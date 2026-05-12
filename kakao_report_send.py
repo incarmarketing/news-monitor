@@ -16,7 +16,7 @@ LOG_DIR = BASE_DIR / "logs"
 
 KAKAO_OAUTH = "https://kauth.kakao.com/oauth/token"
 KAKAO_API = "https://kapi.kakao.com"
-DEFAULT_LINK = "https://search.naver.com/search.naver?query=%EC%9D%B8%EC%B9%B4%EA%B8%88%EC%9C%B5%EC%84%9C%EB%B9%84%EC%8A%A4"
+DEFAULT_REPORT_URL = "https://incarmarketing.github.io/news-monitor/"
 
 
 def refresh_access_token() -> str:
@@ -56,7 +56,20 @@ def latest_html_path() -> Path | None:
 
 
 def report_link() -> str:
-    return os.getenv("REPORT_PUBLIC_URL", "").strip() or DEFAULT_LINK
+    configured = os.getenv("REPORT_PUBLIC_URL", "").strip()
+    if configured and not is_local_url(configured):
+        return configured
+    return DEFAULT_REPORT_URL
+
+
+def is_local_url(url: str) -> bool:
+    lowered = url.lower()
+    return (
+        "localhost" in lowered
+        or "127.0.0.1" in lowered
+        or "::1" in lowered
+        or lowered.startswith("file:")
+    )
 
 
 def build_message(report: dict) -> str:
@@ -67,7 +80,8 @@ def build_message(report: dict) -> str:
         for line in briefing.splitlines()
         if line.strip() and not set(line.strip()) <= {"-", " "}
     ]
-    summary = "\n".join(lines[:8])
+    issue_lines = [line for line in lines if line and not line.startswith(("최종", "지표", "액션", "추적"))]
+    summary = "\n".join(issue_lines[:4])
 
     header = (
         f"[AI 언론 브리핑] {report.get('date', '')}\n"
@@ -75,20 +89,18 @@ def build_message(report: dict) -> str:
         f"· 자사 {metrics.get('by_category', {}).get('own', 0)}건 "
         f"· 자사부정 {metrics.get('own_negative', 0)}건"
     )
-    if os.getenv("REPORT_PUBLIC_URL", "").strip():
-        footer = "\n\n아래 버튼에서 모바일 보고서를 바로 열 수 있습니다."
-    else:
-        footer = "\n\n전체 HTML 보고서는 PC의 logs 폴더에 저장되었습니다."
-    return (header + "\n\n" + summary + footer)[:950]
+    if not summary:
+        summary = "특이 리스크 없음. 전체 보고서에서 근거 기사와 지표를 확인하세요."
+    footer = "\n\n전체 보고서는 아래 버튼에서 확인하세요."
+    return (header + "\n\n" + summary + footer)[:700]
 
 
 def send_text_to_me(access_token: str, text: str, link_url: str) -> dict:
-    has_public_report = bool(os.getenv("REPORT_PUBLIC_URL", "").strip())
     template = {
         "object_type": "text",
         "text": text,
         "link": {"web_url": link_url, "mobile_web_url": link_url},
-        "button_title": "보고서 보기" if has_public_report else "관련 뉴스 보기",
+        "button_title": "보고서 보기",
     }
     response = requests.post(
         f"{KAKAO_API}/v2/api/talk/memo/default/send",

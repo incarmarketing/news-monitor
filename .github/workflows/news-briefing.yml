@@ -2,6 +2,9 @@ name: AI News Briefing
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 23 * * *" # 08:00 KST
     - cron: "0 4 * * *"  # 13:00 KST
