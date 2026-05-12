@@ -23,7 +23,7 @@ python news_collector.py    # 수집만 테스트
 python ai_briefing.py       # AI 브리핑만 테스트 (더미 데이터)
 
 # 4. 자동 스케줄러 실행
-python scheduler.py         # 08:00, 17:00 자동 실행
+python scheduler.py         # 로컬 PC용 예약 실행
 ```
 
 ---
@@ -135,7 +135,7 @@ news-monitor/
 ├── config.py              ← 키워드/설정 (자주 수정)
 ├── news_collector.py      ← 뉴스 수집기
 ├── ai_briefing.py         ← AI 브리핑 + 이메일
-├── scheduler.py           ← 자동 실행 (메인 진입점)
+├── scheduler.py           ← 로컬 PC용 자동 실행
 ├── templates/
 │   └── email.html         ← 이메일 디자인
 ├── logs/                  ← 발송 로그 (자동 생성)
