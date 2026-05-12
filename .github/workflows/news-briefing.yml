@@ -6,9 +6,9 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 23 * * *" # 08:00 KST
-    - cron: "0 4 * * *"  # 13:00 KST
-    - cron: "0 8 * * *"  # 17:00 KST
+    - cron: "5 23 * * *" # 08:05 KST
+    - cron: "5 4 * * *"  # 13:05 KST
+    - cron: "5 8 * * *"  # 17:05 KST
 
 permissions:
   contents: read
