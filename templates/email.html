@@ -528,8 +528,8 @@
       </div>
       <div class="kpi">
         <div class="num">{{ metrics.by_category.own }}</div>
-        <div class="label">자사 언급</div>
-        {% if diff.available %}<div class="sub {{ diff.own.direction }}">전일 {{ diff.own.diff }}</div>{% else %}<div class="sub same">기준일</div>{% endif %}
+        <div class="label">자사 보도</div>
+        <div class="sub">긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }} · 부정 {{ metrics.own_by_tone.negative }}</div>
       </div>
       <div class="kpi">
         <div class="num">{{ metrics.own_negative }}</div>

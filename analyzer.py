@@ -173,6 +173,11 @@ def normalize_title(title: str) -> str:
 def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
     category_count = Counter(a.get("_category", "other") for a in all_articles)
     tone_count = Counter(a.get("_tone", "neutral") for a in all_articles)
+    own_tone_count = Counter(
+        a.get("_tone", "neutral")
+        for a in all_articles
+        if a.get("_category") == "own"
+    )
     own_negative = sum(
         1 for a in all_articles
         if a.get("_category") == "own" and a.get("_tone") == "negative"
@@ -195,6 +200,11 @@ def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
         },
         "own_negative": own_negative,
         "own_total": category_count.get("own", 0),
+        "own_by_tone": {
+            "positive": own_tone_count.get("positive", 0),
+            "neutral": own_tone_count.get("neutral", 0),
+            "negative": own_tone_count.get("negative", 0),
+        },
         "risk_level": calculate_risk_level(own_negative),
     }
 

@@ -65,9 +65,11 @@ def run_briefing(articles: list[dict]) -> Path:
 
     risk_color = {"HIGH": "red", "MEDIUM": "yellow", "LOW": "green"}.get(metrics["risk_level"], "green")
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
+    own_tone = metrics.get("own_by_tone", {})
     console.print(
         f"  수집 {metrics['total_collected']}건 -> 주요 후보 {metrics['total_after_cluster']}건 "
-        f"(자사 {metrics['by_category']['own']} / 자사 부정 {metrics['own_negative']} / "
+        f"(자사 {metrics['by_category']['own']} "
+        f"긍정 {own_tone.get('positive', 0)}·중립 {own_tone.get('neutral', 0)}·부정 {own_tone.get('negative', 0)} / "
         f"경쟁·업계 {market_count} / 리스크 [{risk_color}]{metrics['risk_level']}[/])"
     )
 
@@ -109,6 +111,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
     diff = format_diff(metrics, y_metrics)
     articles_text = format_articles_for_prompt(clustered[:config.MAX_ARTICLES_FOR_PROMPT])
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
+    own_tone = metrics.get("own_by_tone", {})
 
     return f"""
 당신은 {config.COMPANY_NAME} {config.TEAM_NAME}의 언론 모니터링 분석 담당자입니다.
@@ -124,7 +127,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 총 수집: {metrics['total_collected']}건
 - 주요 후보: {metrics['total_after_cluster']}건
 - 자사 언급: {metrics['by_category']['own']}건
-- 자사 부정: {metrics['own_negative']}건
+- 자사 톤: 긍정 {own_tone.get('positive', 0)}건, 중립 {own_tone.get('neutral', 0)}건, 부정 {own_tone.get('negative', 0)}건
 - 경쟁/업계 동향: {market_count}건
 - 리스크: {metrics['risk_level']}
 - 전일 대비: {diff}
@@ -149,7 +152,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 최대 2개
 
 ## 지표 해석
-1~2문장. 자사 언급, 자사 부정, 경쟁/업계 동향 중심.
+1~2문장. 자사 보도 톤, 자사 부정, 경쟁/업계 동향 중심.
 
 ## 액션
 | 구분 | 실행 |
@@ -220,7 +223,7 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
 {issue_lines}
 
 ## 지표 해석
-전체 {metrics['total_collected']}건 중 자사 언급 {metrics['by_category']['own']}건, 자사 부정 {metrics['own_negative']}건입니다.
+전체 {metrics['total_collected']}건 중 자사 보도 {metrics['by_category']['own']}건, 자사 부정 {metrics['own_negative']}건입니다.
 
 ## 액션
 | 구분 | 실행 |

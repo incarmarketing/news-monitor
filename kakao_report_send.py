@@ -75,14 +75,16 @@ def is_local_url(url: str) -> bool:
 def build_message(report: dict) -> str:
     metrics = report.get("metrics", {})
     sections = parse_briefing(report.get("briefing", ""))
-    link = report_link()
+    own_tone = metrics.get("own_by_tone", {})
 
     header = [
         f"[AI 언론 브리핑] {report.get('date', '')}",
+        f"리스크: {metrics.get('risk_level', '-')}",
         (
-            f"리스크 {metrics.get('risk_level', '-')} | "
-            f"자사 {metrics.get('by_category', {}).get('own', 0)}건 | "
-            f"부정 {metrics.get('own_negative', 0)}건"
+            f"자사 보도: {metrics.get('by_category', {}).get('own', 0)}건 "
+            f"(긍정 {own_tone.get('positive', 0)} · "
+            f"중립 {own_tone.get('neutral', 0)} · "
+            f"부정 {own_tone.get('negative', metrics.get('own_negative', 0))})"
         ),
     ]
 
@@ -91,7 +93,7 @@ def build_message(report: dict) -> str:
         lines += ["", "■ 핵심 이슈"]
         lines += [f"{idx}. {issue}" for idx, issue in enumerate(sections["issues"][:2], 1)]
 
-    lines += ["", "■ 보고서", link]
+    lines += ["", "■ 전체 보고서", "아래 버튼에서 확인"]
     return "\n".join(lines)[:900]
 
 
