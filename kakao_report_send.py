@@ -74,25 +74,60 @@ def is_local_url(url: str) -> bool:
 
 def build_message(report: dict) -> str:
     metrics = report.get("metrics", {})
-    briefing = report.get("briefing", "").replace("##", "").replace("**", "").replace("|", " ")
-    lines = [
-        line.strip("- ").strip()
-        for line in briefing.splitlines()
-        if line.strip() and not set(line.strip()) <= {"-", " "}
-    ]
-    issue_lines = [line for line in lines if line and not line.startswith(("최종", "지표", "액션", "추적"))]
-    summary = "\n".join(issue_lines[:4])
+    sections = parse_briefing(report.get("briefing", ""))
+    link = report_link()
 
-    header = (
-        f"[AI 언론 브리핑] {report.get('date', '')}\n"
-        f"리스크 {metrics.get('risk_level', '-')} "
-        f"· 자사 {metrics.get('by_category', {}).get('own', 0)}건 "
-        f"· 자사부정 {metrics.get('own_negative', 0)}건"
-    )
-    if not summary:
-        summary = "특이 리스크 없음. 전체 보고서에서 근거 기사와 지표를 확인하세요."
-    footer = "\n\n전체 보고서는 아래 버튼에서 확인하세요."
-    return (header + "\n\n" + summary + footer)[:700]
+    header = [
+        f"[AI 언론 브리핑] {report.get('date', '')}",
+        (
+            f"리스크 {metrics.get('risk_level', '-')} | "
+            f"자사 {metrics.get('by_category', {}).get('own', 0)}건 | "
+            f"부정 {metrics.get('own_negative', 0)}건"
+        ),
+    ]
+
+    lines = header + ["", "■ 오늘의 판단", sections["conclusion"]]
+    if sections["issues"]:
+        lines += ["", "■ 핵심 이슈"]
+        lines += [f"{idx}. {issue}" for idx, issue in enumerate(sections["issues"][:2], 1)]
+
+    lines += ["", "■ 보고서", link]
+    return "\n".join(lines)[:900]
+
+
+def parse_briefing(briefing: str) -> dict:
+    cleaned = briefing.replace("**", "").strip()
+    section_map: dict[str, list[str]] = {}
+    current = "본문"
+
+    for raw_line in cleaned.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("#"):
+            current = line.lstrip("#").strip()
+            section_map.setdefault(current, [])
+            continue
+        if line.startswith("|") or set(line) <= {"-", "|", " "}:
+            continue
+        section_map.setdefault(current, []).append(line.strip("- ").strip())
+
+    conclusion = first_text(section_map, ["최종 결론", "오늘의 판단", "본문"])
+    issues = section_map.get("핵심 이슈", [])
+    if not conclusion:
+        conclusion = "특이 리스크 없음. 전체 보고서에서 근거 기사와 지표를 확인하세요."
+    return {
+        "conclusion": conclusion,
+        "issues": [item for item in issues if item],
+    }
+
+
+def first_text(section_map: dict[str, list[str]], names: list[str]) -> str:
+    for name in names:
+        values = section_map.get(name, [])
+        if values:
+            return values[0]
+    return ""
 
 
 def send_text_to_me(access_token: str, text: str, link_url: str) -> dict:
