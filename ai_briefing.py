@@ -61,6 +61,7 @@ TONE_LABELS = {
 def run_briefing(articles: list[dict]) -> Path:
     console.print("\n[cyan]분석 단계: 스코어링 / 카테고리화 / 유사 기사 묶기[/]")
     clustered, metrics = analyzer.analyze(articles, top_n=config.TOP_N_FOR_BRIEFING)
+    assign_report_ids(clustered)
     yesterday = archiver.load_yesterday()
 
     risk_color = {"HIGH": "red", "MEDIUM": "yellow", "LOW": "green"}.get(metrics["risk_level"], "green")
@@ -109,7 +110,8 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
 def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:
     y_metrics = yesterday.get("metrics") if yesterday else None
     diff = format_diff(metrics, y_metrics)
-    articles_text = format_articles_for_prompt(clustered[:config.MAX_ARTICLES_FOR_PROMPT])
+    prompt_articles = select_prompt_articles(clustered, config.MAX_ARTICLES_FOR_PROMPT)
+    articles_text = format_articles_for_prompt(prompt_articles)
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
     own_tone = metrics.get("own_by_tone", {})
 
@@ -141,6 +143,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 굵게 표시용 ** 문법 금지.
 - 기사 나열 금지. 중복 기사는 하나의 이슈로 설명.
 - 기사 목록에 없는 이슈, 키워드, 법안, 사건은 절대 추가하지 마세요.
+- 핵심 이슈에는 반드시 근거 기사 ID를 [N] 형식으로 붙이세요. 예: - [3] 브랜드평판 1위: 자사 긍정 보도.
 - 불확실한 내용은 "확인 필요"라고 표현하세요.
 
 반드시 이 형식:
@@ -148,7 +151,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 한 문장. 55자 이내.
 
 ## 핵심 이슈
-- 이슈명: 판단
+- [기사ID] 이슈명: 판단
 - 최대 2개
 
 ## 지표 해석
@@ -166,13 +169,48 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 """.strip()
 
 
+def assign_report_ids(articles: list[dict]) -> None:
+    for idx, article in enumerate(articles, 1):
+        article["_report_id"] = idx
+
+
+def select_prompt_articles(clustered: list[dict], limit: int) -> list[dict]:
+    selected: list[dict] = []
+    seen_links: set[str] = set()
+
+    def add(article: dict) -> None:
+        link = article.get("link", "")
+        key = link or article.get("title", "")
+        if key in seen_links or len(selected) >= limit:
+            return
+        selected.append(article)
+        seen_links.add(key)
+
+    priority_terms = ("브랜드평판", "1위", "수성", "금감원", "금융위", "근로자성", "불완전판매")
+    for article in clustered:
+        if article.get("_category") == "own":
+            add(article)
+    for article in clustered:
+        text = article.get("title", "") + " " + article.get("description", "")
+        if any(term in text for term in priority_terms):
+            add(article)
+    for category in ("regulation", "competitor", "industry"):
+        for article in clustered:
+            if article.get("_category") == category:
+                add(article)
+    for article in clustered:
+        add(article)
+
+    return selected[:limit]
+
+
 def format_articles_for_prompt(articles: list[dict]) -> str:
     rows = []
-    for idx, article in enumerate(articles, 1):
+    for article in articles:
         rows.append(
-            f"{idx}. [{article.get('_category')}/{article.get('_tone')}/점수{article.get('_score')}] "
+            f"{article.get('_report_id')}. [{article.get('_category')}/{article.get('_tone')}/점수{article.get('_score')}] "
             f"{article.get('title', '')[:95]} "
-            f"(출처 {article.get('source')}, 유사 {article.get('_cluster_size', 1)}건)"
+            f"(출처 {article.get('source')}, 검색어 {article.get('keyword')}, 유사 {article.get('_cluster_size', 1)}건)"
         )
     return "\n".join(rows)
 
@@ -251,7 +289,7 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
         metrics=metrics,
         diff=build_diff_for_template(metrics, y_metrics),
         sections=sections,
-        top_articles=enrich_articles(select_evidence_articles(clustered)),
+        top_articles=enrich_articles(select_evidence_articles(clustered, sections)),
         risk_message=risk_message(metrics),
         market_count=market_count,
         methodology=build_methodology(metrics),
@@ -279,21 +317,43 @@ def parse_report_sections(markdown: str) -> dict:
     }
 
 
-def select_evidence_articles(clustered: list[dict], limit: int = 8) -> list[dict]:
+def select_evidence_articles(clustered: list[dict], sections: dict, limit: int = 12) -> list[dict]:
     selected: list[dict] = []
     seen_links: set[str] = set()
+
+    by_id = {article.get("_report_id"): article for article in clustered}
+
+    def add_article(article: dict | None) -> None:
+        if not article:
+            return
+        link = article.get("link", "")
+        key = link or article.get("title", "")
+        if key in seen_links or len(selected) >= limit:
+            return
+        selected.append(article)
+        seen_links.add(key)
+
+    for issue in sections.get("issues", []):
+        for ref_id in issue.get("refs", []):
+            add_article(by_id.get(ref_id))
 
     def add_matching(category: str, count: int) -> None:
         current = 0
         for article in clustered:
             if current >= count:
                 break
-            link = article.get("link", "")
-            if link in seen_links or article.get("_category") != category:
+            if article.get("_category") != category:
                 continue
-            selected.append(article)
-            seen_links.add(link)
+            before = len(selected)
+            add_article(article)
+            if len(selected) == before:
+                continue
             current += 1
+
+    for article in clustered:
+        text = article.get("title", "") + " " + article.get("description", "")
+        if any(term in text for term in ("브랜드평판", "1위", "수성")):
+            add_article(article)
 
     add_matching("own", 2)
     add_matching("regulation", 2)
@@ -303,10 +363,7 @@ def select_evidence_articles(clustered: list[dict], limit: int = 8) -> list[dict
     for article in clustered:
         if len(selected) >= limit:
             break
-        link = article.get("link", "")
-        if link and link not in seen_links:
-            selected.append(article)
-            seen_links.add(link)
+        add_article(article)
     return selected[:limit]
 
 
@@ -321,7 +378,10 @@ def parse_bullets(text: str) -> list[dict]:
             title, detail = body.split(":", 1)
         else:
             title, detail = body, ""
-        items.append({"title": title.strip(), "detail": detail.strip()})
+        refs = [int(value) for value in re.findall(r"\[(\d+)\]", body)]
+        title = re.sub(r"\[\d+\]\s*", "", title).strip()
+        detail = re.sub(r"\[\d+\]\s*", "", detail).strip()
+        items.append({"title": title.strip(), "detail": detail.strip(), "refs": refs})
     return items[:2]
 
 
@@ -332,6 +392,7 @@ def enrich_articles(articles: list[dict]) -> list[dict]:
             "_category_label": CATEGORY_LABELS.get(article.get("_category", "other"), "기타"),
             "_tone_label": TONE_LABELS.get(article.get("_tone", "neutral"), "중립"),
             "_impact": article_impact(article),
+            "_evidence_id": article.get("_report_id", "-"),
         }
         for article in articles
     ]

@@ -9,6 +9,9 @@ KEYWORDS = [
     "보험 프로모션",
     "GA 보험",
     "보험설계사",
+    "보험대리점 브랜드평판",
+    "GA 브랜드평판",
+    "인카금융서비스 브랜드평판",
 ]
 
 EXCLUDE_KEYWORDS = [
@@ -20,9 +23,9 @@ EXCLUDE_KEYWORDS = [
 ]
 
 HOURS_BACK = 24
-ARTICLES_PER_KEYWORD = 20
+ARTICLES_PER_KEYWORD = 25
 TOP_N_FOR_BRIEFING = 60
-MAX_ARTICLES_FOR_PROMPT = 24
+MAX_ARTICLES_FOR_PROMPT = 32
 
 SCHEDULE_TIMES = ["08:00", "13:00", "17:00"]
 

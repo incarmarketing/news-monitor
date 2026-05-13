@@ -60,6 +60,8 @@ POSITIVE_WORDS = [
 
 CSR_CONTEXT_WORDS = ["사회공헌", "기부", "후원", "봉사", "지원", "캠페인", "협약"]
 
+REPUTATION_WORDS = ["브랜드평판", "평판", "1위", "순위", "수성"]
+
 CATEGORIES = {
     "own": OWN_NAMES,
     "regulation": REGULATION_WORDS,
@@ -101,6 +103,10 @@ def score_article(article: dict) -> int:
         score += 6
     if any(word in title for word in REGULATION_WORDS):
         score += 4
+    if any(word in text for word in REPUTATION_WORDS):
+        score += 7
+    if is_own_article(article) and any(word in text for word in REPUTATION_WORDS):
+        score += 5
     if len(title) < 15:
         score -= 2
     return score
