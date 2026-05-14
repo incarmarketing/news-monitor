@@ -313,6 +313,56 @@
     padding-top: 16px;
   }
 
+  .tab-controls {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .tab-button {
+    min-height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #f8fafc;
+    color: var(--slate);
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .tab-button.active {
+    background: #172554;
+    border-color: #172554;
+    color: #fff;
+  }
+
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  .tab-desc {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 800;
+  }
+
+  .empty-list {
+    margin: 0;
+    padding: 16px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    background: #f8fafc;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
   .article-list {
     margin: 0;
     padding: 0;
@@ -484,6 +534,18 @@
       break-inside: auto;
       page-break-inside: auto;
     }
+    .tab-controls {
+      display: none;
+    }
+    .tab-panel {
+      display: block;
+      margin-bottom: 10px;
+    }
+    .tab-panel h3 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: var(--navy);
+    }
     .article-list {
       gap: 4px;
     }
@@ -618,6 +680,19 @@
       gap: 10px;
     }
 
+    .tab-controls {
+      display: flex;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+    }
+
+    .tab-button {
+      flex: 0 0 auto;
+      min-width: 92px;
+      padding: 0 10px;
+    }
+
     .article-list li {
       grid-template-columns: 1fr;
       gap: 7px;
@@ -645,6 +720,16 @@
     }
   }
 </style>
+<script>
+  function showArticleTab(tabId) {
+    document.querySelectorAll(".tab-button").forEach(function(button) {
+      button.classList.toggle("active", button.dataset.tab === tabId);
+    });
+    document.querySelectorAll(".tab-panel").forEach(function(panel) {
+      panel.classList.toggle("active", panel.id === "tab-" + tabId);
+    });
+  }
+</script>
 </head>
 <body>
   <div class="toolbar">
@@ -737,23 +822,41 @@
       {% endif %}
 
       <section class="evidence">
-        <h2 class="section-title">근거 기사 TOP 12</h2>
-        <ul class="article-list">
-          {% for a in top_articles %}
-          <li>
-            <div class="tag-stack">
-              <span class="article-id">#{{ a._evidence_id }}</span>
-              <span class="tag cat-{{ a._category }}">{{ a._category_label }}</span>
-              <span class="tag tone-{{ a._tone }}">{{ a._tone_label }}</span>
-            </div>
-            <div>
-              <a href="{{ a.link }}" target="_blank">{{ a.title }}</a>
-              <div class="source">{{ a.source|upper }} · {{ a.keyword }}{% if a._cluster_size > 1 %} · 유사 {{ a._cluster_size }}건{% endif %}</div>
-            </div>
-            <div class="impact">영향 {{ a._impact }}</div>
-          </li>
+        <h2 class="section-title">기사 대시보드</h2>
+        <div class="tab-controls" role="tablist" aria-label="기사 분류">
+          {% for tab in article_tabs %}
+          <button class="tab-button {% if loop.first %}active{% endif %}" type="button" data-tab="{{ tab.id }}" onclick="showArticleTab('{{ tab.id }}')">
+            {{ tab.label }} {{ tab.articles|length }}
+          </button>
           {% endfor %}
-        </ul>
+        </div>
+
+        {% for tab in article_tabs %}
+        <section class="tab-panel {% if loop.first %}active{% endif %}" id="tab-{{ tab.id }}">
+          <h3 class="section-title">{{ tab.label }}</h3>
+          <p class="tab-desc">{{ tab.description }}</p>
+          {% if tab.articles %}
+          <ul class="article-list">
+            {% for a in tab.articles %}
+            <li>
+              <div class="tag-stack">
+                <span class="article-id">#{{ a._evidence_id }}</span>
+                <span class="tag cat-{{ a._category }}">{{ a._category_label }}</span>
+                <span class="tag tone-{{ a._tone }}">{{ a._tone_label }}</span>
+              </div>
+              <div>
+                <a href="{{ a.link }}" target="_blank">{{ a.title }}</a>
+                <div class="source">{{ a.source|upper }} · {{ a.keyword }}{% if a._cluster_size > 1 %} · 유사 {{ a._cluster_size }}건{% endif %}</div>
+              </div>
+              <div class="impact">영향 {{ a._impact }}</div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="empty-list">해당 분류의 주요 기사가 없습니다.</p>
+          {% endif %}
+        </section>
+        {% endfor %}
       </section>
 
       <section class="methodology">

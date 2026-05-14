@@ -289,7 +289,7 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
         metrics=metrics,
         diff=build_diff_for_template(metrics, y_metrics),
         sections=sections,
-        top_articles=enrich_articles(select_evidence_articles(clustered, sections)),
+        article_tabs=build_article_tabs(clustered, sections),
         risk_message=risk_message(metrics),
         market_count=market_count,
         methodology=build_methodology(metrics),
@@ -365,6 +365,52 @@ def select_evidence_articles(clustered: list[dict], sections: dict, limit: int =
             break
         add_article(article)
     return selected[:limit]
+
+
+def build_article_tabs(clustered: list[dict], sections: dict) -> list[dict]:
+    return [
+        {
+            "id": "evidence",
+            "label": "요약 근거",
+            "description": "오늘의 판단과 핵심 이슈에 직접 연결되는 기사입니다.",
+            "articles": enrich_articles(select_evidence_articles(clustered, sections, limit=8)),
+        },
+        {
+            "id": "own",
+            "label": "자사 언급",
+            "description": "인카금융서비스가 직접 언급된 기사입니다.",
+            "articles": enrich_articles(select_articles_by_category(clustered, {"own"}, limit=10)),
+        },
+        {
+            "id": "risk",
+            "label": "규제/리스크",
+            "description": "규제, 제도, 감독 이슈와 리스크 관찰 기사입니다.",
+            "articles": enrich_articles(select_articles_by_category(clustered, {"regulation"}, limit=10)),
+        },
+        {
+            "id": "market",
+            "label": "업계/경쟁",
+            "description": "경쟁사와 보험·GA 업계 흐름을 보여주는 기사입니다.",
+            "articles": enrich_articles(select_articles_by_category(clustered, {"competitor", "industry"}, limit=12)),
+        },
+    ]
+
+
+def select_articles_by_category(clustered: list[dict], categories: set[str], limit: int) -> list[dict]:
+    selected = []
+    seen_links: set[str] = set()
+
+    for article in clustered:
+        link = article.get("link", "")
+        key = link or article.get("title", "")
+        if article.get("_category") not in categories or key in seen_links:
+            continue
+        selected.append(article)
+        seen_links.add(key)
+        if len(selected) >= limit:
+            break
+
+    return selected
 
 
 def parse_bullets(text: str) -> list[dict]:
