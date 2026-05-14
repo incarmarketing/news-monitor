@@ -86,13 +86,13 @@ jobs:
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
 
       - name: Generate period reports
-        if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none'))
+        if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none'))
         run: |
           PERIOD="${{ github.event.inputs.period_reports }}"
-          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] || [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
+          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] || [ "${{ github.event_name }}" = "push" ] || [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
             python period_report.py weekly
           fi
-          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] || [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
+          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] || [ "${{ github.event_name }}" = "push" ] || [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
             python period_report.py monthly
           fi
         env:
