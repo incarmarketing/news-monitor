@@ -23,6 +23,7 @@ from rich.panel import Panel
 import analyzer
 import archiver
 import config
+import report_window
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -94,7 +95,8 @@ def run_briefing(articles: list[dict]) -> Path:
 
 def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:
     if not clustered:
-        return "## 최종 결론\n최근 24시간 기준 주요 모니터링 대상 뉴스가 없습니다."
+        window = report_window.current_window()
+        return f"## 최종 결론\n{window['label']} 기준 주요 모니터링 대상 뉴스가 없습니다."
     if not GEMINI_API_KEY:
         return fallback_report(clustered, metrics)
 
@@ -109,17 +111,16 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
 
 
 def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:
-    y_metrics = yesterday.get("metrics") if yesterday else None
-    diff = format_diff(metrics, y_metrics)
     prompt_articles = select_prompt_articles(clustered, config.MAX_ARTICLES_FOR_PROMPT)
     articles_text = format_articles_for_prompt(prompt_articles)
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
     own_tone = metrics.get("own_by_tone", {})
     action_instruction = build_action_instruction(metrics)
+    window = report_window.current_window()
 
     return f"""
 당신은 {config.COMPANY_NAME} {config.TEAM_NAME}의 언론 모니터링 분석 담당자입니다.
-아래 최근 {config.HOURS_BACK}시간 기사만 근거로 사내 의사결정용 일일 모니터링 보고서를 작성하세요.
+아래 {window['label']} 기사만 근거로 사내 의사결정용 언론 모니터링 보고서를 작성하세요.
 
 분류 기준:
 - {config.COMPANY_NAME}가 직접 언급되지 않은 기사는 긍정/부정으로 과도하게 판단하지 말고 업계/경쟁 동향으로만 해석하세요.
@@ -128,13 +129,13 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 사회공헌/기부/지원 기사는 피해자나 사기 같은 단어가 있어도 당사 CSR 맥락이면 부정으로 보지 마세요.
 
 데이터:
+- 수집 구간: {window['label']}
 - 총 수집: {metrics['total_collected']}건
 - 분석 기사: {metrics['total_after_cluster']}건
 - 당사 언급: {metrics['by_category']['own']}건
 - 당사 톤: 긍정 {own_tone.get('positive', 0)}건, 중립 {own_tone.get('neutral', 0)}건, 부정 {own_tone.get('negative', 0)}건
 - 경쟁/업계 동향: {market_count}건
 - 리스크: {metrics['risk_level']}
-- 전일 대비: {diff}
 
 주요 기사:
 {articles_text}
@@ -265,6 +266,7 @@ def clean_markdown(text: str) -> str:
 
 
 def fallback_report(clustered: list[dict], metrics: dict) -> str:
+    window = report_window.current_window()
     issue_lines = "\n".join(
         f"- {article.get('title', '')[:55]}: 확인 필요"
         for article in clustered[:2]
@@ -278,7 +280,7 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
 """
 
     return f"""## 최종 결론
-최근 24시간 기준 리스크는 {metrics['risk_level']}이며, 당사 부정 {metrics['own_negative']}건입니다.
+{window['label']} 기준 리스크는 {metrics['risk_level']}이며, 당사 부정 {metrics['own_negative']}건입니다.
 
 ## 핵심 이슈
 {issue_lines}
@@ -297,6 +299,7 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
     y_metrics = yesterday.get("metrics") if yesterday else None
     sections = parse_report_sections(report_md, metrics)
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
+    window = report_window.current_window()
 
     return template.render(
         subject_prefix=config.EMAIL_SUBJECT_PREFIX,
@@ -311,6 +314,7 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
         risk_message=risk_message(metrics),
         market_count=market_count,
         methodology=build_methodology(metrics),
+        window=window,
     )
 
 
@@ -483,9 +487,10 @@ def article_impact(article: dict) -> str:
 
 
 def build_methodology(metrics: dict) -> dict:
+    window = report_window.current_window()
     return {
         "sources": "네이버 뉴스, 구글 뉴스",
-        "window": f"최근 {config.HOURS_BACK}시간",
+        "window": window["label"],
         "keywords": len(config.KEYWORDS),
         "collected": metrics["total_collected"],
         "candidates": metrics["total_after_cluster"],

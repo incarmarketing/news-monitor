@@ -79,10 +79,13 @@ def build_message(report: dict) -> str:
     own_tone = metrics.get("own_by_tone", {})
     own_total = metrics.get("by_category", {}).get("own", 0)
     risk = metrics.get("risk_level", "-")
+    window = report.get("window", {})
+    window_label = window.get("short_label") or window.get("label") or "현재 기준"
 
     header = [
         f"[AI 언론 브리핑] {report.get('date', '')}",
-        f"리스크 {risk} · 당사 {own_total}건",
+        f"{window_label} · 리스크 {risk}",
+        f"당사 {own_total}건",
         (
             f"긍정 {own_tone.get('positive', 0)} · "
             f"중립 {own_tone.get('neutral', 0)} · "

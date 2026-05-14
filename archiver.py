@@ -6,6 +6,8 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import report_window
+
 BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
 ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
@@ -22,10 +24,18 @@ def now_kst() -> datetime:
 
 def save_daily(articles: list[dict], briefing: str, metrics: dict) -> Path:
     report_date = today_kst()
+    window = report_window.current_window()
     target = ARCHIVE_DIR / f"{report_date.isoformat()}.json"
     payload = {
         "date": report_date.isoformat(),
         "timestamp": now_kst().isoformat(),
+        "window": {
+            "slot": window["slot"],
+            "label": window["label"],
+            "short_label": window["short_label"],
+            "start": window["start"].isoformat(),
+            "end": window["end"].isoformat(),
+        },
         "metrics": metrics,
         "briefing": briefing,
         "articles": [lighten(article) for article in articles],

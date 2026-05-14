@@ -774,7 +774,7 @@
         <div>
           <div class="eyebrow">{{ subject_prefix }}</div>
           <h1>일일 언론 모니터링 보고서</h1>
-          <div class="hero-meta">{{ company }} · {{ team }} · {{ date_str }} · 최근 24시간 기준</div>
+          <div class="hero-meta">{{ company }} · {{ team }} · {{ date_str }} · {{ window.label }} 기준</div>
         </div>
         <div class="risk-summary">
           <div class="risk-badge {{ metrics.risk_level }}">
@@ -783,7 +783,7 @@
           </div>
           <div class="risk-copy">
             <div class="risk-message">{{ risk_message }}</div>
-            <div class="risk-sub">최근 24시간 기준 · 당사 부정 {{ metrics.own_negative }}건</div>
+            <div class="risk-sub">{{ window.short_label }} · 당사 부정 {{ metrics.own_negative }}건</div>
           </div>
         </div>
       </div>
@@ -792,8 +792,8 @@
     <section class="kpis">
       <div class="kpi">
         <div class="num">{{ metrics.total_collected }}</div>
-        <div class="label">전체 수집</div>
-        <div class="sub">최근 24시간</div>
+        <div class="label">구간 수집</div>
+        <div class="sub">{{ window.short_label }}</div>
       </div>
       <div class="kpi">
         <div class="num">{{ metrics.total_after_cluster }}</div>
@@ -808,12 +808,12 @@
       <div class="kpi">
         <div class="num">{{ metrics.own_negative }}</div>
         <div class="label">당사 부정</div>
-        {% if diff.available %}<div class="sub {{ diff.own_neg.direction }}">전일 {{ diff.own_neg.diff }}</div>{% else %}<div class="sub same">기준일 {{ basis_datetime }}</div>{% endif %}
+        <div class="sub same">기준 {{ basis_datetime }}</div>
       </div>
       <div class="kpi">
         <div class="num">{{ market_count }}</div>
         <div class="label">경쟁/업계 동향</div>
-        {% if diff.available %}<div class="sub {{ diff.market.direction }}">전일 {{ diff.market.diff }}</div>{% else %}<div class="sub same">기준일 {{ basis_datetime }}</div>{% endif %}
+        <div class="sub same">기준 {{ basis_datetime }}</div>
       </div>
     </section>
 
