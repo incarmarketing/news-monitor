@@ -1,31 +1,31 @@
 {
   "date": "2026-05-14",
-  "timestamp": "2026-05-14T17:52:03.943507+09:00",
+  "timestamp": "2026-05-14T19:30:24.609020+09:00",
   "metrics": {
-    "total_collected": 166,
+    "total_collected": 182,
     "total_after_cluster": 42,
     "by_category": {
-      "own": 15,
-      "regulation": 15,
-      "competitor": 89,
-      "industry": 46,
+      "own": 14,
+      "regulation": 17,
+      "competitor": 101,
+      "industry": 49,
       "other": 1
     },
     "by_tone": {
       "negative": 0,
-      "positive": 14,
-      "neutral": 152
+      "positive": 13,
+      "neutral": 169
     },
     "own_negative": 0,
-    "own_total": 15,
+    "own_total": 14,
     "own_by_tone": {
-      "positive": 14,
+      "positive": 13,
       "neutral": 1,
       "negative": 0
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 브랜드평판 1위 달성 보도가 다수이며, 업계는 금감원 규제 강화 동향이 관찰됩니다.\n\n## 핵심 이슈\n- [1] 브랜드평판 1위: 독립 보험대리점(GA) 5월 브랜드평판 1위 달성으로 긍정적 평판 형성 및 홍보 기회.\n- [12] 금감원 규제 강화: 한화라이프랩 검사, 부당승환 경고 등 GA 채널 영업 관행에 대한 감독 강화 동향.\n\n## 지표 해석\n당사 관련 보도는 브랜드평판 1위 소식이 주를 이루며 긍정적 톤을 유지했습니다. 부정 기사는 없었으며, 경쟁사 및 업계는 금감원의 영업 관행 조사 및 규제 강화 동향이 주요 이슈입니다.\n\n## 액션\n| 구분 | 실행 |\n|---|---|\n| 즉시 | 브랜드평판 1위 기사 홍보 강화 |\n| 금주 | 내부통제 및 판매규정 준수 재점검 |\n| 관찰 | 금감원의 GA 채널 규제 동향 모니터링 |\n\n## 분석 키워드\n브랜드평판, 금감원, 한화라이프랩, 부당승환",
+  "briefing": "## 최종 결론\n당사 브랜드평판 1위 긍정 보도 다수, 경쟁사 규제 리스크 부각.\n\n## 핵심 이슈\n- [1] 독립 보험대리점 브랜드평판 1위 달성: 긍정적 여론 형성\n- [12] 금감원의 경쟁사(한화라이프랩) 검사 착수: GA 업계 영업 관행 규제 강화\n\n## 지표 해석\n당사 관련 보도는 브랜드평판 1위 소식이 주를 이루며 긍정 톤이 압도적입니다. 경쟁사 관련, 금감원의 불완전판매 및 부당승환 관련 규제 강화 동향이 관측됩니다.\n\n## 액션\n| 구분 | 실행 |\n|---|---|\n| 즉시 | 브랜드평판 1위 보도자료 배포 및 활용 |\n| 금주 | 경쟁사 규제 관련 내부통제 현황 점검 |\n| 관찰 | 금감원의 GA 영업 관행 규제 동향 모니터링 |\n\n## 분석 키워드\n브랜드평판, 금감원, GA, 한화생명금융서비스",
   "articles": [
     {
       "title": "인카금융서비스, 독립 보험대리점 2026년 5월 브랜드평판 1위",
@@ -58,7 +58,7 @@
       "_score": 30,
       "_category": "own",
       "_tone": "positive",
-      "_cluster_size": 2
+      "_cluster_size": 1
     },
     {
       "title": "인카금융서비스, 독립 보험대리점 브랜드평판 5월 1위...한화생명금융서비스 뒤이어 - 빅데이터뉴스",
@@ -83,22 +83,33 @@
       "_cluster_size": 3
     },
     {
-      "title": "[마켓인]매물만 나오면 ‘0순위 후보’…태광그룹은 어떻게 ‘큰 손’이...",
-      "link": "https://n.news.naver.com/mnews/article/018/0006281429?sid=101",
+      "title": "허리통증 씻어낸 박상현 KPGA 경북오픈 첫날 7언더파 공동선두 \"총상금...",
+      "link": "https://www.smartbizn.com/news/articleView.html?idxno=143918",
       "source": "naver",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 17:07:00 +0900",
+      "pub_date": "Thu, 14 May 2026 18:20:00 +0900",
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "[금융레이더] KB손해보험/AXA손해보험/ABL생명/신한카드/애큐온캐피탈/저축은행중앙회/금융보안원 - 대한경제",
-      "link": "https://news.google.com/rss/articles/CBMidEFVX3lxTE5LQlJyQi03U1dzVlY5OHI1SXRkaWE1bHBLaFZqUVppTU42SXYwRFBFTHVQMjhnMFRhTGJPb0hCUm1zVDVwaHZLU0EtVWJWZGlFNVN2Y3k1MGN1M2N1cWt2dTdVeE40eTF6REZMenRIYS1vV2p3?oc=5",
-      "source": "google",
+      "title": "43세 베테랑 박상현의 질주…20살 문동현과 공동선두",
+      "link": "https://m.sports.naver.com/golf/article/009/0005680277",
+      "source": "naver",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 00:59:57 GMT",
+      "pub_date": "Thu, 14 May 2026 18:20:00 +0900",
+      "_score": 15,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "메리츠화재 \"GA 신계약 점유율 1위…수익성 확보된 계약만 집중\"[IR종합...",
+      "link": "https://n.news.naver.com/mnews/article/421/0008945617?sid=101",
+      "source": "naver",
+      "keyword": "GA 보험",
+      "pub_date": "Thu, 14 May 2026 18:19:00 +0900",
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
@@ -138,39 +149,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "금감원, 보험권 장애인 고용 활성화 간담회 개최",
-      "link": "https://n.news.naver.com/mnews/article/374/0000510222?sid=101",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 14 May 2026 17:21:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금감원, '요양시설 종신보험 의혹' 한화라이프랩 검사 착수…GA 내부통...",
-      "link": "http://www.newslock.co.kr/news/articleView.html?idxno=130120",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 14 May 2026 17:08:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "금감원, 한화라이프랩 검사 착수···법인보험 영업 관행 '정조준'",
-      "link": "https://www.seoulfn.com/news/articleView.html?idxno=628824",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 14 May 2026 17:07:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
       "title": "‘요양시설 종신보험 판매’ 금감원 검사 착수…1호에 한화라이프랩 - KBS 뉴스",
       "link": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9VSndOMWx4WHVYZUx4MkNqTVlWc1hTZW9pQ2oycUNIdk9MV3QtNGRDbWY0Y2lIWkk5WHZwVVlPYzhOUkJIcGNueXdGcFIyUW9EVi1rbHVROUN2RmM?oc=5",
       "source": "google",
@@ -182,22 +160,44 @@
       "_cluster_size": 1
     },
     {
-      "title": "괴산농협, NH농협손해보험 TOP-CLASS 사무소 선정",
-      "link": "http://www.dynews.co.kr/news/articleView.html?idxno=850401",
+      "title": "AXA손해보험, 고혈압 합병증 대비 간편보험 출시…유병자도 80세까지 가...",
+      "link": "https://www.viva100.com/article/20260514500911",
       "source": "naver",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 17:04:00 +0900",
+      "pub_date": "Thu, 14 May 2026 18:04:00 +0900",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
     },
     {
+      "title": "한국교총-한화손해보험 업무협약 체결해",
+      "link": "https://www.hangyo.com/news/article.html?no=107736",
+      "source": "naver",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 17:52:00 +0900",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "금감원, 보험권 장애인 고용 활성화 간담회 개최",
+      "link": "https://n.news.naver.com/mnews/article/374/0000510222?sid=101",
+      "source": "naver",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 17:21:00 +0900",
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "여성특화시장 견인한 한화손해보험...1분기 신계약 CSM 역대 최대치 - 녹색경제신문",
       "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTFA0aU93NnUtWGl4U0lZaVdoZG9WUkdXaWpmUzFaSlRrSU1iS1ZTWFdJSW9qZl9IaHhERW11V1RtTUprN0pkUF9Wdlo5QjdnX1prSmdYODF0ZEl3SURXQlJqZkdNZFBaOXlq?oc=5",
       "source": "google",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 04:54:45 GMT",
+      "pub_date": "Thu, 14 May 2026 05:17:00 GMT",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
@@ -215,6 +215,17 @@
       "_cluster_size": 3
     },
     {
+      "title": "한화손해보험, 실손보험 제도 개선 수혜 기대감 - PRESS9",
+      "link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA5alJBa2ZzTzZfeWdmT2FSRmE3UUN3TlM0SG8yNEpJU3VER1J5c2dPeXdsNXBROTVyNXpjTGhwMXBpYVI5SzdFV2lGRkZDblhqdVRyZ0QxRURLeHNQcndYcFBFc2I?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 04:09:38 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "KB손해보험, 'KB희망바자회' 개최…21년째 이어온 나눔 실천 - 폴리뉴스 Polinews",
       "link": "https://news.google.com/rss/articles/CBMibkFVX3lxTFBYMk1BOExva3JuUkRodkxIaGhiYmhhbjZCOExoQk5HQ1drYWNtZHprYWM1NEpUay13MnB1QlVNS0tNNEwyZ2hTejdKamlkTzVrTHYyNG45OE9yeF9UZ1d6SUYtRGpHZlFZdDlYbnp30gFyQVVfeXFMTjl6bFRRay05WEVvVGtuSTg1V1J5OXdybHUyRFViZGIxdktSM2RJZUp1a2djaXpMNjBLVk5SajFoamFJQ0M1OHRCcnAwazBDcWtXeG9NX25IT2xyTnA0NmFXSDhuTFhUTzVSQ1JBNTJhQTBB?oc=5",
       "source": "google",
@@ -226,11 +237,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "한화손해보험, 실손보험 제도 개선 수혜 기대감 - PRESS9",
-      "link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFA5alJBa2ZzTzZfeWdmT2FSRmE3UUN3TlM0SG8yNEpJU3VER1J5c2dPeXdsNXBROTVyNXpjTGhwMXBpYVI5SzdFV2lGRkZDblhqdVRyZ0QxRURLeHNQcndYcFBFc2I?oc=5",
+      "title": "괴산농협, NH농협손해보험 TOP-CLASS 사무소 선정 - 동양일보",
+      "link": "https://news.google.com/rss/articles/CBMiakFVX3lxTFAyMzA3azh5TUdzSldxU0ZPNmVRNmlsYlREYndhaE1heW5sa3A0eTdkeEJZRjhDZzg0VWt1X3NJa1lHdExvWnhuOEh4elNKTEVEUGNHaU44MTFYTzZoTENfTl9FRnI3SG5pZXc?oc=5",
       "source": "google",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 04:09:38 GMT",
+      "pub_date": "Thu, 14 May 2026 07:55:57 GMT",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
@@ -248,48 +259,26 @@
       "_cluster_size": 1
     },
     {
-      "title": "[보험업계 소식] ABL생명, 한화손해보험 - 파이낸셜포스트",
-      "link": "https://news.google.com/rss/articles/CBMidEFVX3lxTFBKeGhUNnZNUHlXenlrSW1qbkVPN3BiNl9JUnBIUC1YeWxXTy05RVgzdkZ3ZmQ4bmJpQlhEN1FKQVlEX3prek1OVWZqaThCemQtZW5zMklNcTFkTlNtME5Sd0N0ZkF5MjVjNHpjbVVyczhZcUFM?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 08:05:15 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "고귀, DB손해보험 보청기 분실·파손 보장 서비스 확대…진심보청기 11곳·서대문 센터 업무협약 - 파이낸스투데이",
-      "link": "https://news.google.com/rss/articles/CBMibEFVX3lxTFBNRF9VOVZzV1pmUU03NTJxNDJmQnNvSm5pUWdFMndwZ3hLQ2JkOE8wUHdONzlrbG5Qb0U1dlV5Uk9KMFAzNF8yUmJ0azJtbkJDS0xXVUlqRTB3aGtsTmlCOUxaYktnX3J4MEhpRw?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 06:52:02 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금감원, 한화라이프랩 연이은 현장 검사…모회사 한화생명 내부통제 도...",
-      "link": "https://www.newsinside.kr/news/articleView.html?idxno=4673047",
+      "title": "금감원, '요양시설 종신보험 의혹' 한화라이프랩 검사 착수…GA 내부통...",
+      "link": "http://www.newslock.co.kr/news/articleView.html?idxno=130120",
       "source": "naver",
       "keyword": "GA 보험",
-      "pub_date": "Thu, 14 May 2026 13:34:00 +0900",
+      "pub_date": "Thu, 14 May 2026 17:08:00 +0900",
       "_score": 12,
-      "_category": "competitor",
+      "_category": "regulation",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
-      "title": "금감원, '요양시설 종신보험' 검사…한화생명 \"제휴법인 문제, 지난달 해...",
-      "link": "https://www.greened.kr/news/articleView.html?idxno=340667",
+      "title": "금감원, 한화라이프랩 검사 착수···법인보험 영업 관행 '정조준'",
+      "link": "https://www.seoulfn.com/news/articleView.html?idxno=628824",
       "source": "naver",
       "keyword": "GA 보험",
-      "pub_date": "Thu, 14 May 2026 11:19:00 +0900",
+      "pub_date": "Thu, 14 May 2026 17:07:00 +0900",
       "_score": 12,
-      "_category": "competitor",
+      "_category": "regulation",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "‘13차월·연금보험으로 우회’…1,200%룰 앞둔 보험업계, 규제 회피형 영업 확산 - 보험매일",
@@ -299,6 +288,17 @@
       "pub_date": "Wed, 13 May 2026 21:22:27 GMT",
       "_score": 12,
       "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "금감원, 한화라이프랩 연이은 현장 검사…모회사 한화생명 내부통제 도...",
+      "link": "https://www.newsinside.kr/news/articleView.html?idxno=4673047",
+      "source": "naver",
+      "keyword": "보험설계사",
+      "pub_date": "Thu, 14 May 2026 13:34:00 +0900",
+      "_score": 12,
+      "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -331,6 +331,39 @@
       "keyword": "생명보험",
       "pub_date": "Thu, 14 May 2026 01:11:00 GMT",
       "_score": 11,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "김중현 메리츠화재 대표, GA 중심 장기보험 신계약 확대…보험금 청구 증가에 보험손익은 하락 [금융사 2026 1분기 실적] - 한국금융신문",
+      "link": "https://news.google.com/rss/articles/CBMifEFVX3lxTE5ncEVpTEN5UVJibXgzV3RLNUpmQTc3RGo4TE4zN294bUFnUmZQZmEyWldwZ1VvMUsxUWtzMjlfUDJ5aFA5NHI5YV9wek81bE5SNlB2anhaLTVQM0hDZ2JFZVJpcmlwQ3BzRGhZcnBfYUhLTkxzalpxTk90TGI?oc=5",
+      "source": "google",
+      "keyword": "GA 보험",
+      "pub_date": "Thu, 14 May 2026 09:16:15 GMT",
+      "_score": 11,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "호실적 함께 웃은 삼성 '보험형제'… 주주환원도 나란히 확대",
+      "link": "https://www.asiatoday.co.kr/kn/view.php?key=20260515010004058",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Thu, 14 May 2026 18:24:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "ABL생명, 서울 마포구에 한강·마포지점 동시 개소",
+      "link": "https://www.viva100.com/article/20260514500873",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Thu, 14 May 2026 18:02:00 +0900",
+      "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
@@ -451,39 +484,6 @@
       "source": "naver",
       "keyword": "보험 마케팅",
       "pub_date": "Thu, 14 May 2026 15:59:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[종합] 삼성생명, 1분기 순이익 1.2조…주주환원 구체안은 또 유보",
-      "link": "https://www.newspim.com/news/view/20260514001097",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 15:57:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "삼성생명 1분기 당기순익 1.2조원...전년 대비 89.5%↑(종합)",
-      "link": "https://n.news.naver.com/mnews/article/031/0001028672?sid=101",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 15:56:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "IMM PE '4조원대 에어퍼스트' 컨티뉴에이션 펀드 조성 시동…UBS 자문",
-      "link": "https://www.etoday.co.kr/news/view/2584546",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 15:54:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
