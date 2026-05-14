@@ -58,8 +58,8 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
         for d in aggregate.get("daily_own_negative", [])
     )
 
-    prompt = f"""당신은 {config.COMPANY_NAME} {config.TEAM_NAME}의 시니어 분석가입니다.
-{period_label} 기간 동안의 누적 모니터링 데이터를 바탕으로 **{period_label} 종합 리포트**를 작성해주세요.
+    prompt = f"""당신은 {config.COMPANY_NAME} {config.TEAM_NAME}의 시니어 언론 모니터링 분석가입니다.
+{period_label} 기간 동안의 누적 모니터링 데이터를 바탕으로 {period_label} 종합 리포트를 작성해주세요.
 
 # 분석 기간
 {aggregate['period_days']}일
@@ -82,36 +82,36 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 
 ---
 
-# 리포트 형식 (반드시 마크다운, 아래 구조 그대로)
+# 리포트 형식
 
-## 🎯 {period_label} 핵심 결론
+## {period_label} 핵심 결론
 3~4줄로 기간 동안의 가장 중요한 흐름. 단순 사실 나열 금지, 의미 해석 중심.
 
-## 📈 트렌드 분석
+## 트렌드 분석
 - 자사 부정 이슈가 어떤 패턴으로 발생했는지 (집중/산발/특정 시점 급증 등)
 - 카테고리별 비중이 시사하는 바
 - 리스크 HIGH 일수가 의미하는 것
 
-## 🚨 기간 내 핵심 이슈 TOP 3
+## 기간 내 핵심 이슈 TOP 3
 각 이슈마다:
-- **이슈명**
+- 이슈명
 - 노출 정도 / 확산 양상
 - 누적 영향 평가
 - 후속 대응 권고
 
-## 📊 카테고리별 인사이트
+## 카테고리별 인사이트
 ### 자사 동향
 ### 규제·제도
 ### 경쟁사
 ### 업계
 각 1~2 문단. "그래서 우리에게 무슨 의미인가" 중심.
 
-## 💡 다음 기간 전략 제언
+## 다음 기간 전략 제언
 | 우선순위 | 액션 | 기대효과 |
 |---------|------|---------|
 표 형식. 3~5개 항목. 구체적이고 실행 가능하게.
 
-## 👁 지속 추적 필요 키워드
+## 지속 추적 필요 키워드
 bullet 5~7개
 
 ---
@@ -119,6 +119,7 @@ bullet 5~7개
 작성 원칙:
 - 단순 카운트 나열 금지. 추이와 의미 중심
 - 데이터에 근거하지 않은 추측 금지
+- 굵게 표시용 ** 문법 사용 금지
 - 분량: A4 2장 분량으로 충분히 분석
 """
 
@@ -134,6 +135,7 @@ bullet 5~7개
 # ── 마크다운 → HTML (간이) ──────────────────────────────────
 def markdown_to_html(md: str) -> str:
     html = md
+    html = html.replace("**", "")
     html = re.sub(r"^## (.+)$", r"<h2>\1</h2>", html, flags=re.MULTILINE)
     html = re.sub(r"^### (.+)$", r"<h3>\1</h3>", html, flags=re.MULTILINE)
     html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html)
@@ -166,15 +168,21 @@ def markdown_to_html(md: str) -> str:
 # ── 메인 실행 ───────────────────────────────────────────────
 def run(period: str, custom_days: int | None = None):
     if period == "weekly":
-        days = 7
+        today = date.today()
+        start = today - timedelta(days=today.weekday())
+        end = today
         label = "주간"
         badge = "WEEKLY REPORT"
     elif period == "monthly":
-        days = 30
+        today = date.today()
+        start = today.replace(day=1)
+        end = today
         label = "월간"
         badge = "MONTHLY REPORT"
     else:
         days = custom_days or 7
+        end = date.today()
+        start = end - timedelta(days=days - 1)
         label = f"최근 {days}일"
         badge = f"{days}-DAY REPORT"
 
@@ -184,7 +192,7 @@ def run(period: str, custom_days: int | None = None):
     ))
 
     # 1. 데이터 로드
-    daily_data = archiver.load_range(days)
+    daily_data = archiver.load_between(start, end)
     if not daily_data:
         console.print("[red]✗ 누적된 일일 데이터가 없습니다.[/]")
         console.print("[dim]먼저 run_once.py를 며칠간 실행해서 데이터를 쌓으세요.[/]")
@@ -215,8 +223,6 @@ def run(period: str, custom_days: int | None = None):
     # 4. HTML 빌드
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
     template = env.get_template("period_report.html")
-    end = date.today()
-    start = end - timedelta(days=days - 1)
     max_neg = max((d["value"] for d in aggregate.get("daily_own_negative", [])), default=0)
 
     html = template.render(
@@ -237,11 +243,16 @@ def run(period: str, custom_days: int | None = None):
     out_path.write_text(html, encoding="utf-8")
     console.print(f"\n[green]✓[/] 리포트 저장: [bold cyan]{out_path.name}[/]")
 
+    if os.getenv("CI"):
+        return out_path
+
     try:
         os.startfile(str(out_path))
         console.print("[dim]→ 기본 브라우저에서 자동으로 열림[/]")
     except Exception:
         console.print(f"[dim]브라우저에서 직접 열기: {out_path}[/]")
+
+    return out_path
 
 
 if __name__ == "__main__":

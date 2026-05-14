@@ -45,6 +45,8 @@ def begin() -> None:
     if event_name != "schedule":
         github_output("should_run", "true")
         github_output("should_mark", "false")
+        github_output("should_period", "true")
+        github_output("kst_hour", "manual")
         github_output("marker_path", "")
         return
 
@@ -52,6 +54,8 @@ def begin() -> None:
     if not kst_hour:
         github_output("should_run", "false")
         github_output("should_mark", "false")
+        github_output("should_period", "false")
+        github_output("kst_hour", "")
         github_output("marker_path", "")
         print(f"Unknown schedule cron: {schedule}")
         return
@@ -59,6 +63,8 @@ def begin() -> None:
     today = datetime.now(KST).strftime("%Y-%m-%d")
     marker_path = STATE_DIR / f"{today}-{kst_hour}.txt"
 
+    github_output("kst_hour", kst_hour)
+    github_output("should_period", "true" if kst_hour == "18" else "false")
     github_output("marker_path", marker_path.as_posix())
     github_output("should_mark", "true")
     if marker_path.exists():

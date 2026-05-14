@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import date
 from pathlib import Path
 
@@ -76,25 +77,31 @@ def build_message(report: dict) -> str:
     metrics = report.get("metrics", {})
     sections = parse_briefing(report.get("briefing", ""))
     own_tone = metrics.get("own_by_tone", {})
+    own_total = metrics.get("by_category", {}).get("own", 0)
+    risk = metrics.get("risk_level", "-")
 
     header = [
         f"[AI 언론 브리핑] {report.get('date', '')}",
-        f"리스크: {metrics.get('risk_level', '-')}",
+        f"리스크 {risk} · 자사 {own_total}건",
         (
-            f"자사 보도: {metrics.get('by_category', {}).get('own', 0)}건 "
-            f"(긍정 {own_tone.get('positive', 0)} · "
+            f"긍정 {own_tone.get('positive', 0)} · "
             f"중립 {own_tone.get('neutral', 0)} · "
-            f"부정 {own_tone.get('negative', metrics.get('own_negative', 0))})"
+            f"부정 {own_tone.get('negative', metrics.get('own_negative', 0))}"
         ),
     ]
 
-    lines = header + ["", "■ 오늘의 판단", sections["conclusion"]]
+    lines = header + ["", "오늘의 판단", compact(sections["conclusion"], 70)]
     if sections["issues"]:
-        lines += ["", "■ 핵심 이슈"]
-        lines += [f"{idx}. {issue}" for idx, issue in enumerate(sections["issues"][:2], 1)]
+        lines += ["", "핵심 이슈"]
+        lines += [f"- {compact(issue, 58)}" for issue in sections["issues"][:2]]
 
-    lines += ["", "■ 전체 보고서", "아래 버튼에서 확인"]
-    return "\n".join(lines)[:900]
+    return "\n".join(lines)[:520]
+
+
+def compact(text: str, limit: int) -> str:
+    cleaned = re.sub(r"\[\d+\]\s*", "", text or "")
+    cleaned = " ".join(cleaned.split())
+    return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
 
 
 def parse_briefing(briefing: str) -> dict:

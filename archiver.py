@@ -59,6 +59,17 @@ def load_range(days: int, end_date: date | None = None) -> list[dict]:
     return out
 
 
+def load_between(start_date: date, end_date: date) -> list[dict]:
+    out = []
+    current = start_date
+    while current <= end_date:
+        item = load_day(current)
+        if item:
+            out.append(item)
+        current += timedelta(days=1)
+    return out
+
+
 def aggregate_metrics(daily_data: list[dict]) -> dict:
     cats = {"own": 0, "regulation": 0, "competitor": 0, "industry": 0, "other": 0}
     tones = {"negative": 0, "positive": 0, "neutral": 0}

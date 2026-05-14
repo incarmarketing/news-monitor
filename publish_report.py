@@ -27,11 +27,26 @@ def publish() -> Path:
 
     shutil.copy2(source, archive_target)
     shutil.copy2(source, index_target)
+    publish_period_report("weekly")
+    publish_period_report("monthly")
 
     print(f"Published latest report: {source.name}")
     print(f"Static index: {index_target}")
     print(f"Static archive: {archive_target}")
     return index_target
+
+
+def publish_period_report(period: str) -> None:
+    files = sorted(LOG_DIR.glob(f"{period}_report_*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not files:
+        return
+
+    source = files[0]
+    archive_dir = PUBLIC_DIR / period
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, PUBLIC_DIR / f"{period}.html")
+    shutil.copy2(source, archive_dir / source.name)
+    print(f"Published {period} report: {source.name}")
 
 
 if __name__ == "__main__":
