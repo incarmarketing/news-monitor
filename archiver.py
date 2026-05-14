@@ -3,19 +3,29 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
 ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+KST = timezone(timedelta(hours=9))
+
+
+def today_kst() -> date:
+    return datetime.now(KST).date()
+
+
+def now_kst() -> datetime:
+    return datetime.now(KST)
 
 
 def save_daily(articles: list[dict], briefing: str, metrics: dict) -> Path:
-    target = ARCHIVE_DIR / f"{date.today().isoformat()}.json"
+    report_date = today_kst()
+    target = ARCHIVE_DIR / f"{report_date.isoformat()}.json"
     payload = {
-        "date": date.today().isoformat(),
-        "timestamp": datetime.now().isoformat(),
+        "date": report_date.isoformat(),
+        "timestamp": now_kst().isoformat(),
         "metrics": metrics,
         "briefing": briefing,
         "articles": [lighten(article) for article in articles],
@@ -46,11 +56,11 @@ def load_day(target_date: date) -> dict | None:
 
 
 def load_yesterday() -> dict | None:
-    return load_day(date.today() - timedelta(days=1))
+    return load_day(today_kst() - timedelta(days=1))
 
 
 def load_range(days: int, end_date: date | None = None) -> list[dict]:
-    end = end_date or date.today()
+    end = end_date or today_kst()
     out = []
     for i in range(days):
         item = load_day(end - timedelta(days=i))

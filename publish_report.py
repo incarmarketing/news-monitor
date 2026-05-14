@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
 PUBLIC_DIR = BASE_DIR / "public"
 REPORTS_DIR = PUBLIC_DIR / "reports"
+PERIOD_DIR = BASE_DIR / "period_reports"
 
 
 def latest_report() -> Path:
@@ -38,10 +39,16 @@ def publish() -> Path:
 
 def publish_period_report(period: str) -> None:
     files = sorted(LOG_DIR.glob(f"{period}_report_*.html"), key=lambda p: p.stat().st_mtime, reverse=True)
-    if not files:
+    if files:
+        source = files[0]
+        PERIOD_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, PERIOD_DIR / f"{period}.html")
+    else:
+        source = PERIOD_DIR / f"{period}.html"
+
+    if not source.exists():
         return
 
-    source = files[0]
     archive_dir = PUBLIC_DIR / period
     archive_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, PUBLIC_DIR / f"{period}.html")

@@ -19,7 +19,7 @@ if sys.stdout.encoding.lower() != "utf-8":
 import os
 import re
 from pathlib import Path
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta, datetime, timezone
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
@@ -40,6 +40,15 @@ if GEMINI_API_KEY:
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
+KST = timezone(timedelta(hours=9))
+
+
+def today_kst() -> date:
+    return datetime.now(KST).date()
+
+
+def now_kst() -> datetime:
+    return datetime.now(KST)
 
 
 # ── AI 종합 리포트 ─────────────────────────────────────────
@@ -100,11 +109,11 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 - 후속 대응 권고
 
 ## 카테고리별 인사이트
-### 자사 동향
-### 규제·제도
-### 경쟁사
-### 업계
-각 1~2 문단. "그래서 우리에게 무슨 의미인가" 중심.
+- 자사 동향
+- 규제·제도
+- 경쟁사
+- 업계
+각 항목은 1~2문장으로, "그래서 우리에게 무슨 의미인가" 중심.
 
 ## 다음 기간 전략 제언
 | 우선순위 | 액션 | 기대효과 |
@@ -120,6 +129,7 @@ bullet 5~7개
 - 단순 카운트 나열 금지. 추이와 의미 중심
 - 데이터에 근거하지 않은 추측 금지
 - 굵게 표시용 ** 문법 사용 금지
+- ###, #### 같은 3단계 이하 제목 사용 금지
 - 분량: A4 2장 분량으로 충분히 분석
 """
 
@@ -136,8 +146,10 @@ bullet 5~7개
 def markdown_to_html(md: str) -> str:
     html = md
     html = html.replace("**", "")
+    html = re.sub(r"^#{4,6}\s+(.+)$", r"<h3>\1</h3>", html, flags=re.MULTILINE)
     html = re.sub(r"^## (.+)$", r"<h2>\1</h2>", html, flags=re.MULTILINE)
     html = re.sub(r"^### (.+)$", r"<h3>\1</h3>", html, flags=re.MULTILINE)
+    html = re.sub(r"^# (.+)$", r"<h2>\1</h2>", html, flags=re.MULTILINE)
     html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html)
 
     def _table(match):
@@ -168,23 +180,40 @@ def markdown_to_html(md: str) -> str:
 # ── 메인 실행 ───────────────────────────────────────────────
 def run(period: str, custom_days: int | None = None):
     if period == "weekly":
-        today = date.today()
+        today = today_kst()
         start = today - timedelta(days=today.weekday())
         end = today
         label = "주간"
         badge = "WEEKLY REPORT"
+        output_slug = "weekly"
+    elif period == "weekly_previous":
+        today = today_kst()
+        start = today - timedelta(days=today.weekday() + 7)
+        end = start + timedelta(days=6)
+        label = "전주 주간"
+        badge = "WEEKLY REPORT"
+        output_slug = "weekly"
     elif period == "monthly":
-        today = date.today()
+        today = today_kst()
         start = today.replace(day=1)
         end = today
         label = "월간"
         badge = "MONTHLY REPORT"
+        output_slug = "monthly"
+    elif period == "monthly_previous":
+        today = today_kst()
+        end = today.replace(day=1) - timedelta(days=1)
+        start = end.replace(day=1)
+        label = "전월 월간"
+        badge = "MONTHLY REPORT"
+        output_slug = "monthly"
     else:
         days = custom_days or 7
-        end = date.today()
+        end = today_kst()
         start = end - timedelta(days=days - 1)
         label = f"최근 {days}일"
         badge = f"{days}-DAY REPORT"
+        output_slug = "custom"
 
     console.print(Panel.fit(
         f"[bold cyan]{label} 모니터링 리포트 생성[/]",
@@ -238,8 +267,8 @@ def run(period: str, custom_days: int | None = None):
     )
 
     # 5. 저장 + 열기
-    ts = datetime.now().strftime("%Y%m%d_%H%M")
-    out_path = LOG_DIR / f"{period}_report_{ts}.html"
+    ts = now_kst().strftime("%Y%m%d_%H%M")
+    out_path = LOG_DIR / f"{output_slug}_report_{ts}.html"
     out_path.write_text(html, encoding="utf-8")
     console.print(f"\n[green]✓[/] 리포트 저장: [bold cyan]{out_path.name}[/]")
 
@@ -259,7 +288,9 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         console.print("[yellow]사용법:[/]")
         console.print("  python period_report.py weekly")
+        console.print("  python period_report.py weekly_previous")
         console.print("  python period_report.py monthly")
+        console.print("  python period_report.py monthly_previous")
         console.print("  python period_report.py custom 14")
         sys.exit(0)
 
