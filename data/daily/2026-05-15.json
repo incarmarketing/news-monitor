@@ -1,27 +1,27 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T08:45:15.700481+09:00",
+  "timestamp": "2026-05-15T08:51:26.281908+09:00",
   "window": {
     "slot": "08",
-    "label": "전일 18:00~08:45",
+    "label": "전일 18:00~08:51",
     "short_label": "전일 18시 이후",
     "start": "2026-05-14T18:00:00+09:00",
-    "end": "2026-05-15T08:45:15.700452+09:00"
+    "end": "2026-05-15T08:51:26.281880+09:00"
   },
   "metrics": {
-    "total_collected": 88,
-    "total_after_cluster": 55,
+    "total_collected": 87,
+    "total_after_cluster": 54,
     "by_category": {
       "own": 3,
       "regulation": 5,
-      "competitor": 48,
+      "competitor": 47,
       "industry": 32,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 2,
-      "neutral": 86
+      "neutral": 85
     },
     "own_negative": 0,
     "own_total": 3,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 긍정 보도 속, 업계 경쟁 및 규제 동향이 관찰됨.\n\n## 핵심 이슈\n- [1] GA채널 실적 선두권 유지: KDB생명 1위 탈환 등 다수 생보사 4월 실적 관련 긍정 보도.\n- [48] 금융당국의 경쟁 GA 현장검사: 한화라이프랩 현장검사 착수로 GA업계 전반의 규제 리스크 우려.\n\n## 지표 해석\n당사 관련 부정 기사 없이 GA채널 실적 관련 긍정 보도가 집중됐습니다. 업계 전반적으로는 주요 보험사 실적 발표와 금융당국의 규제 강화 동향이 주요 이슈였습니다.\n\n## 분석 키워드\nGA 실적, M/S, 금융당국 규제, 보험사 실적",
+  "briefing": "## 최종 결론\n생보사 GA 채널 실적 1위 달성 등 긍정적 보도가 이어졌습니다.\n\n## 핵심 이슈\n- [1, 2, 3] 생보사 GA 채널 실적 선두권 유지: KDB생명 4월 실적 1위 탈환, 메트라이프생명 선두권 형성, 신한라이프 선두 유지 등 당사 영업 경쟁력을 긍정적으로 평가.\n- [46] 금융당국, 자회사형 GA 현장검사 착수: 한화라이프랩 현장검사 소식에 GA 업계 전반의 긴장감이 고조되고 있으며, 향후 규제 강화 가능성에 대한 우려가 나타남.\n\n## 지표 해석\n당사 관련 긍정 보도 2건, 중립 1건으로 부정 이슈는 없었습니다. 경쟁사 실적 호조 및 자회사형 GA 규제 동향 등 업계 뉴스가 다수 발생했습니다.\n\n## 분석 키워드\nGA 실적, 자회사형 GA, 금융당국, 실적 발표",
   "articles": [
     {
       "title": "KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널",
@@ -123,15 +123,15 @@
       "_cluster_size": 1
     },
     {
-      "title": "교보생명, 황제펭귄 캐릭터 ‘꼬옥’ 공개…생명보험 가치 전달 강화 - 핀포인트뉴스",
-      "link": "https://news.google.com/rss/articles/CBMic0FVX3lxTE14UUl4VGZUVTMyazlDTkxFbWVZTV9aWmZaMTRCSzNIaUNhMW1hM0x0a3N0RENlSGZJNUx1dGlPcnVsNTdEeGkxa3JQRTFRUVJVT3g2VjJ6RG5LUEMwZTlMNEhLY1o4cVZHZGM3dW9oaFNwR1XSAXdBVV95cUxNMkpsRXhWQWw0b0JTSWVFemFjV1hoY3BKMFN2RHAtdWVpMWJnYW16Z3ZCZmJzNVRuMzlzclZJTHFCYjRGNW02LWJ0aHMwdzJZSFlFalhPXzNkY3VoNkhqOExDLVJOd3pIRUhvaU55MEpJQnpBN1hTRQ?oc=5",
-      "source": "google",
+      "title": "교보생명, 황제펭귄 캐릭터 '꼬옥' 공개…생명보험 가치 전달 강화",
+      "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=452824",
+      "source": "naver",
       "keyword": "생명보험",
-      "pub_date": "Thu, 14 May 2026 11:10:00 GMT",
+      "pub_date": "Thu, 14 May 2026 20:10:00 +0900",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "5월 15일 개장 전 주요 공시",
@@ -310,8 +310,8 @@
       "_cluster_size": 1
     },
     {
-      "title": "[지지부진 보험사 M&A]국내 보험사는 해외로 눈돌려…은행·증권사 인수",
-      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141447541110779",
+      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
+      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
@@ -332,8 +332,8 @@
       "_cluster_size": 2
     },
     {
-      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
-      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
+      "title": "[지지부진 보험사 M&A]국내 보험사는 해외로 눈돌려…은행·증권사 인수",
+      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141447541110779",
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
@@ -398,17 +398,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "[2026 1분기 실적] 삼성생명 순익 1.2조…작년 한해 순익 절반 채웠다",
-      "link": "https://www.inthenews.co.kr/news/article.html?no=86873",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 14 May 2026 20:10:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "빚 67억 진 아내, 남편 앞으로 30억 생명보험 들고 독살…美재판부 \"절대 석방 될 수 없다\" - v.daum.net",
       "link": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFBhQWJLMzNlanhxQlpoRmR2SjdPOG5hOU9JZ3pBUFYxdHNvdnhIUFl4UXlodHBiallIaDNxd01MR19jdFpDS25vWXN5dXJMWXc?oc=5",
       "source": "google",
@@ -425,17 +414,6 @@
       "source": "google",
       "keyword": "생명보험",
       "pub_date": "Thu, 14 May 2026 23:13:00 GMT",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "교보생명, 캐릭터 ‘꼬옥’ 론칭… “고객과 끝까지 함께합니다” - 한국보험신문",
-      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE9Kc0tRc2RRVFdINkprWjBBZkszWWZLdDdfc2VRSmtHYVI0WjR3cmVDd1Z5cmtRekdLdzQ2UjI2cFVVYnVvUXBnRFduZFRjaTI4MjdSNm05cGVSRWtvSElJb1NTdWZocG9XTlA00gFvQVVfeXFMUEJOZ3FfajZmRDBZbUh2Nm02YlJnN2c2bm9wRzVDVWVRUjR4MUd2SktBLWg0dE5UMEpDSW1KaVh6aXZDR25vREZreldLdTVNYjluQUFPQU9sUEVrVFRjQXgzSlhKdnM0VkxtbXgwaXVn?oc=5",
-      "source": "google",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 14 May 2026 09:23:15 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -636,6 +614,17 @@
       "pub_date": "Thu, 14 May 2026 18:04:00 +0900",
       "_score": 8,
       "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "하나은행, K-조선 5조 금융지원 확대... 스포츠 후원까지 ESG 경영 보폭 ...",
+      "link": "https://m.sports.naver.com/general/article/450/0000151480",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 00:53:00 +0900",
+      "_score": 7,
+      "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
     }
