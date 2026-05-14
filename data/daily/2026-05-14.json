@@ -1,31 +1,31 @@
 {
   "date": "2026-05-14",
-  "timestamp": "2026-05-14T03:23:11.175906",
+  "timestamp": "2026-05-14T13:03:38.095231+09:00",
   "metrics": {
-    "total_collected": 165,
-    "total_after_cluster": 43,
+    "total_collected": 166,
+    "total_after_cluster": 41,
     "by_category": {
-      "own": 13,
+      "own": 14,
       "regulation": 19,
-      "competitor": 80,
-      "industry": 51,
+      "competitor": 77,
+      "industry": 54,
       "other": 2
     },
     "by_tone": {
       "negative": 0,
-      "positive": 11,
+      "positive": 12,
       "neutral": 154
     },
     "own_negative": 0,
-    "own_total": 13,
+    "own_total": 14,
     "own_by_tone": {
-      "positive": 11,
+      "positive": 12,
       "neutral": 2,
       "negative": 0
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n브랜드평판 1위 긍정 보도 속, GA 업계 규제 강화 동향 관찰 필요.\n\n## 핵심 이슈\n- [1] GA 브랜드평판 1위 달성: 다수 매체를 통해 긍정적 기업 이미지가 확산되었습니다.\n- [28] GA 정착지원금 경쟁 과열: 금감원의 소비자경보 발령으로 업계 전반의 영업 관행에 대한 감독 강화가 예상됩니다.\n\n## 지표 해석\n자사 관련 부정 기사 없이 브랜드평판 1위 보도가 다수 발생해 긍정 톤이 우세합니다. 업계는 1200%룰 시행을 앞두고 금감원의 규제 강화가 주요 동향입니다.\n\n## 액션\n| 구분 | 실행 |\n|---|---|\n| 즉시 | 브랜드평판 1위 콘텐츠 확산 |\n| 금주 | 1200%룰 관련 내부 규정 점검 |\n| 관찰 | 금감원 후속 조치 및 경쟁사 동향 |\n\n## 추적 키워드\n브랜드평판, 1200%룰, 정착지원금, 부당승환",
+  "briefing": "## 최종 결론\n브랜드평판 1위 보도 다수, 업계 규제 강화 동향 지속.\n\n## 핵심 이슈\n- [1] GA 브랜드평판 1위: 긍정적 평판 확산 및 마케팅 활용 기회.\n- [27] 1200%룰 관련 GA 경쟁 과열 및 금감원 규제 강화: 업계 리스크.\n\n## 지표 해석\n자사 관련 긍정 보도가 다수 발생했으며, 부정 기사는 없습니다. 업계 전반의 설계사 정착지원금 과열 경쟁 및 당국 규제 강화 동향이 관찰됩니다.\n\n## 액션\n| 구분 | 실행 |\n|---|---|\n| 즉시 | 브랜드평판 1위 기사 내부 공유 |\n| 금주 | 평판 1위 콘텐츠 제작 및 배포 |\n| 관찰 | 설계사 수수료 규제 동향 모니터링 |\n\n## 추적 키워드\n브랜드평판, 1200%룰, 설계사 정착지원금, 금감원",
   "articles": [
     {
       "title": "인카금융서비스, 독립 보험대리점 2026년 5월 브랜드평판 1위",
@@ -47,7 +47,7 @@
       "_score": 30,
       "_category": "own",
       "_tone": "positive",
-      "_cluster_size": 3
+      "_cluster_size": 4
     },
     {
       "title": "국내 독립 보험대리점(GA) 5월 브랜드평판... 인카금융서비스 1위, 한화생명금융서비스 2위, 에이플러스에셋 3위 - 핀포인트뉴스",
@@ -69,17 +69,6 @@
       "_score": 30,
       "_category": "own",
       "_tone": "positive",
-      "_cluster_size": 1
-    },
-    {
-      "title": "\"태아보험 설계 차별화\" 호평 삼성화재, 손보업계 관심도 1위...현대해상·DB손해보험 순 - 빅데이터뉴스",
-      "link": "https://news.google.com/rss/articles/CBMifEFVX3lxTE9oX0dBQjAwWmM5eFVsTzNCQkF0OGFXd3ZJTktvRklBd0swVFE4MXphOGJhSDhscjQtdms0bjdEcGhXbnRSNkRVdC1qb0p3ODdfbGNNcWhpc1R6aFRXb0x5czNiVEZLbDZncmJjcWY5TlBweEkyZFh6V1lyRno?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 13 May 2026 22:59:10 GMT",
-      "_score": 19,
-      "_category": "competitor",
-      "_tone": "neutral",
       "_cluster_size": 1
     },
     {
@@ -124,7 +113,7 @@
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 3
+      "_cluster_size": 4
     },
     {
       "title": "[금융레이더] KB손해보험/AXA손해보험/ABL생명/신한카드/애큐온캐피탈/저축은행중앙회/금융보안원 - 대한경제",
@@ -156,6 +145,17 @@
       "pub_date": "Wed, 13 May 2026 16:54:00 +0900",
       "_score": 14,
       "_category": "own",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "퇴직연금 일시금 인출 83.5%…금감원, 연금수령기간 장기화 유도",
+      "link": "https://www.naeil.com/news/read/588604?ref=naver",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Thu, 14 May 2026 13:02:00 +0900",
+      "_score": 12,
+      "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -281,17 +281,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "“한화손해보험, 자본·CSM·투자·영업 등 양호한 상황…실손만 개선되면 더할 나위 없다” - 뉴스퀘스트",
-      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTFB0Z3FfdFJfMW41VHlmbml2dVhHRHpuSjZhXzZVSExDdEg5emlHSzczSUE2c3p2V1dUVjM3LURkT0p3T0dUNF9SQUJldnV3S3MxQ0t4N0NjSjlmQU4ycDJlcUtmY2ZVRUtvTm94SGZFNNIBc0FVX3lxTE1NNUdvaS00NVgtRUJoRWQ0UmV6Wkp6c2I5b2pmOFRLaTdHTmFXSkRrYkpBMkNWenBHZUhMbzJDeDdaN3dTY1JvUkJjaDlHcEl2NHZNa19HdTNmcldDUDBESDEyYTZReXFEU19CRC1yX0lpUUU?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 13 May 2026 07:21:56 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "“얼른 갈아타라” 이 말 믿었다가 5000만원 날렸다…금감원, 소비자경...",
       "link": "https://n.news.naver.com/mnews/article/011/0004620661?sid=101",
       "source": "naver",
@@ -330,17 +319,6 @@
       "source": "naver",
       "keyword": "보험설계사",
       "pub_date": "Wed, 13 May 2026 13:54:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금감원 ‘보험 갈아타기’ 소비자경보 발령",
-      "link": "https://www.naeil.com/news/read/588456?ref=naver",
-      "source": "naver",
-      "keyword": "보험설계사",
-      "pub_date": "Wed, 13 May 2026 13:02:00 +0900",
       "_score": 12,
       "_category": "regulation",
       "_tone": "neutral",
@@ -386,6 +364,17 @@
       "keyword": "손해보험",
       "pub_date": "Wed, 13 May 2026 23:59:59 GMT",
       "_score": 11,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[#금융톡톡] 교보생명 '황제펭귄 꼬옥' 론칭·농협생명 '농산물 배송 이...",
+      "link": "https://www.newsworks.co.kr/news/articleView.html?idxno=840733",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Thu, 14 May 2026 12:42:00 +0900",
+      "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
@@ -446,22 +435,22 @@
       "_cluster_size": 1
     },
     {
-      "title": "한화손보, 고가치 승부수 통했다…질적 성장 ‘가속페달’",
-      "link": "http://www.segyebiz.com/newsView/20260513514858?OutUrl=naver",
-      "source": "naver",
+      "title": "교보생명, 황제펭귄 캐릭터 ‘꼬옥’ 공개…캐릭터 마케팅 강화 - SR타임스",
+      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE5iN29CQVVHTENFQ2ZtcVVDck1jZ2VqdmVReEdCMEpZNW41dkh2alR4TnRlSWZyS1BSWWRuWUF6cExlOXVJdi14OEZfemtMNDdieGxyWEJ2VlhfRXVwT3Rkckl4T2hfaEZn0gFrQVVfeXFMT3VOSG1uRlFubE5lZmRtelRpZzRmTzJKU2dqcVN4dkpuU2JIY3BSa1VHeTI1RDR0eE1VUTZ4RDNwWlIxSXVLNHJPdFB3TnV2QW9VT2IwUWhMclFtZmdGekxuTnpBOXVJSlhMMUU?oc=5",
+      "source": "google",
       "keyword": "보험 마케팅",
-      "pub_date": "Wed, 13 May 2026 16:30:00 +0900",
+      "pub_date": "Thu, 14 May 2026 01:08:08 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "교보생명, 황제펭귄 캐릭터 ‘꼬옥’ 공개…캐릭터 마케팅 강화 - SR타임스",
-      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE5iN29CQVVHTENFQ2ZtcVVDck1jZ2VqdmVReEdCMEpZNW41dkh2alR4TnRlSWZyS1BSWWRuWUF6cExlOXVJdi14OEZfemtMNDdieGxyWEJ2VlhfRXVwT3Rkckl4T2hfaEZn0gFrQVVfeXFMT3VOSG1uRlFubE5lZmRtelRpZzRmTzJKU2dqcVN4dkpuU2JIY3BSa1VHeTI1RDR0eE1VUTZ4RDNwWlIxSXVLNHJPdFB3TnV2QW9VT2IwUWhMclFtZmdGekxuTnpBOXVJSlhMMUU?oc=5",
-      "source": "google",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 01:08:08 GMT",
+      "title": "고객의 곁을 ‘꼭’ 지키겠다…교보생명 신규 캐릭터 ‘꼬옥’ 출시",
+      "link": "https://n.news.naver.com/mnews/article/029/0003026627?sid=101",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Thu, 14 May 2026 12:37:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -484,17 +473,6 @@
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Thu, 14 May 2026 11:22:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "교보생명 새 캐릭터 ‘꼬옥’ 론칭…신창재 의장 “고객보장 약속 꼭 지...",
-      "link": "https://www.inthenews.co.kr/news/article.html?no=86830",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 14 May 2026 11:14:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",

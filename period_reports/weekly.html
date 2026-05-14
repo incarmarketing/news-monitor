@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>주간 모니터링 리포트</title>
+<style>
+  body { font-family: 'Malgun Gothic','Apple SD Gothic Neo',sans-serif; background:#f1f5f9; margin:0; padding:0; color:#0f172a; }
+  .wrap { max-width:820px; margin:0 auto; background:#fff; }
+  .header { padding:36px 32px 30px; background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 60%,#3b82f6 100%); color:#fff; }
+  .header .badge { display:inline-block; padding:5px 12px; border-radius:14px; font-size:11px; font-weight:600; background:rgba(255,255,255,0.18); margin-bottom:12px; letter-spacing:0.5px; }
+  .header h1 { margin:0; font-size:26px; font-weight:700; }
+  .header .meta { margin-top:10px; opacity:0.85; font-size:13px; }
+  .summary-bar { padding:16px 32px; background:#1e293b; color:#e2e8f0; font-size:13px; font-weight:500; }
+
+  .kpi { display:table; width:100%; border-collapse:collapse; }
+  .kpi-row { display:table-row; }
+  .kpi-cell { display:table-cell; width:20%; padding:20px 10px; text-align:center; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; background:#fafbfc; }
+  .kpi-cell:last-child { border-right:none; }
+  .kpi-num { font-size:24px; font-weight:700; color:#1e3a8a; }
+  .kpi-label { font-size:11px; color:#64748b; margin-top:5px; text-transform:uppercase; }
+
+  .section { padding:26px 32px; border-bottom:1px solid #e2e8f0; }
+  .section h2 { font-size:15px; color:#1e3a8a; margin:0 0 16px; padding-bottom:8px; border-bottom:2px solid #3b82f6; display:inline-block; font-weight:700; }
+
+  /* 일별 트렌드 막대 */
+  .trend { display:flex; align-items:flex-end; gap:6px; height:120px; margin:14px 0 6px; }
+  .trend-bar { flex:1; background:linear-gradient(to top,#3b82f6,#93c5fd); border-radius:3px 3px 0 0; position:relative; min-height:4px; }
+  .trend-bar.high { background:linear-gradient(to top,#dc2626,#fca5a5); }
+  .trend-bar.med { background:linear-gradient(to top,#f59e0b,#fcd34d); }
+  .trend-label { display:flex; gap:6px; font-size:10px; color:#64748b; }
+  .trend-label > div { flex:1; text-align:center; }
+
+  /* 카테고리 분포 가로막대 */
+  .cat-bar { margin:8px 0; }
+  .cat-bar-header { display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px; }
+  .cat-bar-track { background:#e2e8f0; height:14px; border-radius:7px; overflow:hidden; }
+  .cat-bar-fill { height:100%; }
+  .fill-own { background:#1e3a8a; }
+  .fill-regulation { background:#7c3aed; }
+  .fill-competitor { background:#db2777; }
+  .fill-industry { background:#0891b2; }
+
+  .report-body { font-size:13.5px; line-height:1.75; }
+  .report-body h2 { font-size:14px; color:#1e3a8a; margin-top:20px; }
+  .report-body h3 { font-size:13px; }
+  .report-body table { border-collapse:collapse; width:100%; margin:10px 0; font-size:12.5px; }
+  .report-body table th { background:#1e3a8a; color:#fff; padding:8px 10px; text-align:left; }
+  .report-body table td { padding:7px 10px; border-bottom:1px solid #e2e8f0; }
+
+  .top-list { list-style:none; padding:0; margin:0; }
+  .top-list li { display:flex; padding:10px 0; border-bottom:1px solid #f1f5f9; gap:12px; align-items:flex-start; font-size:13px; }
+  .top-list .rank { min-width:28px; height:28px; background:#1e3a8a; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .top-list .info { flex:1; }
+  .top-list .date { font-size:11px; color:#94a3b8; margin-bottom:2px; }
+  .top-list a { color:#0f172a; text-decoration:none; }
+  .top-list a:hover { color:#3b82f6; }
+
+  .footer { padding:18px 32px; background:#0f172a; color:#94a3b8; font-size:11px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <span class="badge">WEEKLY REPORT</span>
+    <h1>주간 모니터링 리포트</h1>
+    <div class="meta">인카금융서비스 · 마케팅팀 · 2026-05-11 ~ 2026-05-14</div>
+  </div>
+
+  <div class="summary-bar">
+    분석 기간: <strong style="color:#fff">1일</strong> ·
+    총 수집: <strong style="color:#fff">166건</strong> ·
+    HIGH 리스크 일수: <strong style="color:#fef08a">0일</strong>
+  </div>
+
+  <div class="kpi">
+    <div class="kpi-row">
+      <div class="kpi-cell">
+        <div class="kpi-num">14</div>
+        <div class="kpi-label">자사 언급</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-num" style="color:#dc2626">0</div>
+        <div class="kpi-label">부정 톤</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-num" style="color:#16a34a">12</div>
+        <div class="kpi-label">긍정 톤</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-num">19</div>
+        <div class="kpi-label">규제·제도</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-num">77</div>
+        <div class="kpi-label">경쟁사</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>자사 부정 이슈 일별 추이</h2>
+    <div class="trend">
+      
+      <div class="trend-bar "
+           style="height:4%"
+           title="2026-05-14: 0건">
+      </div>
+      
+    </div>
+    <div class="trend-label">
+      
+      <div>05-14<br><strong>0</strong></div>
+      
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>카테고리 분포</h2>
+    
+    <div class="cat-bar">
+      <div class="cat-bar-header">
+        <span>자사</span>
+        <span><strong>14건</strong> (8.4%)</span>
+      </div>
+      <div class="cat-bar-track">
+        <div class="cat-bar-fill fill-own" style="width:8.433734939759036%"></div>
+      </div>
+    </div>
+    
+    <div class="cat-bar">
+      <div class="cat-bar-header">
+        <span>규제</span>
+        <span><strong>19건</strong> (11.4%)</span>
+      </div>
+      <div class="cat-bar-track">
+        <div class="cat-bar-fill fill-regulation" style="width:11.44578313253012%"></div>
+      </div>
+    </div>
+    
+    <div class="cat-bar">
+      <div class="cat-bar-header">
+        <span>경쟁사</span>
+        <span><strong>77건</strong> (46.4%)</span>
+      </div>
+      <div class="cat-bar-track">
+        <div class="cat-bar-fill fill-competitor" style="width:46.3855421686747%"></div>
+      </div>
+    </div>
+    
+    <div class="cat-bar">
+      <div class="cat-bar-header">
+        <span>업계</span>
+        <span><strong>54건</strong> (32.5%)</span>
+      </div>
+      <div class="cat-bar-track">
+        <div class="cat-bar-fill fill-industry" style="width:32.53012048192771%"></div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="section">
+    <h2>AI 종합 분석</h2>
+    <div class="report-body">
+      <h2>주간 언론 모니터링 종합 리포트 (인카금융서비스 마케팅팀)</h2><p>분석 기간: 2026년 5월 14일 (주간 누적 데이터 기반)
+작성자: 시니어 언론 모니터링 분석가</p><h2>주간 핵심 결론</h2><p>금주 언론 환경은 자사에 매우 우호적인 흐름을 보였습니다. 'GA 브랜드평판 1위'라는 강력한 긍정 이슈가 보도량을 주도하며, 부정적 언급 없이 안정적인 브랜드 이미지를 구축했습니다. 반면, 업계 전반은 '1200% 룰' 도입을 앞둔 과열 경쟁과 그에 따른 규제 당국의 경고가 핵심 화두로 부상했습니다. 이는 경쟁사 리스크와 맞물려, 인카금융서비스가 안정성과 신뢰도를 바탕으로 차별화된 위상을 강화할 수 있는 전략적 기회 국면임을 시사합니다.</p><h2>트렌드 분석</h2><ul><li>자사 부정 이슈는 분석 기간 동안 단 한 건도 발생하지 않았습니다. 이는 현재 자사의 대외 커뮤니케이션 및 리스크 관리가 매우 안정적으로 이루어지고 있음을 의미합니다. 산발적 이슈 발생조차 없는 '클린' 상태는 브랜드 평판 1위 이슈의 긍정 효과를 극대화하는 배경으로 작용합니다.</li></ul><ul><li>카테고리별 비중을 보면, 경쟁사(77건)와 업계 일반(54건) 관련 보도가 자사 언급(14건)을 크게 상회합니다. 이는 보험업계, 특히 GA 채널에 대한 시장의 관심이 높다는 증거입니다. 자사 관련 보도량은 적지만 모두 긍정적 핵심 이슈에 집중된 반면, 업계 및 경쟁사 뉴스는 규제와 리스크 중심으로 전개되어, 양적 측면이 아닌 질적 측면에서 자사의 포지셔닝이 매우 효과적이었음을 보여줍니다.</li></ul><ul><li>리스크 HIGH 및 MEDIUM 일수가 '0일'로 기록된 것은, 통상적인 업계 리스크(불완전판매, 설계사 이탈 등)가 공론화되지 않았으며, 자사를 직접 겨냥한 위협적인 이슈가 전무했음을 나타냅니다. 이는 마케팅 및 홍보 활동을 공격적으로 전개할 수 있는 안정적인 외부 환경이 조성되었음을 의미합니다.</li></ul><h2>기간 내 핵심 이슈 TOP 3</h2><h3>1. 이슈명: 인카금융서비스, 5월 GA 브랜드평판 1위 달성</h3><ul><li>노출 정도 / 확산 양상: 빅데이터뉴스, 핀포인트뉴스 등 다수 매체를 통해 관련 기사가 동시 다발적으로 확산되었습니다. 모든 기사가 높은 점수를 기록하며 주요 기사 상위권을 모두 점유, 압도적인 어젠다를 형성했습니다.</li>
+<li>누적 영향 평가 (POSITIVE): 단일 이슈가 전체 긍정 톤(12건)을 형성한 핵심 동력입니다. 이는 소비자 신뢰도, 설계사 소속감 증대 및 신규 리크루팅 활동에 매우 강력한 긍정적 영향을 미칠 것으로 평가됩니다. '1위'라는 직관적 키워드는 명확한 경쟁 우위를 각인시키는 효과가 있습니다.</li>
+<li>후속 대응 권고:</li></ul>
+    - 내부: 성과를 전사적으로 공유하여 임직원 및 설계사의 자부심을 고취합니다.
+    - 외부: 공식 SNS 채널 및 홈페이지에 해당 성과를 적극적으로 홍보하고, 이를 활용한 디지털 광고 소재를 제작하여 '신뢰할 수 있는 GA' 이미지를 확산시킬 필요가 있습니다.</p><h3>2. 이슈명: '1200% 룰' 도입 앞둔 GA 업계 과열 경쟁 및 당국 규제 강화</h3><ul><li>노출 정도 / 확산 양상: 더벨, KBS 등 경제 및 종합 미디어에서 심층적으로 다루어졌습니다. '설계사 빼오기', '정착지원금' 등의 키워드와 함께 금융감독원의 경고 메시지가 부각되며 업계 전반의 리스크로 확산되는 양상입니다.</li>
+<li>누적 영향 평가 (NEUTRAL to POTENTIAL RISK): 현재 자사가 직접 언급되지는 않았으나, GA 업계 전체에 대한 규제 강화 시그널이라는 점에서 잠재적 리스크 요인입니다. 이는 향후 리크루팅 전략 및 비용 구조에 영향을 줄 수 있으며, 업계 전체의 이미지에 부정적 영향을 미칠 수 있습니다.</li>
+<li>후속 대응 권고:</li></ul>
+    - 자사의 리크루팅 정책이 규제 기준을 준수하고 있음을 재점검하고, '과당 경쟁'이 아닌 '정도 영업'과 '설계사 성장 지원'을 강조하는 메시지를 선제적으로 준비해야 합니다. 경쟁사의 공격적 행보와 차별화되는 지점을 부각할 필요가 있습니다.</p><h3>3. 이슈명: 경쟁사 한화생명금융서비스, 당국 조사 및 부정 이슈 발생</h3><ul><li>노출 정도 / 확산 양상: 공정위와 금감원의 조사가 동시에 언급되며, 자회사 관련 이슈 및 요양시설 내 불완전판매 의혹이 제기되었습니다. 특정 경쟁사에 대한 부정적 이슈가 집중되는 모습을 보입니다.</li>
+<li>누적 영향 평가 (INDIRECTLY POSITIVE): 직접적인 반사이익을 논하기는 이르나, 주요 경쟁사의 평판 리스크는 자사의 안정성을 상대적으로 부각하는 효과를 낳습니다. 특히 설계사 이동 및 고객 선택에 있어 '안정성'과 '준법성'이 중요한 고려 요인으로 작용할 수 있습니다.</li>
+<li>후속 대응 권고:</li></ul>
+    - 해당 이슈에 대해 공식적인 언급이나 비교는 지양해야 합니다. 다만, 내부적으로 경쟁사의 리스크 요인을 면밀히 분석하고, 이를 바탕으로 자사의 강점(투명한 경영, 준법 문화 등)을 강화하는 커뮤니케이션 전략을 수립하는 것이 바람직합니다.</p><h2>카테고리별 인사이트</h2><ul><li>자사 동향: 브랜드 평판 1위라는 확고한 성과를 기반으로, 대외 신뢰도를 한 단계 격상시킬 최적의 시기입니다.</li>
+<li>규제·제도: '1200% 룰'은 단기적 비용 문제를 넘어 GA 산업의 체질 개선을 요구하는 신호탄으로, 준법 및 내실 경영의 중요성이 더욱 커질 것입니다.</li>
+<li>경쟁사: 대형사(한화)가 규제 당국의 집중 타겟이 되면서, 시장의 관심이 리스크 관리 능력으로 이동하고 있습니다. 이는 우리에게 기회가 될 수 있습니다.</li>
+<li>업계: 단순 판매 채널을 넘어 '금융 플랫폼'으로 진화하려는 움직임이 포착됩니다. 장기적 관점에서 설계사의 전문성 강화와 플랫폼 경쟁력 확보가 핵심 과제가 될 것입니다.</li></ul><h2>다음 기간 전략 제언</h2><table>
+<tr><th>우선순위</th><th>액션</th><th>기대효과</th></tr>
+<tr><td>최우선</td><td>'브랜드평판 1위' 성과를 활용한 통합 마케팅 캠페인 전개 (보도자료 배포, SNS 이벤트, 광고 소재 활용)</td><td>'1위 GA' 이미지 공고화 및 잠재 고객 및 설계사 대상 인지도 극대화</td></tr>
+<tr><td>우선</td><td>'1200% 룰' 관련 내부 규정 재점검 및 '건전한 성장'을 강조하는 선제적 커뮤니케이션 메시지 개발</td><td>규제 리스크에 대한 선제적 대응 및 신뢰도 높은 기업 이미지 구축</td></tr>
+<tr><td>차순위</td><td>경쟁사(특히 한화) 관련 규제 동향 및 후속 보도 심층 모니터링</td><td>시장 변화에 따른 기회 요인 포착 및 경쟁사 약점 분석을 통한 전략 수립</td></tr>
+<tr><td>차순위</td><td>GA의 '금융 플랫폼' 진화 트렌드 관련 스터디 및 자사 적용 방안 내부 검토</td><td>미래 성장 동력 확보를 위한 장기적 관점의 비즈니스 모델 혁신 준비</td></tr>
+</table>
+<h2>지속 추적 필요 키워드</h2><ul><li>1200% 룰</li>
+<li>정착지원금</li>
+<li>설계사 스카우트</li>
+<li>금융소비자보호법</li>
+<li>한화생명금융서비스</li>
+<li>브랜드평판지수</li>
+<li>금융 플랫폼</li></ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>기간 내 주요 기사 TOP 20</h2>
+    <ul class="top-list">
+      
+      <li>
+        <div class="rank">1</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 30</div>
+          <a href="https://www.energy-news.co.kr/news/articleView.html?idxno=225385" target="_blank">인카금융서비스, 독립 보험대리점 2026년 5월 브랜드평판 1위</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">2</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 30</div>
+          <a href="https://www.cbci.co.kr/news/articleView.html?idxno=574466" target="_blank">독립 보험대리점(GA) 브랜드평판 2026년 5월, 인카금융서비스 1위…한화...</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">3</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 30</div>
+          <a href="https://news.google.com/rss/articles/CBMid0FVX3lxTE1Vdzl4NE84VkkxVEpWY3FJdWlmdVRKbW9rd182blMyelpNRnVoT3F4M3RVVkloMXlXYUI4X2pkZE1KRmxXVktKZzIwb0RhWk5STEc1bDdUS0lvdEUzUEFZeXF6RnpqTlpOVFhiVUNqYUhiX2xrNkVn0gF3QVVfeXFMTVV3OXg0TzhWSTFUSlZjcUl1aWZ1VEptb2t3XzZuUzJ6Wk1GdWhPcXgzdFVWSWgxeVdhQjhfamRkTUpGbFdWS0pnMjBvRGFaTlJMRzVsN1RLSW90RTNQQVl5cXpGempOWk5UWGJVQ2phSGJfbGs2RWc?oc=5" target="_blank">국내 독립 보험대리점(GA) 5월 브랜드평판... 인카금융서비스 1위, 한화생명금융서비스 2위, 에이플러스에셋 3위 - 핀포인트뉴스</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">4</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 30</div>
+          <a href="https://news.google.com/rss/articles/CBMie0FVX3lxTE82V3FhamRSR1JKWldJRkpSVG1NNV9xU1YyVG1HZGtVdURSWnI4a2g1alFyaFo4aHhNQjdlR1dvVDZHdnlWMDFyUGNLTFE5Z1d2M0Y4YVh5M1lxU1k5ZWxUN2VzQzlwNjJvcm96b2dEOFlSYXBtSUFjNXYwWQ?oc=5" target="_blank">인카금융서비스, 독립 보험대리점 브랜드평판 5월 1위...한화생명금융서비스 뒤이어 - 빅데이터뉴스</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">5</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 16</div>
+          <a href="https://www.greened.kr/news/articleView.html?idxno=340616" target="_blank">'1200%룰' 도입 전 '보험설계사 빼오기 과열'...금감원 "실적 압박에 소...</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">6</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 15</div>
+          <a href="https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605130016137120103665" target="_blank">[더벨][Policy Radar] 1200% 룰 앞두고 GA 정착지원금 경쟁 제동</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">7</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 15</div>
+          <a href="https://news.google.com/rss/articles/CBMiUkFVX3lxTFBMRHQ5SEVNNFgzNC1RWXg3REQ1T09CUWVpSnUwRk1lY2lQNlFsWVhFbGFtRmRjMDVObzZROVkwODFMZGdCQTd6SUtqMHdRNGJUQ1E?oc=5" target="_blank">특징주, 삼성생명-생명보험 테마 상승세에 5.23% ↑ - 매일경제 마켓</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">8</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 15</div>
+          <a href="https://www.joongangenews.com/news/articleView.html?idxno=519200" target="_blank">KB손해보험, 21회 KB희망바자회 성료..."지속 가능 나눔 앞장"</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">9</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 15</div>
+          <a href="https://news.google.com/rss/articles/CBMidEFVX3lxTE5LQlJyQi03U1dzVlY5OHI1SXRkaWE1bHBLaFZqUVppTU42SXYwRFBFTHVQMjhnMFRhTGJPb0hCUm1zVDVwaHZLU0EtVWJWZGlFNVN2Y3k1MGN1M2N1cWt2dTdVeE40eTF6REZMenRIYS1vV2p3?oc=5" target="_blank">[금융레이더] KB손해보험/AXA손해보험/ABL생명/신한카드/애큐온캐피탈/저축은행중앙회/금융보안원 - 대한경제</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">10</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 14</div>
+          <a href="https://m.sports.naver.com/general/article/057/0001949020" target="_blank">레인 위의 마법사, 곽민상 데뷔 6년 만에 첫 우승</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">11</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 14</div>
+          <a href="https://www.insightkorea.co.kr/news/articleView.html?idxno=246344" target="_blank">GA, 단순 채널 넘어 금융 플랫폼으로 진화..."설계사가 경쟁력"</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">12</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 12</div>
+          <a href="https://www.naeil.com/news/read/588604?ref=naver" target="_blank">퇴직연금 일시금 인출 83.5%…금감원, 연금수령기간 장기화 유도</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">13</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 12</div>
+          <a href="https://www.greened.kr/news/articleView.html?idxno=340667" target="_blank">공정위·금감원 칼끝, 한화에 잇단 '정조준'…이번엔 한화생명 자회사 ...</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">14</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 12</div>
+          <a href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9VSndOMWx4WHVYZUx4MkNqTVlWc1hTZW9pQ2oycUNIdk9MV3QtNGRDbWY0Y2lIWkk5WHZwVVlPYzhOUkJIcGNueXdGcFIyUW9EVi1rbHVROUN2RmM?oc=5" target="_blank">‘요양시설 종신보험 판매’ 금감원 검사 착수…1호에 한화라이프랩 - KBS 뉴스</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">15</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 12</div>
+          <a href="https://www.cnbizm.com/news/articleView.html?idxno=302922" target="_blank">KB손해보험, 'KB희망바자회' 개최…21년째 나눔 지속</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">16</div>
+        <div class="info">
+          <div class="date">2026-05-14 · NAVER · 점수 12</div>
+          <a href="https://www.ilyoseoul.co.kr/news/articleView.html?idxno=517030" target="_blank">KB손해보험, 21년째 이어온 'KB희망바자회' 성료… 임직원·시민 함께한...</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">17</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 12</div>
+          <a href="https://news.google.com/rss/articles/CBMiXEFVX3lxTE9ldmhGa1ZzSnRhb2xYblkwYzRhM0dYbzMyZW5MRGI2c0NaUXZhQ0duMWpJOF9tMFVaOTE3UElhdzZDOHlxcXpEdjFfYlZVMEJmOW9CLVZTZjhWaUJv?oc=5" target="_blank">NH농협손해보험, '2026년 농기계 사고예방 캠페인' 전개 - 뉴스핌</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">18</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 12</div>
+          <a href="https://news.google.com/rss/articles/CBMibkFVX3lxTE94NG1yZGlDX09zbGJmak1iNjVZU3kxNEx1M2NCNVAxc1B1SEQ1YjVqdy16TDN1ZTI4enBXYkNMS0YyQ2dHeHNSTmlxZ0xhOWFHLWFhSWJxU1Q1Y2lkdVBTRzdVUVBqWk1mZVp5X05B0gFyQVVfeXFMTUF3TDN4TFh3WTliU01Hd2c3STFlN0VpYXk5MzQzVVB1RVcxRDhxQlNsSGcxM2NBQXY1a2NzNk0tRXppTzBxOUxpTzdwcDdfZUM0aTk1amFsSWU3YmZROVZIczFYNjljTWg4ZURPVGRlNFFn?oc=5" target="_blank">KB손해보험, 한부모가정 지원 1억원 전달…13년째 돌봄 공백 해소 - 폴리뉴스 Polinews</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">19</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 12</div>
+          <a href="https://news.google.com/rss/articles/CBMiU0FVX3lxTE1GTkJ3d0Y2NHdNR3AteEQyV2RFVjF0aHhYVFJBQnFJVExVSG9pdWFFOXNXWVMwcjRhWTJtb3BWQWlWdHBQN0VZd0hqU1RFNTdiY3Fv?oc=5" target="_blank">한화손해보험, 1분기 순익 989억 신계약 CSM '분기 최대'…여성·시니어 보험 전략 통했다 - 네이트</a>
+        </div>
+      </li>
+      
+      <li>
+        <div class="rank">20</div>
+        <div class="info">
+          <div class="date">2026-05-14 · GOOGLE · 점수 12</div>
+          <a href="https://news.google.com/rss/articles/CBMiZkFVX3lxTE9HdWxJWHdiQXloTXBpenhuRzNDakg2S1FvR255cU1uLVB5eFdlakdoMnFZRmlrWWF2RFNZN3NQY3lMeWhRZ3U5TlBjSThoQmpKMmNGOU5SX21nYUVTc2NNMHBNaWl2dw?oc=5" target="_blank">여성소비자신문 모바일 사이트, KB손해보험·신협재단, 나눔·상생 사회공헌 실천 - 통신일보</a>
+        </div>
+      </li>
+      
+    </ul>
+  </div>
+
+  <div class="footer">
+    <strong>주간 리포트</strong> · Gemini AI 생성 · 인카금융서비스 마케팅팀
+  </div>
+
+</div>
+</body>
+</html>
