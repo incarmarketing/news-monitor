@@ -78,6 +78,18 @@
     gap: 18px;
   }
 
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-logo {
+    width: 116px;
+    height: auto;
+    display: block;
+  }
+
   .eyebrow {
     color: #bfdbfe;
     font-size: 11px;
@@ -534,6 +546,7 @@
     }
     .hero-meta,
     .eyebrow { color: var(--muted); }
+    .brand-logo { display: none; }
     h1 { font-size: 18px; }
     .risk-summary {
       color: #0f172a;
@@ -631,6 +644,14 @@
 
     .hero-top {
       display: block;
+    }
+
+    .brand-row {
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 92px;
     }
 
     h1 {
@@ -772,7 +793,10 @@
     <header class="hero">
       <div class="hero-top">
         <div>
-          <div class="eyebrow">{{ subject_prefix }}</div>
+          <div class="brand-row">
+            <img class="brand-logo" src="assets/logo.png" alt="INCAR">
+            <div class="eyebrow">{{ subject_prefix }}</div>
+          </div>
           <h1>일일 언론 모니터링 보고서</h1>
           <div class="hero-meta">{{ company }} · {{ team }} · {{ date_str }} · {{ window.label }} 기준</div>
         </div>

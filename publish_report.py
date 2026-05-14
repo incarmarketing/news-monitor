@@ -10,6 +10,7 @@ LOG_DIR = BASE_DIR / "logs"
 PUBLIC_DIR = BASE_DIR / "public"
 REPORTS_DIR = PUBLIC_DIR / "reports"
 PERIOD_DIR = BASE_DIR / "period_reports"
+ASSETS_DIR = BASE_DIR / "assets"
 
 
 def latest_report() -> Path:
@@ -28,6 +29,7 @@ def publish() -> Path:
 
     shutil.copy2(source, archive_target)
     shutil.copy2(source, index_target)
+    publish_assets()
     publish_period_report("weekly")
     publish_period_report("monthly")
 
@@ -35,6 +37,16 @@ def publish() -> Path:
     print(f"Static index: {index_target}")
     print(f"Static archive: {archive_target}")
     return index_target
+
+
+def publish_assets() -> None:
+    if not ASSETS_DIR.exists():
+        return
+    target = PUBLIC_DIR / "assets"
+    target.mkdir(parents=True, exist_ok=True)
+    for source in ASSETS_DIR.iterdir():
+        if source.is_file():
+            shutil.copy2(source, target / source.name)
 
 
 def publish_period_report(period: str) -> None:
