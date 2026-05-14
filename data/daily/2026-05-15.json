@@ -1,27 +1,27 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T08:34:37.105556+09:00",
+  "timestamp": "2026-05-15T08:45:15.700481+09:00",
   "window": {
     "slot": "08",
-    "label": "전일 18:00~08:34",
+    "label": "전일 18:00~08:45",
     "short_label": "전일 18시 이후",
     "start": "2026-05-14T18:00:00+09:00",
-    "end": "2026-05-15T08:34:37.105497+09:00"
+    "end": "2026-05-15T08:45:15.700452+09:00"
   },
   "metrics": {
-    "total_collected": 87,
+    "total_collected": 88,
     "total_after_cluster": 55,
     "by_category": {
       "own": 3,
       "regulation": 5,
-      "competitor": 47,
+      "competitor": 48,
       "industry": 32,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 2,
-      "neutral": 85
+      "neutral": 86
     },
     "own_negative": 0,
     "own_total": 3,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사, 생보사 GA 채널 실적 1위 보도 등 긍정적 평가 우세.\n\n## 핵심 이슈\n- [1] 생명보험사 GA 채널 실적 선두권 유지: KDB생명 1위 탈환, 신한라이프 선두 유지 등 4월 실적 관련 긍정 보도 다수.\n- [47] 금융당국의 자회사형 GA 현장검사: 한화라이프랩 현장검사 착수로 GA업계 전반의 긴장감이 고조되고 있음.\n\n## 지표 해석\n당사 관련 부정 기사 없이 생보사 GA 채널 실적 관련 긍정 보도가 집중되었습니다. 경쟁/업계 동향은 주요 보험사 1분기 실적 발표와 금융당국의 GA 검사 동향이 주를 이뤘습니다.\n\n## 분석 키워드\nGA 실적, 시장점유율, 금융당국, 1분기 실적",
+  "briefing": "## 최종 결론\n당사 긍정 보도 속, 업계 경쟁 및 규제 동향이 관찰됨.\n\n## 핵심 이슈\n- [1] GA채널 실적 선두권 유지: KDB생명 1위 탈환 등 다수 생보사 4월 실적 관련 긍정 보도.\n- [48] 금융당국의 경쟁 GA 현장검사: 한화라이프랩 현장검사 착수로 GA업계 전반의 규제 리스크 우려.\n\n## 지표 해석\n당사 관련 부정 기사 없이 GA채널 실적 관련 긍정 보도가 집중됐습니다. 업계 전반적으로는 주요 보험사 실적 발표와 금융당국의 규제 강화 동향이 주요 이슈였습니다.\n\n## 분석 키워드\nGA 실적, M/S, 금융당국 규제, 보험사 실적",
   "articles": [
     {
       "title": "KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널",
@@ -310,17 +310,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "[지지부진 보험사 M&A]공급만 있는 매물, 예별손보 입찰 연기…KDB생명은...",
-      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141320058480733",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
       "title": "[지지부진 보험사 M&A]국내 보험사는 해외로 눈돌려…은행·증권사 인수",
       "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141447541110779",
       "source": "naver",
@@ -330,6 +319,17 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
+    },
+    {
+      "title": "[지지부진 보험사 M&A]공급만 있는 매물, 예별손보 입찰 연기…KDB생명은...",
+      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141320058480733",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
     },
     {
       "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
@@ -425,6 +425,17 @@
       "source": "google",
       "keyword": "생명보험",
       "pub_date": "Thu, 14 May 2026 23:13:00 GMT",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "교보생명, 캐릭터 ‘꼬옥’ 론칭… “고객과 끝까지 함께합니다” - 한국보험신문",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE9Kc0tRc2RRVFdINkprWjBBZkszWWZLdDdfc2VRSmtHYVI0WjR3cmVDd1Z5cmtRekdLdzQ2UjI2cFVVYnVvUXBnRFduZFRjaTI4MjdSNm05cGVSRWtvSElJb1NTdWZocG9XTlA00gFvQVVfeXFMUEJOZ3FfajZmRDBZbUh2Nm02YlJnN2c2bm9wRzVDVWVRUjR4MUd2SktBLWg0dE5UMEpDSW1KaVh6aXZDR25vREZreldLdTVNYjluQUFPQU9sUEVrVFRjQXgzSlhKdnM0VkxtbXgwaXVn?oc=5",
+      "source": "google",
+      "keyword": "생명보험",
+      "pub_date": "Thu, 14 May 2026 09:23:15 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -625,17 +636,6 @@
       "pub_date": "Thu, 14 May 2026 18:04:00 +0900",
       "_score": 8,
       "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "하나은행, K-조선 5조 금융지원 확대... 스포츠 후원까지 ESG 경영 보폭 ...",
-      "link": "https://m.sports.naver.com/general/article/450/0000151480",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Fri, 15 May 2026 00:53:00 +0900",
-      "_score": 7,
-      "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
     }
