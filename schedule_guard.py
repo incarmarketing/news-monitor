@@ -45,7 +45,7 @@ def begin() -> None:
     if event_name != "schedule":
         github_output("should_run", "true")
         github_output("should_mark", "false")
-        github_output("should_period", "true")
+        github_output("should_period", "false")
         github_output("kst_hour", "manual")
         github_output("marker_path", "")
         return

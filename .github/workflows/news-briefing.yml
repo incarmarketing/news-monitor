@@ -2,6 +2,22 @@ name: AI News Briefing
 
 on:
   workflow_dispatch:
+    inputs:
+      period_reports:
+        description: "Generate period report preview"
+        required: true
+        default: "both"
+        type: choice
+        options:
+          - none
+          - weekly
+          - monthly
+          - both
+      send_kakao:
+        description: "Send KakaoTalk notification"
+        required: true
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -70,10 +86,15 @@ jobs:
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
 
       - name: Generate period reports
-        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period == 'true'
+        if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none'))
         run: |
-          python period_report.py weekly
-          python period_report.py monthly
+          PERIOD="${{ github.event.inputs.period_reports }}"
+          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] || [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
+            python period_report.py weekly
+          fi
+          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] || [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
+            python period_report.py monthly
+          fi
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
@@ -97,7 +118,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Send KakaoTalk link
-        if: steps.guard.outputs.should_run == 'true'
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event.inputs.send_kakao == 'true')
         run: python kakao_report_send.py
         env:
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
@@ -113,7 +134,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/daily
+          git add -f data/daily
           if [ -d .run-state ]; then
             git add .run-state
           fi
