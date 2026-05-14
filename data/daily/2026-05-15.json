@@ -1,31 +1,31 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T08:11:22.203781+09:00",
+  "timestamp": "2026-05-15T08:18:17.284532+09:00",
   "metrics": {
-    "total_collected": 164,
-    "total_after_cluster": 49,
+    "total_collected": 162,
+    "total_after_cluster": 51,
     "by_category": {
-      "own": 9,
+      "own": 8,
       "regulation": 13,
       "competitor": 83,
-      "industry": 58,
+      "industry": 57,
       "other": 1
     },
     "by_tone": {
       "negative": 0,
-      "positive": 8,
-      "neutral": 156
+      "positive": 7,
+      "neutral": 155
     },
     "own_negative": 0,
-    "own_total": 9,
+    "own_total": 8,
     "own_by_tone": {
-      "positive": 8,
+      "positive": 7,
       "neutral": 1,
       "negative": 0
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 브랜드평판 1위 보도가 다수 발생했으며, 업계 규제 동향이 부각됨.\n\n## 핵심 이슈\n- [1] GA 브랜드평판 1위: 당사 관련 긍정 보도가 다수 발생하여 긍정적 여론을 형성했습니다.\n- [24] 금감원, 경쟁사 GA 검사: 한화라이프랩 현장 검사 착수로 GA 업계 내부통제 강화 동향이 관측됩니다.\n\n## 지표 해석\n당사 관련 보도는 브랜드평판 1위 기사를 중심으로 긍정 톤을 유지했으며, 부정 기사는 없었습니다. 금감원의 경쟁사 검사 및 장애인 고용 확대 등 업계 규제 관련 보도가 다수를 차지했습니다.\n\n## 분석 키워드\n브랜드평판, 금감원, GA, 내부통제",
+  "briefing": "## 최종 결론\n브랜드평판 1위 긍정 보도 다수, 직접적 리스크는 부재.\n\n## 핵심 이슈\n- [1, 2, 3] 5월 GA 브랜드평판 1위 달성: 다수 매체를 통해 당사 긍정 이미지 확산.\n- [24, 25, 26] 금감원, 경쟁사(한화라이프랩) 현장 검사: GA 업계 내부통제 강화 동향 주시 필요.\n\n## 지표 해석\n브랜드평판 1위 관련 긍정 보도가 집중되었으며, 당사 관련 부정 기사는 없습니다. 전일 대비 기사량은 감소했으나 리스크는 LOW 수준을 유지하고 있습니다.\n\n## 분석 키워드\n브랜드평판, 금감원, GA, 한화생명금융서비스",
   "articles": [
     {
       "title": "인카금융서비스, 독립 보험대리점 2026년 5월 브랜드평판 1위",
@@ -58,7 +58,7 @@
       "_score": 30,
       "_category": "own",
       "_tone": "positive",
-      "_cluster_size": 2
+      "_cluster_size": 1
     },
     {
       "title": "삼성생명·미래에셋생명 시총, 새 정부 출범 이후 세 자릿수% ‘급등’",
@@ -171,17 +171,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "[단독] ① NH농협손해보험, 암보험 심사에 '체크형 의료동의서' 사용 논...",
-      "link": "https://www.newswhoplus.com/news/articleView.html?idxno=60400",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 00:00:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
       "title": "AXA손해보험, 고혈압 합병증 대비 간편보험 출시…유병자도 80세까지 가입 가능 - 브릿지경제",
       "link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9qY0Q1TGxNLWFDRVJkLTZtaWJoS2ZmRjVscnJOUEVfNWIzSTJPU1hpMUd2aVVmWXUyaGI0U1FJaGNsNFdLMmZ6YTNKdTZFUjFzcGticWNWZ0JxQQ?oc=5",
       "source": "google",
@@ -204,22 +193,33 @@
       "_cluster_size": 1
     },
     {
-      "title": "KB손해보험, 시민 참여형 사회공헌 ‘KB희망바자회’ 운영 - 시사캐스트",
-      "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE1ESEFWQWpqWkdnTERfVTZhM21pQzFUV1NBWkxGWmtMU0dBTWptR295UXBwRXAxMTctRktJclNrRkVTSFdwMjRKMlhISjdneGVDclFJZ1dtUERTZ2xKSVdkcTdXVlVzSW8?oc=5",
+      "title": "[단독] ① NH농협손해보험, 암보험 심사에 '체크형 의료동의서' 사용 논란 - 뉴스후플러스",
+      "link": "https://news.google.com/rss/articles/CBMibkFVX3lxTE0xSjFIYkRMZy02WWNmOG13Wk5FeGh4eDZtWjRPd2kzM21ZXy1vdVBING10RVRyTndnSkJYWG96bzFVV0RiNXNGdlpIeS1VRmVva2JUcFlZOGt2NXJjdmJoaXBlNmNEaVlzXy1wNjNR?oc=5",
       "source": "google",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 10:44:05 GMT",
+      "pub_date": "Thu, 14 May 2026 15:00:00 GMT",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "[0515주요일정] DB손해보험·미스토홀딩스·금호건설 등 실적발표 예정 - 인포스탁데일리",
-      "link": "https://news.google.com/rss/articles/CBMidkFVX3lxTE01RjJsWXE3QjVKalZURmNZWk5rZjBtenpfQmFFc3F1RWF5cmlKN3ZMbjBCRzRZY2dUZHpwV3NwUlZqZFNwRkdtNnRsOWZTSTJ3bEQycl9JMU1FVWtPbnNBZjlqX24tV2tSVy1Xemt4anRUTFAxSUE?oc=5",
+      "title": "[0515주요일정] DB손해보험·미스토홀딩스·금호건설 등 실적발표 예정 By 인포스탁데일리 - Investing.com 한국어",
+      "link": "https://news.google.com/rss/articles/CBMicEFVX3lxTFA1Z3NqZUlsUnVwWXRCX2FVOXZyTTZQaXB3ZldpODZOZ1ZIWjhlM3gzV21nUlZWTld3NW5SaERxcG1KVjBBWk1YR3JGaWlqUHdZVjJjUk5fV1k1OXhsc0czVEtFUFp1ZTZzX2RpdDlnYnA?oc=5",
       "source": "google",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 21:00:00 GMT",
+      "pub_date": "Thu, 14 May 2026 18:32:00 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "KB손해보험, 시민 참여형 사회공헌 ‘KB희망바자회’ 운영 - 시사캐스트",
+      "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE1ESEFWQWpqWkdnTERfVTZhM21pQzFUV1NBWkxGWmtMU0dBTWptR295UXBwRXAxMTctRktJclNrRkVTSFdwMjRKMlhISjdneGVDclFJZ1dtUERTZ2xKSVdkcTdXVlVzSW8?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 10:44:05 GMT",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
@@ -446,6 +446,17 @@
       "_cluster_size": 1
     },
     {
+      "title": "한화생명, '종합금융그룹' 전환 가속…신 성장축 '비보험·해외투자'",
+      "link": "http://www.hansbiz.co.kr/news/articleView.html?idxno=838761",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Fri, 15 May 2026 08:10:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "iM증권 \"삼성생명, 1분기 순이익 1.2조…호실적에도 주가 변수는 삼성전...",
       "link": "https://www.etoday.co.kr/news/view/2584723",
       "source": "naver",
@@ -490,17 +501,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
-      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "[지지부진 보험사 M&A]국내 보험사는 해외로 눈돌려…은행·증권사 인수",
       "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141447541110779",
       "source": "naver",
@@ -514,6 +514,17 @@
     {
       "title": "[지지부진 보험사 M&A]공급만 있는 매물, 예별손보 입찰 연기…KDB생명은...",
       "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141320058480733",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
+      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
@@ -561,6 +572,17 @@
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Thu, 14 May 2026 22:44:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "교보생명, 생명 가치 담은 새 캐릭터 ‘꼬옥’ 공개",
+      "link": "https://n.news.naver.com/mnews/article/032/0003445886?sid=101",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Thu, 14 May 2026 21:36:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
