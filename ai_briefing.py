@@ -8,7 +8,7 @@ import os
 import re
 import smtplib
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -42,9 +42,10 @@ if GEMINI_API_KEY:
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
+KST = timezone(timedelta(hours=9))
 
 CATEGORY_LABELS = {
-    "own": "자사",
+    "own": "당사",
     "regulation": "규제",
     "competitor": "경쟁",
     "industry": "업계",
@@ -68,8 +69,8 @@ def run_briefing(articles: list[dict]) -> Path:
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
     own_tone = metrics.get("own_by_tone", {})
     console.print(
-        f"  수집 {metrics['total_collected']}건 -> 주요 후보 {metrics['total_after_cluster']}건 "
-        f"(자사 {metrics['by_category']['own']} "
+        f"  수집 {metrics['total_collected']}건 -> 분석 기사 {metrics['total_after_cluster']}건 "
+        f"(당사 {metrics['by_category']['own']} "
         f"긍정 {own_tone.get('positive', 0)}·중립 {own_tone.get('neutral', 0)}·부정 {own_tone.get('negative', 0)} / "
         f"경쟁·업계 {market_count} / 리스크 [{risk_color}]{metrics['risk_level']}[/])"
     )
@@ -127,9 +128,9 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 
 데이터:
 - 총 수집: {metrics['total_collected']}건
-- 주요 후보: {metrics['total_after_cluster']}건
-- 자사 언급: {metrics['by_category']['own']}건
-- 자사 톤: 긍정 {own_tone.get('positive', 0)}건, 중립 {own_tone.get('neutral', 0)}건, 부정 {own_tone.get('negative', 0)}건
+- 분석 기사: {metrics['total_after_cluster']}건
+- 당사 언급: {metrics['by_category']['own']}건
+- 당사 톤: 긍정 {own_tone.get('positive', 0)}건, 중립 {own_tone.get('neutral', 0)}건, 부정 {own_tone.get('negative', 0)}건
 - 경쟁/업계 동향: {market_count}건
 - 리스크: {metrics['risk_level']}
 - 전일 대비: {diff}
@@ -143,7 +144,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 굵게 표시용 ** 문법 금지.
 - 기사 나열 금지. 중복 기사는 하나의 이슈로 설명.
 - 기사 목록에 없는 이슈, 키워드, 법안, 사건은 절대 추가하지 마세요.
-- 핵심 이슈에는 반드시 근거 기사 ID를 [N] 형식으로 붙이세요. 예: - [3] 브랜드평판 1위: 자사 긍정 보도.
+- 핵심 이슈에는 반드시 근거 기사 ID를 [N] 형식으로 붙이세요. 예: - [3] 브랜드평판 1위: 당사 긍정 보도.
 - 불확실한 내용은 "확인 필요"라고 표현하세요.
 
 반드시 이 형식:
@@ -155,7 +156,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 최대 2개
 
 ## 지표 해석
-1~2문장. 자사 보도 톤, 자사 부정, 경쟁/업계 동향 중심.
+1~2문장. 당사 보도 톤, 당사 부정, 경쟁/업계 동향 중심.
 
 ## 액션
 | 구분 | 실행 |
@@ -164,7 +165,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 | 금주 | 25자 이내 |
 | 관찰 | 25자 이내 |
 
-## 추적 키워드
+## 분석 키워드
 키워드 3~5개만 쉼표로 나열.
 """.strip()
 
@@ -228,8 +229,8 @@ def format_diff(today: dict, yesterday: dict | None) -> str:
         return f"{current - previous:+d}"
 
     return (
-        f"자사 {delta(['by_category', 'own'])}, "
-        f"자사부정 {delta(['own_negative'])}, "
+        f"당사 {delta(['by_category', 'own'])}, "
+        f"당사부정 {delta(['own_negative'])}, "
         f"경쟁/업계 {delta_market(today, yesterday)}"
     )
 
@@ -255,22 +256,22 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
         for article in clustered[:2]
     )
     return f"""## 최종 결론
-최근 24시간 기준 리스크는 {metrics['risk_level']}이며, 자사 부정 {metrics['own_negative']}건입니다.
+최근 24시간 기준 리스크는 {metrics['risk_level']}이며, 당사 부정 {metrics['own_negative']}건입니다.
 
 ## 핵심 이슈
 {issue_lines}
 
 ## 지표 해석
-전체 {metrics['total_collected']}건 중 자사 보도 {metrics['by_category']['own']}건, 자사 부정 {metrics['own_negative']}건입니다.
+전체 {metrics['total_collected']}건 중 당사 보도 {metrics['by_category']['own']}건, 당사 부정 {metrics['own_negative']}건입니다.
 
 ## 액션
 | 구분 | 실행 |
 |---|---|
-| 즉시 | 자사 기사 원문 확인 |
+| 즉시 | 당사 기사 원문 확인 |
 | 금주 | 반복 이슈 문안 정리 |
 | 관찰 | 업계 기사 추이 확인 |
 
-## 추적 키워드
+## 분석 키워드
 인카금융서비스, 정착률, GA, 보험설계사"""
 
 
@@ -283,7 +284,8 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
 
     return template.render(
         subject_prefix=config.EMAIL_SUBJECT_PREFIX,
-        date_str=datetime.now().strftime("%Y.%m.%d %H:%M"),
+        date_str=datetime.now(KST).strftime("%Y.%m.%d %H:%M"),
+        basis_datetime=datetime.now(KST).strftime("%y-%m-%d %H:%M"),
         company=config.COMPANY_NAME,
         team=config.TEAM_NAME,
         metrics=metrics,
@@ -313,8 +315,13 @@ def parse_report_sections(markdown: str) -> dict:
         "issues": parse_bullets(raw.get("핵심 이슈", "")),
         "interpretation_html": markdown_to_html("## 지표 해석\n" + raw.get("지표 해석", "")) if raw.get("지표 해석") else "",
         "action_html": markdown_to_html("## 액션\n" + raw.get("액션", "")) if raw.get("액션") else "",
-        "keywords": [item.strip() for item in raw.get("추적 키워드", "").replace("\n", ",").split(",") if item.strip()],
+        "keywords": parse_keywords(raw),
     }
+
+
+def parse_keywords(raw: dict) -> list[str]:
+    text = raw.get("분석 키워드", "") or raw.get("추적 키워드", "")
+    return [item.strip() for item in text.replace("\n", ",").split(",") if item.strip()]
 
 
 def select_evidence_articles(clustered: list[dict], sections: dict, limit: int = 12) -> list[dict]:
@@ -371,13 +378,13 @@ def build_article_tabs(clustered: list[dict], sections: dict) -> list[dict]:
     return [
         {
             "id": "evidence",
-            "label": "요약 근거",
+            "label": "분석 근거",
             "description": "오늘의 판단과 핵심 이슈에 직접 연결되는 기사입니다.",
             "articles": enrich_articles(select_evidence_articles(clustered, sections, limit=8)),
         },
         {
             "id": "own",
-            "label": "자사 언급",
+            "label": "당사 언급",
             "description": "인카금융서비스가 직접 언급된 기사입니다.",
             "articles": enrich_articles(select_articles_by_category(clustered, {"own"}, limit=10)),
         },
@@ -467,10 +474,10 @@ def build_methodology(metrics: dict) -> dict:
 
 def risk_message(metrics: dict) -> str:
     if metrics["risk_level"] == "HIGH":
-        return "자사 부정 이슈 확인 필요"
+        return "당사 부정 이슈 확인 필요"
     if metrics["risk_level"] == "MEDIUM":
         return "주의 이슈 모니터링 필요"
-    return "자사 부정 이슈 없음"
+    return "당사 부정 이슈 없음"
 
 
 def markdown_to_html(markdown: str) -> str:
@@ -564,7 +571,7 @@ def send_email(html_body: str, metrics: dict) -> bool:
 
     subject = (
         f"{config.EMAIL_SUBJECT_PREFIX} {datetime.now().strftime('%Y.%m.%d')} "
-        f"{metrics['risk_level']} 자사{metrics['by_category']['own']} 부정{metrics['own_negative']}"
+        f"{metrics['risk_level']} 당사{metrics['by_category']['own']} 부정{metrics['own_negative']}"
     )
     message = MIMEMultipart("alternative")
     message["From"] = EMAIL_SENDER

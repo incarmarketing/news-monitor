@@ -82,7 +82,7 @@ def build_message(report: dict) -> str:
 
     header = [
         f"[AI 언론 브리핑] {report.get('date', '')}",
-        f"리스크 {risk} · 자사 {own_total}건",
+        f"리스크 {risk} · 당사 {own_total}건",
         (
             f"긍정 {own_tone.get('positive', 0)} · "
             f"중립 {own_tone.get('neutral', 0)} · "

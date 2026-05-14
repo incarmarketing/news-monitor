@@ -96,11 +96,18 @@
     font-size: 12px;
   }
 
-  .risk-pill {
-    width: 156px;
+  .risk-wrap {
+    flex: 0 0 188px;
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 8px;
+    align-self: stretch;
+  }
+
+  .risk-box,
+  .risk-status {
     min-height: 78px;
-    flex: 0 0 156px;
-    padding: 12px 14px;
+    padding: 12px 10px;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -109,6 +116,11 @@
     text-align: center;
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .risk-status {
+    align-items: flex-start;
+    text-align: left;
   }
 
   .risk-label {
@@ -120,23 +132,22 @@
 
   .risk-value {
     margin-top: 5px;
-    font-size: 24px;
+    font-size: 18px;
     line-height: 1;
     font-weight: 900;
     white-space: nowrap;
   }
 
   .risk-message {
-    margin-top: 16px;
-    padding: 10px 12px;
-    border-radius: 10px;
+    margin-top: 6px;
     font-weight: 900;
-    font-size: 14px;
+    font-size: 12px;
+    line-height: 1.35;
   }
 
-  .risk-message.LOW { background: var(--green-soft); color: #14532d; }
-  .risk-message.MEDIUM { background: var(--amber-soft); color: #78350f; }
-  .risk-message.HIGH { background: var(--red-soft); color: #7f1d1d; }
+  .risk-box.LOW { background: var(--green-soft); color: #14532d; border-color: rgba(22, 163, 74, 0.28); }
+  .risk-box.MEDIUM { background: var(--amber-soft); color: #78350f; border-color: rgba(217, 119, 6, 0.28); }
+  .risk-box.HIGH { background: var(--red-soft); color: #7f1d1d; border-color: rgba(220, 38, 38, 0.28); }
 
   .kpis {
     display: grid;
@@ -513,15 +524,19 @@
     .eyebrow,
     .risk-label { color: var(--muted); }
     h1 { font-size: 18px; }
-    .risk-pill {
+    .risk-wrap {
+      color: #0f172a;
+      grid-template-columns: 70px 1fr;
+      flex-basis: 184px;
+    }
+    .risk-box,
+    .risk-status {
       color: #0f172a;
       background: #fff;
       border-color: var(--line);
-      width: 132px;
       min-height: 58px;
-      flex-basis: 132px;
     }
-    .risk-message { padding: 8px 10px; margin-top: 10px; font-size: 12px; }
+    .risk-message { margin-top: 4px; font-size: 11px; }
     .kpis { grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px 0; background: #fff; }
     .kpi { min-height: 62px; padding: 8px; }
     .kpi .num { font-size: 18px; }
@@ -614,22 +629,30 @@
       word-break: keep-all;
     }
 
-    .risk-pill {
-      width: 100%;
-      min-height: 54px;
-      margin-top: 14px;
-      flex-direction: row;
-      gap: 10px;
-    }
-
     .risk-value {
       margin-top: 0;
       font-size: 22px;
     }
 
     .risk-message {
-      margin-top: 12px;
+      margin-top: 5px;
       font-size: 13px;
+    }
+
+    .risk-wrap {
+      width: 100%;
+      margin-top: 14px;
+      grid-template-columns: 86px 1fr;
+    }
+
+    .risk-box,
+    .risk-status {
+      min-height: 58px;
+      padding: 10px;
+    }
+
+    .risk-value {
+      font-size: 18px;
     }
 
     .kpis {
@@ -650,6 +673,7 @@
     .kpi .sub {
       font-size: 10px;
       word-break: keep-all;
+      overflow-wrap: anywhere;
     }
 
     .content {
@@ -681,16 +705,15 @@
     }
 
     .tab-controls {
-      display: flex;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      scrollbar-width: thin;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
     }
 
     .tab-button {
-      flex: 0 0 auto;
-      min-width: 92px;
+      min-width: 0;
       padding: 0 10px;
+      font-size: 11px;
     }
 
     .article-list li {
@@ -744,12 +767,17 @@
           <h1>일일 언론 모니터링 보고서</h1>
           <div class="hero-meta">{{ company }} · {{ team }} · {{ date_str }} · 최근 24시간 기준</div>
         </div>
-        <div class="risk-pill">
-          <div class="risk-label">리스크</div>
-          <div class="risk-value">{{ metrics.risk_level }}</div>
+        <div class="risk-wrap">
+          <div class="risk-box {{ metrics.risk_level }}">
+            <div class="risk-label">리스크 레벨</div>
+            <div class="risk-value">{{ metrics.risk_level }}</div>
+          </div>
+          <div class="risk-status">
+            <div class="risk-label">상태</div>
+            <div class="risk-message">{{ risk_message }}</div>
+          </div>
         </div>
       </div>
-      <div class="risk-message {{ metrics.risk_level }}">{{ risk_message }}</div>
     </header>
 
     <section class="kpis">
@@ -760,23 +788,23 @@
       </div>
       <div class="kpi">
         <div class="num">{{ metrics.total_after_cluster }}</div>
-        <div class="label">주요 후보</div>
-        <div class="sub">중복 묶음 후</div>
+        <div class="label">분석 기사</div>
+        <div class="sub">중복 정리 후</div>
       </div>
       <div class="kpi">
         <div class="num">{{ metrics.by_category.own }}</div>
-        <div class="label">자사 보도</div>
+        <div class="label">당사 보도</div>
         <div class="sub">긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }} · 부정 {{ metrics.own_by_tone.negative }}</div>
       </div>
       <div class="kpi">
         <div class="num">{{ metrics.own_negative }}</div>
-        <div class="label">자사 부정</div>
-        {% if diff.available %}<div class="sub {{ diff.own_neg.direction }}">전일 {{ diff.own_neg.diff }}</div>{% else %}<div class="sub same">기준일</div>{% endif %}
+        <div class="label">당사 부정</div>
+        {% if diff.available %}<div class="sub {{ diff.own_neg.direction }}">전일 {{ diff.own_neg.diff }}</div>{% else %}<div class="sub same">기준일 {{ basis_datetime }}</div>{% endif %}
       </div>
       <div class="kpi">
         <div class="num">{{ market_count }}</div>
         <div class="label">경쟁/업계 동향</div>
-        {% if diff.available %}<div class="sub {{ diff.market.direction }}">전일 {{ diff.market.diff }}</div>{% else %}<div class="sub same">기준일</div>{% endif %}
+        {% if diff.available %}<div class="sub {{ diff.market.direction }}">전일 {{ diff.market.diff }}</div>{% else %}<div class="sub same">기준일 {{ basis_datetime }}</div>{% endif %}
       </div>
     </section>
 
@@ -812,7 +840,7 @@
 
       {% if sections.keywords %}
       <section>
-        <h2 class="section-title">추적 키워드</h2>
+        <h2 class="section-title">분석 키워드</h2>
         <div class="keywords">
           {% for keyword in sections.keywords %}
           <span class="keyword">{{ keyword }}</span>
@@ -826,7 +854,7 @@
         <div class="tab-controls" role="tablist" aria-label="기사 분류">
           {% for tab in article_tabs %}
           <button class="tab-button {% if loop.first %}active{% endif %}" type="button" data-tab="{{ tab.id }}" onclick="showArticleTab('{{ tab.id }}')">
-            {{ tab.label }} {{ tab.articles|length }}
+            {{ tab.label }}
           </button>
           {% endfor %}
         </div>
