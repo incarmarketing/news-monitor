@@ -230,7 +230,7 @@
 
   .conclusion { border-top: 4px solid var(--blue); }
   .interpretation { border-top: 4px solid #94a3b8; }
-  .actions { margin-bottom: 14px; border-top: 4px solid #0f766e; }
+  .actions { margin-bottom: 14px; border-top: 4px solid #dc2626; }
 
   .conclusion p {
     margin: 0;
@@ -842,10 +842,12 @@
         </div>
       </section>
 
+      {% if sections.action_html %}
       <section class="panel actions">
-        <h2 class="section-title">실행 액션</h2>
+        <h2 class="section-title">대응 필요 사항</h2>
         {{ sections.action_html | safe }}
       </section>
+      {% endif %}
 
       {% if sections.keywords %}
       <section>

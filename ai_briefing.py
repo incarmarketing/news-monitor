@@ -115,6 +115,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
     articles_text = format_articles_for_prompt(prompt_articles)
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
     own_tone = metrics.get("own_by_tone", {})
+    action_instruction = build_action_instruction(metrics)
 
     return f"""
 당신은 {config.COMPANY_NAME} {config.TEAM_NAME}의 언론 모니터링 분석 담당자입니다.
@@ -140,12 +141,14 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 
 출력 규칙:
 - 전체 700자 이내.
-- 제목은 아래 5개만 사용. ###, ####, 번호형 대제목 금지.
+- 제목은 아래 지정된 제목만 사용. ###, ####, 번호형 대제목 금지.
 - 굵게 표시용 ** 문법 금지.
 - 기사 나열 금지. 중복 기사는 하나의 이슈로 설명.
 - 기사 목록에 없는 이슈, 키워드, 법안, 사건은 절대 추가하지 마세요.
 - 핵심 이슈에는 반드시 근거 기사 ID를 [N] 형식으로 붙이세요. 예: - [3] 브랜드평판 1위: 당사 긍정 보도.
 - 불확실한 내용은 "확인 필요"라고 표현하세요.
+- 액션/대응 섹션은 아래 조건을 따르세요.
+{action_instruction}
 
 반드시 이 형식:
 ## 최종 결론
@@ -158,16 +161,27 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 ## 지표 해석
 1~2문장. 당사 보도 톤, 당사 부정, 경쟁/업계 동향 중심.
 
-## 액션
-| 구분 | 실행 |
-|---|---|
-| 즉시 | 25자 이내 |
-| 금주 | 25자 이내 |
-| 관찰 | 25자 이내 |
-
 ## 분석 키워드
 키워드 3~5개만 쉼표로 나열.
 """.strip()
+
+
+def build_action_instruction(metrics: dict) -> str:
+    if should_show_action(metrics):
+        return (
+            "- 리스크가 MEDIUM 이상이거나 당사 부정 이슈가 있으므로 "
+            "'## 대응 필요 사항' 섹션을 '## 분석 키워드' 바로 앞에 추가하세요.\n"
+            "- 대응 필요 사항은 최대 2개 bullet로 작성하고, 각 bullet은 35자 이내로 제한하세요.\n"
+            "- 일반적인 '모니터링 지속', '내부 공유' 같은 관성적 문구는 금지합니다."
+        )
+    return (
+        "- 리스크가 LOW이고 당사 부정 이슈가 없으므로 액션/대응 섹션을 쓰지 마세요.\n"
+        "- '모니터링 지속', '내부 공유', '추이 관찰' 같은 형식적 액션은 작성하지 마세요."
+    )
+
+
+def should_show_action(metrics: dict) -> bool:
+    return metrics.get("risk_level") in {"MEDIUM", "HIGH"} or metrics.get("own_negative", 0) > 0
 
 
 def assign_report_ids(articles: list[dict]) -> None:
@@ -255,6 +269,14 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
         f"- {article.get('title', '')[:55]}: 확인 필요"
         for article in clustered[:2]
     )
+    response_section = ""
+    if should_show_action(metrics):
+        response_section = """
+## 대응 필요 사항
+- 당사 부정 기사 원문 확인
+- 관련 부서 사실관계 점검
+"""
+
     return f"""## 최종 결론
 최근 24시간 기준 리스크는 {metrics['risk_level']}이며, 당사 부정 {metrics['own_negative']}건입니다.
 
@@ -263,13 +285,7 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
 
 ## 지표 해석
 전체 {metrics['total_collected']}건 중 당사 보도 {metrics['by_category']['own']}건, 당사 부정 {metrics['own_negative']}건입니다.
-
-## 액션
-| 구분 | 실행 |
-|---|---|
-| 즉시 | 당사 기사 원문 확인 |
-| 금주 | 반복 이슈 문안 정리 |
-| 관찰 | 업계 기사 추이 확인 |
+{response_section}
 
 ## 분석 키워드
 인카금융서비스, 정착률, GA, 보험설계사"""
@@ -279,7 +295,7 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
     template = env.get_template("email.html")
     y_metrics = yesterday.get("metrics") if yesterday else None
-    sections = parse_report_sections(report_md)
+    sections = parse_report_sections(report_md, metrics)
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
 
     return template.render(
@@ -298,7 +314,7 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
     )
 
 
-def parse_report_sections(markdown: str) -> dict:
+def parse_report_sections(markdown: str, metrics: dict | None = None) -> dict:
     cleaned = clean_markdown(markdown)
     pattern = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
     matches = list(pattern.finditer(cleaned))
@@ -310,11 +326,15 @@ def parse_report_sections(markdown: str) -> dict:
         end = matches[idx + 1].start() if idx + 1 < len(matches) else len(cleaned)
         raw[title] = cleaned[start:end].strip()
 
+    action_text = raw.get("대응 필요 사항", "") or raw.get("액션", "")
+    if metrics is not None and not should_show_action(metrics):
+        action_text = ""
+
     return {
         "conclusion": raw.get("최종 결론", ""),
         "issues": parse_bullets(raw.get("핵심 이슈", "")),
         "interpretation_html": markdown_to_html("## 지표 해석\n" + raw.get("지표 해석", "")) if raw.get("지표 해석") else "",
-        "action_html": markdown_to_html("## 액션\n" + raw.get("액션", "")) if raw.get("액션") else "",
+        "action_html": markdown_to_html("## 대응 필요 사항\n" + action_text) if action_text else "",
         "keywords": parse_keywords(raw),
     }
 
