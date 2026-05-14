@@ -11,6 +11,10 @@ KST = timezone(timedelta(hours=9))
 STATE_DIR = Path(".run-state")
 
 SCHEDULE_TO_KST_HOUR = {
+    "0 22 * * *": "07",
+    "10 22 * * *": "07",
+    "20 22 * * *": "07",
+    "30 22 * * *": "07",
     "5 23 * * *": "08",
     "15 23 * * *": "08",
     "30 23 * * *": "08",
@@ -61,12 +65,18 @@ def begin() -> None:
         return
 
     today = datetime.now(KST).strftime("%Y-%m-%d")
+    weekday = datetime.now(KST).isoweekday()
+    day = datetime.now(KST).day
     marker_path = STATE_DIR / f"{today}-{kst_hour}.txt"
 
     github_output("kst_hour", kst_hour)
-    github_output("should_period", "true" if kst_hour == "18" else "false")
+    github_output("should_period", "true" if kst_hour == "07" else "false")
     github_output("marker_path", marker_path.as_posix())
     github_output("should_mark", "true")
+    if kst_hour == "07" and weekday != 1 and day != 1:
+        github_output("should_run", "false")
+        print("Period report slot skipped: not Monday or first day of month.")
+        return
     if marker_path.exists():
         github_output("should_run", "false")
         print(f"Already completed scheduled slot: {marker_path}")

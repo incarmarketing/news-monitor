@@ -25,6 +25,10 @@ on:
       - ".run-state/**"
       - "data/daily/**"
   schedule:
+    - cron: "0 22 * * *" # 07:00 KST weekly/monthly
+    - cron: "10 22 * * *" # 07:10 KST weekly/monthly backup
+    - cron: "20 22 * * *" # 07:20 KST weekly/monthly backup
+    - cron: "30 22 * * *" # 07:30 KST weekly/monthly backup
     - cron: "5 23 * * *" # 08:05 KST
     - cron: "15 23 * * *" # 08:15 KST backup
     - cron: "30 23 * * *" # 08:30 KST backup
@@ -135,8 +139,23 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Send KakaoTalk link
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event.inputs.send_kakao == 'true')
+        if: steps.guard.outputs.should_run == 'true' && ((github.event_name == 'schedule' && steps.guard.outputs.should_period != 'true') || github.event.inputs.send_kakao == 'true')
         run: python kakao_report_send.py
+        env:
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
+
+      - name: Send period KakaoTalk link
+        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period == 'true'
+        run: |
+          if [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
+            python kakao_period_send.py weekly
+          fi
+          if [ "$(TZ=Asia/Seoul date +%d)" = "01" ]; then
+            python kakao_period_send.py monthly
+          fi
         env:
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
           KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
