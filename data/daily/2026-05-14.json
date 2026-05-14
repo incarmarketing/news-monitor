@@ -1,31 +1,31 @@
 {
   "date": "2026-05-14",
-  "timestamp": "2026-05-14T19:30:24.609020+09:00",
+  "timestamp": "2026-05-14T20:20:48.328512+09:00",
   "metrics": {
-    "total_collected": 182,
-    "total_after_cluster": 42,
+    "total_collected": 186,
+    "total_after_cluster": 38,
     "by_category": {
-      "own": 14,
-      "regulation": 17,
-      "competitor": 101,
-      "industry": 49,
+      "own": 15,
+      "regulation": 16,
+      "competitor": 107,
+      "industry": 47,
       "other": 1
     },
     "by_tone": {
       "negative": 0,
-      "positive": 13,
-      "neutral": 169
+      "positive": 14,
+      "neutral": 172
     },
     "own_negative": 0,
-    "own_total": 14,
+    "own_total": 15,
     "own_by_tone": {
-      "positive": 13,
+      "positive": 14,
       "neutral": 1,
       "negative": 0
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 브랜드평판 1위 긍정 보도 다수, 경쟁사 규제 리스크 부각.\n\n## 핵심 이슈\n- [1] 독립 보험대리점 브랜드평판 1위 달성: 긍정적 여론 형성\n- [12] 금감원의 경쟁사(한화라이프랩) 검사 착수: GA 업계 영업 관행 규제 강화\n\n## 지표 해석\n당사 관련 보도는 브랜드평판 1위 소식이 주를 이루며 긍정 톤이 압도적입니다. 경쟁사 관련, 금감원의 불완전판매 및 부당승환 관련 규제 강화 동향이 관측됩니다.\n\n## 액션\n| 구분 | 실행 |\n|---|---|\n| 즉시 | 브랜드평판 1위 보도자료 배포 및 활용 |\n| 금주 | 경쟁사 규제 관련 내부통제 현황 점검 |\n| 관찰 | 금감원의 GA 영업 관행 규제 동향 모니터링 |\n\n## 분석 키워드\n브랜드평판, 금감원, GA, 한화생명금융서비스",
+  "briefing": "## 최종 결론\n브랜드평판 1위 긍정 보도 속, GA 영업 규제 강화 동향.\n\n## 핵심 이슈\n- [1] GA 브랜드평판 1위: 당사 긍정 이미지 강화 보도 다수.\n- [14] 금감원, 경쟁사 영업 관행 검사: GA 채널 규제 강화 가능성.\n\n## 지표 해석\n당사 관련 부정 기사 없이 브랜드평판 1위 등 긍정 보도가 다수입니다. 경쟁사 영업 관행에 대한 금감원 조사가 시작되어 업계 규제 동향 관찰이 필요합니다.\n\n## 액션\n| 구분 | 실행 |\n|---|---|\n| 즉시 | 브랜드평판 1위 보도자료 배포 |\n| 금주 | 내부통제 및 판매 관행 점검 |\n| 관찰 | 금감원 GA 규제 동향 모니터링 |\n\n## 분석 키워드\n브랜드평판, GA, 금감원, 부당승환",
   "articles": [
     {
       "title": "인카금융서비스, 독립 보험대리점 2026년 5월 브랜드평판 1위",
@@ -58,7 +58,7 @@
       "_score": 30,
       "_category": "own",
       "_tone": "positive",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "인카금융서비스, 독립 보험대리점 브랜드평판 5월 1위...한화생명금융서비스 뒤이어 - 빅데이터뉴스",
@@ -83,11 +83,22 @@
       "_cluster_size": 3
     },
     {
-      "title": "허리통증 씻어낸 박상현 KPGA 경북오픈 첫날 7언더파 공동선두 \"총상금...",
-      "link": "https://www.smartbizn.com/news/articleView.html?idxno=143918",
+      "title": "KPGA 경북오픈 첫날, 베테랑 박상현 7언더파 공동 선두",
+      "link": "https://www.thegolftimes.co.kr/news/articleView.html?idxno=81105",
       "source": "naver",
       "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 18:20:00 +0900",
+      "pub_date": "Thu, 14 May 2026 19:46:00 +0900",
+      "_score": 15,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "박상현, KPGA 투어 통산 상금 60억원 향해 다시 전진(종합)",
+      "link": "https://m.sports.naver.com/golf/article/001/0016078202",
+      "source": "naver",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 19:33:00 +0900",
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
@@ -149,6 +160,17 @@
       "_cluster_size": 1
     },
     {
+      "title": "교보생명, 황제펭귄 캐릭터 '꼬옥' 공개…생명보험 가치 전달 강화",
+      "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=452824",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Thu, 14 May 2026 20:10:00 +0900",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
       "title": "‘요양시설 종신보험 판매’ 금감원 검사 착수…1호에 한화라이프랩 - KBS 뉴스",
       "link": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9VSndOMWx4WHVYZUx4MkNqTVlWc1hTZW9pQ2oycUNIdk9MV3QtNGRDbWY0Y2lIWkk5WHZwVVlPYzhOUkJIcGNueXdGcFIyUW9EVi1rbHVROUN2RmM?oc=5",
       "source": "google",
@@ -158,6 +180,17 @@
       "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 1
+    },
+    {
+      "title": "KB손해보험, 시민 참여형 사회공헌 'KB희망바자회' 운영",
+      "link": "http://www.sisacast.kr/news/articleView.html?idxno=95919",
+      "source": "naver",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 19:44:00 +0900",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
     },
     {
       "title": "AXA손해보험, 고혈압 합병증 대비 간편보험 출시…유병자도 80세까지 가...",
@@ -180,17 +213,6 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
-    },
-    {
-      "title": "금감원, 보험권 장애인 고용 활성화 간담회 개최",
-      "link": "https://n.news.naver.com/mnews/article/374/0000510222?sid=101",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Thu, 14 May 2026 17:21:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
     },
     {
       "title": "여성특화시장 견인한 한화손해보험...1분기 신계약 CSM 역대 최대치 - 녹색경제신문",
@@ -418,72 +440,6 @@
       "source": "naver",
       "keyword": "보험 마케팅",
       "pub_date": "Thu, 14 May 2026 16:52:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "\"보장도 친근하게\"… 교보생명, 펭귄 캐릭터 '꼬옥' 공개",
-      "link": "https://www.lcnews.co.kr/news/articleView.html?idxno=202136",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 16:44:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[금융권 이모저모]신한은행, 일본 관광객 유치 위해 충청권 관광 마케팅...",
-      "link": "https://www.businessplus.kr/news/articleView.html?idxno=111784",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 16:22:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "교보생명, '허들링'으로 혹한 견디는 황제펭귄 캐릭터 '꼬옥' 론칭... \"생...",
-      "link": "http://www.thefirstmedia.net/news/articleView.html?idxno=199476",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 16:16:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "삼성생명·화재, 나란히 호실적…해외 M&A 계획도",
-      "link": "https://n.news.naver.com/mnews/article/648/0000047150?sid=101",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 16:13:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "삼성생명 해외 M&A 모색 중... 주주가치제고·미래 성장 투자 적극 나선...",
-      "link": "http://www.consumernews.co.kr/news/articleView.html?idxno=755745",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 16:06:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "삼성생명, 1분기부터 순익 1조원 달성…해외 M&A도 모색(종합)",
-      "link": "https://n.news.naver.com/mnews/article/018/0006281173?sid=101",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Thu, 14 May 2026 15:59:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
