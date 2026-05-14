@@ -163,7 +163,7 @@
 
   .kpis {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     padding: 16px 20px;
     background: #f8fafc;
@@ -551,7 +551,7 @@
     .risk-message { color: #0f172a; }
     .risk-sub { color: var(--muted); }
     .risk-message { font-size: 11px; }
-    .kpis { grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px 0; background: #fff; }
+    .kpis { grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px 0; background: #fff; }
     .kpi { min-height: 62px; padding: 8px; }
     .kpi .num { font-size: 18px; }
     .content { padding: 12px 0; }
@@ -804,11 +804,6 @@
         <div class="num">{{ metrics.by_category.own }}</div>
         <div class="label">당사 보도</div>
         <div class="sub">긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }} · 부정 {{ metrics.own_by_tone.negative }}</div>
-      </div>
-      <div class="kpi">
-        <div class="num">{{ metrics.own_negative }}</div>
-        <div class="label">당사 부정</div>
-        <div class="sub same">기준 {{ basis_datetime }}</div>
       </div>
       <div class="kpi">
         <div class="num">{{ market_count }}</div>

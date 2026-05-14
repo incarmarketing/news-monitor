@@ -34,4 +34,4 @@ MAX_TOKENS = 4096
 
 EMAIL_SUBJECT_PREFIX = "[AI 언론 브리핑]"
 COMPANY_NAME = "인카금융서비스"
-TEAM_NAME = "마케팅팀"
+TEAM_NAME = "마케팅부"
