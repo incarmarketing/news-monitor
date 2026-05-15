@@ -1,6 +1,6 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T16:29:18.369761+09:00",
+  "timestamp": "2026-05-15T16:38:25.441976+09:00",
   "window": {
     "slot": "13",
     "label": "당일 08:00~13:00",
@@ -14,8 +14,8 @@
     "by_category": {
       "own": 3,
       "regulation": 2,
-      "competitor": 29,
-      "industry": 17,
+      "competitor": 30,
+      "industry": 16,
       "other": 1
     },
     "by_tone": {
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 GA 실적 관련 긍정 보도 다수, 부정 이슈 없음.\n\n## 핵심 이슈\n- [1] KDB/메트/신한 GA 실적: 당사 1위 탈환 및 선두권 유지 보도 다수.\n- [32] 금융당국, 한화라이프랩 검사: GA업계 전반으로 불똥 튈 우려 제기.\n\n## 지표 해석\n당일 당사 관련 보도는 GA 채널 실적 호조에 대한 긍정적 톤이 중심이며, 부정 기사는 없습니다. 경쟁 GA 동향 및 금융당국의 특정 자회사형 GA 검사 동향이 관찰됩니다.\n\n## 분석 키워드\nKDB생명 GA 실적, 한화라이프랩, 부당승환, DB손해보험",
+  "briefing": "## 최종 결론\n당사 GA 채널 실적 관련 긍정 보도 속 업계 규제 동향 주시 필요.\n\n## 핵심 이슈\n- [1] KDB생명 GA 실적: 당사 1위 탈환 등 선두권 실적 보도.\n- [33] 금융당국, GA 자회사 검사: 업계 전반으로 확산 가능성에 대한 우려.\n\n## 지표 해석\n당사 관련 부정 기사 없이 생명보험 GA 채널 실적 관련 긍정 보도가 발생했습니다. DB손해보험 실적 감소 등 경쟁사 동향과 금융당국의 GA 자회사 검사 착수가 주요 이슈입니다.\n\n## 분석 키워드\nKDB생명 GA 실적, 금융당국 검사, DB손해보험 실적, GA 동향",
   "articles": [
     {
       "title": "KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널",
@@ -90,11 +90,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "DB손해보험, 2026년1분기 당기순이익 2685억400만원… 전년 동기 대비 39.9% 감소 - 디지털투데이",
-      "link": "https://news.google.com/rss/articles/CBMic0FVX3lxTFBVdXA0OXdMRUc4X203Z18ySF9oWEQ3VjhJbWJUUHFkVkltdHRRUEhaVG5oMkhqMTBMTmZEYjlJT0pnZ1lsSF9rUV9mdl9SZzN6ZGtMMmFCX1podEtheFZQa0RMZnhaVmtDWWhFeUtEa0ttakk?oc=5",
+      "title": "[속보]DB손해보험, 1분기 순이익 2685억원…전년比 39.9% 감소 - 뉴스1",
+      "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE9qT1pNMXg4SVhCUndlWGhjbVdzSjlHb0MxX1IzTjFqR0M1Z2ZieE1XSzVpaXR2QWs2cWFyWU9SaklzTl9ZNmtJRXRwMUNsb2Q1dUxWZzQxSzhYd3FEejdHTA?oc=5",
       "source": "google",
       "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 00:32:01 GMT",
+      "pub_date": "Fri, 15 May 2026 00:27:39 GMT",
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
@@ -128,6 +128,17 @@
       "source": "google",
       "keyword": "손해보험",
       "pub_date": "Fri, 15 May 2026 02:36:06 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "DB손해보험, 1분기 순익 39.9%↓…대형 화재·손해율 상승 여파 - 디지털데일리",
+      "link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTFAzMDUzTWFOa3VlY1dNNE9FcWJ0Y1ZOc3dPSFFORGlXZ0V4NC1EQnVBZ29adFVaR2VxNnctU1BfRVJqMUp5SW1DVGo0OVBXRWE1RlF5UTBYRDRBNmJDZ3hsaTdoNW4?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Fri, 15 May 2026 03:31:36 GMT",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
@@ -458,17 +469,6 @@
       "source": "naver",
       "keyword": "보험 마케팅",
       "pub_date": "Fri, 15 May 2026 10:14:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "카카오페이손보, ‘댕댕트레킹 2026’ 공식 스폰서 참여 - 보험매일",
-      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE0yb0huUmVURzl0U0FmUVp3c0NUbzd3UVp2MjM3YzEtZ2tEajlUSzhVTVgyQmV0SVRldWwybkJndFNueUVFZXdKU3ozUTdfUUFuX2xtd0FadGFOaTEzRVlaRE56dE9lUng5?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 00:57:55 GMT",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
