@@ -1,27 +1,27 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T09:10:59.384875+09:00",
+  "timestamp": "2026-05-15T09:18:19.552345+09:00",
   "window": {
     "slot": "08",
-    "label": "전일 18:00~09:10",
+    "label": "전일 18:00~09:18",
     "short_label": "전일 18시 이후",
     "start": "2026-05-14T18:00:00+09:00",
-    "end": "2026-05-15T09:10:59.384849+09:00"
+    "end": "2026-05-15T09:18:19.552318+09:00"
   },
   "metrics": {
-    "total_collected": 95,
+    "total_collected": 96,
     "total_after_cluster": 52,
     "by_category": {
       "own": 3,
       "regulation": 5,
       "competitor": 54,
-      "industry": 33,
+      "industry": 34,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 2,
-      "neutral": 93
+      "neutral": 94
     },
     "own_negative": 0,
     "own_total": 3,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 GA 채널 실적 긍정 보도 속, 업계 규제 강화 동향 관찰.\n\n## 핵심 이슈\n- [1, 2, 3] 4월 생보사 GA 채널 실적 호조: KDB생명 1위 탈환, 메트라이프 및 신한라이프 채널에서 선두권을 유지했다는 긍정 보도.\n- [50] 금융당국의 경쟁사(한화라이프랩) 현장검사: GA업계 전반으로 검사가 확대될 수 있다는 우려가 보도됨.\n\n## 지표 해석\n당사 관련 보도는 총 3건으로, 4월 GA 채널 실적에 대한 긍정적 내용이 중심입니다. 부정 기사는 없었으며, 대부분은 경쟁사 실적 및 금융당국 규제 관련 동향 보도였습니다.\n\n## 분석 키워드\nGA 채널 실적, 금융당국, 현장검사, 삼성생명",
+  "briefing": "## 최종 결론\nGA 채널 실적 1위 등 긍정 보도 속, 업계 규제 및 경쟁사 동향 주시 필요.\n\n## 핵심 이슈\n- [1,2,3] GA 채널 실적 선두권 유지: KDB생명 1위 탈환, 메트라이프 및 신한라이프 채널에서 선두권을 형성하며 당사 경쟁력을 입증함.\n- [50] 경쟁 GA 현장검사: 금융당국의 한화라이프랩 현장검사 착수로 GA업계 전반의 긴장감이 고조되는 동향이 관측됨.\n\n## 지표 해석\n당사 직접 부정 기사 없이, GA 채널 시장점유율 관련 긍정 보도가 발생했습니다. 업계 전반에서는 주요 보험사의 1분기 실적 호조와 금융당국의 규제 강화 동향이 주요 이슈로 다뤄졌습니다.\n\n## 분석 키워드\nGA 실적, 시장점유율, 금융당국, 생명보험",
   "articles": [
     {
       "title": "KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널",
@@ -142,18 +142,7 @@
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 3
-    },
-    {
-      "title": "5월 15일 개장 전 주요 공시",
-      "link": "https://www.seoulfn.com/news/articleView.html?idxno=628851",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 07:00:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 4
     },
     {
       "title": "[단독] ① NH농협손해보험, 암보험 심사에 '체크형 의료동의서' 사용 논란 - 뉴스후플러스",
@@ -218,6 +207,17 @@
       "pub_date": "Thu, 14 May 2026 21:35:00 +0900",
       "_score": 11,
       "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "DB손보, 화성·서울서 '프로미 안전체험' 페스티벌 개최",
+      "link": "https://www.joongangenews.com/news/articleView.html?idxno=519459",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 09:12:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -354,6 +354,17 @@
       "_cluster_size": 1
     },
     {
+      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
+      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "[지지부진 보험사 M&A]공급만 있는 매물, 예별손보 입찰 연기…KDB생명은...",
       "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141320058480733",
       "source": "naver",
@@ -367,17 +378,6 @@
     {
       "title": "[지지부진 보험사 M&A]국내 보험사는 해외로 눈돌려…은행·증권사 인수",
       "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141447541110779",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
-      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
@@ -494,7 +494,7 @@
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 2
+      "_cluster_size": 1
     },
     {
       "title": "[#금융톡톡] 삼성화재 '차량 5부제 특약' 예고·DB손보 '프로미 안전체험...",
