@@ -1,6 +1,6 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T14:07:42.176605+09:00",
+  "timestamp": "2026-05-15T16:29:18.369761+09:00",
   "window": {
     "slot": "13",
     "label": "당일 08:00~13:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-15T13:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 82,
+    "total_collected": 52,
     "total_after_cluster": 44,
     "by_category": {
       "own": 3,
       "regulation": 2,
-      "competitor": 57,
-      "industry": 20,
-      "other": 0
+      "competitor": 29,
+      "industry": 17,
+      "other": 1
     },
     "by_tone": {
       "negative": 0,
       "positive": 2,
-      "neutral": 80
+      "neutral": 50
     },
     "own_negative": 0,
     "own_total": 3,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 M/S 1위 보도 등 긍정적 기류 속 경쟁사 동향 관찰.\n\n## 핵심 이슈\n- [1] KDB생명 GA 실적: 당사 4월 생보 M/S 1위 탈환 보도.\n- [3] 신한라이프 GA 실적: 당사 생보 M/S 선두권 유지 보도.\n\n## 지표 해석\n당일 당사 관련 보도는 M/S 선두권 유지 등 긍정적이며, 부정 기사는 없습니다. 경쟁사 실적 발표 및 신상품 출시, 금융당국 규제 동향이 주요 이슈입니다.\n\n## 분석 키워드\nKDB생명 M/S, 신한라이프 M/S, DB손해보험 실적, KB손해보험 신상품",
+  "briefing": "## 최종 결론\n당사 GA 실적 관련 긍정 보도 다수, 부정 이슈 없음.\n\n## 핵심 이슈\n- [1] KDB/메트/신한 GA 실적: 당사 1위 탈환 및 선두권 유지 보도 다수.\n- [32] 금융당국, 한화라이프랩 검사: GA업계 전반으로 불똥 튈 우려 제기.\n\n## 지표 해석\n당일 당사 관련 보도는 GA 채널 실적 호조에 대한 긍정적 톤이 중심이며, 부정 기사는 없습니다. 경쟁 GA 동향 및 금융당국의 특정 자회사형 GA 검사 동향이 관찰됩니다.\n\n## 분석 키워드\nKDB생명 GA 실적, 한화라이프랩, 부당승환, DB손해보험",
   "articles": [
     {
       "title": "KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널",
@@ -87,7 +87,7 @@
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 8
+      "_cluster_size": 1
     },
     {
       "title": "DB손해보험, 2026년1분기 당기순이익 2685억400만원… 전년 동기 대비 39.9% 감소 - 디지털투데이",
@@ -112,55 +112,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "[더밸류 브리핑] 오늘의 생명보험 소식…삼성생명·신한라이프·NH농협생...",
-      "link": "http://www.thevaluenews.co.kr/news/view.php?idx=198765",
-      "source": "naver",
+      "title": "[더밸류 브리핑] 오늘의 생명보험 소식…삼성생명·신한라이프·NH 농협생명 - 더밸류뉴스",
+      "link": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE1sS2VSQWNqVV9saFdBVmlyWlZPbVAwT0F4RzJhb1dqVnRLa3VsdGZqRGtsWXAxbWg5bVdReXRhM2txTU16a1EwN2lOb2tCTjNfN0dJ?oc=5",
+      "source": "google",
       "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 11:40:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "[나눔 트렌드] KB손해보험, '제21회 KB희망바자회' 성료…\"지속가능 나눔...",
-      "link": "https://www.ibabynews.com/news/articleView.html?idxno=151301",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 12:48:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "DB손해보험, 1분기 순익 39.9%↓…대형 화재·손해율 상승 여파",
-      "link": "https://n.news.naver.com/mnews/article/138/0002228006?sid=101",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 12:32:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "KB손해보험, 'KB다이렉트 핏테크 건강보험' 출시 - 아시아경제",
-      "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE1ORTc1QmdYaV8wOF9QeXZiakNjaVdNTE1wMmIzZXVYZU9xalRHTWhQVWEwUk9uNmZEdjNfSWlQc1VIczIwQkoyOUgteDA1QWZ2TDZjRW84dm1LZXNkNXNWLQ?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 00:08:48 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "KB손해보험, '핏(Fit)테크 건강보험' 출시···건강할수록 보험료 최대 25%↓ - 네이트",
-      "link": "https://news.google.com/rss/articles/CBMiU0FVX3lxTFBtQ2p4eENqekNyajdRRTRVcjBpRThGcURSRzNjdVJCQnF2LU0wSFd4anRvdmV0Mmxib05nQXZUeFZZQWFkRnNRckM5VWs1TEtiYzFN?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 01:50:00 GMT",
+      "pub_date": "Fri, 15 May 2026 02:36:31 GMT",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
@@ -222,28 +178,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "DB손해보험, 대형사고 여파에 1분기 순익 39.9% 감소 - 현대경제신문",
-      "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE1QNUhZbVFJWlR6YVQ1cUlzOTkyeUdxeFByUW9JSi1xMG44Ukt0c3pVcmVsNkJBM0U1REJaM0E0TkptdFhLQ3pjb3lmdV9GMlhIWml6ZXZITWNRXzZyNUh3T2ZrQno1a2PSAWtBVV95cUxOaURBMC0tV09hNmdpNkJnV1FWM1ozTWxiUEVHSjhuTVY1dEJjQUVUTmxaeVNNWVlLNTYzQkFtc3hxWUEybjR2SkY2R1p6Vk9hS3FNQzFwOGl3Tnc2bXVSM29XYUZlZmt5dGo4QQ?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 01:17:27 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "건강할수록 보험료는 가볍게 KB손해보험, 신상품 ‘KB다이렉트 핏(Fit)테크 건강보험’ 출시 - mstoday.co.kr",
-      "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFAyVkhkX0Z0UnRoM0tFbWpFdnlvM1JRWlF0YTF2TzFpTF93S1JxSy13WWYwb05vTGdlOEQ5cDZ5ZWszb1NTNlQzVlppT3JEeDBYMTduR0k0OXBnT2NtYXVsd3plR1h0Unc?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 01:14:00 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "보험 갈아타다 보장 '날릴 판'…금감원, 부당승환 주의보",
       "link": "http://www.dailypop.kr/news/articleView.html?idxno=98798",
       "source": "naver",
@@ -260,28 +194,6 @@
       "source": "google",
       "keyword": "보험 마케팅",
       "pub_date": "Fri, 15 May 2026 00:17:44 GMT",
-      "_score": 11,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[더벨]교보생명, 디지털자산 사업 시동…웹3 전담조직 신설",
-      "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605141539542960108437",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 11:02:00 +0900",
-      "_score": 11,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[더벨][GA 톱티어의 조건] 에이플러스에셋, 최상위 내실 지표…'상장사...",
-      "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605121649341280106834",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 11:02:00 +0900",
       "_score": 11,
       "_category": "competitor",
       "_tone": "neutral",
@@ -310,6 +222,28 @@
       "_cluster_size": 1
     },
     {
+      "title": "[더벨][GA 톱티어의 조건] 에이플러스에셋, 최상위 내실 지표…'상장사...",
+      "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605121649341280106834",
+      "source": "naver",
+      "keyword": "GA 보험",
+      "pub_date": "Fri, 15 May 2026 11:02:00 +0900",
+      "_score": 11,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "DB생명 4월 GA 생보실적 M/S…스카이블루에셋 27.8% 독주, 상위 3개사 56.9% 집중 - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE1zVlJuZ2Z1T2pVMjhYTV8tU2V5cUtFa2tjdHJRNDFNQkNMdjN1a1I5U3kyd243dkRnNUxjSDN4THJTMmVjNWZWN05zMXVXTHZ4dE5lRmc0UGxzekxFUk55QUdkbk8tOWdRTXVSajRiVQ?oc=5",
+      "source": "google",
+      "keyword": "인카금융",
+      "pub_date": "Thu, 14 May 2026 23:20:05 GMT",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "곳간 두둑해진 삼성생명…주주환원·글로벌 M&A 속도 낸다",
       "link": "https://dealsite.co.kr/articles/161895",
       "source": "naver",
@@ -321,70 +255,26 @@
       "_cluster_size": 1
     },
     {
-      "title": "DB손보, 화성·서울서 '프로미 안전체험' 페스티벌 개최",
-      "link": "https://www.joongangenews.com/news/articleView.html?idxno=519459",
-      "source": "naver",
+      "title": "AIA생명, 영국 ‘AIA 챔피언십’ 참가···토트넘 연계 글로벌 마케팅 강화 - 뉴스프리존",
+      "link": "https://news.google.com/rss/articles/CBMic0FVX3lxTE52ck9WZkhYMjJlMUhzMjRORGFQOENTSXNvWnJ0OUg1VVZCQ0NCNzlMOW5fZXhPV2tNMUlPTmpZQUZuNV9Fb3Z0NHc5Q3pWWlpld2tWVWMtWmFZbm16WFdVLU82REhVWUVoQURwUUtqOUV1NUXSAXdBVV95cUxPQndhbXF5dDJZU01Ba1hzTHVLNXN6NEFLYV9BY1RnNGhqdnVyZ0d3N1pLZVNJcTNkQ25zUi1VLVFadEhQM0dtaVZ4TFJHY0lSTnZnN2g3Z1lGdlk0eGswc0tXcnZoNWNxNWlZMXRubVJrdldqNWU5TQ?oc=5",
+      "source": "google",
       "keyword": "보험 마케팅",
-      "pub_date": "Fri, 15 May 2026 09:12:00 +0900",
+      "pub_date": "Fri, 15 May 2026 00:01:12 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "AIA생명, 영국 'AIA 챔피언십' 참가···토트넘 연계 글로벌 마케팅 강...",
-      "link": "https://www.newsfreezone.co.kr/news/articleView.html?idxno=689867",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Fri, 15 May 2026 09:02:00 +0900",
+      "title": "신한라이프, 19년 연속 보험금지급능력 최고등급 ‘AAA’ 획득 - 브릿지경제",
+      "link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9jN0Z6X01NalZ1bjRZT3NaTGFZaWJORjh0eGs4TlAtMkJYcmFrS0tONnVQeUlDUzJ5VTVxNHl0cUczVkhUWElOWTVNa29mcjhuME13RDAyNml1UQ?oc=5",
+      "source": "google",
+      "keyword": "생명보험",
+      "pub_date": "Fri, 15 May 2026 02:29:00 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
-    },
-    {
-      "title": "“미래 먹거리 찍었다”...함영주 선택은 ‘두나무’",
-      "link": "https://www.ekn.kr/web/view.php?key=20260515024095040",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 11:58:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[보험업계 동향] 삼성화재ㆍ삼성생명ㆍDB손해보험ㆍ신한라이프ㆍKB손보...",
-      "link": "http://www.weeklytoday.com/news/articleView.html?idxno=775747",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 11:52:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "신한라이프, 19년 연속 보험금지급능력 AAA 획득",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90828",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 11:36:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 4
-    },
-    {
-      "title": "차라리 배당 ETF 산다? 우선주 설 자리 좁아지는 까닭",
-      "link": "https://ilyo.co.kr/?ac=article_view&entry_id=510871",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 11:16:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
     },
     {
       "title": "삼성생명, 보험손익 견조·투자이익 큰 폭 성장 By 알파경제 alphabiz - Investing.com 한국어",
@@ -442,55 +332,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "5세대 실손 나왔지만…보험업계선 실효성 회의론",
-      "link": "https://dealsite.co.kr/articles/161829",
+      "title": "[나눔 트렌드] KB손해보험, '제21회 KB희망바자회' 성료…\"지속가능 나눔...",
+      "link": "https://www.ibabynews.com/news/articleView.html?idxno=151301",
       "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 12:36:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "굿즈·환급 앞세운 카카오페이손보, '댕댕트레킹'서 고객몰이",
-      "link": "https://www.thereport.co.kr/news/articleView.html?idxno=87877",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 12:12:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "\"놀면서 배우는 안전습관\" DB손보 '2026 함께, 약속 페스티벌' 개최",
-      "link": "https://www.catchnews.kr/news/articleView.html?idxno=123900",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 11:55:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "DB손보, 1분기 순이익 2685억원…\"대형사고로 일반보험 손실\" - 뉴시스",
-      "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTFA1SnVJcmdRd2RVaHpWaV81eWxWUDQzRUVSLW1tdmhzOUZjU1lxV3VhNlprWFM5Tl9HbmF0aEFoYlFhX1BkejFBWGJsOWUzcGNNOGUyR2VmeGNDbU9CSjNSRtIBeEFVX3lxTE85QlJldGJYZzR5c2I4UDB1UUlUSy1KV2Uzc3dwc3FMYk1KWkR6dlVRZmFJZG1oN0ZNakpqdTZhM1VKdHF2WEZvZGp1QkJWMENQTEpWY0o5VmhTWXJPblhvdl9aZHRpcUc4R2FRX3lSRHk5N1lyNi14NA?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 00:50:30 GMT",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "KB손보, 건강관리 연계한 ‘핏테크 건강보험’ 선보여 - 스트레이트뉴스",
-      "link": "https://news.google.com/rss/articles/CBMic0FVX3lxTFAzT1JneXh3TjY1dWlBdzk5aEFxVWs1Z3daeEpXWmJBWWdYOXlfZUx2SHR1QUFYVWtIazRnTkFSMnlVQ3ZBOFl6Z0hrejRvTmRla3pielNSREFlSXJhMGNoV3pQTlI2Qzl4ZkN5bmF6ZWJ1RjTSAXdBVV95cUxNbnpjSEtlN2piUzBCVXh5MGtBdnREVDNPcktuSzRVSlhERDQyLUd1ZjVOb2p4cXR6NUxfTnN1ZEhYYWNTaDJ4R3lTWGR3RUx0UU1xd0RsZk5NSjBRZGJvT0pLOHlBd0RiYnZSQUs1YUxLRF9oVTJfOA?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 02:14:32 GMT",
+      "keyword": "보험 프로모션",
+      "pub_date": "Fri, 15 May 2026 12:48:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -515,6 +361,160 @@
       "pub_date": "Fri, 15 May 2026 11:00:00 +0900",
       "_score": 8,
       "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "한화생명, '종합금융그룹' 전환 가속…신 성장축 '비보험·해외투자'",
+      "link": "http://www.hansbiz.co.kr/news/articleView.html?idxno=838761",
+      "source": "naver",
+      "keyword": "GA 보험",
+      "pub_date": "Fri, 15 May 2026 08:10:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "금융당국, 한화라이프랩 현장검사 착수...GA업계 \"불똥 튈라\" 불안감 증...",
+      "link": "https://www.youthdaily.co.kr/news/article.html?no=219151",
+      "source": "naver",
+      "keyword": "GA 보험",
+      "pub_date": "Fri, 15 May 2026 08:02:00 +0900",
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "IM라이프 4월 GA 생보실적 M/S…상위 3개사 40.1% 집중, 뉴니케 선두 유지 - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE9MRWpZc2gyMk1BNEVqYlpqVC1lSmh2bGR6WHBhb1FjX1MyYl9ubWkzcm5Zemd4M19qX2NZWjMxbmUyNTdKNXNvSjc5LTBvRnVfRWJQOTI2d2ZmMDhIZ0JLNDNOS3hPVGVWWkNiSU9Tcw?oc=5",
+      "source": "google",
+      "keyword": "인카금융",
+      "pub_date": "Thu, 14 May 2026 23:20:42 GMT",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "정샘물뷰티, 산업부 '2026 K-수출스타500' 선정",
+      "link": "https://www.businesskorea.co.kr/news/articleView.html?idxno=269503",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 12:08:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 6
+    },
+    {
+      "title": "정샘물뷰티, 산업부 수출 지원 사업 선정…글로벌 공략 본격화",
+      "link": "http://www.srtimes.kr/news/articleView.html?idxno=203307",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 11:46:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "삼성증권 'M&A 전문가' 이승재 상무 선임···\"시장위상 회복 시도\"",
+      "link": "https://www.sisajournal-e.com/news/articleView.html?idxno=421099",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 11:20:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "제논-링크알파, APAC 금융 AI 시장 공략 본격화…투자 리서치·프론트오...",
+      "link": "https://www.epnc.co.kr/news/articleView.html?idxno=401826",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 10:38:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "링크알파·제논, 증권·자산운용 특화 AI 플랫폼 공동 개발 MOU 체결",
+      "link": "https://n.news.naver.com/mnews/article/050/0000106181?sid=101",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 10:21:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "비접촉 AI 건강 모니터링 시스템 '유어다 스마트액자', 와디즈 프리오더...",
+      "link": "https://www.enetnews.co.kr/news/articleView.html?idxno=50066",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 10:14:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "카카오페이손보, ‘댕댕트레킹 2026’ 공식 스폰서 참여 - 보험매일",
+      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE0yb0huUmVURzl0U0FmUVp3c0NUbzd3UVp2MjM3YzEtZ2tEajlUSzhVTVgyQmV0SVRldWwybkJndFNueUVFZXdKU3ozUTdfUUFuX2xtd0FadGFOaTEzRVlaRE56dE9lUng5?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Fri, 15 May 2026 00:57:55 GMT",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "오토스테이, 토스·SK일렉링크와 제휴 확대… 모빌리티 플랫폼 전환 속...",
+      "link": "https://n.news.naver.com/mnews/article/243/0000097863?sid=101",
+      "source": "naver",
+      "keyword": "보험 프로모션",
+      "pub_date": "Fri, 15 May 2026 11:35:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "배달산업연구원, 첫 자문회의 개최…'주요 현안 해법 모색'",
+      "link": "https://www.klnews.co.kr/news/articleView.html?idxno=321101",
+      "source": "naver",
+      "keyword": "보험 프로모션",
+      "pub_date": "Fri, 15 May 2026 09:08:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[포커스] iM라이프, 변액보험서 활로 찾나...'보장성 경쟁' 외 선택지 주...",
+      "link": "https://www.startuptoday.co.kr/news/articleView.html?idxno=801036",
+      "source": "naver",
+      "keyword": "GA 보험",
+      "pub_date": "Fri, 15 May 2026 10:38:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "교보라이프플래닛생명, 마케팅 플랫폼 '라플레이' 해외 수출 본격화 - MSN",
+      "link": "https://news.google.com/rss/articles/CBMizARBVV95cUxOZ1ctT0tqb3pwT0FlMmx6ZDY0QV9SZW5Od1FfWE0xekxROG1IQVdNVWlEN2IybExNNVBoMm5QVlM3NTc5Zk92NlB5OG9pVkRDVGZSRTJOdmNrVFFYUlg3REhtSmhYd2N0dU51ZUFvYm9DZ0ptUV9qemJRNkRNNlg5cXBCbEstWm5kekdLM0lwaXFJc0FpVzJmVVV6UGJaazcyeWNyNjhtWnNJNHhVVTJad1FhdkNIay00dnNRbC1sWjJuaGxNNmdKczlhNzVHVW9nVkFHaWk0bHpOQkktOTJJdWxqNDgwaGpKRUhPYWRWSzRXVGNlT3Q2a2ctdy1sV0tIekZYc1ZpODhHTE41dmdIcFVsT053dndacE8tQVB3Rnd4dEQwT2hkbFoxNEgwLWpVc2FzTlB5NU5DRlZ3bTZzdTFIanFFY0Z3cWt0ZGxUQjE0bGhEOEJoYkVQSW12LWpFTi0yV1RKekxLQ0xBZTFZemxfbjd5OGZJTmowRFVfbFlSSE53UWNwTWNJV3d5enZKenk4LWdYVkdGNTl2QjUwSDBCZlpJdFRKeVdlTFhZdzUxN2V5OHVka25mTWtsalRjeU5PXzlKZ1ctOVo1OTVkR2xHbVMwbjlZZUxPa3NmM2hJeS1NXzMyWUdXUTEzMVdEQXFQbGVsR0VnQnE3ZGVLQ19CX1p1TG0zdXBTM2kyczFaV2RkaHRHeTJMRTdVNUdHUEtncm1WY1ZSLTJRMzNRTGV3OExSUjFmSm9NZzJndERIX0dGUXNiVWxQRHA?oc=5",
+      "source": "google",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 02:50:54 GMT",
+      "_score": 0,
+      "_category": "other",
       "_tone": "neutral",
       "_cluster_size": 1
     }
