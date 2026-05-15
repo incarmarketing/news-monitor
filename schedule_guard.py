@@ -55,6 +55,7 @@ def begin() -> None:
         return
 
     today = datetime.now(KST).strftime("%Y-%m-%d")
+    current_hour = datetime.now(KST).strftime("%H")
     weekday = datetime.now(KST).isoweekday()
     day = datetime.now(KST).day
     marker_path = STATE_DIR / f"{today}-{kst_hour}.txt"
@@ -63,6 +64,10 @@ def begin() -> None:
     github_output("should_period", "true" if kst_hour == "07" else "false")
     github_output("marker_path", marker_path.as_posix())
     github_output("should_mark", "true")
+    if current_hour != kst_hour:
+        github_output("should_run", "false")
+        print(f"Scheduled slot skipped: cron hour {kst_hour}, current KST hour {current_hour}.")
+        return
     if kst_hour == "07" and weekday != 1 and day != 1:
         github_output("should_run", "false")
         print("Period report slot skipped: not Monday or first day of month.")
