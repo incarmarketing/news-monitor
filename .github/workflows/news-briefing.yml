@@ -78,6 +78,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
 
       - name: Generate period reports
         if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none'))
