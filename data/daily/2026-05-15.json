@@ -1,27 +1,27 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T09:06:32.863011+09:00",
+  "timestamp": "2026-05-15T09:10:59.384875+09:00",
   "window": {
     "slot": "08",
-    "label": "전일 18:00~09:06",
+    "label": "전일 18:00~09:10",
     "short_label": "전일 18시 이후",
     "start": "2026-05-14T18:00:00+09:00",
-    "end": "2026-05-15T09:06:32.862982+09:00"
+    "end": "2026-05-15T09:10:59.384849+09:00"
   },
   "metrics": {
-    "total_collected": 92,
-    "total_after_cluster": 55,
+    "total_collected": 95,
+    "total_after_cluster": 52,
     "by_category": {
       "own": 3,
       "regulation": 5,
-      "competitor": 51,
+      "competitor": 54,
       "industry": 33,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 2,
-      "neutral": 90
+      "neutral": 93
     },
     "own_negative": 0,
     "own_total": 3,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\nGA 채널 1위 등 긍정 보도 속, 업계 경쟁 및 규제 동향 관찰 필요.\n\n## 핵심 이슈\n- [1, 2, 3] GA 채널 생보실적 선두권 유지: KDB생명 등 주요 생보사 4월 실적에서 당사가 GA 채널 1위 및 선두권으로 보도되었습니다.\n- [50] 금융당국 GA 현장검사 착수: 금융당국이 경쟁 GA(한화라이프랩) 현장검사에 착수하며 업계 전반으로 조사가 확대될 수 있다는 우려가 제기되었습니다.\n\n## 지표 해석\n당사 관련 보도는 GA 채널 실적 1위 등 긍정적 톤을 유지했으며, 부정 이슈는 없었습니다. 다만, 경쟁사 실적 발표와 금융당국의 GA 업계 규제 동향 관련 보도가 다수 발생했습니다.\n\n## 분석 키워드\nGA 채널, 생보실적, 금융당국, 경쟁사 동향",
+  "briefing": "## 최종 결론\n당사 GA 채널 실적 긍정 보도 속, 업계 규제 강화 동향 관찰.\n\n## 핵심 이슈\n- [1, 2, 3] 4월 생보사 GA 채널 실적 호조: KDB생명 1위 탈환, 메트라이프 및 신한라이프 채널에서 선두권을 유지했다는 긍정 보도.\n- [50] 금융당국의 경쟁사(한화라이프랩) 현장검사: GA업계 전반으로 검사가 확대될 수 있다는 우려가 보도됨.\n\n## 지표 해석\n당사 관련 보도는 총 3건으로, 4월 GA 채널 실적에 대한 긍정적 내용이 중심입니다. 부정 기사는 없었으며, 대부분은 경쟁사 실적 및 금융당국 규제 관련 동향 보도였습니다.\n\n## 분석 키워드\nGA 채널 실적, 금융당국, 현장검사, 삼성생명",
   "articles": [
     {
       "title": "KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널",
@@ -73,17 +73,6 @@
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
-      "_score": 15,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "'1위 싸움' 삼성 vs 메리츠 격차 확대…하반기 실적 주목",
-      "link": "https://www.fetv.co.kr/news/articleView.html?idxno=302428",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 06:00:00 +0900",
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
@@ -143,6 +132,17 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
+    },
+    {
+      "title": "KB손해보험, 'KB다이렉트 핏테크 건강보험' 출시",
+      "link": "https://n.news.naver.com/mnews/article/277/0005763253?sid=101",
+      "source": "naver",
+      "keyword": "손해보험",
+      "pub_date": "Fri, 15 May 2026 09:08:00 +0900",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 3
     },
     {
       "title": "5월 15일 개장 전 주요 공시",
@@ -230,7 +230,7 @@
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "생보사 사업비율 극과 극…교보라이프플래닛 53.9% 최고, 삼성·한화생명...",
@@ -453,6 +453,17 @@
       "_cluster_size": 1
     },
     {
+      "title": "건강 상태 따라 보험료 달라진다…KB손보, 맞춤형 건강보험 잇단 출시",
+      "link": "http://www.srtimes.kr/news/articleView.html?idxno=203266",
+      "source": "naver",
+      "keyword": "손해보험",
+      "pub_date": "Fri, 15 May 2026 09:08:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "손보업계, 내연기관 대상 '운행 감축형 할인' 실험 나선다",
       "link": "http://www.srtimes.kr/news/articleView.html?idxno=203265",
       "source": "naver",
@@ -484,17 +495,6 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
-    },
-    {
-      "title": "KB손보, 2030 겨냥 'KB다이렉트 핏테크 건강보험' 출시…건강할수록 보험...",
-      "link": "https://www.thefairnews.co.kr/news/articleView.html?idxno=77014",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 08:52:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
     },
     {
       "title": "[#금융톡톡] 삼성화재 '차량 5부제 특약' 예고·DB손보 '프로미 안전체험...",
@@ -601,39 +601,6 @@
       "source": "naver",
       "keyword": "GA 보험",
       "pub_date": "Thu, 14 May 2026 19:26:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "김중현 메리츠화재 대표 \"수익성 중심 전략으로 GA 신계약 30% 성장\"",
-      "link": "https://www.newsway.co.kr/news/view?ud=2026051418353064949",
-      "source": "naver",
-      "keyword": "GA 보험",
-      "pub_date": "Thu, 14 May 2026 19:06:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "‘호실적’ 이어간 메리츠금융…화재·증권 동반 성장",
-      "link": "https://www.kukinews.com/article/view/kuk202605140192",
-      "source": "naver",
-      "keyword": "GA 보험",
-      "pub_date": "Thu, 14 May 2026 19:04:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "메리츠화재 “양호한 손해율, 일시적 아닌 구조적 차이”",
-      "link": "https://www.kukinews.com/article/view/kuk202605140187",
-      "source": "naver",
-      "keyword": "GA 보험",
-      "pub_date": "Thu, 14 May 2026 18:50:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
