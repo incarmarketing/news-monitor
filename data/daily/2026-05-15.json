@@ -1,27 +1,27 @@
 {
   "date": "2026-05-15",
-  "timestamp": "2026-05-15T09:33:03.849536+09:00",
+  "timestamp": "2026-05-15T09:46:31.581273+09:00",
   "window": {
     "slot": "08",
-    "label": "전일 18:00~09:33",
+    "label": "전일 18:00~09:46",
     "short_label": "전일 18시 이후",
     "start": "2026-05-14T18:00:00+09:00",
-    "end": "2026-05-15T09:33:03.849506+09:00"
+    "end": "2026-05-15T09:46:31.581248+09:00"
   },
   "metrics": {
-    "total_collected": 96,
-    "total_after_cluster": 52,
+    "total_collected": 111,
+    "total_after_cluster": 47,
     "by_category": {
       "own": 3,
       "regulation": 4,
-      "competitor": 55,
-      "industry": 34,
+      "competitor": 72,
+      "industry": 32,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 2,
-      "neutral": 94
+      "neutral": 109
     },
     "own_negative": 0,
     "own_total": 3,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\nGA 채널 내 당사 경쟁력은 긍정적이나, 금융당국의 GA 규제 동향은 주시 필요.\n\n## 핵심 이슈\n- [1, 2, 3] GA 채널 생보 실적 선두권 유지: 다수 생보사 4월 GA 실적 보도에서 당사가 1위 탈환 및 선두 유지를 기록하며 시장 경쟁력을 입증.\n- [50] 금융당국, 경쟁사형 GA 현장검사 착수: 금융당국이 한화라이프랩에 대한 현장검사에 착수하며 GA업계 전반으로 불똥이 튈 수 있다는 우려가 제기됨.\n\n## 지표 해석\n당사 관련 보도는 총 3건으로, GA 채널 실적 선두를 유지한다는 긍정적 내용이 주를 이뤘습니다. 부정 기사는 없었으며, 경쟁사 실적 발표 및 금융당국 규제 관련 동향이 다수 보도되었습니다.\n\n## 분석 키워드\nGA 실적, M/S 1위, 금융당국, 경쟁사 동향",
+  "briefing": "## 최종 결론\n당사 M/S 1위 긍정 보도, 경쟁사 동향은 혼재.\n\n## 핵심 이슈\n- [1] KDB생명 4월 GA 실적: 당사 1위 탈환 등 선두권 실적 긍정 보도.\n- [7] 메리츠화재 GA 신계약: GA 채널 신계약 점유율 1위 발표로 경쟁 심화.\n\n## 지표 해석\n당사는 생명보험사 GA 실적 1위 등 긍정적 톤으로 보도되었으며, 직접적인 부정 이슈는 없습니다. 경쟁사는 실적 발표 및 마케팅 활동 관련 보도가 다수였으나, 일부 실적 감소 및 분쟁 이슈도 관찰됩니다.\n\n## 분석 키워드\nKDB생명 M/S, 신한라이프 M/S, 메리츠화재 GA, 보험사 실적",
   "articles": [
     {
       "title": "KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널",
@@ -79,6 +79,28 @@
       "_cluster_size": 1
     },
     {
+      "title": "[속보]DB손해보험, 1분기 순이익 2685억원…전년比 39.9% 감소 - 뉴스1",
+      "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE9qT1pNMXg4SVhCUndlWGhjbVdzSjlHb0MxX1IzTjFqR0M1Z2ZieE1XSzVpaXR2QWs2cWFyWU9SaklzTl9ZNmtJRXRwMUNsb2Q1dUxWZzQxSzhYd3FEejdHTA?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Fri, 15 May 2026 00:27:39 GMT",
+      "_score": 15,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 5
+    },
+    {
+      "title": "DB손해보험, ‘2026 함께, 약속 페스티벌-프로미 안전체험’ 화성·서울서 개최 - 한국경제",
+      "link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE42cVVQaUFkRGdOZmFWVWhyZkdIcFJEdU1CeFI1NndnM1dOXzNNUkdvamlQT2JiRzRVY0NzZlF6b2ZCUW9DMW1ZMHNpV0tyUi1iV29iWGdUczB0d9IBVEFVX3lxTFBSRl9NaXVUWF9Ba2xZeHhlaG84WElMTk9CZmo4ZmVqUjJsQWhKMGFUWGVvOXF6NnFqU2pVNVZwb0t5aHhrZFFoT2wwOXQ5UGdhWHlMWA?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 23:07:59 GMT",
+      "_score": 15,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
       "title": "메리츠화재 \"GA 신계약 점유율 1위…수익성 확보된 계약만 집중\"[IR종합...",
       "link": "https://n.news.naver.com/mnews/article/421/0008945617?sid=101",
       "source": "naver",
@@ -123,26 +145,15 @@
       "_cluster_size": 1
     },
     {
-      "title": "DB손해보험, '약속 페스티벌-프로미 안전체험' 연다",
-      "link": "http://www.enewstoday.co.kr/news/articleView.html?idxno=2429664",
+      "title": "DB손해보험, 제4회 프로미 안전체험 진행",
+      "link": "http://www.fins.co.kr/news/articleView.html?idxno=108555",
       "source": "naver",
       "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 09:28:00 +0900",
+      "pub_date": "Fri, 15 May 2026 09:40:00 +0900",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
-    },
-    {
-      "title": "[속보]DB손해보험, 1분기 순이익 2685억원…전년比 39.9% 감소",
-      "link": "https://n.news.naver.com/mnews/article/421/0008946191?sid=101",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 09:27:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
     },
     {
       "title": "[보험사 이모저모] NH농협생명 '농산물 배송 이벤트' 전개, KB손해보험 ...",
@@ -164,7 +175,51 @@
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 3
+      "_cluster_size": 4
+    },
+    {
+      "title": "DB손해보험, ‘약속 페스티벌-프로미 안전체험’ 연다 - 이뉴스투데이",
+      "link": "https://news.google.com/rss/articles/CBMickFVX3lxTE03WFlySVB5UVlmOE5zdnkwN0xqTmZlQU1UTGFGckMxZGc5RHVJSkNkUEpYdVIzOUhrV25DZVN3czg4UG1JdDRPT1NlYklISWNRMHpyNHhYSTJGOWZhU2YzUFlORUhkVTJJeTM5MDR3ejFyUdIBdEFVX3lxTFBSZGFKOUJ3b09iZUhwdlFKbWJBc0FPZjNEd2FUQU5qT1FHaEd5MHNuLWpyck8zc2lnZnRkNjluQURQem9MRV9QenVMZ2ZEMDlDY3pSV3VzMzVNRVJRbHdjMjVmeDJxWmhraWpKQVhra19wZHE4?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Fri, 15 May 2026 00:28:40 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[단독] ① NH농협손해보험, 암보험 심사에 '체크형 의료동의서' 사용 논란 - 뉴스후플러스",
+      "link": "https://news.google.com/rss/articles/CBMibkFVX3lxTE0xSjFIYkRMZy02WWNmOG13Wk5FeGh4eDZtWjRPd2kzM21ZXy1vdVBING10RVRyTndnSkJYWG96bzFVV0RiNXNGdlpIeS1VRmVva2JUcFlZOGt2NXJjdmJoaXBlNmNEaVlzXy1wNjNR?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 15:00:00 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[0515주요일정] DB손해보험·미스토홀딩스·금호건설 등 실적발표 예정 By 인포스탁데일리 - Investing.com 한국어",
+      "link": "https://news.google.com/rss/articles/CBMicEFVX3lxTFA1Z3NqZUlsUnVwWXRCX2FVOXZyTTZQaXB3ZldpODZOZ1ZIWjhlM3gzV21nUlZWTld3NW5SaERxcG1KVjBBWk1YR3JGaWlqUHdZVjJjUk5fV1k1OXhsc0czVEtFUFp1ZTZzX2RpdDlnYnA?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 18:32:00 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "KB손해보험, 시민 참여형 사회공헌 ‘KB희망바자회’ 운영 - 시사캐스트",
+      "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE1ESEFWQWpqWkdnTERfVTZhM21pQzFUV1NBWkxGWmtMU0dBTWptR295UXBwRXAxMTctRktJclNrRkVTSFdwMjRKMlhISjdneGVDclFJZ1dtUERTZ2xKSVdkcTdXVlVzSW8?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 14 May 2026 10:44:05 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
     },
     {
       "title": "AIA생명, 토트넘 연계 글로벌 마케팅 영국서 진행... ‘2026 AIA 챔피언십’ 참가 - 중앙이코노미뉴스",
@@ -189,6 +244,17 @@
       "_cluster_size": 1
     },
     {
+      "title": "KB손보, '핏(Fit)테크 건강보험' 출시…건강관리·보험료 연계 - 연합뉴스 한민족센터",
+      "link": "https://news.google.com/rss/articles/CBMidEFVX3lxTE1Ra25JYWVzSlZ4X0VyeC1DXzgzOHJqRjVYQ09fUTJhUC14T3lham9uVklTLUppT0VfWllkU0J4TVdIOTZCUzN0bDR5cVIzZlZnYTBENkpKLXdkRnhncEJEaGlEZDhqbHQwVGZiZW9XWTBIZFNE?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "pub_date": "Fri, 15 May 2026 00:31:56 GMT",
+      "_score": 11,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "김중현 메리츠화재 대표, GA 중심 장기보험 신계약 확대…보험금 청구 증가에 보험손익은 하락 [금융사 2026 1분기 실적] - 한국금융신문",
       "link": "https://news.google.com/rss/articles/CBMifEFVX3lxTE5ncEVpTEN5UVJibXgzV3RLNUpmQTc3RGo4TE4zN294bUFnUmZQZmEyWldwZ1VvMUsxUWtzMjlfUDJ5aFA5NHI5YV9wek81bE5SNlB2anhaLTVQM0hDZ2JFZVJpcmlwQ3BzRGhZcnBfYUhLTkxzalpxTk90TGI?oc=5",
       "source": "google",
@@ -207,6 +273,17 @@
       "pub_date": "Thu, 14 May 2026 21:35:00 +0900",
       "_score": 11,
       "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "곳간 두둑해진 삼성생명…주주환원·글로벌 M&A 속도 낸다",
+      "link": "https://dealsite.co.kr/articles/161895",
+      "source": "naver",
+      "keyword": "보험 마케팅",
+      "pub_date": "Fri, 15 May 2026 09:36:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -365,17 +442,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
-      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "[지지부진 보험사 M&A]국내 보험사는 해외로 눈돌려…은행·증권사 인수",
       "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141447541110779",
       "source": "naver",
@@ -396,6 +462,17 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
+    },
+    {
+      "title": "[지지부진 보험사 M&A]큰 손은 결국 금융지주…태광그룹도 주목",
+      "link": "https://www.dnews.co.kr/uhtml/view.jsp?idxno=202605141355580360746",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Fri, 15 May 2026 07:02:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
     },
     {
       "title": "[금융 AI 전쟁④] AI가 바꾸는 보험업…'역할 재편' 본격화",
@@ -453,154 +530,22 @@
       "_cluster_size": 1
     },
     {
-      "title": "금융권, '상생'으로 경제 위기 정면돌파…고난도 산업 지원부터 소상공...",
-      "link": "http://www.dailypop.kr/news/articleView.html?idxno=98845",
+      "title": "건강하게 생활할수록 보험료 깎인다…KB손보, '핏테크 건강보험' 출시",
+      "link": "https://n.news.naver.com/mnews/article/018/0006281978?sid=101",
       "source": "naver",
       "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 09:26:00 +0900",
+      "pub_date": "Fri, 15 May 2026 09:42:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "[8천피 시대]얼라인 이창환 \"더 오를 지 알 수 없어…밸류업에는 유리\"",
-      "link": "https://news.einfomax.co.kr/news/articleView.html?idxno=4414995",
+      "title": "DB손보, 1분기 영업익 4627억원...전년대비 28.5% 감소",
+      "link": "https://n.news.naver.com/mnews/article/293/0000084671?sid=101",
       "source": "naver",
       "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 09:24:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "건강 상태 따라 보험료 달라진다…KB손보, 맞춤형 건강보험 잇단 출시",
-      "link": "http://www.srtimes.kr/news/articleView.html?idxno=203266",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 09:08:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "손보업계, 내연기관 대상 '운행 감축형 할인' 실험 나선다",
-      "link": "http://www.srtimes.kr/news/articleView.html?idxno=203265",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 09:04:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "\"자연재해 걱정 뚝\"…경주시, 가축재해보험료 85% 파격 지원",
-      "link": "https://www.gukjenews.com/news/articleView.html?idxno=3582673",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 09:02:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "교권 보호 위해 보험사 나섰다…한화손보, 한국교총과 안전망 구축 맞손",
-      "link": "https://n.news.naver.com/mnews/article/016/0002643744?sid=101",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 08:53:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[#금융톡톡] 삼성화재 '차량 5부제 특약' 예고·DB손보 '프로미 안전체험...",
-      "link": "https://www.newsworks.co.kr/news/articleView.html?idxno=840832",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 08:50:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "삼성화재 '차량 5부제 준수 할인특약' 5월 말 출시",
-      "link": "http://www.lawissue.co.kr/view.php?ud=202605150820143919817d053b9_12",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 08:22:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "“삼성생명, 요율인상에도 신계약 약진…건강보험·종신까지 호조” 목...",
-      "link": "https://n.news.naver.com/mnews/article/009/0005680349?sid=101",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 07:46:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "삼성화재, 보험·투자손익 고른 성장…안정적 실적 흐름 지속",
-      "link": "http://www.newsprime.co.kr/news/article.html?no=733540",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 07:28:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[오늘의 IR] GSㆍ코오롱글로벌ㆍ시노펙스 등",
-      "link": "https://www.etoday.co.kr/news/view/2584708",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Fri, 15 May 2026 07:10:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금융당국, 한화라이프랩 현장검사 착수...GA업계 \"불똥 튈라\" 불안감 증...",
-      "link": "https://www.youthdaily.co.kr/news/article.html?no=219151",
-      "source": "naver",
-      "keyword": "GA 보험",
-      "pub_date": "Fri, 15 May 2026 08:02:00 +0900",
-      "_score": 8,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "메리츠화재, 1분기 순익 4661억…보험·투자 '균형 성장'",
-      "link": "http://www.popcornnews.net/news/articleView.html?idxno=121384",
-      "source": "naver",
-      "keyword": "GA 보험",
-      "pub_date": "Thu, 14 May 2026 20:30:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "메리츠화재, 업계 역성장 속 나홀로 '선방'…장기보험 성장 부각",
-      "link": "https://dealsite.co.kr/articles/161893",
-      "source": "naver",
-      "keyword": "GA 보험",
-      "pub_date": "Thu, 14 May 2026 19:26:00 +0900",
+      "pub_date": "Fri, 15 May 2026 09:38:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
