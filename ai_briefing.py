@@ -146,7 +146,9 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 굵게 표시용 ** 문법 금지.
 - 기사 나열 금지. 중복 기사는 하나의 이슈로 설명.
 - 기사 목록에 없는 이슈, 키워드, 법안, 사건은 절대 추가하지 마세요.
-- 핵심 이슈에는 반드시 근거 기사 ID를 [N] 형식으로 붙이세요. 예: - [3] 브랜드평판 1위: 당사 긍정 보도.
+- 핵심 이슈에는 내부 매칭용 근거 기사 ID를 [N] 형식으로 붙이되, 이슈명과 판단은 짧게 작성하세요. 예: - [3] KDB생명 GA 실적: 당사 선두권 보도.
+- 보고서 문장에는 [1, 2, 3] 같은 번호 표현을 설명처럼 반복하지 마세요.
+- 매출/M/S/실적 1위 이슈는 대상 보험사나 회사명을 반드시 포함하세요. 예: KDB생명 GA 실적, 신한라이프 GA 실적.
 - 불확실한 내용은 "확인 필요"라고 표현하세요.
 - 액션/대응 섹션은 아래 조건을 따르세요.
 {action_instruction}
@@ -156,14 +158,14 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 한 문장. 55자 이내.
 
 ## 핵심 이슈
-- [기사ID] 이슈명: 판단
+- [기사ID] 이슈명 18자 이내: 판단 35자 이내
 - 최대 2개
 
 ## 지표 해석
 1~2문장. 당사 보도 톤, 당사 부정, 경쟁/업계 동향 중심.
 
 ## 분석 키워드
-키워드 3~5개만 쉼표로 나열.
+키워드 3~5개만 쉼표로 나열. 매출/M/S/실적 이슈가 있으면 대상 보험사/회사명을 포함.
 """.strip()
 
 
@@ -455,11 +457,27 @@ def parse_bullets(text: str) -> list[dict]:
             title, detail = body.split(":", 1)
         else:
             title, detail = body, ""
-        refs = [int(value) for value in re.findall(r"\[(\d+)\]", body)]
-        title = re.sub(r"\[\d+\]\s*", "", title).strip()
-        detail = re.sub(r"\[\d+\]\s*", "", detail).strip()
-        items.append({"title": title.strip(), "detail": detail.strip(), "refs": refs})
+        refs = extract_refs(body)
+        title = compact_text(strip_ref_marks(title), 28)
+        detail = compact_text(strip_ref_marks(detail), 56)
+        items.append({"title": title, "detail": detail, "refs": refs})
     return items[:2]
+
+
+def extract_refs(text: str) -> list[int]:
+    refs: list[int] = []
+    for group in re.findall(r"\[([\d,\s]+)\]", text or ""):
+        refs.extend(int(value) for value in re.findall(r"\d+", group))
+    return refs
+
+
+def strip_ref_marks(text: str) -> str:
+    return re.sub(r"\[[\d,\s]+\]\s*", "", text or "").strip()
+
+
+def compact_text(text: str, limit: int) -> str:
+    cleaned = " ".join((text or "").split())
+    return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
 
 
 def enrich_articles(articles: list[dict]) -> list[dict]:
@@ -507,6 +525,7 @@ def risk_message(metrics: dict) -> str:
 
 def markdown_to_html(markdown: str) -> str:
     text = clean_markdown(markdown)
+    text = strip_ref_marks(text)
     text = html.escape(text)
     text = re.sub(r"^\s*##\s+(.+)$", r"<h2>\1</h2>", text, flags=re.MULTILINE)
     text = convert_tables(text)

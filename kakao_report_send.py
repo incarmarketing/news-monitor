@@ -103,8 +103,8 @@ def build_message(report: dict) -> str:
 
 def compact(text: str, limit: int) -> str:
     cleaned = re.sub(r"\[[\d,\s]+\]\s*", "", text or "")
+    cleaned = re.sub(r"\s+", " ", cleaned)
     cleaned = cleaned.replace("핵심 이슈", "").strip()
-    cleaned = " ".join(cleaned.split())
     return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
 
 
