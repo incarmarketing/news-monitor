@@ -93,16 +93,17 @@ def build_message(report: dict) -> str:
         ),
     ]
 
-    lines = header + ["", "오늘의 판단", compact(sections["conclusion"], 70)]
+    lines = header + ["", "오늘의 판단", compact(sections["conclusion"], 48)]
     if sections["issues"]:
         lines += ["", "핵심 이슈"]
-        lines += [f"- {compact(issue, 58)}" for issue in sections["issues"][:2]]
+        lines += [f"- {compact(issue, 38)}" for issue in sections["issues"][:2]]
 
-    return "\n".join(lines)[:520]
+    return "\n".join(lines)[:360]
 
 
 def compact(text: str, limit: int) -> str:
-    cleaned = re.sub(r"\[\d+\]\s*", "", text or "")
+    cleaned = re.sub(r"\[[\d,\s]+\]\s*", "", text or "")
+    cleaned = cleaned.replace("핵심 이슈", "").strip()
     cleaned = " ".join(cleaned.split())
     return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
 
