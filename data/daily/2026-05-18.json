@@ -1,6 +1,6 @@
 {
   "date": "2026-05-18",
-  "timestamp": "2026-05-18T07:45:50.973854+09:00",
+  "timestamp": "2026-05-18T08:39:55.018258+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-18T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 75,
-    "total_after_cluster": 55,
+    "total_collected": 69,
+    "total_after_cluster": 56,
     "by_category": {
       "own": 2,
-      "regulation": 9,
-      "competitor": 30,
-      "industry": 33,
+      "regulation": 10,
+      "competitor": 27,
+      "industry": 29,
       "other": 1
     },
     "by_tone": {
       "negative": 0,
       "positive": 0,
-      "neutral": 75
+      "neutral": 69
     },
     "own_negative": 0,
     "own_total": 2,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 직접 리스크는 없으나 GA 업계 규제 및 비용 부담 이슈가 부각됨.\n\n## 핵심 이슈\n- [14] GA업계 사업비/민원 부담: 1200%룰, 민원 책임 등 업계 공통 현안 부각.\n- [1] KB손보 자동차보험 1위: 브랜드 평판 기반 시장 선두 유지 보도 지속.\n\n## 지표 해석\n당사 관련 보도는 중립적 투자 분석 및 인터뷰 기사로 부정 동향은 없습니다. GA 업계 규제 강화 및 손해보험사 실적 관련 보도가 다수 확인되었습니다.\n\n## 분석 키워드\nKB손해보험, GA 규제, 손해보험사 실적",
+  "briefing": "## 최종 결론\n당사 부정 이슈 없이, GA 업계 규제 및 경쟁사 동향이 부각됨.\n\n## 핵심 이슈\n- [1] KB손보 자동차보험 1위: 브랜드 평판 기반 시장 지배력 강화\n- [13] GA업계 1200%룰 논란: 사업비 관련 규제 강화 및 업계 갈등\n\n## 지표 해석\n당사 직접 언급 기사는 중립적 투자 분석 및 인물 소개에 그쳤으며, 부정 동향은 없습니다. KB손보의 자동차보험 1위 수성, 주요 보험사 1분기 호실적 등 경쟁 동향과 GA업계 규제 이슈가 다수 보도되었습니다.\n\n## 분석 키워드\nKB손해보험, GA 1200%룰, 보험사 1분기 실적",
   "articles": [
     {
       "title": "KB손해보험 1위 수성… 자동차보험 브랜드 경쟁 판도 굳어졌다",
@@ -95,17 +95,6 @@
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
-      "_score": 15,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[종합] 문도엽, KPGA 경북 오픈서 역전 우승…‘시즌 첫 승·통산 6승째...",
-      "link": "https://www.viva100.com/article/20260517500610",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Sun, 17 May 2026 23:22:00 +0900",
       "_score": 15,
       "_category": "competitor",
       "_tone": "neutral",
@@ -189,13 +178,13 @@
       "_cluster_size": 1
     },
     {
-      "title": "車보험 수익 악화에 시름 깊어진다…5대 손보사, 1분기 순익 전년比 12....",
-      "link": "https://weekly.hankooki.com/news/articleView.html?idxno=7164582",
+      "title": "[헬스인·싸] 헬스케어 기업의 글로벌 진출, 선택 아닌 '생존 전략'",
+      "link": "https://www.rapportian.com/news/articleView.html?idxno=236066",
       "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Sun, 17 May 2026 23:14:00 +0900",
-      "_score": 11,
-      "_category": "competitor",
+      "keyword": "보험 마케팅",
+      "pub_date": "Mon, 18 May 2026 07:50:00 +0900",
+      "_score": 8,
+      "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -277,17 +266,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "보험사, 상품 넘어 고객 일상으로 브랜드 확장",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90797",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "중국 보험업계 '군살 빼기' 지속, 4대 상장보험사 내근직원 2만명 감소",
       "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90738",
       "source": "naver",
@@ -295,6 +273,17 @@
       "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
       "_score": 8,
       "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험사, 상품 넘어 고객 일상으로 브랜드 확장",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90797",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -387,15 +376,15 @@
       "_cluster_size": 1
     },
     {
-      "title": "KB손보 KB다이렉트 핏테크 건강보험 출시…“건강할수록 보험료 부담↓...",
-      "link": "https://www.inthenews.co.kr/news/article.html?no=86926",
-      "source": "naver",
+      "title": "KB손보 KB다이렉트 핏테크 건강보험 출시…“건강할수록 보험료 부담↓” - 인더뉴스",
+      "link": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1hcU9LdFkyMFRleDBIM0RhbHFPNmxDOF9fZklQV25PYnl0dHZCN3otZFg5T3lrZG9tblpzY004ZXRJcTQ5TFZDd09pMEZ1UzB5V3haclNqTW5vNHJJSGNF?oc=5",
+      "source": "google",
       "keyword": "손해보험",
-      "pub_date": "Sun, 17 May 2026 23:50:00 +0900",
+      "pub_date": "Sun, 17 May 2026 14:49:03 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 2
+      "_cluster_size": 1
     },
     {
       "title": "'민원은 원수사, 부담은 GA'…장기계약 민원 놓고 책임공방 확산",
@@ -439,7 +428,7 @@
       "_score": 8,
       "_category": "industry",
       "_tone": "neutral",
-      "_cluster_size": 2
+      "_cluster_size": 1
     },
     {
       "title": "의원 팔고도 조사받는 이유",
@@ -497,8 +486,8 @@
       "_cluster_size": 1
     },
     {
-      "title": "[기고] 보험 채널 선택의 새 기준, '의사결정비용'으로 본 채널 경제학",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90744",
+      "title": "건강수명 관리 나선 보험사… 미래는 '병원 밖'에",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90748",
       "source": "naver",
       "keyword": "보험 마케팅",
       "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
@@ -508,8 +497,8 @@
       "_cluster_size": 1
     },
     {
-      "title": "건강수명 관리 나선 보험사… 미래는 '병원 밖'에",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90748",
+      "title": "[기고] 보험 채널 선택의 새 기준, '의사결정비용'으로 본 채널 경제학",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90744",
       "source": "naver",
       "keyword": "보험 마케팅",
       "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
@@ -571,7 +560,7 @@
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "보험 M&A 대형화 심화…특종보험·MGA로 자본 재배치 가속",
@@ -579,6 +568,17 @@
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Mon, 18 May 2026 06:38:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "넷플릭스같은 구독형 보험, '켜고 끄는 보장' 가능할까",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90751",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
@@ -618,22 +618,33 @@
       "_cluster_size": 1
     },
     {
-      "title": "넷플릭스같은 구독형 보험, '켜고 끄는 보장' 가능할까",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90751",
+      "title": "고물가에 빅테크 회사채도 급증…美 국채금리 '껑충'",
+      "link": "https://n.news.naver.com/mnews/article/015/0005287913?sid=104",
       "source": "naver",
       "keyword": "생명보험",
-      "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
+      "pub_date": "Sun, 17 May 2026 18:44:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "고물가에 빅테크 회사채도 급증…美 국채금리 '껑충'",
-      "link": "https://n.news.naver.com/mnews/article/015/0005287913?sid=104",
-      "source": "naver",
+      "title": "[재테크 특집] 필요한 보장만 ‘쏙’… 2030세대가 반한 보험 - 세계일보",
+      "link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5uakw3TXMtTjVwanVjRkRZcG92bU1JZDJ4MXp3ekM5czRkdjZfenVwMnFPUjhURWo5UG5xSGRQNkpzWDNHaE9iUER2Q1NvRjVlWGhKTTA2cE7SAVRBVV95cUxPS2xOWFhwaW9OcHhuYXpXYng2ODFCbFBVU2RDNmFYZzFmdjdoMDhYV01aYi1ZWE5OYzFya3IxZF9TY2MxWlNIb3k1NTcyazMwOXFSSnE?oc=5",
+      "source": "google",
       "keyword": "생명보험",
-      "pub_date": "Sun, 17 May 2026 18:44:00 +0900",
+      "pub_date": "Sun, 17 May 2026 11:14:08 GMT",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "KB금융, 'K-엔비디아' 발굴 나선다…딥테크에 모험자본 공급[생산적 금...",
+      "link": "https://www.etoday.co.kr/news/view/2585209",
+      "source": "naver",
+      "keyword": "손해보험",
+      "pub_date": "Mon, 18 May 2026 05:00:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
