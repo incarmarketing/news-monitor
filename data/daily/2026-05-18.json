@@ -1,6 +1,6 @@
 {
   "date": "2026-05-18",
-  "timestamp": "2026-05-18T08:39:55.018258+09:00",
+  "timestamp": "2026-05-18T08:51:09.475900+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 부정 이슈 없이, GA 업계 규제 및 경쟁사 동향이 부각됨.\n\n## 핵심 이슈\n- [1] KB손보 자동차보험 1위: 브랜드 평판 기반 시장 지배력 강화\n- [13] GA업계 1200%룰 논란: 사업비 관련 규제 강화 및 업계 갈등\n\n## 지표 해석\n당사 직접 언급 기사는 중립적 투자 분석 및 인물 소개에 그쳤으며, 부정 동향은 없습니다. KB손보의 자동차보험 1위 수성, 주요 보험사 1분기 호실적 등 경쟁 동향과 GA업계 규제 이슈가 다수 보도되었습니다.\n\n## 분석 키워드\nKB손해보험, GA 1200%룰, 보험사 1분기 실적",
+  "briefing": "## 최종 결론\n당사 직접 리스크는 부재하나, GA 규제 및 경쟁사 동향이 활발합니다.\n\n## 핵심 이슈\n- [1] KB손보 자동차보험 1위: 브랜드평판 경쟁 구도 고착화 가능성.\n- [13] GA업계 사업비/민원 이슈: 1200%룰 등 규제 강화에 따른 부담.\n\n## 지표 해석\n당사 관련 보도는 중립적 투자분석 및 인터뷰로, 부정 동향은 없습니다. 업계 전반적으로는 GA 규제 강화와 주요 보험사의 1분기 실적 호조 관련 보도가 집중되었습니다.\n\n## 분석 키워드\nKB손해보험, GA 규제, 1200%룰, 생명보험사 실적",
   "articles": [
     {
       "title": "KB손해보험 1위 수성… 자동차보험 브랜드 경쟁 판도 굳어졌다",
@@ -585,6 +585,17 @@
       "_cluster_size": 1
     },
     {
+      "title": "[성년의 날 ②] 새 보험 들기 전 '내 보험'부터 검토해야",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90783",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "HSBC \"아시아 보험시장, 고령화·부유화·글로벌화가 성장 견인\"",
       "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90796",
       "source": "naver",
@@ -598,17 +609,6 @@
     {
       "title": "주가 상승에 보험사 건전성 회복… 지급여력비율 212.3% 안착",
       "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90768",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[성년의 날 ②] 새 보험 들기 전 '내 보험'부터 검토해야",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90783",
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Mon, 18 May 2026 00:00:00 +0900",
