@@ -104,16 +104,38 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
         risk = metrics.get("risk_level", "LOW")
         risk_days[risk] = risk_days.get(risk, 0) + 1
 
+    sorted_days = sorted(daily_data, key=lambda x: x["date"])
+    daily_volume = [
+        {
+            "date": d["date"],
+            "total": d.get("metrics", {}).get("total_collected", 0),
+            "analyzed": d.get("metrics", {}).get("total_after_cluster", 0),
+            "own": d.get("metrics", {}).get("by_category", {}).get("own", 0),
+            "risk": d.get("metrics", {}).get("risk_level", "LOW"),
+            "own_negative": d.get("metrics", {}).get("own_negative", 0),
+        }
+        for d in sorted_days
+    ]
+    total_articles = sum(d.get("metrics", {}).get("total_collected", 0) for d in daily_data)
+    max_daily_total = max((d["total"] for d in daily_volume), default=0)
+
     return {
         "period_days": len(daily_data),
-        "total_collected": sum(d.get("metrics", {}).get("total_collected", 0) for d in daily_data),
+        "total_collected": total_articles,
         "total_after_cluster": sum(d.get("metrics", {}).get("total_after_cluster", 0) for d in daily_data),
         "by_category": cats,
         "by_tone": tones,
         "risk_distribution": risk_days,
+        "daily_volume": daily_volume,
+        "max_daily_total": max_daily_total,
+        "avg_daily_collected": round(total_articles / len(daily_data), 1) if daily_data else 0,
+        "category_share": {
+            key: round((value / total_articles * 100), 1) if total_articles else 0
+            for key, value in cats.items()
+        },
         "daily_own_negative": [
             {"date": d["date"], "value": d.get("metrics", {}).get("own_negative", 0)}
-            for d in sorted(daily_data, key=lambda x: x["date"])
+            for d in sorted_days
         ],
     }
 
