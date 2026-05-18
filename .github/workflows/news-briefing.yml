@@ -25,20 +25,10 @@ on:
       - ".run-state/**"
       - "data/daily/**"
   schedule:
-    - cron: "0 22 * * *" # 07:00 KST weekly/monthly
-    - cron: "10 22 * * *" # 07:10 KST weekly/monthly backup
-    - cron: "20 22 * * *" # 07:20 KST weekly/monthly backup
-    - cron: "30 22 * * *" # 07:30 KST weekly/monthly backup
-    - cron: "5 23 * * *" # 08:05 KST
-    - cron: "15 23 * * *" # 08:15 KST backup
-    - cron: "30 23 * * *" # 08:30 KST backup
-    - cron: "45 23 * * *" # 08:45 KST backup
-    - cron: "5 4 * * *"  # 13:05 KST
-    - cron: "15 4 * * *"  # 13:15 KST backup
-    - cron: "30 4 * * *"  # 13:30 KST backup
-    - cron: "45 4 * * *"  # 13:45 KST backup
-    - cron: "5 9 * * *"  # 18:05 KST
-    - cron: "15 9 * * *"  # 18:15 KST backup
+    - cron: "*/5 22 * * *" # 07:00-07:59 KST weekly/monthly watch window
+    - cron: "*/5 23 * * *" # 08:00-08:59 KST daily watch window
+    - cron: "*/5 4 * * *"  # 13:00-13:59 KST daily watch window
+    - cron: "*/5 9 * * *"  # 18:00-18:59 KST daily watch window
 
 permissions:
   contents: write

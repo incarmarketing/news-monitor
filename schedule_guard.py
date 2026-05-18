@@ -9,23 +9,7 @@ from pathlib import Path
 
 KST = timezone(timedelta(hours=9))
 STATE_DIR = Path(".run-state")
-
-SCHEDULE_TO_KST_HOUR = {
-    "0 22 * * *": "07",
-    "10 22 * * *": "07",
-    "20 22 * * *": "07",
-    "30 22 * * *": "07",
-    "5 23 * * *": "08",
-    "15 23 * * *": "08",
-    "30 23 * * *": "08",
-    "45 23 * * *": "08",
-    "5 4 * * *": "13",
-    "15 4 * * *": "13",
-    "30 4 * * *": "13",
-    "45 4 * * *": "13",
-    "5 9 * * *": "18",
-    "15 9 * * *": "18",
-}
+ACTIVE_KST_HOURS = {"07", "08", "13", "18"}
 
 
 def github_output(name: str, value: str) -> None:
@@ -38,8 +22,6 @@ def github_output(name: str, value: str) -> None:
 
 def begin() -> None:
     event_name = os.getenv("GITHUB_EVENT_NAME", "")
-    schedule = os.getenv("SCHEDULE_CRON", "").strip()
-
     if event_name != "schedule":
         github_output("should_run", "true")
         github_output("should_mark", "false")
@@ -48,30 +30,26 @@ def begin() -> None:
         github_output("marker_path", "")
         return
 
-    kst_hour = SCHEDULE_TO_KST_HOUR.get(schedule)
-    if not kst_hour:
+    now = datetime.now(KST)
+    kst_hour = now.strftime("%H")
+    if kst_hour not in ACTIVE_KST_HOURS:
         github_output("should_run", "false")
         github_output("should_mark", "false")
         github_output("should_period", "false")
         github_output("kst_hour", "")
         github_output("marker_path", "")
-        print(f"Unknown schedule cron: {schedule}")
+        print(f"Scheduled watcher skipped: current KST hour {kst_hour} is outside active windows.")
         return
 
-    today = datetime.now(KST).strftime("%Y-%m-%d")
-    current_hour = datetime.now(KST).strftime("%H")
-    weekday = datetime.now(KST).isoweekday()
-    day = datetime.now(KST).day
+    today = now.strftime("%Y-%m-%d")
+    weekday = now.isoweekday()
+    day = now.day
     marker_path = STATE_DIR / f"{today}-{kst_hour}.txt"
 
     github_output("kst_hour", kst_hour)
     github_output("should_period", "true" if kst_hour == "07" else "false")
     github_output("marker_path", marker_path.as_posix())
     github_output("should_mark", "true")
-    if current_hour != kst_hour:
-        github_output("should_run", "false")
-        print(f"Scheduled slot skipped: cron hour {kst_hour}, current KST hour {current_hour}.")
-        return
     if kst_hour == "07" and weekday != 1 and day != 1:
         github_output("should_run", "false")
         print("Period report slot skipped: not Monday or first day of month.")
