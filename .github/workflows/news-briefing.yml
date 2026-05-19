@@ -119,24 +119,24 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Prepare static report
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-kakao]'))
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
         run: python publish_report.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Configure GitHub Pages
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-kakao]'))
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-kakao]'))
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
       - name: Deploy to GitHub Pages
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-kakao]'))
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
         id: deployment
         uses: actions/deploy-pages@v4
 
