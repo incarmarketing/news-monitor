@@ -23,6 +23,7 @@ on:
       - main
     paths-ignore:
       - ".run-state/**"
+      - ".watch-state/**"
       - "data/daily/**"
   schedule:
     - cron: "*/5 22 * * *" # 07:00-07:59 KST weekly/monthly watch window
