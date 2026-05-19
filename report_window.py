@@ -25,11 +25,11 @@ def current_window(now: datetime | None = None) -> dict:
         short_label = "오전 08~13시"
         report_label = "오전 업데이트"
     else:
-        start = (current - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
+        start = current.replace(hour=13, minute=0, second=0, microsecond=0)
         end = current.replace(hour=18, minute=0, second=0, microsecond=0)
-        label = "전일 18:00~당일 18:00"
-        short_label = "일일 마감"
-        report_label = "일일 마감 보고서"
+        label = "당일 13:00~18:00"
+        short_label = "오후 13~18시"
+        report_label = "오후 마감 보고서"
 
     return {
         "slot": slot,
