@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>언론 정보 통합 데이터베이스</title>
+  <title>언론 동향 브리핑 대시보드</title>
   <style>
     :root {
       --ink: #111827;
@@ -11,11 +11,17 @@
       --line: #d9e2ef;
       --panel: #ffffff;
       --bg: #f4f7fb;
-      --blue: #263b8f;
+      --navy: #172554;
+      --blue: #2563eb;
       --blue-soft: #e9eefc;
       --green: #16794c;
+      --green-soft: #eaf8ef;
       --red: #be123c;
+      --red-soft: #fff1f2;
       --amber: #b45309;
+      --amber-soft: #fff7ed;
+      --violet: #6d28d9;
+      --violet-soft: #f3e8ff;
     }
     * { box-sizing: border-box; }
     body {
@@ -25,19 +31,18 @@
       font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
       letter-spacing: 0;
     }
-    button, input, select {
-      font: inherit;
-    }
+    button, input, select { font: inherit; }
+    a { color: inherit; }
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 20;
       background: rgba(255, 255, 255, 0.96);
       border-bottom: 1px solid var(--line);
       backdrop-filter: blur(10px);
     }
     .topbar-inner {
-      max-width: 1180px;
+      max-width: 1220px;
       margin: 0 auto;
       padding: 12px 20px;
       display: flex;
@@ -45,27 +50,22 @@
       align-items: center;
       justify-content: space-between;
     }
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
+    .brand { min-width: 0; }
     .eyebrow {
       color: var(--muted);
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
     }
     h1 {
-      margin: 0;
+      margin: 2px 0 0;
+      color: var(--navy);
       font-size: 22px;
       line-height: 1.25;
-      color: #15245a;
     }
     .nav-actions {
       display: flex;
-      gap: 8px;
       flex-wrap: wrap;
+      gap: 8px;
       justify-content: flex-end;
     }
     .btn {
@@ -73,9 +73,9 @@
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #fff;
-      color: #15245a;
+      color: var(--navy);
       padding: 8px 12px;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
@@ -83,20 +83,100 @@
       justify-content: center;
     }
     .btn.primary {
-      background: #15245a;
-      border-color: #15245a;
+      background: var(--navy);
+      border-color: var(--navy);
       color: #fff;
     }
     main {
-      max-width: 1180px;
+      max-width: 1220px;
       margin: 0 auto;
-      padding: 22px 20px 42px;
+      padding: 20px 20px 44px;
     }
+    .hero {
+      background: linear-gradient(135deg, #172554 0%, #263b8f 62%, #3157c7 100%);
+      border-radius: 10px;
+      color: #fff;
+      padding: 22px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 14px;
+    }
+    .hero h2 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.32;
+    }
+    .hero-meta {
+      margin-top: 8px;
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .judgement {
+      margin-top: 18px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+      font-size: 18px;
+      line-height: 1.45;
+      font-weight: 900;
+    }
+    .risk-card {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 8px;
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+    .risk-label {
+      color: rgba(255,255,255,.72);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .risk-value {
+      color: #fff;
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .status-line {
+      color: rgba(255,255,255,.88);
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+    .tabbar {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0;
+    }
+    .tab {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 8px;
+      min-height: 44px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+    }
+    .view { display: none; }
+    .view.active { display: block; }
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .metric {
       background: var(--panel);
@@ -109,9 +189,9 @@
       justify-content: space-between;
     }
     .metric-value {
+      color: var(--navy);
       font-size: 30px;
       font-weight: 900;
-      color: #15245a;
       line-height: 1;
     }
     .metric-label {
@@ -120,66 +200,74 @@
       font-size: 13px;
       font-weight: 800;
     }
-    .controls {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      display: grid;
-      grid-template-columns: 1.7fr repeat(4, minmax(120px, 1fr));
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .control {
-      min-width: 0;
-    }
-    .control label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
-    }
-    .control input,
-    .control select {
-      width: 100%;
-      min-height: 40px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
-      padding: 8px 10px;
-      color: var(--ink);
-    }
-    .insights {
+    .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-bottom: 16px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
     }
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 16px;
+      min-width: 0;
     }
     .panel-title {
       margin: 0 0 12px;
-      color: #15245a;
+      color: var(--navy);
       font-size: 16px;
       font-weight: 900;
     }
-    .bars {
+    .brief-list {
       display: grid;
       gap: 10px;
     }
+    .brief-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfdff;
+    }
+    .brief-item a {
+      text-decoration: none;
+      font-weight: 900;
+      line-height: 1.45;
+    }
+    .brief-item a:hover { color: var(--blue); text-decoration: underline; }
+    .meta {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #fff;
+    }
+    .chip.own { background: var(--green-soft); color: var(--green); border-color: #cbead5; }
+    .chip.regulation { background: var(--amber-soft); color: var(--amber); border-color: #fed7aa; }
+    .chip.competitor, .chip.industry { background: var(--blue-soft); color: #243b8f; border-color: #c8d5fb; }
+    .chip.negative { background: var(--red-soft); color: var(--red); border-color: #fecdd3; }
+    .chip.positive { background: var(--green-soft); color: var(--green); border-color: #cbead5; }
+    .bars { display: grid; gap: 10px; }
     .bar-row {
       display: grid;
-      grid-template-columns: 82px 1fr 44px;
+      grid-template-columns: 92px 1fr 46px;
       gap: 10px;
       align-items: center;
       color: var(--muted);
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 900;
     }
     .bar-track {
       height: 10px;
@@ -192,132 +280,125 @@
       background: var(--blue);
       border-radius: inherit;
     }
-    .result-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin: 18px 0 10px;
+    .sparkline {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(28px, 1fr);
+      gap: 8px;
+      align-items: end;
+      min-height: 190px;
+      padding-top: 10px;
+      border-bottom: 1px solid var(--line);
     }
-    .result-count {
+    .spark-col {
+      display: grid;
+      gap: 6px;
+      align-items: end;
+      text-align: center;
       color: var(--muted);
+      font-size: 11px;
       font-weight: 800;
     }
-    .articles {
+    .spark-bar {
+      min-height: 8px;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, #3157c7, #172554);
+    }
+    .tree {
       display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 10px;
     }
-    .article {
+    .tree-node {
+      min-height: 88px;
+      border-radius: 8px;
+      padding: 12px;
+      color: #fff;
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .tree-node strong {
+      font-size: 16px;
+      line-height: 1.25;
+      word-break: keep-all;
+    }
+    .tree-node span {
+      color: rgba(255,255,255,.78);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .controls {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 14px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
+      grid-template-columns: 1.7fr repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
     }
-    .article-title {
-      color: var(--ink);
-      text-decoration: none;
-      font-weight: 900;
-      line-height: 1.45;
-    }
-    .article-title:hover {
-      color: var(--blue);
-      text-decoration: underline;
-    }
-    .meta {
-      margin-top: 8px;
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+    .control label {
+      display: block;
+      margin-bottom: 6px;
       color: var(--muted);
       font-size: 12px;
-      font-weight: 700;
-    }
-    .chip {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 4px 8px;
-      background: #fff;
-    }
-    .chip.own { background: #eef8f1; color: var(--green); border-color: #cbead5; }
-    .chip.regulation { background: #fff7ed; color: var(--amber); border-color: #fed7aa; }
-    .chip.competitor, .chip.industry { background: var(--blue-soft); color: #243b8f; border-color: #c8d5fb; }
-    .chip.negative { background: #fff1f2; color: var(--red); border-color: #fecdd3; }
-    .chip.positive { background: #eef8f1; color: var(--green); border-color: #cbead5; }
-    .score {
-      min-width: 56px;
-      height: 56px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #15245a;
       font-weight: 900;
     }
-    .score span {
+    .control input,
+    .control select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      padding: 8px 10px;
+      color: var(--ink);
+    }
+    .result-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 10px;
+    }
+    .result-count {
       color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
+      font-weight: 900;
     }
     .empty {
-      background: var(--panel);
       border: 1px dashed var(--line);
       border-radius: 8px;
-      padding: 28px;
+      padding: 24px;
       color: var(--muted);
       text-align: center;
-      font-weight: 800;
+      font-weight: 900;
+      background: #fff;
     }
-    @media (max-width: 860px) {
-      .topbar-inner {
-        align-items: flex-start;
+    @media (max-width: 900px) {
+      .topbar-inner,
+      .hero {
+        grid-template-columns: 1fr;
         flex-direction: column;
+        align-items: stretch;
       }
-      .nav-actions {
-        width: 100%;
-        justify-content: stretch;
-      }
-      .btn {
-        flex: 1 1 auto;
-      }
-      .summary-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .controls {
-        grid-template-columns: 1fr 1fr;
-      }
-      .control:first-child {
-        grid-column: 1 / -1;
-      }
-      .insights {
-        grid-template-columns: 1fr;
-      }
-      .article {
-        grid-template-columns: 1fr;
-      }
-      .score {
-        width: 100%;
-        height: 44px;
-        flex-direction: row;
-        gap: 6px;
-      }
+      .nav-actions { justify-content: stretch; }
+      .btn { flex: 1 1 auto; }
+      .tabbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      .control:first-child { grid-column: 1 / -1; }
     }
     @media (max-width: 520px) {
-      h1 {
-        font-size: 19px;
-      }
-      main {
-        padding: 16px 12px 32px;
-      }
+      main { padding: 14px 12px 32px; }
+      h1 { font-size: 19px; }
+      .hero { padding: 18px; }
+      .hero h2 { font-size: 23px; }
       .summary-grid,
-      .controls {
-        grid-template-columns: 1fr;
-      }
+      .controls,
+      .tabbar { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -326,7 +407,7 @@
     <div class="topbar-inner">
       <div class="brand">
         <div class="eyebrow">인카금융서비스 · 마케팅부</div>
-        <h1>언론 정보 통합 데이터베이스</h1>
+        <h1>언론 동향 브리핑 대시보드</h1>
       </div>
       <div class="nav-actions">
         <a class="btn" href="./index.html">최신 보고서</a>
@@ -337,77 +418,123 @@
   </header>
 
   <main>
-    <section class="summary-grid" aria-label="요약 지표">
-      <div class="metric">
-        <div class="metric-value" id="metricTotal">0</div>
-        <div class="metric-label">누적 기사</div>
+    <section class="hero">
+      <div>
+        <div class="eyebrow">LIVE BRIEFING</div>
+        <h2 id="headline">언론 동향을 불러오는 중입니다.</h2>
+        <div class="hero-meta" id="heroMeta">수집 데이터를 확인하고 있습니다.</div>
+        <div class="judgement" id="judgement">현재 기준 핵심 이슈를 정리합니다.</div>
       </div>
-      <div class="metric">
-        <div class="metric-value" id="metricOwn">0</div>
-        <div class="metric-label">당사 보도</div>
+      <aside class="risk-card">
+        <div>
+          <div class="risk-label">현재 리스크</div>
+          <div class="risk-value" id="riskValue">-</div>
+        </div>
+        <div class="status-line" id="statusLine">당사 보도, 부정 이슈, 규제 동향을 함께 판단합니다.</div>
+      </aside>
+    </section>
+
+    <nav class="tabbar" aria-label="대시보드 보기">
+      <button class="tab active" data-view="current">현재 동향</button>
+      <button class="tab" data-view="weekly">주간 동향</button>
+      <button class="tab" data-view="monthly">월간 동향</button>
+      <button class="tab" data-view="keywords">키워드 트리</button>
+      <button class="tab" data-view="articles">근거 기사</button>
+    </nav>
+
+    <section class="view active" id="view-current">
+      <div class="summary-grid">
+        <div class="metric"><div class="metric-value" id="metricTotal">0</div><div class="metric-label">현재 표시 기사</div></div>
+        <div class="metric"><div class="metric-value" id="metricOwn">0</div><div class="metric-label">당사 보도</div></div>
+        <div class="metric"><div class="metric-value" id="metricNegative">0</div><div class="metric-label">부정 기사</div></div>
+        <div class="metric"><div class="metric-value" id="metricRegulation">0</div><div class="metric-label">규제/정책</div></div>
+        <div class="metric"><div class="metric-value" id="metricDays">0</div><div class="metric-label">수집 일수</div></div>
       </div>
-      <div class="metric">
-        <div class="metric-value" id="metricNegative">0</div>
-        <div class="metric-label">부정 기사</div>
-      </div>
-      <div class="metric">
-        <div class="metric-value" id="metricRegulation">0</div>
-        <div class="metric-label">규제/정책</div>
-      </div>
-      <div class="metric">
-        <div class="metric-value" id="metricDays">0</div>
-        <div class="metric-label">수집 일수</div>
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="panel-title">오늘의 핵심 이슈</h2>
+          <div class="brief-list" id="topIssues"></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">분류별 흐름</h2>
+          <div class="bars" id="categoryBars"></div>
+        </div>
       </div>
     </section>
 
-    <section class="controls" aria-label="기사 검색 필터">
-      <div class="control">
-        <label for="searchInput">검색어</label>
-        <input id="searchInput" type="search" placeholder="제목, 키워드, 출처 검색">
-      </div>
-      <div class="control">
-        <label for="dateFilter">기준일</label>
-        <select id="dateFilter">
-          <option value="">전체</option>
-        </select>
-      </div>
-      <div class="control">
-        <label for="categoryFilter">분류</label>
-        <select id="categoryFilter">
-          <option value="">전체</option>
-        </select>
-      </div>
-      <div class="control">
-        <label for="toneFilter">논조</label>
-        <select id="toneFilter">
-          <option value="">전체</option>
-        </select>
-      </div>
-      <div class="control">
-        <label for="riskFilter">리스크</label>
-        <select id="riskFilter">
-          <option value="">전체</option>
-        </select>
+    <section class="view" id="view-weekly">
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="panel-title">최근 7일 기사량</h2>
+          <div class="sparkline" id="weeklyVolume"></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">최근 7일 주요 키워드</h2>
+          <div class="bars" id="weeklyKeywords"></div>
+        </div>
       </div>
     </section>
 
-    <section class="insights" aria-label="분포">
+    <section class="view" id="view-monthly">
+      <div class="grid-2">
+        <div class="panel">
+          <h2 class="panel-title">최근 30일 기사량</h2>
+          <div class="sparkline" id="monthlyVolume"></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">최근 30일 논조 분포</h2>
+          <div class="bars" id="monthlyTone"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-keywords">
+      <div class="grid-3">
+        <div class="panel">
+          <h2 class="panel-title">당사 키워드</h2>
+          <div class="tree" id="treeOwn"></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">규제/정책 키워드</h2>
+          <div class="tree" id="treeRegulation"></div>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">경쟁/업계 키워드</h2>
+          <div class="tree" id="treeMarket"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-articles">
+      <section class="controls" aria-label="기사 검색 필터">
+        <div class="control">
+          <label for="searchInput">검색어</label>
+          <input id="searchInput" type="search" placeholder="제목, 키워드, 출처 검색">
+        </div>
+        <div class="control">
+          <label for="dateFilter">기준일</label>
+          <select id="dateFilter"><option value="">전체</option></select>
+        </div>
+        <div class="control">
+          <label for="categoryFilter">분류</label>
+          <select id="categoryFilter"><option value="">전체</option></select>
+        </div>
+        <div class="control">
+          <label for="toneFilter">논조</label>
+          <select id="toneFilter"><option value="">전체</option></select>
+        </div>
+        <div class="control">
+          <label for="riskFilter">리스크</label>
+          <select id="riskFilter"><option value="">전체</option></select>
+        </div>
+      </section>
       <div class="panel">
-        <h2 class="panel-title">분류별 분포</h2>
-        <div class="bars" id="categoryBars"></div>
+        <div class="result-head">
+          <h2 class="panel-title">근거 기사 목록</h2>
+          <div class="result-count" id="resultCount">0건</div>
+        </div>
+        <div class="brief-list" id="articleList"></div>
       </div>
-      <div class="panel">
-        <h2 class="panel-title">논조별 분포</h2>
-        <div class="bars" id="toneBars"></div>
-      </div>
-    </section>
-
-    <section aria-label="기사 목록">
-      <div class="result-head">
-        <h2 class="panel-title">기사 목록</h2>
-        <div class="result-count" id="resultCount">0건</div>
-      </div>
-      <div class="articles" id="articleList"></div>
     </section>
   </main>
 
@@ -417,27 +544,49 @@
       filtered: [],
       categoryLabels: {},
       toneLabels: {},
-      filters: {
-        q: "",
-        date: "",
-        category: "",
-        tone: "",
-        risk: ""
-      }
+      filters: { q: "", date: "", category: "", tone: "", risk: "" }
     };
 
     const categoryOrder = ["own", "regulation", "competitor", "industry", "other"];
     const toneOrder = ["negative", "neutral", "positive"];
+    const categoryFallback = { own: "당사 보도", regulation: "규제/정책", competitor: "경쟁사", industry: "업계 동향", other: "기타" };
+    const toneFallback = { negative: "부정", neutral: "중립", positive: "긍정" };
 
     const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     }[char]));
-
     const uniq = (items) => Array.from(new Set(items.filter(Boolean)));
+    const countBy = (items, key) => items.reduce((acc, item) => {
+      acc[item[key]] = (acc[item[key]] || 0) + 1;
+      return acc;
+    }, {});
+    const topBy = (items, key, limit = 8) => Object.entries(countBy(items, key))
+      .filter(([name]) => name)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit);
+
+    function parseDate(value) {
+      if (!value) return null;
+      const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function latestDate(items) {
+      return uniq(items.map((a) => a.date)).sort().reverse()[0] || "";
+    }
+
+    function periodItems(days) {
+      const dates = uniq(state.articles.map((a) => a.date)).sort();
+      if (!dates.length) return [];
+      const end = parseDate(dates[dates.length - 1]);
+      if (!end) return state.articles;
+      const start = new Date(end);
+      start.setDate(start.getDate() - days + 1);
+      return state.articles.filter((article) => {
+        const date = parseDate(article.date);
+        return date && date >= start && date <= end;
+      });
+    }
 
     function optionList(select, values, labeler = (v) => v) {
       select.innerHTML = '<option value="">전체</option>';
@@ -451,27 +600,27 @@
 
     function initFilters(data) {
       optionList(document.getElementById("dateFilter"), uniq(data.articles.map((a) => a.date)).sort().reverse());
-      optionList(
-        document.getElementById("categoryFilter"),
-        categoryOrder.filter((key) => data.articles.some((a) => a.category === key)),
-        (key) => data.category_labels[key] || key
-      );
-      optionList(
-        document.getElementById("toneFilter"),
-        toneOrder.filter((key) => data.articles.some((a) => a.tone === key)),
-        (key) => data.tone_labels[key] || key
-      );
+      optionList(document.getElementById("categoryFilter"), categoryOrder.filter((key) => data.articles.some((a) => a.category === key)), categoryLabel);
+      optionList(document.getElementById("toneFilter"), toneOrder.filter((key) => data.articles.some((a) => a.tone === key)), toneLabel);
       optionList(document.getElementById("riskFilter"), uniq(data.articles.map((a) => a.risk)).sort());
     }
 
+    function categoryLabel(key) {
+      return state.categoryLabels[key] || categoryFallback[key] || key;
+    }
+
+    function toneLabel(key) {
+      return state.toneLabels[key] || toneFallback[key] || key;
+    }
+
     function bindControls() {
-      const map = {
-        searchInput: "q",
-        dateFilter: "date",
-        categoryFilter: "category",
-        toneFilter: "tone",
-        riskFilter: "risk"
-      };
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item === button));
+          document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === `view-${button.dataset.view}`));
+        });
+      });
+      const map = { searchInput: "q", dateFilter: "date", categoryFilter: "category", toneFilter: "tone", riskFilter: "risk" };
       Object.entries(map).forEach(([id, key]) => {
         document.getElementById(id).addEventListener("input", (event) => {
           state.filters[key] = event.target.value.trim();
@@ -489,7 +638,7 @@
     function applyFilters() {
       const query = state.filters.q.toLowerCase();
       state.filtered = state.articles.filter((article) => {
-        const haystack = [article.title, article.keyword, article.source, article.category_label, article.tone_label]
+        const haystack = [article.title, article.keyword, article.source, categoryLabel(article.category), toneLabel(article.tone)]
           .join(" ")
           .toLowerCase();
         return (!query || haystack.includes(query))
@@ -498,6 +647,31 @@
           && (!state.filters.tone || article.tone === state.filters.tone)
           && (!state.filters.risk || article.risk === state.filters.risk);
       });
+    }
+
+    function renderHero() {
+      const latest = latestDate(state.articles);
+      const current = latest ? state.articles.filter((article) => article.date === latest) : state.articles;
+      const categories = countBy(current, "category");
+      const tones = countBy(current, "tone");
+      const risk = current.find((article) => article.risk)?.risk || "-";
+      const topKeyword = topBy(current, "keyword", 1)[0]?.[0] || "주요 키워드 없음";
+      const own = categories.own || 0;
+      const negative = tones.negative || 0;
+      const market = (categories.competitor || 0) + (categories.industry || 0);
+      document.getElementById("headline").textContent = `${topKeyword} 중심으로 ${current.length}건 관찰`;
+      document.getElementById("heroMeta").textContent = latest ? `${latest} 기준 · 최신 수집 구간 중심` : "수집 데이터 없음";
+      document.getElementById("riskValue").textContent = risk;
+      document.getElementById("statusLine").textContent = `당사 보도 ${own}건 · 부정 ${negative}건 · 경쟁/업계 ${market}건`;
+      document.getElementById("judgement").textContent = buildJudgement(current, categories, tones);
+    }
+
+    function buildJudgement(items, categories, tones) {
+      if (!items.length) return "현재 표시할 언론 동향이 없습니다.";
+      if ((tones.negative || 0) > 0 && (categories.own || 0) > 0) return "당사 관련 부정성 이슈가 있어 원문 확인과 후속 모니터링이 필요합니다.";
+      if ((categories.regulation || 0) >= 3) return "규제/정책 보도가 상대적으로 많아 업계 영향 가능성을 우선 확인해야 합니다.";
+      if ((categories.own || 0) > 0) return "당사 보도가 관찰되고 있으며, 긍정/중립 확산 여부를 함께 추적할 필요가 있습니다.";
+      return "당사 직접 리스크는 낮고, 경쟁사 및 업계 흐름 중심의 관찰 구간입니다.";
     }
 
     function renderMetrics() {
@@ -511,95 +685,149 @@
       document.getElementById("metricDays").textContent = uniq(items.map((a) => a.date)).length.toLocaleString("ko-KR");
     }
 
-    function countBy(items, key) {
-      return items.reduce((acc, item) => {
-        acc[item[key]] = (acc[item[key]] || 0) + 1;
-        return acc;
-      }, {});
-    }
-
-    function renderBars(targetId, counts, order, labels) {
+    function renderBars(targetId, entries, labeler = (v) => v) {
       const target = document.getElementById(targetId);
-      const max = Math.max(...Object.values(counts), 1);
-      target.innerHTML = order
-        .filter((key) => counts[key])
-        .map((key) => `
-          <div class="bar-row">
-            <div>${escapeHtml(labels[key] || key)}</div>
-            <div class="bar-track"><div class="bar-fill" style="width:${Math.max(6, counts[key] / max * 100)}%"></div></div>
-            <div>${counts[key]}</div>
-          </div>
-        `)
-        .join("") || '<div class="empty">표시할 데이터가 없습니다.</div>';
+      const max = Math.max(...entries.map((entry) => entry[1]), 1);
+      target.innerHTML = entries.map(([key, value]) => `
+        <div class="bar-row">
+          <div>${escapeHtml(labeler(key))}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.max(6, value / max * 100)}%"></div></div>
+          <div>${value}</div>
+        </div>
+      `).join("") || '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
-    function renderInsights() {
-      renderBars("categoryBars", countBy(state.filtered, "category"), categoryOrder, state.categoryLabels);
-      renderBars("toneBars", countBy(state.filtered, "tone"), toneOrder, state.toneLabels);
+    function renderCurrent() {
+      const categoryCounts = countBy(state.filtered, "category");
+      renderBars("categoryBars", categoryOrder.filter((key) => categoryCounts[key]).map((key) => [key, categoryCounts[key]]), categoryLabel);
+      renderBriefList("topIssues", state.filtered.slice().sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5));
+    }
+
+    function renderBriefList(targetId, items) {
+      const target = document.getElementById(targetId);
+      target.innerHTML = items.map(articleCard).join("") || '<div class="empty">표시할 기사가 없습니다.</div>';
+    }
+
+    function articleCard(article) {
+      return `
+        <article class="brief-item">
+          <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
+          <div class="meta">
+            <span class="chip">${escapeHtml(article.date)}</span>
+            <span class="chip ${escapeHtml(article.category)}">${escapeHtml(categoryLabel(article.category))}</span>
+            <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(toneLabel(article.tone))}</span>
+            <span class="chip">${escapeHtml(article.keyword || "키워드 없음")}</span>
+            <span class="chip">${escapeHtml(article.source || "출처 없음")}</span>
+            <span class="chip">묶음 ${escapeHtml(article.cluster_size || 1)}건</span>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderSparkline(targetId, items, days) {
+      const target = document.getElementById(targetId);
+      const dates = uniq(state.articles.map((a) => a.date)).sort().slice(-days);
+      const counts = countBy(items, "date");
+      const max = Math.max(...dates.map((date) => counts[date] || 0), 1);
+      target.innerHTML = dates.map((date) => {
+        const value = counts[date] || 0;
+        return `
+          <div class="spark-col">
+            <div class="spark-bar" style="height:${Math.max(8, value / max * 160)}px"></div>
+            <div>${date.slice(5)}</div>
+            <div>${value}</div>
+          </div>
+        `;
+      }).join("") || '<div class="empty">표시할 데이터가 없습니다.</div>';
+    }
+
+    function renderPeriodViews() {
+      const weekly = periodItems(7);
+      const monthly = periodItems(30);
+      renderSparkline("weeklyVolume", weekly, 7);
+      renderSparkline("monthlyVolume", monthly, 30);
+      renderBars("weeklyKeywords", topBy(weekly, "keyword", 10));
+      renderBars("monthlyTone", toneOrder.map((key) => [key, countBy(monthly, "tone")[key] || 0]).filter((entry) => entry[1]), toneLabel);
+    }
+
+    function renderKeywordTree() {
+      renderTree("treeOwn", state.articles.filter((a) => a.category === "own"));
+      renderTree("treeRegulation", state.articles.filter((a) => a.category === "regulation"));
+      renderTree("treeMarket", state.articles.filter((a) => a.category === "competitor" || a.category === "industry"));
+    }
+
+    function renderTree(targetId, items) {
+      const target = document.getElementById(targetId);
+      const entries = topBy(items, "keyword", 12);
+      const max = Math.max(...entries.map((entry) => entry[1]), 1);
+      target.innerHTML = entries.map(([keyword, count]) => {
+        const alpha = Math.max(.72, count / max);
+        return `
+          <div class="tree-node" style="background:rgba(23,37,84,${alpha})">
+            <strong>${escapeHtml(keyword)}</strong>
+            <span>${count}건</span>
+          </div>
+        `;
+      }).join("") || '<div class="empty">표시할 키워드가 없습니다.</div>';
     }
 
     function renderArticles() {
-      const target = document.getElementById("articleList");
       document.getElementById("resultCount").textContent = `${state.filtered.length.toLocaleString("ko-KR")}건`;
-      if (!state.filtered.length) {
-        target.innerHTML = '<div class="empty">조건에 맞는 기사가 없습니다.</div>';
-        return;
-      }
-      target.innerHTML = state.filtered.map((article) => `
-        <article class="article">
-          <div>
-            <a class="article-title" href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">
-              ${escapeHtml(article.title)}
-            </a>
-            <div class="meta">
-              <span class="chip">${escapeHtml(article.date)}</span>
-              <span class="chip ${escapeHtml(article.category)}">${escapeHtml(article.category_label)}</span>
-              <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(article.tone_label)}</span>
-              <span class="chip">${escapeHtml(article.keyword || "키워드 없음")}</span>
-              <span class="chip">${escapeHtml(article.source || "출처 없음")}</span>
-              <span class="chip">묶음 ${escapeHtml(article.cluster_size)}건</span>
-            </div>
-          </div>
-          <div class="score">${escapeHtml(article.score)}<span>score</span></div>
-        </article>
-      `).join("");
+      renderBriefList("articleList", state.filtered.slice(0, 120));
     }
 
     function render() {
       applyFilters();
+      renderHero();
       renderMetrics();
-      renderInsights();
+      renderCurrent();
+      renderPeriodViews();
+      renderKeywordTree();
       renderArticles();
     }
 
     function exportCsv() {
       const headers = ["date", "category", "tone", "risk", "keyword", "source", "title", "link"];
-      const rows = state.filtered.map((article) => headers.map((key) => {
-        const value = String(article[key] ?? "").replace(/"/g, '""');
-        return `"${value}"`;
-      }).join(","));
+      const rows = state.filtered.map((article) => headers.map((key) => `"${String(article[key] ?? "").replace(/"/g, '""')}"`).join(","));
       const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "news-monitor-articles.csv";
+      link.download = "news-briefing-dashboard.csv";
       link.click();
       URL.revokeObjectURL(link.href);
     }
 
+    async function fetchDashboardData() {
+      const paths = ["./data/articles.json", "../public/data/articles.json"];
+      let lastError;
+      for (const path of paths) {
+        try {
+          const response = await fetch(path, { cache: "no-store" });
+          if (response.ok) return response.json();
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || new Error("No dashboard data");
+    }
+
     async function boot() {
-      const response = await fetch("./data/articles.json", { cache: "no-store" });
-      const data = await response.json();
+      const data = await fetchDashboardData();
       state.articles = data.articles || [];
-      state.categoryLabels = data.category_labels || {};
-      state.toneLabels = data.tone_labels || {};
-      initFilters(data);
+      state.categoryLabels = data.category_labels || categoryFallback;
+      state.toneLabels = data.tone_labels || toneFallback;
+      initFilters({ articles: state.articles });
       bindControls();
       render();
     }
 
     boot().catch(() => {
-      document.getElementById("articleList").innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.</div>';
+      document.getElementById("headline").textContent = "대시보드 데이터를 불러오지 못했습니다.";
+      document.getElementById("heroMeta").textContent = "자동 보고서 실행 후 public/data/articles.json이 생성되면 표시됩니다.";
+      document.getElementById("judgement").textContent = "GitHub Pages의 dashboard.html 또는 생성된 public/dashboard.html에서 확인해 주세요.";
+      document.getElementById("riskValue").textContent = "-";
+      document.getElementById("statusLine").textContent = "데이터 연결 대기";
     });
   </script>
 </body>
