@@ -15,6 +15,27 @@ GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필
 
 주의: 이 토큰은 외부 cron 서비스에 입력되므로, 저장 후 노출되지 않게 관리해야 합니다.
 
+## 1-1. 자동 등록 스크립트로 한 번에 만들기
+
+cron-job.org API key와 GitHub 토큰을 준비했다면 아래 환경변수를 설정한 뒤 스크립트를 실행하면 됩니다.
+
+```powershell
+$env:CRONJOB_API_KEY="cron-job.org API key"
+$env:GITHUB_DISPATCH_TOKEN="GitHub fine-grained token"
+python setup_cronjob_org.py
+```
+
+이 스크립트는 아래 작업을 자동 생성하거나, 같은 제목의 작업이 이미 있으면 업데이트합니다.
+
+- `news-monitor negative watch`
+- `news-monitor daily 08`
+- `news-monitor daily 13`
+- `news-monitor daily 18`
+- `news-monitor weekly report`
+- `news-monitor monthly report`
+
+cron-job.org API key는 cron-job.org Console > Settings에서 생성합니다. cron-job.org 공식 문서에 따르면 API는 `Authorization: Bearer <API_KEY>` 방식으로 인증하며, 요청 payload는 JSON으로 보냅니다.
+
 ## 2. 부정기사 10분 감지 호출
 
 외부 cron 서비스에서 아래 요청을 10분마다 실행합니다.
