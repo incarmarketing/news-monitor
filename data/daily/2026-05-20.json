@@ -1,6 +1,6 @@
 {
   "date": "2026-05-20",
-  "timestamp": "2026-05-20T08:01:10.828816+09:00",
+  "timestamp": "2026-05-20T08:09:19.812929+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -14,8 +14,8 @@
     "by_category": {
       "own": 1,
       "regulation": 5,
-      "competitor": 29,
-      "industry": 24,
+      "competitor": 28,
+      "industry": 25,
       "other": 1
     },
     "by_tone": {
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사, 원수사 핵심 파트너로 언급. 업계는 실적 및 규제 동향 중심.\n\n## 핵심 이슈\n- [3] 원수사별 주력 GA 구도: 메리츠화재의 핵심 파트너로 당사 부각.\n- [1] 손보사 1분기 실적 희비: 삼성·현대해상 실적 선방, DB·KB손보 부진.\n\n## 지표 해석\n당사 관련 보도는 1건으로 중립적 톤을 유지했으며, 부정 이슈는 없습니다. 업계 동향은 손해보험사 1분기 실적과 금융당국의 소비자 보호 강화에 집중되었습니다.\n\n## 분석 키워드\n주력 GA, 손보사 실적, 삼성·현대해상, 소비자 보호",
+  "briefing": "## 최종 결론\n당사는 메리츠 주력 GA로 언급, 업계는 실적 발표 및 규제 동향이 중심.\n\n## 핵심 이슈\n- [3] 메리츠화재 주력 GA 보도: 당사를 메리츠의 핵심 파트너로 언급, 중립적 보도.\n- [1] 손보사 1분기 실적 희비: 삼성/현대해상 호실적, DB/KB손보 부진 보도.\n\n## 지표 해석\n당사 직접 언급은 1건으로 중립적 톤을 유지했으며, 부정 기사는 없었습니다. 손해보험사 1분기 실적 발표 등 경쟁사 동향이 다수 보도되었습니다.\n\n## 분석 키워드\n메리츠 주력 GA, 삼성/현대해상 실적, 금감원, 생보사 투자손익",
   "articles": [
     {
       "title": "삼성·현대해상 웃고, DB·KB손보 울고…손보 빅5 희비 엇갈린 1분기",
@@ -112,17 +112,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "해리농협, ‘2026 NH농협손해보험 위더스 사무소 선정’",
-      "link": "https://sjbnews.com/news/news.php?number=878854",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Tue, 19 May 2026 18:59:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "[보험사 이모저모] KB손해보험, 신한라이프, iM라이프 - 비즈월드",
       "link": "https://news.google.com/rss/articles/CBMiakFVX3lxTE9RaHZEVndCV3c2MkdFM2RDU1NLOWo3eXAtdWI3YUNQQ2hKdHNVQTBJd2FWc2Y2d3Z5NnhWVExVeWozbllIRjA5QVFjUVR6YWZSX0dzSTVlc0J4bWhNa2llcFNxZlhpNTdEdUE?oc=5",
       "source": "google",
@@ -194,6 +183,17 @@
       "source": "naver",
       "keyword": "보험 마케팅",
       "pub_date": "Tue, 19 May 2026 18:13:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[실버타운 2.0] 요양산업 '퍼스트 무버' KB금융···추격자 따돌릴 수 있...",
+      "link": "https://www.womaneconomy.co.kr/news/articleView.html?idxno=253976",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Wed, 20 May 2026 08:00:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -282,17 +282,6 @@
       "source": "naver",
       "keyword": "생명보험",
       "pub_date": "Tue, 19 May 2026 18:04:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[실버타운 2.0] 요양산업 '퍼스트 무버' KB금융···추격자 따돌릴 수 있...",
-      "link": "https://www.womaneconomy.co.kr/news/articleView.html?idxno=253976",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 08:00:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -491,6 +480,17 @@
       "source": "naver",
       "keyword": "보험 마케팅",
       "pub_date": "Tue, 19 May 2026 18:24:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[美·日 금리 폭주] 국고채 10년물 입찰 '사상 첫 가격 균열'…보험사가...",
+      "link": "https://www.newspim.com/news/view/20260519001141",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Wed, 20 May 2026 07:59:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
