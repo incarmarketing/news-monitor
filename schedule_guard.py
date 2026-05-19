@@ -23,10 +23,13 @@ def github_output(name: str, value: str) -> None:
 def begin() -> None:
     event_name = os.getenv("GITHUB_EVENT_NAME", "")
     if event_name != "schedule":
+        manual_slot = os.getenv("MANUAL_REPORT_SLOT", "").strip()
+        if manual_slot not in {"08", "13", "18"}:
+            manual_slot = "manual"
         github_output("should_run", "true")
         github_output("should_mark", "false")
         github_output("should_period", "false")
-        github_output("kst_hour", "manual")
+        github_output("kst_hour", manual_slot)
         github_output("marker_path", "")
         return
 
