@@ -5,6 +5,8 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+import dashboard_builder
+
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
 PUBLIC_DIR = BASE_DIR / "public"
@@ -55,6 +57,7 @@ def publish() -> Path:
     publish_assets()
     publish_period_report("weekly")
     publish_period_report("monthly")
+    dashboard_builder.publish_dashboard()
     return index_target
 
 

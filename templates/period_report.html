@@ -40,7 +40,8 @@
     border-bottom:1px solid rgba(148,163,184,.28);
     backdrop-filter:blur(10px);
   }
-  .toolbar button {
+  .toolbar button,
+  .toolbar a {
     border:1px solid #cbd5e1;
     background:#fff;
     color:var(--navy);
@@ -48,6 +49,8 @@
     padding:8px 14px;
     font-weight:900;
     cursor:pointer;
+    text-decoration:none;
+    margin:0 4px;
   }
   .page {
     width:min(980px, calc(100% - 24px));
@@ -352,7 +355,7 @@
 </style>
 </head>
 <body>
-<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button></div>
+<div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><a href="./dashboard.html">언론 DB</a></div>
 <main class="page">
   <section class="hero">
     <div class="hero-grid">

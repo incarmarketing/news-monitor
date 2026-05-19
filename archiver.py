@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import report_window
+import supabase_store
 
 BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
@@ -41,6 +42,10 @@ def save_daily(articles: list[dict], briefing: str, metrics: dict) -> Path:
         "articles": [lighten(article) for article in articles],
     }
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        supabase_store.save_report_run(payload)
+    except Exception as exc:
+        print(f"Supabase archive skipped: {exc}")
     return target
 
 
