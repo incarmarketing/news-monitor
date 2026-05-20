@@ -7,6 +7,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from urllib.parse import urlparse
 
 import feedparser
 import requests
@@ -85,11 +86,16 @@ def fetch_naver_news(keyword: str) -> list[dict]:
         return [
             {
                 "title": clean_html(item.get("title", "")),
-                "link": item.get("link", ""),
+                "link": item.get("originallink") or item.get("link", ""),
                 "description": clean_html(item.get("description", "")),
                 "pub_date": item.get("pubDate", ""),
-                "source": "naver",
+                "source": infer_press_name(
+                    clean_html(item.get("title", "")),
+                    item.get("originallink") or item.get("link", ""),
+                    "naver",
+                ),
                 "keyword": keyword,
+                "portal": "naver",
             }
             for item in response.json().get("items", [])
         ]
@@ -110,8 +116,9 @@ def fetch_google_news(keyword: str) -> list[dict]:
                 "link": entry.get("link", ""),
                 "description": clean_html(entry.get("summary", "")),
                 "pub_date": entry.get("published", ""),
-                "source": "google",
+                "source": infer_press_name(entry.get("title", ""), entry.get("link", ""), "google"),
                 "keyword": keyword,
+                "portal": "google",
             }
             for entry in feed.entries[:config.ARTICLES_PER_KEYWORD]
         ]
@@ -129,6 +136,44 @@ def clean_html(text: str) -> str:
         .replace("&gt;", ">")
         .strip()
     )
+
+
+def infer_press_name(title: str, link: str, fallback: str) -> str:
+    title_press = extract_press_from_title(title)
+    if title_press:
+        return title_press
+    domain_press = extract_press_from_url(link)
+    return domain_press or fallback
+
+
+def extract_press_from_title(title: str) -> str:
+    bracket = re.match(r"^\s*\[([^\]]{2,15})\]", title or "")
+    if bracket:
+        return bracket.group(1).strip()
+    dash = re.search(r"\s[-–]\s([^-\u2013]{2,18})$", title or "")
+    if not dash:
+        return ""
+    candidate = re.sub(r"\s+", " ", dash.group(1)).strip()
+    if re.search(r"기자|특파원|단독|종합|속보", candidate):
+        return ""
+    return candidate
+
+
+def extract_press_from_url(link: str) -> str:
+    if not link:
+        return ""
+    host = urlparse(link).hostname or ""
+    host = host.removeprefix("www.")
+    if not host or host in {"news.naver.com", "n.news.naver.com", "m.sports.naver.com", "news.google.com"}:
+        return ""
+    domain_map = {
+        "fins.co.kr": "보험저널",
+        "news2day.co.kr": "뉴스투데이",
+        "econovill.com": "이코노믹리뷰",
+        "pinpointnews.co.kr": "핀포인트뉴스",
+        "bigdatanews.co.kr": "빅데이터뉴스",
+    }
+    return domain_map.get(host, host)
 
 
 def deduplicate(articles: list[dict]) -> list[dict]:
