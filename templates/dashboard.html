@@ -189,29 +189,41 @@
       padding:4px 0 4px 18px;
       display:grid;
       align-content:center;
-      gap:9px;
+      gap:12px;
     }
-    .risk-value {
-      width:max-content;
-      min-width:82px;
-      min-height:36px;
-      border-radius:999px;
-      display:inline-flex;
+    .risk-state {
+      display:flex;
       align-items:center;
-      justify-content:center;
-      padding:7px 14px;
-      background:#fff;
-      color:#172554;
+      gap:12px;
+      padding:13px;
       border:1px solid var(--line);
-      font-size:18px;
+      border-radius:8px;
+      background:#fff;
+    }
+    .risk-dot {
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:#94a3b8;
+      box-shadow:0 0 0 5px #f1f5f9;
+      flex:0 0 auto;
+    }
+    .risk-card.risk-low .risk-state { background:#f0fdf4; border-color:#bbf7d0; }
+    .risk-card.risk-low .risk-dot { background:#16a34a; box-shadow:0 0 0 5px #dcfce7; }
+    .risk-card.risk-medium .risk-state { background:#fffbeb; border-color:#fde68a; }
+    .risk-card.risk-medium .risk-dot { background:#d97706; box-shadow:0 0 0 5px #fef3c7; }
+    .risk-card.risk-high .risk-state { background:#fff1f2; border-color:#fecdd3; }
+    .risk-card.risk-high .risk-dot { background:#dc2626; box-shadow:0 0 0 5px #ffe4e6; }
+    .risk-value {
+      color:#0f172a;
+      font-size:22px;
       font-weight:900;
       line-height:1;
-      box-shadow:none;
     }
-    .risk-value.risk-low { background:#e8f8ee; color:#166534; }
-    .risk-value.risk-medium { background:#fff7ed; color:#9a3412; }
-    .risk-value.risk-high { background:#fff1f2; color:#be123c; }
-    .risk-label { color:var(--muted); font-size:12px; font-weight:900; }
+    .risk-card.risk-low .risk-value { color:#166534; }
+    .risk-card.risk-medium .risk-value { color:#9a3412; }
+    .risk-card.risk-high .risk-value { color:#be123c; }
+    .risk-label { color:var(--muted); font-size:12px; font-weight:900; margin-bottom:6px; }
     .risk-hint { color:#475467; font-size:13px; font-weight:800; line-height:1.45; }
     .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
     .metric {
@@ -399,9 +411,19 @@
     }
     .report-evidence {
       display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
     }
+    .evidence-section {
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:12px;
+      background:#fbfdff;
+      min-width:0;
+    }
+    .evidence-section.primary { grid-row:span 2; }
+    .evidence-section .feed { gap:10px; }
+    .evidence-section .article { background:#fff; }
     .table { width:100%; border-collapse:collapse; font-size:13px; }
     .table th,.table td { border-bottom:1px solid var(--line); padding:12px 10px; text-align:left; vertical-align:top; }
     .table th { color:var(--muted); font-size:12px; font-weight:900; background:#f8fafc; }
@@ -446,6 +468,7 @@
       .toolbar .field:first-child { grid-column:1/-1; }
       .report-head,.report-controls,.report-evidence { grid-template-columns:1fr; }
       .report-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .evidence-section.primary { grid-row:auto; }
     }
     @media(max-width:540px) {
       h1 { font-size:20px; }
@@ -524,9 +547,12 @@
               <div class="judgement" id="judgement">현재 언론 상황을 분석합니다.</div>
             </div>
             <aside class="risk-card">
-              <div>
+              <div class="risk-state">
+                <span class="risk-dot" aria-hidden="true"></span>
+                <div>
                 <div class="risk-label">리스크 레벨</div>
                 <div class="risk-value" id="riskValue">-</div>
+                </div>
               </div>
               <div class="risk-hint" id="riskHint">당사 직접 부정 이슈를 기준으로 산정합니다.</div>
             </aside>
@@ -909,7 +935,8 @@
       document.getElementById("heroMeta").textContent = `${latestDate(current) || "-"} · ${contextLabel()}`;
       const riskEl = document.getElementById("riskValue");
       riskEl.textContent = risk;
-      riskEl.className = `risk-value risk-${String(risk).toLowerCase()}`;
+      riskEl.className = "risk-value";
+      riskEl.closest(".risk-card").className = `risk-card risk-${String(risk).toLowerCase()}`;
       document.getElementById("riskHint").textContent = risk === "LOW" ? "당사 직접 부정 이슈는 낮은 상태입니다." : "원문 확인과 후속 대응 검토가 필요합니다.";
       document.getElementById("issueTitle").innerHTML = `<i data-lucide="activity"></i> ${hasActiveFilter() ? "필터 기준 핵심 이슈" : "최신 모니터링 핵심 이슈"}`;
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
@@ -1113,14 +1140,16 @@
       const negative = items.filter(a => a.tone === "negative").sort((a,b) => b.score - a.score).slice(0,3);
       const trend = items.filter(a => ["regulation","competitor","industry"].includes(a.category)).sort((a,b) => b.score - a.score).slice(0,3);
       const groups = [
-        ["당사 보도", own],
-        ["리스크/부정", negative],
-        ["업계 동향", trend],
+        ["당사 보도", own, "primary"],
+        ["리스크/부정", negative, ""],
+        ["업계 동향", trend, ""],
       ];
-      document.getElementById("analysisEvidence").innerHTML = groups.map(([title, rows]) => `
-        <div class="feed">
+      document.getElementById("analysisEvidence").innerHTML = groups.map(([title, rows, variant]) => `
+        <div class="evidence-section ${variant}">
           <h3 class="report-section-title" style="font-size:14px;margin:0">${escapeHtml(title)}</h3>
+          <div class="feed">
           ${rows.map(a => articleCard(a,true)).join("") || '<div class="empty">해당 기사 없음</div>'}
+          </div>
         </div>
       `).join("");
     }
