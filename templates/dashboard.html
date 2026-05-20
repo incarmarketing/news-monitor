@@ -711,6 +711,15 @@
                     <option>주의</option>
                   </select>
                 </div>
+                <div class="field">
+                  <label>언론사 등급</label>
+                  <select id="mediaGrade">
+                    <option>A</option>
+                    <option>B</option>
+                    <option>C</option>
+                    <option>관찰</option>
+                  </select>
+                </div>
                 <div class="field"><label>담당자</label><input id="mediaOwner" placeholder="담당자명"></div>
                 <div class="field"><label>최근 접촉일</label><input id="mediaContactDate" type="date"></div>
               </div>
@@ -719,7 +728,10 @@
             </div>
           </div>
           <div class="panel" style="margin-top:14px">
-            <h2 class="panel-title"><i data-lucide="clipboard-list"></i> 언론사 관리 목록</h2>
+            <div class="section-head">
+              <h2 class="panel-title"><i data-lucide="clipboard-list"></i> 언론사 관리 목록</h2>
+              <button class="btn" onclick="resetHiddenMedia()">숨김 초기화</button>
+            </div>
             <table class="table" id="mediaTable"></table>
           </div>
         </section>
@@ -799,6 +811,7 @@
       scraps: JSON.parse(localStorage.getItem("pr_scraps") || "[]"),
       keywords: JSON.parse(localStorage.getItem("pr_keywords") || '["인카금융서비스","GA","브랜드평판"]'),
       mediaRelations: JSON.parse(localStorage.getItem("pr_media_relations") || "[]"),
+      hiddenMedia: JSON.parse(localStorage.getItem("pr_hidden_media") || "[]"),
       reporters: JSON.parse(localStorage.getItem("pr_reporters") || "[]"),
       ads: JSON.parse(localStorage.getItem("pr_ads") || "[]")
     };
@@ -818,6 +831,10 @@
     const toneOrder = ["negative","neutral","positive"];
     const categoryFallback = { own:"당사 보도", regulation:"규제/정책", competitor:"경쟁사", industry:"업계 동향", other:"기타" };
     const toneFallback = { negative:"부정", neutral:"중립", positive:"긍정" };
+    const portalPressNames = new Set([
+      "google", "google.com", "news.google.com", "news.google.co.kr",
+      "naver", "naver.com", "news.naver.com", "네이버뉴스", "구글뉴스"
+    ]);
 
     const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     const uniq = (items) => Array.from(new Set(items.filter(Boolean)));
@@ -825,6 +842,10 @@
     const topBy = (items,key,limit=8) => Object.entries(countBy(items,key)).sort((a,b) => b[1] - a[1]).slice(0,limit);
     const categoryLabel = key => state.categoryLabels[key] || categoryFallback[key] || key;
     const toneLabel = key => state.toneLabels[key] || toneFallback[key] || key;
+    const isPortalPress = press => portalPressNames.has(String(press || "").trim().toLowerCase());
+    const managedMediaArticles = () => state.articles.filter(article =>
+      article.press && !isPortalPress(article.press) && !state.hiddenMedia.includes(article.press)
+    );
 
     function pressName(article) {
       if (article.press) return article.press;
@@ -832,6 +853,7 @@
       if (source && !["naver","google"].includes(source.toLowerCase())) return source;
       try {
         const host = new URL(article.link).hostname.replace("www.","");
+        if (isPortalPress(host)) return host;
         const map = { "fins.co.kr":"보험저널", "news2day.co.kr":"뉴스투데이", "econovill.com":"이코노믹리뷰", "pinpointnews.co.kr":"핀포인트뉴스", "bigdatanews.co.kr":"빅데이터뉴스" };
         return map[host] || host;
       } catch { return source || "언론사"; }
@@ -1149,7 +1171,7 @@
     function renderInsights(items = focusedItems()) {
       const current = items;
       const topKeyword = topBy(current,"keyword",1)[0];
-      const topPress = topBy(current,"press",1)[0];
+      const topPress = topBy(current.filter(article => !isPortalPress(article.press)),"press",1)[0];
       const neg = current.filter(a => a.tone === "negative").length;
       const messages = [
         `${contextLabel()} 기사 ${current.length}건이 관찰되었습니다.`,
@@ -1194,7 +1216,8 @@
     }
 
     function renderMedia() {
-      const sourceEntries = topBy(state.articles,"press",12);
+      const mediaArticles = managedMediaArticles();
+      const sourceEntries = topBy(mediaArticles,"press",12);
       renderBars("sourceBars", sourceEntries);
       document.getElementById("sourceOptions").innerHTML = sourceEntries
         .map(([press]) => `<option value="${escapeHtml(press)}"></option>`)
@@ -1203,55 +1226,62 @@
       const sourceNames = uniq([
         ...sourceEntries.map(([press]) => press),
         ...state.mediaRelations.map(item => item.name)
-      ]);
+      ]).filter(press => !isPortalPress(press) && !state.hiddenMedia.includes(press));
       const rows = sourceNames.map(press => {
-        const articles = state.articles.filter(a => a.press === press);
+        const articles = mediaArticles.filter(a => a.press === press);
         const count = articles.length;
         const neg = articles.filter(a => a.tone === "negative").length;
         const pos = articles.filter(a => a.tone === "positive").length;
         const relation = state.mediaRelations.find(item => item.name === press);
         const status = relation?.status || (neg ? "주의" : pos ? "우호" : "중립");
+        const grade = relation?.grade || (count >= 10 ? "A" : count >= 4 ? "B" : "C");
         return `
           <tr>
             <td><strong>${escapeHtml(press)}</strong></td>
             <td>${count ? `${count}건` : "-"}</td>
             <td>${pos}/${neg}</td>
             <td>${escapeHtml(status)}</td>
+            <td><span class="chip">${escapeHtml(grade)}</span></td>
             <td>${escapeHtml(relation?.owner || "-")}</td>
             <td>${escapeHtml(relation?.contactDate || "-")}</td>
             <td>${escapeHtml(relation?.memo || "관리 메모 없음")}</td>
             <td>
               <button class="btn" onclick="editMediaRelation('${escapeHtml(press)}')">관리</button>
-              ${relation ? `<button class="btn danger" onclick="removeMediaRelation('${escapeHtml(press)}')">삭제</button>` : ""}
+              <button class="btn danger" onclick="removeMediaRelation('${escapeHtml(press)}')">삭제</button>
             </td>
           </tr>
         `;
       }).join("");
-      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>보도량</th><th>긍정/부정</th><th>관계</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="8">언론사 데이터가 없습니다.</td></tr>'}`;
+      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>보도량</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="9">언론사 데이터가 없습니다.</td></tr>'}`;
     }
 
     function saveMediaRelation() {
       const item = {
         name: document.getElementById("mediaName").value.trim(),
         status: document.getElementById("mediaRelation").value,
+        grade: document.getElementById("mediaGrade").value,
         owner: document.getElementById("mediaOwner").value.trim(),
         contactDate: document.getElementById("mediaContactDate").value,
         memo: document.getElementById("mediaMemo").value.trim()
       };
       if (!item.name) return alert("언론사명을 입력해 주세요.");
+      state.hiddenMedia = state.hiddenMedia.filter(name => name !== item.name);
+      localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
       const existing = state.mediaRelations.findIndex(row => row.name === item.name);
       if (existing >= 0) state.mediaRelations[existing] = item;
       else state.mediaRelations.unshift(item);
       localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
       ["mediaName","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("mediaRelation").value = "우호";
+      document.getElementById("mediaGrade").value = "A";
       renderMedia();
     }
 
     function editMediaRelation(press) {
-      const relation = state.mediaRelations.find(item => item.name === press) || { name: press, status: "중립", owner: "", contactDate: "", memo: "" };
+      const relation = state.mediaRelations.find(item => item.name === press) || { name: press, status: "중립", grade: "B", owner: "", contactDate: "", memo: "" };
       document.getElementById("mediaName").value = relation.name;
       document.getElementById("mediaRelation").value = relation.status;
+      document.getElementById("mediaGrade").value = relation.grade || "B";
       document.getElementById("mediaOwner").value = relation.owner || "";
       document.getElementById("mediaContactDate").value = relation.contactDate || "";
       document.getElementById("mediaMemo").value = relation.memo || "";
@@ -1259,9 +1289,18 @@
     }
 
     function removeMediaRelation(press) {
-      if (!confirm(`${press} 관리 정보를 삭제할까요?`)) return;
+      if (!confirm(`${press}를 언론사 관리 목록에서 삭제할까요?`)) return;
       state.mediaRelations = state.mediaRelations.filter(item => item.name !== press);
+      if (!state.hiddenMedia.includes(press)) state.hiddenMedia.push(press);
       localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
+      localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
+      renderMedia();
+    }
+
+    function resetHiddenMedia() {
+      if (!confirm("숨김 처리한 언론사를 다시 표시할까요?")) return;
+      state.hiddenMedia = [];
+      localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
       renderMedia();
     }
 
@@ -1350,7 +1389,7 @@
 
     function clearLocal() {
       if (!confirm("스크랩, 기자, 광고비 등 로컬 관리 데이터를 초기화할까요?")) return;
-      ["pr_scraps","pr_keywords","pr_media_relations","pr_reporters","pr_ads"].forEach(key => localStorage.removeItem(key));
+      ["pr_scraps","pr_keywords","pr_media_relations","pr_hidden_media","pr_reporters","pr_ads"].forEach(key => localStorage.removeItem(key));
       location.reload();
     }
 
