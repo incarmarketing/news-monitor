@@ -317,6 +317,87 @@
     .keyword-count { color:var(--incar-dark); font-size:13px; font-weight:900; text-align:right; }
     .focus-box { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; color:var(--muted); font-size:13px; font-weight:800; min-height:62px; }
     .focus-box strong { display:block; color:var(--incar-dark); font-size:15px; margin-bottom:4px; }
+    .report-shell {
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:8px;
+      overflow:hidden;
+      box-shadow:0 1px 2px rgba(16,24,40,.04);
+    }
+    .report-head {
+      padding:24px;
+      background:linear-gradient(135deg,#111827 0%,#27398c 100%);
+      color:#fff;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:18px;
+      align-items:start;
+    }
+    .report-badge {
+      display:inline-flex;
+      width:max-content;
+      border:1px solid rgba(255,255,255,.28);
+      border-radius:999px;
+      padding:5px 10px;
+      color:#dbeafe;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.08em;
+    }
+    .report-head h2 { margin:10px 0 6px; font-size:30px; line-height:1.22; letter-spacing:0; }
+    .report-meta { color:#dbe4ff; font-size:13px; font-weight:800; line-height:1.5; }
+    .report-controls {
+      padding:16px;
+      border-bottom:1px solid var(--line);
+      background:#f8fafc;
+      display:grid;
+      grid-template-columns:1fr 150px 150px auto;
+      gap:10px;
+      align-items:end;
+    }
+    .segmented {
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .segmented .btn.active { background:var(--incar); border-color:var(--incar); color:#fff; }
+    .report-body { padding:18px; display:grid; gap:14px; }
+    .report-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+    .report-kpi {
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:14px;
+      background:#fff;
+      min-height:86px;
+    }
+    .report-kpi .num { color:var(--incar-dark); font-size:27px; font-weight:900; line-height:1; }
+    .report-kpi .label { margin-top:8px; color:var(--muted); font-size:12px; font-weight:900; }
+    .report-message {
+      border:1px solid #c7d7fe;
+      border-left:4px solid var(--incar);
+      border-radius:8px;
+      padding:14px 15px;
+      background:#f8fbff;
+      color:#182230;
+      font-size:15px;
+      font-weight:900;
+      line-height:1.55;
+    }
+    .report-section-title {
+      margin:0 0 12px;
+      color:var(--incar-dark);
+      font-size:17px;
+      font-weight:900;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .report-evidence {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
     .table { width:100%; border-collapse:collapse; font-size:13px; }
     .table th,.table td { border-bottom:1px solid var(--line); padding:12px 10px; text-align:left; vertical-align:top; }
     .table th { color:var(--muted); font-size:12px; font-weight:900; background:#f8fafc; }
@@ -359,6 +440,8 @@
       .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .toolbar { grid-template-columns:1fr 1fr; }
       .toolbar .field:first-child { grid-column:1/-1; }
+      .report-head,.report-controls,.report-evidence { grid-template-columns:1fr; }
+      .report-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
     }
     @media(max-width:540px) {
       h1 { font-size:20px; }
@@ -366,6 +449,20 @@
       .hero h2 { font-size:23px; }
       .metric-grid,.toolbar,.form-grid { grid-template-columns:1fr; }
       .actions .btn span { display:none; }
+      .report-kpis { grid-template-columns:1fr; }
+    }
+    @media print {
+      body { height:auto; overflow:visible; background:#fff; }
+      .sidebar,.topbar,.mobile-tabs,.no-print { display:none !important; }
+      .app,.main { display:block; height:auto; overflow:visible; }
+      .page-wrap { max-width:none; padding:0; }
+      .page { display:none !important; }
+      #page-analysis { display:block !important; }
+      .report-shell,.panel,.article,.report-kpi { box-shadow:none; break-inside:avoid; }
+      .report-head { background:#111827 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .report-controls { display:none !important; }
+      .chart { height:170px; }
+      a { text-decoration:none; }
     }
   </style>
 </head>
@@ -465,24 +562,65 @@
         </section>
 
         <section class="page" id="page-analysis">
-          <div class="grid-2">
-            <div class="panel">
-              <h2 class="panel-title"><i data-lucide="trending-up"></i> 최근 기사량 추이</h2>
-              <div class="chart" id="volumeChart"></div>
+          <div class="report-shell">
+            <div class="report-head">
+              <div>
+                <div class="report-badge">MEDIA ANALYSIS REPORT</div>
+                <h2>미디어 분석 리포트</h2>
+                <div class="report-meta" id="analysisMeta">기간을 선택하면 해당 구간의 보도량, 논조, 키워드, 근거기사를 재계산합니다.</div>
+              </div>
+              <button class="btn primary no-print" id="printAnalysis"><i data-lucide="printer"></i><span>인쇄 / PDF 저장</span></button>
             </div>
-            <div class="panel">
-              <h2 class="panel-title"><i data-lucide="smile"></i> 보도 톤앤매너</h2>
-              <div class="bars" id="toneBars"></div>
+            <div class="report-controls no-print">
+              <div class="field">
+                <label>분석 기간</label>
+                <div class="segmented" id="analysisPreset">
+                  <button class="btn active" data-range="all">전체</button>
+                  <button class="btn" data-range="7">최근 7일</button>
+                  <button class="btn" data-range="30">최근 30일</button>
+                  <button class="btn" data-range="custom">직접 선택</button>
+                </div>
+              </div>
+              <div class="field"><label>시작일</label><input id="analysisStart" type="date"></div>
+              <div class="field"><label>종료일</label><input id="analysisEnd" type="date"></div>
+              <button class="btn" id="applyAnalysisRange"><i data-lucide="search"></i><span>분석 적용</span></button>
             </div>
-          </div>
-          <div class="grid-2" style="margin-top:14px">
-            <div class="panel">
-              <h2 class="panel-title"><i data-lucide="cloud"></i> 주요 키워드</h2>
-              <div class="keyword-board" id="keywordTree"></div>
-            </div>
-            <div class="panel">
-              <h2 class="panel-title"><i data-lucide="list-checks"></i> 자동 인사이트</h2>
-              <div class="feed" id="insights"></div>
+            <div class="report-body">
+              <div class="report-kpis">
+                <div class="report-kpi"><div class="num" id="analysisTotal">0</div><div class="label">전체 기사</div></div>
+                <div class="report-kpi"><div class="num" id="analysisOwn">0</div><div class="label">당사 보도</div></div>
+                <div class="report-kpi"><div class="num" id="analysisNegative">0</div><div class="label">부정 톤</div></div>
+                <div class="report-kpi"><div class="num" id="analysisRegulation">0</div><div class="label">규제/정책</div></div>
+                <div class="report-kpi"><div class="num" id="analysisRisk">LOW</div><div class="label">리스크 레벨</div></div>
+              </div>
+              <div class="report-message" id="analysisMessage">분석 데이터를 불러오는 중입니다.</div>
+
+              <div class="grid-2">
+                <div class="panel">
+                  <h2 class="report-section-title"><i data-lucide="trending-up"></i> 기사량 추이</h2>
+                  <div class="chart" id="volumeChart"></div>
+                </div>
+                <div class="panel">
+                  <h2 class="report-section-title"><i data-lucide="smile"></i> 보도 논조</h2>
+                  <div class="bars" id="toneBars"></div>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="panel">
+                  <h2 class="report-section-title"><i data-lucide="cloud"></i> 주요 키워드</h2>
+                  <div class="keyword-board" id="keywordTree"></div>
+                </div>
+                <div class="panel">
+                  <h2 class="report-section-title"><i data-lucide="list-checks"></i> 자동 해석</h2>
+                  <div class="feed" id="insights"></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <h2 class="report-section-title"><i data-lucide="newspaper"></i> 분석 근거 기사</h2>
+                <div class="report-evidence" id="analysisEvidence"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -619,6 +757,7 @@
       articles: [],
       filtered: [],
       filters: { q:"", date:"", category:"", tone:"", risk:"" },
+      analysis: { range:"all", start:"", end:"" },
       categoryLabels: {},
       toneLabels: {},
       scraps: JSON.parse(localStorage.getItem("pr_scraps") || "[]"),
@@ -708,6 +847,22 @@
         render();
       });
       document.getElementById("exportCsv").addEventListener("click", exportCsv);
+      document.getElementById("printAnalysis")?.addEventListener("click", () => window.print());
+      document.getElementById("applyAnalysisRange")?.addEventListener("click", () => {
+        state.analysis.range = "custom";
+        state.analysis.start = document.getElementById("analysisStart").value;
+        state.analysis.end = document.getElementById("analysisEnd").value;
+        updateAnalysisPresetButtons();
+        renderAnalysis();
+      });
+      document.querySelectorAll("#analysisPreset [data-range]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.analysis.range = btn.dataset.range;
+          if (btn.dataset.range !== "custom") setAnalysisRange(btn.dataset.range);
+          updateAnalysisPresetButtons();
+          renderAnalysis();
+        });
+      });
     }
 
     function switchPage(page) {
@@ -794,19 +949,102 @@
       document.getElementById("riskArticles").innerHTML = risks.map(a => articleCard(a,true)).join("") || '<div class="empty">현재 리스크 기사가 없습니다.</div>';
     }
 
+    function parseDateValue(value) {
+      if (!value) return null;
+      const parsed = new Date(`${value}T00:00:00`);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function sortedDates(items = state.articles) {
+      return uniq(items.map(a => a.date)).sort();
+    }
+
+    function setAnalysisRange(range) {
+      const dates = sortedDates();
+      const end = dates[dates.length - 1] || "";
+      let start = dates[0] || "";
+      if (range !== "all" && end) {
+        const endDate = parseDateValue(end);
+        if (endDate) {
+          endDate.setDate(endDate.getDate() - Number(range) + 1);
+          const candidate = endDate.toISOString().slice(0,10);
+          start = dates.find(date => date >= candidate) || candidate;
+        }
+      }
+      state.analysis.start = start;
+      state.analysis.end = end;
+      const startEl = document.getElementById("analysisStart");
+      const endEl = document.getElementById("analysisEnd");
+      if (startEl) startEl.value = start;
+      if (endEl) endEl.value = end;
+    }
+
+    function updateAnalysisPresetButtons() {
+      document.querySelectorAll("#analysisPreset [data-range]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.range === state.analysis.range);
+      });
+    }
+
+    function analysisItems() {
+      if (!state.analysis.start && !state.analysis.end) setAnalysisRange("all");
+      return state.articles.filter(article => {
+        return (!state.analysis.start || article.date >= state.analysis.start)
+          && (!state.analysis.end || article.date <= state.analysis.end);
+      });
+    }
+
+    function analysisPeriodLabel() {
+      if (!state.analysis.start && !state.analysis.end) return "전체 기간";
+      if (state.analysis.start === state.analysis.end) return state.analysis.start || "선택 기간";
+      return `${state.analysis.start || "-"} ~ ${state.analysis.end || "-"}`;
+    }
+
+    function analysisRisk(items) {
+      const ownNegative = items.filter(a => a.category === "own" && a.tone === "negative").length;
+      if (ownNegative >= 3) return "HIGH";
+      if (ownNegative >= 1) return "MEDIUM";
+      return "LOW";
+    }
+
+    function buildAnalysisMessage(items, cats, tones) {
+      if (!items.length) return "선택한 기간에 표시할 언론 데이터가 없습니다. 기간을 다시 선택하거나 수집 상태를 확인해 주세요.";
+      const topKeyword = topBy(items,"keyword",1)[0];
+      const own = cats.own || 0;
+      const negative = tones.negative || 0;
+      const regulation = cats.regulation || 0;
+      const market = (cats.competitor || 0) + (cats.industry || 0);
+      if (own && negative) return `선택 기간에는 당사 관련 부정성 이슈가 포함되어 있습니다. 원문 확인, 사실관계 정리, 후속 대응 상태 등록이 우선입니다. 주요 키워드는 ${topKeyword ? `"${topKeyword[0]}"` : "확인 필요"}입니다.`;
+      if (regulation >= Math.max(3, own)) return `규제/정책성 보도가 상대적으로 두드러집니다. 당사 직접 리스크보다 업계 환경 변화가 핵심이므로, 관련 법안·감독 이슈의 후속 보도를 관찰해야 합니다.`;
+      if (own) return `당사 보도가 ${own}건 관찰되었습니다. 부정 이슈는 낮은 상태이며, 긍정 보도의 확산 매체와 반복 노출 키워드를 중심으로 홍보 효과를 관리할 수 있습니다.`;
+      return `당사 직접 보도보다 경쟁/업계 동향 ${market}건이 중심입니다. 시장 흐름을 파악하고 당사 관점에서 활용 가능한 커뮤니케이션 소재를 선별하는 구간입니다.`;
+    }
+
     function renderAnalysis() {
       const cats = countBy(focusedItems(),"category");
       renderBars("categoryBars", categoryOrder.filter(k => cats[k]).map(k => [k,cats[k]]), categoryLabel);
-      const tones = countBy(state.filtered,"tone");
+
+      const items = analysisItems();
+      const reportCats = countBy(items,"category");
+      const tones = countBy(items,"tone");
+      const risk = analysisRisk(items);
+      document.getElementById("analysisTotal").textContent = items.length.toLocaleString("ko-KR");
+      document.getElementById("analysisOwn").textContent = (reportCats.own || 0).toLocaleString("ko-KR");
+      document.getElementById("analysisNegative").textContent = (tones.negative || 0).toLocaleString("ko-KR");
+      document.getElementById("analysisRegulation").textContent = (reportCats.regulation || 0).toLocaleString("ko-KR");
+      document.getElementById("analysisRisk").textContent = risk;
+      document.getElementById("analysisMeta").textContent = `인카금융서비스 · 마케팅부 · ${analysisPeriodLabel()} 기준`;
+      document.getElementById("analysisMessage").textContent = buildAnalysisMessage(items, reportCats, tones);
+
       renderBars("toneBars", toneOrder.map(k => [k,tones[k] || 0]).filter(e => e[1]), toneLabel);
-      renderVolumeChart();
-      renderKeywordTree("keywordTree", state.filtered);
-      renderInsights();
+      renderVolumeChart(items);
+      renderKeywordTree("keywordTree", items);
+      renderInsights(items);
+      renderAnalysisEvidence(items);
     }
 
-    function renderVolumeChart() {
-      const dates = uniq(state.articles.map(a => a.date)).sort().slice(-14);
-      const counts = countBy(state.articles,"date");
+    function renderVolumeChart(items = state.articles) {
+      const dates = uniq(items.map(a => a.date)).sort().slice(-14);
+      const counts = countBy(items,"date");
       const max = Math.max(...dates.map(d => counts[d] || 0), 1);
       document.getElementById("volumeChart").innerHTML = dates.map(date => {
         const value = counts[date] || 0;
@@ -843,18 +1081,35 @@
       });
     }
 
-    function renderInsights() {
-      const current = focusedItems();
+    function renderInsights(items = focusedItems()) {
+      const current = items;
       const topKeyword = topBy(current,"keyword",1)[0];
       const topPress = topBy(current,"press",1)[0];
       const neg = current.filter(a => a.tone === "negative").length;
-      const items = [
+      const messages = [
         `${contextLabel()} 기사 ${current.length}건이 관찰되었습니다.`,
         topKeyword ? `최다 키워드는 "${topKeyword[0]}"이며 ${topKeyword[1]}건입니다.` : "주요 키워드 데이터가 부족합니다.",
         topPress ? `가장 많이 등장한 언론사는 ${topPress[0]}입니다.` : "언론사 분포 데이터가 부족합니다.",
         neg ? `부정성 기사 ${neg}건은 리스크 대응 센터에서 확인이 필요합니다.` : "부정성 이슈는 현재 낮은 상태입니다."
       ];
-      document.getElementById("insights").innerHTML = items.map(text => `<div class="article"><div class="meta"><span class="chip">Insight</span></div><div class="article-title" style="margin-bottom:0">${escapeHtml(text)}</div></div>`).join("");
+      document.getElementById("insights").innerHTML = messages.map(text => `<div class="article"><div class="meta"><span class="chip">Insight</span></div><div class="article-title" style="margin-bottom:0">${escapeHtml(text)}</div></div>`).join("");
+    }
+
+    function renderAnalysisEvidence(items) {
+      const own = items.filter(a => a.category === "own").sort((a,b) => b.score - a.score).slice(0,3);
+      const negative = items.filter(a => a.tone === "negative").sort((a,b) => b.score - a.score).slice(0,3);
+      const trend = items.filter(a => ["regulation","competitor","industry"].includes(a.category)).sort((a,b) => b.score - a.score).slice(0,3);
+      const groups = [
+        ["당사 보도", own],
+        ["리스크/부정", negative],
+        ["업계 동향", trend],
+      ];
+      document.getElementById("analysisEvidence").innerHTML = groups.map(([title, rows]) => `
+        <div class="feed">
+          <h3 class="report-section-title" style="font-size:14px;margin:0">${escapeHtml(title)}</h3>
+          ${rows.map(a => articleCard(a,true)).join("") || '<div class="empty">해당 기사 없음</div>'}
+        </div>
+      `).join("");
     }
 
     function renderScraps() {
@@ -1070,6 +1325,8 @@
       optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
       optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
       optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
+      setAnalysisRange("all");
+      updateAnalysisPresetButtons();
       render();
     }
 
