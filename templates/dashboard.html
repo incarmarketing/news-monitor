@@ -3,717 +3,638 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>언론 동향 브리핑 대시보드</title>
+  <title>Marketing PR Center</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --ink: #111827;
-      --muted: #64748b;
-      --line: #d9e2ef;
-      --panel: #ffffff;
-      --bg: #f4f7fb;
-      --navy: #172554;
-      --blue: #2563eb;
-      --blue-soft: #e9eefc;
-      --green: #16794c;
-      --green-soft: #eaf8ef;
-      --red: #be123c;
-      --red-soft: #fff1f2;
-      --amber: #b45309;
-      --amber-soft: #fff7ed;
-      --violet: #6d28d9;
-      --violet-soft: #f3e8ff;
+      --incar:#27398c;
+      --incar-dark:#172554;
+      --bg:#f5f7fb;
+      --panel:#fff;
+      --ink:#111827;
+      --muted:#64748b;
+      --line:#dbe4f0;
+      --blue:#2563eb;
+      --green:#16834a;
+      --red:#dc2626;
+      --amber:#d97706;
+      --purple:#7c3aed;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing:border-box; }
     body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
-      letter-spacing: 0;
+      margin:0;
+      height:100vh;
+      overflow:hidden;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;
+      letter-spacing:0;
     }
-    button, input, select { font: inherit; }
-    a { color: inherit; }
+    button,input,textarea,select { font:inherit; }
+    a { color:inherit; }
+    .app {
+      height:100vh;
+      display:grid;
+      grid-template-columns:280px 1fr;
+      min-width:0;
+    }
+    .sidebar {
+      background:var(--incar);
+      color:#fff;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      overflow:auto;
+    }
+    .brand {
+      padding:24px;
+      position:sticky;
+      top:0;
+      background:var(--incar);
+      z-index:2;
+    }
+    .brand-row { display:flex; gap:12px; align-items:center; }
+    .brand-mark {
+      width:42px; height:42px; border-radius:12px;
+      background:rgba(255,255,255,.18);
+      display:grid; place-items:center;
+      font-weight:900;
+    }
+    .brand-title { font-size:20px; font-weight:900; line-height:1; }
+    .brand-sub { margin-top:5px; color:#c7d2fe; font-size:11px; font-weight:800; letter-spacing:.12em; }
+    .menu { padding:0 16px 18px; }
+    .group-title {
+      margin:22px 0 8px;
+      padding-left:12px;
+      color:#c7d2fe;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .nav {
+      width:100%;
+      border:0;
+      background:transparent;
+      color:#dbeafe;
+      border-radius:10px;
+      padding:12px 14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      text-align:left;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      position:relative;
+    }
+    .nav:hover { background:rgba(255,255,255,.1); color:#fff; }
+    .nav.active { background:rgba(255,255,255,.16); color:#fff; }
+    .nav.danger { color:#fecaca; }
+    .nav.disabled { color:#9ca3af; opacity:.62; cursor:not-allowed; }
+    .main {
+      height:100vh;
+      overflow:auto;
+      min-width:0;
+    }
     .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: rgba(255, 255, 255, 0.96);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(10px);
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:14px 24px;
     }
-    .topbar-inner {
-      max-width: 1220px;
-      margin: 0 auto;
-      padding: 12px 20px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      justify-content: space-between;
+    .mobile-menu { display:none; }
+    .page-wrap {
+      max-width:1240px;
+      margin:0 auto;
+      padding:24px;
     }
-    .brand { min-width: 0; }
-    .eyebrow {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
-    }
-    h1 {
-      margin: 2px 0 0;
-      color: var(--navy);
-      font-size: 22px;
-      line-height: 1.25;
-    }
-    .nav-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
+    .eyebrow { color:var(--muted); font-size:12px; font-weight:900; }
+    h1 { margin:3px 0 0; font-size:25px; color:var(--incar-dark); line-height:1.22; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
     .btn {
-      min-height: 38px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
-      color: var(--navy);
-      padding: 8px 12px;
-      font-weight: 900;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      min-height:38px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--incar-dark);
+      border-radius:8px;
+      padding:8px 12px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      font-size:13px;
+      font-weight:900;
+      cursor:pointer;
+      text-decoration:none;
     }
-    .btn.primary {
-      background: var(--navy);
-      border-color: var(--navy);
-      color: #fff;
-    }
-    main {
-      max-width: 1220px;
-      margin: 0 auto;
-      padding: 20px 20px 44px;
-    }
+    .btn.primary { background:var(--incar); border-color:var(--incar); color:#fff; }
+    .btn.danger { color:var(--red); border-color:#fecdd3; }
+    .page { display:none; animation:fadeIn .22s ease-out; }
+    .page.active { display:block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
     .hero {
-      background: linear-gradient(135deg, #172554 0%, #263b8f 62%, #3157c7 100%);
-      border-radius: 10px;
-      color: #fff;
-      padding: 22px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
-      gap: 18px;
-      align-items: stretch;
-      margin-bottom: 14px;
+      border-radius:12px;
+      color:#fff;
+      background:linear-gradient(135deg,#172554 0%,#27398c 58%,#3157c7 100%);
+      padding:24px;
+      display:grid;
+      grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
+      gap:18px;
+      margin-bottom:16px;
     }
-    .hero h2 {
-      margin: 0;
-      font-size: 28px;
-      line-height: 1.32;
-    }
-    .hero-meta {
-      margin-top: 8px;
-      color: rgba(255,255,255,.78);
-      font-size: 13px;
-      font-weight: 800;
-    }
+    .hero h2 { margin:0; font-size:30px; line-height:1.3; }
+    .hero-meta { margin-top:8px; color:rgba(255,255,255,.78); font-size:13px; font-weight:800; }
     .judgement {
-      margin-top: 18px;
-      padding: 16px;
-      border: 1px solid rgba(255,255,255,.22);
-      border-radius: 8px;
-      background: rgba(255,255,255,.08);
-      font-size: 18px;
-      line-height: 1.45;
-      font-weight: 900;
+      margin-top:18px;
+      padding:16px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.24);
+      background:rgba(255,255,255,.09);
+      font-size:18px;
+      line-height:1.45;
+      font-weight:900;
     }
     .risk-card {
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.24);
-      border-radius: 8px;
-      padding: 16px;
-      display: grid;
-      gap: 10px;
-      align-content: center;
-      min-height: 154px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.12);
+      padding:18px;
+      display:grid;
+      align-content:center;
+      gap:12px;
     }
-    .risk-label {
-      color: rgba(255,255,255,.72);
-      font-size: 12px;
-      font-weight: 900;
-    }
-    .risk-value {
-      color: #fff;
-      font-size: 42px;
-      font-weight: 900;
-      line-height: 1;
-    }
-    .risk-hint {
-      color: rgba(255,255,255,.88);
-      font-size: 14px;
-      font-weight: 800;
-      line-height: 1.45;
-    }
-    .signal-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin: -2px 0 14px;
-    }
-    .signal {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 13px 14px;
-      display: grid;
-      gap: 5px;
-      min-height: 82px;
-    }
-    .signal strong {
-      color: var(--navy);
-      font-size: 22px;
-      line-height: 1;
-    }
-    .signal span {
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 900;
-    }
-    .tabbar {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 8px;
-      margin: 14px 0;
-    }
-    .tab {
-      border: 1px solid var(--line);
-      background: #fff;
-      color: var(--muted);
-      border-radius: 8px;
-      min-height: 44px;
-      font-weight: 900;
-      cursor: pointer;
-    }
-    .tab.active {
-      background: var(--navy);
-      border-color: var(--navy);
-      color: #fff;
-    }
-    .view { display: none; }
-    .view.active { display: block; }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 14px;
-    }
+    .risk-value { font-size:44px; font-weight:900; line-height:1; color:#fff; }
+    .risk-label { color:rgba(255,255,255,.72); font-size:12px; font-weight:900; }
+    .risk-hint { color:rgba(255,255,255,.88); font-size:14px; font-weight:800; line-height:1.45; }
+    .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
     .metric {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 16px;
-      min-height: 104px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:17px;
+      min-height:104px;
+      display:grid;
+      align-content:space-between;
+      gap:11px;
     }
-    .metric-value {
-      color: var(--navy);
-      font-size: 30px;
-      font-weight: 900;
-      line-height: 1;
-    }
-    .metric-label {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-    }
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .grid-3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-    }
+    .metric strong { color:var(--incar-dark); font-size:30px; line-height:1; }
+    .metric span { color:var(--muted); font-size:13px; font-weight:900; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
     .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 16px;
-      min-width: 0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:18px;
+      min-width:0;
     }
     .panel-title {
-      margin: 0 0 12px;
-      color: var(--navy);
-      font-size: 16px;
-      font-weight: 900;
+      margin:0 0 14px;
+      color:var(--incar-dark);
+      font-size:17px;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      gap:8px;
     }
-    .brief-list {
-      display: grid;
-      gap: 10px;
+    .feed { display:grid; gap:12px; }
+    .article {
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+      background:#fbfdff;
+      transition:box-shadow .18s,border-color .18s;
     }
-    .brief-item {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 12px;
-      background: #fbfdff;
+    .article:hover { border-color:#b9c7dc; box-shadow:0 10px 24px rgba(15,23,42,.07); }
+    .article-title {
+      margin:8px 0 7px;
+      display:block;
+      color:var(--ink);
+      font-size:16px;
+      line-height:1.45;
+      font-weight:900;
+      text-decoration:none;
     }
-    .brief-item a {
-      text-decoration: none;
-      font-weight: 900;
-      line-height: 1.45;
+    .article-title:hover { color:var(--incar); text-decoration:underline; }
+    .summary { color:#475569; font-size:13px; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:var(--muted); font-size:12px; font-weight:800; }
+    .chip { border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 8px; }
+    .chip.own,.chip.positive { background:#eef8f1; color:var(--green); border-color:#cbead5; }
+    .chip.negative { background:#fff1f2; color:var(--red); border-color:#fecdd3; }
+    .chip.regulation { background:#fff7ed; color:var(--amber); border-color:#fed7aa; }
+    .chip.competitor,.chip.industry { background:#e9eefc; color:var(--incar); border-color:#c8d5fb; }
+    .toolbar {
+      display:grid;
+      grid-template-columns:1.5fr repeat(4,minmax(118px,1fr));
+      gap:10px;
+      margin-bottom:14px;
     }
-    .brief-item a:hover { color: var(--blue); text-decoration: underline; }
-    .meta {
-      margin-top: 8px;
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 800;
+    .field label { display:block; margin-bottom:5px; color:var(--muted); font-size:12px; font-weight:900; }
+    .field input,.field select,.field textarea {
+      width:100%;
+      min-height:40px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:8px 10px;
+      background:#fff;
+      color:var(--ink);
     }
-    .chip {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 4px 8px;
-      background: #fff;
-    }
-    .chip.own { background: var(--green-soft); color: var(--green); border-color: #cbead5; }
-    .chip.regulation { background: var(--amber-soft); color: var(--amber); border-color: #fed7aa; }
-    .chip.competitor, .chip.industry { background: var(--blue-soft); color: #243b8f; border-color: #c8d5fb; }
-    .chip.negative { background: var(--red-soft); color: var(--red); border-color: #fecdd3; }
-    .chip.positive { background: var(--green-soft); color: var(--green); border-color: #cbead5; }
-    .bars { display: grid; gap: 10px; }
-    .bar-row {
-      display: grid;
-      grid-template-columns: 92px 1fr 46px;
-      gap: 10px;
-      align-items: center;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 900;
-    }
-    .bar-track {
-      height: 10px;
-      border-radius: 999px;
-      background: #edf2f7;
-      overflow: hidden;
-    }
-    .bar-fill {
-      height: 100%;
-      background: var(--blue);
-      border-radius: inherit;
-    }
-    .sparkline {
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(28px, 1fr);
-      gap: 8px;
-      align-items: end;
-      min-height: 190px;
-      padding-top: 10px;
-      border-bottom: 1px solid var(--line);
-    }
-    .spark-col {
-      display: grid;
-      gap: 6px;
-      align-items: end;
-      text-align: center;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-    }
-    .spark-bar {
-      min-height: 8px;
-      border-radius: 6px 6px 0 0;
-      background: linear-gradient(180deg, #3157c7, #172554);
-    }
-    .radial-tree {
-      position: relative;
-      min-height: 330px;
-      display: grid;
-      grid-template-rows: 1fr auto;
-      gap: 10px;
-    }
-    .radial-svg {
-      width: 100%;
-      height: 286px;
-      overflow: visible;
-    }
-    .radial-link {
-      stroke: #cbd5e1;
-      stroke-width: 1.2;
-    }
-    .radial-node {
-      cursor: pointer;
-      transition: transform .18s ease, opacity .18s ease;
-      transform-box: fill-box;
-      transform-origin: center;
-    }
-    .radial-node:hover,
-    .radial-node.active {
-      transform: scale(1.08);
-    }
-    .radial-node circle {
-      fill: var(--navy);
-      stroke: rgba(255,255,255,.95);
-      stroke-width: 2;
-      filter: drop-shadow(0 6px 12px rgba(15,23,42,.16));
-    }
-    .radial-node text {
-      fill: #fff;
-      font-size: 11px;
-      font-weight: 900;
-      text-anchor: middle;
-      dominant-baseline: middle;
-      pointer-events: none;
-    }
-    .keyword-focus {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 12px;
-      background: #fbfdff;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-      min-height: 62px;
-    }
-    .keyword-focus strong {
-      display: block;
-      color: var(--navy);
-      font-size: 15px;
-      margin-bottom: 4px;
-    }
-    .controls {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      display: grid;
-      grid-template-columns: 1.7fr repeat(4, minmax(120px, 1fr));
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .control label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 900;
-    }
-    .control input,
-    .control select {
-      width: 100%;
-      min-height: 40px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #fff;
-      padding: 8px 10px;
-      color: var(--ink);
-    }
-    .result-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin: 0 0 10px;
-    }
-    .result-count {
-      color: var(--muted);
-      font-weight: 900;
-    }
-    .empty {
-      border: 1px dashed var(--line);
-      border-radius: 8px;
-      padding: 24px;
-      color: var(--muted);
-      text-align: center;
-      font-weight: 900;
-      background: #fff;
-    }
-    @media (max-width: 900px) {
-      .topbar-inner,
-      .hero {
-        grid-template-columns: 1fr;
-        flex-direction: column;
-        align-items: stretch;
+    .bars { display:grid; gap:10px; }
+    .bar-row { display:grid; grid-template-columns:96px 1fr 46px; gap:10px; align-items:center; font-size:13px; color:var(--muted); font-weight:900; }
+    .bar-track { height:10px; border-radius:999px; background:#eef2f7; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:inherit; background:var(--blue); }
+    .chart { height:220px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(26px,1fr); gap:8px; align-items:end; border-bottom:1px solid var(--line); padding-top:10px; }
+    .chart-col { display:grid; gap:6px; align-items:end; text-align:center; color:var(--muted); font-size:11px; font-weight:800; }
+    .chart-bar { min-height:8px; border-radius:6px 6px 0 0; background:linear-gradient(180deg,#3157c7,#172554); }
+    .radial-tree { min-height:330px; display:grid; grid-template-rows:1fr auto; gap:10px; }
+    .radial-svg { width:100%; height:286px; overflow:visible; }
+    .radial-link { stroke:#cbd5e1; stroke-width:1.2; }
+    .radial-node { cursor:pointer; transition:transform .18s; transform-box:fill-box; transform-origin:center; }
+    .radial-node:hover,.radial-node.active { transform:scale(1.08); }
+    .radial-node circle { fill:var(--incar-dark); stroke:#fff; stroke-width:2; filter:drop-shadow(0 6px 12px rgba(15,23,42,.15)); }
+    .radial-node text { fill:#fff; font-size:11px; font-weight:900; text-anchor:middle; dominant-baseline:middle; pointer-events:none; }
+    .focus-box { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; color:var(--muted); font-size:13px; font-weight:800; min-height:62px; }
+    .focus-box strong { display:block; color:var(--incar-dark); font-size:15px; margin-bottom:4px; }
+    .table { width:100%; border-collapse:collapse; font-size:13px; }
+    .table th,.table td { border-bottom:1px solid var(--line); padding:11px 8px; text-align:left; vertical-align:top; }
+    .table th { color:var(--muted); font-size:12px; font-weight:900; background:#f8fafc; }
+    .empty { border:1px dashed var(--line); border-radius:10px; padding:28px; color:var(--muted); text-align:center; font-weight:900; background:#fff; }
+    .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .mobile-tabs { display:none; }
+    @media(max-width:940px) {
+      body { overflow:auto; height:auto; }
+      .app { height:auto; min-height:100vh; grid-template-columns:1fr; }
+      .sidebar { display:none; }
+      .main { height:auto; overflow:visible; }
+      .mobile-menu { display:inline-flex; }
+      .mobile-tabs {
+        display:flex;
+        position:fixed;
+        bottom:0; left:0; right:0;
+        z-index:30;
+        background:#fff;
+        border-top:1px solid var(--line);
+        padding:6px 6px max(6px,env(safe-area-inset-bottom));
+        gap:3px;
       }
-      .nav-actions { justify-content: stretch; }
-      .btn { flex: 1 1 auto; }
-      .tabbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .signal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .grid-2, .grid-3 { grid-template-columns: 1fr; }
-      .controls { grid-template-columns: 1fr 1fr; }
-      .control:first-child { grid-column: 1 / -1; }
+      .mobile-tabs button {
+        flex:1;
+        border:0;
+        background:#fff;
+        color:var(--muted);
+        display:grid;
+        place-items:center;
+        gap:3px;
+        font-size:10px;
+        font-weight:900;
+        padding:8px 4px;
+        border-radius:10px;
+      }
+      .mobile-tabs button.active { color:var(--incar); background:#eef2ff; }
+      .page-wrap { padding:16px 12px 88px; }
+      .topbar { padding:12px; }
+      .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
+      .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .toolbar { grid-template-columns:1fr 1fr; }
+      .toolbar .field:first-child { grid-column:1/-1; }
     }
-    @media (max-width: 520px) {
-      main { padding: 14px 12px 32px; }
-      h1 { font-size: 19px; }
-      .hero { padding: 18px; }
-      .hero h2 { font-size: 23px; }
-      .summary-grid,
-      .signal-grid,
-      .controls,
-      .tabbar { grid-template-columns: 1fr; }
+    @media(max-width:540px) {
+      h1 { font-size:20px; }
+      .hero { padding:18px; }
+      .hero h2 { font-size:23px; }
+      .metric-grid,.toolbar,.form-grid { grid-template-columns:1fr; }
+      .actions .btn span { display:none; }
     }
   </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
+  <div class="app">
+    <aside class="sidebar">
       <div class="brand">
-        <div class="eyebrow">인카금융서비스 · 마케팅부</div>
-        <h1>언론 동향 브리핑 대시보드</h1>
+        <div class="brand-row">
+          <div class="brand-mark">PR</div>
+          <div>
+            <div class="brand-title">Marketing PR</div>
+            <div class="brand-sub">CONTROL CENTER</div>
+          </div>
+        </div>
       </div>
-      <div class="nav-actions">
-        <a class="btn" href="./index.html">최신 보고서</a>
-        <button class="btn" type="button" id="exportCsv">CSV 출력</button>
-        <button class="btn primary" type="button" id="resetFilters">필터 초기화</button>
-      </div>
-    </div>
-  </header>
+      <nav class="menu" id="desktopNav">
+        <button class="nav active" data-page="home"><i data-lucide="layout-dashboard"></i> 통합 대시보드</button>
+        <div class="group-title">PR & Media Relations</div>
+        <button class="nav" data-page="monitor"><i data-lucide="radio"></i> 실시간 모니터링</button>
+        <button class="nav" data-page="analysis"><i data-lucide="pie-chart"></i> 미디어 분석 리포트</button>
+        <button class="nav" data-page="scrap"><i data-lucide="bookmark"></i> 주요 기사 스크랩</button>
+        <button class="nav danger" data-page="risk"><i data-lucide="siren"></i> 리스크 대응 센터</button>
+        <div class="group-title">Relationship & Budget</div>
+        <button class="nav" data-page="media"><i data-lucide="newspaper"></i> 언론사 관리</button>
+        <button class="nav" data-page="reporters"><i data-lucide="users"></i> 기자 관리</button>
+        <button class="nav" data-page="ads"><i data-lucide="wallet-cards"></i> 광고비/협찬 관리</button>
+        <div class="group-title">System</div>
+        <button class="nav" data-page="settings"><i data-lucide="settings"></i> 환경 설정</button>
+      </nav>
+    </aside>
 
-  <main>
-    <section class="hero">
-      <div>
-        <div class="eyebrow">MEDIA CONTROL CENTER</div>
-        <h2 id="headline">언론 동향을 불러오는 중입니다.</h2>
-        <div class="hero-meta" id="heroMeta">수집 데이터를 확인하고 있습니다.</div>
-        <div class="judgement" id="judgement">현재 기준 핵심 이슈를 정리합니다.</div>
-      </div>
-      <aside class="risk-card">
+    <main class="main">
+      <header class="topbar">
         <div>
-          <div class="risk-label">리스크 레벨</div>
-          <div class="risk-value" id="riskValue">-</div>
+          <div class="eyebrow">인카금융서비스 · 마케팅부</div>
+          <h1 id="pageTitle">통합 대시보드</h1>
         </div>
-        <div class="risk-hint" id="riskHint">당사 직접 부정 이슈를 기준으로 산정합니다.</div>
-      </aside>
-    </section>
+        <div class="actions">
+          <button class="btn mobile-menu" id="mobileMenuBtn"><i data-lucide="menu"></i></button>
+          <a class="btn" href="./index.html"><i data-lucide="file-text"></i><span>최신 보고서</span></a>
+          <button class="btn" id="exportCsv"><i data-lucide="download"></i><span>CSV 출력</span></button>
+          <button class="btn primary" id="resetFilters"><i data-lucide="rotate-ccw"></i><span>필터 초기화</span></button>
+        </div>
+      </header>
 
-    <section class="signal-grid" aria-label="핵심 신호">
-      <div class="signal"><strong id="signalOwn">0</strong><span>당사 보도</span></div>
-      <div class="signal"><strong id="signalNegative">0</strong><span>부정 기사</span></div>
-      <div class="signal"><strong id="signalMarket">0</strong><span>경쟁/업계 동향</span></div>
-      <div class="signal"><strong id="signalRegulation">0</strong><span>규제/정책</span></div>
-    </section>
+      <div class="page-wrap">
+        <section class="page active" id="page-home">
+          <div class="hero">
+            <div>
+              <div class="eyebrow" style="color:#c7d2fe">LIVE MEDIA BRIEFING</div>
+              <h2 id="headline">언론 데이터를 불러오는 중입니다.</h2>
+              <div class="hero-meta" id="heroMeta">수집 구간과 최신 이슈를 확인하고 있습니다.</div>
+              <div class="judgement" id="judgement">현재 언론 상황을 분석합니다.</div>
+            </div>
+            <aside class="risk-card">
+              <div>
+                <div class="risk-label">리스크 레벨</div>
+                <div class="risk-value" id="riskValue">-</div>
+              </div>
+              <div class="risk-hint" id="riskHint">당사 직접 부정 이슈를 기준으로 산정합니다.</div>
+            </aside>
+          </div>
 
-    <nav class="tabbar" aria-label="대시보드 보기">
-      <button class="tab active" data-view="current">현재 동향</button>
-      <button class="tab" data-view="weekly">주간 동향</button>
-      <button class="tab" data-view="monthly">월간 동향</button>
-      <button class="tab" data-view="keywords">키워드 트리</button>
-      <button class="tab" data-view="articles">근거 기사</button>
-    </nav>
+          <div class="metric-grid">
+            <div class="metric"><strong id="metricTotal">0</strong><span>전체 기사</span></div>
+            <div class="metric"><strong id="metricOwn">0</strong><span>당사 보도</span></div>
+            <div class="metric"><strong id="metricNegative">0</strong><span>부정 기사</span></div>
+            <div class="metric"><strong id="metricMarket">0</strong><span>경쟁/업계 동향</span></div>
+          </div>
 
-    <section class="view active" id="view-current">
-      <div class="summary-grid">
-        <div class="metric"><div class="metric-value" id="metricTotal">0</div><div class="metric-label">현재 표시 기사</div></div>
-        <div class="metric"><div class="metric-value" id="metricOwn">0</div><div class="metric-label">당사 보도</div></div>
-        <div class="metric"><div class="metric-value" id="metricNegative">0</div><div class="metric-label">부정 기사</div></div>
-        <div class="metric"><div class="metric-value" id="metricRegulation">0</div><div class="metric-label">규제/정책</div></div>
-        <div class="metric"><div class="metric-value" id="metricDays">0</div><div class="metric-label">수집 일수</div></div>
+          <div class="grid-2">
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="activity"></i> 선택 구간 핵심 이슈</h2>
+              <div class="feed" id="topIssues"></div>
+            </div>
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="bar-chart-3"></i> 분류별 흐름</h2>
+              <div class="bars" id="categoryBars"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-monitor">
+          <div class="toolbar">
+            <div class="field"><label>검색어</label><input id="searchInput" type="search" placeholder="기사 제목, 키워드, 언론사 검색"></div>
+            <div class="field"><label>기준일</label><select id="dateFilter"><option value="">전체</option></select></div>
+            <div class="field"><label>분류</label><select id="categoryFilter"><option value="">전체</option></select></div>
+            <div class="field"><label>논조</label><select id="toneFilter"><option value="">전체</option></select></div>
+            <div class="field"><label>리스크</label><select id="riskFilter"><option value="">전체</option></select></div>
+          </div>
+          <div class="panel">
+            <h2 class="panel-title"><i data-lucide="radio"></i> 실시간 모니터링 피드 <span id="resultCount" style="margin-left:auto;color:var(--muted);font-size:13px">0건</span></h2>
+            <div class="feed" id="articleList"></div>
+          </div>
+        </section>
+
+        <section class="page" id="page-analysis">
+          <div class="grid-2">
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="trending-up"></i> 최근 기사량 추이</h2>
+              <div class="chart" id="volumeChart"></div>
+            </div>
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="smile"></i> 보도 톤앤매너</h2>
+              <div class="bars" id="toneBars"></div>
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top:14px">
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="cloud"></i> 주요 키워드</h2>
+              <div class="radial-tree" id="keywordTree"></div>
+            </div>
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="list-checks"></i> 자동 인사이트</h2>
+              <div class="feed" id="insights"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-scrap">
+          <div class="panel">
+            <h2 class="panel-title"><i data-lucide="bookmark"></i> 주요 기사 스크랩</h2>
+            <div class="feed" id="scrapList"></div>
+          </div>
+        </section>
+
+        <section class="page" id="page-risk">
+          <div class="grid-2">
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="siren"></i> 리스크 기사</h2>
+              <div class="feed" id="riskArticles"></div>
+            </div>
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="pen-tool"></i> 대응 초안 생성기</h2>
+              <div class="field"><label>기사 URL</label><input id="issueUrl" placeholder="기사 링크 붙여넣기"></div>
+              <div class="field" style="margin-top:10px"><label>팩트체크 / 핵심 내용</label><textarea id="issueInput" rows="7" placeholder="확인된 사실, 쟁점, 대응 방향을 입력하세요."></textarea></div>
+              <div class="actions" style="justify-content:flex-start;margin-top:10px">
+                <button class="btn" onclick="generateResponse('internal')">사내 공지용</button>
+                <button class="btn primary" onclick="generateResponse('press')">언론 해명용</button>
+                <button class="btn" onclick="copyResponse()">복사</button>
+              </div>
+              <div class="focus-box" id="responseOutput" style="margin-top:12px;white-space:pre-line">왼쪽 입력값을 바탕으로 대응 초안을 생성합니다.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-media">
+          <div class="grid-2">
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="newspaper"></i> 언론사별 보도 현황</h2>
+              <div class="bars" id="sourceBars"></div>
+            </div>
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="heart-handshake"></i> 우호도 관리</h2>
+              <table class="table" id="mediaTable"></table>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-reporters">
+          <div class="panel">
+            <h2 class="panel-title"><i data-lucide="users"></i> 기자/담당자 관리</h2>
+            <div class="form-grid">
+              <div class="field"><label>기자명</label><input id="reporterName" placeholder="예: 홍길동"></div>
+              <div class="field"><label>언론사</label><input id="reporterMedia" placeholder="예: 보험저널"></div>
+              <div class="field"><label>관계 상태</label><select id="reporterStatus"><option>우호</option><option>중립</option><option>관찰</option><option>주의</option></select></div>
+              <div class="field"><label>최근 접촉일</label><input id="reporterDate" type="date"></div>
+            </div>
+            <div class="field" style="margin-top:10px"><label>메모</label><textarea id="reporterMemo" rows="3" placeholder="관심 주제, 요청사항, 접촉 이력"></textarea></div>
+            <button class="btn primary" style="margin-top:10px" onclick="addReporter()">기자 추가</button>
+            <table class="table" id="reporterTable" style="margin-top:16px"></table>
+          </div>
+        </section>
+
+        <section class="page" id="page-ads">
+          <div class="panel">
+            <h2 class="panel-title"><i data-lucide="wallet-cards"></i> 광고비/협찬 관리</h2>
+            <div class="form-grid">
+              <div class="field"><label>매체명</label><input id="adMedia" placeholder="예: 보험저널"></div>
+              <div class="field"><label>집행월</label><input id="adMonth" type="month"></div>
+              <div class="field"><label>금액</label><input id="adAmount" type="number" placeholder="금액"></div>
+              <div class="field"><label>구분</label><select id="adType"><option>광고</option><option>협찬</option><option>캠페인</option><option>기타</option></select></div>
+            </div>
+            <div class="field" style="margin-top:10px"><label>메모</label><input id="adMemo" placeholder="계약 조건, 담당자, 비고"></div>
+            <button class="btn primary" style="margin-top:10px" onclick="addAd()">집행 내역 추가</button>
+            <div class="grid-2" style="margin-top:16px">
+              <div><table class="table" id="adTable"></table></div>
+              <div><div class="bars" id="adBars"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="page-settings">
+          <div class="grid-2">
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="hash"></i> 모니터링 키워드</h2>
+              <div class="field"><label>키워드 추가</label><input id="keywordInput" placeholder="예: 인카금융서비스, GA, 브랜드평판"></div>
+              <button class="btn primary" style="margin-top:10px" onclick="addKeyword()">추가</button>
+              <div class="meta" id="keywordList" style="margin-top:14px"></div>
+            </div>
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="database"></i> 시스템 상태</h2>
+              <table class="table">
+                <tr><th>데이터 소스</th><td>GitHub Pages JSON + Supabase 옵션 저장</td></tr>
+                <tr><th>화면 버전</th><td>Marketing PR Center</td></tr>
+                <tr><th>관리 데이터</th><td>현재 브라우저 localStorage 저장, 다음 단계 Supabase 테이블화 가능</td></tr>
+              </table>
+              <button class="btn danger" style="margin-top:12px" onclick="clearLocal()">로컬 관리 데이터 초기화</button>
+            </div>
+          </div>
+        </section>
       </div>
-      <div class="grid-2">
-        <div class="panel">
-          <h2 class="panel-title">선택 구간 핵심 이슈</h2>
-          <div class="brief-list" id="topIssues"></div>
-        </div>
-        <div class="panel">
-          <h2 class="panel-title">분류별 흐름</h2>
-          <div class="bars" id="categoryBars"></div>
-        </div>
-      </div>
-    </section>
+    </main>
+  </div>
 
-    <section class="view" id="view-weekly">
-      <div class="grid-2">
-        <div class="panel">
-          <h2 class="panel-title">최근 7일 기사량</h2>
-          <div class="sparkline" id="weeklyVolume"></div>
-        </div>
-        <div class="panel">
-          <h2 class="panel-title">최근 7일 주요 키워드</h2>
-          <div class="bars" id="weeklyKeywords"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="view" id="view-monthly">
-      <div class="grid-2">
-        <div class="panel">
-          <h2 class="panel-title">최근 30일 기사량</h2>
-          <div class="sparkline" id="monthlyVolume"></div>
-        </div>
-        <div class="panel">
-          <h2 class="panel-title">최근 30일 논조 분포</h2>
-          <div class="bars" id="monthlyTone"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="view" id="view-keywords">
-      <div class="grid-3">
-        <div class="panel">
-          <h2 class="panel-title">당사 키워드</h2>
-          <div class="radial-tree" id="treeOwn"></div>
-        </div>
-        <div class="panel">
-          <h2 class="panel-title">규제/정책 키워드</h2>
-          <div class="radial-tree" id="treeRegulation"></div>
-        </div>
-        <div class="panel">
-          <h2 class="panel-title">경쟁/업계 키워드</h2>
-          <div class="radial-tree" id="treeMarket"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="view" id="view-articles">
-      <section class="controls" aria-label="기사 검색 필터">
-        <div class="control">
-          <label for="searchInput">검색어</label>
-          <input id="searchInput" type="search" placeholder="제목, 키워드, 출처 검색">
-        </div>
-        <div class="control">
-          <label for="dateFilter">기준일</label>
-          <select id="dateFilter"><option value="">전체</option></select>
-        </div>
-        <div class="control">
-          <label for="categoryFilter">분류</label>
-          <select id="categoryFilter"><option value="">전체</option></select>
-        </div>
-        <div class="control">
-          <label for="toneFilter">논조</label>
-          <select id="toneFilter"><option value="">전체</option></select>
-        </div>
-        <div class="control">
-          <label for="riskFilter">리스크</label>
-          <select id="riskFilter"><option value="">전체</option></select>
-        </div>
-      </section>
-      <div class="panel">
-        <div class="result-head">
-          <h2 class="panel-title">근거 기사 목록</h2>
-          <div class="result-count" id="resultCount">0건</div>
-        </div>
-        <div class="brief-list" id="articleList"></div>
-      </div>
-    </section>
-  </main>
+  <nav class="mobile-tabs" id="mobileTabs">
+    <button class="active" data-page="home"><i data-lucide="layout-dashboard"></i><span>홈</span></button>
+    <button data-page="monitor"><i data-lucide="radio"></i><span>모니터링</span></button>
+    <button data-page="analysis"><i data-lucide="pie-chart"></i><span>분석</span></button>
+    <button data-page="risk"><i data-lucide="siren"></i><span>대응</span></button>
+    <button data-page="settings"><i data-lucide="settings"></i><span>설정</span></button>
+  </nav>
 
   <script>
     const state = {
       articles: [],
       filtered: [],
+      filters: { q:"", date:"", category:"", tone:"", risk:"" },
       categoryLabels: {},
       toneLabels: {},
-      filters: { q: "", date: "", category: "", tone: "", risk: "" }
+      scraps: JSON.parse(localStorage.getItem("pr_scraps") || "[]"),
+      keywords: JSON.parse(localStorage.getItem("pr_keywords") || '["인카금융서비스","GA","브랜드평판"]'),
+      reporters: JSON.parse(localStorage.getItem("pr_reporters") || "[]"),
+      ads: JSON.parse(localStorage.getItem("pr_ads") || "[]")
     };
 
-    const categoryOrder = ["own", "regulation", "competitor", "industry", "other"];
-    const toneOrder = ["negative", "neutral", "positive"];
-    const categoryFallback = { own: "당사 보도", regulation: "규제/정책", competitor: "경쟁사", industry: "업계 동향", other: "기타" };
-    const toneFallback = { negative: "부정", neutral: "중립", positive: "긍정" };
+    const pageTitles = {
+      home:"통합 대시보드",
+      monitor:"실시간 모니터링",
+      analysis:"미디어 분석 리포트",
+      scrap:"주요 기사 스크랩",
+      risk:"리스크 대응 센터",
+      media:"언론사 관리",
+      reporters:"기자 관리",
+      ads:"광고비/협찬 관리",
+      settings:"환경 설정"
+    };
+    const categoryOrder = ["own","regulation","competitor","industry","other"];
+    const toneOrder = ["negative","neutral","positive"];
+    const categoryFallback = { own:"당사 보도", regulation:"규제/정책", competitor:"경쟁사", industry:"업계 동향", other:"기타" };
+    const toneFallback = { negative:"부정", neutral:"중립", positive:"긍정" };
 
-    const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    }[char]));
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     const uniq = (items) => Array.from(new Set(items.filter(Boolean)));
-    const countBy = (items, key) => items.reduce((acc, item) => {
-      acc[item[key]] = (acc[item[key]] || 0) + 1;
-      return acc;
-    }, {});
-    const topBy = (items, key, limit = 8) => Object.entries(countBy(items, key))
-      .filter(([name]) => name)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit);
+    const countBy = (items,key) => items.reduce((acc,item) => { const value = item[key] || "미분류"; acc[value] = (acc[value] || 0) + 1; return acc; }, {});
+    const topBy = (items,key,limit=8) => Object.entries(countBy(items,key)).sort((a,b) => b[1] - a[1]).slice(0,limit);
+    const categoryLabel = key => state.categoryLabels[key] || categoryFallback[key] || key;
+    const toneLabel = key => state.toneLabels[key] || toneFallback[key] || key;
 
-    function parseDate(value) {
-      if (!value) return null;
-      const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
-      return Number.isNaN(date.getTime()) ? null : date;
+    function pressName(article) {
+      if (article.press) return article.press;
+      const source = article.source || "";
+      if (source && !["naver","google"].includes(source.toLowerCase())) return source;
+      try {
+        const host = new URL(article.link).hostname.replace("www.","");
+        const map = { "fins.co.kr":"보험저널", "news2day.co.kr":"뉴스투데이", "econovill.com":"이코노믹리뷰", "pinpointnews.co.kr":"핀포인트뉴스", "bigdatanews.co.kr":"빅데이터뉴스" };
+        return map[host] || host;
+      } catch { return source || "언론사"; }
+    }
+
+    function normalize(article) {
+      return {
+        ...article,
+        press: pressName(article),
+        category_label: article.category_label || categoryLabel(article.category),
+        tone_label: article.tone_label || toneLabel(article.tone),
+        summary: article.summary || "",
+        score: Number(article.score || 0)
+      };
     }
 
     function latestDate(items) {
-      return uniq(items.map((a) => a.date)).sort().reverse()[0] || "";
+      return uniq(items.map(a => a.date)).sort().reverse()[0] || "";
     }
 
     function focusedItems() {
       if (state.filters.date) return state.filtered;
       const latest = latestDate(state.filtered);
-      return latest ? state.filtered.filter((article) => article.date === latest) : state.filtered;
+      return latest ? state.filtered.filter(a => a.date === latest) : state.filtered;
     }
 
-    function periodItems(days) {
-      const dates = uniq(state.articles.map((a) => a.date)).sort();
-      if (!dates.length) return [];
-      const end = parseDate(dates[dates.length - 1]);
-      if (!end) return state.articles;
-      const start = new Date(end);
-      start.setDate(start.getDate() - days + 1);
-      return state.articles.filter((article) => {
-        const date = parseDate(article.date);
-        return date && date >= start && date <= end;
-      });
+    function optionList(select, values, labeler = v => v) {
+      select.innerHTML = '<option value="">전체</option>' + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(labeler(v))}</option>`).join("");
     }
 
-    function optionList(select, values, labeler = (v) => v) {
-      select.innerHTML = '<option value="">전체</option>';
-      values.forEach((value) => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = labeler(value);
-        select.appendChild(option);
-      });
-    }
-
-    function initFilters(data) {
-      optionList(document.getElementById("dateFilter"), uniq(data.articles.map((a) => a.date)).sort().reverse());
-      optionList(document.getElementById("categoryFilter"), categoryOrder.filter((key) => data.articles.some((a) => a.category === key)), categoryLabel);
-      optionList(document.getElementById("toneFilter"), toneOrder.filter((key) => data.articles.some((a) => a.tone === key)), toneLabel);
-      optionList(document.getElementById("riskFilter"), uniq(data.articles.map((a) => a.risk)).sort());
-    }
-
-    function categoryLabel(key) {
-      return state.categoryLabels[key] || categoryFallback[key] || key;
-    }
-
-    function toneLabel(key) {
-      return state.toneLabels[key] || toneFallback[key] || key;
-    }
-
-    function bindControls() {
-      document.querySelectorAll(".tab").forEach((button) => {
-        button.addEventListener("click", () => {
-          document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item === button));
-          document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === `view-${button.dataset.view}`));
-        });
-      });
-      const map = { searchInput: "q", dateFilter: "date", categoryFilter: "category", toneFilter: "tone", riskFilter: "risk" };
-      Object.entries(map).forEach(([id, key]) => {
-        document.getElementById(id).addEventListener("input", (event) => {
-          state.filters[key] = event.target.value.trim();
-          render();
-        });
+    function bind() {
+      document.querySelectorAll("[data-page]").forEach(btn => btn.addEventListener("click", () => switchPage(btn.dataset.page)));
+      const map = { searchInput:"q", dateFilter:"date", categoryFilter:"category", toneFilter:"tone", riskFilter:"risk" };
+      Object.entries(map).forEach(([id,key]) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("input", e => { state.filters[key] = e.target.value.trim(); render(); });
       });
       document.getElementById("resetFilters").addEventListener("click", () => {
-        Object.keys(state.filters).forEach((key) => state.filters[key] = "");
-        Object.keys(map).forEach((id) => document.getElementById(id).value = "");
+        Object.keys(state.filters).forEach(key => state.filters[key] = "");
+        Object.keys(map).forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
         render();
       });
       document.getElementById("exportCsv").addEventListener("click", exportCsv);
     }
 
+    function switchPage(page) {
+      document.querySelectorAll(".page").forEach(item => item.classList.toggle("active", item.id === `page-${page}`));
+      document.querySelectorAll("[data-page]").forEach(item => item.classList.toggle("active", item.dataset.page === page));
+      document.getElementById("pageTitle").textContent = pageTitles[page] || "Marketing PR Center";
+      window.scrollTo({ top:0, behavior:"smooth" });
+      lucide.createIcons();
+    }
+
     function applyFilters() {
-      const query = state.filters.q.toLowerCase();
-      state.filtered = state.articles.filter((article) => {
-        const haystack = [article.title, article.keyword, article.source, categoryLabel(article.category), toneLabel(article.tone)]
-          .join(" ")
-          .toLowerCase();
-        return (!query || haystack.includes(query))
+      const q = state.filters.q.toLowerCase();
+      state.filtered = state.articles.filter(article => {
+        const haystack = [article.title, article.keyword, article.press, article.category_label, article.tone_label].join(" ").toLowerCase();
+        return (!q || haystack.includes(q))
           && (!state.filters.date || article.date === state.filters.date)
           && (!state.filters.category || article.category === state.filters.category)
           && (!state.filters.tone || article.tone === state.filters.tone)
@@ -722,240 +643,291 @@
     }
 
     function renderHero() {
-      const latest = latestDate(state.articles);
-      const current = latest ? state.articles.filter((article) => article.date === latest) : state.articles;
-      const categories = countBy(current, "category");
-      const tones = countBy(current, "tone");
-      const risk = current.find((article) => article.risk)?.risk || "-";
-      const topKeyword = topBy(current, "keyword", 1)[0]?.[0] || "주요 키워드 없음";
-      const own = categories.own || 0;
-      const negative = tones.negative || 0;
-      const market = (categories.competitor || 0) + (categories.industry || 0);
-      const regulation = categories.regulation || 0;
+      const current = focusedItems();
+      const cats = countBy(current,"category");
+      const tones = countBy(current,"tone");
+      const risk = current.find(a => a.risk)?.risk || "-";
+      const topKeyword = topBy(current,"keyword",1)[0]?.[0] || "주요 키워드 없음";
+      const market = (cats.competitor || 0) + (cats.industry || 0);
       document.getElementById("headline").textContent = `${topKeyword} 중심으로 ${current.length}건 관찰`;
-      document.getElementById("heroMeta").textContent = latest ? `${latest} 기준 · 최신 수집 구간 중심` : "수집 데이터 없음";
+      document.getElementById("heroMeta").textContent = `${latestDate(current) || "-"} 기준 · 선택 구간 언론 동향`;
       document.getElementById("riskValue").textContent = risk;
-      document.getElementById("riskHint").textContent = risk === "LOW"
-        ? "당사 직접 부정 이슈는 낮은 상태입니다."
-        : "원문 확인과 후속 대응 검토가 필요합니다.";
-      document.getElementById("signalOwn").textContent = own.toLocaleString("ko-KR");
-      document.getElementById("signalNegative").textContent = negative.toLocaleString("ko-KR");
-      document.getElementById("signalMarket").textContent = market.toLocaleString("ko-KR");
-      document.getElementById("signalRegulation").textContent = regulation.toLocaleString("ko-KR");
-      document.getElementById("judgement").textContent = buildJudgement(current, categories, tones);
+      document.getElementById("riskHint").textContent = risk === "LOW" ? "당사 직접 부정 이슈는 낮은 상태입니다." : "원문 확인과 후속 대응 검토가 필요합니다.";
+      document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
+      document.getElementById("metricTotal").textContent = state.filtered.length.toLocaleString("ko-KR");
+      document.getElementById("metricOwn").textContent = (cats.own || 0).toLocaleString("ko-KR");
+      document.getElementById("metricNegative").textContent = (tones.negative || 0).toLocaleString("ko-KR");
+      document.getElementById("metricMarket").textContent = market.toLocaleString("ko-KR");
     }
 
-    function buildJudgement(items, categories, tones) {
-      if (!items.length) return "현재 표시할 언론 동향이 없습니다.";
-      if ((tones.negative || 0) > 0 && (categories.own || 0) > 0) return "당사 관련 부정성 이슈가 있어 원문 확인과 후속 모니터링이 필요합니다.";
-      if ((categories.regulation || 0) >= 3) return "규제/정책 보도가 상대적으로 많아 업계 영향 가능성을 우선 확인해야 합니다.";
-      if ((categories.own || 0) > 0) return "당사 보도가 관찰되고 있으며, 긍정/중립 확산 여부를 함께 추적할 필요가 있습니다.";
-      return "당사 직접 리스크는 낮고, 경쟁사 및 업계 흐름 중심의 관찰 구간입니다.";
+    function buildJudgement(items,cats,tones) {
+      if (!items.length) return "선택 구간에 표시할 언론 데이터가 없습니다.";
+      if ((tones.negative || 0) > 0 && (cats.own || 0) > 0) return "당사 관련 부정성 이슈가 있어 원문 확인과 대응 상태 등록이 필요합니다.";
+      if ((cats.regulation || 0) >= 3) return "규제/정책 보도가 많아 업계 영향과 당사 관련성을 우선 확인해야 합니다.";
+      if ((cats.own || 0) > 0) return "당사 보도가 관찰되고 있으며 보도 톤과 확산 매체를 함께 추적할 필요가 있습니다.";
+      return "당사 직접 리스크는 낮고 경쟁사 및 업계 흐름 중심의 관찰 구간입니다.";
     }
 
-    function renderMetrics() {
-      const items = state.filtered;
-      const categoryCounts = countBy(items, "category");
-      const toneCounts = countBy(items, "tone");
-      document.getElementById("metricTotal").textContent = items.length.toLocaleString("ko-KR");
-      document.getElementById("metricOwn").textContent = (categoryCounts.own || 0).toLocaleString("ko-KR");
-      document.getElementById("metricNegative").textContent = (toneCounts.negative || 0).toLocaleString("ko-KR");
-      document.getElementById("metricRegulation").textContent = (categoryCounts.regulation || 0).toLocaleString("ko-KR");
-      document.getElementById("metricDays").textContent = uniq(items.map((a) => a.date)).length.toLocaleString("ko-KR");
-    }
-
-    function renderBars(targetId, entries, labeler = (v) => v) {
+    function renderBars(targetId, entries, labeler = v => v) {
       const target = document.getElementById(targetId);
-      const max = Math.max(...entries.map((entry) => entry[1]), 1);
-      target.innerHTML = entries.map(([key, value]) => `
-        <div class="bar-row">
-          <div>${escapeHtml(labeler(key))}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.max(6, value / max * 100)}%"></div></div>
-          <div>${value}</div>
-        </div>
+      const max = Math.max(...entries.map(e => e[1]), 1);
+      target.innerHTML = entries.map(([key,value]) => `
+        <div class="bar-row"><div>${escapeHtml(labeler(key))}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5,value/max*100)}%"></div></div><div>${value}</div></div>
       `).join("") || '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
-    function renderCurrent() {
-      const current = focusedItems();
-      const categoryCounts = countBy(current, "category");
-      renderBars("categoryBars", categoryOrder.filter((key) => categoryCounts[key]).map((key) => [key, categoryCounts[key]]), categoryLabel);
-      renderBriefList("topIssues", current.slice().sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5));
-    }
-
-    function renderBriefList(targetId, items) {
-      const target = document.getElementById(targetId);
-      target.innerHTML = items.map(articleCard).join("") || '<div class="empty">표시할 기사가 없습니다.</div>';
-    }
-
-    function articleCard(article) {
+    function articleCard(article, compact=false) {
+      const key = article.id || article.link;
+      const scraped = state.scraps.some(item => (item.id || item.link) === key);
       return `
-        <article class="brief-item">
-          <a href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
+        <article class="article">
           <div class="meta">
-            <span class="chip">${escapeHtml(article.date)}</span>
-            <span class="chip ${escapeHtml(article.category)}">${escapeHtml(categoryLabel(article.category))}</span>
-            <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(toneLabel(article.tone))}</span>
+            <span class="chip">${escapeHtml(article.date || "-")}</span>
+            <span class="chip">${escapeHtml(article.press)}</span>
+            <span class="chip ${escapeHtml(article.category)}">${escapeHtml(article.category_label)}</span>
+            <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(article.tone_label)}</span>
             <span class="chip">${escapeHtml(article.keyword || "키워드 없음")}</span>
-            <span class="chip">${escapeHtml(article.source || "출처 없음")}</span>
-            <span class="chip">묶음 ${escapeHtml(article.cluster_size || 1)}건</span>
+            <button class="btn" style="min-height:26px;padding:3px 8px;margin-left:auto" onclick="toggleScrapById('${escapeHtml(key)}')">${scraped ? "스크랩됨" : "스크랩"}</button>
           </div>
+          <a class="article-title" href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
+          ${compact ? "" : `<div class="summary">${escapeHtml(article.summary || "요약 내용 없음")}</div>`}
         </article>
       `;
     }
 
-    function renderSparkline(targetId, items, days) {
-      const target = document.getElementById(targetId);
-      const dates = uniq(state.articles.map((a) => a.date)).sort().slice(-days);
-      const counts = countBy(items, "date");
-      const max = Math.max(...dates.map((date) => counts[date] || 0), 1);
-      target.innerHTML = dates.map((date) => {
+    function renderArticles() {
+      document.getElementById("resultCount").textContent = `${state.filtered.length.toLocaleString("ko-KR")}건`;
+      document.getElementById("articleList").innerHTML = state.filtered.slice(0,160).map(a => articleCard(a)).join("") || '<div class="empty">표시할 기사가 없습니다.</div>';
+      document.getElementById("topIssues").innerHTML = focusedItems().slice().sort((a,b) => b.score - a.score).slice(0,5).map(a => articleCard(a,true)).join("") || '<div class="empty">핵심 이슈가 없습니다.</div>';
+      const risks = state.articles.filter(a => a.tone === "negative" || a.category === "own" && a.risk !== "LOW").slice(0,20);
+      document.getElementById("riskArticles").innerHTML = risks.map(a => articleCard(a,true)).join("") || '<div class="empty">현재 리스크 기사가 없습니다.</div>';
+    }
+
+    function renderAnalysis() {
+      const cats = countBy(focusedItems(),"category");
+      renderBars("categoryBars", categoryOrder.filter(k => cats[k]).map(k => [k,cats[k]]), categoryLabel);
+      const tones = countBy(state.filtered,"tone");
+      renderBars("toneBars", toneOrder.map(k => [k,tones[k] || 0]).filter(e => e[1]), toneLabel);
+      renderVolumeChart();
+      renderKeywordTree("keywordTree", state.filtered);
+      renderInsights();
+    }
+
+    function renderVolumeChart() {
+      const dates = uniq(state.articles.map(a => a.date)).sort().slice(-14);
+      const counts = countBy(state.articles,"date");
+      const max = Math.max(...dates.map(d => counts[d] || 0), 1);
+      document.getElementById("volumeChart").innerHTML = dates.map(date => {
         const value = counts[date] || 0;
-        return `
-          <div class="spark-col">
-            <div class="spark-bar" style="height:${Math.max(8, value / max * 160)}px"></div>
-            <div>${date.slice(5)}</div>
-            <div>${value}</div>
-          </div>
-        `;
+        return `<div class="chart-col"><div class="chart-bar" style="height:${Math.max(8,value/max*185)}px"></div><div>${date.slice(5)}</div><div>${value}</div></div>`;
       }).join("") || '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
-    function renderPeriodViews() {
-      const weekly = periodItems(7);
-      const monthly = periodItems(30);
-      renderSparkline("weeklyVolume", weekly, 7);
-      renderSparkline("monthlyVolume", monthly, 30);
-      renderBars("weeklyKeywords", topBy(weekly, "keyword", 10));
-      renderBars("monthlyTone", toneOrder.map((key) => [key, countBy(monthly, "tone")[key] || 0]).filter((entry) => entry[1]), toneLabel);
-    }
-
-    function renderKeywordTree() {
-      renderTree("treeOwn", state.articles.filter((a) => a.category === "own"));
-      renderTree("treeRegulation", state.articles.filter((a) => a.category === "regulation"));
-      renderTree("treeMarket", state.articles.filter((a) => a.category === "competitor" || a.category === "industry"));
-    }
-
-    function renderTree(targetId, items) {
+    function renderKeywordTree(targetId, items) {
       const target = document.getElementById(targetId);
-      const entries = topBy(items, "keyword", 12);
-      if (!entries.length) {
-        target.innerHTML = '<div class="empty">표시할 키워드가 없습니다.</div>';
-        return;
-      }
-      const width = 430;
-      const height = 286;
-      const cx = width / 2;
-      const cy = height / 2;
-      const radius = Math.min(112, 58 + entries.length * 5);
-      const max = Math.max(...entries.map((entry) => entry[1]), 1);
-      const nodes = entries.map(([keyword, count], index) => {
-        const angle = (Math.PI * 2 * index / entries.length) - Math.PI / 2;
-        const x = cx + Math.cos(angle) * radius;
-        const y = cy + Math.sin(angle) * radius;
-        const r = 22 + (count / max) * 18;
-        return { keyword, count, x, y, r };
+      const entries = topBy(items,"keyword",14);
+      if (!entries.length) { target.innerHTML = '<div class="empty">키워드가 없습니다.</div>'; return; }
+      const width = 430, height = 286, cx = width/2, cy = height/2, radius = Math.min(112,60+entries.length*4);
+      const max = Math.max(...entries.map(e => e[1]),1);
+      const nodes = entries.map(([keyword,count],idx) => {
+        const angle = Math.PI*2*idx/entries.length - Math.PI/2;
+        return { keyword, count, x:cx+Math.cos(angle)*radius, y:cy+Math.sin(angle)*radius, r:22+(count/max)*18 };
       });
-      const links = nodes.map((node) => `<line class="radial-link" x1="${cx}" y1="${cy}" x2="${node.x}" y2="${node.y}"></line>`).join("");
-      const nodeMarkup = nodes.map((node, index) => {
-        const label = node.keyword.length > 7 ? `${node.keyword.slice(0, 7)}…` : node.keyword;
-        return `
-          <g class="radial-node" data-keyword="${escapeHtml(node.keyword)}" data-count="${node.count}" data-index="${index}">
-            <circle cx="${node.x}" cy="${node.y}" r="${node.r}"></circle>
-            <text x="${node.x}" y="${node.y - 4}">${escapeHtml(label)}</text>
-            <text x="${node.x}" y="${node.y + 11}">${node.count}건</text>
-          </g>
-        `;
-      }).join("");
       target.innerHTML = `
-        <svg class="radial-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="키워드 방사형 트리">
-          ${links}
+        <svg class="radial-svg" viewBox="0 0 ${width} ${height}">
+          ${nodes.map(n => `<line class="radial-link" x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}"></line>`).join("")}
           <circle cx="${cx}" cy="${cy}" r="42" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"></circle>
-          <text x="${cx}" y="${cy - 5}" fill="#172554" font-size="13" font-weight="900" text-anchor="middle">키워드</text>
-          <text x="${cx}" y="${cy + 12}" fill="#64748b" font-size="11" font-weight="800" text-anchor="middle">${entries.length}개</text>
-          ${nodeMarkup}
+          <text x="${cx}" y="${cy-5}" fill="#172554" font-size="13" font-weight="900" text-anchor="middle">키워드</text>
+          <text x="${cx}" y="${cy+12}" fill="#64748b" font-size="11" font-weight="800" text-anchor="middle">${entries.length}개</text>
+          ${nodes.map((n,idx) => `<g class="radial-node" tabindex="0" data-keyword="${escapeHtml(n.keyword)}" data-count="${n.count}"><circle cx="${n.x}" cy="${n.y}" r="${n.r}"></circle><text x="${n.x}" y="${n.y-4}">${escapeHtml(n.keyword.length>7 ? n.keyword.slice(0,7)+"…" : n.keyword)}</text><text x="${n.x}" y="${n.y+11}">${n.count}건</text></g>`).join("")}
         </svg>
-        <div class="keyword-focus"><strong>${escapeHtml(nodes[0].keyword)}</strong>${nodes[0].count}건 관찰 · 원을 선택하면 키워드별 신호를 확인할 수 있습니다.</div>
+        <div class="focus-box"><strong>${escapeHtml(nodes[0].keyword)}</strong>${nodes[0].count}건 관찰 · 원을 선택하면 관련 기사 예시가 표시됩니다.</div>
       `;
-      const focus = target.querySelector(".keyword-focus");
-      target.querySelectorAll(".radial-node").forEach((node) => {
-        node.addEventListener("mouseenter", () => updateKeywordFocus(target, focus, node));
-        node.addEventListener("focus", () => updateKeywordFocus(target, focus, node));
-        node.addEventListener("click", () => updateKeywordFocus(target, focus, node));
-        node.setAttribute("tabindex", "0");
+      const focus = target.querySelector(".focus-box");
+      target.querySelectorAll(".radial-node").forEach(node => {
+        const update = () => {
+          target.querySelectorAll(".radial-node").forEach(item => item.classList.toggle("active", item === node));
+          const keyword = node.dataset.keyword;
+          const examples = state.articles.filter(a => a.keyword === keyword).slice(0,2).map(a => a.title).join(" · ");
+          focus.innerHTML = `<strong>${escapeHtml(keyword)}</strong>${escapeHtml(node.dataset.count)}건 관찰${examples ? " · " + escapeHtml(examples) : ""}`;
+        };
+        node.addEventListener("mouseenter", update);
+        node.addEventListener("focus", update);
+        node.addEventListener("click", update);
       });
     }
 
-    function updateKeywordFocus(target, focus, node) {
-      target.querySelectorAll(".radial-node").forEach((item) => item.classList.toggle("active", item === node));
-      const keyword = node.dataset.keyword;
-      const count = node.dataset.count;
-      const examples = state.articles
-        .filter((article) => article.keyword === keyword)
-        .slice(0, 2)
-        .map((article) => article.title)
-        .join(" · ");
-      focus.innerHTML = `<strong>${escapeHtml(keyword)}</strong>${escapeHtml(count)}건 관찰${examples ? ` · ${escapeHtml(examples)}` : ""}`;
+    function renderInsights() {
+      const current = focusedItems();
+      const topKeyword = topBy(current,"keyword",1)[0];
+      const topPress = topBy(current,"press",1)[0];
+      const neg = current.filter(a => a.tone === "negative").length;
+      const items = [
+        `선택 구간 기사 ${current.length}건이 관찰되었습니다.`,
+        topKeyword ? `최다 키워드는 "${topKeyword[0]}"이며 ${topKeyword[1]}건입니다.` : "주요 키워드 데이터가 부족합니다.",
+        topPress ? `가장 많이 등장한 언론사는 ${topPress[0]}입니다.` : "언론사 분포 데이터가 부족합니다.",
+        neg ? `부정성 기사 ${neg}건은 리스크 대응 센터에서 확인이 필요합니다.` : "부정성 이슈는 현재 낮은 상태입니다."
+      ];
+      document.getElementById("insights").innerHTML = items.map(text => `<div class="article"><div class="meta"><span class="chip">Insight</span></div><div class="article-title" style="margin-bottom:0">${escapeHtml(text)}</div></div>`).join("");
     }
 
-    function renderArticles() {
-      document.getElementById("resultCount").textContent = `${state.filtered.length.toLocaleString("ko-KR")}건`;
-      renderBriefList("articleList", state.filtered.slice(0, 120));
+    function renderScraps() {
+      document.getElementById("scrapList").innerHTML = state.scraps.map(a => articleCard(a)).join("") || '<div class="empty">스크랩된 기사가 없습니다.</div>';
+    }
+
+    function toggleScrapById(key) {
+      const article = state.articles.find(a => (a.id || a.link) === key) || state.scraps.find(a => (a.id || a.link) === key);
+      if (!article) return;
+      const exists = state.scraps.findIndex(a => (a.id || a.link) === key);
+      if (exists >= 0) state.scraps.splice(exists,1);
+      else state.scraps.unshift(article);
+      localStorage.setItem("pr_scraps", JSON.stringify(state.scraps.slice(0,100)));
+      render();
+    }
+
+    function renderMedia() {
+      renderBars("sourceBars", topBy(state.articles,"press",12));
+      const rows = topBy(state.articles,"press",12).map(([press,count]) => {
+        const rows = state.articles.filter(a => a.press === press);
+        const neg = rows.filter(a => a.tone === "negative").length;
+        const pos = rows.filter(a => a.tone === "positive").length;
+        const relation = neg ? "주의" : pos ? "우호" : "중립";
+        return `<tr><td>${escapeHtml(press)}</td><td>${count}건</td><td>${pos}/${neg}</td><td>${relation}</td><td>접촉 이력 등록 필요</td></tr>`;
+      }).join("");
+      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>보도량</th><th>긍정/부정</th><th>우호도</th><th>관리 메모</th></tr>${rows || '<tr><td colspan="5">데이터가 없습니다.</td></tr>'}`;
+    }
+
+    function addReporter() {
+      const item = {
+        name: document.getElementById("reporterName").value.trim(),
+        media: document.getElementById("reporterMedia").value.trim(),
+        status: document.getElementById("reporterStatus").value,
+        date: document.getElementById("reporterDate").value,
+        memo: document.getElementById("reporterMemo").value.trim()
+      };
+      if (!item.name || !item.media) return alert("기자명과 언론사를 입력해 주세요.");
+      state.reporters.unshift(item);
+      localStorage.setItem("pr_reporters", JSON.stringify(state.reporters));
+      ["reporterName","reporterMedia","reporterMemo"].forEach(id => document.getElementById(id).value = "");
+      renderReporters();
+    }
+
+    function renderReporters() {
+      const rows = state.reporters.map((r,idx) => `<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.media)}</td><td>${escapeHtml(r.status)}</td><td>${escapeHtml(r.date || "-")}</td><td>${escapeHtml(r.memo || "-")}</td><td><button class="btn danger" onclick="removeReporter(${idx})">삭제</button></td></tr>`).join("");
+      document.getElementById("reporterTable").innerHTML = `<tr><th>기자명</th><th>언론사</th><th>상태</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="6">등록된 기자가 없습니다.</td></tr>'}`;
+    }
+    function removeReporter(idx) { state.reporters.splice(idx,1); localStorage.setItem("pr_reporters", JSON.stringify(state.reporters)); renderReporters(); }
+
+    function addAd() {
+      const item = {
+        media: document.getElementById("adMedia").value.trim(),
+        month: document.getElementById("adMonth").value,
+        amount: Number(document.getElementById("adAmount").value || 0),
+        type: document.getElementById("adType").value,
+        memo: document.getElementById("adMemo").value.trim()
+      };
+      if (!item.media || !item.month || !item.amount) return alert("매체명, 집행월, 금액을 입력해 주세요.");
+      state.ads.unshift(item);
+      localStorage.setItem("pr_ads", JSON.stringify(state.ads));
+      ["adMedia","adMonth","adAmount","adMemo"].forEach(id => document.getElementById(id).value = "");
+      renderAds();
+    }
+
+    function renderAds() {
+      const rows = state.ads.map((a,idx) => `<tr><td>${escapeHtml(a.month)}</td><td>${escapeHtml(a.media)}</td><td>${escapeHtml(a.type)}</td><td>${a.amount.toLocaleString("ko-KR")}원</td><td>${escapeHtml(a.memo || "-")}</td><td><button class="btn danger" onclick="removeAd(${idx})">삭제</button></td></tr>`).join("");
+      document.getElementById("adTable").innerHTML = `<tr><th>월</th><th>매체</th><th>구분</th><th>금액</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="6">등록된 집행 내역이 없습니다.</td></tr>'}`;
+      const totals = {};
+      state.ads.forEach(a => totals[a.media] = (totals[a.media] || 0) + a.amount);
+      renderBars("adBars", Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,10), key => key);
+    }
+    function removeAd(idx) { state.ads.splice(idx,1); localStorage.setItem("pr_ads", JSON.stringify(state.ads)); renderAds(); }
+
+    function renderKeywords() {
+      document.getElementById("keywordList").innerHTML = state.keywords.map(k => `<span class="chip">${escapeHtml(k)} <button onclick="removeKeyword('${escapeHtml(k)}')" style="border:0;background:transparent;cursor:pointer;color:var(--red)">×</button></span>`).join("");
+    }
+    function addKeyword() {
+      const input = document.getElementById("keywordInput");
+      const value = input.value.trim();
+      if (value && !state.keywords.includes(value)) state.keywords.push(value);
+      localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
+      input.value = "";
+      renderKeywords();
+    }
+    function removeKeyword(value) { state.keywords = state.keywords.filter(k => k !== value); localStorage.setItem("pr_keywords", JSON.stringify(state.keywords)); renderKeywords(); }
+
+    function generateResponse(type) {
+      const text = document.getElementById("issueInput").value.trim();
+      const url = document.getElementById("issueUrl").value.trim();
+      if (!text) return alert("핵심 내용을 입력해 주세요.");
+      const date = new Date().toLocaleDateString("ko-KR");
+      const title = type === "internal" ? "[사내 공유용 이슈 대응 메모]" : "[언론 대응용 공식 입장 초안]";
+      document.getElementById("responseOutput").textContent = `${title}\n일자: ${date}\n기사: ${url || "미입력"}\n\n1. 이슈 개요\n${text}\n\n2. 확인 필요 사항\n- 기사 원문과 사실관계 대조\n- 당사 직접 언급 여부 확인\n- 관련 부서 확인 의견 취합\n\n3. 대응 방향\n- 사실과 다른 부분은 정정 요청 검토\n- 단순 업계 이슈는 모니터링 유지\n- 당사 평판 영향 가능성이 있으면 후속 브리핑 작성`;
+    }
+    function copyResponse() {
+      const text = document.getElementById("responseOutput").textContent;
+      navigator.clipboard?.writeText(text);
+      alert("대응 초안이 복사되었습니다.");
+    }
+
+    function exportCsv() {
+      const headers = ["date","press","category_label","tone_label","risk","keyword","title","link"];
+      const rows = state.filtered.map(a => headers.map(key => `"${String(a[key] || "").replace(/"/g,'""')}"`).join(","));
+      const blob = new Blob(["\uFEFF" + [headers.join(","), ...rows].join("\n")], { type:"text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "marketing-pr-center.csv";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function clearLocal() {
+      if (!confirm("스크랩, 기자, 광고비 등 로컬 관리 데이터를 초기화할까요?")) return;
+      ["pr_scraps","pr_keywords","pr_reporters","pr_ads"].forEach(key => localStorage.removeItem(key));
+      location.reload();
     }
 
     function render() {
       applyFilters();
       renderHero();
-      renderMetrics();
-      renderCurrent();
-      renderPeriodViews();
-      renderKeywordTree();
       renderArticles();
-    }
-
-    function exportCsv() {
-      const headers = ["date", "category", "tone", "risk", "keyword", "source", "title", "link"];
-      const rows = state.filtered.map((article) => headers.map((key) => `"${String(article[key] ?? "").replace(/"/g, '""')}"`).join(","));
-      const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "news-briefing-dashboard.csv";
-      link.click();
-      URL.revokeObjectURL(link.href);
+      renderAnalysis();
+      renderScraps();
+      renderMedia();
+      renderReporters();
+      renderAds();
+      renderKeywords();
+      lucide.createIcons();
     }
 
     async function fetchDashboardData() {
       const paths = ["./data/articles.json", "../public/data/articles.json"];
-      let lastError;
       for (const path of paths) {
         try {
-          const response = await fetch(path, { cache: "no-store" });
+          const response = await fetch(path, { cache:"no-store" });
           if (response.ok) return response.json();
-        } catch (error) {
-          lastError = error;
-        }
+        } catch {}
       }
-      throw lastError || new Error("No dashboard data");
+      throw new Error("No dashboard data");
     }
 
     async function boot() {
-      const data = await fetchDashboardData();
-      state.articles = data.articles || [];
-      state.categoryLabels = data.category_labels || categoryFallback;
-      state.toneLabels = data.tone_labels || toneFallback;
-      initFilters({ articles: state.articles });
-      bindControls();
+      bind();
+      try {
+        const data = await fetchDashboardData();
+        state.categoryLabels = data.category_labels || {};
+        state.toneLabels = data.tone_labels || {};
+        state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
+      } catch {
+        state.articles = [];
+      }
+      optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
+      optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
+      optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
+      optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
       render();
     }
 
-    boot().catch(() => {
-      document.getElementById("headline").textContent = "대시보드 데이터를 불러오지 못했습니다.";
-      document.getElementById("heroMeta").textContent = "자동 보고서 실행 후 public/data/articles.json이 생성되면 표시됩니다.";
-      document.getElementById("judgement").textContent = "GitHub Pages의 dashboard.html 또는 생성된 public/dashboard.html에서 확인해 주세요.";
-      document.getElementById("riskValue").textContent = "-";
-      document.getElementById("riskHint").textContent = "데이터 연결 대기";
-    });
+    boot();
   </script>
 </body>
 </html>
