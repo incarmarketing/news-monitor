@@ -1387,7 +1387,7 @@
         optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
         render();
         const now = new Date();
-        setRefreshStatus(`업데이트 ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
+        setRefreshStatus(`Supabase 동기화 ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
       } catch {
         setRefreshStatus("새로고침 실패");
       } finally {
@@ -1396,6 +1396,8 @@
     }
 
     async function fetchDashboardData(force = false) {
+      const supabaseData = await fetchSupabaseDashboardData(force);
+      if (supabaseData) return supabaseData;
       const paths = ["./data/articles.json", "../public/data/articles.json"];
       for (const path of paths) {
         try {
@@ -1405,6 +1407,55 @@
         } catch {}
       }
       throw new Error("No dashboard data");
+    }
+
+    async function fetchSupabaseDashboardData(force = false) {
+      try {
+        const configUrl = `./data/supabase.json${force ? `?v=${Date.now()}` : ""}`;
+        const configResponse = await fetch(configUrl, { cache:"no-store" });
+        if (!configResponse.ok) return null;
+        const config = await configResponse.json();
+        if (!config.url || !config.anon_key) return null;
+
+        const query = [
+          "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,keyword,pub_date,pub_date_raw,score,category,tone,cluster_size,status",
+          "order=report_date.desc,score.desc",
+          "limit=2000",
+        ].join("&");
+        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/news_articles?${query}`, {
+          cache:"no-store",
+          headers: {
+            apikey: config.anon_key,
+            Authorization: `Bearer ${config.anon_key}`,
+          },
+        });
+        if (!response.ok) return null;
+        const rows = await response.json();
+        return {
+          category_labels: state.categoryLabels,
+          tone_labels: state.toneLabels,
+          articles: rows.map(row => ({
+            id: row.article_hash,
+            article_hash: row.article_hash,
+            date: row.report_date || "",
+            window: row.window_label || "",
+            slot: row.report_slot || "",
+            risk: row.risk_level || "LOW",
+            title: row.title || "",
+            link: row.link || "",
+            source: row.source || "",
+            keyword: row.keyword || "",
+            pub_date: row.pub_date || row.pub_date_raw || "",
+            score: row.score || 0,
+            category: row.category || "other",
+            tone: row.tone || "neutral",
+            cluster_size: row.cluster_size || 1,
+            status: row.status || "new",
+          })),
+        };
+      } catch {
+        return null;
+      }
     }
 
     async function boot() {

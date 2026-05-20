@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -174,6 +175,7 @@ def publish_dashboard() -> Path:
         ),
         encoding="utf-8",
     )
+    publish_supabase_public_config()
 
     env = Environment(
         loader=FileSystemLoader(TEMPLATE_DIR),
@@ -185,6 +187,20 @@ def publish_dashboard() -> Path:
     print(f"Published dashboard: {target}")
     print(f"Dashboard articles: {len(articles)}")
     return target
+
+
+def publish_supabase_public_config() -> None:
+    url = (os.getenv("PUBLIC_SUPABASE_URL") or os.getenv("SUPABASE_URL") or "").rstrip("/")
+    anon_key = os.getenv("PUBLIC_SUPABASE_ANON_KEY") or os.getenv("SUPABASE_ANON_KEY") or ""
+    config_path = PUBLIC_DATA_DIR / "supabase.json"
+    if not url or not anon_key:
+        if config_path.exists():
+            config_path.unlink()
+        return
+    config_path.write_text(
+        json.dumps({"url": url, "anon_key": anon_key}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":

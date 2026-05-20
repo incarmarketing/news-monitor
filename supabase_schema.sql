@@ -74,6 +74,35 @@ alter table public.report_runs enable row level security;
 alter table public.news_articles enable row level security;
 
 -- Service role writes from GitHub Actions bypass RLS.
--- Keep browser access closed for now. The GitHub Pages dashboard is generated
--- as static JSON by GitHub Actions, so Supabase does not need public policies yet.
--- Add authenticated select/update policies later for an internal editing screen.
+-- Public dashboard read access.
+-- The anon key can only SELECT the columns explicitly granted below.
+-- Inserts/updates still require the service role used by GitHub Actions.
+revoke all on public.news_articles from anon;
+grant select (
+  article_hash,
+  report_date,
+  report_slot,
+  window_label,
+  risk_level,
+  title,
+  link,
+  source,
+  keyword,
+  pub_date,
+  pub_date_raw,
+  score,
+  category,
+  tone,
+  cluster_size,
+  status
+) on public.news_articles to anon;
+
+drop policy if exists "public dashboard read news articles" on public.news_articles;
+create policy "public dashboard read news articles"
+on public.news_articles
+for select
+to anon
+using (true);
+
+revoke all on public.report_runs from anon;
+drop policy if exists "public dashboard read report runs" on public.report_runs;
