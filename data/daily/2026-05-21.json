@@ -1,6 +1,6 @@
 {
   "date": "2026-05-21",
-  "timestamp": "2026-05-21T08:01:12.273954+09:00",
+  "timestamp": "2026-05-21T08:18:03.332746+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 직접 보도 없이, 업계 실적 부진 및 경쟁사 동향 다수.\n\n## 핵심 이슈\n- [1] 보험사 1분기 실적 부진: 투자이익으로 선방했으나 본업은 약화.\n- [15] 삼성생명 자회사형 GA: 매출 증가로 4년 연속 업계 1위 도전.\n\n## 지표 해석\n당사 관련 직접 보도는 없었으며 부정적 이슈는 없습니다. 보험업계 전반의 실적 부진과 삼성생명 등 경쟁사의 GA 채널 강화 동향이 주로 보도되었습니다.\n\n## 분석 키워드\n보험사 실적, 삼성생명 GA, 소비자보호, 보험사기 AI",
+  "briefing": "## 최종 결론\n당사 직접 보도 없이, 업계 실적 부진 및 경쟁사 동향이 다수 발생.\n\n## 핵심 이슈\n- [1] 보험사 1분기 실적 부진: 투자이익으로 선방했으나, 본업 경쟁력 약화 우려.\n- [16] 삼성생명 자회사형 GA 매출: 4년 연속 업계 최대 매출에 도전하며 경쟁 심화.\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며, 부정적 이슈 또한 발생하지 않았습니다. 보험사 실적 부진, 자회사형 GA 경쟁 등 업계 동향 중심의 보도가 이어졌습니다.\n\n## 분석 키워드\n보험사 실적, 삼성생명 GA, AI 보험사기, 소비자보호",
   "articles": [
     {
       "title": "보험사, 투자이익에 1분기 실적 선방…본업은 부진",
@@ -87,7 +87,7 @@
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 8
+      "_cluster_size": 7
     },
     {
       "title": "DB손해보험, 배당 매력·실적 개선 기대 '동시 부각'…하반기 실적 반등...",
@@ -162,6 +162,17 @@
       "keyword": "손해보험",
       "pub_date": "Thu, 21 May 2026 07:46:00 +0900",
       "_score": 11,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[실버타운 2.0] 요양, 이제는 '프리미엄' 경쟁···신한라이프의 차별화...",
+      "link": "https://www.womaneconomy.co.kr/news/articleView.html?idxno=253984",
+      "source": "naver",
+      "keyword": "생명보험",
+      "pub_date": "Thu, 21 May 2026 08:00:00 +0900",
+      "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
@@ -497,17 +508,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "\"이웃에게 따뜻한 위로·희망을\" KB라이프, 임직원 자발적참여 '희망드...",
-      "link": "https://www.catchnews.kr/news/articleView.html?idxno=124118",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 18:14:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "같은 주사인데 가격 차이 10배…줄줄 새는 비급여 실손보험금",
       "link": "https://n.news.naver.com/mnews/article/421/0008957489?sid=101",
       "source": "naver",
@@ -538,7 +538,7 @@
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "서울시, 보라매공원에 현대ENG와 '꿀벌 서식지' 조성",
