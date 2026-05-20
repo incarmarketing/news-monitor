@@ -12,6 +12,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "method_not_allowed" }, 405);
   }
 
+  if (!isAllowedApiKey(req.headers.get("apikey"))) {
+    return jsonResponse({ error: "unauthorized" }, 401);
+  }
+
   const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
   const owner = Deno.env.get("GITHUB_OWNER") || "incarmarketing";
   const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
@@ -65,4 +69,36 @@ function jsonResponse(payload: unknown, status = 200) {
       "Content-Type": "application/json; charset=utf-8",
     },
   });
+}
+
+function isAllowedApiKey(apiKey: string | null) {
+  if (!apiKey) {
+    return false;
+  }
+
+  const allowed = new Set<string>();
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (anonKey) {
+    allowed.add(anonKey);
+  }
+
+  const publishableKeys = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+  if (publishableKeys) {
+    try {
+      const parsed = JSON.parse(publishableKeys);
+      if (typeof parsed === "string") {
+        allowed.add(parsed);
+      } else if (parsed && typeof parsed === "object") {
+        Object.values(parsed).forEach((value) => {
+          if (typeof value === "string") {
+            allowed.add(value);
+          }
+        });
+      }
+    } catch {
+      allowed.add(publishableKeys);
+    }
+  }
+
+  return allowed.has(apiKey);
 }
