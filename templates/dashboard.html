@@ -181,26 +181,25 @@
       font-weight:900;
     }
     .risk-card {
-      border-radius:8px;
-      border:1px solid var(--line);
-      background:#f8fafc;
-      padding:16px;
+      border-left:1px solid var(--line);
+      padding:4px 0 4px 18px;
       display:grid;
       align-content:center;
-      gap:12px;
+      gap:9px;
     }
     .risk-value {
       width:max-content;
-      min-width:112px;
-      min-height:56px;
-      border-radius:8px;
+      min-width:82px;
+      min-height:36px;
+      border-radius:999px;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      padding:8px 18px;
+      padding:7px 14px;
       background:#fff;
       color:#172554;
-      font-size:32px;
+      border:1px solid var(--line);
+      font-size:18px;
       font-weight:900;
       line-height:1;
       box-shadow:none;
@@ -298,13 +297,24 @@
     .chart { height:220px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(26px,1fr); gap:8px; align-items:end; border-bottom:1px solid var(--line); padding-top:10px; }
     .chart-col { display:grid; gap:6px; align-items:end; text-align:center; color:var(--muted); font-size:11px; font-weight:800; }
     .chart-bar { min-height:8px; border-radius:6px 6px 0 0; background:linear-gradient(180deg,#3157c7,#172554); }
-    .radial-tree { min-height:330px; display:grid; grid-template-rows:1fr auto; gap:10px; }
-    .radial-svg { width:100%; height:286px; overflow:visible; }
-    .radial-link { stroke:#cbd5e1; stroke-width:1.2; }
-    .radial-node { cursor:pointer; transition:transform .18s; transform-box:fill-box; transform-origin:center; }
-    .radial-node:hover,.radial-node.active { transform:scale(1.08); }
-    .radial-node circle { fill:var(--incar-dark); stroke:#fff; stroke-width:2; filter:drop-shadow(0 6px 12px rgba(15,23,42,.15)); }
-    .radial-node text { fill:#fff; font-size:11px; font-weight:900; text-anchor:middle; dominant-baseline:middle; pointer-events:none; }
+    .keyword-board { display:grid; gap:10px; }
+    .keyword-row {
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      padding:11px;
+      display:grid;
+      grid-template-columns:minmax(120px,.6fr) 1fr 46px;
+      gap:12px;
+      align-items:center;
+      cursor:pointer;
+      transition:border-color .16s,background .16s;
+    }
+    .keyword-row:hover,.keyword-row.active { border-color:#9eb1dc; background:#f8fbff; }
+    .keyword-name { color:#182230; font-weight:900; line-height:1.3; }
+    .keyword-track { height:10px; border-radius:999px; background:#eef2f7; overflow:hidden; }
+    .keyword-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#27398c,#5b7cfa); }
+    .keyword-count { color:var(--incar-dark); font-size:13px; font-weight:900; text-align:right; }
     .focus-box { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; color:var(--muted); font-size:13px; font-weight:800; min-height:62px; }
     .focus-box strong { display:block; color:var(--incar-dark); font-size:15px; margin-bottom:4px; }
     .table { width:100%; border-collapse:collapse; font-size:13px; }
@@ -468,7 +478,7 @@
           <div class="grid-2" style="margin-top:14px">
             <div class="panel">
               <h2 class="panel-title"><i data-lucide="cloud"></i> 주요 키워드</h2>
-              <div class="radial-tree" id="keywordTree"></div>
+              <div class="keyword-board" id="keywordTree"></div>
             </div>
             <div class="panel">
               <h2 class="panel-title"><i data-lucide="list-checks"></i> 자동 인사이트</h2>
@@ -806,28 +816,23 @@
 
     function renderKeywordTree(targetId, items) {
       const target = document.getElementById(targetId);
-      const entries = topBy(items,"keyword",14);
+      const entries = topBy(items,"keyword",10);
       if (!entries.length) { target.innerHTML = '<div class="empty">키워드가 없습니다.</div>'; return; }
-      const width = 430, height = 286, cx = width/2, cy = height/2, radius = Math.min(112,60+entries.length*4);
       const max = Math.max(...entries.map(e => e[1]),1);
-      const nodes = entries.map(([keyword,count],idx) => {
-        const angle = Math.PI*2*idx/entries.length - Math.PI/2;
-        return { keyword, count, x:cx+Math.cos(angle)*radius, y:cy+Math.sin(angle)*radius, r:22+(count/max)*18 };
-      });
       target.innerHTML = `
-        <svg class="radial-svg" viewBox="0 0 ${width} ${height}">
-          ${nodes.map(n => `<line class="radial-link" x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}"></line>`).join("")}
-          <circle cx="${cx}" cy="${cy}" r="42" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"></circle>
-          <text x="${cx}" y="${cy-5}" fill="#172554" font-size="13" font-weight="900" text-anchor="middle">키워드</text>
-          <text x="${cx}" y="${cy+12}" fill="#64748b" font-size="11" font-weight="800" text-anchor="middle">${entries.length}개</text>
-          ${nodes.map((n,idx) => `<g class="radial-node" tabindex="0" data-keyword="${escapeHtml(n.keyword)}" data-count="${n.count}"><circle cx="${n.x}" cy="${n.y}" r="${n.r}"></circle><text x="${n.x}" y="${n.y-4}">${escapeHtml(n.keyword.length>7 ? n.keyword.slice(0,7)+"…" : n.keyword)}</text><text x="${n.x}" y="${n.y+11}">${n.count}건</text></g>`).join("")}
-        </svg>
-        <div class="focus-box"><strong>${escapeHtml(nodes[0].keyword)}</strong>${nodes[0].count}건 관찰 · 원을 선택하면 관련 기사 예시가 표시됩니다.</div>
+        ${entries.map(([keyword,count],idx) => `
+          <div class="keyword-row${idx === 0 ? " active" : ""}" tabindex="0" data-keyword="${escapeHtml(keyword)}" data-count="${count}">
+            <div class="keyword-name">${escapeHtml(keyword)}</div>
+            <div class="keyword-track"><div class="keyword-fill" style="width:${Math.max(6,count/max*100)}%"></div></div>
+            <div class="keyword-count">${count}건</div>
+          </div>
+        `).join("")}
+        <div class="focus-box"><strong>${escapeHtml(entries[0][0])}</strong>${entries[0][1]}건 관찰 · 키워드를 선택하면 관련 기사 예시가 표시됩니다.</div>
       `;
       const focus = target.querySelector(".focus-box");
-      target.querySelectorAll(".radial-node").forEach(node => {
+      target.querySelectorAll(".keyword-row").forEach(node => {
         const update = () => {
-          target.querySelectorAll(".radial-node").forEach(item => item.classList.toggle("active", item === node));
+          target.querySelectorAll(".keyword-row").forEach(item => item.classList.toggle("active", item === node));
           const keyword = node.dataset.keyword;
           const examples = state.articles.filter(a => a.keyword === keyword).slice(0,2).map(a => a.title).join(" · ");
           focus.innerHTML = `<strong>${escapeHtml(keyword)}</strong>${escapeHtml(node.dataset.count)}건 관찰${examples ? " · " + escapeHtml(examples) : ""}`;
