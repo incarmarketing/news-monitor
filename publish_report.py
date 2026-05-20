@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import shutil
+import json
+from datetime import datetime, timedelta
 from pathlib import Path
 
+import archiver
+import ai_briefing
 import dashboard_builder
 
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
+ARCHIVE_DIR = BASE_DIR / "data" / "daily"
 PUBLIC_DIR = BASE_DIR / "public"
 REPORTS_DIR = PUBLIC_DIR / "reports"
 PERIOD_DIR = BASE_DIR / "period_reports"
@@ -20,6 +25,23 @@ def latest_report() -> Path:
     if not files:
         raise FileNotFoundError("No briefing_*.html file found in logs.")
     return files[0]
+
+
+def latest_archive_report() -> tuple[str, str] | None:
+    files = sorted(ARCHIVE_DIR.glob("*.json"), key=lambda p: p.name, reverse=True)
+    if not files:
+        return None
+
+    source = files[0]
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    timestamp = datetime.fromisoformat(payload["timestamp"])
+    report_name = f"briefing_{timestamp.strftime('%Y%m%d_%H%M')}.html"
+    report_md = payload.get("briefing", "")
+    articles = payload.get("articles", [])
+    metrics = payload.get("metrics", {})
+    previous_day = archiver.load_day(timestamp.date() - timedelta(days=1))
+    html_body = ai_briefing.build_html_report(report_md, articles, metrics, previous_day)
+    return report_name, html_body
 
 
 def publish() -> Path:
@@ -37,6 +59,14 @@ def publish() -> Path:
         shutil.copy2(source, archive_target)
         shutil.copy2(source, index_target)
         print(f"Published latest report: {source.name}")
+        print(f"Static index: {index_target}")
+        print(f"Static archive: {archive_target}")
+    elif archive := latest_archive_report():
+        report_name, html_body = archive
+        archive_target = REPORTS_DIR / report_name
+        archive_target.write_text(html_body, encoding="utf-8")
+        index_target.write_text(html_body, encoding="utf-8")
+        print(f"Published latest archived report: {report_name}")
         print(f"Static index: {index_target}")
         print(f"Static archive: {archive_target}")
     else:
