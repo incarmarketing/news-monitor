@@ -1,6 +1,6 @@
 {
   "date": "2026-05-20",
-  "timestamp": "2026-05-20T13:01:15.451251+09:00",
+  "timestamp": "2026-05-20T17:02:15.266072+09:00",
   "window": {
     "slot": "13",
     "label": "당일 08:00~13:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-20T13:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 98,
-    "total_after_cluster": 46,
+    "total_collected": 35,
+    "total_after_cluster": 29,
     "by_category": {
       "own": 2,
-      "regulation": 5,
-      "competitor": 30,
-      "industry": 60,
-      "other": 1
+      "regulation": 3,
+      "competitor": 13,
+      "industry": 17,
+      "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 1,
-      "neutral": 97
+      "neutral": 34
     },
     "own_negative": 0,
     "own_total": 2,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 긍정 보도 속, 생보사 투자이익 중심 성장세.\n\n## 핵심 이슈\n- [1] 금감원, 대형 GA 현황 파악: 1200%룰 관련, 당사 포함 업계 영향력 주목.\n- [19] 주요 생보사 1분기 실적: 보험손익 감소, 투자이익 급증으로 호실적 기록.\n\n## 지표 해석\n당사 관련 보도는 1200%룰 관련 긍정적 동향이 포착되었으며, 부정 기사는 없습니다. 경쟁사들은 1분기 호실적 발표와 사회공헌 활동 보도를 중심으로 다수 노출되었습니다.\n\n## 분석 키워드\n1200%룰, 대형 GA, 생보사 1분기 실적, KB손해보험 사회공헌",
+  "briefing": "## 최종 결론\n당사 관련 긍정/중립 보도 확인, 업계 내 GA 영향력 확대.\n\n## 핵심 이슈\n- [1] 금감원, GA 정착지원금 점검: 1200%룰 관련 동향으로, 당사 긍정적 맥락에서 언급.\n- [3] 대형 GA 중심 판매전략 변화: 업계 재편 속 당사의 역할 및 위상 부각.\n\n## 지표 해석\n당사 직접 언급 기사는 긍정적/중립적 톤을 유지했으며, 부정 이슈는 없습니다. 경쟁사 CSR 활동 및 GA 업계 재편 관련 동향이 다수 관측됩니다.\n\n## 분석 키워드\n1200%룰, GA 판매채널, 금감원, KB손해보험 CSR",
   "articles": [
     {
       "title": "금감원, ‘1200%룰’ 앞두고 대형 GA 정착 지원금 현황 파악",
@@ -49,21 +49,10 @@
       "title": "[더벨][Sanction Radar] 금감원, 한화라이프랩 현장검사…요양시설 종신...",
       "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605181354035920102950",
       "source": "naver",
-      "keyword": "생명보험",
+      "keyword": "GA 보험",
       "pub_date": "Wed, 20 May 2026 11:02:00 +0900",
       "_score": 15,
       "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[적중! 대박 예감] '한화손해보험,비에이치' 내일장 예감 좋은 대박 종목은? - MTN 머니투데이방송",
-      "link": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE9iT1ZFWFdJQy1CT2RwaFY2ckZfLXlVaU9wUXA3RnhBTjI4Uk1PaHppbFBkWmZKUldYOXpKU0J4aHZSVVg3ZnExUjhqMkNNMl9sVmExRjdmRTR5LUcydjF1TkdsQzQ?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Tue, 19 May 2026 23:40:34 GMT",
-      "_score": 15,
-      "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -76,29 +65,7 @@
       "_score": 14,
       "_category": "own",
       "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[증권 뉴스브리핑] 국민성장펀드, 22일부터 판매/금감원장 \"빚투·레버리...",
-      "link": "https://www.asiatime.co.kr/article/20260520500075",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Wed, 20 May 2026 10:24:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[금융계 동향] KB손해보험·NH농협은행·대신증권",
-      "link": "http://www.iminju.net/news/articleView.html?idxno=164090",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 12:44:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "좋은변화·KB손해보험, 송파구 폐지 수거 노인 안전용품 지원 - v.daum.net",
@@ -112,37 +79,15 @@
       "_cluster_size": 1
     },
     {
-      "title": "KB손해보험, 폐지수거 어르신 교통사고 예방 지원 사업 - biz.sbs.co.kr.",
-      "link": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE5pbl9hU3RJaVFVT3l0MURXdkpialdtR0FqSUJ3dTlYd0todEF1VGFwMzlfdm1EM3VUUEN0dnVjOEp1bWJVZVFZUzFYdWtLSXpBQXBZ?oc=5",
+      "title": "KB손해보험, 폐지수거 어르신 위한 '반짝반짝 캠페인' 실시 - 보험신보",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE9iYkhRWVdXdFBmaEhWek5sZkM3TWtyNnJMQXRDQ213ZHBRSXQtTzNPbUgwclZndk5vaVJvM09FSGNON01lVFhuUlZQR3pReDZudHRfTW9nYVp6UEh3V181Tm5LV2R0ZmliNThr?oc=5",
       "source": "google",
       "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 01:30:00 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "KB손해보험, 폐지수거 어르신 대상 '교통안전 교육 지원 '캠페인 실시 - 전자신문",
-      "link": "https://news.google.com/rss/articles/CBMiTkFVX3lxTE5aeWYtYlFaX0lPZjRSYjFjZEFDXzF2WV9jeURlcDkwallQaEFnQ20yVnNvb1MzQm1jLU9JQmVGak51Z3p4VVAyWkhKV1pzQQ?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 00:16:25 GMT",
+      "pub_date": "Wed, 20 May 2026 01:32:40 GMT",
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
-    },
-    {
-      "title": "KB손해보험, 폐지수거 어르신 안전 지킨다…‘반짝반짝 캠페인’ 9년째 - 우먼타임스",
-      "link": "https://news.google.com/rss/articles/CBMicEFVX3lxTE1YZDZRSXJBMHR2Vzl5eHczcFJONXR1bzVUSGJ5YWxhTGVjRGlyRXYwUDJUQWpaWEx0V1BjVGdfN2g0SWJTaUZLbGpDbkNtMXJUMkRqODhBSWQyOU96QXlSMzB3NlBYbUZ2SDJ1WjNKOUbSAXRBVV95cUxQZ3FBblFGUHJyajM2T2M2Y05XRC05TVdsdWlOREhiLXlwMkJzbVRnN1ZwS1U5WVJfVkFyYUkzdEdrWW1reUJURGpfb3I1SWd3LWpUWFdNd2dibmZ6UTRGWlF0UlFBNlpSQXlmSkNoZnVWSnc2Xw?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 02:07:54 GMT",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
     },
     {
       "title": "[보험업계 동향] 삼성화재ㆍKB손해보험ㆍDB생명,ㆍKB라이프(5.20) - 위클리오늘",
@@ -153,10 +98,10 @@
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 2
+      "_cluster_size": 1
     },
     {
-      "title": "여성소비자신문 모바일 사이트, KB손해보험·NH투자증권, ESG 캠페인 전개 - 통신일보",
+      "title": "여성소비자신문 모바일 사이트, KB손해보험·NH투자증권, ESG 캠페인 전개 - 여성소비자신문",
       "link": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE5nS1NTVTZEdnFncWh5T2MxSVRhSG13R2JMRndFcm53THRjRjZpaXdma0FNS1ByMFphbFFZQmY2akVwTmlRY19VS1hnVUVzNDN6S01hMWRJMnFIM00xeXQ0YWtGVU5MQQ?oc=5",
       "source": "google",
       "keyword": "손해보험",
@@ -167,24 +112,13 @@
       "_cluster_size": 1
     },
     {
-      "title": "KB손해보험, 폐지수거 어르신 교통사고 예방 나서…안전용품 300세트 지원 - 이코노뉴스",
-      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTFA1bmFoR002S0NjM2IxV2ctUmViXzE0bUxOeEpEc2dTRDVDVF9yWGxtOW1ybTFEY0J5RnFxU0hDb1E5REhMamdBMUphUmxleWhnWEE1UldiVEhVdnEyajhmR1p6dk02akJlczc4UFIyYw?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 00:27:13 GMT",
+      "title": "[증권 뉴스브리핑] 국민성장펀드, 22일부터 판매/금감원장 \"빚투·레버리...",
+      "link": "https://www.asiatime.co.kr/article/20260520500075",
+      "source": "naver",
+      "keyword": "GA 보험",
+      "pub_date": "Wed, 20 May 2026 10:24:00 +0900",
       "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "“새벽길 위험 줄인다”… KB손해보험, 폐지수거 어르신 교통사고 예방 나섰다 - 스마트경제",
-      "link": "https://news.google.com/rss/articles/CBMicEFVX3lxTE01SWFEaHkydWZPOXdWV3ZRd1FyYlFmclVoNTdXTG96dW1oZ0tXSl9pSXZGbDY2eEdhWjFWMFFJUUt0dzdVS3ZSbWtTaEpqejlVT20zUzdUc0xxRUh1ZlhKMVJOWDkxN3lkUndTV3Y1enI?oc=5",
-      "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 00:36:15 GMT",
-      "_score": 12,
-      "_category": "competitor",
+      "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -192,7 +126,7 @@
       "title": "AIA 프리미어파트너스, 설계사들과 소송전…'집단 해촉·부당 환수' 논란",
       "link": "https://www.joongangenews.com/news/articleView.html?idxno=520512",
       "source": "naver",
-      "keyword": "생명보험",
+      "keyword": "GA 보험",
       "pub_date": "Wed, 20 May 2026 10:04:00 +0900",
       "_score": 11,
       "_category": "competitor",
@@ -211,169 +145,26 @@
       "_cluster_size": 1
     },
     {
-      "title": "교보생명, 보험본업·투자수익 동반 '순익 쌍끌이'...건강보험 판매 확...",
-      "link": "https://www.greened.kr/news/articleView.html?idxno=341018",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 12:01:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "\"소리가 아닌 글로 듣는다\" DB생명, 장벽 허무는 '실시간 텍스트 상담' ...",
-      "link": "https://www.catchnews.kr/news/articleView.html?idxno=124091",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 11:55:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "'생보 빅3' 1분기 순익 2조 돌파···투자손익 급증 영향",
-      "link": "http://www.koreastocknews.com/news/articleView.html?idxno=118588",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 11:52:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "손보사 중기대출 50조 육박, 10년새 3배↑",
-      "link": "https://n.news.naver.com/mnews/article/016/0002645879?sid=101",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 11:10:00 +0900",
-      "_score": 8,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "한화생명 '해외·투자' vs 교보생명 '보장성'…생보 '빅2' 다른 생존법",
-      "link": "http://www.opinionnews.co.kr/news/articleView.html?idxno=138723",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 11:08:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "동양생명 파인CC 매각, '공개입찰'이었나...동양레저 우협에 공정성 논...",
-      "link": "https://www.asiaa.co.kr/news/articleView.html?idxno=250065",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 10:56:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "교보 이어 삼성생명도 인식…해약준비금 제도 개선 '안갯속'",
-      "link": "https://www.widedaily.com/news/articleView.html?idxno=294345",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 10:54:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[대한민국 ESG 금융포럼 2026] 생산적금융과 ESG 공존…'대전환 시대' 금...",
-      "link": "https://www.news2day.co.kr/article/20260520500087",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 10:20:00 +0900",
-      "_score": 8,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "생보사 빅4, 본업인 '보험손익' 줄었지만 투자손익 2배 늘면서 실적 지...",
-      "link": "https://www.insight.co.kr/news/554884",
-      "source": "naver",
-      "keyword": "생명보험",
-      "pub_date": "Wed, 20 May 2026 10:06:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "삼성화재, 1분기 순이익 6352억..'총자산 100조 시대' 열어",
-      "link": "https://www.koreareport.co.kr/news/articleView.html?idxno=50503",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 12:56:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "악사손보, 수익성 TFT 꾸렸지만…실적 반등 '안갯속'",
-      "link": "https://dealsite.co.kr/articles/162117",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 12:16:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "씨어스-삼성화재, 디지털 헬스케어 MOU…'병원 밖' 수익 모델 검증",
-      "link": "https://www.the-stock.kr/news/articleView.html?idxno=32572",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 12:12:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "손해보험협회, 고령운전자 안전운전 위해 '페달 오조작 방지장치' 보급...",
-      "link": "https://n.news.naver.com/mnews/article/030/0003429552?sid=101",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 12:01:00 +0900",
-      "_score": 8,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "삼성화재, 웨어러블 기반 헬스케어 강화···미래 먹거리 선점 나서 - 서울파이낸스",
-      "link": "https://news.google.com/rss/articles/CBMiakFVX3lxTE5md0Z6QUFpVUdRSmx4bDUta05KQS1XaFJOMkFVbk5VNnNWd3doV0hqUldxbjd4TGVPSzVXRmc1OUdhZXliNVZxOWlBQ3dGUko3VWV5LTNBSzlkdThtckRHOEd5cUtWUGhGNmc?oc=5",
+      "title": "교보생명, 보험본업·투자수익 동반 '순익 쌍끌이'...건강보험 판매 확대로 신계약 CSM 급증 - 녹색경제신문",
+      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE5EQUJjSVRsbGQ2ZFdrV0FzVi1hZHI5QmU5UGcxY0hmdXlWZzlkd1o0b3lGVk05Z3ExU0VsNDlUWm9yQzI5dmszaG1sYWdYMEN5YmFYV1YyTEVKc05iekVCeWQ5eDdiMnFy?oc=5",
       "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 01:34:42 GMT",
+      "keyword": "생명보험",
+      "pub_date": "Wed, 20 May 2026 03:01:00 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "삼성화재, 씨어스와 맞손…디지털 헬스케어 고도화 추진 - 보험매일",
-      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE5ydzlESjdweUduUjFjMmJjT0JXd3lTTmJsck5KbnI0eS0wNndYam5UeUhZUWtLSFBidGdraVNfNXgwX2ZKWlNkZUxremZwSWZpTzVQcGxUTndnVGtZX0d2ODcyTHBYaHY4?oc=5",
+      "title": "한화생명 '해외·투자' vs 교보생명 '보장성'…생보 '빅2' 다른 생존법 - 오피니언뉴스",
+      "link": "https://news.google.com/rss/articles/CBMickFVX3lxTE1JUndodTBMTWF2TlQ0TWgyQmJSUFEyTTBOcWlRU2Itamt5dWhCcHBEMVpMZ2FNaUxVcFZPaV9zR3kzTVY5b1E1d1NlVEtRaGtMRVVhWElUTklpT3d3X3VDcHJnWUZYQVZqT1h3YWlrdzhTdw?oc=5",
       "source": "google",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 00:42:00 GMT",
+      "keyword": "생명보험",
+      "pub_date": "Wed, 20 May 2026 02:06:45 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "[금융지주 보험사 분석] ① 양종희 KB금융 회장, 비은행 강화…관건은 ...",
@@ -381,6 +172,17 @@
       "source": "naver",
       "keyword": "GA 보험",
       "pub_date": "Wed, 20 May 2026 11:36:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“AI 시대일수록 인간의 온기 중요…고객 ‘보장 완주’ 돕는 사회안전...",
+      "link": "https://n.news.naver.com/mnews/article/009/0005682557?sid=101",
+      "source": "naver",
+      "keyword": "GA 보험",
+      "pub_date": "Wed, 20 May 2026 10:53:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -406,29 +208,7 @@
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[굿모닝! 20일 제약바이오 소식] 동아제약·대웅제약·삼성바이오에피스...",
-      "link": "https://www.goodkyung.com/news/articleView.html?idxno=287201",
-      "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Wed, 20 May 2026 10:36:00 +0900",
-      "_score": 7,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "고령운전자 '페달 착각' 사고 막는다…방지장치 759대 설치",
-      "link": "https://www.ajunews.com/view/20260520105106555",
-      "source": "naver",
-      "keyword": "손해보험",
-      "pub_date": "Wed, 20 May 2026 12:02:00 +0900",
-      "_score": 7,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
       "title": "車 보험에 짓눌린 손보사 실적… ‘8주룰’ 지연에 5부제 부담까지 - 조선비즈 - Chosunbiz",
@@ -450,7 +230,7 @@
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
-      "_cluster_size": 8
+      "_cluster_size": 3
     },
     {
       "title": "[강원 24] 강원랜드, 감사원 자체감사평가 '최우수기관' 선정…4년 연속...",
@@ -472,7 +252,7 @@
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
-      "_cluster_size": 3
+      "_cluster_size": 1
     },
     {
       "title": "실적 압박 계속되는 비보존제약…신약 '어나프라' 반전 과제",
@@ -508,33 +288,66 @@
       "_cluster_size": 1
     },
     {
-      "title": "[EBN 칼럼] 스타트업 런웨이 설계법(상)…현금보다 선택권이 먼저다",
-      "link": "https://www.ebn.co.kr/news/articleView.html?idxno=1709481",
+      "title": "[은행가] 우리카드 '다이소몰 할인'·KB국민은행 '아시안뱅커지 수상' 外",
+      "link": "https://www.slist.kr/news/articleView.html?idxno=740305",
       "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Wed, 20 May 2026 10:22:00 +0900",
+      "keyword": "보험 프로모션",
+      "pub_date": "Wed, 20 May 2026 12:20:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "삼성바이오에피스, SB17(스텔라라 바이오시밀러) 일본서 첫 출시",
-      "link": "http://www.incheonin.com/news/articleView.html?idxno=118069",
+      "title": "KB스타뱅킹 독주 흔들까…은행권 슈퍼앱 '체류 시간' 경쟁 구도재편",
+      "link": "https://www.ebn.co.kr/news/articleView.html?idxno=1709484",
       "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Wed, 20 May 2026 10:22:00 +0900",
+      "keyword": "보험 프로모션",
+      "pub_date": "Wed, 20 May 2026 11:14:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "삼성바이오에피스, 日 '스텔라라' 시밀러 시장 출사표",
-      "link": "http://www.hansbiz.co.kr/news/articleView.html?idxno=839802",
+      "title": "[제약+] 삼성바이오에피스, 日서 자가면역질환 치료제 첫 출시 外",
+      "link": "https://dealsite.co.kr/articles/162197",
       "source": "naver",
-      "keyword": "보험 마케팅",
-      "pub_date": "Wed, 20 May 2026 10:04:00 +0900",
+      "keyword": "보험 프로모션",
+      "pub_date": "Wed, 20 May 2026 09:46:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[生기업TALK] 삼성카드, '무신사' 타고 결제 넘어 소비 플랫폼으로",
+      "link": "http://www.sisacast.kr/news/articleView.html?idxno=96021",
+      "source": "naver",
+      "keyword": "보험 프로모션",
+      "pub_date": "Wed, 20 May 2026 08:26:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[시네마 데이트] 강동원의 망가짐을 창, 오정세를 필살기로 차트 접수할...",
+      "link": "https://m.entertain.naver.com/article/465/0000017344",
+      "source": "naver",
+      "keyword": "보험설계사",
+      "pub_date": "Wed, 20 May 2026 11:35:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[인터뷰] 꿈 없던 소년 강동원, 불혹 지나 택한 아이돌의 길",
+      "link": "https://n.news.naver.com/mnews/article/310/0000136771?sid=103",
+      "source": "naver",
+      "keyword": "보험설계사",
+      "pub_date": "Wed, 20 May 2026 11:29:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
