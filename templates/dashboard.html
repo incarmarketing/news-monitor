@@ -280,6 +280,7 @@
     .summary { color:#475569; font-size:13px; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:var(--muted); font-size:12px; font-weight:800; }
     .chip { border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 8px; }
+    .chip.time { background:#f8fafc; color:#334155; border-color:#cbd5e1; }
     .chip.own,.chip.positive { background:#eef8f1; color:var(--green); border-color:#cbead5; }
     .chip.negative { background:#fff1f2; color:var(--red); border-color:#fecdd3; }
     .chip.regulation { background:#fff7ed; color:var(--amber); border-color:#fed7aa; }
@@ -586,7 +587,12 @@
             <div class="field"><label>리스크</label><select id="riskFilter"><option value="">전체</option></select></div>
           </div>
           <div class="panel">
-            <h2 class="panel-title"><i data-lucide="radio"></i> 실시간 모니터링 피드 <span id="resultCount" style="margin-left:auto;color:var(--muted);font-size:13px">0건</span></h2>
+            <h2 class="panel-title">
+              <i data-lucide="radio"></i> 실시간 모니터링 피드
+              <span id="refreshStatus" style="margin-left:auto;color:var(--muted);font-size:12px">대기 중</span>
+              <button class="btn" id="refreshArticles" style="min-height:30px;padding:4px 9px"><i data-lucide="refresh-cw"></i><span>새로고침</span></button>
+              <span id="resultCount" style="color:var(--muted);font-size:13px">0건</span>
+            </h2>
             <div class="feed" id="articleList"></div>
           </div>
         </section>
@@ -832,14 +838,32 @@
     }
 
     function normalize(article) {
+      const publishedAt = parsePublishedAt(article.pub_date || article.pub_date_raw || "");
       return {
         ...article,
         press: pressName(article),
         category_label: article.category_label || categoryLabel(article.category),
         tone_label: article.tone_label || toneLabel(article.tone),
         summary: article.summary || "",
-        score: Number(article.score || 0)
+        score: Number(article.score || 0),
+        published_at: publishedAt,
+        published_label: formatPublishedAt(publishedAt, article.date)
       };
+    }
+
+    function parsePublishedAt(value) {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function formatPublishedAt(date, fallbackDate = "") {
+      if (!date) return fallbackDate ? `${fallbackDate} 보도` : "보도시각 미확인";
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hour = String(date.getHours()).padStart(2, "0");
+      const minute = String(date.getMinutes()).padStart(2, "0");
+      return `${month}-${day} ${hour}:${minute} 보도`;
     }
 
     function latestDate(items) {
@@ -877,6 +901,7 @@
         render();
       });
       document.getElementById("exportCsv").addEventListener("click", exportCsv);
+      document.getElementById("refreshArticles")?.addEventListener("click", () => refreshDashboardData());
       document.getElementById("printAnalysis")?.addEventListener("click", () => window.print());
       document.getElementById("applyAnalysisRange")?.addEventListener("click", () => {
         state.analysis.range = "custom";
@@ -968,7 +993,7 @@
       return `
         <article class="article">
           <div class="meta">
-            <span class="chip">${escapeHtml(article.date || "-")}</span>
+            <span class="chip time">${escapeHtml(article.published_label || article.date || "-")}</span>
             <span class="chip">${escapeHtml(article.press)}</span>
             <span class="chip ${escapeHtml(article.category)}">${escapeHtml(article.category_label)}</span>
             <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(article.tone_label)}</span>
@@ -1342,11 +1367,40 @@
       lucide.createIcons();
     }
 
-    async function fetchDashboardData() {
+    function setRefreshStatus(text) {
+      const target = document.getElementById("refreshStatus");
+      if (target) target.textContent = text;
+    }
+
+    async function refreshDashboardData() {
+      const button = document.getElementById("refreshArticles");
+      if (button) button.disabled = true;
+      setRefreshStatus("최신 데이터 확인 중...");
+      try {
+        const data = await fetchDashboardData(true);
+        state.categoryLabels = data.category_labels || {};
+        state.toneLabels = data.tone_labels || {};
+        state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
+        optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
+        optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
+        optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
+        optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
+        render();
+        const now = new Date();
+        setRefreshStatus(`업데이트 ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
+      } catch {
+        setRefreshStatus("새로고침 실패");
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    async function fetchDashboardData(force = false) {
       const paths = ["./data/articles.json", "../public/data/articles.json"];
       for (const path of paths) {
         try {
-          const response = await fetch(path, { cache:"no-store" });
+          const url = force ? `${path}${path.includes("?") ? "&" : "?"}v=${Date.now()}` : path;
+          const response = await fetch(url, { cache:"no-store" });
           if (response.ok) return response.json();
         } catch {}
       }
