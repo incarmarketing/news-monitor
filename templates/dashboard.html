@@ -503,8 +503,8 @@
         <div class="actions">
           <button class="btn mobile-menu" id="mobileMenuBtn"><i data-lucide="menu"></i></button>
           <a class="btn" href="./index.html"><i data-lucide="file-text"></i><span>일일 보고서</span></a>
-          <a class="btn" href="./weekly.html"><i data-lucide="calendar-days"></i><span>주간</span></a>
-          <a class="btn" href="./monthly.html"><i data-lucide="calendar-range"></i><span>월간</span></a>
+          <button class="btn" data-analysis-shortcut="7"><i data-lucide="calendar-days"></i><span>주간</span></button>
+          <button class="btn" data-analysis-shortcut="30"><i data-lucide="calendar-range"></i><span>월간</span></button>
           <button class="btn" id="exportCsv"><i data-lucide="download"></i><span>CSV 출력</span></button>
           <button class="btn primary" id="resetFilters"><i data-lucide="rotate-ccw"></i><span>필터 초기화</span></button>
         </div>
@@ -576,13 +576,13 @@
                 <label>분석 기간</label>
                 <div class="segmented" id="analysisPreset">
                   <button class="btn active" data-range="all">전체</button>
-                  <button class="btn" data-range="7">최근 7일</button>
-                  <button class="btn" data-range="30">최근 30일</button>
-                  <button class="btn" data-range="custom">직접 선택</button>
+                  <button class="btn" data-range="7">주간</button>
+                  <button class="btn" data-range="30">월간</button>
+                  <button class="btn" data-range="custom">선택 구간</button>
                 </div>
               </div>
-              <div class="field"><label>시작일</label><input id="analysisStart" type="date"></div>
-              <div class="field"><label>종료일</label><input id="analysisEnd" type="date"></div>
+              <div class="field"><label>시작 기준일</label><input id="analysisStart" type="date"></div>
+              <div class="field"><label>종료 기준일</label><input id="analysisEnd" type="date"></div>
               <button class="btn" id="applyAnalysisRange"><i data-lucide="search"></i><span>분석 적용</span></button>
             </div>
             <div class="report-body">
@@ -860,6 +860,15 @@
           state.analysis.range = btn.dataset.range;
           if (btn.dataset.range !== "custom") setAnalysisRange(btn.dataset.range);
           updateAnalysisPresetButtons();
+          renderAnalysis();
+        });
+      });
+      document.querySelectorAll("[data-analysis-shortcut]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.analysis.range = btn.dataset.analysisShortcut;
+          setAnalysisRange(state.analysis.range);
+          updateAnalysisPresetButtons();
+          switchPage("analysis");
           renderAnalysis();
         });
       });
