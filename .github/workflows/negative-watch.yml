@@ -3,7 +3,7 @@ name: Negative Article Watch
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
@@ -36,7 +36,7 @@ jobs:
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
           KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
           KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
-          NEGATIVE_WATCH_MINUTES: "30"
+          NEGATIVE_WATCH_MINUTES: "15"
           NEGATIVE_WATCH_START_HOUR: "7"
           NEGATIVE_WATCH_END_HOUR: "18"
 

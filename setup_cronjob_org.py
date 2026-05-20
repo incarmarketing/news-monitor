@@ -95,7 +95,7 @@ def specs() -> list[CronSpec]:
             title="news-monitor negative watch",
             workflow="negative-watch.yml",
             body={"ref": "main"},
-            minutes=[0, 10, 20, 30, 40, 50],
+            minutes=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55],
             hours=list(range(7, 19)),
             wdays=weekdays,
             mdays=every_day,
