@@ -1377,7 +1377,14 @@
       if (button) button.disabled = true;
       setRefreshStatus("최신 데이터 확인 중...");
       try {
-        const data = await fetchDashboardData(true);
+        const before = dataSignature(state.articles);
+        const dispatched = await triggerCollectionRun();
+        if (dispatched) {
+          setRefreshStatus("수집/분석 실행 중...");
+        }
+        const data = dispatched
+          ? await waitForFreshDashboardData(before)
+          : await fetchDashboardData(true);
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
         state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
@@ -1387,12 +1394,57 @@
         optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
         render();
         const now = new Date();
-        setRefreshStatus(`Supabase 동기화 ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
+        setRefreshStatus(`반영 완료 ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
       } catch {
         setRefreshStatus("새로고침 실패");
       } finally {
         if (button) button.disabled = false;
       }
+    }
+
+    function dataSignature(items) {
+      const latest = items
+        .map(item => item.pub_date || item.pub_date_raw || item.date || "")
+        .sort()
+        .reverse()[0] || "";
+      return `${items.length}:${latest}`;
+    }
+
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    async function triggerCollectionRun() {
+      try {
+        const config = await fetchSupabaseConfig(true);
+        if (!config?.url || !config?.anon_key) return false;
+        const response = await fetch(`${config.url.replace(/\/$/,"")}/functions/v1/trigger-news-collection`, {
+          method: "POST",
+          cache: "no-store",
+          headers: {
+            apikey: config.anon_key,
+            Authorization: `Bearer ${config.anon_key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ source: "dashboard" }),
+        });
+        return response.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    async function waitForFreshDashboardData(beforeSignature) {
+      let latest = await fetchDashboardData(true);
+      for (let attempt = 1; attempt <= 12; attempt++) {
+        const articles = latest.articles || [];
+        const signature = dataSignature(articles);
+        if (signature && signature !== beforeSignature) {
+          return latest;
+        }
+        setRefreshStatus(`수집/분석 대기 중... ${attempt}/12`);
+        await sleep(15000);
+        latest = await fetchDashboardData(true);
+      }
+      return latest;
     }
 
     async function fetchDashboardData(force = false) {
@@ -1411,10 +1463,7 @@
 
     async function fetchSupabaseDashboardData(force = false) {
       try {
-        const configUrl = `./data/supabase.json${force ? `?v=${Date.now()}` : ""}`;
-        const configResponse = await fetch(configUrl, { cache:"no-store" });
-        if (!configResponse.ok) return null;
-        const config = await configResponse.json();
+        const config = await fetchSupabaseConfig(force);
         if (!config.url || !config.anon_key) return null;
 
         const query = [
@@ -1456,6 +1505,13 @@
       } catch {
         return null;
       }
+    }
+
+    async function fetchSupabaseConfig(force = false) {
+      const configUrl = `./data/supabase.json${force ? `?v=${Date.now()}` : ""}`;
+      const configResponse = await fetch(configUrl, { cache:"no-store" });
+      if (!configResponse.ok) return null;
+      return configResponse.json();
     }
 
     async function boot() {
