@@ -26,6 +26,7 @@ ARTICLE_COLUMNS = (
     "link",
     "source",
     "keyword",
+    "summary",
     "pub_date",
     "pub_date_raw",
     "score",
@@ -41,13 +42,24 @@ class SupabaseConfigError(RuntimeError):
 
 
 def is_enabled() -> bool:
-    return bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
+    return bool(os.getenv("SUPABASE_URL") and write_key())
+
+
+def write_key() -> str:
+    return (
+        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        or os.getenv("SUPABASE_ANON_KEY")
+        or os.getenv("PUBLIC_SUPABASE_ANON_KEY")
+        or os.getenv("SUPABASE_PUBLISHABLE_KEY")
+        or os.getenv("PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+        or ""
+    )
 
 
 def headers() -> dict[str, str]:
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    key = write_key()
     if not key:
-        raise SupabaseConfigError("SUPABASE_SERVICE_ROLE_KEY is not configured.")
+        raise SupabaseConfigError("Supabase write key is not configured.")
     return {
         "apikey": key,
         "Authorization": f"Bearer {key}",
@@ -139,6 +151,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "link": article.get("link", ""),
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
+        "summary": article.get("description", "") or article.get("summary", ""),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),
@@ -158,7 +171,7 @@ def load_dashboard_articles(limit: int = 2000) -> list[dict]:
         (
             "news_articles?"
             "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
-            "keyword,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
+            "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
             f"&order=report_date.desc,score.desc&limit={limit}"
         ),
     )

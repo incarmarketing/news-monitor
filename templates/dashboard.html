@@ -329,6 +329,10 @@
     .insight-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
     .insight-card b { display:block; color:var(--incar-dark); font-size:20px; margin-bottom:4px; }
     .insight-card span { color:#475467; font-size:12px; font-weight:900; }
+    .ops-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+    .ops-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
+    .ops-card b { display:block; color:var(--incar-dark); font-size:16px; margin-bottom:5px; }
+    .ops-card span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.45; }
     .tone-board { display:grid; gap:10px; }
     .tone-buttons { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
     .tone-button {
@@ -622,7 +626,7 @@
       .page-wrap { padding:16px 12px 88px; }
       .topbar { padding:12px; }
       .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
-      .hero-briefs,.media-flow,.insight-grid,.ad-kpis { grid-template-columns:1fr; }
+      .hero-briefs,.media-flow,.insight-grid,.ad-kpis,.ops-grid { grid-template-columns:1fr; }
       .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .toolbar { grid-template-columns:1fr 1fr; }
       .toolbar .field:first-child { grid-column:1/-1; }
@@ -720,6 +724,11 @@
             <div class="metric"><strong id="metricOwn">0</strong><span>당사 보도</span></div>
             <div class="metric"><strong id="metricNegative">0</strong><span>부정 기사</span></div>
             <div class="metric"><strong id="metricMarket">0</strong><span>경쟁/업계 동향</span></div>
+          </div>
+
+          <div class="panel">
+            <h2 class="panel-title"><i data-lucide="server-cog"></i> 운영 상태</h2>
+            <div class="ops-grid" id="opsStatus"></div>
           </div>
 
           <div class="grid-2">
@@ -977,6 +986,9 @@
       keywordSource: "로컬 캐시",
       keywordSyncMessage: "",
       keywordSyncTone: "",
+      dataSource: "배포 데이터",
+      managementSource: "브라우저 저장",
+      reportRuns: [],
       categoryLabels: {},
       toneLabels: {},
       scraps: JSON.parse(localStorage.getItem("pr_scraps") || "[]"),
@@ -1093,7 +1105,7 @@
         category_detail: categoryDetail(article),
         category_label: article.category_label || categoryLabel(article.category),
         tone_label: article.tone_label || toneLabel(article.tone),
-        summary: article.summary || "",
+        summary: article.summary || article.description || "",
         score: Number(article.score || 0),
         published_at: publishedAt,
         published_label: formatPublishedAt(publishedAt, article.date)
@@ -1221,6 +1233,26 @@
       document.getElementById("metricOwn").textContent = (cats.own || 0).toLocaleString("ko-KR");
       document.getElementById("metricNegative").textContent = (tones.negative || 0).toLocaleString("ko-KR");
       document.getElementById("metricMarket").textContent = market.toLocaleString("ko-KR");
+    }
+
+    function renderOpsStatus() {
+      const latestRun = state.reportRuns.slice().sort((a,b) => String(b.timestamp || b.report_date || "").localeCompare(String(a.timestamp || a.report_date || "")))[0];
+      const latestRunLabel = latestRun
+        ? `${latestRun.report_date || "-"} ${latestRun.report_slot || ""}`.trim()
+        : "실행 로그 없음";
+      const latestWindow = latestRun?.window_label || "최근 실행 구간 미확인";
+      const latestTimestamp = latestRun?.timestamp ? formatPublishedAt(new Date(latestRun.timestamp), latestRun.report_date) : latestWindow;
+      const cards = [
+        ["데이터 원본", state.dataSource || "배포 데이터"],
+        ["최근 실행", latestRunLabel, latestTimestamp],
+        ["키워드 조건", `${state.keywords.length.toLocaleString("ko-KR")}개`, state.keywordSource || "Supabase"],
+        ["관리 데이터", state.managementSource || "브라우저 저장"],
+      ];
+      const target = document.getElementById("opsStatus");
+      if (!target) return;
+      target.innerHTML = cards.map(([title, value, sub]) =>
+        `<div class="ops-card"><b>${escapeHtml(value)}</b><span>${escapeHtml(title)}${sub ? " · " + escapeHtml(sub) : ""}</span></div>`
+      ).join("");
     }
 
     function dateRangeLabel(items) {
@@ -1568,7 +1600,7 @@
       document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>보도량</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="9">언론사 데이터가 없습니다.</td></tr>'}`;
     }
 
-    function saveMediaRelation() {
+    async function saveMediaRelation() {
       const item = {
         name: document.getElementById("mediaName").value.trim(),
         status: document.getElementById("mediaRelation").value,
@@ -1578,15 +1610,31 @@
         memo: document.getElementById("mediaMemo").value.trim()
       };
       if (!item.name) return alert("언론사명을 입력해 주세요.");
+      const saved = await supabaseRest("media_relations?on_conflict=name", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{
+          name: item.name,
+          status: item.status,
+          grade: item.grade,
+          owner: item.owner,
+          contact_date: item.contactDate || null,
+          memo: item.memo,
+          hidden: false,
+        }]),
+      });
       state.hiddenMedia = state.hiddenMedia.filter(name => name !== item.name);
       localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
       const existing = state.mediaRelations.findIndex(row => row.name === item.name);
       if (existing >= 0) state.mediaRelations[existing] = item;
       else state.mediaRelations.unshift(item);
       localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
+      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
       ["mediaName","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("mediaRelation").value = "우호";
       document.getElementById("mediaGrade").value = "A";
+      if (saved) await loadManagementDataFromSupabase();
+      else alert("Supabase 저장에 실패해 브라우저에만 임시 저장했습니다.");
       renderMedia();
     }
 
@@ -1601,32 +1649,45 @@
       document.getElementById("mediaName").scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    function removeMediaRelation(press) {
+    async function removeMediaRelation(press) {
       if (!confirm(`${press}를 언론사 관리 목록에서 삭제할까요?`)) return;
+      const saved = await supabaseRest("media_relations?on_conflict=name", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{ name: press, hidden: true }]),
+      });
       state.mediaRelations = state.mediaRelations.filter(item => item.name !== press);
       if (!state.hiddenMedia.includes(press)) state.hiddenMedia.push(press);
       localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
       localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
+      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
+      if (saved) await loadManagementDataFromSupabase();
       renderMedia();
     }
 
-    function deleteSelectedMedia() {
+    async function deleteSelectedMedia() {
       const press = document.getElementById("mediaName").value.trim();
       if (!press) return alert("삭제할 언론사를 먼저 관리 화면에 불러오거나 입력해 주세요.");
-      removeMediaRelation(press);
+      await removeMediaRelation(press);
       ["mediaName","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("mediaRelation").value = "우호";
       document.getElementById("mediaGrade").value = "A";
     }
 
-    function resetHiddenMedia() {
+    async function resetHiddenMedia() {
       if (!confirm("숨김 처리한 언론사를 다시 표시할까요?")) return;
+      const saved = await supabaseRest("media_relations?hidden=eq.true", {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ hidden: false }),
+      });
       state.hiddenMedia = [];
       localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
+      if (saved) await loadManagementDataFromSupabase();
       renderMedia();
     }
 
-    function addReporter() {
+    async function addReporter() {
       const item = {
         name: document.getElementById("reporterName").value.trim(),
         media: document.getElementById("reporterMedia").value.trim(),
@@ -1635,9 +1696,24 @@
         memo: document.getElementById("reporterMemo").value.trim()
       };
       if (!item.name || !item.media) return alert("기자명과 언론사를 입력해 주세요.");
+      const saved = await supabaseRest("reporters", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify([{
+          name: item.name,
+          media: item.media,
+          status: item.status,
+          contact_date: item.date || null,
+          memo: item.memo,
+        }]),
+      });
+      if (Array.isArray(saved) && saved[0]) item.id = saved[0].id;
       state.reporters.unshift(item);
       localStorage.setItem("pr_reporters", JSON.stringify(state.reporters));
+      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
       ["reporterName","reporterMedia","reporterMemo"].forEach(id => document.getElementById(id).value = "");
+      if (saved) await loadManagementDataFromSupabase();
+      else alert("Supabase 저장에 실패해 브라우저에만 임시 저장했습니다.");
       renderReporters();
     }
 
@@ -1645,9 +1721,15 @@
       const rows = state.reporters.map((r,idx) => `<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.media)}</td><td>${escapeHtml(r.status)}</td><td>${escapeHtml(r.date || "-")}</td><td>${escapeHtml(r.memo || "-")}</td><td><button class="btn danger" onclick="removeReporter(${idx})">삭제</button></td></tr>`).join("");
       document.getElementById("reporterTable").innerHTML = `<tr><th>기자명</th><th>언론사</th><th>상태</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="6">등록된 기자가 없습니다.</td></tr>'}`;
     }
-    function removeReporter(idx) { state.reporters.splice(idx,1); localStorage.setItem("pr_reporters", JSON.stringify(state.reporters)); renderReporters(); }
+    async function removeReporter(idx) {
+      const item = state.reporters[idx];
+      if (item?.id) await supabaseRest(`reporters?id=eq.${encodeURIComponent(item.id)}`, { method: "DELETE" });
+      state.reporters.splice(idx,1);
+      localStorage.setItem("pr_reporters", JSON.stringify(state.reporters));
+      renderReporters();
+    }
 
-    function addAd() {
+    async function addAd() {
       const item = {
         media: document.getElementById("adMedia").value.trim(),
         month: document.getElementById("adMonth").value,
@@ -1656,9 +1738,24 @@
         memo: document.getElementById("adMemo").value.trim()
       };
       if (!item.media || !item.month || !item.amount) return alert("매체명, 집행월, 금액을 입력해 주세요.");
+      const saved = await supabaseRest("ad_spends", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify([{
+          media: item.media,
+          spend_month: item.month,
+          amount: item.amount,
+          spend_type: item.type,
+          memo: item.memo,
+        }]),
+      });
+      if (Array.isArray(saved) && saved[0]) item.id = saved[0].id;
       state.ads.unshift(item);
       localStorage.setItem("pr_ads", JSON.stringify(state.ads));
+      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
       ["adMedia","adMonth","adAmount","adMemo"].forEach(id => document.getElementById(id).value = "");
+      if (saved) await loadManagementDataFromSupabase();
+      else alert("Supabase 저장에 실패해 브라우저에만 임시 저장했습니다.");
       renderAds();
     }
 
@@ -1706,7 +1803,13 @@
         <div class="ad-kpis">${typeCards}</div>
       ` : '<div class="empty">광고비/협찬 집행 내역을 등록하면 전광판이 표시됩니다.</div>';
     }
-    function removeAd(idx) { state.ads.splice(idx,1); localStorage.setItem("pr_ads", JSON.stringify(state.ads)); renderAds(); }
+    async function removeAd(idx) {
+      const item = state.ads[idx];
+      if (item?.id) await supabaseRest(`ad_spends?id=eq.${encodeURIComponent(item.id)}`, { method: "DELETE" });
+      state.ads.splice(idx,1);
+      localStorage.setItem("pr_ads", JSON.stringify(state.ads));
+      renderAds();
+    }
 
     function renderKeywords() {
       const list = document.getElementById("keywordList");
@@ -1828,6 +1931,77 @@
       }
     }
 
+    async function supabaseRest(path, options = {}) {
+      const config = await fetchSupabaseConfig(true);
+      if (!config?.url || !config?.anon_key) return null;
+      const headers = {
+        apikey: config.anon_key,
+        Authorization: `Bearer ${config.anon_key}`,
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.headers || {}),
+      };
+      const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/${path}`, {
+        cache: "no-store",
+        ...options,
+        headers,
+      });
+      if (!response.ok) return null;
+      if (response.status === 204) return true;
+      const text = await response.text();
+      return text ? JSON.parse(text) : true;
+    }
+
+    async function loadManagementDataFromSupabase() {
+      const [mediaRows, reporterRows, adRows] = await Promise.all([
+        supabaseRest("media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
+        supabaseRest("reporters?select=id,name,media,status,contact_date,memo&order=updated_at.desc"),
+        supabaseRest("ad_spends?select=id,media,spend_month,amount,spend_type,memo&order=spend_month.desc,updated_at.desc"),
+      ]);
+      let loaded = false;
+      if (Array.isArray(mediaRows)) {
+        state.mediaRelations = mediaRows
+          .filter(row => !row.hidden)
+          .map(row => ({
+            name: row.name,
+            status: row.status || "중립",
+            grade: row.grade || "B",
+            owner: row.owner || "",
+            contactDate: row.contact_date || "",
+            memo: row.memo || "",
+          }));
+        state.hiddenMedia = mediaRows.filter(row => row.hidden).map(row => row.name);
+        localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
+        localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
+        loaded = true;
+      }
+      if (Array.isArray(reporterRows)) {
+        state.reporters = reporterRows.map(row => ({
+          id: row.id,
+          name: row.name,
+          media: row.media,
+          status: row.status || "중립",
+          date: row.contact_date || "",
+          memo: row.memo || "",
+        }));
+        localStorage.setItem("pr_reporters", JSON.stringify(state.reporters));
+        loaded = true;
+      }
+      if (Array.isArray(adRows)) {
+        state.ads = adRows.map(row => ({
+          id: row.id,
+          media: row.media,
+          month: row.spend_month,
+          amount: Number(row.amount || 0),
+          type: row.spend_type || "광고",
+          memo: row.memo || "",
+        }));
+        localStorage.setItem("pr_ads", JSON.stringify(state.ads));
+        loaded = true;
+      }
+      state.managementSource = loaded ? "Supabase DB" : "브라우저 저장";
+      return loaded;
+    }
+
     function generateResponse(type) {
       const text = document.getElementById("issueInput").value.trim();
       const url = document.getElementById("issueUrl").value.trim();
@@ -1862,6 +2036,7 @@
     function render() {
       applyFilters();
       renderHero();
+      renderOpsStatus();
       renderArticles();
       renderAnalysis();
       renderScraps();
@@ -1890,10 +2065,13 @@
         const data = dispatched
           ? await waitForFreshDashboardData(before)
           : await fetchDashboardData(true);
+        state.dataSource = data.source || "배포 데이터";
+        state.reportRuns = data.report_runs || [];
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
         applyKeywordSource(data.keywords, "새로고침 데이터");
         await loadKeywordsFromSupabase();
+        await loadManagementDataFromSupabase();
         state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
         optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
@@ -1959,14 +2137,16 @@
       const staticData = await fetchStaticDashboardData(force);
       if (supabaseData) {
         return {
+          source: supabaseData.articles?.length ? "Supabase DB" : "GitHub Pages 백업",
           category_labels: Object.keys(supabaseData.category_labels || {}).length ? supabaseData.category_labels : (staticData?.category_labels || {}),
           tone_labels: Object.keys(supabaseData.tone_labels || {}).length ? supabaseData.tone_labels : (staticData?.tone_labels || {}),
           keywords: Array.isArray(supabaseData.keywords) ? supabaseData.keywords : (staticData?.keywords || []),
           articles: supabaseData.articles?.length ? supabaseData.articles : (staticData?.articles || []),
+          report_runs: supabaseData.report_runs || staticData?.report_runs || [],
           summary: supabaseData.summary || staticData?.summary || {},
         };
       }
-      if (staticData) return staticData;
+      if (staticData) return { ...staticData, source: "GitHub Pages 백업" };
       throw new Error("No dashboard data");
     }
 
@@ -1988,7 +2168,7 @@
         if (!config.url || !config.anon_key) return null;
 
         const query = [
-          "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,keyword,pub_date,pub_date_raw,score,category,tone,cluster_size,status",
+          "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status",
           "order=report_date.desc,score.desc",
           "limit=2000",
         ].join("&");
@@ -2002,10 +2182,12 @@
         if (!response.ok) return null;
         const rows = await response.json();
         const keywords = await fetchSupabaseKeywords(config);
+        const reportRuns = await fetchSupabaseReportRuns(config);
         return {
           category_labels: state.categoryLabels,
           tone_labels: state.toneLabels,
           keywords,
+          report_runs: reportRuns || [],
           articles: rows.map(row => ({
             id: row.article_hash,
             article_hash: row.article_hash,
@@ -2017,6 +2199,7 @@
             link: row.link || "",
             source: row.source || "",
             keyword: row.keyword || "",
+            summary: row.summary || "",
             pub_date: row.pub_date || row.pub_date_raw || "",
             score: row.score || 0,
             category: row.category || "other",
@@ -2027,6 +2210,27 @@
         };
       } catch {
         return null;
+      }
+    }
+
+    async function fetchSupabaseReportRuns(config) {
+      try {
+        const query = [
+          "select=run_key,report_date,report_slot,timestamp,window_label,window_start,window_end,risk_level",
+          "order=timestamp.desc",
+          "limit=20",
+        ].join("&");
+        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/report_runs?${query}`, {
+          cache:"no-store",
+          headers: {
+            apikey: config.anon_key,
+            Authorization: `Bearer ${config.anon_key}`,
+          },
+        });
+        if (!response.ok) return [];
+        return response.json();
+      } catch {
+        return [];
       }
     }
 
@@ -2058,10 +2262,13 @@
       bind();
       try {
         const data = await fetchDashboardData();
+        state.dataSource = data.source || "배포 데이터";
+        state.reportRuns = data.report_runs || [];
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
         applyKeywordSource(data.keywords, "배포 데이터");
         await loadKeywordsFromSupabase();
+        await loadManagementDataFromSupabase();
         state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
       } catch {
         state.articles = [];

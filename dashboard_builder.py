@@ -80,6 +80,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
                     "link": link,
                     "source": article.get("source", ""),
                     "keyword": article.get("keyword", ""),
+                    "summary": article.get("description", "") or article.get("summary", ""),
                     "pub_date": article.get("pub_date", ""),
                     "score": article.get("_score", 0),
                     "category": category,
@@ -116,6 +117,7 @@ def load_supabase_articles() -> list[dict]:
                 "link": row.get("link", ""),
                 "source": row.get("source", ""),
                 "keyword": row.get("keyword", ""),
+                "summary": row.get("summary", ""),
                 "pub_date": row.get("pub_date") or row.get("pub_date_raw", ""),
                 "score": row.get("score", 0),
                 "category": category,
@@ -157,6 +159,27 @@ def build_summary(archives: list[dict], articles: list[dict]) -> dict:
     }
 
 
+def build_report_runs(archives: list[dict]) -> list[dict]:
+    rows = []
+    for archive in archives[-20:]:
+        window = archive.get("window", {})
+        metrics = archive.get("metrics", {})
+        rows.append(
+            {
+                "run_key": f"{archive.get('date', '')}-{window.get('slot', '')}",
+                "report_date": archive.get("date", ""),
+                "report_slot": window.get("slot", ""),
+                "timestamp": archive.get("timestamp", ""),
+                "window_label": window.get("label", ""),
+                "window_start": window.get("start", ""),
+                "window_end": window.get("end", ""),
+                "risk_level": metrics.get("risk_level", "LOW"),
+            }
+        )
+    rows.sort(key=lambda row: row.get("timestamp") or row.get("report_date", ""), reverse=True)
+    return rows
+
+
 def load_dashboard_keywords() -> list[str]:
     try:
         keywords = supabase_store.load_monitor_keywords()
@@ -171,6 +194,7 @@ def publish_dashboard() -> Path:
     archives = load_daily_archives()
     articles = build_articles(archives)
     summary = build_summary(archives, articles)
+    report_runs = build_report_runs(archives)
     keywords = load_dashboard_keywords()
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -183,6 +207,7 @@ def publish_dashboard() -> Path:
                 "category_labels": CATEGORY_LABELS,
                 "tone_labels": TONE_LABELS,
                 "keywords": keywords,
+                "report_runs": report_runs,
             },
             ensure_ascii=False,
             indent=2,
