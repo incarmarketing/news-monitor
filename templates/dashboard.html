@@ -1340,7 +1340,7 @@
             <button class="btn" style="min-height:26px;padding:3px 8px;margin-left:auto" onclick="toggleScrapById('${escapeHtml(key)}')">${scraped ? "스크랩됨" : "스크랩"}</button>
           </div>
           <a class="article-title" href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
-          ${compact ? "" : `<div class="summary">${escapeHtml(article.summary || "요약 내용 없음")}</div>`}
+          ${compact ? "" : `<div class="summary">${escapeHtml(article.summary || "기사 원문 기준으로 세부 내용을 확인하세요.")}</div>`}
         </article>
       `;
     }
