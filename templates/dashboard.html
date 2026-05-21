@@ -307,6 +307,13 @@
     .chart { height:220px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(26px,1fr); gap:8px; align-items:end; border-bottom:1px solid var(--line); padding-top:10px; }
     .chart-col { display:grid; gap:6px; align-items:end; text-align:center; color:var(--muted); font-size:11px; font-weight:800; }
     .chart-bar { min-height:8px; border-radius:6px 6px 0 0; background:linear-gradient(180deg,#3157c7,#172554); }
+    #volumeChart.chart {
+      height:auto;
+      display:block;
+      border-bottom:0;
+      padding-top:0;
+      overflow:hidden;
+    }
     .stacked-chart { height:240px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(34px,1fr); gap:10px; align-items:end; border-bottom:1px solid var(--line); padding:10px 4px 0; }
     .stacked-col { display:grid; gap:6px; align-items:end; text-align:center; color:var(--muted); font-size:11px; font-weight:900; min-width:0; }
     .stacked-bar { height:190px; width:100%; display:flex; flex-direction:column-reverse; justify-content:flex-start; overflow:hidden; border-radius:7px 7px 0 0; background:#eef2f7; }
@@ -348,36 +355,102 @@
     .line-chart { height:150px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(28px,1fr); align-items:end; gap:8px; border-bottom:1px solid var(--line); padding-top:8px; }
     .line-point { display:grid; gap:5px; justify-items:center; color:var(--muted); font-size:10px; font-weight:900; }
     .line-stick { width:8px; min-height:8px; border-radius:999px 999px 0 0; background:linear-gradient(180deg,#16a34a,#27398c); }
-    .keyword-volume { display:grid; gap:12px; }
+    .keyword-volume {
+      display:grid;
+      gap:10px;
+      min-width:0;
+    }
     .keyword-grouped-chart {
-      min-height:210px;
+      height:230px;
       display:grid;
       grid-auto-flow:column;
-      grid-auto-columns:minmax(58px,1fr);
-      gap:10px;
+      grid-auto-columns:minmax(74px,1fr);
+      gap:12px;
       align-items:end;
-      padding:10px 2px 0;
+      padding:8px 4px 0;
       border-bottom:1px solid var(--line);
       overflow-x:auto;
+      overflow-y:hidden;
     }
-    .keyword-date-group { display:grid; grid-template-rows:170px 24px; gap:7px; min-width:0; }
+    .keyword-date-group { display:grid; grid-template-rows:196px 24px; gap:8px; min-width:0; }
     .keyword-bars {
       display:flex;
       align-items:end;
       justify-content:center;
-      gap:3px;
-      height:170px;
+      gap:5px;
+      height:196px;
+      padding:0 4px;
       border-bottom:1px solid #eef2f7;
     }
+    .keyword-bar-item {
+      position:relative;
+      width:14px;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      align-items:center;
+      gap:2px;
+      flex:0 0 14px;
+    }
+    .keyword-bar-value {
+      color:#0f172a;
+      font-size:10px;
+      font-weight:900;
+      line-height:1;
+      white-space:nowrap;
+    }
     .keyword-volume-bar {
-      width:9px;
+      width:10px;
       min-height:3px;
       border-radius:5px 5px 0 0;
       background:#27398c;
     }
+    .keyword-tooltip {
+      position:absolute;
+      left:50%;
+      bottom:100%;
+      z-index:5;
+      transform:translate(-50%,-6px);
+      display:none;
+      width:max-content;
+      max-width:190px;
+      padding:6px 8px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#111827;
+      color:#fff;
+      font-size:11px;
+      font-weight:900;
+      box-shadow:0 8px 18px rgba(15,23,42,.18);
+      pointer-events:none;
+      white-space:nowrap;
+    }
+    .keyword-bar-item:hover .keyword-tooltip { display:block; }
     .keyword-date-label { color:var(--muted); font-size:10px; font-weight:900; text-align:center; white-space:nowrap; }
-    .keyword-volume-legend { display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); font-size:11px; font-weight:900; }
-    .keyword-volume-legend span { display:inline-flex; align-items:center; gap:5px; }
+    .keyword-volume-legend {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:900;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#f8fafc;
+      padding:8px;
+      max-height:72px;
+      overflow:auto;
+    }
+    .keyword-volume-legend span {
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      max-width:170px;
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     .keyword-volume-legend i { width:9px; height:9px; border-radius:99px; display:inline-block; }
     .keyword-board { display:grid; gap:10px; }
     .keyword-row {
@@ -1280,12 +1353,19 @@
       const groups = dates.map(date => {
         const bars = keywords.map((keyword, idx) => {
           const value = items.filter(a => a.keyword === keyword && a.date === date).length;
-          return `<div class="keyword-volume-bar" title="${escapeHtml(date)} · ${escapeHtml(keyword)} ${value}건" style="height:${value ? Math.max(5, value / max * 164) : 3}px;opacity:${value ? 1 : .2};background:${colors[idx % colors.length]}"></div>`;
+          const height = value ? Math.max(8, value / max * 160) : 4;
+          return `
+            <div class="keyword-bar-item" style="height:${height + 14}px">
+              <span class="keyword-bar-value">${value || ""}</span>
+              <div class="keyword-volume-bar" style="height:${height}px;opacity:${value ? 1 : .16};background:${colors[idx % colors.length]}"></div>
+              <div class="keyword-tooltip">${escapeHtml(date)}<br>${escapeHtml(keyword)} ${value}건</div>
+            </div>
+          `;
         }).join("");
         return `<div class="keyword-date-group"><div class="keyword-bars">${bars}</div><div class="keyword-date-label">${escapeHtml(date.slice(5))}</div></div>`;
       }).join("");
       const legend = keywords.map((keyword, idx) =>
-        `<span><i style="background:${colors[idx % colors.length]}"></i>${escapeHtml(keyword)}</span>`
+        `<span title="${escapeHtml(keyword)}"><i style="background:${colors[idx % colors.length]}"></i>${escapeHtml(keyword)}</span>`
       ).join("");
       document.getElementById("volumeChart").innerHTML = groups
         ? `<div class="keyword-volume"><div class="keyword-grouped-chart">${groups}</div><div class="keyword-volume-legend">${legend}</div></div>`
