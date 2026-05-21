@@ -348,42 +348,37 @@
     .line-chart { height:150px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(28px,1fr); align-items:end; gap:8px; border-bottom:1px solid var(--line); padding-top:8px; }
     .line-point { display:grid; gap:5px; justify-items:center; color:var(--muted); font-size:10px; font-weight:900; }
     .line-stick { width:8px; min-height:8px; border-radius:999px 999px 0 0; background:linear-gradient(180deg,#16a34a,#27398c); }
-    .keyword-volume { display:grid; gap:8px; }
-    .keyword-volume-row {
-      display:grid;
-      grid-template-columns:110px 1fr 42px;
-      gap:10px;
-      align-items:center;
-      min-height:30px;
-    }
-    .keyword-volume-name {
-      color:var(--incar-dark);
-      font-size:12px;
-      font-weight:900;
-      line-height:1.25;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .keyword-volume-bars {
+    .keyword-volume { display:grid; gap:12px; }
+    .keyword-grouped-chart {
+      min-height:210px;
       display:grid;
       grid-auto-flow:column;
-      grid-auto-columns:minmax(14px,1fr);
-      gap:4px;
+      grid-auto-columns:minmax(58px,1fr);
+      gap:10px;
       align-items:end;
-      height:34px;
-      padding-top:3px;
+      padding:10px 2px 0;
       border-bottom:1px solid var(--line);
+      overflow-x:auto;
+    }
+    .keyword-date-group { display:grid; grid-template-rows:170px 24px; gap:7px; min-width:0; }
+    .keyword-bars {
+      display:flex;
+      align-items:end;
+      justify-content:center;
+      gap:3px;
+      height:170px;
+      border-bottom:1px solid #eef2f7;
     }
     .keyword-volume-bar {
+      width:9px;
       min-height:3px;
-      max-height:30px;
-      border-radius:4px 4px 0 0;
-      background:linear-gradient(180deg,#3157c7,#172554);
+      border-radius:5px 5px 0 0;
+      background:#27398c;
     }
-    .keyword-volume-total { color:var(--incar-dark); font-size:12px; font-weight:900; text-align:right; }
-    .keyword-volume-dates { display:grid; grid-template-columns:110px 1fr 42px; gap:10px; color:var(--muted); font-size:10px; font-weight:900; }
-    .keyword-volume-date-row { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(14px,1fr); gap:4px; text-align:center; }
+    .keyword-date-label { color:var(--muted); font-size:10px; font-weight:900; text-align:center; white-space:nowrap; }
+    .keyword-volume-legend { display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); font-size:11px; font-weight:900; }
+    .keyword-volume-legend span { display:inline-flex; align-items:center; gap:5px; }
+    .keyword-volume-legend i { width:9px; height:9px; border-radius:99px; display:inline-block; }
     .keyword-board { display:grid; gap:10px; }
     .keyword-row {
       border:1px solid var(--line);
@@ -1279,18 +1274,21 @@
 
     function renderVolumeChart(items = state.articles) {
       const dates = uniq(items.map(a => a.date)).sort().slice(-14);
-      const keywords = topBy(items, "keyword", 6).map(([keyword]) => keyword);
+      const keywords = topBy(items, "keyword", 5).map(([keyword]) => keyword);
       const max = Math.max(...keywords.flatMap(keyword => dates.map(date => items.filter(a => a.keyword === keyword && a.date === date).length)), 1);
-      const rows = keywords.map(keyword => {
-        const total = items.filter(a => a.keyword === keyword).length;
-        const bars = dates.map(date => {
+      const colors = ["#27398c", "#16a34a", "#d97706", "#7c3aed", "#dc2626"];
+      const groups = dates.map(date => {
+        const bars = keywords.map((keyword, idx) => {
           const value = items.filter(a => a.keyword === keyword && a.date === date).length;
-          return `<div class="keyword-volume-bar" title="${escapeHtml(date)} ${value}건" style="height:${value ? Math.max(5, value / max * 30) : 3}px;opacity:${value ? 1 : .18}"></div>`;
+          return `<div class="keyword-volume-bar" title="${escapeHtml(date)} · ${escapeHtml(keyword)} ${value}건" style="height:${value ? Math.max(5, value / max * 164) : 3}px;opacity:${value ? 1 : .2};background:${colors[idx % colors.length]}"></div>`;
         }).join("");
-        return `<div class="keyword-volume-row"><div class="keyword-volume-name" title="${escapeHtml(keyword)}">${escapeHtml(keyword)}</div><div class="keyword-volume-bars">${bars}</div><div class="keyword-volume-total">${total}</div></div>`;
+        return `<div class="keyword-date-group"><div class="keyword-bars">${bars}</div><div class="keyword-date-label">${escapeHtml(date.slice(5))}</div></div>`;
       }).join("");
-      document.getElementById("volumeChart").innerHTML = rows
-        ? `<div class="keyword-volume">${rows}<div class="keyword-volume-dates"><span></span><div class="keyword-volume-date-row">${dates.map(date => `<span>${date.slice(5)}</span>`).join("")}</div><span>합계</span></div></div>`
+      const legend = keywords.map((keyword, idx) =>
+        `<span><i style="background:${colors[idx % colors.length]}"></i>${escapeHtml(keyword)}</span>`
+      ).join("");
+      document.getElementById("volumeChart").innerHTML = groups
+        ? `<div class="keyword-volume"><div class="keyword-grouped-chart">${groups}</div><div class="keyword-volume-legend">${legend}</div></div>`
         : '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
