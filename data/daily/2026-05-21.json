@@ -1,6 +1,6 @@
 {
   "date": "2026-05-21",
-  "timestamp": "2026-05-21T13:01:27.883963+09:00",
+  "timestamp": "2026-05-21T13:51:06.325511+09:00",
   "window": {
     "slot": "13",
     "label": "당일 08:00~13:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-21T13:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 89,
-    "total_after_cluster": 51,
+    "total_collected": 71,
+    "total_after_cluster": 50,
     "by_category": {
       "own": 2,
-      "regulation": 12,
-      "competitor": 26,
-      "industry": 46,
-      "other": 3
+      "regulation": 10,
+      "competitor": 23,
+      "industry": 34,
+      "other": 2
     },
     "by_tone": {
       "negative": 0,
       "positive": 1,
-      "neutral": 88
+      "neutral": 70
     },
     "own_negative": 0,
     "own_total": 2,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 매출 성장 긍정 보도 속, GA 영업 규제 강화 동향 부각.\n\n## 핵심 이슈\n- [1] 당사 매출 고성장 보도: 이익률 후퇴는 과제, 긍정적 톤 유지.\n- [3] 금감원 GA 영업 규제: 컨설팅 영업 방식 개편 예고, 영향 주시.\n\n## 지표 해석\n당사 관련 부정 기사 없이 매출 성장에 대한 긍정 보도가 있었으나, 금감원의 GA 영업 규제 강화 및 온라인 DB 수급난 등 업계 리스크가 부각되었습니다.\n\n## 분석 키워드\nGA 영업 규제, 인카금융서비스 매출, 에이플러스에셋 매출, 온라인 DB",
+  "briefing": "## 최종 결론\n당사 긍정 보도 속, GA 영업 규제 강화 동향이 관찰됨.\n\n## 핵심 이슈\n- [1] 인카금융 매출 고성장 보도: 매출 성장 긍정 평가, 이익률은 과제\n- [3] 금감원, GA 컨설팅 영업 규제: 업계 전반 영업 방식 변화 가능성 예고\n\n## 지표 해석\n당사는 매출 고성장을 중심으로 긍정적 톤이 보도되었으며, 부정 기사는 없습니다. 금융당국의 GA 영업 규제 강화 및 경쟁사 실적 발표가 주요 동향입니다.\n\n## 분석 키워드\n인카금융 매출, GA 영업 규제, 에이플러스에셋 실적, 소비자보호",
   "articles": [
     {
       "title": "[더벨][보험경영분석] 인카금융, 매출 고성장 속 이익률 후퇴",
@@ -101,9 +101,9 @@
       "_cluster_size": 1
     },
     {
-      "title": "\"AI·IT 사고 소비자보호 관점서 대응\"...금감원, 금융권 CCO 소집",
-      "link": "https://www.sidae.com/article/2026052108422857771",
-      "source": "sidae.com",
+      "title": "금감원 \"IT 임원뿐 아니라 소비자보호 임원도 IT 사고 해결 책임\"",
+      "link": "https://view.asiae.co.kr/article/2026052110532192212",
+      "source": "view.asiae.co.kr",
       "keyword": "생명보험",
       "pub_date": "Thu, 21 May 2026 11:00:00 +0900",
       "_score": 12,
@@ -112,9 +112,9 @@
       "_cluster_size": 1
     },
     {
-      "title": "금감원 \"IT 임원뿐 아니라 소비자보호 임원도 IT 사고 해결 책임\"",
-      "link": "https://view.asiae.co.kr/article/2026052110532192212",
-      "source": "view.asiae.co.kr",
+      "title": "\"AI·IT 사고 소비자보호 관점서 대응\"...금감원, 금융권 CCO 소집",
+      "link": "https://www.sidae.com/article/2026052108422857771",
+      "source": "sidae.com",
       "keyword": "생명보험",
       "pub_date": "Thu, 21 May 2026 11:00:00 +0900",
       "_score": 12,
@@ -178,17 +178,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "[더벨][보험경영분석] 에이플러스에셋, 효율 경영으로 분기 최대 매출",
-      "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605201427132880109394",
-      "source": "더벨",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 21 May 2026 11:02:00 +0900",
-      "_score": 11,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "[더벨]GA협회, 상근부회장 교체 가닥…대관 역량 최우선",
       "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605201102524160104929",
       "source": "더벨",
@@ -196,6 +185,17 @@
       "pub_date": "Thu, 21 May 2026 11:02:00 +0900",
       "_score": 11,
       "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[더벨][보험경영분석] 에이플러스에셋, 효율 경영으로 분기 최대 매출",
+      "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605201427132880109394",
+      "source": "더벨",
+      "keyword": "생명보험",
+      "pub_date": "Thu, 21 May 2026 11:02:00 +0900",
+      "_score": 11,
+      "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -263,7 +263,7 @@
       "_score": 8,
       "_category": "regulation",
       "_tone": "neutral",
-      "_cluster_size": 2
+      "_cluster_size": 1
     },
     {
       "title": "[대한민국 ESG 금융포럼 2026③] 강준현 의원 \"지속가능한 성장과 탄소중...",
@@ -284,17 +284,6 @@
       "pub_date": "Thu, 21 May 2026 10:50:00 +0900",
       "_score": 8,
       "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "“나도 옮길까?”…증시 활황에 연금도 은행·보험보다 증권사로",
-      "link": "https://www.ekn.kr/web/view.php?key=20260521023356602",
-      "source": "ekn.kr",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 21 May 2026 10:36:00 +0900",
-      "_score": 8,
-      "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -321,6 +310,17 @@
       "_cluster_size": 1
     },
     {
+      "title": "손해보험 \"고령운전자 급발진 막자\"...사고예방 효과 낸 첨단장치 보급...",
+      "link": "https://www.greened.kr/news/articleView.html?idxno=341132",
+      "source": "greened.kr",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 21 May 2026 13:00:00 +0900",
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "\"축구 이관우? 배구 하면 김관우!\" 20살 세터, 대표팀 깜짝 발탁…196cm ...",
       "link": "https://www.nocutnews.co.kr/news/6520756?utm_source=naver&utm_medium=article&utm_campaign=20260521120958",
       "source": "nocutnews.co.kr",
@@ -343,39 +343,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "대법 \"보험사, 교통사고 운전자 부담금 받고 상대 보험사 구상도 가능\"",
-      "link": "https://www.newsis.com/view/NISX20260521_0003639135",
-      "source": "newsis.com",
-      "keyword": "손해보험",
-      "pub_date": "Thu, 21 May 2026 12:00:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "대법 \"사고부담금, 보험사-운전자 간 문제…구상권에 영향 無\"",
-      "link": "https://view.asiae.co.kr/article/2026052111184341000",
-      "source": "view.asiae.co.kr",
-      "keyword": "손해보험",
-      "pub_date": "Thu, 21 May 2026 12:00:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "'음주운전 vs 급차선 변경' 공동과실…대법 \"전액 배상한 보험사, 구상권...",
-      "link": "https://www.newspim.com/news/view/20260520001083",
-      "source": "newspim.com",
-      "keyword": "손해보험",
-      "pub_date": "Thu, 21 May 2026 12:00:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "차량 2대에 얽혀 오토바이 사망…대법 \"음주 사고부담금, 구상금서 못 빼...",
       "link": "https://www.news1.kr/society/court-prosecution/6173678",
       "source": "news1.kr",
@@ -387,22 +354,22 @@
       "_cluster_size": 1
     },
     {
-      "title": "자동차보험 4월 손해율 85.4%…전년比 소폭 개선",
-      "link": "https://www.ajunews.com/view/20260521110618712",
-      "source": "ajunews.com",
+      "title": "대법 \"보험사, 교통사고 운전자 부담금 받고 상대 보험사 구상도 가능\"",
+      "link": "https://www.newsis.com/view/NISX20260521_0003639135",
+      "source": "newsis.com",
       "keyword": "손해보험",
-      "pub_date": "Thu, 21 May 2026 11:28:00 +0900",
+      "pub_date": "Thu, 21 May 2026 12:00:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
-      "title": "자동차보험 4월 누적 손해율 85.8%…작년 대비 2.5%p 올라",
-      "link": "http://www.fins.co.kr/news/articleView.html?idxno=108611",
-      "source": "보험저널",
+      "title": "'음주운전 vs 급차선 변경' 공동과실…대법 \"전액 배상한 보험사, 구상권...",
+      "link": "https://www.newspim.com/news/view/20260520001083",
+      "source": "newspim.com",
       "keyword": "손해보험",
-      "pub_date": "Thu, 21 May 2026 11:14:00 +0900",
+      "pub_date": "Thu, 21 May 2026 12:00:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -464,9 +431,9 @@
       "_cluster_size": 1
     },
     {
-      "title": "프로티아, 중기부 ‘글로벌 강소기업 1000+’ 선정...글로벌 시장 공략 ...",
-      "link": "http://www.edaily.co.kr/news/newspath.asp?newsid=03312806645451216",
-      "source": "edaily.co.kr",
+      "title": "'증권사 판정승' 연금백서에 발등 불 은행권..퇴직연금 IRP 사수 총력전",
+      "link": "https://kpenews.com/View.aspx?No=4085838",
+      "source": "kpenews.com",
       "keyword": "보험 마케팅",
       "pub_date": "Thu, 21 May 2026 10:24:00 +0900",
       "_score": 4,
@@ -475,9 +442,9 @@
       "_cluster_size": 1
     },
     {
-      "title": "'증권사 판정승' 연금백서에 발등 불 은행권..퇴직연금 IRP 사수 총력전",
-      "link": "https://kpenews.com/View.aspx?No=4085838",
-      "source": "kpenews.com",
+      "title": "프로티아, 중기부 ‘글로벌 강소기업 1000+’ 선정...글로벌 시장 공략 ...",
+      "link": "http://www.edaily.co.kr/news/newspath.asp?newsid=03312806645451216",
+      "source": "edaily.co.kr",
       "keyword": "보험 마케팅",
       "pub_date": "Thu, 21 May 2026 10:24:00 +0900",
       "_score": 4,
@@ -516,7 +483,7 @@
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
-      "_cluster_size": 2
+      "_cluster_size": 4
     },
     {
       "title": "5대 손보사 1분기 준비금 1조4천억원…주주환원 제약 우려 커져",
@@ -538,7 +505,7 @@
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
-      "_cluster_size": 3
+      "_cluster_size": 2
     },
     {
       "title": "KB라이프, 윤리헌장 선서식…정문철 대표 \"말 아닌 행동 실천 약속\"",
@@ -585,11 +552,33 @@
       "_cluster_size": 1
     },
     {
-      "title": "1분기 희비 갈린 생·손보사...車보험에 발목잡힌 손보, 건강보험 약진한 생보 - 녹색경제신문",
-      "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE1CMVgzTHA3dEplc3ROeWxZMXh5VU00OFJrc0dMWVdWREo1TzFHeHRPXzduR1RLYzBsYXNvUXZGcjlYTGk0OGdLOUIybWJKYzFvV0dNUFYwb0otNzFvV3hXbXhQcEI1OFA4?oc=5",
-      "source": "녹색경제신문",
-      "keyword": "생명보험",
-      "pub_date": "Thu, 21 May 2026 00:39:14 GMT",
+      "title": "대법원, 음주 교통사고로 사상자 낸 사건 '보험자 간 분담비율 50%' 원심...",
+      "link": "http://www.lawissue.co.kr/view.php?ud=2026052021473680289a8c8bf58f_12",
+      "source": "lawissue.co.kr",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 21 May 2026 12:00:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "車보험 손해율 85%대…보험료 인상에도 적자 압박 지속 - 대한데일리",
+      "link": "https://news.google.com/rss/articles/CBMiakFVX3lxTE9Da3VZVFNFYzNOdU9ubEFYRl9JSnpuN1JNeV9TNWVzVHRTYW5fLTQ4bmdCR0RxWVVCRVUwc3FSNWZPSENjQWtKU3FVQ1ZjSUNfb3M5ZEltcmU0bVYxREJwZ3VOU1JXT0hyaHc?oc=5",
+      "source": "대한데일리",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 21 May 2026 02:47:37 GMT",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "車보험 손해율 85.8% '비상'…손보사 1분기 실적 끌어내렸다 - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE03ZlpsTG12YWo0VldOaXo0QnVGcEFXUk9jaU9HUHUtYzJTN0ZNcU00dG54bmZ3aG1Ob3JtdUNHX2xnTHlNNVN5cXRQSUIzTFV1N2ZZS21OaWIzQjNFMm5raDRkMlhNQXpUMnh0RGpMWQ?oc=5",
+      "source": "보험저널",
+      "keyword": "손해보험",
+      "pub_date": "Thu, 21 May 2026 03:25:13 GMT",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
