@@ -355,6 +355,26 @@
     .line-chart { height:150px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(28px,1fr); align-items:end; gap:8px; border-bottom:1px solid var(--line); padding-top:8px; }
     .line-point { display:grid; gap:5px; justify-items:center; color:var(--muted); font-size:10px; font-weight:900; }
     .line-stick { width:8px; min-height:8px; border-radius:999px 999px 0 0; background:linear-gradient(180deg,#16a34a,#27398c); }
+    .settings-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; }
+    .settings-head .panel-title { margin:0; }
+    .status-pill {
+      display:inline-flex;
+      align-items:center;
+      min-height:28px;
+      padding:5px 10px;
+      border:1px solid #b8c7e9;
+      border-radius:999px;
+      background:#f5f8ff;
+      color:var(--incar-dark);
+      font-size:11px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .status-pill.ok { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+    .status-pill.warn { border-color:#fed7aa; background:#fff7ed; color:#9a3412; }
+    .status-pill.error { border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
+    .keyword-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .sync-note { margin-top:10px; color:var(--muted); font-size:12px; font-weight:800; min-height:18px; }
     .keyword-volume {
       display:grid;
       gap:10px;
@@ -911,16 +931,25 @@
         <section class="page" id="page-settings">
           <div class="grid-2">
             <div class="panel">
-              <h2 class="panel-title"><i data-lucide="hash"></i> 모니터링 키워드</h2>
+              <div class="settings-head">
+                <h2 class="panel-title"><i data-lucide="hash"></i> 모니터링 키워드</h2>
+                <span class="status-pill" id="keywordSourcePill">동기화 대기</span>
+              </div>
               <div class="field"><label>키워드 추가</label><input id="keywordInput" placeholder="예: 인카금융서비스, GA, 브랜드평판"></div>
-              <button class="btn primary" style="margin-top:10px" onclick="addKeyword()">추가</button>
+              <div class="keyword-actions">
+                <button class="btn primary" id="keywordAddButton" onclick="addKeyword()">추가</button>
+                <button class="btn" id="keywordSyncButton" onclick="syncKeywordsFromSupabase()">Supabase 동기화</button>
+              </div>
+              <div class="sync-note" id="keywordSyncStatus"></div>
               <div class="meta" id="keywordList" style="margin-top:14px"></div>
             </div>
             <div class="panel">
               <h2 class="panel-title"><i data-lucide="database"></i> 시스템 상태</h2>
               <table class="table">
-                <tr><th>데이터 소스</th><td>GitHub Pages JSON + Supabase 옵션 저장</td></tr>
+                <tr><th>데이터 소스</th><td>Supabase 기사 DB + GitHub Pages 백업 JSON</td></tr>
                 <tr><th>화면 버전</th><td>Marketing PR Center</td></tr>
+                <tr><th>키워드 원본</th><td id="keywordSourceText">Supabase monitor_keywords</td></tr>
+                <tr><th>키워드 수</th><td id="keywordCountText">-</td></tr>
                 <tr><th>관리 데이터</th><td>키워드는 Supabase 공유 저장, 기타 관리 데이터는 브라우저 저장</td></tr>
               </table>
               <button class="btn danger" style="margin-top:12px" onclick="clearLocal()">로컬 관리 데이터 초기화</button>
@@ -945,6 +974,9 @@
       filtered: [],
       filters: { q:"", date:"", category:"", tone:"", risk:"" },
       analysis: { range:"all", start:"", end:"" },
+      keywordSource: "로컬 캐시",
+      keywordSyncMessage: "",
+      keywordSyncTone: "",
       categoryLabels: {},
       toneLabels: {},
       scraps: JSON.parse(localStorage.getItem("pr_scraps") || "[]"),
@@ -986,11 +1018,31 @@
       article.press && !isPortalPress(article.press) && !state.hiddenMedia.includes(article.press)
     );
 
-    function applyKeywordSource(keywords) {
+    function applyKeywordSource(keywords, source = "Supabase") {
       if (!Array.isArray(keywords)) return;
       const normalized = uniq(keywords.map(keyword => String(keyword || "").trim()));
       state.keywords = normalized;
+      state.keywordSource = source;
       localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
+    }
+
+    function setKeywordSyncStatus(message, tone = "") {
+      state.keywordSyncMessage = message;
+      state.keywordSyncTone = tone;
+      const note = document.getElementById("keywordSyncStatus");
+      const pill = document.getElementById("keywordSourcePill");
+      if (note) note.textContent = message || "";
+      if (pill) {
+        pill.textContent = state.keywordSource || "Supabase";
+        pill.className = `status-pill ${tone || ""}`.trim();
+      }
+    }
+
+    function setKeywordControlsDisabled(disabled) {
+      ["keywordAddButton", "keywordSyncButton", "keywordInput"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = disabled;
+      });
     }
 
     function pressName(article) {
@@ -1099,6 +1151,9 @@
       });
       document.getElementById("exportCsv").addEventListener("click", exportCsv);
       document.getElementById("refreshArticles")?.addEventListener("click", () => refreshDashboardData());
+      document.getElementById("keywordInput")?.addEventListener("keydown", event => {
+        if (event.key === "Enter") addKeyword();
+      });
       document.getElementById("printAnalysis")?.addEventListener("click", () => window.print());
       document.getElementById("applyAnalysisRange")?.addEventListener("click", () => {
         state.analysis.range = "custom";
@@ -1654,40 +1709,88 @@
     function removeAd(idx) { state.ads.splice(idx,1); localStorage.setItem("pr_ads", JSON.stringify(state.ads)); renderAds(); }
 
     function renderKeywords() {
-      document.getElementById("keywordList").innerHTML = state.keywords.map(k => `<span class="chip">${escapeHtml(k)} <button onclick="removeKeyword('${escapeHtml(k)}')" style="border:0;background:transparent;cursor:pointer;color:var(--red)">×</button></span>`).join("");
+      const list = document.getElementById("keywordList");
+      if (list) {
+        list.innerHTML = state.keywords.map(k => `
+          <span class="chip">${escapeHtml(k)}
+            <button onclick="removeKeyword(decodeURIComponent('${encodeURIComponent(k)}'))" style="border:0;background:transparent;cursor:pointer;color:var(--red)">×</button>
+          </span>
+        `).join("") || '<span class="chip">등록된 키워드 없음</span>';
+      }
+      const countText = document.getElementById("keywordCountText");
+      if (countText) countText.textContent = `${state.keywords.length.toLocaleString("ko-KR")}개`;
+      const sourceText = document.getElementById("keywordSourceText");
+      if (sourceText) sourceText.textContent = state.keywordSource || "Supabase monitor_keywords";
+      setKeywordSyncStatus(state.keywordSyncMessage, state.keywordSyncTone);
     }
+
+    async function syncKeywordsFromSupabase() {
+      setKeywordControlsDisabled(true);
+      setKeywordSyncStatus("Supabase 키워드 확인 중...", "warn");
+      const loaded = await loadKeywordsFromSupabase({ announce: true });
+      if (!loaded) alert("Supabase 키워드를 불러오지 못했습니다. 연결 설정 또는 권한을 확인해야 합니다.");
+      renderKeywords();
+      setKeywordControlsDisabled(false);
+    }
+
     async function addKeyword() {
       const input = document.getElementById("keywordInput");
       const value = input.value.trim();
       if (!value) return;
-      const saved = await saveKeywordToSupabase(value);
-      if (saved) {
-        await loadKeywordsFromSupabase();
-        if (!state.keywords.includes(value)) applyKeywordSource([...state.keywords, value]);
-      } else if (!state.keywords.includes(value)) {
-        applyKeywordSource([...state.keywords, value]);
+      if (state.keywords.includes(value)) {
+        setKeywordSyncStatus("이미 등록된 키워드입니다.", "warn");
+        return;
       }
+      setKeywordControlsDisabled(true);
+      setKeywordSyncStatus("Supabase에 키워드 저장 중...", "warn");
+      const saved = await saveKeywordToSupabase(value);
+      if (!saved) {
+        setKeywordSyncStatus("키워드 저장 실패: Supabase에 반영되지 않았습니다.", "error");
+        alert("키워드를 Supabase에 저장하지 못했습니다. 화면만 바꾸지 않고 취소했습니다.");
+        setKeywordControlsDisabled(false);
+        renderKeywords();
+        return;
+      }
+      const loaded = await loadKeywordsFromSupabase({ announce: true });
+      if (!loaded && !state.keywords.includes(value)) applyKeywordSource([...state.keywords, value], "Supabase 저장 완료");
       input.value = "";
       renderKeywords();
-    }
-    async function removeKeyword(value) {
-      const deleted = await deleteKeywordFromSupabase(value);
-      if (deleted) {
-        await loadKeywordsFromSupabase();
-        if (state.keywords.includes(value)) applyKeywordSource(state.keywords.filter(k => k !== value));
-      } else {
-        applyKeywordSource(state.keywords.filter(k => k !== value));
-      }
-      renderKeywords();
+      setKeywordControlsDisabled(false);
     }
 
-    async function loadKeywordsFromSupabase() {
+    async function removeKeyword(value) {
+      if (!confirm(`'${value}' 키워드를 Supabase 수집 조건에서 삭제할까요?`)) return;
+      setKeywordControlsDisabled(true);
+      setKeywordSyncStatus("Supabase에서 키워드 삭제 중...", "warn");
+      const deleted = await deleteKeywordFromSupabase(value);
+      if (!deleted) {
+        setKeywordSyncStatus("키워드 삭제 실패: Supabase 기준 목록을 유지합니다.", "error");
+        alert("키워드를 Supabase에서 삭제하지 못했습니다. 화면에서도 삭제하지 않았습니다.");
+        setKeywordControlsDisabled(false);
+        renderKeywords();
+        return;
+      }
+      const loaded = await loadKeywordsFromSupabase({ announce: true });
+      if (!loaded) applyKeywordSource(state.keywords.filter(k => k !== value), "Supabase 삭제 완료");
+      renderKeywords();
+      setKeywordControlsDisabled(false);
+    }
+
+    async function loadKeywordsFromSupabase({ announce = false } = {}) {
       try {
         const config = await fetchSupabaseConfig();
-        if (!config?.url || !config?.anon_key) return;
+        if (!config?.url || !config?.anon_key) return false;
         const keywords = await fetchSupabaseKeywords(config);
-        applyKeywordSource(keywords);
-      } catch {}
+        if (!Array.isArray(keywords)) return false;
+        applyKeywordSource(keywords, "Supabase monitor_keywords");
+        setKeywordSyncStatus(
+          announce ? `Supabase 기준 ${keywords.length.toLocaleString("ko-KR")}개 키워드 동기화 완료` : "",
+          "ok"
+        );
+        return true;
+      } catch {
+        return false;
+      }
     }
 
     async function saveKeywordToSupabase(keyword) {
@@ -1789,7 +1892,8 @@
           : await fetchDashboardData(true);
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
-        applyKeywordSource(data.keywords);
+        applyKeywordSource(data.keywords, "새로고침 데이터");
+        await loadKeywordsFromSupabase();
         state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
         optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
@@ -1956,7 +2060,8 @@
         const data = await fetchDashboardData();
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
-        applyKeywordSource(data.keywords);
+        applyKeywordSource(data.keywords, "배포 데이터");
+        await loadKeywordsFromSupabase();
         state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
       } catch {
         state.articles = [];

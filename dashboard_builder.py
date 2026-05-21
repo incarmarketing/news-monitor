@@ -204,7 +204,16 @@ def publish_dashboard() -> Path:
 
 def publish_supabase_public_config() -> None:
     url = (os.getenv("PUBLIC_SUPABASE_URL") or os.getenv("SUPABASE_URL") or "").rstrip("/")
-    anon_key = os.getenv("PUBLIC_SUPABASE_ANON_KEY") or os.getenv("SUPABASE_ANON_KEY") or ""
+    project_ref = os.getenv("SUPABASE_PROJECT_REF", "").strip()
+    if not url and project_ref:
+        url = f"https://{project_ref}.supabase.co"
+    anon_key = (
+        os.getenv("PUBLIC_SUPABASE_ANON_KEY")
+        or os.getenv("SUPABASE_ANON_KEY")
+        or os.getenv("PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+        or os.getenv("SUPABASE_PUBLISHABLE_KEY")
+        or ""
+    )
     config_path = PUBLIC_DATA_DIR / "supabase.json"
     if not url or not anon_key:
         if config_path.exists():
