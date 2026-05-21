@@ -1,6 +1,6 @@
 {
   "date": "2026-05-21",
-  "timestamp": "2026-05-21T14:42:57.515138+09:00",
+  "timestamp": "2026-05-21T15:05:19.941122+09:00",
   "window": {
     "slot": "13",
     "label": "당일 08:00~13:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-21T13:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 55,
-    "total_after_cluster": 46,
+    "total_collected": 52,
+    "total_after_cluster": 44,
     "by_category": {
       "own": 2,
       "regulation": 5,
-      "competitor": 15,
-      "industry": 31,
+      "competitor": 13,
+      "industry": 30,
       "other": 2
     },
     "by_tone": {
       "negative": 0,
       "positive": 1,
-      "neutral": 54
+      "neutral": 51
     },
     "own_negative": 0,
     "own_total": 2,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 성장성 긍정 보도, 금융당국 GA 영업 규제 강화 동향.\n\n## 핵심 이슈\n- [1] 인카금융서비스 경영 실적: 매출 고성장 긍정 평가, 이익률은 과제.\n- [3] 금감원 GA 컨설팅 영업 규제: 향후 영업 방식 변화 가능성, 업계 전반 영향.\n\n## 지표 해석\n당사는 매출 성장에 대한 긍정적 평가가 보도되었으며, 직접적 부정 기사는 없습니다. 업계 전반적으로는 금융당국의 GA 영업 규제 강화와 경쟁사 실적 개선 동향이 관찰됩니다.\n\n## 분석 키워드\n인카금융서비스 매출, GA 영업 규제, 에이플러스에셋 실적, 온라인 DB",
+  "briefing": "## 최종 결론\n당사 매출 성장 긍정 보도 속, GA 영업 규제 강화 동향.\n\n## 핵심 이슈\n- [1] 인카금융서비스 실적 보도: 매출 고성장 긍정 평가, 이익률은 과제.\n- [3] 금감원 GA 영업 규제: 컨설팅 영업 방식 개편 예고, 업계 영향 주시.\n\n## 지표 해석\n당사 관련 보도는 매출 고성장을 긍정적으로 평가했으며, 직접적인 부정 기사는 없어 리스크는 낮습니다. 다만 금감원의 GA 영업 규제 강화 및 온라인 DB 수급난 등 업계 전반의 영업 환경 변화가 관측됩니다.\n\n## 분석 키워드\n인카금융서비스 매출, GA 영업 규제, 온라인 DB",
   "articles": [
     {
       "title": "[더벨][보험경영분석] 인카금융, 매출 고성장 속 이익률 후퇴",
@@ -104,7 +104,7 @@
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 3
+      "_cluster_size": 2
     },
     {
       "title": "NH농협손해보험, 완도농협에 ‘위더스(With-us)상’ 수여 - 농수축산신문",
@@ -155,13 +155,13 @@
       "_cluster_size": 1
     },
     {
-      "title": "[더벨][보험경영분석] 에이플러스에셋, 효율 경영으로 분기 최대 매출",
-      "link": "https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605201427132880109394",
-      "source": "더벨",
-      "keyword": "생명보험",
-      "description": "생명보험 매출은 772억원으로 41.4%를 기록했다. 보험판매수수료가 실적의 핵심 축을 유지했다. ◇계약 장기 유지율 개선…단기 유지율 관리는 과제 판매 볼륨은 이익 증가세와 다른 흐름을 보였다....",
-      "pub_date": "Thu, 21 May 2026 11:02:00 +0900",
-      "_score": 11,
+      "title": "[경제소식] 신한은행 '나라사랑카드' 발급 30만좌 돌파",
+      "link": "http://www.4th.kr/news/articleView.html?idxno=2112058",
+      "source": "경제소식",
+      "keyword": "보험 마케팅",
+      "description": "2026년 5월 20일 강남구 역삼동 KB라이프타워에서 열린 금융소비자보호 업무협약(MOU) 체결식에서 장재원 KB라이프 영업부문 부사장(왼쪽)과 이호열 KB손해보험 수도권 GA본부장(오른쪽)이 전영 유퍼스트보험마케팅...",
+      "pub_date": "Thu, 21 May 2026 12:08:00 +0900",
+      "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
@@ -227,18 +227,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "영업지원 넘어 내부통제까지…KB라이프·KB손보, 유퍼스트와 '소비자보호 동맹' - 보험저널",
-      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE9KTUtIaWJ4TGZuZjVMcmZvV1RVR2RGWGpjX3JhTzdhOTR6bXJuQUlGUUVmSU4zMERacmJBdU02U0F4MTFXMENacFRaZFNPdmhVaEdORy1DalphMW5DZU0tR3FRaXBhQXM0WmlyOTlmTQ?oc=5",
-      "source": "보험저널",
-      "keyword": "생명보험",
-      "description": "영업지원 넘어 내부통제까지…KB라이프·KB손보, 유퍼스트와 '소비자보호 동맹'&nbsp;&nbsp;보험저널",
-      "pub_date": "Thu, 21 May 2026 02:09:29 GMT",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "요양시설 종신보험 '편법 가입' 논란, GA 넘어 보험사 책임론 확산",
       "link": "http://www.srtimes.kr/news/articleView.html?idxno=203638",
       "source": "srtimes.kr",
@@ -299,11 +287,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "'증권사 판정승' 연금백서에 발등 불 은행권..퇴직연금 IRP 사수 총력전",
-      "link": "https://kpenews.com/View.aspx?No=4085838",
-      "source": "kpenews.com",
+      "title": "프로티아, 중기부 ‘글로벌 강소기업 1000+’ 선정...글로벌 시장 공략 ...",
+      "link": "http://www.edaily.co.kr/news/newspath.asp?newsid=03312806645451216",
+      "source": "edaily.co.kr",
       "keyword": "보험 마케팅",
-      "description": "반면 은행과 보험권 가입자는 10명 중 8명이 전체 평균 수익률에도 미치지 못했다. 실물이전 제도 도입 이후... 하나은행은 세대별 맞춤 마케팅과 운용사 협업 투 트랙 전략을 펴고 있다. 6월 30일까지 개인형 IRP를...",
+      "description": "이번 지정에 따라 프로티아는 △수출바우처 자동 선정 △정책자금 및 연구개발(R&D) 지원 우대 △수출보증·보험 한도 확대 등 정부의 다각적인 혜택을 받게 된다. 프로티아는 이를 바탕으로 글로벌 마케팅과 기술...",
       "pub_date": "Thu, 21 May 2026 10:24:00 +0900",
       "_score": 4,
       "_category": "industry",
@@ -311,11 +299,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "프로티아, 중기부 ‘글로벌 강소기업 1000+’ 선정...글로벌 시장 공략 ...",
-      "link": "http://www.edaily.co.kr/news/newspath.asp?newsid=03312806645451216",
-      "source": "edaily.co.kr",
+      "title": "'증권사 판정승' 연금백서에 발등 불 은행권..퇴직연금 IRP 사수 총력전",
+      "link": "https://kpenews.com/View.aspx?No=4085838",
+      "source": "kpenews.com",
       "keyword": "보험 마케팅",
-      "description": "이번 지정에 따라 프로티아는 △수출바우처 자동 선정 △정책자금 및 연구개발(R&D) 지원 우대 △수출보증·보험 한도 확대 등 정부의 다각적인 혜택을 받게 된다. 프로티아는 이를 바탕으로 글로벌 마케팅과 기술...",
+      "description": "반면 은행과 보험권 가입자는 10명 중 8명이 전체 평균 수익률에도 미치지 못했다. 실물이전 제도 도입 이후... 하나은행은 세대별 맞춤 마케팅과 운용사 협업 투 트랙 전략을 펴고 있다. 6월 30일까지 개인형 IRP를...",
       "pub_date": "Thu, 21 May 2026 10:24:00 +0900",
       "_score": 4,
       "_category": "industry",
@@ -341,18 +329,6 @@
       "keyword": "생명보험",
       "description": "신한금융그룹은 은행·카드·증권·생명보험 등 주요 자회사 이사회 내 소비자보호위원회를 신설했다. 자회사 이사회가 소비자보호 경영계획과 핵심성과지표(KPI) 적정성 등을 점검하는 방식이다. KB국민은행도 이사회 내...",
       "pub_date": "Thu, 21 May 2026 12:20:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[경제소식] 신한은행, '나라사랑카드' 발급 30만좌 돌파",
-      "link": "http://www.4th.kr/news/articleView.html?idxno=2112058",
-      "source": "경제소식",
-      "keyword": "생명보험",
-      "description": "신뢰하는 생명보험회사로 성장해 나가겠다\"고 말했다. 한편 KB라이프는 지난해 구축한 컴플라이언스 디지털 시스템을 기반으로 사전 예방 중심의 내부통제 체계를 강화하고 있다. 영업 건전성 관리를 위한 조기경보...",
-      "pub_date": "Thu, 21 May 2026 12:08:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
@@ -407,24 +383,24 @@
       "_cluster_size": 1
     },
     {
-      "title": "케이지에이에셋, 25회차 생보 유지율 7.6%p 상승… 전 부문 유지율 개선 - 보험저널",
-      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE93YUdTUlV0MThONGxvSkRiRHgwN1psRjFPUTFPNDItMHNvSkFkQlBtRE9ja1BiaDIzc09jWXFaZlhrUXdBclBXRHVqNEZlZEl5QlpBU0FYMFpTQmRQakhsNVZSdlBHdkdBeXFJOHRGdw?oc=5",
-      "source": "보험저널",
-      "keyword": "생명보험",
-      "description": "케이지에이에셋, 25회차 생보 유지율 7.6%p 상승… 전 부문 유지율 개선&nbsp;&nbsp;보험저널",
-      "pub_date": "Thu, 21 May 2026 02:46:40 GMT",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "1분기 희비 갈린 생·손보사...車보험에 발목잡힌 손보, 건강보험 약진한 생보 - 녹색경제신문",
       "link": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE1CMVgzTHA3dEplc3ROeWxZMXh5VU00OFJrc0dMWVdWREo1TzFHeHRPXzduR1RLYzBsYXNvUXZGcjlYTGk0OGdLOUIybWJKYzFvV0dNUFYwb0otNzFvV3hXbXhQcEI1OFA4?oc=5",
       "source": "녹색경제신문",
       "keyword": "생명보험",
       "description": "1분기 희비 갈린 생·손보사...車보험에 발목잡힌 손보, 건강보험 약진한 생보&nbsp;&nbsp;녹색경제신문",
       "pub_date": "Thu, 21 May 2026 00:39:14 GMT",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "케이지에이에셋, 25회차 생보 유지율 7.6%p 상승… 전 부문 유지율 개선 - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE93YUdTUlV0MThONGxvSkRiRHgwN1psRjFPUTFPNDItMHNvSkFkQlBtRE9ja1BiaDIzc09jWXFaZlhrUXdBclBXRHVqNEZlZEl5QlpBU0FYMFpTQmRQakhsNVZSdlBHdkdBeXFJOHRGdw?oc=5",
+      "source": "보험저널",
+      "keyword": "생명보험",
+      "description": "케이지에이에셋, 25회차 생보 유지율 7.6%p 상승… 전 부문 유지율 개선&nbsp;&nbsp;보험저널",
+      "pub_date": "Thu, 21 May 2026 02:46:40 GMT",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
