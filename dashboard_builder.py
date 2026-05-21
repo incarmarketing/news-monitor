@@ -18,6 +18,7 @@ ARCHIVE_DIR = BASE_DIR / "data" / "daily"
 PUBLIC_DIR = BASE_DIR / "public"
 PUBLIC_DATA_DIR = PUBLIC_DIR / "data"
 TEMPLATE_DIR = BASE_DIR / "templates"
+DEFAULT_SUPABASE_PROJECT_REF = "moszekksbhprhevxdynb"
 
 CATEGORY_LABELS = {
     "own": "당사 보도",
@@ -204,7 +205,7 @@ def publish_dashboard() -> Path:
 
 def publish_supabase_public_config() -> None:
     url = (os.getenv("PUBLIC_SUPABASE_URL") or os.getenv("SUPABASE_URL") or "").rstrip("/")
-    project_ref = os.getenv("SUPABASE_PROJECT_REF", "").strip()
+    project_ref = os.getenv("SUPABASE_PROJECT_REF", "").strip() or DEFAULT_SUPABASE_PROJECT_REF
     if not url and project_ref:
         url = f"https://{project_ref}.supabase.co"
     anon_key = (
