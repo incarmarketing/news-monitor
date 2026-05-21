@@ -163,3 +163,13 @@ def load_dashboard_articles(limit: int = 2000) -> list[dict]:
         ),
     )
     return response.json()
+
+
+def load_monitor_keywords() -> list[str]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        "monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc",
+    )
+    return [row["keyword"] for row in response.json() if row.get("keyword")]

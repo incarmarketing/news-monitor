@@ -154,9 +154,6 @@
       background:#fff;
       border:1px solid var(--line);
       padding:22px;
-      display:grid;
-      grid-template-columns:minmax(0,1.45fr) minmax(250px,.55fr);
-      gap:18px;
       margin-bottom:14px;
       box-shadow:0 1px 2px rgba(16,24,40,.04);
     }
@@ -170,7 +167,8 @@
       color:#27398c;
       font-size:11px;
     }
-    .hero h2 { margin:10px 0 0; font-size:29px; line-height:1.28; letter-spacing:0; color:#0f172a; }
+    .hero h2 { display:none; }
+    .brief-topline { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
     .hero-meta { margin-top:8px; color:var(--muted); font-size:13px; font-weight:800; }
     .judgement {
       margin-top:16px;
@@ -184,22 +182,16 @@
       line-height:1.45;
       font-weight:900;
     }
-    .risk-card {
-      border-left:1px solid var(--line);
-      padding:4px 0 4px 18px;
-      display:grid;
-      align-content:center;
-      gap:8px;
-    }
+    .risk-card { display:inline-flex; align-items:center; gap:6px; }
     .risk-state {
       display:inline-flex;
       align-items:center;
       justify-content:center;
       width:max-content;
       min-width:0;
-      padding:8px 13px;
+      padding:4px 9px;
       border:1px solid var(--line);
-      border-radius:8px;
+      border-radius:999px;
       background:#fff;
     }
     .risk-card.risk-low .risk-state { background:#f0fdf4; border-color:#bbf7d0; }
@@ -207,15 +199,15 @@
     .risk-card.risk-high .risk-state { background:#fff1f2; border-color:#fecdd3; }
     .risk-value {
       color:#0f172a;
-      font-size:21px;
+      font-size:12px;
       font-weight:900;
       line-height:1;
     }
     .risk-card.risk-low .risk-value { color:#166534; }
     .risk-card.risk-medium .risk-value { color:#9a3412; }
     .risk-card.risk-high .risk-value { color:#be123c; }
-    .risk-label { color:var(--muted); font-size:12px; font-weight:900; margin-bottom:0; }
-    .risk-hint { color:#475467; font-size:13px; font-weight:800; line-height:1.45; }
+    .risk-label { color:var(--muted); font-size:11px; font-weight:900; margin-bottom:0; }
+    .risk-hint { display:none; }
     .hero-briefs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:12px; }
     .hero-brief {
       border:1px solid var(--line);
@@ -331,13 +323,17 @@
     .insight-card b { display:block; color:var(--incar-dark); font-size:20px; margin-bottom:4px; }
     .insight-card span { color:#475467; font-size:12px; font-weight:900; }
     .tone-board { display:grid; gap:10px; }
-    .tone-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fff; }
-    .tone-head { display:flex; justify-content:space-between; gap:10px; color:var(--incar-dark); font-weight:900; font-size:13px; }
-    .tone-meter { margin-top:9px; height:9px; border-radius:999px; background:#eef2f7; overflow:hidden; }
-    .tone-meter span { display:block; height:100%; border-radius:999px; }
-    .tone-positive span { background:#16a34a; }
-    .tone-neutral span { background:#5b7cfa; }
-    .tone-negative span { background:#dc2626; }
+    .tone-buttons { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+    .tone-button {
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      padding:12px;
+      display:grid;
+      gap:5px;
+    }
+    .tone-button b { color:var(--incar-dark); font-size:20px; }
+    .tone-button span { color:var(--muted); font-size:12px; font-weight:900; }
     .media-flow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .flow-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
     .flow-card strong { display:flex; justify-content:space-between; gap:8px; color:var(--incar-dark); font-size:13px; }
@@ -352,6 +348,13 @@
     .line-chart { height:150px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(28px,1fr); align-items:end; gap:8px; border-bottom:1px solid var(--line); padding-top:8px; }
     .line-point { display:grid; gap:5px; justify-items:center; color:var(--muted); font-size:10px; font-weight:900; }
     .line-stick { width:8px; min-height:8px; border-radius:999px 999px 0 0; background:linear-gradient(180deg,#16a34a,#27398c); }
+    .keyword-volume { display:grid; gap:10px; }
+    .keyword-volume-row { display:grid; grid-template-columns:120px 1fr; gap:10px; align-items:end; }
+    .keyword-volume-name { color:var(--incar-dark); font-size:12px; font-weight:900; line-height:1.25; }
+    .keyword-volume-bars { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(18px,1fr); gap:5px; align-items:end; height:140px; border-bottom:1px solid var(--line); }
+    .keyword-volume-bar { min-height:3px; border-radius:5px 5px 0 0; background:linear-gradient(180deg,#3157c7,#172554); }
+    .keyword-volume-dates { display:grid; grid-template-columns:120px 1fr; gap:10px; color:var(--muted); font-size:10px; font-weight:900; }
+    .keyword-volume-date-row { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(18px,1fr); gap:5px; text-align:center; }
     .keyword-board { display:grid; gap:10px; }
     .keyword-row {
       border:1px solid var(--line);
@@ -581,19 +584,18 @@
         <section class="page active" id="page-home">
           <div class="hero">
             <div>
-              <div class="eyebrow">LIVE MEDIA BRIEFING</div>
+              <div class="brief-topline">
+                <div class="eyebrow">LIVE MEDIA BRIEFING</div>
+                <span class="risk-card">
+                  <span class="risk-label">리스크 레벨</span>
+                  <span class="risk-state"><span class="risk-value" id="riskValue">-</span></span>
+                </span>
+              </div>
               <h2 id="headline">언론 데이터를 불러오는 중입니다.</h2>
               <div class="hero-meta" id="heroMeta">수집 구간과 최신 이슈를 확인하고 있습니다.</div>
               <div class="judgement" id="judgement">현재 언론 상황을 분석합니다.</div>
               <div class="hero-briefs" id="heroBriefs"></div>
             </div>
-            <aside class="risk-card">
-              <div class="risk-label">리스크 레벨</div>
-              <div class="risk-state">
-                <div class="risk-value" id="riskValue">-</div>
-              </div>
-              <div class="risk-hint" id="riskHint">당사 직접 부정 이슈를 기준으로 산정합니다.</div>
-            </aside>
           </div>
 
           <div class="metric-grid">
@@ -822,7 +824,7 @@
               <table class="table">
                 <tr><th>데이터 소스</th><td>GitHub Pages JSON + Supabase 옵션 저장</td></tr>
                 <tr><th>화면 버전</th><td>Marketing PR Center</td></tr>
-                <tr><th>관리 데이터</th><td>현재 브라우저 localStorage 저장, 다음 단계 Supabase 테이블화 가능</td></tr>
+                <tr><th>관리 데이터</th><td>키워드는 Supabase 공유 저장, 기타 관리 데이터는 브라우저 저장</td></tr>
               </table>
               <button class="btn danger" style="margin-top:12px" onclick="clearLocal()">로컬 관리 데이터 초기화</button>
             </div>
@@ -911,11 +913,28 @@
       return candidate;
     }
 
+    function categoryDetail(article) {
+      const text = `${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`;
+      if (/금감원|금융감독원|금융위|금융위원회|감독|제재|처분|공시/.test(text)) return "금융당국/감독";
+      if (/1200%|수수료|시책|정착지원금|정착률/.test(text)) return "수수료/1200%룰";
+      if (/설계사|근로자성|고용|특수고용|전속/.test(text)) return "설계사/고용";
+      if (/법안|보험업법|제도|규제/.test(text)) return "법안/제도";
+      if (/브랜드평판|평판|순위|1위/.test(text)) return "브랜드평판";
+      if (/프로모션|영업|마케팅|캠페인/.test(text)) return "영업/프로모션";
+      if (/실적|매출|손익|성장|감소|증가/.test(text)) return "시장/실적";
+      if (/삼성생명|한화생명|교보생명|신한라이프|미래에셋생명|생명보험/.test(text)) return "생명보험사";
+      if (/삼성화재|현대해상|DB손해|KB손해|메리츠화재|손해보험/.test(text)) return "손해보험사";
+      if (/핀테크|플랫폼|카카오|토스|네이버/.test(text)) return "플랫폼/핀테크";
+      if (article.category === "competitor") return "GA/보험대리점";
+      return article.category === "industry" ? "시장/실적" : "기타";
+    }
+
     function normalize(article) {
       const publishedAt = parsePublishedAt(article.pub_date || article.pub_date_raw || "");
       return {
         ...article,
         press: pressName(article),
+        category_detail: categoryDetail(article),
         category_label: article.category_label || categoryLabel(article.category),
         tone_label: article.tone_label || toneLabel(article.tone),
         summary: article.summary || "",
@@ -1036,7 +1055,6 @@
       riskEl.textContent = risk;
       riskEl.className = "risk-value";
       riskEl.closest(".risk-card").className = `risk-card risk-${String(risk).toLowerCase()}`;
-      document.getElementById("riskHint").textContent = risk === "LOW" ? "당사 직접 부정 이슈는 낮은 상태입니다." : "원문 확인과 후속 대응 검토가 필요합니다.";
       document.getElementById("issueTitle").innerHTML = `<i data-lucide="activity"></i> ${hasActiveFilter() ? "필터 기준 핵심 이슈" : "최신 모니터링 핵심 이슈"}`;
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
       renderHeroBriefs(current, cats, tones, market);
@@ -1088,17 +1106,22 @@
 
     function renderCategoryFlow(targetId, items) {
       const target = document.getElementById(targetId);
-      const counts = countBy(items, "category");
+      const counts = countBy(items, "category_detail");
       const total = Math.max(items.length, 1);
-      const rows = categoryOrder.filter(key => counts[key]).map(key => {
+      const detailOrder = [
+        "금융당국/감독", "수수료/1200%룰", "설계사/고용", "법안/제도",
+        "GA/보험대리점", "생명보험사", "손해보험사", "플랫폼/핀테크",
+        "브랜드평판", "영업/프로모션", "시장/실적", "기타"
+      ];
+      const rows = detailOrder.filter(key => counts[key]).map(key => {
         const value = counts[key];
         const share = Math.round(value / total * 100);
-        const negative = items.filter(a => a.category === key && a.tone === "negative").length;
+        const negative = items.filter(a => a.category_detail === key && a.tone === "negative").length;
         return `
           <div class="flow-card">
-            <strong><span>${escapeHtml(categoryLabel(key))}</span><span>${value.toLocaleString("ko-KR")}건</span></strong>
+            <strong><span>${escapeHtml(key)}</span><span>${value.toLocaleString("ko-KR")}건</span></strong>
             <div class="flow-sub">비중 ${share}% · 부정 ${negative}건</div>
-            <div class="flow-track"><span class="seg-${escapeHtml(key)}" style="width:${Math.max(4, share)}%"></span></div>
+            <div class="flow-track"><span style="width:${Math.max(4, share)}%"></span></div>
           </div>
         `;
       }).join("");
@@ -1227,20 +1250,17 @@
 
     function renderVolumeChart(items = state.articles) {
       const dates = uniq(items.map(a => a.date)).sort().slice(-14);
-      const max = Math.max(...dates.map(date => items.filter(a => a.date === date).length), 1);
-      const chart = dates.map(date => {
-        const dayItems = items.filter(a => a.date === date);
-        const counts = countBy(dayItems, "category");
-        const total = dayItems.length;
-        const segments = categoryOrder.map(key => {
-          const value = counts[key] || 0;
-          if (!value) return "";
-          return `<span class="stacked-segment seg-${escapeHtml(key)}" title="${escapeHtml(categoryLabel(key))} ${value}건" style="height:${Math.max(3, value / max * 190)}px"></span>`;
+      const keywords = topBy(items, "keyword", 6).map(([keyword]) => keyword);
+      const max = Math.max(...keywords.flatMap(keyword => dates.map(date => items.filter(a => a.keyword === keyword && a.date === date).length)), 1);
+      const rows = keywords.map(keyword => {
+        const bars = dates.map(date => {
+          const value = items.filter(a => a.keyword === keyword && a.date === date).length;
+          return `<div class="keyword-volume-bar" title="${escapeHtml(date)} ${value}건" style="height:${value ? Math.max(5, value / max * 132) : 3}px;opacity:${value ? 1 : .18}"></div>`;
         }).join("");
-        return `<div class="stacked-col"><div class="stacked-bar">${segments}</div><div>${date.slice(5)}</div><div>${total}</div></div>`;
+        return `<div class="keyword-volume-row"><div class="keyword-volume-name">${escapeHtml(keyword)}</div><div class="keyword-volume-bars">${bars}</div></div>`;
       }).join("");
-      document.getElementById("volumeChart").innerHTML = chart
-        ? `<div class="stacked-chart">${chart}</div><div class="chart-legend">${categoryOrder.map(key => `<span><i class="legend-dot seg-${key}"></i>${escapeHtml(categoryLabel(key))}</span>`).join("")}</div>`
+      document.getElementById("volumeChart").innerHTML = rows
+        ? `<div class="keyword-volume">${rows}<div class="keyword-volume-dates"><span></span><div class="keyword-volume-date-row">${dates.map(date => `<span>${date.slice(5)}</span>`).join("")}</div></div></div>`
         : '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
@@ -1253,14 +1273,14 @@
         const share = Math.round(value / total * 100);
         const top = topBy(items.filter(a => a.tone === key), "category", 1)[0];
         return `
-          <div class="tone-card tone-${escapeHtml(key)}">
-            <div class="tone-head"><span>${escapeHtml(toneLabel(key))}</span><span>${value.toLocaleString("ko-KR")}건 · ${share}%</span></div>
-            <div class="flow-sub">${top ? `${categoryLabel(top[0])} ${top[1]}건 중심` : "해당 논조 기사 없음"}</div>
-            <div class="tone-meter"><span style="width:${Math.max(3, share)}%"></span></div>
+          <div class="tone-button">
+            <b>${value.toLocaleString("ko-KR")}</b>
+            <span>${escapeHtml(toneLabel(key))} · ${share}%</span>
+            <span>${top ? `${categoryLabel(top[0])} ${top[1]}건 중심` : "해당 논조 기사 없음"}</span>
           </div>
         `;
       }).join("");
-      target.innerHTML = `<div class="tone-board">${rows}</div>`;
+      target.innerHTML = `<div class="tone-buttons">${rows}</div>`;
     }
 
     function renderKeywordTree(targetId, items) {
@@ -1521,15 +1541,68 @@
     function renderKeywords() {
       document.getElementById("keywordList").innerHTML = state.keywords.map(k => `<span class="chip">${escapeHtml(k)} <button onclick="removeKeyword('${escapeHtml(k)}')" style="border:0;background:transparent;cursor:pointer;color:var(--red)">×</button></span>`).join("");
     }
-    function addKeyword() {
+    async function addKeyword() {
       const input = document.getElementById("keywordInput");
       const value = input.value.trim();
       if (value && !state.keywords.includes(value)) state.keywords.push(value);
       localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
+      await saveKeywordToSupabase(value);
       input.value = "";
       renderKeywords();
     }
-    function removeKeyword(value) { state.keywords = state.keywords.filter(k => k !== value); localStorage.setItem("pr_keywords", JSON.stringify(state.keywords)); renderKeywords(); }
+    async function removeKeyword(value) {
+      state.keywords = state.keywords.filter(k => k !== value);
+      localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
+      await deleteKeywordFromSupabase(value);
+      renderKeywords();
+    }
+
+    async function loadKeywordsFromSupabase() {
+      try {
+        const config = await fetchSupabaseConfig();
+        if (!config?.url || !config?.anon_key) return;
+        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc`, {
+          cache:"no-store",
+          headers: { apikey: config.anon_key, Authorization: `Bearer ${config.anon_key}` },
+        });
+        if (!response.ok) return;
+        const rows = await response.json();
+        const keywords = rows.map(row => row.keyword).filter(Boolean);
+        if (keywords.length) {
+          state.keywords = keywords;
+          localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
+        }
+      } catch {}
+    }
+
+    async function saveKeywordToSupabase(keyword) {
+      if (!keyword) return;
+      try {
+        const config = await fetchSupabaseConfig(true);
+        if (!config?.url || !config?.anon_key) return;
+        await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?on_conflict=keyword`, {
+          method:"POST",
+          headers: {
+            apikey: config.anon_key,
+            Authorization: `Bearer ${config.anon_key}`,
+            "Content-Type":"application/json",
+            Prefer:"resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify([{ keyword, enabled:true }]),
+        });
+      } catch {}
+    }
+
+    async function deleteKeywordFromSupabase(keyword) {
+      try {
+        const config = await fetchSupabaseConfig(true);
+        if (!config?.url || !config?.anon_key) return;
+        await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?keyword=eq.${encodeURIComponent(keyword)}`, {
+          method:"DELETE",
+          headers: { apikey: config.anon_key, Authorization: `Bearer ${config.anon_key}` },
+        });
+      } catch {}
+    }
 
     function generateResponse(type) {
       const text = document.getElementById("issueInput").value.trim();
@@ -1724,6 +1797,7 @@
 
     async function boot() {
       bind();
+      await loadKeywordsFromSupabase();
       try {
         const data = await fetchDashboardData();
         state.categoryLabels = data.category_labels || {};

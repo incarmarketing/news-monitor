@@ -19,6 +19,7 @@ from rich.table import Table
 
 import config
 import report_window
+import supabase_store
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -48,8 +49,9 @@ def collect_news() -> list[dict]:
         TaskProgressColumn(),
         console=console,
     ) as progress:
-        task = progress.add_task("[cyan]키워드 수집", total=len(config.KEYWORDS))
-        for keyword in config.KEYWORDS:
+        keywords = load_collection_keywords()
+        task = progress.add_task("[cyan]키워드 수집", total=len(keywords))
+        for keyword in keywords:
             progress.update(task, description=f"[cyan]'{keyword}' 수집 중")
             naver = fetch_naver_news(keyword)
             google = fetch_google_news(keyword)
@@ -67,6 +69,16 @@ def collect_news() -> list[dict]:
 
     print_collection_stats(stats, before, after_dedup, after_exclude, after_window, window["label"])
     return articles
+
+
+def load_collection_keywords() -> list[str]:
+    try:
+        keywords = supabase_store.load_monitor_keywords()
+        if keywords:
+            return keywords
+    except Exception as exc:
+        console.print(f"[yellow]Supabase keyword config skipped:[/] {exc}")
+    return config.KEYWORDS
 
 
 def fetch_naver_news(keyword: str) -> list[dict]:
