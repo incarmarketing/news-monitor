@@ -348,13 +348,42 @@
     .line-chart { height:150px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(28px,1fr); align-items:end; gap:8px; border-bottom:1px solid var(--line); padding-top:8px; }
     .line-point { display:grid; gap:5px; justify-items:center; color:var(--muted); font-size:10px; font-weight:900; }
     .line-stick { width:8px; min-height:8px; border-radius:999px 999px 0 0; background:linear-gradient(180deg,#16a34a,#27398c); }
-    .keyword-volume { display:grid; gap:10px; }
-    .keyword-volume-row { display:grid; grid-template-columns:120px 1fr; gap:10px; align-items:end; }
-    .keyword-volume-name { color:var(--incar-dark); font-size:12px; font-weight:900; line-height:1.25; }
-    .keyword-volume-bars { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(18px,1fr); gap:5px; align-items:end; height:140px; border-bottom:1px solid var(--line); }
-    .keyword-volume-bar { min-height:3px; border-radius:5px 5px 0 0; background:linear-gradient(180deg,#3157c7,#172554); }
-    .keyword-volume-dates { display:grid; grid-template-columns:120px 1fr; gap:10px; color:var(--muted); font-size:10px; font-weight:900; }
-    .keyword-volume-date-row { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(18px,1fr); gap:5px; text-align:center; }
+    .keyword-volume { display:grid; gap:8px; }
+    .keyword-volume-row {
+      display:grid;
+      grid-template-columns:110px 1fr 42px;
+      gap:10px;
+      align-items:center;
+      min-height:30px;
+    }
+    .keyword-volume-name {
+      color:var(--incar-dark);
+      font-size:12px;
+      font-weight:900;
+      line-height:1.25;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .keyword-volume-bars {
+      display:grid;
+      grid-auto-flow:column;
+      grid-auto-columns:minmax(14px,1fr);
+      gap:4px;
+      align-items:end;
+      height:34px;
+      padding-top:3px;
+      border-bottom:1px solid var(--line);
+    }
+    .keyword-volume-bar {
+      min-height:3px;
+      max-height:30px;
+      border-radius:4px 4px 0 0;
+      background:linear-gradient(180deg,#3157c7,#172554);
+    }
+    .keyword-volume-total { color:var(--incar-dark); font-size:12px; font-weight:900; text-align:right; }
+    .keyword-volume-dates { display:grid; grid-template-columns:110px 1fr 42px; gap:10px; color:var(--muted); font-size:10px; font-weight:900; }
+    .keyword-volume-date-row { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(14px,1fr); gap:4px; text-align:center; }
     .keyword-board { display:grid; gap:10px; }
     .keyword-row {
       border:1px solid var(--line);
@@ -1253,14 +1282,15 @@
       const keywords = topBy(items, "keyword", 6).map(([keyword]) => keyword);
       const max = Math.max(...keywords.flatMap(keyword => dates.map(date => items.filter(a => a.keyword === keyword && a.date === date).length)), 1);
       const rows = keywords.map(keyword => {
+        const total = items.filter(a => a.keyword === keyword).length;
         const bars = dates.map(date => {
           const value = items.filter(a => a.keyword === keyword && a.date === date).length;
-          return `<div class="keyword-volume-bar" title="${escapeHtml(date)} ${value}건" style="height:${value ? Math.max(5, value / max * 132) : 3}px;opacity:${value ? 1 : .18}"></div>`;
+          return `<div class="keyword-volume-bar" title="${escapeHtml(date)} ${value}건" style="height:${value ? Math.max(5, value / max * 30) : 3}px;opacity:${value ? 1 : .18}"></div>`;
         }).join("");
-        return `<div class="keyword-volume-row"><div class="keyword-volume-name">${escapeHtml(keyword)}</div><div class="keyword-volume-bars">${bars}</div></div>`;
+        return `<div class="keyword-volume-row"><div class="keyword-volume-name" title="${escapeHtml(keyword)}">${escapeHtml(keyword)}</div><div class="keyword-volume-bars">${bars}</div><div class="keyword-volume-total">${total}</div></div>`;
       }).join("");
       document.getElementById("volumeChart").innerHTML = rows
-        ? `<div class="keyword-volume">${rows}<div class="keyword-volume-dates"><span></span><div class="keyword-volume-date-row">${dates.map(date => `<span>${date.slice(5)}</span>`).join("")}</div></div></div>`
+        ? `<div class="keyword-volume">${rows}<div class="keyword-volume-dates"><span></span><div class="keyword-volume-date-row">${dates.map(date => `<span>${date.slice(5)}</span>`).join("")}</div><span>합계</span></div></div>`
         : '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
