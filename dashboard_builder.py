@@ -11,6 +11,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import supabase_store
+import config
 
 BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
@@ -155,10 +156,21 @@ def build_summary(archives: list[dict], articles: list[dict]) -> dict:
     }
 
 
+def load_dashboard_keywords() -> list[str]:
+    try:
+        keywords = supabase_store.load_monitor_keywords()
+        if keywords:
+            return keywords
+    except Exception as exc:
+        print(f"Supabase keyword source skipped: {exc}")
+    return list(config.KEYWORDS)
+
+
 def publish_dashboard() -> Path:
     archives = load_daily_archives()
     articles = build_articles(archives)
     summary = build_summary(archives, articles)
+    keywords = load_dashboard_keywords()
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -169,6 +181,7 @@ def publish_dashboard() -> Path:
                 "articles": articles,
                 "category_labels": CATEGORY_LABELS,
                 "tone_labels": TONE_LABELS,
+                "keywords": keywords,
             },
             ensure_ascii=False,
             indent=2,

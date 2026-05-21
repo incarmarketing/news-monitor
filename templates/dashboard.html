@@ -986,6 +986,13 @@
       article.press && !isPortalPress(article.press) && !state.hiddenMedia.includes(article.press)
     );
 
+    function applyKeywordSource(keywords) {
+      if (!Array.isArray(keywords)) return;
+      const normalized = uniq(keywords.map(keyword => String(keyword || "").trim()));
+      state.keywords = normalized;
+      localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
+    }
+
     function pressName(article) {
       if (article.press) return article.press;
       const source = article.source || "";
@@ -1652,16 +1659,25 @@
     async function addKeyword() {
       const input = document.getElementById("keywordInput");
       const value = input.value.trim();
-      if (value && !state.keywords.includes(value)) state.keywords.push(value);
-      localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
-      await saveKeywordToSupabase(value);
+      if (!value) return;
+      const saved = await saveKeywordToSupabase(value);
+      if (saved) {
+        await loadKeywordsFromSupabase();
+        if (!state.keywords.includes(value)) applyKeywordSource([...state.keywords, value]);
+      } else if (!state.keywords.includes(value)) {
+        applyKeywordSource([...state.keywords, value]);
+      }
       input.value = "";
       renderKeywords();
     }
     async function removeKeyword(value) {
-      state.keywords = state.keywords.filter(k => k !== value);
-      localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
-      await deleteKeywordFromSupabase(value);
+      const deleted = await deleteKeywordFromSupabase(value);
+      if (deleted) {
+        await loadKeywordsFromSupabase();
+        if (state.keywords.includes(value)) applyKeywordSource(state.keywords.filter(k => k !== value));
+      } else {
+        applyKeywordSource(state.keywords.filter(k => k !== value));
+      }
       renderKeywords();
     }
 
@@ -1669,26 +1685,17 @@
       try {
         const config = await fetchSupabaseConfig();
         if (!config?.url || !config?.anon_key) return;
-        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc`, {
-          cache:"no-store",
-          headers: { apikey: config.anon_key, Authorization: `Bearer ${config.anon_key}` },
-        });
-        if (!response.ok) return;
-        const rows = await response.json();
-        const keywords = rows.map(row => row.keyword).filter(Boolean);
-        if (keywords.length) {
-          state.keywords = keywords;
-          localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
-        }
+        const keywords = await fetchSupabaseKeywords(config);
+        applyKeywordSource(keywords);
       } catch {}
     }
 
     async function saveKeywordToSupabase(keyword) {
-      if (!keyword) return;
+      if (!keyword) return false;
       try {
         const config = await fetchSupabaseConfig(true);
-        if (!config?.url || !config?.anon_key) return;
-        await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?on_conflict=keyword`, {
+        if (!config?.url || !config?.anon_key) return false;
+        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?on_conflict=keyword`, {
           method:"POST",
           headers: {
             apikey: config.anon_key,
@@ -1698,18 +1705,24 @@
           },
           body: JSON.stringify([{ keyword, enabled:true }]),
         });
-      } catch {}
+        return response.ok;
+      } catch {
+        return false;
+      }
     }
 
     async function deleteKeywordFromSupabase(keyword) {
       try {
         const config = await fetchSupabaseConfig(true);
-        if (!config?.url || !config?.anon_key) return;
-        await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?keyword=eq.${encodeURIComponent(keyword)}`, {
+        if (!config?.url || !config?.anon_key) return false;
+        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?keyword=eq.${encodeURIComponent(keyword)}`, {
           method:"DELETE",
           headers: { apikey: config.anon_key, Authorization: `Bearer ${config.anon_key}` },
         });
-      } catch {}
+        return response.ok;
+      } catch {
+        return false;
+      }
     }
 
     function generateResponse(type) {
@@ -1776,6 +1789,7 @@
           : await fetchDashboardData(true);
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
+        applyKeywordSource(data.keywords);
         state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
         optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
@@ -1838,7 +1852,21 @@
 
     async function fetchDashboardData(force = false) {
       const supabaseData = await fetchSupabaseDashboardData(force);
-      if (supabaseData) return supabaseData;
+      const staticData = await fetchStaticDashboardData(force);
+      if (supabaseData) {
+        return {
+          category_labels: Object.keys(supabaseData.category_labels || {}).length ? supabaseData.category_labels : (staticData?.category_labels || {}),
+          tone_labels: Object.keys(supabaseData.tone_labels || {}).length ? supabaseData.tone_labels : (staticData?.tone_labels || {}),
+          keywords: Array.isArray(supabaseData.keywords) ? supabaseData.keywords : (staticData?.keywords || []),
+          articles: supabaseData.articles?.length ? supabaseData.articles : (staticData?.articles || []),
+          summary: supabaseData.summary || staticData?.summary || {},
+        };
+      }
+      if (staticData) return staticData;
+      throw new Error("No dashboard data");
+    }
+
+    async function fetchStaticDashboardData(force = false) {
       const paths = ["./data/articles.json", "../public/data/articles.json"];
       for (const path of paths) {
         try {
@@ -1847,7 +1875,7 @@
           if (response.ok) return response.json();
         } catch {}
       }
-      throw new Error("No dashboard data");
+      return null;
     }
 
     async function fetchSupabaseDashboardData(force = false) {
@@ -1869,9 +1897,11 @@
         });
         if (!response.ok) return null;
         const rows = await response.json();
+        const keywords = await fetchSupabaseKeywords(config);
         return {
           category_labels: state.categoryLabels,
           tone_labels: state.toneLabels,
+          keywords,
           articles: rows.map(row => ({
             id: row.article_hash,
             article_hash: row.article_hash,
@@ -1896,6 +1926,23 @@
       }
     }
 
+    async function fetchSupabaseKeywords(config) {
+      try {
+        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc`, {
+          cache:"no-store",
+          headers: {
+            apikey: config.anon_key,
+            Authorization: `Bearer ${config.anon_key}`,
+          },
+        });
+        if (!response.ok) return null;
+        const rows = await response.json();
+        return rows.map(row => row.keyword).filter(Boolean);
+      } catch {
+        return null;
+      }
+    }
+
     async function fetchSupabaseConfig(force = false) {
       const configUrl = `./data/supabase.json${force ? `?v=${Date.now()}` : ""}`;
       const configResponse = await fetch(configUrl, { cache:"no-store" });
@@ -1905,11 +1952,11 @@
 
     async function boot() {
       bind();
-      await loadKeywordsFromSupabase();
       try {
         const data = await fetchDashboardData();
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
+        applyKeywordSource(data.keywords);
         state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
       } catch {
         state.articles = [];
