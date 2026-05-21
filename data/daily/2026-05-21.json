@@ -1,6 +1,6 @@
 {
   "date": "2026-05-21",
-  "timestamp": "2026-05-21T14:34:04.458813+09:00",
+  "timestamp": "2026-05-21T14:42:57.515138+09:00",
   "window": {
     "slot": "13",
     "label": "당일 08:00~13:00",
@@ -9,11 +9,11 @@
     "end": "2026-05-21T13:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 58,
-    "total_after_cluster": 49,
+    "total_collected": 55,
+    "total_after_cluster": 46,
     "by_category": {
       "own": 2,
-      "regulation": 8,
+      "regulation": 5,
       "competitor": 15,
       "industry": 31,
       "other": 2
@@ -21,7 +21,7 @@
     "by_tone": {
       "negative": 0,
       "positive": 1,
-      "neutral": 57
+      "neutral": 54
     },
     "own_negative": 0,
     "own_total": 2,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 고성장 보도와 함께 GA 영업 규제 강화 동향이 관찰됨.\n\n## 핵심 이슈\n- [1] 인카금융서비스 매출 고성장: 매출 성장 긍정적이나 이익률 후퇴 언급.\n- [3] 금감원 GA 컨설팅 영업 규제: 향후 영업 방식 변화 가능성, 업계 전반 영향.\n\n## 지표 해석\n당사는 매출 고성장을 긍정적으로 평가한 기사가 보도되었으며, 직접적인 부정 기사는 없습니다. 업계 전반에서는 금감원의 GA 영업 규제 강화 및 AI 관련 소비자보호 요구가 주요 동향으로 파악됩니다.\n\n## 분석 키워드\n인카금융서비스 매출, 금감원 GA 규제, 에이플러스에셋 실적, AI 소비자보호",
+  "briefing": "## 최종 결론\n당사 성장성 긍정 보도, 금융당국 GA 영업 규제 강화 동향.\n\n## 핵심 이슈\n- [1] 인카금융서비스 경영 실적: 매출 고성장 긍정 평가, 이익률은 과제.\n- [3] 금감원 GA 컨설팅 영업 규제: 향후 영업 방식 변화 가능성, 업계 전반 영향.\n\n## 지표 해석\n당사는 매출 성장에 대한 긍정적 평가가 보도되었으며, 직접적 부정 기사는 없습니다. 업계 전반적으로는 금융당국의 GA 영업 규제 강화와 경쟁사 실적 개선 동향이 관찰됩니다.\n\n## 분석 키워드\n인카금융서비스 매출, GA 영업 규제, 에이플러스에셋 실적, 온라인 DB",
   "articles": [
     {
       "title": "[더벨][보험경영분석] 인카금융, 매출 고성장 속 이익률 후퇴",
@@ -93,42 +93,6 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 3
-    },
-    {
-      "title": "소비자보호 임원 만난 금감원 “AI 편향·딥페이크 피해 막아라”",
-      "link": "https://www.etoday.co.kr/news/view/2586576",
-      "source": "etoday.co.kr",
-      "keyword": "생명보험",
-      "description": "금감원은 21일 이종오 디지털·IT부문 부원장보 주재로 은행연합회·금융투자협회·생명보험협회·손해보험협회·여신금융협회 및 주요 금융회사 소비자보호 담당 임원들과 ‘디지털금융 이용자 보호를 위한 간담회’를...",
-      "pub_date": "Thu, 21 May 2026 11:02:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금감원 \"IT 임원뿐 아니라 소비자보호 임원도 IT 사고 해결 책임\"",
-      "link": "https://view.asiae.co.kr/article/2026052110532192212",
-      "source": "view.asiae.co.kr",
-      "keyword": "생명보험",
-      "description": "간담회엔 이종오 금감원 디지털·IT부문 부원장보와 은행연합회, 금융투자협회, 생명보험협회, 손해보험협회, 여신금융협회 CCO, 업권별 주요 금융사 CCO 10명 등이 참석했다. 이 부원장보는 \"디지털·AI 혁신을 통해 금융의...",
-      "pub_date": "Thu, 21 May 2026 11:00:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "\"AI·IT 사고 소비자보호 관점서 대응\"...금감원, 금융권 CCO 소집",
-      "link": "https://www.sidae.com/article/2026052108422857771",
-      "source": "sidae.com",
-      "keyword": "생명보험",
-      "description": "간담회에는 은행연합회, 금융투자협회, 생명보험협회, 손해보험협회, 여신금융협회 등 금융협회와 업권별 주요 금융회사 소비자보호 담당 임원들이 참석했다. 이번 간담회는 금융의 디지털 전환이 빨라지면서 이용자...",
-      "pub_date": "Thu, 21 May 2026 11:00:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
     },
     {
       "title": "AXA손해보험, 암보험 부문 ‘고객사랑브랜드대상’ 10년 연속 수상 - 브릿지경제",
@@ -251,11 +215,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "미래에셋운용 ‘TIGER 미국나스닥100’ 순자산 10조 돌파···미래생명보험에 500억 추가 출자 - 여성소비자신문",
+      "title": "미래에셋운용 ‘TIGER 미국나스닥100’ 순자산 10조 돌파···미래생명보험에 500억 추가 출자 - kmctimes.com",
       "link": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE5ISzFTWXJpdEhROEYyV0xuNHpIdDFpWUs4dzdna2lia29DaHlTVG1CVi1DbkV4N1NsRUM4bTIzeV9qUXY1X2lWTkFHNVhYM2QxLURnaFltSVJmamRJcjVnSDE1N0xVUQ?oc=5",
-      "source": "여성소비자신문",
+      "source": "kmctimes.com",
       "keyword": "생명보험",
-      "description": "미래에셋운용 ‘TIGER 미국나스닥100’ 순자산 10조 돌파···미래생명보험에 500억 추가 출자&nbsp;&nbsp;여성소비자신문",
+      "description": "미래에셋운용 ‘TIGER 미국나스닥100’ 순자산 10조 돌파···미래생명보험에 500억 추가 출자&nbsp;&nbsp;kmctimes.com",
       "pub_date": "Thu, 21 May 2026 01:12:51 GMT",
       "_score": 8,
       "_category": "industry",
@@ -335,11 +299,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "프로티아, 중기부 ‘글로벌 강소기업 1000+’ 선정...글로벌 시장 공략 ...",
-      "link": "http://www.edaily.co.kr/news/newspath.asp?newsid=03312806645451216",
-      "source": "edaily.co.kr",
+      "title": "'증권사 판정승' 연금백서에 발등 불 은행권..퇴직연금 IRP 사수 총력전",
+      "link": "https://kpenews.com/View.aspx?No=4085838",
+      "source": "kpenews.com",
       "keyword": "보험 마케팅",
-      "description": "이번 지정에 따라 프로티아는 △수출바우처 자동 선정 △정책자금 및 연구개발(R&D) 지원 우대 △수출보증·보험 한도 확대 등 정부의 다각적인 혜택을 받게 된다. 프로티아는 이를 바탕으로 글로벌 마케팅과 기술...",
+      "description": "반면 은행과 보험권 가입자는 10명 중 8명이 전체 평균 수익률에도 미치지 못했다. 실물이전 제도 도입 이후... 하나은행은 세대별 맞춤 마케팅과 운용사 협업 투 트랙 전략을 펴고 있다. 6월 30일까지 개인형 IRP를...",
       "pub_date": "Thu, 21 May 2026 10:24:00 +0900",
       "_score": 4,
       "_category": "industry",
@@ -347,11 +311,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "'증권사 판정승' 연금백서에 발등 불 은행권..퇴직연금 IRP 사수 총력전",
-      "link": "https://kpenews.com/View.aspx?No=4085838",
-      "source": "kpenews.com",
+      "title": "프로티아, 중기부 ‘글로벌 강소기업 1000+’ 선정...글로벌 시장 공략 ...",
+      "link": "http://www.edaily.co.kr/news/newspath.asp?newsid=03312806645451216",
+      "source": "edaily.co.kr",
       "keyword": "보험 마케팅",
-      "description": "반면 은행과 보험권 가입자는 10명 중 8명이 전체 평균 수익률에도 미치지 못했다. 실물이전 제도 도입 이후... 하나은행은 세대별 맞춤 마케팅과 운용사 협업 투 트랙 전략을 펴고 있다. 6월 30일까지 개인형 IRP를...",
+      "description": "이번 지정에 따라 프로티아는 △수출바우처 자동 선정 △정책자금 및 연구개발(R&D) 지원 우대 △수출보증·보험 한도 확대 등 정부의 다각적인 혜택을 받게 된다. 프로티아는 이를 바탕으로 글로벌 마케팅과 기술...",
       "pub_date": "Thu, 21 May 2026 10:24:00 +0900",
       "_score": 4,
       "_category": "industry",
