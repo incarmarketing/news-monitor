@@ -63,7 +63,7 @@ def headers() -> dict[str, str]:
     return {
         "apikey": key,
         "Authorization": f"Bearer {key}",
-        "Content-Type": "application/json",
+        "Content-Type": "application/json; charset=utf-8",
         "Prefer": "resolution=merge-duplicates,return=minimal",
     }
 
@@ -76,6 +76,8 @@ def base_url() -> str:
 
 
 def request(method: str, path: str, **kwargs: Any) -> requests.Response:
+    if isinstance(kwargs.get("data"), str):
+        kwargs["data"] = kwargs["data"].encode("utf-8")
     response = requests.request(
         method,
         f"{base_url()}/rest/v1/{path}",
@@ -83,7 +85,11 @@ def request(method: str, path: str, **kwargs: Any) -> requests.Response:
         timeout=30,
         **kwargs,
     )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        detail = response.text[:500].replace("\n", " ")
+        raise requests.HTTPError(f"{exc} - {detail}", response=response) from exc
     return response
 
 
