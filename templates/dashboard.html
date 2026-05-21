@@ -1099,16 +1099,23 @@
 
     function normalize(article) {
       const publishedAt = parsePublishedAt(article.pub_date || article.pub_date_raw || "");
+      const press = pressName(article);
+      const category = article.category || "other";
+      const tone = article.tone || "neutral";
+      const categoryLabelValue = article.category_label || categoryLabel(category);
+      const toneLabelValue = article.tone_label || toneLabel(tone);
+      const publishedLabel = formatPublishedAt(publishedAt, article.date);
+      const fallback = `${press}에서 보도된 ${categoryLabelValue} 기사입니다. '${article.keyword || "관련"}' 키워드로 수집됐으며 보도 논조는 ${toneLabelValue}으로 분류됐습니다.`;
       return {
         ...article,
-        press: pressName(article),
+        press,
         category_detail: categoryDetail(article),
-        category_label: article.category_label || categoryLabel(article.category),
-        tone_label: article.tone_label || toneLabel(article.tone),
-        summary: article.summary || article.description || "",
+        category_label: categoryLabelValue,
+        tone_label: toneLabelValue,
+        summary: article.summary || article.description || fallback,
         score: Number(article.score || 0),
         published_at: publishedAt,
-        published_label: formatPublishedAt(publishedAt, article.date)
+        published_label: publishedLabel
       };
     }
 

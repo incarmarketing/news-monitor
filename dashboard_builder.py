@@ -80,7 +80,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
                     "link": link,
                     "source": article.get("source", ""),
                     "keyword": article.get("keyword", ""),
-                    "summary": article.get("description", "") or article.get("summary", ""),
+                    "summary": article_summary(article, category, tone),
                     "pub_date": article.get("pub_date", ""),
                     "score": article.get("_score", 0),
                     "category": category,
@@ -93,6 +93,17 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
     rows.sort(key=lambda row: (row["date"], row["score"]), reverse=True)
     return rows
+
+
+def article_summary(article: dict, category: str, tone: str) -> str:
+    existing = article.get("description", "") or article.get("summary", "")
+    if existing:
+        return existing
+    source = article.get("source") or "언론"
+    keyword = article.get("keyword") or "관련 키워드"
+    category_label = CATEGORY_LABELS.get(category, "기타")
+    tone_label = TONE_LABELS.get(tone, "중립")
+    return f"{source}에서 보도된 {category_label} 기사입니다. '{keyword}' 키워드로 수집됐으며 보도 논조는 {tone_label}으로 분류됐습니다."
 
 
 def load_supabase_articles() -> list[dict]:
@@ -117,7 +128,7 @@ def load_supabase_articles() -> list[dict]:
                 "link": row.get("link", ""),
                 "source": row.get("source", ""),
                 "keyword": row.get("keyword", ""),
-                "summary": row.get("summary", ""),
+                "summary": row.get("summary", "") or article_summary(row, category, tone),
                 "pub_date": row.get("pub_date") or row.get("pub_date_raw", ""),
                 "score": row.get("score", 0),
                 "category": category,

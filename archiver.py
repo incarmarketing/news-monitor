@@ -55,6 +55,7 @@ def lighten(article: dict) -> dict:
         "link": article.get("link", ""),
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
+        "description": article.get("description", "") or article.get("summary", ""),
         "pub_date": article.get("pub_date", ""),
         "_score": article.get("_score", 0),
         "_category": article.get("_category", "other"),
