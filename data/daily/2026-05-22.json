@@ -1,6 +1,6 @@
 {
   "date": "2026-05-22",
-  "timestamp": "2026-05-22T08:01:11.880220+09:00",
+  "timestamp": "2026-05-22T08:07:17.585475+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-22T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 54,
-    "total_after_cluster": 49,
+    "total_collected": 52,
+    "total_after_cluster": 47,
     "by_category": {
       "own": 0,
-      "regulation": 8,
+      "regulation": 5,
       "competitor": 23,
-      "industry": 23,
+      "industry": 24,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 0,
-      "neutral": 54
+      "neutral": 52
     },
     "own_negative": 0,
     "own_total": 0,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 직접 보도 없이, GA 수수료 규제 및 업계 동향 기사 다수 발생.\n\n## 핵심 이슈\n- [10] GA 1200%룰 우회 방지: 금융당국, 본점 귀속 강화 등 제도 개선 예고.\n- [4] 정부, 해운업 전쟁보험 지원: 금융위, 중동 리스크 관련 3천억 규모 지원.\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며, 부정 보도도 발생하지 않았습니다. 금융당국의 GA 채널 규제 강화와 경쟁사 실적 및 M&A 관련 동향이 주로 보도되었습니다.\n\n## 분석 키워드\nGA 1200%룰, 전쟁보험, 경쟁사 실적, 소비자보호",
+  "briefing": "## 최종 결론\n당사 보도 없이, GA 1200%룰 규제 및 경쟁사 동향이 부각됨.\n\n## 핵심 이슈\n- [8] GA 1200%룰 규제 강화: 금융당국, 수수료 편법 지급 방지 목적.\n- [1] KB손보 소비자민원평가: 소비자민원평가대상 수상으로 긍정 이미지 부각.\n\n## 지표 해석\n당사 직접 언급 기사 없이 리스크는 LOW 수준입니다. 보도는 GA 1200%룰 등 규제 동향과 KB손보의 소비자보호 활동 등 경쟁사 동향에 집중되었습니다.\n\n## 분석 키워드\n1200%룰, KB손해보험, 보험사기, 생명보험 실적",
   "articles": [
     {
       "title": "[소비자민원평가대상-손해보험] KB손해보험, 상품 기획단계부터 촘촘한...",
@@ -59,24 +59,24 @@
       "_cluster_size": 1
     },
     {
+      "title": "[브랜드 랭킹] 베이커리·손해보험사 앱 TOP 순위 공개 - 오픈애즈",
+      "link": "https://news.google.com/rss/articles/CBMibkFVX3lxTE5sU2ZSMUhoZ2dLelU4Z2s2Q2xPbnJ2ejQzOTBfU0tIOVVzRlVRZVMtMjdYclpRQm9sQ3JWRi1PRzZHbUlDdjc2QjgzQ1ZWYnFZX0l3MFBZOTYwZ0VzaGprM3hLbXVFSFp6d2xIdlRn?oc=5",
+      "source": "브랜드 랭킹",
+      "keyword": "손해보험",
+      "description": "[브랜드 랭킹] 베이커리·손해보험사 앱 TOP 순위 공개&nbsp;&nbsp;오픈애즈",
+      "pub_date": "Thu, 21 May 2026 23:00:00 GMT",
+      "_score": 15,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "영역은 광범위, 관리는 분산…보험사기 행정처분 강화 약속도 1년째 표...",
       "link": "https://biz.heraldcorp.com/article/10742823?ref=naver",
       "source": "biz.heraldcorp.com",
       "keyword": "생명보험",
       "description": "금융위 주재로 산하 금융기관, 생명·손해보험협회, 보험업계와 함께 회의를 진행했으며, 내부 태스크포스(TF) 구성을 위한 논의에도 들어갔다. AI로 위·변조한 진단서를 활용하는 새로운 사기 수법이 등장하면서 기존...",
       "pub_date": "Thu, 21 May 2026 18:01:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금융위, 호르무즈 선박 전쟁보험 공동 지원...중견 이하 선사 숨통 기대...",
-      "link": "https://www.financialpost.co.kr/news/articleView.html?idxno=260003",
-      "source": "financialpost.co.kr",
-      "keyword": "손해보험",
-      "description": "22일 금융권에 따르면 국내 손해보험사들이 위험을 나눠 맡는 방식으로 보험 가입 거절 가능성과 과도한 보험료 부담을 낮추면, 선박 운항 차질을 크게 줄이는 효과를 거둘 것으로 기대된다. 금융위는 21일 손해보험협회...",
-      "pub_date": "Fri, 22 May 2026 07:20:00 +0900",
       "_score": 12,
       "_category": "regulation",
       "_tone": "neutral",
@@ -95,36 +95,12 @@
       "_cluster_size": 2
     },
     {
-      "title": "[포토] 금융위, 중동상황 피해업종(해운) 관련 산업-금융권 간담회 개최",
-      "link": "http://www.sisafocus.co.kr/news/articleView.html?idxno=360382",
-      "source": "포토",
+      "title": "금융위, 호르무즈 선박 전쟁보험 공동 지원...중견 이하 선사 숨통 기대...",
+      "link": "https://www.financialpost.co.kr/news/articleView.html?idxno=260003",
+      "source": "financialpost.co.kr",
       "keyword": "손해보험",
-      "description": "21일 이억원 금융위원장이 모두발언을 하고 있다.(1) (사진 / 오훈 기자)21일 이억원 금융위원장이 모두발언을 하고 있다.(2) (사진 / 오훈 기자) 금융위원회가 21일 서울 종로구 손해보험협회에서 중동상황 피해업종(해운)...",
-      "pub_date": "Thu, 21 May 2026 19:46:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[포토] 모두발언하는 이억원 금융위원장",
-      "link": "http://www.sisafocus.co.kr/news/articleView.html?idxno=360381",
-      "source": "포토",
-      "keyword": "손해보험",
-      "description": "(3) (사진 / 오훈 기자) 이억원 금융위원회 위원장이 21일 서울 종로구 손해보험협회에서 열린 중동상황 피해업종(해운) 관련 산업-금융권 간담회에서 모두발언을 하고 있다.",
-      "pub_date": "Thu, 21 May 2026 19:44:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금융위, 중동 긴장 속 해운업계에 3천억원 전쟁보험 지원",
-      "link": "https://www.tokenpost.kr/news/economy/362157",
-      "source": "tokenpost.kr",
-      "keyword": "손해보험",
-      "description": "이억원 금융위원장은 21일 서울 종로구 손해보험협회에서 해운업계와 정책금융기관, 보험업권이 함께한 ‘중동상황 피해업종 산업-금융권 간담회’에서 이런 방안을 발표했다. 최근 중동전쟁 여파로 해운사는 유류비...",
-      "pub_date": "Thu, 21 May 2026 19:40:00 +0900",
+      "description": "22일 금융권에 따르면 국내 손해보험사들이 위험을 나눠 맡는 방식으로 보험 가입 거절 가능성과 과도한 보험료 부담을 낮추면, 선박 운항 차질을 크게 줄이는 효과를 거둘 것으로 기대된다. 금융위는 21일 손해보험협회...",
+      "pub_date": "Fri, 22 May 2026 07:20:00 +0900",
       "_score": 12,
       "_category": "regulation",
       "_tone": "neutral",
