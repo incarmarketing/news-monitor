@@ -218,6 +218,7 @@ def publish_supabase_public_config() -> None:
     if not url or not anon_key:
         if config_path.exists():
             config_path.unlink()
+        print("Supabase public config skipped: PUBLIC_SUPABASE_URL/SUPABASE_URL and public anon or publishable key are required.")
         return
     config_path.write_text(
         json.dumps({"url": url, "anon_key": anon_key}, ensure_ascii=False, indent=2),
