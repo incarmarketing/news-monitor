@@ -1,0 +1,302 @@
+{
+  "date": "2026-05-24",
+  "timestamp": "2026-05-24T08:46:03.712184+09:00",
+  "window": {
+    "slot": "08",
+    "label": "전일 18:00~당일 08:00",
+    "short_label": "전일 18시 이후",
+    "start": "2026-05-23T18:00:00+09:00",
+    "end": "2026-05-24T08:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 26,
+    "total_after_cluster": 22,
+    "by_category": {
+      "own": 0,
+      "regulation": 2,
+      "competitor": 13,
+      "industry": 10,
+      "other": 1
+    },
+    "by_tone": {
+      "negative": 0,
+      "positive": 0,
+      "neutral": 26
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW"
+  },
+  "briefing": "## 최종 결론\n당사 보도 없이, GA 규제 강화 및 경쟁사 해외 M&A 동향 관측.\n\n## 핵심 이슈\n- [4] GA 1200%룰 우회 방지: 금융당국의 수수료 규제 강화 동향.\n- [1] DB손보, 미국 보험사 인수: 경쟁사의 해외 시장 진출 본격화.\n\n## 지표 해석\n당사에 대한 직접적인 보도나 부정 기사는 없었으며 리스크는 낮습니다. GA업계 수수료 규제 강화와 대형 보험사의 해외 M&A, 디지털 헬스케어 전환 등 업계 전반의 동향이 주로 보도되었습니다.\n\n## 분석 키워드\n1200%룰, DB손해보험, 해외 M&A, 디지털 헬스케어",
+  "articles": [
+    {
+      "title": "DB손해보험, 美 보험사 포테그라 인수 마무리",
+      "link": "https://www.wolyo.co.kr/news/articleView.html?idxno=312595",
+      "source": "wolyo.co.kr",
+      "keyword": "손해보험",
+      "description": "DB손해보험은 지난해 9월 체결한 미국 특화보험사 포테그라(The Fortegra Group) 지분 100% 인수 절차를 오는 30일 최종 마무리한다고 밝혔다. 이번 거래 규모는 총 16억5000만달러(약 2조3000억원) 수준이다. DB손해보험은...",
+      "pub_date": "Sun, 24 May 2026 02:06:00 +0900",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "DB손해보험, 포테그라 인수 최종 종결 - 보험신보",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE43Y3BkNGVuNTZrQTNnZW1IT0F2VWhmVmtNdWxuTW5QQURVUERWNDFwTjB1MXU1dnVCQmwxdjVGTENEMzlvSTVKekdXSkhhS1Z1aldXaGE3Wm1uRkE1bUhzX0tMRlIyUXpwOGRF?oc=5",
+      "source": "보험신보",
+      "keyword": "손해보험",
+      "description": "DB손해보험, 포테그라 인수 최종 종결&nbsp;&nbsp;보험신보",
+      "pub_date": "Sat, 23 May 2026 12:54:24 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "NH농협손해보험, ‘2026 제로트러스트 도입 시범사업’ 참여 - 보험신보",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE9Rb1p0aXl2eWhKVnBfdVZYbFJyemJvZ1JTWmJaSEd3cFhjaGJDRGtfRy1qeEZlV0o1YVlyOTFBbkFZc2VlNDFXUTFwVjkxNnhJTjZPaVAyYWlxTzI1a3ltbzJDOFBVMTRULUlj?oc=5",
+      "source": "보험신보",
+      "keyword": "손해보험",
+      "description": "NH농협손해보험, ‘2026 제로트러스트 도입 시범사업’ 참여&nbsp;&nbsp;보험신보",
+      "pub_date": "Sat, 23 May 2026 12:54:11 GMT",
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "GA설계사 ‘1200%룰 시행’ 우회 막는다… 본점 귀속 강화 나선 금융당국 (영상+) - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE1WazlqSVltTnVKUWxXMkRDeUVSSnhXajFxODg4Z3pkLW9lWFI3Z090QjZrYmNPZGd0YS1FaXBmZlRwVTYzX2tZSXVDR3pTeE1yR1NXQnEyajMyNXFOcnRGb0xYYTQ4XzVYQ2t2ZEZaWQ?oc=5",
+      "source": "보험저널",
+      "keyword": "보험설계사",
+      "description": "GA설계사 ‘1200%룰 시행’ 우회 막는다… 본점 귀속 강화 나선 금융당국 (영상+)&nbsp;&nbsp;보험저널",
+      "pub_date": "Sat, 23 May 2026 22:55:26 GMT",
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[은행 이모저모] 농협은행·iM뱅크·전북은행 등",
+      "link": "http://www.bizwnews.com/news/articleView.html?idxno=137236",
+      "source": "은행 이모저모",
+      "keyword": "생명보험",
+      "description": "이번 교육에는 농협은행 직원뿐만 아니라 농협중앙회, 농협생명, 농협손해보험, NH농협캐피탈 등 범농협 계열사 직원들도 참여한다고 은행 측은 설명했다. 교육은 오는 8월 8일까지 총 12회차에 걸쳐 진행된다. 주로...",
+      "pub_date": "Sun, 24 May 2026 04:30:00 +0900",
+      "_score": 11,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[테크 이모저모] NHN KCP, 페이코 연계해 스테이블코인 결제 실증 진행",
+      "link": "http://www.worktoday.co.kr/news/articleView.html?idxno=84902",
+      "source": "테크 이모저모",
+      "keyword": "보험 마케팅",
+      "description": "다우기술 비즈마케팅부문 김성욱 전무는 \"기업 복지몰과 차별화된 기능 및 상품을 기반으로, 복지를 통해... 계절적 비수기와 금융권 대출 규제 영향으로 매출은 다소 감소했으나 시세정보 API, 보험설계사 자격...",
+      "pub_date": "Sat, 23 May 2026 18:56:00 +0900",
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "금융지주 체제 강화되는 보험업권…\"영업력보다 자본력\"",
+      "link": "https://view.asiae.co.kr/article/2026052115432072987",
+      "source": "view.asiae.co.kr",
+      "keyword": "생명보험",
+      "description": "KB금융지주와의 시너지를 바탕으로 시니어 산업의 선두주자로 꼽히는 KB라이프생명(자회사 KB골든라이프케어) 및 KB손해보험, 그리고 전통의 생명보험 '빅3' 체제를 위협할 정도로 성장한 신한금융그룹의 신한라이프...",
+      "pub_date": "Sun, 24 May 2026 08:00:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "내린다던 보험사 대출 금리, 전쟁 탓 상승…그래도 은행보다 싸네",
+      "link": "https://www.mt.co.kr/finance/2026/05/24/2026052216350216564",
+      "source": "mt.co.kr",
+      "keyword": "생명보험",
+      "description": "24일 생명보험협회에 따르면 전체 보험사 가운데 대출이 가장 많은 삼성생명의 이달 주택담보대출 금리는 연 4.41~5.57% 수준으로 나타났다. 삼성생명의 주담대 평균 취급 금리는 1월 연 4.48%에서 2월 연 4.62%, 3월 연 4.74...",
+      "pub_date": "Sun, 24 May 2026 07:00:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "[N2 포커스] '보험금 지급' 넘어 '건강 파트너'로…보험사 새 전장 '디지...",
+      "link": "https://www.news2day.co.kr/article/20260520500206",
+      "source": "N2 포커스",
+      "keyword": "생명보험",
+      "description": "[사진=삼성화재] 생명보험 쪽에서는 삼성생명이 '더헬스(THE Health)'를 통해 AI 모션 인식 기반 운동 코칭, 음식 사진 기반 영양 분석, 수면 패턴 분석 등을 제공하며 서비스를 고도화하고 있다. 신한라이프는 2022년 헬스케어...",
+      "pub_date": "Sun, 24 May 2026 06:54:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "교보생명, 보험금지급능력 20년 연속 최고 등급 'AAA'",
+      "link": "https://www.fetv.co.kr/news/articleView.html?idxno=302896",
+      "source": "fetv.co.kr",
+      "keyword": "생명보험",
+      "description": "교보생명이 보험금지급능력평가에서 우수한 수익성과 건전성을 인정받아 20년 연속 최고 등급인 'AAA' 등급을 획득했다. 교보생명은 나이스신용평가가 실시한 보험금지급능력평가에서 AAA 등급을 획득했다고 24일...",
+      "pub_date": "Sun, 24 May 2026 06:00:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[6·3 지방선거] 선거사무소 보면 선거 전략 보인다…좋은 터·이색 명칭...",
+      "link": "https://biz.chosun.com/policy/politics/election/2026/05/24/EHKLODTH3ZDEFOXRCD6RUEAFYA/?utm_source=naver&utm_medium=original&utm_campaign=biz",
+      "source": "6·3 지방선거",
+      "keyword": "손해보험",
+      "description": "전재수 민주당 부산시장 후보는 부산진구 NH투자증권빌딩, 김부겸 민주당 대구시장 후보는 달서구 한화손해보험빌딩에서 선거사무소 개소식을 열었다. 김경수 민주당 경남지사 후보의 선거사무소는 창원시 성산구...",
+      "pub_date": "Sun, 24 May 2026 06:01:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[mhn포토] 안재희, 버디 브이로 마무리",
+      "link": "https://mhnse.com/news/articleView.html?idxno=1387107",
+      "source": "mhn포토",
+      "keyword": "손해보험",
+      "description": "본선·6,670야드)에서 한국여자프로골프(KLPGA) 아홉 번째 대회인 ‘제14회 E1 채리티 오픈’(총상금 10억 원 우승상금 1억 8천만 원) 2라운드가 열렸다. 안재희(DB손해보험)가 17번홀 경기를 펼치고 있다.",
+      "pub_date": "Sun, 24 May 2026 01:32:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[mhn포토] 안재희, 버디 성공 후 파이팅",
+      "link": "https://mhnse.com/news/articleView.html?idxno=1387102",
+      "source": "mhn포토",
+      "keyword": "손해보험",
+      "description": "본선·6,670야드)에서 한국여자프로골프(KLPGA) 아홉 번째 대회인 ‘제14회 E1 채리티 오픈’(총상금 10억 원 우승상금 1억 8천만 원) 2라운드가 열렸다. 안재희(DB손해보험)가 17번홀 경기를 펼치고 있다.",
+      "pub_date": "Sun, 24 May 2026 01:32:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[mhn포토] 엄지 척 안재희, 버디 성공했어요",
+      "link": "https://mhnse.com/news/articleView.html?idxno=1387099",
+      "source": "mhn포토",
+      "keyword": "손해보험",
+      "description": "본선·6,670야드)에서 한국여자프로골프(KLPGA) 아홉 번째 대회인 ‘제14회 E1 채리티 오픈’(총상금 10억 원 우승상금 1억 8천만 원) 2라운드가 열렸다. 안재희(DB손해보험)가 17번홀 경기를 펼치고 있다.",
+      "pub_date": "Sun, 24 May 2026 01:31:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "신한EZ손해보험·이스타항공, ‘여행자보험 서비스 확대 위한 업무협약’ 체결 - 보험신보",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE1CN1NwRFNaMUZtOUtzTndBcUR5clRUUGtYWWFmVXNxMVhXb1RheFFQOFE0WlhQcVdtN2hobFBDN0tDQ1JFWTlIWk5ucGoxaGpmUnJUZWdnRnp1aTRKc3RUTTk2RHQ3ZzVlSkJv?oc=5",
+      "source": "보험신보",
+      "keyword": "손해보험",
+      "description": "신한EZ손해보험·이스타항공, ‘여행자보험 서비스 확대 위한 업무협약’ 체결&nbsp;&nbsp;보험신보",
+      "pub_date": "Sat, 23 May 2026 12:54:11 GMT",
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[공모주달력]주가급등 코스모로보틱스, 락업해제 첫 관문",
+      "link": "https://news.bizwatch.co.kr/article/market/2026/05/22/0016",
+      "source": "공모주달력",
+      "keyword": "보험 마케팅",
+      "description": "레몬헬스케어는 환자와 병원, 보험사 등 의료데이터를 필요로 하는 기관을 연결하는 서비스를 운영하고... 회사 측은 사업 확대 과정에서 인력 확충과 연구개발, 마케팅 비용이 늘어난 영향이라고 설명해요....",
+      "pub_date": "Sun, 24 May 2026 08:00:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"금융권 덮친 '규모의 경제'…보험업계 대형사 독주 심화\"",
+      "link": "http://www.bizwnews.com/news/articleView.html?idxno=137106",
+      "source": "bizwnews.com",
+      "keyword": "생명보험",
+      "description": "생명보험사 순이익은 4조9680억원으로 11.8%, 손해보험사는 7조2492억원으로 16.2% 줄었다. 손해보험협회 통계에 따르면 국내 주요 손보사 14곳의 지난해 말 기준 기타포괄손익누계액은 -3조1235억원으로 전년 대비 약...",
+      "pub_date": "Sun, 24 May 2026 07:32:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "누가 청년들에게 총을 쐈나 ‘3·1절 남대문 총격 사건' [호준석의 역사...",
+      "link": "https://www.chosun.com/culture-life/2026/05/24/J4GAN2XV5ZDN7CGKH6OQKWB444/?utm_source=naver&utm_medium=referral&utm_campaign=naver-news",
+      "source": "chosun.com",
+      "keyword": "생명보험",
+      "description": "숭례문 바로 앞에 있었던 일화빌딩(남대문로 5가 29번지)은 1928년 일본의 일화(닛카)생명보험 사옥으로 지어진 건물로 당시 서울의 랜드마크 중 하나였습니다. 경찰 수사 결과, 일화빌딩 2층과 옥상에서 괴한 여러 명이...",
+      "pub_date": "Sun, 24 May 2026 07:21:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "'턴어라운드' 선언 푸본현대생명, 3년 적자 터널 벗어나나",
+      "link": "https://news.dealsitetv.com/articles/170858",
+      "source": "news.dealsitetv.com",
+      "keyword": "생명보험",
+      "description": "생명보험협회 통계에 따르면, 푸본현대생명의 지난해 보장성 보험 신계약은 125만건으로, 전년 대비 21% 증가했다. 지난해 보장성 보험 수입보험료(6234억원)도 85% 급증했다. 1분기 CSM은 2045억원으로, 전년 대비 37.1...",
+      "pub_date": "Sun, 24 May 2026 07:02:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "속타는 보험사 \"손해율 잡기 비상\"",
+      "link": "https://www.sisaon.co.kr/news/articleView.html?idxno=201266",
+      "source": "sisaon.co.kr",
+      "keyword": "손해보험",
+      "description": "최근 고령운전자의 페달 오조작으로 인한 치명적인 급가속 사망 사고가 급증하면서 손해보험업계의 고심이 깊어지고 있다. 인구 고령화와 맞물려 고령층이 유발한 교통사고 손해액이 눈덩이처럼 불어나자...",
+      "pub_date": "Sun, 24 May 2026 07:30:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "이스타항공, 반려동물 여행보험까지…부가서비스 경쟁력 확대",
+      "link": "https://www.pointdaily.co.kr/news/articleView.html?idxno=305912",
+      "source": "pointdaily.co.kr",
+      "keyword": "손해보험",
+      "description": "이스타항공은 신한EZ손해보험과 '여행자 보험 서비스 확대를 위한 업무협약(MOU)'을 체결하고 자사 탑승객 대상 여행자 보험 서비스를 강화한다고 24일 밝혔다. 협약식은 전날 서울 강서구 이스타항공 본사에서 진행됐다....",
+      "pub_date": "Sun, 24 May 2026 00:00:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[위클립] 5월 3주",
+      "link": "https://www.laborplus.co.kr/news/articleView.html?idxno=40894",
+      "source": "위클립",
+      "keyword": "보험 마케팅",
+      "description": "과도한 보험료 대책 마련 등을 정부에 촉구함 □ 2026 보건의료노조 정기 실태조사 보도자료② 내 일도, 남의... 계엄군이 장갑차와 탱크를 앞세웠던 그날의 기억을 마케팅 도구로 전락시킨 것\"이라며 \"우리 조합원 중엔...",
+      "pub_date": "Sun, 24 May 2026 00:04:00 +0900",
+      "_score": 2,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
