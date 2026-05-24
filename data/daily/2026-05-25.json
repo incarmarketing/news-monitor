@@ -1,6 +1,6 @@
 {
   "date": "2026-05-25",
-  "timestamp": "2026-05-25T08:01:14.792771+09:00",
+  "timestamp": "2026-05-25T08:02:44.987401+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-25T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 68,
+    "total_collected": 69,
     "total_after_cluster": 47,
     "by_category": {
       "own": 1,
       "regulation": 8,
       "competitor": 22,
-      "industry": 36,
+      "industry": 37,
       "other": 1
     },
     "by_tone": {
       "negative": 0,
       "positive": 1,
-      "neutral": 67
+      "neutral": 68
     },
     "own_negative": 0,
     "own_total": 1,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 긍정 보도 1건 외, GA 업계 규제 강화 동향이 지속됩니다.\n\n## 핵심 이슈\n- [1] 인카금융 신인 설계사 교육: 설계사 영업 지원 활동 관련 긍정 보도.\n- [7] GA 1200%룰 제도 보완: 7월 시행 앞두고 수수료 체계 개편 논의.\n\n## 지표 해석\n당사는 신인 설계사 교육 관련 긍정 보도 1건 외 부정 기사는 없었으며, 업계는 GA 판매수수료 체계 개편 등 규제 관련 동향이 다수 보도되었습니다.\n\n## 분석 키워드\n인카금융서비스, GA 규제, 삼성생명 실적, 방카슈랑스",
+  "briefing": "## 최종 결론\n당사 긍정 보도 1건 외 업계 규제 및 경쟁 동향이 주요 이슈임.\n\n## 핵심 이슈\n- [1] 신인 설계사 교육 지원: 당사 영업력 강화 활동에 대한 긍정적 보도.\n- [7] GA 판매수수료 규제: 1200%룰 제도 보완 및 컨설팅 규제 관련 업계 우려.\n\n## 지표 해석\n당사 관련 보도는 신인 설계사 교육 지원 1건으로 긍정적이며, 직접적 부정 기사는 없습니다. 업계는 GA 수수료 규제와 KB금융의 방카슈랑스 재편 동향이 주목됩니다.\n\n## 분석 키워드\n신인 설계사 교육, GA 수수료 규제, KB금융 방카슈랑스, 삼성생명 실적",
   "articles": [
     {
       "title": "인카금융서비스, 신인 설계사 영업지원 교육 - 보험신보",
@@ -215,30 +215,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "한화생명금융서비스, 질적 경쟁력 강화 주력 - 보험신보",
-      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE9KWnl2V25rcXY0OHliX0Y0dGs5X21CYmxKYVFqaFFjX0FDUXRPYXg4SC1vQ0UxZy1GX0dsWVpOc3UxcDdqdmZ4TkZjR1FQSmtxdWRfdFZiQUI2VWNSUVVGOFVBTGM3OXVPRUJn?oc=5",
-      "source": "보험신보",
-      "keyword": "생명보험",
-      "description": "한화생명금융서비스, 질적 경쟁력 강화 주력&nbsp;&nbsp;보험신보",
-      "pub_date": "Sun, 24 May 2026 15:00:00 GMT",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "흥국화재 김대현호, 본업 내실 다지며 ‘도약’ 시동 - 한국보험신문",
-      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE9hR0pwZWZnNVhWM2FUVS1GTVNyaVNJbXduQm5ibkZHYzFuNzBZbnc2azdKSm8zVndkR0RTeEhESWFvWENXWXFPX0oxRjVBT0UyNTV3VE85NzkzNk5hYk14NlJ3WHBfWkZlSGpV0gFvQVVfeXFMTTdYa2hyb0VQTzBncm1fVnlnTmtnaDJZOUcwRjd0VldLenlicGdsZk83OWZhcHdIVWljdm5selNfa29pcU5mUDRlMlBtQ1RxUkxLR3MxNnpkeDZURHJ3WnRQX19pUEZ2aXFac0dvWmdN?oc=5",
-      "source": "한국보험신문",
-      "keyword": "생명보험",
-      "description": "흥국화재 김대현호, 본업 내실 다지며 ‘도약’ 시동&nbsp;&nbsp;한국보험신문",
-      "pub_date": "Sun, 24 May 2026 15:00:00 GMT",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
       "title": "기관만 옮겨선 안 된다…부산·대구로 본 ‘금융 클러스터’의 조건 [금...",
       "link": "http://www.fntimes.com/html/view.php?ud=2026052215430685275e6e69892f_18",
       "source": "fntimes.com",
@@ -261,6 +237,18 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
+    },
+    {
+      "title": "흥국화재 김대현호, 본업 내실 다지며 '도약' 시동",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90893",
+      "source": "insnews.co.kr",
+      "keyword": "손해보험",
+      "description": "이 같은 성과의 배경에 손해보험업계에서 오랜 경험을 쌓아온 김대현 대표의 내실 중심 경영 전략이 주효했다는 평가다. 1990년 LG화재(현 KB손해보험)에 입사한 김 대표는 30년 넘게 손해보험업계에서 근무한 전문가다....",
+      "pub_date": "Mon, 25 May 2026 00:00:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
     },
     {
       "title": "처브손해보험재팬 \"업무 위탁업체서 부정접속 피해 발생\" 발표",
@@ -359,8 +347,8 @@
       "_cluster_size": 1
     },
     {
-      "title": "[mhn포토] 안재희, 버디 성공하며 전반 마무리",
-      "link": "https://mhnse.com/news/articleView.html?idxno=1388176",
+      "title": "[mhn포토] 안재희, 캐디와 버디 파이팅",
+      "link": "https://mhnse.com/news/articleView.html?idxno=1388179",
       "source": "mhn포토",
       "keyword": "손해보험",
       "description": "본선·6,670야드)에서 한국여자프로골프(KLPGA) 아홉 번째 대회인 ‘제14회 E1 채리티 오픈’(총상금 10억 원 우승상금 1억 8천만 원) 최종 3라운드가 열렸다. 안재희(DB손해보험)가 18번홀 경기를 펼치고 있다.",
@@ -378,6 +366,30 @@
       "description": "하나손해보험, 장기보험 ‘불판’ 차단&nbsp;&nbsp;보험신보",
       "pub_date": "Sun, 24 May 2026 15:00:00 GMT",
       "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "한화생명금융서비스, 질적 경쟁력 강화 주력 - 보험신보",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE9KWnl2V25rcXY0OHliX0Y0dGs5X21CYmxKYVFqaFFjX0FDUXRPYXg4SC1vQ0UxZy1GX0dsWVpOc3UxcDdqdmZ4TkZjR1FQSmtxdWRfdFZiQUI2VWNSUVVGOFVBTGM3OXVPRUJn?oc=5",
+      "source": "보험신보",
+      "keyword": "보험설계사",
+      "description": "한화생명금융서비스, 질적 경쟁력 강화 주력&nbsp;&nbsp;보험신보",
+      "pub_date": "Sun, 24 May 2026 15:00:00 GMT",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "글로벌 경쟁 ‘최상위 포식자’의 자격 [CEO 110인 긴급진단]⑤",
+      "link": "https://economist.co.kr/article/view/ecn202605060028",
+      "source": "economist.co.kr",
+      "keyword": "보험 마케팅",
+      "description": "그러나 이는 특정 공급망 마비 시 전체 매출이 증발하는 치명적 리스크를 방어하기 위한 필수 보험료로... 마케팅 전략이나 가격 정책 등은 현지 조직에 맡겨야 한다. 동남아 법인장에게 마케팅 예산 집행 권한을 전면...",
+      "pub_date": "Mon, 25 May 2026 08:00:00 +0900",
+      "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
@@ -407,11 +419,11 @@
       "_cluster_size": 2
     },
     {
-      "title": "[Invest]'투자손익'에 요동친 생보사…불안한 '대형사'·사면초가 '은행...",
-      "link": "https://www.investchosun.com/site/data/html_dir/2026/05/22/2026052280154.html",
+      "title": "[Invest]美日은 되는데...협회ㆍ당국 '무관심'에 손발 묶인 보험사 퇴직...",
+      "link": "https://www.investchosun.com/site/data/html_dir/2026/05/22/2026052280155.html",
       "source": "Invest",
       "keyword": "생명보험",
-      "description": "올해 1분기 생명보험사의 자산운용 역량이 주요 경영 변수로 부상했다. 손해율 및 예실차(예상보험금과 실제보험금의 차이) 악화로 본업 수익성이 구조적 침체를 겪고 있는 가운데, 각 사의 자본 효율성 관리 전략이...",
+      "description": "시장 이권 다툼 속 회원사들의 방파제 역할을 할 생명·손해보험협회의 역량도 부족했다는 지적이 나온다. 타 업권이 공정 경쟁의 필요성을 피력할 때, 협회는 '건강보장을 포괄한 종합적 노후 생활보장'의 가치를...",
       "pub_date": "Mon, 25 May 2026 07:02:00 +0900",
       "_score": 4,
       "_category": "industry",
@@ -419,11 +431,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "[Invest]美日은 되는데...협회ㆍ당국 '무관심'에 손발 묶인 보험사 퇴직...",
-      "link": "https://www.investchosun.com/site/data/html_dir/2026/05/22/2026052280155.html",
+      "title": "[Invest]'투자손익'에 요동친 생보사…불안한 '대형사'·사면초가 '은행...",
+      "link": "https://www.investchosun.com/site/data/html_dir/2026/05/22/2026052280154.html",
       "source": "Invest",
       "keyword": "생명보험",
-      "description": "시장 이권 다툼 속 회원사들의 방파제 역할을 할 생명·손해보험협회의 역량도 부족했다는 지적이 나온다. 타 업권이 공정 경쟁의 필요성을 피력할 때, 협회는 '건강보장을 포괄한 종합적 노후 생활보장'의 가치를...",
+      "description": "올해 1분기 생명보험사의 자산운용 역량이 주요 경영 변수로 부상했다. 손해율 및 예실차(예상보험금과 실제보험금의 차이) 악화로 본업 수익성이 구조적 침체를 겪고 있는 가운데, 각 사의 자본 효율성 관리 전략이...",
       "pub_date": "Mon, 25 May 2026 07:02:00 +0900",
       "_score": 4,
       "_category": "industry",
@@ -503,18 +515,6 @@
       "_cluster_size": 2
     },
     {
-      "title": "의료비 상승에 보험금도 증가… AIA 뉴질랜드 지급 확대",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90900",
-      "source": "insnews.co.kr",
-      "keyword": "생명보험",
-      "description": "뉴질랜드 생명보험사 AIA 뉴질랜드(AIA NZ)가 지난해 총 7억9000만 뉴질랜드달러(약 4700억원)의 보험금을 지급한 것으로 나타났다. 심장질환 관련 청구가 크게 늘어난 가운데 의료비 상승과 공공의료 시스템 부담...",
-      "pub_date": "Mon, 25 May 2026 00:00:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "싱가포르 생보업계, 1분기 보험금·만기환급금 50억 싱가포르달러 돌파",
       "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90901",
       "source": "insnews.co.kr",
@@ -532,6 +532,18 @@
       "source": "insnews.co.kr",
       "keyword": "생명보험",
       "description": "이 외에도 주요 생명보험사들은 전시·체험형 콘텐츠와 브랜드 캠페인을 통해 젊은 세대와의 접점을 확대하고 있다. ■ 은행권, 자체 캐릭터 활용 등 다변화 시중은행들은 문화 콘텐츠와 자체 캐릭터를 활용해 오프라인...",
+      "pub_date": "Mon, 25 May 2026 00:00:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "의료비 상승에 보험금도 증가… AIA 뉴질랜드 지급 확대",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90900",
+      "source": "insnews.co.kr",
+      "keyword": "생명보험",
+      "description": "뉴질랜드 생명보험사 AIA 뉴질랜드(AIA NZ)가 지난해 총 7억9000만 뉴질랜드달러(약 4700억원)의 보험금을 지급한 것으로 나타났다. 심장질환 관련 청구가 크게 늘어난 가운데 의료비 상승과 공공의료 시스템 부담...",
       "pub_date": "Mon, 25 May 2026 00:00:00 +0900",
       "_score": 4,
       "_category": "industry",
@@ -581,18 +593,6 @@
       "keyword": "손해보험",
       "description": "국내 손해보험사들이 위험을 나눠 맡는 방식으로 보험 가입 거절 가능성과 과도한 보험료 부담을 낮추면, 선박 운항 차질을 크게 줄이는 효과를 거둘 것으로 기대된다는 것이다. 여전업권은 채권시장 변동성을...",
       "pub_date": "Mon, 25 May 2026 05:00:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "아시아 보험 CFO 한자리에… \"AI·기후리스크 시대, 전략 재편해야\"",
-      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=90896",
-      "source": "insnews.co.kr",
-      "keyword": "손해보험",
-      "description": "스티븐 가이슬러(Stephen Geisler) 호주 손해보험사 QBE 인슈어런스 남아시아 CEO, 유리 간(Ury Gan) 프루덴셜 싱가포르 CFO 등 참석자들은 향후 보험사 경쟁력이 단순 보험 판매보다 자본 효율성과 리스크 대응 체계에서...",
-      "pub_date": "Mon, 25 May 2026 00:00:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
