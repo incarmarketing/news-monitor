@@ -1,6 +1,6 @@
 {
   "date": "2026-05-26",
-  "timestamp": "2026-05-26T08:01:12.105827+09:00",
+  "timestamp": "2026-05-26T08:12:14.246709+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -14,8 +14,8 @@
     "by_category": {
       "own": 0,
       "regulation": 6,
-      "competitor": 24,
-      "industry": 25,
+      "competitor": 23,
+      "industry": 26,
       "other": 0
     },
     "by_tone": {
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 직접 보도 없이, 연금 시장 경쟁 및 GA 규제 동향이 부각됨.\n\n## 핵심 이슈\n- [1] 미래에셋 연금 브랜드평판 1위: 연금 시장 내 자산운용사 경쟁력 부각.\n- [5] 금감원, 대형 GA 설계사 감독: 설계사 위·해촉 관련 내부 규정 점검 필요.\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며 부정 톤은 감지되지 않았습니다. 연금 시장 경쟁 구도 변화와 GA 대상 규제 강화 동향이 주요 이슈로 부상했습니다.\n\n## 분석 키워드\n미래에셋자산운용, GA 설계사 위·해촉, 5세대 실손",
+  "briefing": "## 최종 결론\n당사 직접 보도 없이, 금감원의 GA 점검 및 경쟁사 동향이 보도됨.\n\n## 핵심 이슈\n- [5] 금감원, 대형 GA 점검: 설계사 위·해촉 적정성 관련.\n- [1] 미래에셋 연금 브랜드평판 1위: 연금 시장 내 자산운용사 경쟁력 부각.\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며, 부정적 보도 또한 발생하지 않았습니다. 금감원의 GA 점검 및 연금 시장 경쟁 구도 변화 등 업계 동향이 주를 이뤘습니다.\n\n## 분석 키워드\n금감원, 대형 GA, 미래에셋자산운용, 연금 브랜드평판",
   "articles": [
     {
       "title": "미래에셋자산운용, 연금 브랜드평판 5월 1위...하나·신한은행·KB손보순",
@@ -237,18 +237,6 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
-    },
-    {
-      "title": "미래에셋생명, 투자로 벌고 보험은 흔들…본업 '경고등' : 네이버 블로그 - Naver Blog",
-      "link": "https://news.google.com/rss/articles/CBMijwFBVV95cUxPbnhMN3lzX19uZGFIRkE1Z3hhRHRpWTBPTmNTeUtNT2lEWjdMZlotRXdtSHNHbk83OVBaNTBOZXhuekVpeXAzbTRTQjdxTldCU3Y1bDkwNlV1TklNMHVlZXhNMHNDQ0NSMENkdGZjTS1rcjlIM0lkT1hiZlg0WV9rMHpXeFBzRUJnN2Z3RUNkVQ?oc=5",
-      "source": "Naver Blog",
-      "keyword": "생명보험",
-      "description": "미래에셋생명, 투자로 벌고 보험은 흔들…본업 '경고등' : 네이버 블로그&nbsp;&nbsp;Naver Blog",
-      "pub_date": "Mon, 25 May 2026 09:39:02 GMT",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
     },
     {
       "title": "교보생명, 보장성 확대·리밸런싱 효과…본업·운용 웃었다 : 네이버 블로그 - Naver Blog",
@@ -521,6 +509,18 @@
       "keyword": "손해보험",
       "description": "호르무즈 대기 선박 10척에 '전쟁보험' 공동인수…국내 손보사 3000억 지원 : 네이버 블로그&nbsp;&nbsp;Naver Blog",
       "pub_date": "Mon, 25 May 2026 14:59:37 GMT",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[디깅노트] 약가인하 위기에 직면한 삼진제약의 '낭만'",
+      "link": "https://www.bloter.net/news/articleView.html?idxno=663274",
+      "source": "디깅노트",
+      "keyword": "보험 프로모션",
+      "description": "약값이 내려가면 환자와 건강보험 재정에는 도움이 되지만 기업 입장에서는 낮은 채산성 품목을 유지할... 코프로모션, 항암제, 중추신경계(CNS) 등으로 사업축을 넓히고 있지만 체질개선에는 시간이 필요하다. 지금의...",
+      "pub_date": "Tue, 26 May 2026 08:00:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
