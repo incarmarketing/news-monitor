@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="dashboard-version" content="media-analysis-range-v2">
+  <meta name="dashboard-version" content="mobile-scrap-polish-v1">
   <title>Marketing PR Center</title>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -145,6 +145,24 @@
     .btn:hover { border-color:#b9c7dc; background:#f8fafc; }
     .btn.primary { background:var(--incar); border-color:var(--incar); color:#fff; }
     .btn.danger { color:var(--red); border-color:#fecdd3; }
+    .btn.scrap-toggle {
+      min-height:28px;
+      padding:4px 9px;
+      margin-left:auto;
+      color:#475467;
+      border-color:#d8dee8;
+      background:#fff;
+    }
+    .btn.scrap-toggle.is-scraped {
+      color:#fff;
+      border-color:var(--incar);
+      background:var(--incar);
+      box-shadow:0 5px 12px rgba(39,57,140,.16);
+    }
+    .btn.scrap-toggle.is-scraped:hover {
+      background:#1f2f78;
+      border-color:#1f2f78;
+    }
     .page { display:none; animation:fadeIn .22s ease-out; }
     .page.active { display:block; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
@@ -250,6 +268,26 @@
       display:flex;
       align-items:center;
       gap:8px;
+    }
+    .monitor-head {
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .monitor-head-main {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+    .monitor-head-actions {
+      margin-left:auto;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
     .feed { display:grid; gap:12px; }
     .article {
@@ -624,7 +662,24 @@
       }
       .mobile-tabs button.active { color:var(--incar); background:#eef2ff; }
       .page-wrap { padding:16px 12px 88px; }
-      .topbar { padding:12px; }
+      .topbar { padding:12px; align-items:flex-start; flex-wrap:wrap; }
+      .topbar > div:first-child { min-width:0; flex:1 1 auto; }
+      .actions {
+        flex:0 0 100%;
+        width:100%;
+        min-width:0;
+        max-width:100%;
+        flex-wrap:nowrap;
+        justify-content:flex-start;
+        overflow-x:auto;
+        scrollbar-width:none;
+      }
+      .actions::-webkit-scrollbar { display:none; }
+      .actions .btn {
+        flex:0 0 auto;
+        white-space:nowrap;
+        min-width:38px;
+      }
       .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
       .hero-briefs,.media-flow,.insight-grid,.ad-kpis,.ops-grid { grid-template-columns:1fr; }
       .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -632,15 +687,45 @@
       .toolbar .field:first-child { grid-column:1/-1; }
       .report-head,.report-controls,.report-evidence { grid-template-columns:1fr; }
       .report-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .report-kpi:last-child { grid-column:1/-1; }
+      .report-controls .segmented { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+      .report-controls .segmented .btn { width:100%; min-width:0; padding-inline:8px; }
       .evidence-section.primary { grid-row:auto; }
     }
     @media(max-width:540px) {
       h1 { font-size:20px; }
       .hero { padding:18px; }
       .hero h2 { font-size:23px; }
-      .metric-grid,.toolbar,.form-grid { grid-template-columns:1fr; }
+      .metric-grid,.form-grid { grid-template-columns:1fr; }
       .actions .btn span { display:none; }
-      .report-kpis { grid-template-columns:1fr; }
+      .monitor-head { display:grid; grid-template-columns:1fr; }
+      .monitor-head-actions {
+        margin-left:0;
+        display:grid;
+        grid-template-columns:1fr auto auto;
+        width:100%;
+      }
+      .monitor-head-actions #refreshStatus { margin-left:0 !important; }
+      .monitor-head-actions .btn { min-width:0; }
+      .article { padding:12px; }
+      .article-title { font-size:15px; }
+      .article .meta { gap:5px; }
+      .article .meta .chip { padding:3px 7px; font-size:11px; }
+      .btn.scrap-toggle { margin-left:0; }
+      .toolbar { gap:8px; }
+      .tone-buttons { grid-template-columns:1fr; }
+      .keyword-row {
+        grid-template-columns:1fr;
+        gap:8px;
+      }
+      .keyword-count { text-align:left; }
+      .bar-row { grid-template-columns:78px 1fr 38px; gap:8px; font-size:12px; }
+      .report-head { padding:19px; }
+      .report-head h2 { font-size:24px; }
+      .report-body { padding:12px; }
+      .report-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+      .report-kpi { min-height:76px; padding:12px; }
+      .report-kpi .num { font-size:23px; }
     }
     @media print {
       body { height:auto; overflow:visible; background:#fff; }
@@ -752,11 +837,13 @@
             <div class="field"><label>리스크</label><select id="riskFilter"><option value="">전체</option></select></div>
           </div>
           <div class="panel">
-            <h2 class="panel-title">
-              <i data-lucide="radio"></i> 실시간 모니터링 피드
-              <span id="refreshStatus" style="margin-left:auto;color:var(--muted);font-size:12px">대기 중</span>
-              <button class="btn" id="refreshArticles" style="min-height:30px;padding:4px 9px"><i data-lucide="refresh-cw"></i><span>새로고침</span></button>
-              <span id="resultCount" style="color:var(--muted);font-size:13px">0건</span>
+            <h2 class="panel-title monitor-head">
+              <span class="monitor-head-main"><i data-lucide="radio"></i> 실시간 모니터링 피드</span>
+              <span class="monitor-head-actions">
+                <span id="refreshStatus" style="color:var(--muted);font-size:12px">대기 중</span>
+                <button class="btn" id="refreshArticles" style="min-height:30px;padding:4px 9px"><i data-lucide="refresh-cw"></i><span>새로고침</span></button>
+                <span id="resultCount" style="color:var(--muted);font-size:13px">0건</span>
+              </span>
             </h2>
             <div class="feed" id="articleList"></div>
           </div>
@@ -1337,7 +1424,7 @@
             <span class="chip ${escapeHtml(article.category)}">${escapeHtml(article.category_label)}</span>
             <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(article.tone_label)}</span>
             <span class="chip">${escapeHtml(article.keyword || "키워드 없음")}</span>
-            <button class="btn" style="min-height:26px;padding:3px 8px;margin-left:auto" onclick="toggleScrapById('${escapeHtml(key)}')">${scraped ? "스크랩됨" : "스크랩"}</button>
+            <button class="btn scrap-toggle${scraped ? " is-scraped" : ""}" aria-pressed="${scraped ? "true" : "false"}" title="${scraped ? "스크랩 해제" : "스크랩"}" onclick="toggleScrapById('${escapeHtml(key)}')"><i data-lucide="bookmark"></i><span>스크랩</span></button>
           </div>
           <a class="article-title" href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
           ${compact ? "" : `<div class="summary">${escapeHtml(article.summary || "기사 원문 기준으로 세부 내용을 확인하세요.")}</div>`}
