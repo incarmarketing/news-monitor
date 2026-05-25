@@ -1,6 +1,6 @@
 {
   "date": "2026-05-26",
-  "timestamp": "2026-05-26T08:12:14.246709+09:00",
+  "timestamp": "2026-05-26T08:58:26.755365+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-26T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 55,
-    "total_after_cluster": 47,
+    "total_collected": 51,
+    "total_after_cluster": 45,
     "by_category": {
       "own": 0,
-      "regulation": 6,
-      "competitor": 23,
-      "industry": 26,
+      "regulation": 7,
+      "competitor": 22,
+      "industry": 22,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 0,
-      "neutral": 55
+      "neutral": 51
     },
     "own_negative": 0,
     "own_total": 0,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 직접 보도 없이, 금감원의 GA 점검 및 경쟁사 동향이 보도됨.\n\n## 핵심 이슈\n- [5] 금감원, 대형 GA 점검: 설계사 위·해촉 적정성 관련.\n- [1] 미래에셋 연금 브랜드평판 1위: 연금 시장 내 자산운용사 경쟁력 부각.\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며, 부정적 보도 또한 발생하지 않았습니다. 금감원의 GA 점검 및 연금 시장 경쟁 구도 변화 등 업계 동향이 주를 이뤘습니다.\n\n## 분석 키워드\n금감원, 대형 GA, 미래에셋자산운용, 연금 브랜드평판",
+  "briefing": "## 최종 결론\n당사 직접 보도는 없으나, GA 규제 및 연금 시장 경쟁 동향이 부각됨.\n\n## 핵심 이슈\n- [5] 금감원, 대형 GA 설계사 관리 점검: 위/해촉 적정성 점검으로 GA 업계 전반 영향 예상.\n- [1] 미래에셋자산운용 연금 평판 1위: 자산운용사의 연금 시장 내 영향력 확대 동향.\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며 부정 리스크는 낮습니다. 금융감독원의 GA 점검, 미래에셋자산운용의 연금 시장 1위 등 업계 및 경쟁사 동향이 주로 관측되었습니다.\n\n## 분석 키워드\n미래에셋자산운용, 금감원, GA 설계사 관리, 연금 브랜드평판",
   "articles": [
     {
       "title": "미래에셋자산운용, 연금 브랜드평판 5월 1위...하나·신한은행·KB손보순",
@@ -227,18 +227,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "“보험주 투자자들 속 탄다”…배당 여력 갈수록 증발",
-      "link": "https://www.ekn.kr/web/view.php?key=20260525022417621",
-      "source": "ekn.kr",
-      "keyword": "생명보험",
-      "description": "삼성생명이 적립을 시작하는 등 생명보험 업권에서도 더욱 무거운 부담을 토로하고 있다. 시장금리 변화로 보험부채 평가액이 축소되면서 가입자에게 돌려줘야 하는 해약환급금과 차이가 벌어졌고, 이 간극을 메울...",
-      "pub_date": "Mon, 25 May 2026 18:20:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
       "title": "교보생명, 보장성 확대·리밸런싱 효과…본업·운용 웃었다 : 네이버 블로그 - Naver Blog",
       "link": "https://news.google.com/rss/articles/CBMijwFBVV95cUxOWGlmNlN5UnNHVDBGRE5HbDNvVFFxVUVQMHoteWJrcmkxM01WZnFWdUdNV1ZVU0o4SDBWbmk3b21mQV82ZWVKY2o2VlJoVVo5bXJ0Uml0QUNwMTlOempuWElTRUZPbGlnaTBjRHJhODloMFFZNTh2aTlOVWFxdnkta2g0MEJRcXdIRmdHbEdwZw?oc=5",
       "source": "Naver Blog",
@@ -311,11 +299,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "[기자수첩] 삼성화재가 켠 조사원의 '안전등'",
-      "link": "https://www.shinailbo.co.kr/news/articleView.html?idxno=5023174",
-      "source": "기자수첩",
+      "title": "혁신금융 1천건 시대… 소비자 체감은 아직 [AI금융의 과제 ①]",
+      "link": "https://it.chosun.com/news/articleView.html?idxno=2023092162425",
+      "source": "it.chosun.com",
       "keyword": "손해보험",
-      "description": "지난해 10월 서울시의회와 경찰청, 손해보험협회, 한국교통안전공단 등은 간담회를 열고 교통사고조사원 2차 사고 예방 방안을 논의했다. 핵심은 원거리 가시성을 높이기 위한 방향지시등 설치였다. 당시에는 방향지시등...",
+      "description": "카카오페이손해보험은 보험 약관과 질의응답(Q&A) 검색에 AI를 활용하고 있다. 한화생명은 고객맞춤형 화법을 생성하고 가상대화 훈련을 해주는 시스템을 도입했다. 은행 간 협업 사례도 등장했다. 대표적으로...",
       "pub_date": "Tue, 26 May 2026 06:00:00 +0900",
       "_score": 8,
       "_category": "competitor",
@@ -323,11 +311,11 @@
       "_cluster_size": 1
     },
     {
-      "title": "혁신금융 1천건 시대… 소비자 체감은 아직 [AI금융의 과제 ①]",
-      "link": "https://it.chosun.com/news/articleView.html?idxno=2023092162425",
-      "source": "it.chosun.com",
+      "title": "[기자수첩] 삼성화재가 켠 조사원의 '안전등'",
+      "link": "https://www.shinailbo.co.kr/news/articleView.html?idxno=5023174",
+      "source": "기자수첩",
       "keyword": "손해보험",
-      "description": "카카오페이손해보험은 보험 약관과 질의응답(Q&A) 검색에 AI를 활용하고 있다. 한화생명은 고객맞춤형 화법을 생성하고 가상대화 훈련을 해주는 시스템을 도입했다. 은행 간 협업 사례도 등장했다. 대표적으로...",
+      "description": "지난해 10월 서울시의회와 경찰청, 손해보험협회, 한국교통안전공단 등은 간담회를 열고 교통사고조사원 2차 사고 예방 방안을 논의했다. 핵심은 원거리 가시성을 높이기 위한 방향지시등 설치였다. 당시에는 방향지시등...",
       "pub_date": "Tue, 26 May 2026 06:00:00 +0900",
       "_score": 8,
       "_category": "competitor",
@@ -347,14 +335,14 @@
       "_cluster_size": 1
     },
     {
-      "title": "‘부업’ 보험설계사 아시나요…“월 200만원” 광고의 비밀 - v.daum.net",
-      "link": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE9vTlhsRGZLVmFsUW1faXJFZnJpN2NET0RzU3hEcE9Ickp5aFotNlB1aHo5VjBlckdKWG9sQzMyLVVmYkJnRDc3M2xXT1k5bmZTdE1IbQ?oc=5",
-      "source": "v.daum.net",
-      "keyword": "보험설계사",
-      "description": "‘부업’ 보험설계사 아시나요…“월 200만원” 광고의 비밀&nbsp;&nbsp;v.daum.net",
-      "pub_date": "Mon, 25 May 2026 15:05:07 GMT",
+      "title": "‘부업’ 보험설계사 아시나요…“월 200만원” 광고의 비밀",
+      "link": "https://www.joongang.co.kr/article/25431167",
+      "source": "joongang.co.kr",
+      "keyword": "GA 보험",
+      "description": "보험사가 GA에 지급하는 판매수수료를 계약 첫해(초년도) 보험료의 1200% 이내로 제한하는 규제다. GA에 높은 수수료를 지급하며 계약을 늘려왔던 보험사의 위기감이 커졌다. 한 보험업계 관계자는 “GA 영업망 외에 다른...",
+      "pub_date": "Tue, 26 May 2026 00:02:00 +0900",
       "_score": 8,
-      "_category": "industry",
+      "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 3
     },
@@ -479,36 +467,24 @@
       "_cluster_size": 1
     },
     {
-      "title": "건당 평균 20억원… 지난해 금융사고 역대 최대",
-      "link": "http://www.fnnews.com/news/202605251805037120",
-      "source": "fnnews.com",
-      "keyword": "생명보험",
-      "description": "은행이 7697억6400만원(381건)으로 선두였고, 증권(2622억9000만원·62건), 카드(1080억6800만원·32건), 저축은행(812억4300만원·55건), 손해보험(112억5500만원·38건), 생명보험(93억1100만원·41건) 등 순이었다.",
-      "pub_date": "Mon, 25 May 2026 18:06:00 +0900",
+      "title": "고령운전자 증대에…보험손해율 주범 된 ‘오조작’ [흔들리는 車보험 안전망 ②] - v.daum.net",
+      "link": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1iZ1FBSEtsMXlDeWxGM1BKS2YwTnhnTUlrWHdBWUl3SjNMVWZKV1dnVUROY3FYa0FvN2pIUkJ1S0dkanAxc2pjUXpON0hlakk?oc=5",
+      "source": "v.daum.net",
+      "keyword": "손해보험",
+      "description": "고령운전자 증대에…보험손해율 주범 된 ‘오조작’ [흔들리는 車보험 안전망 ②]&nbsp;&nbsp;v.daum.net",
+      "pub_date": "Mon, 25 May 2026 19:17:01 GMT",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "고령운전자 증대에…보험손해율 주범 된 ‘오조작’ [흔들리는 車보험...",
-      "link": "https://www.kyeonggi.com/article/20260525580268",
-      "source": "kyeonggi.com",
+      "title": "“보험주 투자자들 속 탄다”…배당 여력 갈수록 증발 - 에너지경제신문",
+      "link": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE1JZE1wR1ctOEl5VVRyemc0SDI4bGpZZm1fVC1MX3BqNjhTR1VFSVdsNXlhVVRLZ2ZoRnVTRjFLaHZvVU1XLV9JVi13SURpWE9oVUJyWWpzWlpwd1k?oc=5",
+      "source": "에너지경제신문",
       "keyword": "손해보험",
-      "description": "손해보험사회공헌협의회는 주요 손해보험사, 경찰청, TS와 공동으로 고령 자동차보험 가입자를 대상으로 ‘페달 오조작 방지 장치 무상 보급 사업’을 전개 중이다. 해당 장치는 전·후진 과정에서 운전자가 가속...",
-      "pub_date": "Tue, 26 May 2026 04:02:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "호르무즈 대기 선박 10척에 '전쟁보험' 공동인수…국내 손보사 3000억 지원 : 네이버 블로그 - Naver Blog",
-      "link": "https://news.google.com/rss/articles/CBMijwFBVV95cUxQZXRBXzdOVHVyRU1UdWpfcWJ5eVhORXRaekV1b0pjekh5X2JEZTNKeWpYTDRPU19WNWhDM3BCWUhqOC1Eb0NIS0NlSVhiNzdoeUdLejNtZVZKM051enZKdXpYZ2ZHUmV5eVdld3hFX3NvakVZUWtTeE9ndGRGeWNCWjNPd3NicnZQdXZrU1lybw?oc=5",
-      "source": "Naver Blog",
-      "keyword": "손해보험",
-      "description": "호르무즈 대기 선박 10척에 '전쟁보험' 공동인수…국내 손보사 3000억 지원 : 네이버 블로그&nbsp;&nbsp;Naver Blog",
-      "pub_date": "Mon, 25 May 2026 14:59:37 GMT",
+      "description": "“보험주 투자자들 속 탄다”…배당 여력 갈수록 증발&nbsp;&nbsp;에너지경제신문",
+      "pub_date": "Mon, 25 May 2026 09:13:00 GMT",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
