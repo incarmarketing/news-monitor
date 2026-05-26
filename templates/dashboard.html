@@ -1264,7 +1264,10 @@
     const portalPressNames = new Set([
       "google", "google.com", "news.google.com", "news.google.co.kr",
       "naver", "naver.com", "news.naver.com", "n.news.naver.com", "m.news.naver.com",
-      "m.sports.naver.com", "sports.news.naver.com", "네이버뉴스", "구글뉴스", "네이버", "구글"
+      "m.naver.com", "sports.naver.com", "game.naver.com", "help.naver.com", "m.sports.naver.com", "sports.news.naver.com",
+      "entertain.naver.com", "m.entertain.naver.com",
+      "blog.naver.com", "v.daum.net", "news.daum.net", "daum.net", "sports.news.nate.com",
+      "네이버뉴스", "네이버 블로그", "Naver Blog", "naver blog", "구글뉴스", "다음뉴스", "네이버", "구글", "다음", "네이트"
     ]);
     const pressDomainMap = {
       "fins.co.kr":"보험저널",
@@ -1280,8 +1283,58 @@
       "yna.co.kr":"연합뉴스",
       "newsis.com":"뉴시스",
       "news1.kr":"뉴스1",
+      "insnews.co.kr":"보험매일",
       "mhnse.com":"MHN스포츠",
-      "mhnsports.com":"MHN스포츠"
+      "mhns.co.kr":"MHN스포츠",
+      "mhnsports.com":"MHN스포츠",
+      "mt.co.kr":"머니투데이",
+      "biz.heraldcorp.com":"헤럴드경제",
+      "heraldcorp.com":"헤럴드경제",
+      "view.asiae.co.kr":"아시아경제",
+      "asiae.co.kr":"아시아경제",
+      "edaily.co.kr":"이데일리",
+      "sedaily.com":"서울경제",
+      "bloter.net":"블로터",
+      "ziksir.com":"직썰",
+      "segyebiz.com":"세계비즈",
+      "sisaon.co.kr":"시사오늘",
+      "ttlnews.com":"티티엘뉴스",
+      "popcornnews.net":"팝콘뉴스",
+      "4th.kr":"포쓰저널",
+      "footballist.co.kr":"풋볼리스트",
+      "nocutnews.co.kr":"노컷뉴스",
+      "osen.co.kr":"OSEN",
+      "chosun.com":"조선일보",
+      "sports.chosun.com":"스포츠조선",
+      "sportsworldi.com":"스포츠월드",
+      "kookje.co.kr":"국제신문",
+      "newsworks.co.kr":"뉴스웍스",
+      "youthdaily.co.kr":"청년일보",
+      "joseilbo.com":"조세일보",
+      "sisafocus.co.kr":"시사포커스",
+      "dailian.co.kr":"데일리안",
+      "ngetnews.com":"뉴스저널리즘",
+      "ftoday.co.kr":"파이낸셜투데이",
+      "sateconomy.co.kr":"시장경제",
+      "dt.co.kr":"디지털타임스",
+      "pointdaily.co.kr":"포인트데일리",
+      "m.maniareport.com":"마니아리포트",
+      "maniareport.com":"마니아리포트",
+      "kmib.co.kr":"국민일보",
+      "m.sportsworldi.com":"스포츠월드",
+      "m.hankookilbo.com":"한국일보",
+      "starin.edaily.co.kr":"이데일리",
+      "mbn.co.kr":"MBN",
+      "m.nocutnews.co.kr":"노컷뉴스",
+      "cnbnews.com":"CNB뉴스",
+      "sports.hankooki.com":"스포츠한국",
+      "m-i.kr":"매일일보",
+      "efnews.co.kr":"파이낸셜신문",
+      "newsprime.co.kr":"프라임경제",
+      "breaknews.com":"브레이크뉴스",
+      "safetimes.co.kr":"세이프타임즈",
+      "xportsnews.com":"엑스포츠뉴스",
+      "fnnews.com":"파이낸셜뉴스"
     };
     const pressAliasMap = {
       "MHN포토":"MHN스포츠",
@@ -1296,8 +1349,9 @@
     const toneLabel = key => state.toneLabels[key] || toneFallback[key] || key;
     const canonicalPressKey = press => String(press || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
     const normalizePressLabel = press => {
-      const value = String(press || "").replace(/\s+/g, " ").trim();
-      return pressAliasMap[value] || value;
+      const value = String(press || "").replace(/\s+/g, " ").replace(/\s+\|\s*(네이버|다음|구글|네이트).*$/i, "").trim();
+      const aliased = pressAliasMap[value] || value;
+      return pressDomainMap[canonicalPressKey(aliased)] || aliased;
     };
     const isPortalPress = press => portalPressNames.has(canonicalPressKey(press));
     const isUnresolvedPress = press => ["언론사 확인", "언론사", "미확인"].includes(normalizePressLabel(press));
@@ -1356,14 +1410,23 @@
       const bracket = title.match(/^\s*\[([^\]]{2,15})\]/);
       if (bracket) {
         const candidate = normalizePressLabel(bracket[1]);
-        if (["포토", "단독", "속보", "인터뷰", "기획"].includes(candidate)) return "";
-        return candidate;
+        if (isLikelyPressLabel(candidate)) return candidate;
       }
       const dash = title.match(/\s[-–]\s([^-\u2013]{2,18})$/);
       if (!dash) return "";
       const candidate = normalizePressLabel(dash[1]);
       if (["포토", "단독", "속보", "인터뷰", "기획"].includes(candidate) || /기자|특파원|단독|종합|속보/.test(candidate)) return "";
-      return candidate;
+      if (isLikelyPressLabel(candidate)) return candidate;
+      return pressDomainMap[canonicalPressKey(candidate)] || "";
+    }
+
+    function isLikelyPressLabel(candidate) {
+      if (!candidate || ["포토", "단독", "속보", "인터뷰", "기획"].includes(candidate)) return false;
+      if (pressAliasMap[candidate]) return true;
+      if (candidate.length > 14) return false;
+      if (/[<>{}0-9]|시대|명암|기획|브리핑|단독|특징주|투자|판례/.test(candidate)) return false;
+      return /(뉴스|신문|경제|일보|저널|매일|타임스|투데이|데일리|포스트|방송|스포츠|신보|이슈|프레스)$/.test(candidate)
+        || ["더벨", "EBN", "FETV", "CEO스코어데일리", "CBC뉴스", "MHN스포츠"].includes(candidate);
     }
 
     function categoryDetail(article) {

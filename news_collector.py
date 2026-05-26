@@ -39,16 +39,44 @@ NON_PRESS_TITLE_LABELS = {
     "속보",
     "인터뷰",
     "기획",
+    "#금융톡톡",
+    "Invest",
+    "금융 HOT 뉴스",
+    "금융지주 보험사 분석",
+    "카드",
+    "드림&CEO",
+    "보험업계 소식",
 }
 
 PORTAL_HOSTS = {
     "news.naver.com",
     "n.news.naver.com",
     "m.news.naver.com",
+    "m.naver.com",
+    "sports.naver.com",
+    "game.naver.com",
+    "help.naver.com",
     "m.sports.naver.com",
     "sports.news.naver.com",
+    "entertain.naver.com",
+    "m.entertain.naver.com",
+    "blog.naver.com",
+    "v.daum.net",
+    "news.daum.net",
     "news.google.com",
     "news.google.co.kr",
+}
+
+STATIC_HOSTS = {
+    "ssl.pstatic.net",
+    "static.naver.net",
+    "static.news.naver.net",
+    "www.gstatic.com",
+    "fonts.gstatic.com",
+    "fonts.googleapis.com",
+    "lh3.googleusercontent.com",
+    "angular.dev",
+    "w3.org",
 }
 
 DOMAIN_PRESS_MAP = {
@@ -65,8 +93,73 @@ DOMAIN_PRESS_MAP = {
     "yna.co.kr": "연합뉴스",
     "newsis.com": "뉴시스",
     "news1.kr": "뉴스1",
+    "insnews.co.kr": "보험매일",
     "mhnse.com": "MHN스포츠",
+    "mhns.co.kr": "MHN스포츠",
     "mhnsports.com": "MHN스포츠",
+    "mt.co.kr": "머니투데이",
+    "biz.heraldcorp.com": "헤럴드경제",
+    "heraldcorp.com": "헤럴드경제",
+    "view.asiae.co.kr": "아시아경제",
+    "asiae.co.kr": "아시아경제",
+    "edaily.co.kr": "이데일리",
+    "sedaily.com": "서울경제",
+    "bloter.net": "블로터",
+    "ziksir.com": "직썰",
+    "segyebiz.com": "세계비즈",
+    "sisaon.co.kr": "시사오늘",
+    "ttlnews.com": "티티엘뉴스",
+    "popcornnews.net": "팝콘뉴스",
+    "4th.kr": "포쓰저널",
+    "footballist.co.kr": "풋볼리스트",
+    "nocutnews.co.kr": "노컷뉴스",
+    "osen.co.kr": "OSEN",
+    "chosun.com": "조선일보",
+    "sports.chosun.com": "스포츠조선",
+    "sportsworldi.com": "스포츠월드",
+    "kookje.co.kr": "국제신문",
+    "newsworks.co.kr": "뉴스웍스",
+    "youthdaily.co.kr": "청년일보",
+    "joseilbo.com": "조세일보",
+    "sisafocus.co.kr": "시사포커스",
+    "dailian.co.kr": "데일리안",
+    "ngetnews.com": "뉴스저널리즘",
+    "ftoday.co.kr": "파이낸셜투데이",
+    "sateconomy.co.kr": "시장경제",
+    "dt.co.kr": "디지털타임스",
+    "pointdaily.co.kr": "포인트데일리",
+    "m.maniareport.com": "마니아리포트",
+    "maniareport.com": "마니아리포트",
+    "kmib.co.kr": "국민일보",
+    "m.sportsworldi.com": "스포츠월드",
+    "m.hankookilbo.com": "한국일보",
+    "starin.edaily.co.kr": "이데일리",
+    "mbn.co.kr": "MBN",
+    "m.nocutnews.co.kr": "노컷뉴스",
+    "cnbnews.com": "CNB뉴스",
+    "sports.hankooki.com": "스포츠한국",
+    "m-i.kr": "매일일보",
+    "efnews.co.kr": "파이낸셜신문",
+    "newsprime.co.kr": "프라임경제",
+    "breaknews.com": "브레이크뉴스",
+    "safetimes.co.kr": "세이프타임즈",
+    "xportsnews.com": "엑스포츠뉴스",
+    "fnnews.com": "파이낸셜뉴스",
+}
+
+NAVER_OFFICE_ID_MAP = {
+    "001": "연합뉴스",
+    "005": "국민일보",
+    "009": "매일경제",
+    "015": "한국경제",
+    "016": "헤럴드경제",
+    "018": "이데일리",
+    "057": "MBN",
+    "079": "노컷뉴스",
+    "396": "스포츠월드",
+    "425": "마이데일리",
+    "436": "풋볼리스트",
+    "469": "한국일보",
 }
 
 NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
@@ -202,25 +295,46 @@ def infer_press_name(title: str, link: str, fallback: str) -> str:
 def normalize_press_name(value: str) -> str:
     press = clean_html(value or "")
     press = re.sub(r"\s+", " ", press).strip()
+    press = re.sub(r"\s+\|\s*(네이버|다음|구글|네이트).*$", "", press, flags=re.I)
     if not press:
         return ""
-    return PRESS_ALIAS_MAP.get(press, press)
+    aliased = PRESS_ALIAS_MAP.get(press, press)
+    host = canonical_host(aliased)
+    return DOMAIN_PRESS_MAP.get(host, aliased)
 
 
 def extract_press_from_title(title: str) -> str:
     bracket = re.match(r"^\s*\[([^\]]{2,15})\]", title or "")
     if bracket:
         candidate = bracket.group(1).strip()
-        if candidate in NON_PRESS_TITLE_LABELS:
-            return ""
-        return normalize_press_name(candidate)
-    dash = re.search(r"\s[-–]\s([^-\u2013]{2,18})$", title or "")
+        if is_likely_press_label(candidate):
+            return candidate
+    dash = re.search(r"\s[-\u2013]\s([^-\u2013]{2,18})$", title or "")
     if not dash:
         return ""
     candidate = re.sub(r"\s+", " ", dash.group(1)).strip()
     if candidate in NON_PRESS_TITLE_LABELS or re.search(r"기자|특파원|단독|종합|속보", candidate):
         return ""
-    return normalize_press_name(candidate)
+    candidate = normalize_press_name(candidate)
+    if is_likely_press_label(candidate):
+        return candidate
+    return DOMAIN_PRESS_MAP.get(canonical_host(candidate), "")
+
+
+def is_likely_press_label(value: str) -> bool:
+    candidate = normalize_press_name(value)
+    if not candidate or candidate in NON_PRESS_TITLE_LABELS:
+        return False
+    if candidate in PRESS_ALIAS_MAP:
+        return True
+    if len(candidate) > 14:
+        return False
+    if re.search(r"[<>{}0-9]|시대|명암|기획|브리핑|단독|특징주|투자|판례", candidate):
+        return False
+    return bool(
+        re.search(r"(뉴스|신문|경제|일보|저널|매일|타임스|투데이|데일리|포스트|방송|스포츠|신보|이슈|프레스)$", candidate)
+        or candidate in {"더벨", "EBN", "FETV", "CEO스코어데일리", "CBC뉴스", "MHN스포츠"}
+    )
 
 
 def extract_press_from_url(link: str) -> str:
@@ -266,7 +380,63 @@ def resolve_portal_press_from_page(link: str) -> str:
             candidate = normalize_press_name(match.group(1))
             if candidate and candidate not in {"네이버뉴스", "네이버 스포츠", "구글뉴스"}:
                 return candidate
+    host = (urlparse(link).hostname or "").removeprefix("www.")
+    original_url = "" if host.startswith("news.google.") else extract_original_article_url(html, response.url)
+    if original_url:
+        host = (urlparse(original_url).hostname or "").removeprefix("www.")
+        if host in DOMAIN_PRESS_MAP:
+            return DOMAIN_PRESS_MAP[host]
+    office_id = extract_naver_office_id(html)
+    if office_id in NAVER_OFFICE_ID_MAP:
+        return NAVER_OFFICE_ID_MAP[office_id]
     return ""
+
+
+def extract_original_article_url(html: str, final_url: str = "") -> str:
+    patterns = [
+        r'"orgUrl"\s*:\s*\{[\s\S]{0,1200}?"url"\s*:\s*"([^"]+)"',
+        r'"officeOutlinkNews"\s*:\s*\[[\s\S]{0,1600}?"url"\s*:\s*"([^"]+)"',
+        r'class=["\'][^"\']*media_end_head_origin_link[^"\']*["\'][^>]+href=["\']([^"\']+)["\']',
+        r'href=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*media_end_head_origin_link[^"\']*["\']',
+        r'data-clk=["\']are\.ori["\'][^>]+href=["\']([^"\']+)["\']',
+        r'href=["\']([^"\']+)["\'][^>]+data-clk=["\']are\.ori["\']',
+        r'https?://[^"\'<>\\\s]+',
+    ]
+    candidates = []
+    for pattern in patterns:
+        for match in re.finditer(pattern, html, re.S):
+            value = clean_html(match.group(1) if match.groups() else match.group(0)).replace("\\/", "/")
+            if value.startswith("http") and not is_rejected_original_url(value):
+                candidates.append(value)
+    if final_url and not is_rejected_original_url(final_url):
+        candidates.insert(0, final_url)
+    return candidates[0] if candidates else ""
+
+
+def extract_naver_office_id(html: str) -> str:
+    match = re.search(r'"officeId"\s*:\s*"(\d{3})"', html or "")
+    return match.group(1) if match else ""
+
+
+def canonical_host(value: str) -> str:
+    value = (value or "").strip().lower()
+    value = re.sub(r"^https?://", "", value)
+    value = re.sub(r"^www\.", "", value)
+    value = value.split("/", 1)[0]
+    return value
+
+
+def is_rejected_original_url(value: str) -> bool:
+    host = (urlparse(value).hostname or "").removeprefix("www.").lower()
+    if not host or host in PORTAL_HOSTS or host in STATIC_HOSTS:
+        return True
+    if "google." in host or "googleapis." in host or "gstatic." in host or "googleusercontent." in host:
+        return True
+    return bool(re.search(
+        r"(/_next/static/|/static/|\.css(\?|$)|\.js(\?|$)|\.woff2?(\?|$)|\.ttf(\?|$)|\.otf(\?|$)|\.png(\?|$)|\.jpe?g(\?|$)|\.gif(\?|$)|\.svg(\?|$)|\.ico(\?|$)|\.webp(\?|$))",
+        value,
+        re.I,
+    ))
 
 
 def deduplicate(articles: list[dict]) -> list[dict]:
