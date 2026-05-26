@@ -1,6 +1,6 @@
 {
   "date": "2026-05-27",
-  "timestamp": "2026-05-27T08:01:31.717362+09:00",
+  "timestamp": "2026-05-27T08:15:01.278885+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-27T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 77,
+    "total_collected": 76,
     "total_after_cluster": 56,
     "by_category": {
       "own": 0,
       "regulation": 8,
-      "competitor": 34,
+      "competitor": 33,
       "industry": 31,
       "other": 4
     },
     "by_tone": {
       "negative": 0,
       "positive": 0,
-      "neutral": 77
+      "neutral": 76
     },
     "own_negative": 0,
     "own_total": 0,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 직접 보도 없이 GA 규제 강화 및 경쟁사 리스크가 부각됨.\n\n## 핵심 이슈\n- [8] GA 1200%룰 및 준법비용: 업계 전반의 수익성 악화 우려 지속\n- [3] AIA파트너스 집단해촉 논란: 경쟁 GA의 대규모 민원 발생 및 리스크 부각\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며 리스크는 LOW 수준입니다. GA 영업환경 규제 강화와 경쟁사 동향 관련 보도가 집중되었습니다.\n\n## 분석 키워드\nGA 1200%룰, AIA프리미어파트너스, 하나은행 경영평가, 보험금 부지급",
+  "briefing": "## 최종 결론\n당사 직접 보도는 없으나, GA 업계 규제 강화 및 일부 경쟁사 부정 이슈가 부각됨.\n\n## 핵심 이슈\n- [8] GA 수수료 및 비용 규제: 1200%룰, 준법경영비 등 업계 비용 부담 증가 예상.\n- [3] AIA파트너스 집단 해촉: 금감원/공정위 민원 제기, GA 신뢰도 리스크 부각.\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며, 부정 리스크는 감지되지 않았습니다. GA 업계 규제 강화와 일부 경쟁사 부정 이슈가 보도되었습니다.\n\n## 분석 키워드\nGA 규제, 경쟁사 리스크, 하나은행 경영평가, 보험금 부지급 분쟁",
   "articles": [
     {
       "title": "하나은행, 2026 금융사 경영평가 ‘종합1위’… 한국투자증권, 비은행 중...",
@@ -215,18 +215,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "\"판매가 아니라 신뢰\"…동양생명 '보험왕'의 영업 비결은?",
-      "link": "https://www.fetv.co.kr/news/articleView.html?idxno=302974",
-      "source": "fetv.co.kr",
-      "keyword": "생명보험",
-      "description": "장 명예상무는 지난 1997년부터 약 30년간 동양생명 보험설계사(FC)로 활동하며 1만건 이상의 계약을 체결한 최장수 '보험왕'이다. 대구에서 해운회사를 다니다 그만두고 남편을 따라 상경한 그는 이후 보험영업 한 길만을...",
-      "pub_date": "Wed, 27 May 2026 07:00:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
       "title": "NH농협생명, 1분기 순익 58% 급감…본업 경쟁력 회복 '과제'",
       "link": "https://daily.hankooki.com/news/articleView.html?idxno=1370720",
       "source": "daily.hankooki.com",
@@ -237,6 +225,18 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 1
+    },
+    {
+      "title": "\"판매가 아니라 신뢰\"…동양생명 '보험왕'의 영업 비결은?",
+      "link": "https://www.fetv.co.kr/news/articleView.html?idxno=302974",
+      "source": "fetv.co.kr",
+      "keyword": "생명보험",
+      "description": "장 명예상무는 지난 1997년부터 약 30년간 동양생명 보험설계사(FC)로 활동하며 1만건 이상의 계약을 체결한 최장수 '보험왕'이다. 대구에서 해운회사를 다니다 그만두고 남편을 따라 상경한 그는 이후 보험영업 한 길만을...",
+      "pub_date": "Wed, 27 May 2026 07:00:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 2
     },
     {
       "title": "[FORTUNE KOREA 500] 급등락 없는 거대 업종, 보험사의 '이상한 존재감'",
@@ -467,18 +467,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "기술·감성 균형 회복 국면 진입…\"공감이 서비스 경쟁력\"",
-      "link": "https://www.mk.co.kr/article/12057833",
-      "source": "매일경제",
-      "keyword": "손해보험",
-      "description": "서비스·공감 영역 모두에서 우수 등급을 받은 '고객감동콜센터'는 교보생명, 한화생명, ABL생명(신규), DB생명, 삼성화재, KB손해보험, NH농협은행, 웅진씽크빅(신규), 삼성전자서비스, 기아, HD현대오일뱅크, LG유플러스...",
-      "pub_date": "Wed, 27 May 2026 00:01:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "영천 금호농협,‘농협손해보험 위더스상 수상’ - 농민신문",
       "link": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9oVnBJZ0MxTDRVdDk3ZWRrbVItWUdpWTYzT1JoUjhCTXZ3bmJyT051dTJIUlpFSmpsX2h0VTdVVDN5WWduUElrY1YtVGpmTXBva281ajJYQUlLQQ?oc=5",
       "source": "농민신문",
@@ -701,6 +689,18 @@
       "keyword": "보험 마케팅",
       "description": "특정 커피와 뷰티, 패션, 보험 광고 등에서 판매량 증가와 품절 현상을 이끌어내며 스타 마케팅의 대표 사례로 꼽혔고, 글로벌 패션 브랜드 화보를 통해 뉴욕 본사의 러브콜을 받아 해외 화보 촬영과 해외 매거진 단독...",
       "pub_date": "Tue, 26 May 2026 23:34:00 +0900",
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "차기 여신금융협회장 후보 3인 '숏리스트'로 압축",
+      "link": "https://www.joongangenews.com/news/articleView.html?idxno=521756",
+      "source": "joongangenews.com",
+      "keyword": "생명보험",
+      "description": "이동철(65) 전 대표는 고려대 법학과를 졸업한 뒤 KB생명보험 경영기획본부 부사장, KB금융지주 전략총괄 부사장(CSO), KB국민카드 대표이사, KB금융지주 부회장 등을 역임해 업계 이해도가 높은 인사로 거론된다. 장도중(55)...",
+      "pub_date": "Wed, 27 May 2026 08:00:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
