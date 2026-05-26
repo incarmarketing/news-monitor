@@ -350,8 +350,9 @@
       display:block;
       border-bottom:0;
       padding-top:0;
-      overflow:hidden;
+      overflow:visible;
     }
+    .analysis-volume-panel { grid-column:1 / -1; }
     .stacked-chart { height:240px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(34px,1fr); gap:10px; align-items:end; border-bottom:1px solid var(--line); padding:10px 4px 0; }
     .stacked-col { display:grid; gap:6px; align-items:end; text-align:center; color:var(--muted); font-size:11px; font-weight:900; min-width:0; }
     .stacked-bar { height:190px; width:100%; display:flex; flex-direction:column-reverse; justify-content:flex-start; overflow:hidden; border-radius:7px 7px 0 0; background:#eef2f7; }
@@ -397,6 +398,47 @@
     .line-chart { height:150px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(28px,1fr); align-items:end; gap:8px; border-bottom:1px solid var(--line); padding-top:8px; }
     .line-point { display:grid; gap:5px; justify-items:center; color:var(--muted); font-size:10px; font-weight:900; }
     .line-stick { width:8px; min-height:8px; border-radius:999px 999px 0 0; background:linear-gradient(180deg,#16a34a,#27398c); }
+    .section-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+    .section-head .panel-title { margin:0; }
+    .media-count-button {
+      border:0;
+      background:transparent;
+      color:var(--blue);
+      font-weight:900;
+      cursor:pointer;
+      padding:0;
+      text-decoration:underline;
+      text-underline-offset:3px;
+    }
+    .media-count-button:hover { color:var(--incar-dark); }
+    .media-article-title { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .media-article-title .chip { font-size:12px; }
+    .ad-dashboard-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:14px; margin-top:14px; }
+    .ad-filter-grid { display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)) auto auto; gap:10px; align-items:end; margin-top:14px; }
+    .ad-entry-form { margin-top:12px; }
+    .ad-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+    .ad-chart-card {
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      padding:12px;
+      min-width:0;
+    }
+    .ad-chart-title { color:var(--incar-dark); font-size:14px; font-weight:900; margin:0 0 10px; }
+    .ad-month-chart { display:grid; gap:9px; }
+    .ad-month-row { display:grid; grid-template-columns:72px 1fr 92px; gap:10px; align-items:center; font-size:12px; font-weight:900; color:var(--muted); }
+    .ad-month-track { height:18px; border-radius:999px; background:#eef2f7; overflow:hidden; }
+    .ad-month-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#27398c,#5b7cfa); }
+    .ad-report-note {
+      border-left:4px solid var(--blue);
+      background:#f5f8ff;
+      border-radius:8px;
+      padding:12px;
+      color:var(--incar-dark);
+      font-weight:900;
+      line-height:1.45;
+    }
+    .ad-table-wrap { overflow-x:auto; }
     .settings-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; }
     .settings-head .panel-title { margin:0; }
     .status-pill {
@@ -423,24 +465,21 @@
       min-width:0;
     }
     .keyword-total-chart {
-      height:230px;
+      min-height:242px;
       display:grid;
-      grid-auto-flow:column;
-      grid-auto-columns:minmax(72px,1fr);
-      gap:14px;
+      grid-template-columns:repeat(auto-fit,minmax(86px,1fr));
+      gap:16px;
       align-items:end;
-      padding:8px 6px 0;
+      padding:10px 4px 0;
       border-bottom:1px solid var(--line);
-      overflow-x:auto;
-      overflow-y:hidden;
-      scrollbar-width:thin;
+      overflow:visible;
     }
     .keyword-total-item {
       min-width:0;
-      height:220px;
+      min-height:232px;
       display:grid;
-      grid-template-rows:1fr 42px;
-      gap:8px;
+      grid-template-rows:178px auto;
+      gap:10px;
       align-items:end;
     }
     .keyword-total-bar-wrap {
@@ -473,6 +512,7 @@
       display:flex;
       align-items:flex-start;
       justify-content:center;
+      min-height:42px;
       min-width:0;
       color:#475467;
       font-size:11px;
@@ -748,6 +788,9 @@
       }
       .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
       .hero-briefs,.media-flow,.insight-grid,.ad-kpis,.ops-grid { grid-template-columns:1fr; }
+      .ad-dashboard-grid,.ad-filter-grid,.ad-summary-grid { grid-template-columns:1fr; }
+      .section-head { align-items:flex-start; flex-direction:column; }
+      .ad-month-row { grid-template-columns:64px 1fr 76px; }
       .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .toolbar { grid-template-columns:1fr 1fr; }
       .toolbar .field:first-child { grid-column:1/-1; }
@@ -785,10 +828,10 @@
         gap:8px;
       }
       .keyword-total-chart {
-        grid-auto-columns:minmax(64px,1fr);
-        gap:10px;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:12px;
       }
-      .keyword-total-item { height:196px; grid-template-rows:1fr 38px; }
+      .keyword-total-item { min-height:196px; grid-template-rows:148px auto; }
       .keyword-total-bar-wrap { height:148px; }
       .keyword-total-bar { width:min(30px,58%); }
       .keyword-count { text-align:left; }
@@ -807,9 +850,16 @@
       .page-wrap { max-width:none; padding:0; }
       .page { display:none !important; }
       #page-analysis { display:block !important; }
+      body.print-ads #page-analysis { display:none !important; }
+      body.print-ads #page-ads { display:block !important; }
       .report-shell,.panel,.article,.report-kpi { box-shadow:none; break-inside:avoid; }
       .report-head { background:#111827 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       .report-controls { display:none !important; }
+      body.print-ads .ad-entry-form,
+      body.print-ads .ad-filter-grid,
+      body.print-ads .ad-row-actions { display:none !important; }
+      body.print-ads .ad-dashboard-grid { grid-template-columns:1fr; }
+      body.print-ads .ad-table-wrap { overflow:visible; }
       .chart { height:170px; }
       a { text-decoration:none; }
     }
@@ -957,13 +1007,9 @@
               <div class="report-message" id="analysisMessage">분석 데이터를 불러오는 중입니다.</div>
 
               <div class="grid-2">
-                <div class="panel">
+                <div class="panel analysis-volume-panel">
                   <h2 class="report-section-title"><i data-lucide="bar-chart-3"></i> 항목별 기사량</h2>
                   <div class="chart" id="volumeChart"></div>
-                </div>
-                <div class="panel">
-                  <h2 class="report-section-title"><i data-lucide="smile"></i> 보도 논조</h2>
-                  <div class="bars" id="toneBars"></div>
                 </div>
               </div>
 
@@ -1062,6 +1108,13 @@
             </div>
             <table class="table" id="mediaTable"></table>
           </div>
+          <div class="panel" style="margin-top:14px">
+            <div class="section-head">
+              <h2 class="panel-title media-article-title"><i data-lucide="list-filter"></i> 언론사별 기사 확인 <span class="chip" id="mediaArticleScope">전체</span></h2>
+              <button class="btn" onclick="clearMediaArticleView()">전체 보기</button>
+            </div>
+            <div class="feed" id="mediaArticleList"></div>
+          </div>
         </section>
 
         <section class="page" id="page-reporters">
@@ -1081,18 +1134,50 @@
 
         <section class="page" id="page-ads">
           <div class="panel">
-            <h2 class="panel-title"><i data-lucide="wallet-cards"></i> 광고비/협찬 관리</h2>
-            <div class="form-grid">
+            <div class="section-head">
+              <h2 class="panel-title"><i data-lucide="wallet-cards"></i> 광고비/협찬 종합 대시보드</h2>
+              <button class="btn primary no-print" id="printAds"><i data-lucide="printer"></i> 보고서 인쇄</button>
+            </div>
+            <div class="ad-filter-grid no-print">
+              <div class="field"><label>연도</label><select id="adYearFilter"><option value="">전체</option></select></div>
+              <div class="field"><label>월</label><select id="adMonthFilter"><option value="">전체</option></select></div>
+              <div class="field"><label>언론사/매체</label><select id="adMediaFilter"><option value="">전체</option></select></div>
+              <div class="field"><label>구분</label><select id="adTypeFilter"><option value="">전체</option></select></div>
+              <button class="btn" id="resetAdFilters"><i data-lucide="rotate-ccw"></i> 초기화</button>
+              <button class="btn" onclick="document.getElementById('adMedia').focus()"><i data-lucide="plus"></i> 집행 추가</button>
+            </div>
+            <div class="ad-board" id="adBoard"></div>
+            <div class="ad-dashboard-grid">
+              <div class="ad-chart-card">
+                <h3 class="ad-chart-title">월별 집행 추이</h3>
+                <div class="ad-month-chart" id="adMonthlyChart"></div>
+              </div>
+              <div class="ad-chart-card">
+                <h3 class="ad-chart-title">매체별 집행 현황</h3>
+                <div class="bars" id="adMediaBars"></div>
+              </div>
+              <div class="ad-chart-card">
+                <h3 class="ad-chart-title">구분별 집행 비중</h3>
+                <div class="bars" id="adTypeBars"></div>
+              </div>
+              <div class="ad-chart-card">
+                <h3 class="ad-chart-title">보고 메모</h3>
+                <div class="ad-report-note" id="adReportNote">집행 내역을 불러오는 중입니다.</div>
+              </div>
+            </div>
+            <div class="ad-entry-form no-print">
+              <h3 class="ad-chart-title">집행 내역 입력</h3>
+              <div class="form-grid">
               <div class="field"><label>매체명</label><input id="adMedia" placeholder="예: 보험저널"></div>
               <div class="field"><label>집행월</label><input id="adMonth" type="month"></div>
               <div class="field"><label>금액</label><input id="adAmount" type="number" placeholder="금액"></div>
               <div class="field"><label>구분</label><select id="adType"><option>광고</option><option>협찬</option><option>캠페인</option><option>기타</option></select></div>
+              </div>
+              <div class="field" style="margin-top:10px"><label>메모</label><input id="adMemo" placeholder="계약 조건, 담당자, 비고"></div>
+              <button class="btn primary" style="margin-top:10px" onclick="addAd()">집행 내역 추가</button>
             </div>
-            <div class="field" style="margin-top:10px"><label>메모</label><input id="adMemo" placeholder="계약 조건, 담당자, 비고"></div>
-            <button class="btn primary" style="margin-top:10px" onclick="addAd()">집행 내역 추가</button>
-            <div class="grid-2" style="margin-top:16px">
-              <div><table class="table" id="adTable"></table></div>
-              <div><div class="ad-board" id="adBoard"></div></div>
+            <div class="ad-table-wrap" style="margin-top:16px">
+              <table class="table" id="adTable"></table>
             </div>
           </div>
         </section>
@@ -1155,8 +1240,10 @@
       keywords: JSON.parse(localStorage.getItem("pr_keywords") || '["인카금융서비스","GA","브랜드평판"]'),
       mediaRelations: JSON.parse(localStorage.getItem("pr_media_relations") || "[]"),
       hiddenMedia: JSON.parse(localStorage.getItem("pr_hidden_media") || "[]"),
+      selectedMedia: "",
       reporters: JSON.parse(localStorage.getItem("pr_reporters") || "[]"),
-      ads: JSON.parse(localStorage.getItem("pr_ads") || "[]")
+      ads: JSON.parse(localStorage.getItem("pr_ads") || "[]"),
+      adFilters: { year:"", month:"", media:"", type:"" }
     };
 
     const pageTitles = {
@@ -1176,8 +1263,24 @@
     const toneFallback = { negative:"부정", neutral:"중립", positive:"긍정" };
     const portalPressNames = new Set([
       "google", "google.com", "news.google.com", "news.google.co.kr",
-      "naver", "naver.com", "news.naver.com", "네이버뉴스", "구글뉴스"
+      "naver", "naver.com", "news.naver.com", "n.news.naver.com", "m.news.naver.com",
+      "m.sports.naver.com", "sports.news.naver.com", "네이버뉴스", "구글뉴스", "네이버", "구글"
     ]);
+    const pressDomainMap = {
+      "fins.co.kr":"보험저널",
+      "news2day.co.kr":"뉴스투데이",
+      "econovill.com":"이코노믹리뷰",
+      "pinpointnews.co.kr":"핀포인트뉴스",
+      "bigdatanews.co.kr":"빅데이터뉴스",
+      "enetnews.co.kr":"이넷뉴스",
+      "energy-news.co.kr":"에너지경제",
+      "mtn.co.kr":"머니투데이방송",
+      "mk.co.kr":"매일경제",
+      "hankyung.com":"한국경제",
+      "yna.co.kr":"연합뉴스",
+      "newsis.com":"뉴시스",
+      "news1.kr":"뉴스1"
+    };
 
     const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     const uniq = (items) => Array.from(new Set(items.filter(Boolean)));
@@ -1185,10 +1288,18 @@
     const topBy = (items,key,limit=8) => Object.entries(countBy(items,key)).sort((a,b) => b[1] - a[1]).slice(0,limit);
     const categoryLabel = key => state.categoryLabels[key] || categoryFallback[key] || key;
     const toneLabel = key => state.toneLabels[key] || toneFallback[key] || key;
-    const isPortalPress = press => portalPressNames.has(String(press || "").trim().toLowerCase());
-    const managedMediaArticles = () => state.articles.filter(article =>
-      article.press && !isPortalPress(article.press) && !state.hiddenMedia.includes(article.press)
-    );
+    const canonicalPressKey = press => String(press || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+    const isPortalPress = press => portalPressNames.has(canonicalPressKey(press));
+    const isUnresolvedPress = press => ["언론사 확인", "언론사", "미확인"].includes(String(press || "").trim());
+    const jsArg = value => JSON.stringify(String(value ?? ""));
+    const articleTimeValue = article => {
+      const value = article.published_at || article.pub_date || article.date || "";
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    };
+    const sortByLatest = items => [...items].sort((a,b) => articleTimeValue(b) - articleTimeValue(a));
+    const isManagedPress = press => press && !isPortalPress(press) && !isUnresolvedPress(press) && !state.hiddenMedia.includes(press);
+    const managedMediaArticles = () => state.articles.filter(article => isManagedPress(article.press));
 
     function applyKeywordSource(keywords, source = "Supabase") {
       if (!Array.isArray(keywords)) return;
@@ -1218,17 +1329,17 @@
     }
 
     function pressName(article) {
-      if (article.press) return article.press;
-      const source = article.source || "";
-      if (source && !["naver","google"].includes(source.toLowerCase())) return source;
       const titlePress = extractPressFromTitle(article.title || "");
+      const rawPress = String(article.press || "").trim();
+      const source = String(article.source || "").trim();
+      if (rawPress && !isPortalPress(rawPress)) return pressDomainMap[canonicalPressKey(rawPress)] || rawPress;
+      if (source && !isPortalPress(source)) return pressDomainMap[canonicalPressKey(source)] || source;
       if (titlePress) return titlePress;
       try {
-        const host = new URL(article.link).hostname.replace("www.","");
-        if (isPortalPress(host)) return host;
-        const map = { "fins.co.kr":"보험저널", "news2day.co.kr":"뉴스투데이", "econovill.com":"이코노믹리뷰", "pinpointnews.co.kr":"핀포인트뉴스", "bigdatanews.co.kr":"빅데이터뉴스" };
-        return map[host] || host;
-      } catch { return source || "언론사"; }
+        const host = canonicalPressKey(new URL(article.link).hostname);
+        if (isPortalPress(host)) return titlePress || "언론사 확인";
+        return pressDomainMap[host] || host;
+      } catch { return titlePress || "언론사 확인"; }
     }
 
     function extractPressFromTitle(title) {
@@ -1334,6 +1445,18 @@
         if (event.key === "Enter") addKeyword();
       });
       document.getElementById("printAnalysis")?.addEventListener("click", () => window.print());
+      document.getElementById("printAds")?.addEventListener("click", printAdReport);
+      const adFilterMap = { adYearFilter:"year", adMonthFilter:"month", adMediaFilter:"media", adTypeFilter:"type" };
+      Object.entries(adFilterMap).forEach(([id,key]) => {
+        document.getElementById(id)?.addEventListener("input", event => {
+          state.adFilters[key] = event.target.value;
+          renderAds();
+        });
+      });
+      document.getElementById("resetAdFilters")?.addEventListener("click", () => {
+        state.adFilters = { year:"", month:"", media:"", type:"" };
+        renderAds();
+      });
       document.getElementById("applyAnalysisRange")?.addEventListener("click", () => {
         state.analysis.range = "custom";
         state.analysis.start = document.getElementById("analysisStart").value;
@@ -1614,7 +1737,6 @@
       document.getElementById("analysisMeta").textContent = `인카금융서비스 · 마케팅부 · ${analysisPeriodLabel()} 기준`;
       document.getElementById("analysisMessage").textContent = buildAnalysisMessage(items, reportCats, tones);
 
-      renderToneBoard("toneBars", items);
       renderVolumeChart(items);
       renderKeywordTree("keywordTree", items);
       renderInsights(items);
@@ -1751,7 +1873,7 @@
       const sourceNames = uniq([
         ...sourceEntries.map(([press]) => press),
         ...state.mediaRelations.map(item => item.name)
-      ]).filter(press => !isPortalPress(press) && !state.hiddenMedia.includes(press));
+      ]).filter(press => isManagedPress(press));
       const rows = sourceNames.map(press => {
         const articles = mediaArticles.filter(a => a.press === press);
         const count = articles.length;
@@ -1763,7 +1885,7 @@
         return `
           <tr>
             <td><strong>${escapeHtml(press)}</strong></td>
-            <td>${count ? `${count}건` : "-"}</td>
+            <td>${count ? `<button class="media-count-button" onclick='showMediaArticles(${jsArg(press)})'>${count}건</button>` : "-"}</td>
             <td>${pos}/${neg}</td>
             <td>${escapeHtml(status)}</td>
             <td><span class="chip">${escapeHtml(grade)}</span></td>
@@ -1771,12 +1893,36 @@
             <td>${escapeHtml(relation?.contactDate || "-")}</td>
             <td>${escapeHtml(relation?.memo || "관리 메모 없음")}</td>
             <td>
-              <button class="btn" onclick="editMediaRelation('${escapeHtml(press)}')">관리</button>
+              <button class="btn" onclick='editMediaRelation(${jsArg(press)})'>관리</button>
             </td>
           </tr>
         `;
       }).join("");
       document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>보도량</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="9">언론사 데이터가 없습니다.</td></tr>'}`;
+      renderMediaArticleList();
+    }
+
+    function renderMediaArticleList() {
+      const target = document.getElementById("mediaArticleList");
+      if (!target) return;
+      const scope = document.getElementById("mediaArticleScope");
+      const all = sortByLatest(managedMediaArticles());
+      const items = state.selectedMedia ? all.filter(article => article.press === state.selectedMedia) : all.slice(0, 20);
+      if (scope) scope.textContent = state.selectedMedia || "전체";
+      target.innerHTML = items.length
+        ? items.map(article => articleCard(article, true)).join("")
+        : '<div class="empty">해당 언론사의 기사가 없습니다.</div>';
+    }
+
+    function showMediaArticles(press) {
+      state.selectedMedia = press;
+      renderMediaArticleList();
+      document.getElementById("mediaArticleList")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+
+    function clearMediaArticleView() {
+      state.selectedMedia = "";
+      renderMediaArticleList();
     }
 
     async function saveMediaRelation() {
@@ -1938,18 +2084,72 @@
       renderAds();
     }
 
-    function renderAds() {
-      const rows = state.ads.map((a,idx) => `<tr><td>${escapeHtml(a.month)}</td><td>${escapeHtml(a.media)}</td><td>${escapeHtml(a.type)}</td><td>${a.amount.toLocaleString("ko-KR")}원</td><td>${escapeHtml(a.memo || "-")}</td><td><button class="btn danger" onclick="removeAd(${idx})">삭제</button></td></tr>`).join("");
-      document.getElementById("adTable").innerHTML = `<tr><th>월</th><th>매체</th><th>구분</th><th>금액</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="6">등록된 집행 내역이 없습니다.</td></tr>'}`;
-      renderAdBoard();
+    function adYear(month) {
+      return String(month || "").slice(0, 4);
     }
 
-    function renderAdBoard() {
-      const total = state.ads.reduce((sum, item) => sum + item.amount, 0);
+    function adMonthNumber(month) {
+      return String(month || "").slice(5, 7);
+    }
+
+    function filteredAds() {
+      return state.ads.filter(item =>
+        (!state.adFilters.year || adYear(item.month) === state.adFilters.year)
+        && (!state.adFilters.month || adMonthNumber(item.month) === state.adFilters.month)
+        && (!state.adFilters.media || item.media === state.adFilters.media)
+        && (!state.adFilters.type || item.type === state.adFilters.type)
+      ).sort((a,b) => String(b.month || "").localeCompare(String(a.month || "")));
+    }
+
+    function money(value) {
+      return `${Number(value || 0).toLocaleString("ko-KR")}원`;
+    }
+
+    function shortMoney(value) {
+      const amount = Number(value || 0);
+      if (amount >= 100000000) return `${(amount / 100000000).toFixed(amount % 100000000 ? 1 : 0)}억`;
+      if (amount >= 10000) return `${Math.round(amount / 10000).toLocaleString("ko-KR")}만`;
+      return amount.toLocaleString("ko-KR");
+    }
+
+    function setSelectOptions(id, values, selected) {
+      const select = document.getElementById(id);
+      if (!select) return;
+      select.innerHTML = '<option value="">전체</option>' + values.map(value =>
+        `<option value="${escapeHtml(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(value)}</option>`
+      ).join("");
+      select.value = selected || "";
+    }
+
+    function renderAdFilters() {
+      const years = uniq(state.ads.map(item => adYear(item.month))).sort().reverse();
+      const months = Array.from({ length:12 }, (_, idx) => String(idx + 1).padStart(2, "0"));
+      const medias = uniq(state.ads.map(item => item.media)).sort();
+      const types = uniq(state.ads.map(item => item.type)).sort();
+      setSelectOptions("adYearFilter", years, state.adFilters.year);
+      setSelectOptions("adMonthFilter", months, state.adFilters.month);
+      setSelectOptions("adMediaFilter", medias, state.adFilters.media);
+      setSelectOptions("adTypeFilter", types, state.adFilters.type);
+    }
+
+    function renderAds() {
+      renderAdFilters();
+      const ads = filteredAds();
+      const sourceIndex = new Map(state.ads.map((item, idx) => [item, idx]));
+      const rows = ads.map(a => {
+        const idx = sourceIndex.get(a);
+        return `<tr><td>${escapeHtml(a.month)}</td><td>${escapeHtml(a.media)}</td><td>${escapeHtml(a.type)}</td><td>${money(a.amount)}</td><td>${escapeHtml(a.memo || "-")}</td><td class="ad-row-actions"><button class="btn danger" onclick="removeAd(${idx})">삭제</button></td></tr>`;
+      }).join("");
+      document.getElementById("adTable").innerHTML = `<tr><th>월</th><th>매체</th><th>구분</th><th>금액</th><th>메모</th><th class="ad-row-actions"></th></tr>${rows || '<tr><td colspan="6">선택한 조건에 해당하는 집행 내역이 없습니다.</td></tr>'}`;
+      renderAdBoard(ads);
+    }
+
+    function renderAdBoard(ads = filteredAds()) {
+      const total = ads.reduce((sum, item) => sum + item.amount, 0);
       const mediaTotals = {};
       const monthlyTotals = {};
       const typeTotals = {};
-      state.ads.forEach(item => {
+      ads.forEach(item => {
         mediaTotals[item.media] = (mediaTotals[item.media] || 0) + item.amount;
         monthlyTotals[item.month] = (monthlyTotals[item.month] || 0) + item.amount;
         typeTotals[item.type] = (typeTotals[item.type] || 0) + item.amount;
@@ -1957,30 +2157,45 @@
       const topMedia = Object.entries(mediaTotals).sort((a,b) => b[1] - a[1])[0];
       const months = Object.keys(monthlyTotals).sort();
       const maxMonthly = Math.max(...months.map(month => monthlyTotals[month]), 1);
-      const line = months.map(month => `
-        <div class="line-point">
-          <div class="line-stick" style="height:${Math.max(8, monthlyTotals[month] / maxMonthly * 118)}px"></div>
-          <div>${escapeHtml(month.slice(5))}</div>
+      const monthlyRows = months.map(month => `
+        <div class="ad-month-row">
+          <div>${escapeHtml(month)}</div>
+          <div class="ad-month-track"><div class="ad-month-fill" style="width:${Math.max(4, monthlyTotals[month] / maxMonthly * 100)}%"></div></div>
+          <div>${shortMoney(monthlyTotals[month])}</div>
         </div>
       `).join("");
-      const byMedia = Object.entries(mediaTotals).sort((a,b) => b[1] - a[1]).slice(0,8);
+      const byMedia = Object.entries(mediaTotals).sort((a,b) => b[1] - a[1]).slice(0,10);
       const maxMedia = Math.max(...byMedia.map(([,value]) => value), 1);
       const mediaBars = byMedia.map(([media, value]) => `
-        <div class="bar-row"><div>${escapeHtml(media)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, value / maxMedia * 100)}%"></div></div><div>${Math.round(value / 10000)}만</div></div>
+        <div class="bar-row"><div>${escapeHtml(media)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, value / maxMedia * 100)}%"></div></div><div>${shortMoney(value)}</div></div>
       `).join("");
-      const typeCards = Object.entries(typeTotals).map(([type, value]) =>
-        `<div class="ad-kpi"><b>${Math.round(value / 10000).toLocaleString("ko-KR")}만</b><span>${escapeHtml(type)}</span></div>`
-      ).join("");
-      document.getElementById("adBoard").innerHTML = state.ads.length ? `
-        <div class="ad-kpis">
-          <div class="ad-kpi"><b>${total.toLocaleString("ko-KR")}원</b><span>총 집행액</span></div>
-          <div class="ad-kpi"><b>${state.ads.length.toLocaleString("ko-KR")}건</b><span>등록 내역</span></div>
+      const byType = Object.entries(typeTotals).sort((a,b) => b[1] - a[1]);
+      const maxType = Math.max(...byType.map(([,value]) => value), 1);
+      const typeBars = byType.map(([type, value]) => `
+        <div class="bar-row"><div>${escapeHtml(type)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, value / maxType * 100)}%"></div></div><div>${shortMoney(value)}</div></div>
+      `).join("");
+      const activeMonths = months.length;
+      const avgMonthly = activeMonths ? Math.round(total / activeMonths) : 0;
+      document.getElementById("adBoard").innerHTML = ads.length ? `
+        <div class="ad-summary-grid">
+          <div class="ad-kpi"><b>${money(total)}</b><span>선택 기간 총 집행액</span></div>
+          <div class="ad-kpi"><b>${ads.length.toLocaleString("ko-KR")}건</b><span>집행 내역</span></div>
+          <div class="ad-kpi"><b>${activeMonths.toLocaleString("ko-KR")}개월</b><span>집행 월수</span></div>
           <div class="ad-kpi"><b>${escapeHtml(topMedia?.[0] || "-")}</b><span>최대 집행 매체</span></div>
         </div>
-        <div class="panel" style="padding:12px"><h3 class="report-section-title" style="font-size:14px">월별 집행 추이</h3><div class="line-chart">${line}</div></div>
-        <div class="panel" style="padding:12px"><h3 class="report-section-title" style="font-size:14px">매체별 집행</h3><div class="bars">${mediaBars}</div></div>
-        <div class="ad-kpis">${typeCards}</div>
-      ` : '<div class="empty">광고비/협찬 집행 내역을 등록하면 전광판이 표시됩니다.</div>';
+      ` : '<div class="empty">광고비/협찬 집행 내역을 등록하면 대시보드가 표시됩니다.</div>';
+      document.getElementById("adMonthlyChart").innerHTML = monthlyRows || '<div class="empty">월별 데이터 없음</div>';
+      document.getElementById("adMediaBars").innerHTML = mediaBars || '<div class="empty">매체별 데이터 없음</div>';
+      document.getElementById("adTypeBars").innerHTML = typeBars || '<div class="empty">구분별 데이터 없음</div>';
+      document.getElementById("adReportNote").textContent = ads.length
+        ? `선택 조건 기준 총 ${ads.length.toLocaleString("ko-KR")}건, ${money(total)}이 집행되었습니다. 월평균 집행액은 ${money(avgMonthly)}이며, 최대 집행 매체는 ${topMedia?.[0] || "-"}입니다.`
+        : "선택 조건에 해당하는 광고비/협찬 집행 내역이 없습니다.";
+    }
+
+    function printAdReport() {
+      document.body.classList.add("print-ads");
+      window.print();
+      setTimeout(() => document.body.classList.remove("print-ads"), 500);
     }
     async function removeAd(idx) {
       const item = state.ads[idx];

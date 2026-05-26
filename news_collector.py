@@ -176,7 +176,9 @@ def extract_press_from_url(link: str) -> str:
         return ""
     host = urlparse(link).hostname or ""
     host = host.removeprefix("www.")
-    if not host or host in {"news.naver.com", "n.news.naver.com", "m.sports.naver.com", "news.google.com"}:
+    if host in {"news.naver.com", "n.news.naver.com", "m.sports.naver.com", "sports.news.naver.com", "m.news.naver.com"}:
+        return resolve_naver_press_from_page(link)
+    if not host or host in {"news.google.com"}:
         return ""
     domain_map = {
         "fins.co.kr": "보험저널",
@@ -184,8 +186,46 @@ def extract_press_from_url(link: str) -> str:
         "econovill.com": "이코노믹리뷰",
         "pinpointnews.co.kr": "핀포인트뉴스",
         "bigdatanews.co.kr": "빅데이터뉴스",
+        "enetnews.co.kr": "이넷뉴스",
+        "energy-news.co.kr": "에너지경제",
+        "mtn.co.kr": "머니투데이방송",
+        "mk.co.kr": "매일경제",
+        "hankyung.com": "한국경제",
+        "yna.co.kr": "연합뉴스",
+        "newsis.com": "뉴시스",
+        "news1.kr": "뉴스1",
     }
     return domain_map.get(host, host)
+
+
+def resolve_naver_press_from_page(link: str) -> str:
+    """Best-effort publisher extraction for Naver-hosted article pages."""
+    try:
+        response = requests.get(
+            link,
+            timeout=5,
+            headers={"User-Agent": "Mozilla/5.0 news-monitor/1.0"},
+        )
+        response.raise_for_status()
+    except Exception:
+        return ""
+
+    html = response.text
+    patterns = [
+        r'property=["\']og:article:author["\']\s+content=["\']([^"\']+)["\']',
+        r'content=["\']([^"\']+)["\']\s+property=["\']og:article:author["\']',
+        r'class=["\']media_end_head_top_logo_img["\'][^>]+alt=["\']([^"\']+)["\']',
+        r'alt=["\']([^"\']+)["\'][^>]+class=["\']media_end_head_top_logo_img["\']',
+        r'"pressName"\s*:\s*"([^"]+)"',
+        r'"officeName"\s*:\s*"([^"]+)"',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html)
+        if match:
+            candidate = clean_html(match.group(1))
+            if candidate and candidate not in {"네이버뉴스", "네이버 스포츠"}:
+                return candidate
+    return ""
 
 
 def deduplicate(articles: list[dict]) -> list[dict]:
