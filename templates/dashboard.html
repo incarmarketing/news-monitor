@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="dashboard-version" content="period-total-volume-v1">
+  <meta name="dashboard-version" content="company-negative-risk-v1">
   <title>Marketing PR Center</title>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -1433,13 +1433,14 @@
     function renderHeroBriefs(items, cats, tones, market) {
       const topPress = topBy(items.filter(article => !isPortalPress(article.press)), "press", 1)[0];
       const topKeyword = topBy(items, "keyword", 1)[0];
+      const ownNegative = companyNegativeCount(items);
       const cards = [
         ["분석 기준", dateRangeLabel(items)],
         ["핵심 키워드", topKeyword ? `${topKeyword[0]} · ${topKeyword[1]}건` : "관찰 키워드 없음"],
         ["언론/시장", topPress ? `${topPress[0]} 최다 · 시장동향 ${market}건` : `시장동향 ${market}건`],
-        ["당사 보도", `${cats.own || 0}건 · 부정 ${items.filter(a => a.category === "own" && a.tone === "negative").length}건`],
+        ["당사 보도", `${cats.own || 0}건 · 부정 ${ownNegative}건`],
         ["보도 논조", `긍정 ${tones.positive || 0} · 중립 ${tones.neutral || 0} · 부정 ${tones.negative || 0}`],
-        ["관리 포인트", (tones.negative || 0) ? "부정 기사 원문 확인 필요" : "정기 관찰 유지"]
+        ["관리 포인트", ownNegative ? "당사 부정 기사 원문 확인 필요" : "정기 관찰 유지"]
       ];
       document.getElementById("heroBriefs").innerHTML = cards.map(([title, value]) =>
         `<div class="hero-brief"><b>${escapeHtml(title)}</b><span>${escapeHtml(value)}</span></div>`
@@ -1448,10 +1449,24 @@
 
     function buildJudgement(items,cats,tones) {
       if (!items.length) return "현재 표시할 언론 데이터가 없습니다.";
-      if ((tones.negative || 0) > 0 && (cats.own || 0) > 0) return "당사 관련 부정성 이슈가 있어 원문 확인과 대응 상태 등록이 필요합니다.";
+      if (companyNegativeCount(items) > 0) return "당사 직접 부정성 이슈가 있어 원문 확인과 대응 상태 등록이 필요합니다.";
       if ((cats.regulation || 0) >= 3) return "규제/정책 보도가 많아 업계 영향과 당사 관련성을 우선 확인해야 합니다.";
       if ((cats.own || 0) > 0) return "당사 보도가 관찰되고 있으며 보도 톤과 확산 매체를 함께 추적할 필요가 있습니다.";
       return "당사 직접 리스크는 낮고 경쟁사 및 업계 흐름 중심의 관찰 구간입니다.";
+    }
+
+    function isCompanyNegative(article) {
+      return article.category === "own" && article.tone === "negative";
+    }
+
+    function companyNegativeCount(items) {
+      return items.filter(isCompanyNegative).length;
+    }
+
+    function riskArticles(items = state.articles) {
+      return items
+        .filter(isCompanyNegative)
+        .sort((a,b) => b.score - a.score);
     }
 
     function renderBars(targetId, entries, labeler = v => v) {
@@ -1509,8 +1524,8 @@
       document.getElementById("resultCount").textContent = `${state.filtered.length.toLocaleString("ko-KR")}건`;
       document.getElementById("articleList").innerHTML = state.filtered.slice(0,160).map(a => articleCard(a)).join("") || '<div class="empty">표시할 기사가 없습니다.</div>';
       document.getElementById("topIssues").innerHTML = focusedItems().slice().sort((a,b) => b.score - a.score).slice(0,5).map(a => articleCard(a,true)).join("") || '<div class="empty">핵심 이슈가 없습니다.</div>';
-      const risks = state.articles.filter(a => a.tone === "negative" || a.category === "own" && a.risk !== "LOW").slice(0,20);
-      document.getElementById("riskArticles").innerHTML = risks.map(a => articleCard(a,true)).join("") || '<div class="empty">현재 리스크 기사가 없습니다.</div>';
+      const risks = riskArticles().slice(0,20);
+      document.getElementById("riskArticles").innerHTML = risks.map(a => articleCard(a,true)).join("") || '<div class="empty">현재 당사 부정 리스크 기사가 없습니다.</div>';
     }
 
     function parseDateValue(value) {
@@ -1564,7 +1579,7 @@
     }
 
     function analysisRisk(items) {
-      const ownNegative = items.filter(a => a.category === "own" && a.tone === "negative").length;
+      const ownNegative = companyNegativeCount(items);
       if (ownNegative >= 3) return "HIGH";
       if (ownNegative >= 1) return "MEDIUM";
       return "LOW";
@@ -1574,10 +1589,10 @@
       if (!items.length) return "선택한 기간에 표시할 언론 데이터가 없습니다. 기간을 다시 선택하거나 수집 상태를 확인해 주세요.";
       const topKeyword = topBy(items,"keyword",1)[0];
       const own = cats.own || 0;
-      const negative = tones.negative || 0;
+      const ownNegative = companyNegativeCount(items);
       const regulation = cats.regulation || 0;
       const market = (cats.competitor || 0) + (cats.industry || 0);
-      if (own && negative) return `선택 기간에는 당사 관련 부정성 이슈가 포함되어 있습니다. 원문 확인, 사실관계 정리, 후속 대응 상태 등록이 우선입니다. 주요 키워드는 ${topKeyword ? `"${topKeyword[0]}"` : "확인 필요"}입니다.`;
+      if (ownNegative) return `선택 기간에는 당사 직접 부정성 이슈 ${ownNegative}건이 포함되어 있습니다. 원문 확인, 사실관계 정리, 후속 대응 상태 등록이 우선입니다. 주요 키워드는 ${topKeyword ? `"${topKeyword[0]}"` : "확인 필요"}입니다.`;
       if (regulation >= Math.max(3, own)) return `규제/정책성 보도가 상대적으로 두드러집니다. 당사 직접 리스크보다 업계 환경 변화가 핵심이므로, 관련 법안·감독 이슈의 후속 보도를 관찰해야 합니다.`;
       if (own) return `당사 보도가 ${own}건 관찰되었습니다. 부정 이슈는 낮은 상태이며, 긍정 보도의 확산 매체와 반복 노출 키워드를 중심으로 홍보 효과를 관리할 수 있습니다.`;
       return `당사 직접 보도보다 경쟁/업계 동향 ${market}건이 중심입니다. 시장 흐름을 파악하고 당사 관점에서 활용 가능한 커뮤니케이션 소재를 선별하는 구간입니다.`;
@@ -1682,19 +1697,19 @@
       const current = items;
       const topKeyword = topBy(current,"keyword",1)[0];
       const topPress = topBy(current.filter(article => !isPortalPress(article.press)),"press",1)[0];
-      const neg = current.filter(a => a.tone === "negative").length;
+      const neg = companyNegativeCount(current);
       const messages = [
         `${contextLabel()} 기사 ${current.length}건이 관찰되었습니다.`,
         topKeyword ? `최다 키워드는 "${topKeyword[0]}"이며 ${topKeyword[1]}건입니다.` : "주요 키워드 데이터가 부족합니다.",
         topPress ? `가장 많이 등장한 언론사는 ${topPress[0]}입니다.` : "언론사 분포 데이터가 부족합니다.",
-        neg ? `부정성 기사 ${neg}건은 리스크 대응 센터에서 확인이 필요합니다.` : "부정성 이슈는 현재 낮은 상태입니다."
+        neg ? `당사 부정 기사 ${neg}건은 리스크 대응 센터에서 확인이 필요합니다.` : "당사 직접 부정성 이슈는 현재 낮은 상태입니다."
       ];
       document.getElementById("insights").innerHTML = messages.map(text => `<div class="article"><div class="meta"><span class="chip">Insight</span></div><div class="article-title" style="margin-bottom:0">${escapeHtml(text)}</div></div>`).join("");
     }
 
     function renderAnalysisEvidence(items) {
       const own = items.filter(a => a.category === "own").sort((a,b) => b.score - a.score).slice(0,3);
-      const negative = items.filter(a => a.tone === "negative").sort((a,b) => b.score - a.score).slice(0,3);
+      const negative = riskArticles(items).slice(0,3);
       const trend = items.filter(a => ["regulation","competitor","industry"].includes(a.category)).sort((a,b) => b.score - a.score).slice(0,3);
       const groups = [
         ["당사 보도", own, "primary"],
