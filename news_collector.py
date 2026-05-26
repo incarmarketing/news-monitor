@@ -28,6 +28,47 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 load_dotenv()
 console = Console()
 
+PRESS_ALIAS_MAP = {
+    "MHN포토": "MHN스포츠",
+    "엠에이치앤포토": "MHN스포츠",
+}
+
+NON_PRESS_TITLE_LABELS = {
+    "포토",
+    "단독",
+    "속보",
+    "인터뷰",
+    "기획",
+}
+
+PORTAL_HOSTS = {
+    "news.naver.com",
+    "n.news.naver.com",
+    "m.news.naver.com",
+    "m.sports.naver.com",
+    "sports.news.naver.com",
+    "news.google.com",
+    "news.google.co.kr",
+}
+
+DOMAIN_PRESS_MAP = {
+    "fins.co.kr": "보험저널",
+    "news2day.co.kr": "뉴스투데이",
+    "econovill.com": "이코노믹리뷰",
+    "pinpointnews.co.kr": "핀포인트뉴스",
+    "bigdatanews.co.kr": "빅데이터뉴스",
+    "enetnews.co.kr": "이넷뉴스",
+    "energy-news.co.kr": "에너지경제",
+    "mtn.co.kr": "머니투데이방송",
+    "mk.co.kr": "매일경제",
+    "hankyung.com": "한국경제",
+    "yna.co.kr": "연합뉴스",
+    "newsis.com": "뉴시스",
+    "news1.kr": "뉴스1",
+    "mhnse.com": "MHN스포츠",
+    "mhnsports.com": "MHN스포츠",
+}
+
 NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 
@@ -153,22 +194,33 @@ def clean_html(text: str) -> str:
 def infer_press_name(title: str, link: str, fallback: str) -> str:
     title_press = extract_press_from_title(title)
     if title_press:
-        return title_press
+        return normalize_press_name(title_press)
     domain_press = extract_press_from_url(link)
-    return domain_press or fallback
+    return normalize_press_name(domain_press or fallback)
+
+
+def normalize_press_name(value: str) -> str:
+    press = clean_html(value or "")
+    press = re.sub(r"\s+", " ", press).strip()
+    if not press:
+        return ""
+    return PRESS_ALIAS_MAP.get(press, press)
 
 
 def extract_press_from_title(title: str) -> str:
     bracket = re.match(r"^\s*\[([^\]]{2,15})\]", title or "")
     if bracket:
-        return bracket.group(1).strip()
+        candidate = bracket.group(1).strip()
+        if candidate in NON_PRESS_TITLE_LABELS:
+            return ""
+        return normalize_press_name(candidate)
     dash = re.search(r"\s[-–]\s([^-\u2013]{2,18})$", title or "")
     if not dash:
         return ""
     candidate = re.sub(r"\s+", " ", dash.group(1)).strip()
-    if re.search(r"기자|특파원|단독|종합|속보", candidate):
+    if candidate in NON_PRESS_TITLE_LABELS or re.search(r"기자|특파원|단독|종합|속보", candidate):
         return ""
-    return candidate
+    return normalize_press_name(candidate)
 
 
 def extract_press_from_url(link: str) -> str:
@@ -176,30 +228,15 @@ def extract_press_from_url(link: str) -> str:
         return ""
     host = urlparse(link).hostname or ""
     host = host.removeprefix("www.")
-    if host in {"news.naver.com", "n.news.naver.com", "m.sports.naver.com", "sports.news.naver.com", "m.news.naver.com"}:
-        return resolve_naver_press_from_page(link)
-    if not host or host in {"news.google.com"}:
+    if host in PORTAL_HOSTS:
+        return resolve_portal_press_from_page(link)
+    if not host:
         return ""
-    domain_map = {
-        "fins.co.kr": "보험저널",
-        "news2day.co.kr": "뉴스투데이",
-        "econovill.com": "이코노믹리뷰",
-        "pinpointnews.co.kr": "핀포인트뉴스",
-        "bigdatanews.co.kr": "빅데이터뉴스",
-        "enetnews.co.kr": "이넷뉴스",
-        "energy-news.co.kr": "에너지경제",
-        "mtn.co.kr": "머니투데이방송",
-        "mk.co.kr": "매일경제",
-        "hankyung.com": "한국경제",
-        "yna.co.kr": "연합뉴스",
-        "newsis.com": "뉴시스",
-        "news1.kr": "뉴스1",
-    }
-    return domain_map.get(host, host)
+    return DOMAIN_PRESS_MAP.get(host, host)
 
 
-def resolve_naver_press_from_page(link: str) -> str:
-    """Best-effort publisher extraction for Naver-hosted article pages."""
+def resolve_portal_press_from_page(link: str) -> str:
+    """Best-effort publisher extraction for portal-hosted article pages."""
     try:
         response = requests.get(
             link,
@@ -214,16 +251,20 @@ def resolve_naver_press_from_page(link: str) -> str:
     patterns = [
         r'property=["\']og:article:author["\']\s+content=["\']([^"\']+)["\']',
         r'content=["\']([^"\']+)["\']\s+property=["\']og:article:author["\']',
-        r'class=["\']media_end_head_top_logo_img["\'][^>]+alt=["\']([^"\']+)["\']',
-        r'alt=["\']([^"\']+)["\'][^>]+class=["\']media_end_head_top_logo_img["\']',
+        r'class=["\'][^"\']*media_end_head_top_logo_img[^"\']*["\'][^>]+alt=["\']([^"\']+)["\']',
+        r'alt=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*media_end_head_top_logo_img[^"\']*["\']',
+        r'class=["\'][^"\']*press_logo[^"\']*["\'][^>]+alt=["\']([^"\']+)["\']',
+        r'alt=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*press_logo[^"\']*["\']',
+        r'data-office-name=["\']([^"\']+)["\']',
         r'"pressName"\s*:\s*"([^"]+)"',
         r'"officeName"\s*:\s*"([^"]+)"',
+        r'"cpName"\s*:\s*"([^"]+)"',
     ]
     for pattern in patterns:
-        match = re.search(pattern, html)
+        match = re.search(pattern, html, re.S)
         if match:
-            candidate = clean_html(match.group(1))
-            if candidate and candidate not in {"네이버뉴스", "네이버 스포츠"}:
+            candidate = normalize_press_name(match.group(1))
+            if candidate and candidate not in {"네이버뉴스", "네이버 스포츠", "구글뉴스"}:
                 return candidate
     return ""
 

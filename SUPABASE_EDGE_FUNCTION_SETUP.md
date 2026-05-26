@@ -30,6 +30,7 @@ Supabase CLI 로그인 후 프로젝트에서 실행합니다.
 
 ```powershell
 supabase functions deploy trigger-news-collection
+supabase functions deploy generate-risk-response
 ```
 
 ## 4. Edge Function Secret 설정
@@ -40,6 +41,8 @@ supabase secrets set GITHUB_OWNER="incarmarketing"
 supabase secrets set GITHUB_REPO="news-monitor"
 supabase secrets set GITHUB_WORKFLOW_FILE="news-briefing.yml"
 supabase secrets set GITHUB_REF="main"
+supabase secrets set GEMINI_API_KEY="Gemini API key"
+supabase secrets set GEMINI_MODEL="gemini-2.5-flash"
 ```
 
 `GITHUB_DISPATCH_TOKEN` 권한:
