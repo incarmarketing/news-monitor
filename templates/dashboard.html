@@ -146,12 +146,13 @@
     .btn.primary { background:var(--incar); border-color:var(--incar); color:#fff; }
     .btn.danger { color:var(--red); border-color:#fecdd3; }
     .btn.scrap-toggle {
-      min-height:28px;
-      padding:4px 9px;
+      min-height:30px;
+      padding:5px 10px;
       margin-left:auto;
       color:#475467;
       border-color:#d8dee8;
       background:#fff;
+      flex:0 0 auto;
     }
     .btn.scrap-toggle.is-scraped {
       color:#fff;
@@ -293,11 +294,12 @@
     .article {
       border:1px solid var(--line);
       border-radius:8px;
-      padding:13px;
+      padding:15px;
       background:#fff;
       transition:box-shadow .18s,border-color .18s;
     }
     .article:hover { border-color:#b9c7dc; box-shadow:0 6px 14px rgba(15,23,42,.055); }
+    .article.compact { padding:14px; }
     .article-title {
       margin:8px 0 7px;
       display:block;
@@ -307,10 +309,25 @@
       font-weight:900;
       text-decoration:none;
     }
+    .article.compact .article-title {
+      margin:11px 0 0;
+      font-size:15px;
+      line-height:1.48;
+    }
     .article-title:hover { color:var(--incar); text-decoration:underline; }
     .summary { color:#475569; font-size:13px; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:var(--muted); font-size:12px; font-weight:800; }
-    .chip { border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 8px; }
+    .meta { display:flex; flex-wrap:wrap; gap:7px; row-gap:8px; align-items:center; color:var(--muted); font-size:12px; font-weight:800; }
+    .chip {
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      padding:4px 9px;
+      min-height:26px;
+      display:inline-flex;
+      align-items:center;
+      line-height:1.15;
+      white-space:nowrap;
+    }
     .chip.time { background:#f8fafc; color:#334155; border-color:#cbd5e1; }
     .chip.own,.chip.positive { background:#eef8f1; color:var(--green); border-color:#cbead5; }
     .chip.negative { background:#fff1f2; color:var(--red); border-color:#fecdd3; }
@@ -528,6 +545,46 @@
       -webkit-box-orient:vertical;
       overflow:hidden;
     }
+    .keyword-mobile-list {
+      display:none;
+      gap:8px;
+    }
+    .keyword-mobile-row {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px 10px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      box-shadow:0 1px 2px rgba(16,24,40,.035);
+    }
+    .keyword-mobile-name {
+      color:var(--ink);
+      font-size:13px;
+      font-weight:900;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .keyword-mobile-count {
+      color:var(--incar-dark);
+      font-size:13px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .keyword-mobile-track {
+      grid-column:1/-1;
+      height:8px;
+      border-radius:999px;
+      background:#eef2f7;
+      overflow:hidden;
+    }
+    .keyword-mobile-fill {
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg,#27398c,#5b7cfa);
+    }
     .keyword-grouped-chart {
       height:230px;
       display:grid;
@@ -719,18 +776,28 @@
     .report-evidence {
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:14px;
+      gap:16px;
+      align-items:start;
     }
     .evidence-section {
       border:1px solid var(--line);
       border-radius:8px;
-      padding:12px;
+      padding:16px;
       background:#fbfdff;
       min-width:0;
     }
     .evidence-section.primary { grid-row:span 2; }
-    .evidence-section .feed { gap:10px; }
-    .evidence-section .article { background:#fff; }
+    .evidence-section .report-section-title {
+      margin:0 0 13px;
+      padding-bottom:10px;
+      border-bottom:1px solid #e8eef7;
+      font-size:14px;
+    }
+    .evidence-section .feed { gap:12px; }
+    .evidence-section .article {
+      background:#fff;
+      border-color:#d8e2f0;
+    }
     .table { width:100%; border-collapse:collapse; font-size:13px; }
     .table th,.table td { border-bottom:1px solid var(--line); padding:12px 10px; text-align:left; vertical-align:top; }
     .table th { color:var(--muted); font-size:12px; font-weight:900; background:#f8fafc; }
@@ -817,24 +884,26 @@
       .monitor-head-actions #refreshStatus { margin-left:0 !important; }
       .monitor-head-actions .btn { min-width:0; }
       .article { padding:12px; }
+      .article.compact { padding:13px; }
       .article-title { font-size:15px; }
-      .article .meta { gap:5px; }
-      .article .meta .chip { padding:3px 7px; font-size:11px; }
-      .btn.scrap-toggle { margin-left:0; }
+      .article.compact .article-title { margin-top:10px; }
+      .article .meta { gap:6px; row-gap:7px; }
+      .article .meta .chip { padding:3px 8px; font-size:11px; min-height:24px; }
+      .btn.scrap-toggle { margin-left:0; min-height:28px; }
       .toolbar { gap:8px; }
       .tone-buttons { grid-template-columns:1fr; }
       .keyword-row {
         grid-template-columns:1fr;
         gap:8px;
       }
-      .keyword-total-chart {
-        grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:12px;
-      }
-      .keyword-total-item { min-height:196px; grid-template-rows:148px auto; }
-      .keyword-total-bar-wrap { height:148px; }
-      .keyword-total-bar { width:min(30px,58%); }
+      #volumeChart.chart { padding-top:0; }
+      .keyword-volume { gap:0; }
+      .keyword-total-chart { display:none; }
+      .keyword-mobile-list { display:grid; }
       .keyword-count { text-align:left; }
+      .evidence-section { padding:13px; }
+      .evidence-section .report-section-title { margin-bottom:11px; padding-bottom:9px; }
+      .evidence-section .feed { gap:10px; }
       .bar-row { grid-template-columns:78px 1fr 38px; gap:8px; font-size:12px; }
       .report-head { padding:19px; }
       .report-head h2 { font-size:24px; }
@@ -1706,7 +1775,7 @@
       const key = article.id || article.link;
       const scraped = state.scraps.some(item => (item.id || item.link) === key);
       return `
-        <article class="article">
+        <article class="article${compact ? " compact" : ""}">
           <div class="meta">
             <span class="chip time">${escapeHtml(article.published_label || article.date || "-")}</span>
             <span class="chip">${escapeHtml(article.press)}</span>
@@ -1842,7 +1911,14 @@
           </div>
         `;
       }).join("");
-      document.getElementById("volumeChart").innerHTML = `<div class="keyword-volume"><div class="keyword-total-chart">${bars}</div></div>`;
+      const mobileRows = entries.slice(0,8).map(([keyword, value]) => `
+        <div class="keyword-mobile-row" title="${escapeHtml(keyword)} ${value.toLocaleString("ko-KR")}건">
+          <div class="keyword-mobile-name">${escapeHtml(keyword)}</div>
+          <div class="keyword-mobile-count">${value.toLocaleString("ko-KR")}건</div>
+          <div class="keyword-mobile-track"><div class="keyword-mobile-fill" style="width:${Math.max(5, value / max * 100)}%"></div></div>
+        </div>
+      `).join("");
+      document.getElementById("volumeChart").innerHTML = `<div class="keyword-volume"><div class="keyword-total-chart">${bars}</div><div class="keyword-mobile-list">${mobileRows}</div></div>`;
     }
 
     function renderToneBoard(targetId, items) {
@@ -1918,7 +1994,7 @@
       ];
       document.getElementById("analysisEvidence").innerHTML = groups.map(([title, rows, variant]) => `
         <div class="evidence-section ${variant}">
-          <h3 class="report-section-title" style="font-size:14px;margin:0">${escapeHtml(title)}</h3>
+          <h3 class="report-section-title">${escapeHtml(title)}</h3>
           <div class="feed">
           ${rows.map(a => articleCard(a,true)).join("") || '<div class="empty">해당 기사 없음</div>'}
           </div>
