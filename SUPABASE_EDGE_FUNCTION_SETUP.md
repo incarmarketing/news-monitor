@@ -30,8 +30,10 @@ Supabase CLI 로그인 후 프로젝트에서 실행합니다.
 
 ```powershell
 supabase functions deploy trigger-news-collection
-supabase functions deploy generate-risk-response
+supabase functions deploy generate-risk-response --no-verify-jwt
 ```
+
+`generate-risk-response`는 GitHub Pages 대시보드의 publishable/anon key로 호출되므로 Supabase 기본 JWT 검증을 끄고, 함수 내부에서 `PUBLIC_SUPABASE_ANON_KEY`로 요청 키를 확인합니다.
 
 ## 4. Edge Function Secret 설정
 

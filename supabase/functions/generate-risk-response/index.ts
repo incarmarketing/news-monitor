@@ -95,6 +95,7 @@ function buildPrompt(input: { type: "internal" | "press"; issue: string; url: st
     `목적: ${purpose}`,
     "회사: 인카금융서비스",
     "부서: 마케팅부",
+    `작성일: ${todayKst()}`,
     input.url ? `기사 URL: ${input.url}` : "기사 URL: 미입력",
     "",
     "사용자가 입력한 핵심 내용:",
@@ -105,12 +106,23 @@ function buildPrompt(input: { type: "internal" | "press"; issue: string; url: st
     "",
     "작성 조건:",
     "- 한국어로 작성",
+    "- 오늘 날짜는 위 작성일을 사용",
+    "- Markdown 기호(#, **, ---) 없이 일반 보고 문장으로 작성",
     "- 과장 표현 금지",
     "- 사실관계가 불명확하면 '확인 중'으로 표현",
     "- 법적 책임 인정처럼 보일 수 있는 표현 금지",
     "- 바로 보고서에 붙일 수 있게 제목과 항목을 간결하게 구성",
     `- 항목 구성: ${format.join(" / ")}`,
   ].join("\n");
+}
+
+function todayKst() {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 function extractText(data: any) {
@@ -139,26 +151,9 @@ function jsonResponse(payload: unknown, status = 200) {
 
 function isAllowedApiKey(apiKey: string | null) {
   if (!apiKey) return false;
-
-  const allowed = new Set<string>();
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (anonKey) allowed.add(anonKey);
-
-  const publishableKeys = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
-  if (publishableKeys) {
-    try {
-      const parsed = JSON.parse(publishableKeys);
-      if (typeof parsed === "string") {
-        allowed.add(parsed);
-      } else if (parsed && typeof parsed === "object") {
-        Object.values(parsed).forEach((value) => {
-          if (typeof value === "string") allowed.add(value);
-        });
-      }
-    } catch {
-      allowed.add(publishableKeys);
-    }
-  }
-
-  return allowed.has(apiKey);
+  const allowed = [
+    Deno.env.get("PUBLIC_SUPABASE_ANON_KEY"),
+    Deno.env.get("SUPABASE_ANON_KEY"),
+  ].filter(Boolean);
+  return allowed.includes(apiKey);
 }

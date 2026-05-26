@@ -928,7 +928,7 @@
           </div>
 
           <div class="metric-grid">
-            <div class="metric"><strong id="metricTotal">0</strong><span>전체 기사</span></div>
+            <div class="metric"><strong id="metricTotal">0</strong><span>분석 기사</span></div>
             <div class="metric"><strong id="metricOwn">0</strong><span>당사 보도</span></div>
             <div class="metric"><strong id="metricNegative">0</strong><span>부정 기사</span></div>
             <div class="metric"><strong id="metricMarket">0</strong><span>경쟁/업계 동향</span></div>
@@ -1495,7 +1495,7 @@
     }
 
     function focusedItems() {
-      if (state.filters.date) return state.filtered;
+      if (hasActiveFilter()) return state.filtered;
       const latest = latestDate(state.filtered);
       return latest ? state.filtered.filter(a => a.date === latest) : state.filtered;
     }
@@ -1596,7 +1596,7 @@
       document.getElementById("issueTitle").innerHTML = `<i data-lucide="activity"></i> ${hasActiveFilter() ? "필터 기준 핵심 이슈" : "최신 모니터링 핵심 이슈"}`;
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
       renderHeroBriefs(current, cats, tones, market);
-      document.getElementById("metricTotal").textContent = state.filtered.length.toLocaleString("ko-KR");
+      document.getElementById("metricTotal").textContent = current.length.toLocaleString("ko-KR");
       document.getElementById("metricOwn").textContent = (cats.own || 0).toLocaleString("ko-KR");
       document.getElementById("metricNegative").textContent = (tones.negative || 0).toLocaleString("ko-KR");
       document.getElementById("metricMarket").textContent = market.toLocaleString("ko-KR");
@@ -1636,6 +1636,7 @@
       const ownNegative = companyNegativeCount(items);
       const cards = [
         ["분석 기준", dateRangeLabel(items)],
+        ["누적 데이터", `${state.articles.length.toLocaleString("ko-KR")}건 보관`],
         ["핵심 키워드", topKeyword ? `${topKeyword[0]} · ${topKeyword[1]}건` : "관찰 키워드 없음"],
         ["언론/시장", topPress ? `${topPress[0]} 최다 · 시장동향 ${market}건` : `시장동향 ${market}건`],
         ["당사 보도", `${cats.own || 0}건 · 부정 ${ownNegative}건`],
