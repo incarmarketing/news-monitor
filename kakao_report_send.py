@@ -65,8 +65,13 @@ def latest_html_path() -> Path | None:
 def report_link() -> str:
     configured = os.getenv("REPORT_PUBLIC_URL", "").strip()
     if configured and not is_local_url(configured):
-        return configured
-    return DEFAULT_REPORT_URL
+        return with_cache_buster(configured)
+    return with_cache_buster(DEFAULT_REPORT_URL)
+
+
+def with_cache_buster(url: str) -> str:
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}v={datetime.now(KST):%Y%m%d%H%M%S}"
 
 
 def is_local_url(url: str) -> bool:

@@ -83,6 +83,16 @@ jobs:
         if: steps.guard.outputs.should_run == 'true'
         run: python -m pip install -r requirements.txt
 
+      - name: Check Supabase write secret
+        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-kakao]'))
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY secret is missing. Daily reports would be sent without dashboard DB persistence."
+            exit 1
+          fi
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Generate briefing
         if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-kakao]'))
         run: python run_once.py

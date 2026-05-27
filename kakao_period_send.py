@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
 
-from kakao_report_send import DEFAULT_REPORT_URL, refresh_access_token, send_text_to_me
+from kakao_report_send import DEFAULT_REPORT_URL, refresh_access_token, send_text_to_me, with_cache_buster
 from supabase_store import save_notification_send
 
 KST = timezone(timedelta(hours=9))
@@ -47,7 +47,7 @@ def build_message(period: str) -> tuple[str, str]:
             info["desc"],
         ]
     )
-    return text[:500], base_url() + info["path"]
+    return text[:500], with_cache_buster(base_url() + info["path"])
 
 
 def main() -> None:

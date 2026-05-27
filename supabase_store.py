@@ -69,14 +69,7 @@ def is_enabled() -> bool:
 
 
 def write_key() -> str:
-    return (
-        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        or os.getenv("SUPABASE_ANON_KEY")
-        or os.getenv("PUBLIC_SUPABASE_ANON_KEY")
-        or os.getenv("SUPABASE_PUBLISHABLE_KEY")
-        or os.getenv("PUBLIC_SUPABASE_PUBLISHABLE_KEY")
-        or ""
-    )
+    return os.getenv("SUPABASE_SERVICE_ROLE_KEY") or ""
 
 
 def headers() -> dict[str, str]:
