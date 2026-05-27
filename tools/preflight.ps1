@@ -22,7 +22,12 @@ function Get-CommandPath($Name) {
 
 function First-ExistingPath($Paths) {
     foreach ($path in $Paths) {
-        if ($path -and (Test-Path $path)) { return $path }
+        try {
+            if ($path -and (Test-Path -LiteralPath $path -ErrorAction Stop)) { return $path }
+        } catch {
+            # Some corporate Windows profiles deny probing selected AppData paths.
+            # Treat that as "not found" so the preflight can continue.
+        }
     }
     return ""
 }
