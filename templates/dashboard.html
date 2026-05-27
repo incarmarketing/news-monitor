@@ -335,7 +335,9 @@
       gap:8px;
     }
     #page-home > .panel { margin-bottom:20px; }
-    #page-home > .grid-2 { margin-top:0; }
+    #page-home > .grid-2 { margin:0 0 24px; }
+    #page-home > .grid-2 + .grid-2 { margin-top:4px; }
+    #page-home > .grid-2:last-child { margin-bottom:0; }
     .monitor-head {
       display:flex;
       align-items:center;
@@ -2309,7 +2311,7 @@
           </div>
           <div class="watch-meta">
             <span class="status-pill ${negative ? "warn" : "ok"}">부정 ${negative.toLocaleString("ko-KR")}건</span>
-            <span class="status-pill">탐색 주기 ${escapeHtml(String(latest?.minutes_back || 15))}분</span>
+            <span class="status-pill">탐색 주기 ${escapeHtml(String(latest?.minutes_back || 5))}분</span>
           </div>
         </div>
       `;

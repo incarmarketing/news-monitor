@@ -172,7 +172,7 @@ def record_watch_run(
 
 def main() -> None:
     load_dotenv()
-    minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "10"))
+    minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "5"))
     scanned_at = now_kst().isoformat()
 
     if not is_active_time():

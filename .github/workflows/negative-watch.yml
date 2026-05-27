@@ -45,7 +45,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
-          NEGATIVE_WATCH_MINUTES: "15"
+          NEGATIVE_WATCH_MINUTES: "5"
           NEGATIVE_WATCH_START_HOUR: "7"
           NEGATIVE_WATCH_END_HOUR: "18"
 
