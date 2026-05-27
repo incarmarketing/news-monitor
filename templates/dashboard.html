@@ -36,6 +36,68 @@
     }
     button,input,textarea,select { font:inherit; }
     a { color:inherit; }
+    .auth-locked { display:none !important; }
+    .login-screen {
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      background:
+        linear-gradient(135deg, rgba(17,24,39,.96), rgba(39,57,140,.94)),
+        radial-gradient(circle at 80% 10%, rgba(91,124,250,.36), transparent 34%);
+    }
+    .login-card {
+      width:min(420px,100%);
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:8px;
+      background:#fff;
+      padding:28px;
+      box-shadow:0 24px 70px rgba(15,23,42,.28);
+    }
+    .login-mark {
+      width:44px;
+      height:44px;
+      border-radius:8px;
+      display:grid;
+      place-items:center;
+      background:var(--incar);
+      color:#fff;
+      font-weight:900;
+      margin-bottom:16px;
+    }
+    .login-card h1 {
+      margin:0;
+      color:var(--incar-dark);
+      font-size:24px;
+      line-height:1.24;
+    }
+    .login-card p {
+      margin:8px 0 20px;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:800;
+      line-height:1.5;
+    }
+    .login-form {
+      display:grid;
+      gap:12px;
+    }
+    .login-status {
+      min-height:18px;
+      color:var(--red);
+      font-size:12px;
+      font-weight:900;
+      line-height:1.4;
+    }
+    .auth-user {
+      min-height:38px;
+      display:inline-flex;
+      align-items:center;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      white-space:nowrap;
+    }
     .app {
       height:100vh;
       display:grid;
@@ -227,17 +289,19 @@
     .risk-card.risk-high .risk-value { color:#be123c; }
     .risk-label { color:var(--muted); font-size:11px; font-weight:900; margin-bottom:0; }
     .risk-hint { display:none; }
-    .hero-briefs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:12px; }
+    .hero-briefs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:14px; }
     .hero-brief {
       border:1px solid var(--line);
       border-radius:8px;
-      padding:10px;
+      padding:13px;
       background:#fff;
-      min-height:72px;
+      min-height:82px;
+      display:grid;
+      align-content:start;
     }
     .hero-brief b { display:block; color:var(--incar-dark); font-size:12px; margin-bottom:5px; }
     .hero-brief span { color:#475467; font-size:12px; font-weight:800; line-height:1.4; }
-    .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+    .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:15px; }
     .metric {
       background:#fff;
       border:1px solid var(--line);
@@ -385,9 +449,19 @@
     .insight-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
     .insight-card b { display:block; color:var(--incar-dark); font-size:20px; margin-bottom:4px; }
     .insight-card span { color:#475467; font-size:12px; font-weight:900; }
-    .ops-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
-    .ops-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
-    .ops-card b { display:block; color:var(--incar-dark); font-size:16px; margin-bottom:5px; }
+    .ops-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .ops-card {
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:16px;
+      background:#fbfdff;
+      min-height:78px;
+      display:grid;
+      gap:8px;
+      align-content:start;
+      box-shadow:0 1px 2px rgba(16,24,40,.035);
+    }
+    .ops-card b { display:block; color:var(--incar-dark); font-size:16px; margin-bottom:0; }
     .ops-card span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.45; }
     .tone-board { display:grid; gap:10px; }
     .tone-buttons { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
@@ -887,6 +961,7 @@
       .page-wrap { padding:16px 12px 88px; }
       .topbar { padding:12px; align-items:flex-start; flex-wrap:wrap; }
       .topbar > div:first-child { min-width:0; flex:1 1 auto; }
+      .auth-user { min-height:32px; }
       .actions {
         flex:0 0 100%;
         width:100%;
@@ -922,6 +997,8 @@
     }
     @media(max-width:540px) {
       h1 { font-size:20px; }
+      .login-screen { padding:16px; }
+      .login-card { padding:22px; }
       .hero { padding:18px; }
       .hero h2 { font-size:23px; }
       .metric-grid,.form-grid { grid-template-columns:1fr; }
@@ -991,7 +1068,27 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <div class="login-mark">PR</div>
+      <h1>Marketing PR Center</h1>
+      <p>인카금융서비스 사번과 비밀번호로 접속하세요. 등록된 사용자만 대시보드를 열 수 있습니다.</p>
+      <div class="login-form">
+        <div class="field">
+          <label>사번</label>
+          <input id="loginEmployeeNo" inputmode="numeric" autocomplete="username" placeholder="예: 1611499">
+        </div>
+        <div class="field">
+          <label>비밀번호</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" placeholder="비밀번호 입력">
+        </div>
+        <button class="btn primary" id="loginButton" type="submit"><i data-lucide="lock-keyhole"></i><span>로그인</span></button>
+        <div class="login-status" id="loginStatus"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="app auth-locked" id="appShell">
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-row">
@@ -1025,12 +1122,14 @@
           <h1 id="pageTitle">통합 대시보드</h1>
         </div>
         <div class="actions">
+          <span class="auth-user" id="authUser"></span>
           <button class="btn mobile-menu" id="mobileMenuBtn"><i data-lucide="menu"></i></button>
           <a class="btn" href="./index.html"><i data-lucide="file-text"></i><span>일일 보고서</span></a>
           <button class="btn" data-analysis-shortcut="7"><i data-lucide="calendar-days"></i><span>주간</span></button>
           <button class="btn" data-analysis-shortcut="30"><i data-lucide="calendar-range"></i><span>월간</span></button>
           <button class="btn" id="exportCsv"><i data-lucide="download"></i><span>CSV 출력</span></button>
           <button class="btn primary" id="resetFilters"><i data-lucide="rotate-ccw"></i><span>필터 초기화</span></button>
+          <button class="btn" id="logoutButton"><i data-lucide="log-out"></i><span>로그아웃</span></button>
         </div>
       </header>
 
@@ -1368,8 +1467,12 @@
       selectedMedia: "",
       reporters: JSON.parse(localStorage.getItem("pr_reporters") || "[]"),
       ads: JSON.parse(localStorage.getItem("pr_ads") || "[]"),
-      adFilters: { year:"", month:"", media:"", type:"" }
+      adFilters: { year:"", month:"", media:"", type:"" },
+      auth: null
     };
+    const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
+    let appBound = false;
+    let loginBound = false;
 
     const pageTitles = {
       home:"통합 대시보드",
@@ -1498,6 +1601,100 @@
     const sortByLatest = items => [...items].sort(latestArticleSort);
     const isManagedPress = press => press && !isPortalPress(press) && !isUnresolvedPress(press) && !state.hiddenMedia.includes(press);
     const managedMediaArticles = () => state.articles.filter(article => isManagedPress(article.press));
+
+    function getStoredSession() {
+      try {
+        const session = JSON.parse(localStorage.getItem(DASHBOARD_SESSION_KEY) || "null");
+        if (!session?.employee_no || !session?.session_expires_at) return null;
+        if (new Date(session.session_expires_at).getTime() <= Date.now()) {
+          localStorage.removeItem(DASHBOARD_SESSION_KEY);
+          return null;
+        }
+        return session;
+      } catch {
+        localStorage.removeItem(DASHBOARD_SESSION_KEY);
+        return null;
+      }
+    }
+
+    function setLoginStatus(message = "", tone = "error") {
+      const target = document.getElementById("loginStatus");
+      if (!target) return;
+      target.textContent = message;
+      target.style.color = tone === "ok" ? "var(--green)" : tone === "warn" ? "var(--amber)" : "var(--red)";
+    }
+
+    function showLogin(message = "") {
+      document.getElementById("loginScreen")?.classList.remove("auth-locked");
+      document.getElementById("appShell")?.classList.add("auth-locked");
+      setLoginStatus(message);
+      lucide.createIcons();
+    }
+
+    function unlockDashboard(session) {
+      state.auth = session;
+      document.getElementById("loginScreen")?.classList.add("auth-locked");
+      document.getElementById("appShell")?.classList.remove("auth-locked");
+      const user = document.getElementById("authUser");
+      if (user) user.textContent = `${session.display_name || session.employee_no} · ${session.employee_no}`;
+    }
+
+    function bindLogin() {
+      if (loginBound) return;
+      loginBound = true;
+      document.getElementById("loginForm")?.addEventListener("submit", async event => {
+        event.preventDefault();
+        const employeeNo = document.getElementById("loginEmployeeNo").value.trim();
+        const password = document.getElementById("loginPassword").value;
+        if (!employeeNo || !password) {
+          setLoginStatus("사번과 비밀번호를 모두 입력해 주세요.");
+          return;
+        }
+        const button = document.getElementById("loginButton");
+        if (button) button.disabled = true;
+        setLoginStatus("Supabase 사용자 확인 중...", "warn");
+        try {
+          const result = await verifyDashboardLogin(employeeNo, password);
+          if (!result?.ok) {
+            setLoginStatus(result?.message || "사번 또는 비밀번호가 일치하지 않습니다.");
+            return;
+          }
+          localStorage.setItem(DASHBOARD_SESSION_KEY, JSON.stringify(result));
+          setLoginStatus("로그인 완료. 대시보드를 불러옵니다.", "ok");
+          unlockDashboard(result);
+          await loadDashboard();
+        } catch {
+          setLoginStatus("로그인 확인에 실패했습니다. Supabase 연결을 확인해 주세요.");
+        } finally {
+          if (button) button.disabled = false;
+        }
+      });
+    }
+
+    async function verifyDashboardLogin(employeeNo, password) {
+      const config = await fetchSupabaseConfig(true);
+      if (!config?.url || !config?.anon_key) {
+        throw new Error("missing_supabase_config");
+      }
+      const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/rpc/verify_dashboard_login`, {
+        method:"POST",
+        cache:"no-store",
+        headers: {
+          apikey: config.anon_key,
+          Authorization: `Bearer ${config.anon_key}`,
+          "Content-Type":"application/json",
+        },
+        body: JSON.stringify({ p_employee_no: employeeNo, p_password: password }),
+      });
+      if (!response.ok) throw new Error(`login_failed_${response.status}`);
+      return response.json();
+    }
+
+    function logoutDashboard() {
+      localStorage.removeItem(DASHBOARD_SESSION_KEY);
+      state.auth = null;
+      location.reload();
+    }
 
     function applyKeywordSource(keywords, source = "Supabase") {
       if (!Array.isArray(keywords)) return;
@@ -1639,6 +1836,8 @@
     }
 
     function bind() {
+      if (appBound) return;
+      appBound = true;
       document.querySelectorAll("[data-page]").forEach(btn => btn.addEventListener("click", () => switchPage(btn.dataset.page)));
       const map = { searchInput:"q", dateFilter:"date", categoryFilter:"category", toneFilter:"tone", riskFilter:"risk" };
       Object.entries(map).forEach(([id,key]) => {
@@ -1651,6 +1850,7 @@
         render();
       });
       document.getElementById("exportCsv").addEventListener("click", exportCsv);
+      document.getElementById("logoutButton")?.addEventListener("click", logoutDashboard);
       document.getElementById("refreshArticles")?.addEventListener("click", () => refreshDashboardData());
       document.getElementById("keywordInput")?.addEventListener("keydown", event => {
         if (event.key === "Enter") addKeyword();
@@ -2908,13 +3108,18 @@
     }
 
     async function fetchSupabaseConfig(force = false) {
-      const configUrl = `./data/supabase.json${force ? `?v=${Date.now()}` : ""}`;
-      const configResponse = await fetch(configUrl, { cache:"no-store" });
-      if (!configResponse.ok) return null;
-      return configResponse.json();
+      const paths = ["./data/supabase.json", "../public/data/supabase.json"];
+      for (const path of paths) {
+        try {
+          const configUrl = `${path}${force ? `?v=${Date.now()}` : ""}`;
+          const configResponse = await fetch(configUrl, { cache:"no-store" });
+          if (configResponse.ok) return configResponse.json();
+        } catch {}
+      }
+      return null;
     }
 
-    async function boot() {
+    async function loadDashboard() {
       bind();
       try {
         const data = await fetchDashboardData();
@@ -2936,6 +3141,17 @@
       setAnalysisRange("all");
       updateAnalysisPresetButtons();
       render();
+    }
+
+    async function boot() {
+      bindLogin();
+      const session = getStoredSession();
+      if (!session) {
+        showLogin();
+        return;
+      }
+      unlockDashboard(session);
+      await loadDashboard();
     }
 
     boot();
