@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   }
 
   const type = body.type === "press" ? "press" : "internal";
-  const model = (Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash").replace(/^models\//, "");
+  const model = "gemini-2.5-pro";
   const maxOutputTokens = Number(Deno.env.get("GEMINI_MAX_OUTPUT_TOKENS") || "3200") || 3200;
   const prompt = buildPrompt({ type, issue, url: body.url || "", context: body.context });
   const response = await fetch(
