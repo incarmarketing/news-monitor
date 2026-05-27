@@ -315,13 +315,13 @@
     }
     .metric strong { color:var(--incar-dark); font-size:29px; line-height:1; }
     .metric span { color:var(--muted); font-size:13px; font-weight:900; }
-    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .grid-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
     .panel {
       background:#fff;
       border:1px solid var(--line);
       border-radius:8px;
-      padding:16px;
+      padding:18px;
       min-width:0;
       box-shadow:0 1px 2px rgba(16,24,40,.04);
     }
@@ -334,6 +334,8 @@
       align-items:center;
       gap:8px;
     }
+    #page-home > .panel { margin-bottom:20px; }
+    #page-home > .grid-2 { margin-top:0; }
     .monitor-head {
       display:flex;
       align-items:center;
@@ -449,13 +451,13 @@
     .insight-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
     .insight-card b { display:block; color:var(--incar-dark); font-size:20px; margin-bottom:4px; }
     .insight-card span { color:#475467; font-size:12px; font-weight:900; }
-    .ops-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .ops-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
     .ops-card {
       border:1px solid var(--line);
       border-radius:8px;
-      padding:16px;
+      padding:18px;
       background:#fbfdff;
-      min-height:78px;
+      min-height:86px;
       display:grid;
       gap:8px;
       align-content:start;
@@ -475,8 +477,8 @@
     }
     .tone-button b { color:var(--incar-dark); font-size:20px; }
     .tone-button span { color:var(--muted); font-size:12px; font-weight:900; }
-    .media-flow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-    .flow-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
+    .media-flow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .flow-card { border:1px solid var(--line); border-radius:8px; padding:15px; background:#fbfdff; }
     .flow-card strong { display:flex; justify-content:space-between; gap:8px; color:var(--incar-dark); font-size:13px; }
     .flow-sub { color:var(--muted); font-size:12px; font-weight:800; margin-top:4px; }
     .flow-track { margin-top:9px; height:8px; border-radius:999px; background:#eef2f7; overflow:hidden; }
@@ -549,7 +551,7 @@
       border:1px solid var(--line);
       border-radius:8px;
       background:#fff;
-      padding:16px;
+      padding:18px;
       min-width:0;
       box-shadow:0 1px 2px rgba(16,24,40,.035);
     }
@@ -1605,7 +1607,7 @@
     function getStoredSession() {
       try {
         const session = JSON.parse(localStorage.getItem(DASHBOARD_SESSION_KEY) || "null");
-        if (!session?.employee_no || !session?.session_expires_at) return null;
+        if (!session?.employee_no || !session?.session_token || !session?.session_expires_at) return null;
         if (new Date(session.session_expires_at).getTime() <= Date.now()) {
           localStorage.removeItem(DASHBOARD_SESSION_KEY);
           return null;
@@ -1636,7 +1638,7 @@
       document.getElementById("loginScreen")?.classList.add("auth-locked");
       document.getElementById("appShell")?.classList.remove("auth-locked");
       const user = document.getElementById("authUser");
-      if (user) user.textContent = `${session.display_name || session.employee_no} · ${session.employee_no}`;
+      if (user) user.textContent = `${session.display_name || session.employee_no} / ${session.employee_no} / ${session.role || "viewer"}`;
     }
 
     function bindLogin() {
@@ -1690,7 +1692,38 @@
       return response.json();
     }
 
-    function logoutDashboard() {
+    async function dashboardApi(action, payload = {}) {
+      const config = await fetchSupabaseConfig(true);
+      const session = state.auth || getStoredSession();
+      if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+      if (!session?.session_token) throw new Error("missing_dashboard_session");
+      const response = await fetch(`${config.url.replace(/\/$/,"")}/functions/v1/dashboard-api`, {
+        method:"POST",
+        cache:"no-store",
+        headers: {
+          apikey: config.anon_key,
+          Authorization: `Bearer ${config.anon_key}`,
+          "Content-Type":"application/json",
+          "X-Dashboard-Session": session.session_token,
+        },
+        body: JSON.stringify({ action, payload }),
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem(DASHBOARD_SESSION_KEY);
+          showLogin("세션이 만료되었습니다. 다시 로그인해 주세요.");
+        }
+        throw new Error(data?.error || `dashboard_api_${response.status}`);
+      }
+      return data;
+    }
+
+    async function logoutDashboard() {
+      try {
+        await dashboardApi("logout");
+      } catch {}
       localStorage.removeItem(DASHBOARD_SESSION_KEY);
       state.auth = null;
       location.reload();
@@ -2712,19 +2745,12 @@
     async function saveKeywordToSupabase(keyword) {
       if (!keyword) return false;
       try {
-        const config = await fetchSupabaseConfig(true);
-        if (!config?.url || !config?.anon_key) return false;
-        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?on_conflict=keyword`, {
+        const result = await supabaseRest("monitor_keywords?on_conflict=keyword", {
           method:"POST",
-          headers: {
-            apikey: config.anon_key,
-            Authorization: `Bearer ${config.anon_key}`,
-            "Content-Type":"application/json",
-            Prefer:"resolution=merge-duplicates,return=minimal",
-          },
-          body: JSON.stringify([{ keyword, enabled:true }]),
+          headers: { Prefer:"resolution=merge-duplicates,return=minimal" },
+          body: [{ keyword, enabled:true }],
         });
-        return response.ok;
+        return Boolean(result);
       } catch {
         return false;
       }
@@ -2732,36 +2758,32 @@
 
     async function deleteKeywordFromSupabase(keyword) {
       try {
-        const config = await fetchSupabaseConfig(true);
-        if (!config?.url || !config?.anon_key) return false;
-        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?keyword=eq.${encodeURIComponent(keyword)}`, {
-          method:"DELETE",
-          headers: { apikey: config.anon_key, Authorization: `Bearer ${config.anon_key}` },
-        });
-        return response.ok;
+        const result = await supabaseRest(`monitor_keywords?keyword=eq.${encodeURIComponent(keyword)}`, { method:"DELETE" });
+        return Boolean(result);
       } catch {
         return false;
       }
     }
 
     async function supabaseRest(path, options = {}) {
-      const config = await fetchSupabaseConfig(true);
-      if (!config?.url || !config?.anon_key) return null;
-      const headers = {
-        apikey: config.anon_key,
-        Authorization: `Bearer ${config.anon_key}`,
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
-        ...(options.headers || {}),
-      };
-      const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/${path}`, {
-        cache: "no-store",
-        ...options,
-        headers,
-      });
-      if (!response.ok) return null;
-      if (response.status === 204) return true;
-      const text = await response.text();
-      return text ? JSON.parse(text) : true;
+      try {
+        let requestBody = options.body;
+        if (typeof requestBody === "string") {
+          try {
+            requestBody = JSON.parse(requestBody);
+          } catch {}
+        }
+        const result = await dashboardApi("rest", {
+          path,
+          method: options.method || "GET",
+          body: requestBody,
+          headers: options.headers || {},
+        });
+        if (!result?.ok) return null;
+        return result.data ?? true;
+      } catch {
+        return null;
+      }
     }
 
     async function loadManagementDataFromSupabase() {
@@ -2955,19 +2977,8 @@
 
     async function triggerCollectionRun() {
       try {
-        const config = await fetchSupabaseConfig(true);
-        if (!config?.url || !config?.anon_key) return false;
-        const response = await fetch(`${config.url.replace(/\/$/,"")}/functions/v1/trigger-news-collection`, {
-          method: "POST",
-          cache: "no-store",
-          headers: {
-            apikey: config.anon_key,
-            Authorization: `Bearer ${config.anon_key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ source: "dashboard" }),
-        });
-        return response.ok;
+        const response = await dashboardApi("trigger_collection", { source: "dashboard" });
+        return Boolean(response?.ok);
       } catch {
         return false;
       }
@@ -2990,55 +3001,31 @@
 
     async function fetchDashboardData(force = false) {
       const supabaseData = await fetchSupabaseDashboardData(force);
-      const staticData = await fetchStaticDashboardData(force);
       if (supabaseData) {
         return {
-          source: supabaseData.articles?.length ? "Supabase DB" : "GitHub Pages 백업",
-          category_labels: Object.keys(supabaseData.category_labels || {}).length ? supabaseData.category_labels : (staticData?.category_labels || {}),
-          tone_labels: Object.keys(supabaseData.tone_labels || {}).length ? supabaseData.tone_labels : (staticData?.tone_labels || {}),
-          keywords: Array.isArray(supabaseData.keywords) ? supabaseData.keywords : (staticData?.keywords || []),
-          articles: supabaseData.articles?.length ? supabaseData.articles : (staticData?.articles || []),
-          report_runs: supabaseData.report_runs || staticData?.report_runs || [],
-          summary: supabaseData.summary || staticData?.summary || {},
+          source: "Supabase DB",
+          category_labels: supabaseData.category_labels || {},
+          tone_labels: supabaseData.tone_labels || {},
+          keywords: Array.isArray(supabaseData.keywords) ? supabaseData.keywords : [],
+          articles: supabaseData.articles || [],
+          report_runs: supabaseData.report_runs || [],
+          summary: supabaseData.summary || {},
         };
       }
-      if (staticData) return { ...staticData, source: "GitHub Pages 백업" };
       throw new Error("No dashboard data");
-    }
-
-    async function fetchStaticDashboardData(force = false) {
-      const paths = ["./data/articles.json", "../public/data/articles.json"];
-      for (const path of paths) {
-        try {
-          const url = force ? `${path}${path.includes("?") ? "&" : "?"}v=${Date.now()}` : path;
-          const response = await fetch(url, { cache:"no-store" });
-          if (response.ok) return response.json();
-        } catch {}
-      }
-      return null;
     }
 
     async function fetchSupabaseDashboardData(force = false) {
       try {
-        const config = await fetchSupabaseConfig(force);
-        if (!config.url || !config.anon_key) return null;
-
         const query = [
           "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status",
           "order=pub_date.desc.nullslast,report_date.desc,score.desc",
           "limit=2000",
         ].join("&");
-        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/news_articles?${query}`, {
-          cache:"no-store",
-          headers: {
-            apikey: config.anon_key,
-            Authorization: `Bearer ${config.anon_key}`,
-          },
-        });
-        if (!response.ok) return null;
-        const rows = await response.json();
-        const keywords = await fetchSupabaseKeywords(config);
-        const reportRuns = await fetchSupabaseReportRuns(config);
+        const rows = await supabaseRest(`news_articles?${query}`);
+        if (!Array.isArray(rows)) return null;
+        const keywords = await fetchSupabaseKeywords();
+        const reportRuns = await fetchSupabaseReportRuns();
         return {
           category_labels: state.categoryLabels,
           tone_labels: state.toneLabels,
@@ -3069,38 +3056,24 @@
       }
     }
 
-    async function fetchSupabaseReportRuns(config) {
+    async function fetchSupabaseReportRuns() {
       try {
         const query = [
           "select=run_key,report_date,report_slot,timestamp,window_label,window_start,window_end,risk_level",
           "order=timestamp.desc",
           "limit=20",
         ].join("&");
-        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/report_runs?${query}`, {
-          cache:"no-store",
-          headers: {
-            apikey: config.anon_key,
-            Authorization: `Bearer ${config.anon_key}`,
-          },
-        });
-        if (!response.ok) return [];
-        return response.json();
+        const rows = await supabaseRest(`report_runs?${query}`);
+        return Array.isArray(rows) ? rows : [];
       } catch {
         return [];
       }
     }
 
-    async function fetchSupabaseKeywords(config) {
+    async function fetchSupabaseKeywords() {
       try {
-        const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc`, {
-          cache:"no-store",
-          headers: {
-            apikey: config.anon_key,
-            Authorization: `Bearer ${config.anon_key}`,
-          },
-        });
-        if (!response.ok) return null;
-        const rows = await response.json();
+        const rows = await supabaseRest("monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc");
+        if (!Array.isArray(rows)) return null;
         return rows.map(row => row.keyword).filter(Boolean);
       } catch {
         return null;

@@ -210,15 +210,17 @@ def publish_dashboard() -> Path:
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
+    # Do not publish article/report data as a static GitHub Pages JSON file.
+    # The dashboard now reads protected data through Supabase Edge Functions.
     (PUBLIC_DATA_DIR / "articles.json").write_text(
         json.dumps(
             {
-                "summary": summary,
-                "articles": articles,
+                "summary": {},
+                "articles": [],
                 "category_labels": CATEGORY_LABELS,
                 "tone_labels": TONE_LABELS,
-                "keywords": keywords,
-                "report_runs": report_runs,
+                "keywords": [],
+                "report_runs": [],
             },
             ensure_ascii=False,
             indent=2,
