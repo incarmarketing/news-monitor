@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 from kakao_report_send import DEFAULT_REPORT_URL, refresh_access_token, send_text_to_me
+from supabase_store import save_notification_send
 
 KST = timezone(timedelta(hours=9))
 
@@ -55,11 +56,31 @@ def main() -> None:
     if period not in PERIODS:
         raise SystemExit(f"Unknown period: {period}")
 
-    token = refresh_access_token()
     text, link = build_message(period)
-    result = send_text_to_me(token, text, link)
-    print("Kakao period send result:", result)
-    print("Period report link:", link)
+    title = f"{PERIODS[period]['label']} 언론 모니터링 보고서"
+    try:
+        token = refresh_access_token()
+        result = send_text_to_me(token, text, link)
+        save_notification_send(
+            message_type=f"{period}_report",
+            title=title,
+            body=text,
+            link_url=link,
+            status="success",
+            provider_response=result,
+        )
+        print("Kakao period send result:", result)
+        print("Period report link:", link)
+    except Exception as error:
+        save_notification_send(
+            message_type=f"{period}_report",
+            title=title,
+            body=text,
+            link_url=link,
+            status="failed",
+            error=str(error),
+        )
+        raise
 
 
 if __name__ == "__main__":

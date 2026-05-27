@@ -508,6 +508,7 @@
       word-break:keep-all;
       overflow-wrap:anywhere;
     }
+    .ad-kpi b .money-value { font-size:clamp(16px,2.1vw,22px); }
     .ad-kpi span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.25; }
     .line-chart { height:150px; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(28px,1fr); align-items:end; gap:8px; border-bottom:1px solid var(--line); padding-top:8px; }
     .line-point { display:grid; gap:5px; justify-items:center; color:var(--muted); font-size:10px; font-weight:900; }
@@ -558,6 +559,7 @@
     .ad-chart-title { color:var(--incar-dark); font-size:14px; font-weight:900; margin:0 0 12px; }
     .ad-month-chart { display:grid; gap:10px; }
     .ad-month-row { display:grid; grid-template-columns:72px 1fr 92px; gap:10px; align-items:center; font-size:12px; font-weight:900; color:var(--muted); }
+    .ad-month-row > :last-child { text-align:right; }
     .ad-month-track { height:18px; border-radius:999px; background:#eef2f7; overflow:hidden; }
     .ad-month-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#27398c,#5b7cfa); }
     .ad-report-note {
@@ -570,6 +572,141 @@
       line-height:1.45;
     }
     .ad-table-wrap { overflow-x:auto; }
+    .money-value {
+      white-space:nowrap;
+      word-break:normal;
+      overflow-wrap:normal;
+      font-variant-numeric:tabular-nums;
+      letter-spacing:0;
+    }
+    .watch-card {
+      position:relative;
+      min-height:176px;
+      overflow:hidden;
+      border:1px solid #cfe0ff;
+      background:linear-gradient(135deg,#f8fbff 0%,#eef5ff 100%);
+    }
+    .watch-asset {
+      display:grid;
+      grid-template-columns:86px minmax(0,1fr);
+      gap:16px;
+      align-items:center;
+    }
+    .watch-radar {
+      width:76px;
+      height:76px;
+      border-radius:50%;
+      position:relative;
+      display:grid;
+      place-items:center;
+      background:#fff;
+      border:1px solid #d8e4ff;
+      box-shadow:0 12px 28px rgba(39,57,140,.12);
+    }
+    .watch-radar::before,
+    .watch-radar::after {
+      content:"";
+      position:absolute;
+      inset:10px;
+      border-radius:50%;
+      border:2px solid rgba(39,57,140,.18);
+    }
+    .watch-radar::after { inset:18px; border-color:rgba(220,38,38,.18); }
+    .watch-sweep {
+      width:34px;
+      height:34px;
+      border-radius:100% 0 0 0;
+      transform-origin:100% 100%;
+      background:linear-gradient(45deg,rgba(39,57,140,.36),rgba(39,57,140,0));
+      animation:radarSweep 1.8s linear infinite;
+      position:absolute;
+      left:4px;
+      top:4px;
+    }
+    .watch-radar i { color:var(--incar); z-index:1; }
+    @keyframes radarSweep { to { transform:rotate(360deg); } }
+    .watch-title { margin:0 0 7px; color:var(--incar-dark); font-size:17px; font-weight:900; }
+    .watch-copy { color:#344054; font-size:13px; font-weight:800; line-height:1.55; }
+    .watch-meta { margin-top:10px; display:flex; flex-wrap:wrap; gap:7px; }
+    .notification-list { display:grid; gap:8px; }
+    .notification-item {
+      width:100%;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:8px;
+      padding:11px;
+      display:grid;
+      gap:5px;
+      text-align:left;
+      cursor:pointer;
+    }
+    .notification-item:hover { border-color:#9eb1dc; background:#f8fbff; }
+    .notification-top {
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      color:#182230;
+      font-size:13px;
+      font-weight:900;
+    }
+    .notification-meta { color:var(--muted); font-size:12px; font-weight:800; }
+    .status-ok { color:var(--green); }
+    .status-fail { color:var(--red); }
+    .modal-backdrop {
+      position:fixed;
+      inset:0;
+      z-index:80;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:rgba(15,23,42,.45);
+    }
+    .modal-backdrop.active { display:flex; }
+    .modal {
+      width:min(640px,100%);
+      max-height:min(760px,calc(100vh - 36px));
+      overflow:auto;
+      background:#fff;
+      border-radius:10px;
+      border:1px solid rgba(148,163,184,.35);
+      box-shadow:0 24px 70px rgba(15,23,42,.22);
+    }
+    .modal-head {
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      padding:16px;
+      border-bottom:1px solid var(--line);
+    }
+    .modal-head h2 { margin:0; font-size:17px; color:var(--incar-dark); }
+    .modal-body { padding:16px; display:grid; gap:12px; }
+    .modal-message {
+      white-space:pre-wrap;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#f8fafc;
+      padding:13px;
+      color:#182230;
+      font-size:13px;
+      font-weight:800;
+      line-height:1.6;
+    }
+    .risk-drop-hint {
+      margin-top:8px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      line-height:1.45;
+    }
+    .article.risk-draggable {
+      cursor:grab;
+      user-select:none;
+      touch-action:manipulation;
+    }
+    .article.risk-draggable:active { cursor:grabbing; }
+    #issueUrl.drop-active { border-color:var(--incar); box-shadow:0 0 0 3px rgba(39,57,140,.12); }
     .settings-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; }
     .settings-head .panel-title { margin:0; }
     .status-pill {
@@ -1088,6 +1225,9 @@
       .ad-kpi { min-height:72px; padding:13px; }
       .ad-kpi b { font-size:20px; }
       .ad-chart-card { padding:13px; }
+      .watch-asset { grid-template-columns:1fr; }
+      .watch-radar { width:70px; height:70px; }
+      .notification-top { display:grid; }
     }
     @media print {
       body { height:auto; overflow:visible; background:#fff; }
@@ -1208,6 +1348,24 @@
           </div>
 
           <div class="grid-2">
+            <div class="panel watch-card">
+              <h2 class="panel-title"><i data-lucide="scan-search"></i> 부정기사 탐색</h2>
+              <div class="watch-asset" id="negativeWatchAsset">
+                <div class="watch-radar"><span class="watch-sweep"></span><i data-lucide="radar"></i></div>
+                <div>
+                  <h3 class="watch-title">부정기사 탐색 중</h3>
+                  <div class="watch-copy">최근 수행 기록을 불러오는 중입니다.</div>
+                  <div class="watch-meta"></div>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="message-circle"></i> 알림톡 발송 이력</h2>
+              <div class="notification-list" id="notificationHistory"></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
             <div class="panel">
               <h2 class="panel-title" id="issueTitle"><i data-lucide="activity"></i> 최신 모니터링 핵심 이슈</h2>
               <div class="feed" id="topIssues"></div>
@@ -1311,6 +1469,7 @@
           <div class="grid-2">
             <div class="panel">
               <h2 class="panel-title"><i data-lucide="siren"></i> 리스크 기사</h2>
+              <div class="risk-drop-hint">모바일에서는 기사를 길게 누르면 URL과 핵심 내용이 입력됩니다. 데스크톱에서는 기사 카드를 URL 입력칸으로 드래그할 수 있습니다.</div>
               <div class="feed" id="riskArticles"></div>
             </div>
             <div class="panel">
@@ -1501,6 +1660,22 @@
     </main>
   </div>
 
+  <div class="modal-backdrop" id="notificationModal" onclick="if(event.target === this) closeNotificationModal()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="notificationModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="notificationModalTitle">알림톡 발송 내용</h2>
+          <div class="notification-meta" id="notificationModalMeta"></div>
+        </div>
+        <button class="btn" onclick="closeNotificationModal()"><i data-lucide="x"></i><span>닫기</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-message" id="notificationModalBody"></div>
+        <a class="btn" id="notificationModalLink" href="#" target="_blank" rel="noopener noreferrer"><i data-lucide="external-link"></i><span>연결된 보고서 열기</span></a>
+      </div>
+    </div>
+  </div>
+
   <nav class="mobile-tabs" id="mobileTabs">
     <button class="active" data-page="home"><i data-lucide="layout-dashboard"></i><span>홈</span></button>
     <button data-page="monitor"><i data-lucide="radio"></i><span>모니터링</span></button>
@@ -1533,6 +1708,10 @@
       ads: [],
       adFilters: { year:"", month:"", media:"", type:"" },
       responseType: "press",
+      notifications: [],
+      negativeWatchRuns: [],
+      issueAutoFilled: false,
+      riskHoldTimer: null,
       auth: null
     };
     const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
@@ -1929,6 +2108,17 @@
       return `${month}-${day} ${hour}:${minute} 보도`;
     }
 
+    function formatDateTime(value, fallback = "-") {
+      if (!value) return fallback;
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return fallback;
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hour = String(date.getHours()).padStart(2, "0");
+      const minute = String(date.getMinutes()).padStart(2, "0");
+      return `${month}-${day} ${hour}:${minute}`;
+    }
+
     function latestDate(items) {
       return uniq(items.map(a => a.date)).sort().reverse()[0] || "";
     }
@@ -1971,6 +2161,25 @@
       document.getElementById("keywordInput")?.addEventListener("keydown", event => {
         if (event.key === "Enter") addKeyword();
       });
+      const issueUrl = document.getElementById("issueUrl");
+      if (issueUrl) {
+        issueUrl.addEventListener("input", () => syncIssueFromUrl({ force:false }));
+        issueUrl.addEventListener("change", () => syncIssueFromUrl({ force:true }));
+        issueUrl.addEventListener("dragover", event => {
+          event.preventDefault();
+          issueUrl.classList.add("drop-active");
+        });
+        issueUrl.addEventListener("dragleave", () => issueUrl.classList.remove("drop-active"));
+        issueUrl.addEventListener("drop", event => {
+          event.preventDefault();
+          issueUrl.classList.remove("drop-active");
+          const url = event.dataTransfer?.getData("text/uri-list") || event.dataTransfer?.getData("text/plain") || "";
+          if (url) {
+            issueUrl.value = extractFirstUrl(url) || url.trim();
+            syncIssueFromUrl({ force:true });
+          }
+        });
+      }
       document.getElementById("printAnalysis")?.addEventListener("click", () => window.print());
       document.getElementById("printAds")?.addEventListener("click", printAdReport);
       const adFilterMap = { adYearFilter:"year", adMonthFilter:"month", adMediaFilter:"media", adTypeFilter:"type" };
@@ -2073,6 +2282,87 @@
       ).join("");
     }
 
+    function renderNegativeWatchAsset() {
+      const target = document.getElementById("negativeWatchAsset");
+      if (!target) return;
+      const latest = state.negativeWatchRuns[0];
+      const status = latest?.status || "waiting";
+      const statusLabel = {
+        alert_sent:"알림 발송",
+        alert_failed:"알림 실패",
+        scanned:"탐색 완료",
+        skipped:"대기",
+        dry_run:"테스트",
+        waiting:"기록 대기",
+      }[status] || status;
+      const scannedAt = latest ? formatDateTime(latest.scanned_at || latest.created_at) : "수행 기록 없음";
+      const scanned = Number(latest?.scanned_count || 0);
+      const negative = Number(latest?.negative_count || 0);
+      const fresh = Number(latest?.new_negative_count || 0);
+      target.innerHTML = `
+        <div class="watch-radar"><span class="watch-sweep"></span><i data-lucide="radar"></i></div>
+        <div>
+          <h3 class="watch-title">부정기사 탐색 중</h3>
+          <div class="watch-copy">
+            최근 수행 ${escapeHtml(scannedAt)} · 상태 ${escapeHtml(statusLabel)}<br>
+            최근 탐색 ${scanned.toLocaleString("ko-KR")}건 중 부정 ${negative.toLocaleString("ko-KR")}건, 신규 ${fresh.toLocaleString("ko-KR")}건을 확인했습니다.
+          </div>
+          <div class="watch-meta">
+            <span class="status-pill ${negative ? "warn" : "ok"}">부정 ${negative.toLocaleString("ko-KR")}건</span>
+            <span class="status-pill">탐색 주기 ${escapeHtml(String(latest?.minutes_back || 15))}분</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNotificationHistory() {
+      const target = document.getElementById("notificationHistory");
+      if (!target) return;
+      const rows = state.notifications.slice(0, 5);
+      target.innerHTML = rows.map((item, index) => {
+        const ok = item.status === "success";
+        return `
+          <button class="notification-item" onclick="openNotificationModal(${index})">
+            <span class="notification-top">
+              <span>${escapeHtml(item.title || notificationTypeLabel(item.message_type))}</span>
+              <span class="${ok ? "status-ok" : "status-fail"}">${ok ? "성공" : "실패"}</span>
+            </span>
+            <span class="notification-meta">${escapeHtml(formatDateTime(item.sent_at || item.created_at))} · ${escapeHtml(notificationTypeLabel(item.message_type))}</span>
+          </button>
+        `;
+      }).join("") || '<div class="empty">아직 발송 이력이 없습니다.</div>';
+    }
+
+    function notificationTypeLabel(type) {
+      return {
+        daily_report:"일일 브리핑",
+        weekly_report:"주간 보고서",
+        monthly_report:"월간 보고서",
+        negative_alert:"부정기사 알림",
+      }[type] || "알림톡";
+    }
+
+    function openNotificationModal(index) {
+      const item = state.notifications[index];
+      if (!item) return;
+      document.getElementById("notificationModalTitle").textContent = item.title || notificationTypeLabel(item.message_type);
+      document.getElementById("notificationModalMeta").textContent = `${formatDateTime(item.sent_at || item.created_at)} · ${item.status === "success" ? "성공" : "실패"}${item.error ? " · " + item.error : ""}`;
+      document.getElementById("notificationModalBody").textContent = item.body || "발송 본문이 저장되지 않았습니다.";
+      const link = document.getElementById("notificationModalLink");
+      if (item.link_url) {
+        link.href = item.link_url;
+        link.style.display = "inline-flex";
+      } else {
+        link.style.display = "none";
+      }
+      document.getElementById("notificationModal")?.classList.add("active");
+      lucide.createIcons();
+    }
+
+    function closeNotificationModal() {
+      document.getElementById("notificationModal")?.classList.remove("active");
+    }
+
     function dateRangeLabel(items) {
       const dates = sortedDates(items);
       if (!dates.length) return "분석 기준 없음";
@@ -2153,11 +2443,11 @@
       target.innerHTML = rows ? `<div class="media-flow">${rows}</div>` : '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
-    function articleCard(article, compact=false, extraAction = "") {
+    function articleCard(article, compact=false, extraAction = "", attrs = "", extraClass = "") {
       const key = article.id || article.link;
       const scraped = state.scraps.some(item => (item.id || item.link) === key);
       return `
-        <article class="article${compact ? " compact" : ""}">
+        <article class="article${compact ? " compact" : ""}${extraClass ? " " + extraClass : ""}" ${attrs}>
           <div class="meta">
             <span class="chip time">${escapeHtml(article.published_label || article.date || "-")}</span>
             <span class="chip">${escapeHtml(article.press)}</span>
@@ -2175,8 +2465,15 @@
 
     function riskResponseCard(article) {
       const key = article.id || article.link;
-      const action = `<button class="btn scrap-toggle" title="이 기사 링크와 제목을 대응 초안 입력칸에 채웁니다." onclick='useArticleForResponse(${jsArg(key)})'><i data-lucide="link"></i><span>초안에 사용</span></button>`;
-      return articleCard(article, true, action);
+      const attrs = [
+        'draggable="true"',
+        `ondragstart='dragRiskArticle(event, ${jsArg(key)})'`,
+        `onpointerdown='startRiskArticleHold(event, ${jsArg(key)})'`,
+        "onpointerup='cancelRiskArticleHold()'",
+        "onpointerleave='cancelRiskArticleHold()'",
+        "onpointercancel='cancelRiskArticleHold()'",
+      ].join(" ");
+      return articleCard(article, true, "", attrs, "risk-draggable");
     }
 
     function renderArticles() {
@@ -2682,6 +2979,10 @@
       return `${Number(value || 0).toLocaleString("ko-KR")}원`;
     }
 
+    function moneyHtml(value) {
+      return `<span class="money-value">${money(value)}</span>`;
+    }
+
     function shortMoney(value) {
       const amount = Number(value || 0);
       if (amount >= 100000000) return `${(amount / 100000000).toFixed(amount % 100000000 ? 1 : 0)}억`;
@@ -2715,7 +3016,7 @@
       const sourceIndex = new Map(state.ads.map((item, idx) => [item, idx]));
       const rows = ads.map(a => {
         const idx = sourceIndex.get(a);
-        return `<tr><td>${escapeHtml(a.month)}</td><td>${escapeHtml(a.media)}</td><td>${escapeHtml(a.type)}</td><td>${money(a.amount)}</td><td>${escapeHtml(a.memo || "-")}</td><td class="ad-row-actions"><button class="btn danger" onclick="removeAd(${idx})">삭제</button></td></tr>`;
+        return `<tr><td>${escapeHtml(a.month)}</td><td>${escapeHtml(a.media)}</td><td>${escapeHtml(a.type)}</td><td>${moneyHtml(a.amount)}</td><td>${escapeHtml(a.memo || "-")}</td><td class="ad-row-actions"><button class="btn danger" onclick="removeAd(${idx})">삭제</button></td></tr>`;
       }).join("");
       document.getElementById("adTable").innerHTML = `<tr><th>월</th><th>매체</th><th>구분</th><th>금액</th><th>메모</th><th class="ad-row-actions"></th></tr>${rows || '<tr><td colspan="6">선택한 조건에 해당하는 집행 내역이 없습니다.</td></tr>'}`;
       renderAdBoard(ads);
@@ -2738,24 +3039,24 @@
         <div class="ad-month-row">
           <div>${escapeHtml(month)}</div>
           <div class="ad-month-track"><div class="ad-month-fill" style="width:${Math.max(4, monthlyTotals[month] / maxMonthly * 100)}%"></div></div>
-          <div>${shortMoney(monthlyTotals[month])}</div>
+          <div><span class="money-value">${shortMoney(monthlyTotals[month])}</span></div>
         </div>
       `).join("");
       const byMedia = Object.entries(mediaTotals).sort((a,b) => b[1] - a[1]).slice(0,10);
       const maxMedia = Math.max(...byMedia.map(([,value]) => value), 1);
       const mediaBars = byMedia.map(([media, value]) => `
-        <div class="bar-row"><div>${escapeHtml(media)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, value / maxMedia * 100)}%"></div></div><div>${shortMoney(value)}</div></div>
+        <div class="bar-row"><div>${escapeHtml(media)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, value / maxMedia * 100)}%"></div></div><div><span class="money-value">${shortMoney(value)}</span></div></div>
       `).join("");
       const byType = Object.entries(typeTotals).sort((a,b) => b[1] - a[1]);
       const maxType = Math.max(...byType.map(([,value]) => value), 1);
       const typeBars = byType.map(([type, value]) => `
-        <div class="bar-row"><div>${escapeHtml(type)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, value / maxType * 100)}%"></div></div><div>${shortMoney(value)}</div></div>
+        <div class="bar-row"><div>${escapeHtml(type)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(5, value / maxType * 100)}%"></div></div><div><span class="money-value">${shortMoney(value)}</span></div></div>
       `).join("");
       const activeMonths = months.length;
       const avgMonthly = activeMonths ? Math.round(total / activeMonths) : 0;
       document.getElementById("adBoard").innerHTML = ads.length ? `
         <div class="ad-summary-grid">
-          <div class="ad-kpi"><b>${money(total)}</b><span>선택 기간 총 집행액</span></div>
+          <div class="ad-kpi"><b>${moneyHtml(total)}</b><span>선택 기간 총 집행액</span></div>
           <div class="ad-kpi"><b>${ads.length.toLocaleString("ko-KR")}건</b><span>집행 내역</span></div>
           <div class="ad-kpi"><b>${activeMonths.toLocaleString("ko-KR")}개월</b><span>집행 월수</span></div>
           <div class="ad-kpi"><b>${escapeHtml(topMedia?.[0] || "-")}</b><span>최대 집행 매체</span></div>
@@ -2985,33 +3286,123 @@
       });
     }
 
+    function extractFirstUrl(value) {
+      const match = String(value || "").match(/https?:\/\/[^\s]+/i);
+      return match ? match[0].trim() : "";
+    }
+
     function findArticleByKey(key) {
       return state.articles.find(article => (article.id || article.link) === key)
         || state.scraps.find(article => (article.id || article.link) === key);
     }
 
-    function fillResponseFromArticle(article) {
-      if (!article) return;
+    function normalizeUrl(value) {
+      return String(value || "").trim().replace(/[?#].*$/, "").replace(/\/$/, "");
+    }
+
+    function findArticleByUrl(url) {
+      const normalized = normalizeUrl(url);
+      if (!normalized) return null;
+      return state.articles.find(article => normalizeUrl(article.link) === normalized)
+        || state.articles.find(article => article.link && normalized.includes(normalizeUrl(article.link)))
+        || state.articles.find(article => article.link && normalizeUrl(article.link).includes(normalized));
+    }
+
+    function buildIssueInputFromArticle(article, url = "") {
+      if (!article) {
+        return [
+          `기사 URL: ${url}`,
+          "",
+          "확인된 사실:",
+          "- 기사 원문 확인 필요",
+          "",
+          "쟁점:",
+          "- 당사 직접 언급 여부",
+          "- 사실관계와 수치의 출처",
+          "- 언론 문의 가능성 및 확산 가능성",
+          "",
+          "요청 대응 방향:",
+          "- 관련 부서 확인 후 사실 중심으로 대응",
+        ].join("\n");
+      }
+      return [
+        `기사 제목: ${article.title || ""}`,
+        `기사 URL: ${article.link || url || ""}`,
+        `언론사: ${article.press || article.source || ""}`,
+        `보도 시각: ${article.published_label || article.date || ""}`,
+        `분류/논조: ${article.category_label || ""} / ${article.tone_label || ""}`,
+        `요약: ${article.summary || ""}`,
+        "",
+        "확인된 사실:",
+        `- 기사에 언급된 핵심 내용은 '${article.keyword || "관련 키워드"}' 중심입니다.`,
+        "- 원문 수치와 당사 관련 표현은 담당 부서 확인이 필요합니다.",
+        "",
+        "쟁점:",
+        article.tone === "negative" ? "- 당사 평판 또는 감독 리스크로 확산될 가능성" : "- 당사 직접 영향 여부와 추가 확산 가능성",
+        "- 기사 표현 중 정정 요청이 필요한 대목 존재 여부",
+        "",
+        "요청 대응 방향:",
+        "- 확인된 사실과 확인 중인 사항을 분리해 답변",
+        "- 단정적 책임 인정 표현 없이 원문 근거 중심으로 대응",
+      ].join("\n");
+    }
+
+    function setIssueContextFromArticle(article, { force = false } = {}) {
+      if (!article) return false;
       const urlInput = document.getElementById("issueUrl");
       const textInput = document.getElementById("issueInput");
       if (urlInput) urlInput.value = article.link || "";
-      if (textInput) {
-        const nextText = [
-          `기사 제목: ${article.title || ""}`,
-          `언론사: ${article.press || article.source || ""}`,
-          `보도 시각: ${article.published_label || article.date || ""}`,
-          `요약: ${article.summary || ""}`,
-          "",
-          "확인된 사실:",
-          "",
-          "쟁점:",
-          "",
-          "요청 대응 방향:",
-        ].join("\n").trim();
-        if (!textInput.value.trim() || confirm("현재 입력한 핵심 내용을 선택한 기사 정보로 교체할까요?")) {
-          textInput.value = nextText;
-        }
+      if (textInput && (force || !textInput.value.trim() || state.issueAutoFilled)) {
+        textInput.value = buildIssueInputFromArticle(article, article.link);
+        state.issueAutoFilled = true;
       }
+      return true;
+    }
+
+    function syncIssueFromUrl({ force = false } = {}) {
+      const urlInput = document.getElementById("issueUrl");
+      const textInput = document.getElementById("issueInput");
+      const url = extractFirstUrl(urlInput?.value || "") || (urlInput?.value || "").trim();
+      if (!url || !textInput) return;
+      const article = findArticleByUrl(url);
+      if (article) {
+        setIssueContextFromArticle(article, { force });
+        return;
+      }
+      if (force || !textInput.value.trim() || state.issueAutoFilled) {
+        textInput.value = buildIssueInputFromArticle(null, url);
+        state.issueAutoFilled = true;
+      }
+    }
+
+    function dragRiskArticle(event, key) {
+      const article = findArticleByKey(key);
+      if (!article?.link || !event.dataTransfer) return;
+      event.dataTransfer.effectAllowed = "copy";
+      event.dataTransfer.setData("text/uri-list", article.link);
+      event.dataTransfer.setData("text/plain", article.link);
+    }
+
+    function startRiskArticleHold(event, key) {
+      if (event.pointerType === "mouse") return;
+      cancelRiskArticleHold();
+      state.riskHoldTimer = setTimeout(() => {
+        const article = findArticleByKey(key);
+        if (setIssueContextFromArticle(article, { force:true })) {
+          switchPage("risk");
+          document.getElementById("issueUrl")?.focus();
+        }
+      }, 620);
+    }
+
+    function cancelRiskArticleHold() {
+      if (state.riskHoldTimer) clearTimeout(state.riskHoldTimer);
+      state.riskHoldTimer = null;
+    }
+
+    function fillResponseFromArticle(article) {
+      if (!article) return;
+      setIssueContextFromArticle(article, { force:true });
       document.getElementById("responseOutput")?.scrollIntoView({ behavior:"smooth", block:"nearest" });
     }
 
@@ -3029,7 +3420,8 @@
       try {
         const text = await navigator.clipboard.readText();
         if (!text) return alert("클립보드에 붙여넣을 링크가 없습니다.");
-        document.getElementById("issueUrl").value = text.trim();
+        document.getElementById("issueUrl").value = extractFirstUrl(text) || text.trim();
+        syncIssueFromUrl({ force:true });
       } catch {
         alert("브라우저 권한 때문에 자동 붙여넣기를 할 수 없습니다. 입력칸을 길게 눌러 붙여넣어 주세요.");
       }
@@ -3037,9 +3429,12 @@
 
     async function generateResponse(type) {
       setResponseType(type);
-      const text = document.getElementById("issueInput").value.trim();
       const url = document.getElementById("issueUrl").value.trim();
+      syncIssueFromUrl({ force:false });
+      const text = document.getElementById("issueInput").value.trim();
       if (!text) return alert("핵심 내용을 입력해 주세요.");
+      const label = type === "internal" ? "사내 해명용" : "언론 해명용";
+      if (!confirm(`${label} 대응 초안을 생성할까요?`)) return;
       const output = document.getElementById("responseOutput");
       output.textContent = "Gemini AI가 대응 초안을 작성 중입니다...";
       try {
@@ -3115,6 +3510,8 @@
       applyFilters();
       renderHero();
       renderOpsStatus();
+      renderNegativeWatchAsset();
+      renderNotificationHistory();
       renderArticles();
       renderAnalysis();
       renderScraps();
@@ -3145,6 +3542,8 @@
           : await fetchDashboardData(true);
         state.dataSource = data.source || "배포 데이터";
         state.reportRuns = data.report_runs || [];
+        state.notifications = data.notification_sends || [];
+        state.negativeWatchRuns = data.negative_watch_runs || [];
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
         applyKeywordSource(data.keywords, "새로고침 데이터");
@@ -3210,6 +3609,8 @@
           keywords: Array.isArray(supabaseData.keywords) ? supabaseData.keywords : [],
           articles: supabaseData.articles || [],
           report_runs: supabaseData.report_runs || [],
+          notification_sends: supabaseData.notification_sends || [],
+          negative_watch_runs: supabaseData.negative_watch_runs || [],
           summary: supabaseData.summary || {},
         };
       }
@@ -3227,11 +3628,15 @@
         if (!Array.isArray(rows)) return null;
         const keywords = await fetchSupabaseKeywords();
         const reportRuns = await fetchSupabaseReportRuns();
+        const notifications = await fetchSupabaseNotifications();
+        const negativeWatchRuns = await fetchSupabaseNegativeWatchRuns();
         return {
           category_labels: state.categoryLabels,
           tone_labels: state.toneLabels,
           keywords,
           report_runs: reportRuns || [],
+          notification_sends: notifications || [],
+          negative_watch_runs: negativeWatchRuns || [],
           articles: rows.map(row => ({
             id: row.article_hash,
             article_hash: row.article_hash,
@@ -3271,6 +3676,34 @@
       }
     }
 
+    async function fetchSupabaseNotifications() {
+      try {
+        const query = [
+          "select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at",
+          "order=sent_at.desc,created_at.desc",
+          "limit=20",
+        ].join("&");
+        const rows = await supabaseRest(`notification_sends?${query}`);
+        return Array.isArray(rows) ? rows : [];
+      } catch {
+        return [];
+      }
+    }
+
+    async function fetchSupabaseNegativeWatchRuns() {
+      try {
+        const query = [
+          "select=id,run_key,scanned_at,minutes_back,scanned_count,negative_count,new_negative_count,status,message,created_at",
+          "order=scanned_at.desc,created_at.desc",
+          "limit=10",
+        ].join("&");
+        const rows = await supabaseRest(`negative_watch_runs?${query}`);
+        return Array.isArray(rows) ? rows : [];
+      } catch {
+        return [];
+      }
+    }
+
     async function fetchSupabaseKeywords() {
       try {
         const rows = await supabaseRest("monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc");
@@ -3301,6 +3734,8 @@
         const data = await fetchDashboardData();
         state.dataSource = data.source || "배포 데이터";
         state.reportRuns = data.report_runs || [];
+        state.notifications = data.notification_sends || [];
+        state.negativeWatchRuns = data.negative_watch_runs || [];
         state.categoryLabels = data.category_labels || {};
         state.toneLabels = data.tone_labels || {};
         applyKeywordSource(data.keywords, "배포 데이터");

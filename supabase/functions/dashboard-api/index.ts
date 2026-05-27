@@ -27,6 +27,8 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   reporters: { read: true, writeRoles: ["admin", "editor"] },
   ad_spends: { read: true, writeRoles: ["admin", "editor"] },
   press_aliases: { read: true, writeRoles: ["admin", "editor"] },
+  notification_sends: { read: true, writeRoles: [] },
+  negative_watch_runs: { read: true, writeRoles: [] },
 };
 
 Deno.serve(async (req) => {

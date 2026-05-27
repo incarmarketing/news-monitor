@@ -10,6 +10,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+from supabase_store import save_notification_send
 
 BASE_DIR = Path(__file__).parent
 DAILY_DIR = BASE_DIR / "data" / "daily"
@@ -189,11 +190,32 @@ def send_text_to_me(access_token: str, text: str, link_url: str) -> dict:
 def main() -> None:
     load_dotenv()
     report = load_latest_daily()
-    token = refresh_access_token()
     link = report_link()
-    result = send_text_to_me(token, build_message(report), link)
-    print("Kakao send result:", result)
-    print("Report link:", link)
+    text = build_message(report)
+    title = f"일일 언론 브리핑 {report.get('date', '')}"
+    try:
+        token = refresh_access_token()
+        result = send_text_to_me(token, text, link)
+        save_notification_send(
+            message_type="daily_report",
+            title=title,
+            body=text,
+            link_url=link,
+            status="success",
+            provider_response=result,
+        )
+        print("Kakao send result:", result)
+        print("Report link:", link)
+    except Exception as error:
+        save_notification_send(
+            message_type="daily_report",
+            title=title,
+            body=text,
+            link_url=link,
+            status="failed",
+            error=str(error),
+        )
+        raise
     html_path = latest_html_path()
     if html_path:
         print("Latest HTML:", html_path)

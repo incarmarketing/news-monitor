@@ -49,7 +49,9 @@ MAJOR_PRESS = [
 NEGATIVE_WORDS = [
     "불법", "갑질", "사기", "횡령", "과징금", "고발", "논란", "압수수색",
     "제재", "하락", "최하위", "악화", "감소", "부진", "위반", "리스크",
-    "급락", "추락", "관리부실", "무단", "징계", "소송",
+    "급락", "추락", "관리부실", "관리 부실", "무단", "징계", "소송",
+    "오류", "먹통", "기관주의", "경고", "조사", "검사", "점검", "전격",
+    "보따리", "과열", "영업 관행", "정착지원금", "이직", "턴다",
 ]
 
 POSITIVE_WORDS = [
@@ -61,6 +63,14 @@ POSITIVE_WORDS = [
 CSR_CONTEXT_WORDS = ["사회공헌", "기부", "후원", "봉사", "지원", "캠페인", "협약"]
 
 REPUTATION_WORDS = ["브랜드평판", "평판", "1위", "순위", "수성"]
+
+RISK_CONTEXT_WORDS = [
+    "금감원", "금융감독원", "금융위", "제재", "과태료", "기관주의", "검사",
+    "점검", "조사", "논란", "고발", "소송", "불완전판매", "내부통제",
+    "정착지원금", "이직", "보따리", "전격 점검", "영업 관행", "관리 부실",
+]
+
+POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
 
 CATEGORIES = {
     "own": OWN_NAMES,
@@ -131,11 +141,23 @@ def analyze_tone(article: dict) -> str:
 
     title = article.get("title", "")
     text = title + " " + article.get("description", "")
-    if any(word in text for word in CSR_CONTEXT_WORDS):
-        return "positive"
-    if any(word in title for word in NEGATIVE_WORDS):
+
+    negative_score = 0
+    positive_score = 0
+
+    negative_score += sum(3 for word in NEGATIVE_WORDS if word in title)
+    negative_score += sum(1 for word in NEGATIVE_WORDS if word in text and word not in title)
+    negative_score += sum(2 for word in RISK_CONTEXT_WORDS if word in title)
+    negative_score += sum(1 for word in RISK_CONTEXT_WORDS if word in text and word not in title)
+
+    positive_score += sum(2 for word in POSITIVE_RANKING_WORDS if word in title)
+    positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
+    positive_score += sum(1 for word in CSR_CONTEXT_WORDS if word in text)
+
+    # 당사 언급 기사에서 감독/점검/제재 맥락은 단순 수치 증가보다 리스크 신호가 우선이다.
+    if negative_score >= 2 and negative_score >= positive_score:
         return "negative"
-    if any(word in title for word in POSITIVE_WORDS):
+    if positive_score >= 2 and negative_score == 0:
         return "positive"
     return "neutral"
 

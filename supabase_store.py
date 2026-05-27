@@ -36,6 +36,29 @@ ARTICLE_COLUMNS = (
     "raw",
 )
 
+NOTIFICATION_COLUMNS = (
+    "sent_at",
+    "channel",
+    "message_type",
+    "title",
+    "body",
+    "link_url",
+    "status",
+    "error",
+    "provider_response",
+)
+
+NEGATIVE_WATCH_COLUMNS = (
+    "run_key",
+    "scanned_at",
+    "minutes_back",
+    "scanned_count",
+    "negative_count",
+    "new_negative_count",
+    "status",
+    "message",
+)
+
 
 class SupabaseConfigError(RuntimeError):
     """Raised when Supabase credentials are incomplete."""
@@ -140,6 +163,70 @@ def save_report_run(archive_payload: dict) -> None:
     ]
     if rows:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
+
+
+def save_notification_send(
+    *,
+    message_type: str,
+    title: str,
+    body: str,
+    link_url: str,
+    status: str,
+    error: str = "",
+    provider_response: dict | None = None,
+    channel: str = "kakao",
+    sent_at: str | None = None,
+) -> None:
+    if not is_enabled():
+        return
+    row = {
+        "sent_at": sent_at or datetime.now(timezone.utc).isoformat(),
+        "channel": channel,
+        "message_type": message_type,
+        "title": title,
+        "body": body,
+        "link_url": link_url,
+        "status": status,
+        "error": error,
+        "provider_response": provider_response or {},
+    }
+    try:
+        request("POST", "notification_sends", data=json.dumps([{key: row.get(key) for key in NOTIFICATION_COLUMNS}], ensure_ascii=False))
+    except Exception as error:
+        print(f"Supabase notification log skipped: {error}")
+
+
+def save_negative_watch_run(
+    *,
+    run_key: str,
+    scanned_at: str,
+    minutes_back: int,
+    scanned_count: int,
+    negative_count: int,
+    new_negative_count: int,
+    status: str,
+    message: str = "",
+) -> None:
+    if not is_enabled():
+        return
+    row = {
+        "run_key": run_key,
+        "scanned_at": scanned_at,
+        "minutes_back": minutes_back,
+        "scanned_count": scanned_count,
+        "negative_count": negative_count,
+        "new_negative_count": new_negative_count,
+        "status": status,
+        "message": message,
+    }
+    try:
+        request(
+            "POST",
+            "negative_watch_runs?on_conflict=run_key",
+            data=json.dumps([{key: row.get(key) for key in NEGATIVE_WATCH_COLUMNS}], ensure_ascii=False),
+        )
+    except Exception as error:
+        print(f"Supabase negative watch log skipped: {error}")
 
 
 def normalize_article(article: dict, archive_payload: dict) -> dict:

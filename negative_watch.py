@@ -21,6 +21,7 @@ import analyzer
 import config
 import news_collector
 from kakao_report_send import KAKAO_API, refresh_access_token
+from supabase_store import save_negative_watch_run, save_notification_send
 
 KST = timezone(timedelta(hours=9))
 BASE_DIR = Path(__file__).parent
@@ -144,11 +145,46 @@ def send_kakao_alert(access_token: str, text: str, link_url: str) -> dict:
     return response.json()
 
 
+def record_watch_run(
+    *,
+    scanned_at: str,
+    minutes_back: int,
+    scanned_count: int,
+    negative_count: int,
+    new_negative_count: int,
+    status: str,
+    message: str = "",
+) -> None:
+    try:
+        save_negative_watch_run(
+            run_key=f"negative-watch-{scanned_at[:16]}",
+            scanned_at=scanned_at,
+            minutes_back=minutes_back,
+            scanned_count=scanned_count,
+            negative_count=negative_count,
+            new_negative_count=new_negative_count,
+            status=status,
+            message=message,
+        )
+    except Exception as error:
+        print("Negative watch Supabase log skipped:", error)
+
+
 def main() -> None:
     load_dotenv()
     minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "10"))
+    scanned_at = now_kst().isoformat()
 
     if not is_active_time():
+        record_watch_run(
+            scanned_at=scanned_at,
+            minutes_back=minutes_back,
+            scanned_count=0,
+            negative_count=0,
+            new_negative_count=0,
+            status="skipped",
+            message="outside active time",
+        )
         print("Negative watcher skipped: outside active time.")
         return
 
@@ -165,21 +201,76 @@ def main() -> None:
     )
 
     if not new_negatives:
+        record_watch_run(
+            scanned_at=scanned_at,
+            minutes_back=minutes_back,
+            scanned_count=len(articles),
+            negative_count=len(negatives),
+            new_negative_count=0,
+            status="scanned",
+            message="no new negative article",
+        )
         save_state(state)
         return
 
     if os.getenv("NEGATIVE_WATCH_DRY_RUN", "").lower() in {"1", "true", "yes", "y"}:
+        record_watch_run(
+            scanned_at=scanned_at,
+            minutes_back=minutes_back,
+            scanned_count=len(articles),
+            negative_count=len(negatives),
+            new_negative_count=len(new_negatives),
+            status="dry_run",
+            message="dry run",
+        )
         print("Dry run: Kakao alert was not sent.")
         print(build_alert_message(new_negatives, metrics, minutes_back))
         return
 
-    token = refresh_access_token()
     link = new_negatives[0].get("link") or "https://incarmarketing.github.io/news-monitor/"
     message = build_alert_message(new_negatives, metrics, minutes_back)
-    result = send_kakao_alert(token, message, link)
-    print("Kakao negative alert result:", result)
+    try:
+        token = refresh_access_token()
+        result = send_kakao_alert(token, message, link)
+        save_notification_send(
+            message_type="negative_alert",
+            title="부정기사 감지 알림",
+            body=message,
+            link_url=link,
+            status="success",
+            provider_response=result,
+        )
+        record_watch_run(
+            scanned_at=scanned_at,
+            minutes_back=minutes_back,
+            scanned_count=len(articles),
+            negative_count=len(negatives),
+            new_negative_count=len(new_negatives),
+            status="alert_sent",
+            message=f"{len(new_negatives)} new negative article(s)",
+        )
+        print("Kakao negative alert result:", result)
+    except Exception as error:
+        save_notification_send(
+            message_type="negative_alert",
+            title="부정기사 감지 알림",
+            body=message,
+            link_url=link,
+            status="failed",
+            error=str(error),
+        )
+        record_watch_run(
+            scanned_at=scanned_at,
+            minutes_back=minutes_back,
+            scanned_count=len(articles),
+            negative_count=len(negatives),
+            new_negative_count=len(new_negatives),
+            status="alert_failed",
+            message=str(error),
+        )
+        raise
 
-    current = now_kst().isoformat()
+    current = scanned_at
     for article in new_negatives:
         key = article_key(article)
         sent.add(key)
