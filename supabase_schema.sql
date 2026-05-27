@@ -47,10 +47,25 @@ create table if not exists public.news_articles (
 
 create table if not exists public.monitor_keywords (
   keyword text primary key,
+  category text not null default 'other',
   enabled boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+do $$
+begin
+  if not exists (
+    select 1
+      from pg_constraint
+     where conname = 'monitor_keywords_category_check'
+       and conrelid = 'public.monitor_keywords'::regclass
+  ) then
+    alter table public.monitor_keywords
+      add constraint monitor_keywords_category_check
+      check (category in ('own', 'regulation', 'competitor', 'industry', 'other'));
+  end if;
+end $$;
 
 create table if not exists public.media_relations (
   name text primary key,
@@ -93,6 +108,14 @@ create table if not exists public.press_aliases (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.article_scraps (
+  article_hash text primary key,
+  article_snapshot jsonb not null default '{}'::jsonb,
+  created_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.news_articles add column if not exists summary text;
 update public.news_articles
 set summary = coalesce(nullif(summary, ''), raw->>'description', raw->>'summary')
@@ -104,6 +127,7 @@ create index if not exists idx_news_articles_tone on public.news_articles (tone)
 create index if not exists idx_news_articles_status on public.news_articles (status);
 create index if not exists idx_news_articles_keyword on public.news_articles (keyword);
 create index if not exists idx_report_runs_report_date on public.report_runs (report_date desc);
+create index if not exists idx_monitor_keywords_category on public.monitor_keywords (category, created_at);
 create index if not exists idx_media_relations_hidden on public.media_relations (hidden);
 create index if not exists idx_reporters_media on public.reporters (media);
 create index if not exists idx_ad_spends_month on public.ad_spends (spend_month);
@@ -154,6 +178,11 @@ create trigger set_press_aliases_updated_at
 before update on public.press_aliases
 for each row execute function public.set_updated_at();
 
+drop trigger if exists set_article_scraps_updated_at on public.article_scraps;
+create trigger set_article_scraps_updated_at
+before update on public.article_scraps
+for each row execute function public.set_updated_at();
+
 alter table public.report_runs enable row level security;
 alter table public.news_articles enable row level security;
 alter table public.monitor_keywords enable row level security;
@@ -161,6 +190,7 @@ alter table public.media_relations enable row level security;
 alter table public.reporters enable row level security;
 alter table public.ad_spends enable row level security;
 alter table public.press_aliases enable row level security;
+alter table public.article_scraps enable row level security;
 
 -- Service role writes from GitHub Actions bypass RLS.
 -- Public dashboard read access.
@@ -227,6 +257,7 @@ grant select, insert, update, delete on public.media_relations to anon;
 grant select, insert, update, delete on public.reporters to anon;
 grant select, insert, update, delete on public.ad_spends to anon;
 grant select, insert, update, delete on public.press_aliases to anon;
+revoke all on public.article_scraps from anon, authenticated;
 grant usage, select on all sequences in schema public to anon;
 
 drop policy if exists "public dashboard manage media relations" on public.media_relations;
@@ -261,17 +292,17 @@ to anon
 using (true)
 with check (true);
 
-insert into public.monitor_keywords (keyword, enabled)
+insert into public.monitor_keywords (keyword, category, enabled)
 values
-  ('인카금융', true),
-  ('인카금융서비스', true),
-  ('보험 마케팅', true),
-  ('생명보험', true),
-  ('손해보험', true),
-  ('보험 프로모션', true),
-  ('GA 보험', true),
-  ('보험설계사', true),
-  ('보험대리점 브랜드평판', true),
-  ('GA 브랜드평판', true),
-  ('인카금융서비스 브랜드평판', true)
+  ('인카금융', 'own', true),
+  ('인카금융서비스', 'own', true),
+  ('보험 마케팅', 'industry', true),
+  ('생명보험', 'competitor', true),
+  ('손해보험', 'competitor', true),
+  ('보험 프로모션', 'industry', true),
+  ('GA 보험', 'industry', true),
+  ('보험설계사', 'industry', true),
+  ('보험대리점 브랜드평판', 'industry', true),
+  ('GA 브랜드평판', 'industry', true),
+  ('인카금융서비스 브랜드평판', 'own', true)
 on conflict (keyword) do nothing;

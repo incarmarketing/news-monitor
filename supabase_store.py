@@ -189,6 +189,6 @@ def load_monitor_keywords() -> list[str]:
         return []
     response = request(
         "GET",
-        "monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc",
+        "monitor_keywords?select=keyword&enabled=eq.true&order=category.asc,created_at.asc",
     )
     return [row["keyword"] for row in response.json() if row.get("keyword")]
