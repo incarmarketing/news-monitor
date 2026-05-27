@@ -1,6 +1,6 @@
 {
   "date": "2026-05-28",
-  "timestamp": "2026-05-28T08:01:30.389382+09:00",
+  "timestamp": "2026-05-28T08:21:51.186438+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,19 +9,19 @@
     "end": "2026-05-28T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 58,
-    "total_after_cluster": 52,
+    "total_collected": 53,
+    "total_after_cluster": 47,
     "by_category": {
       "own": 1,
       "regulation": 6,
-      "competitor": 31,
-      "industry": 20,
+      "competitor": 29,
+      "industry": 17,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
       "positive": 0,
-      "neutral": 58
+      "neutral": 53
     },
     "own_negative": 0,
     "own_total": 1,
@@ -32,7 +32,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n보험 시장 한파 속 당사 중립 보도, 경쟁사 동향이 다수.\n\n## 핵심 이슈\n- [3] 상위 GA 역성장 및 시장 한파: 외형보다 생산성 경쟁 심화 전망.\n- [7] 롯데손보 경영개선계획 승인: 매각 재추진 등 향후 행보 주목.\n\n## 지표 해석\n당사 직접 언급은 보험 시장 위축에 따른 생산성 경쟁 전환을 다룬 중립 기사 1건입니다. 부정 리스크는 없었으며, 롯데손보 경영개선 승인 등 경쟁 및 업계 동향이 다수 관측됩니다.\n\n## 분석 키워드\n생산성 경쟁, 롯데손해보험, 카드슈랑스 규제, K-ICS",
+  "briefing": "## 최종 결론\n보험 시장 한파 속 당사 중립 보도 및 경쟁사 경영 개선 동향이 관측됨.\n\n## 핵심 이슈\n- [3] 상위 GA 4월 실적 역성장: 시장 한파에 따른 생산성 경쟁 심화 보도.\n- [7] 롯데손보 경영개선계획 승인: 금융위 조건부 승인으로 매각 재추진 가능성.\n\n## 지표 해석\n당사 직접 언급 기사는 1건(중립)으로 부정 이슈는 없었으며, 롯데손보 경영개선안 승인 등 경쟁사 동향 보도가 다수 발생했습니다.\n\n## 분석 키워드\nGA 역성장, 롯데손보, 경영개선, 생산성 경쟁",
   "articles": [
     {
       "title": "[더벨][Financial Index | 생명보험] 빅3 K-ICS 엇갈려…푸본현대·KDB 증자...",
@@ -131,18 +131,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "NH농협손해보험 강원총국, 봉평·문막농협 TOP-CLASS 사무소 시상",
-      "link": "http://www.fntimes.com/html/view.php?ud=202605272153252296dd55077bc2_18",
-      "source": "fntimes.com",
-      "keyword": "손해보험",
-      "description": "NH농협손해보험 강원총국(총국장 임봉국)은 봉평농협(조합장 권혁진)과 문막농협(조합장 곽후신)이 ‘2026년 1분기 TOP-CLASS’ 사무소에 선정됐다고 27일 밝혔다. TOP-CLASS 사무소는 농협손해보험 사업 추진 역량이 우수하고...",
-      "pub_date": "Wed, 27 May 2026 22:04:00 +0900",
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "DB손해보험, 품질혁신 성과 인정… 5개 분야 최우수상 석권 - 시사캐스트",
       "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTFBFbGtrdlJnR193YXRfLUR3dFYtcnp1N3Bia0FCQi1GTkNjcVdRWnVJTEZfb1VjWEhwUHlaeVh2MnhZclh3TTJTSm9Jcms3anVPZW1oSktGdzlobkpFdFN1NGpTNVFZMXM?oc=5",
       "source": "google",
@@ -185,18 +173,6 @@
       "keyword": "생명보험",
       "description": "은행보다 싼 삼성·ABL생명 주담대…반사이익 기대&nbsp;&nbsp;서울경제TV",
       "pub_date": "Wed, 27 May 2026 09:00:52 GMT",
-      "_score": 11,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "급한 불 끈 롯데손보… 변수는 자본확충과 매각",
-      "link": "https://m.skyedaily.com/news_view.html?ID=304844",
-      "source": "m.skyedaily.com",
-      "keyword": "손해보험",
-      "description": "스카이데일리 이세희기자 = K-ICS 100% 넘었지만 시장 안정권과는 거리 ▲ 롯데손해보험 본사 건물. 연합뉴스·롯데손해보험 롯데손해보험이 금융당국의 경영개선요구에 따라 제출한 경영개선계획을 조건부로 승인받으며...",
-      "pub_date": "Wed, 27 May 2026 22:10:00 +0900",
       "_score": 11,
       "_category": "competitor",
       "_tone": "neutral",
@@ -455,6 +431,18 @@
       "_cluster_size": 1
     },
     {
+      "title": "아무도 모르게 4000명씩 잠드는데…韓 고독사 보험, 여전히 황무지 - 매일경제",
+      "link": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE03QlIzejdPT3BERmdPSC1TVldESTVGb0tfQlNLMGxwTjhhVVRFdEZ2LTltYjQ1S2sxQzI2dzRtNmx1LVFDMHV1Z2tXUU9aVEhLRmZhXw?oc=5",
+      "source": "매일경제",
+      "keyword": "손해보험",
+      "description": "아무도 모르게 4000명씩 잠드는데…韓 고독사 보험, 여전히 황무지&nbsp;&nbsp;매일경제",
+      "pub_date": "Wed, 27 May 2026 12:43:58 GMT",
+      "_score": 7,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
       "title": "베트남 현지에 합작 보험사 설립… 파트너십 강화 나서 - 조선비즈 - Chosunbiz",
       "link": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNZVVYYUdyUVFzNlNIeTAxSkdhLWkxZU8zX2RqN2YwZkZHRXZXZUVMMEpFX2IzQlhDVDB4anRNQmtTcFF0OHd4akt6NVNIRjExc3V2RG9hYmtlVmNWYm5veEpzd0VmN2hUR2dCZ3RDM3VRdGNjcmtOMUs4NjVOWHV4N1FQbHZoREpB0gGcAUFVX3lxTE9kdkF5MlItRUhLTWZoUDlFWU1xd2hTQmVkUUFtTGFJOXF0SW5zQ3RRU0NwVzdZdWVSMFM3bXVpQi0zeHZfOEZNMWdqOTNhbVl6M25rdWVKWHE4NW1NekRUc3dvR1Vib0FYWTNJczdjVVItbDJkdndBS1NBbnItUVlPcG5JdmVqd1BhYTZKS1AwV1czMVZ5V0NtSnA2Tg?oc=5",
       "source": "google",
@@ -545,54 +533,6 @@
       "keyword": "생명보험",
       "description": "삼성전자 지분 8.41% 보유 올해 1분기 투자손익만 1.2조 생명보험사는 올해 1분기 당기순이익이 1년 전보다 늘어난 반면 손해보험사는 감소한 것으로 나타났다. 삼성전자가 역대급 실적을 낸 덕에 생명보험 업계...",
       "pub_date": "Thu, 28 May 2026 05:50:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "농협금융, 상생성장펀드 2호 추진…연내 1조 투자 속도전",
-      "link": "https://www.econovill.com/news/articleView.html?idxno=740986",
-      "source": "이코노믹리뷰",
-      "keyword": "생명보험",
-      "description": "외부 기관 자금을 유치하지 않고 은행과 생명보험, 손해보험, 증권, 캐피탈 등 주요 계열사가 직접 자금을 투입한다는 점이 특징이다. 농협금융은 연내 총 1조원 규모 출자를 목표로 하고 있다. 이에 따라 추가 펀드 조성...",
-      "pub_date": "Wed, 27 May 2026 20:24:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "'박경훈·윤창환·이동철'…차기 여신협회장 3파전으로",
-      "link": "https://weekly.hankooki.com/news/articleView.html?idxno=7166271",
-      "source": "weekly.hankooki.com",
-      "keyword": "생명보험",
-      "description": "그는 KB생명보험 경영기획본부 부사장, KB금융지주 전략총괄 부사장(CSO), KB국민카드 대표이사, KB금융지주 부회장을 역임했다. 여신협회는 내달 4일 2차 회추위를 개최하고 후보들에 대한 면접과 투표를 진행한다. 이를...",
-      "pub_date": "Wed, 27 May 2026 19:48:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "보험사 1분기 순익 4.5조…'투자손익'이 생보·손보 희비 갈라",
-      "link": "https://www.econovill.com/news/articleView.html?idxno=740985",
-      "source": "이코노믹리뷰",
-      "keyword": "생명보험",
-      "description": "생명보험사와 손해보험사 모두 수입보험료는 증가했지만, 순이익 흐름은 엇갈렸다. 생보사는 보험손익 부진에도 투자손익 개선으로 순이익이 크게 늘어났다. 반면 손보사는 전년과 비슷한 수준의 보험손익을...",
-      "pub_date": "Wed, 27 May 2026 19:44:00 +0900",
-      "_score": 4,
-      "_category": "industry",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "여신협회장 3파전 압축…재무·글로벌·AI '3色 경쟁'",
-      "link": "https://dealsite.co.kr/articles/162571",
-      "source": "dealsite.co.kr",
-      "keyword": "생명보험",
-      "description": "이 전 부회장은 1990년 KB국민은행에 입행한 뒤 KB생명보험 경영기획본부 부사장, KB금융지주 전략총괄 부사장(CSO)과 KB국민카드 대표, KB금융지주 부회장 등을 지낸 대표적인 'KB맨'이다. 주택은행 합병과 현대증권 인수...",
-      "pub_date": "Wed, 27 May 2026 19:06:00 +0900",
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
