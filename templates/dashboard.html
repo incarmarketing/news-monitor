@@ -823,6 +823,46 @@
       word-break:keep-all;
       overflow-wrap:anywhere;
     }
+    .url-input-row {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto auto;
+      gap:8px;
+      align-items:center;
+    }
+    .response-mode .btn.active,
+    .response-mode .btn.primary {
+      background:var(--incar);
+      border-color:var(--incar);
+      color:#fff;
+    }
+    .keyword-category-grid {
+      display:grid;
+      grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+      gap:10px;
+      align-items:end;
+    }
+    .keyword-group-list {
+      display:grid;
+      gap:10px;
+      margin-top:14px;
+    }
+    .keyword-group {
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:12px;
+      background:#fbfdff;
+    }
+    .keyword-group-title {
+      margin:0 0 9px;
+      color:var(--incar-dark);
+      font-size:13px;
+      font-weight:900;
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+    }
+    .keyword-group .meta { gap:7px; }
     .report-shell {
       background:#fff;
       border:1px solid var(--line);
@@ -1004,6 +1044,8 @@
       .hero { padding:18px; }
       .hero h2 { font-size:23px; }
       .metric-grid,.form-grid { grid-template-columns:1fr; }
+      .keyword-category-grid,.url-input-row { grid-template-columns:1fr; }
+      .url-input-row .btn { width:100%; justify-content:center; }
       .actions .btn span { display:none; }
       .monitor-head { display:grid; grid-template-columns:1fr; }
       .monitor-head-actions {
@@ -1111,7 +1153,7 @@
         <div class="group-title">Relationship & Budget</div>
         <button class="nav" data-page="media"><i data-lucide="newspaper"></i> 언론사 관리</button>
         <button class="nav" data-page="reporters"><i data-lucide="users"></i> 기자 관리</button>
-        <button class="nav" data-page="ads"><i data-lucide="wallet-cards"></i> 광고비/협찬 관리</button>
+        <button class="nav" data-page="ads"><i data-lucide="wallet-cards"></i> 광고비 관리</button>
         <div class="group-title">System</div>
         <button class="nav" data-page="settings"><i data-lucide="settings"></i> 환경 설정</button>
       </nav>
@@ -1130,7 +1172,7 @@
           <button class="btn" data-analysis-shortcut="7"><i data-lucide="calendar-days"></i><span>주간</span></button>
           <button class="btn" data-analysis-shortcut="30"><i data-lucide="calendar-range"></i><span>월간</span></button>
           <button class="btn" id="exportCsv"><i data-lucide="download"></i><span>CSV 출력</span></button>
-          <button class="btn primary" id="resetFilters"><i data-lucide="rotate-ccw"></i><span>필터 초기화</span></button>
+          <button class="btn primary" id="resetFilters" title="검색어, 기준일, 분류, 논조, 리스크 조건을 모두 해제합니다."><i data-lucide="rotate-ccw"></i><span>검색/필터 해제</span></button>
           <button class="btn" id="logoutButton"><i data-lucide="log-out"></i><span>로그아웃</span></button>
         </div>
       </header>
@@ -1273,11 +1315,18 @@
             </div>
             <div class="panel">
               <h2 class="panel-title"><i data-lucide="pen-tool"></i> 대응 초안 생성기</h2>
-              <div class="field"><label>기사 URL</label><input id="issueUrl" placeholder="기사 링크 붙여넣기"></div>
+              <div class="field">
+                <label>기사 URL</label>
+                <div class="url-input-row">
+                  <input id="issueUrl" type="url" inputmode="url" autocomplete="url" placeholder="기사 링크 붙여넣기">
+                  <button class="btn" onclick="pasteIssueUrl()"><i data-lucide="clipboard"></i><span>붙여넣기</span></button>
+                  <button class="btn" onclick="useTopRiskArticle()"><i data-lucide="link"></i><span>최근 리스크</span></button>
+                </div>
+              </div>
               <div class="field" style="margin-top:10px"><label>팩트체크 / 핵심 내용</label><textarea id="issueInput" rows="7" placeholder="확인된 사실, 쟁점, 대응 방향을 입력하세요."></textarea></div>
-              <div class="actions" style="justify-content:flex-start;margin-top:10px">
-                <button class="btn" onclick="generateResponse('internal')">사내 공지용</button>
-                <button class="btn primary" onclick="generateResponse('press')">언론 해명용</button>
+              <div class="actions response-mode" style="justify-content:flex-start;margin-top:10px">
+                <button class="btn response-type-btn" id="responseInternal" data-response-type="internal" onclick="generateResponse('internal')">사내 해명용</button>
+                <button class="btn response-type-btn primary active" id="responsePress" data-response-type="press" onclick="generateResponse('press')">언론 해명용</button>
                 <button class="btn" onclick="copyResponse()">복사</button>
               </div>
               <div class="focus-box response-output" id="responseOutput">왼쪽 입력값을 바탕으로 대응 초안을 생성합니다.</div>
@@ -1320,7 +1369,7 @@
                 <div class="field"><label>담당자</label><input id="mediaOwner" placeholder="담당자명"></div>
                 <div class="field"><label>최근 접촉일</label><input id="mediaContactDate" type="date"></div>
               </div>
-              <div class="field" style="margin-top:10px"><label>관리 메모</label><textarea id="mediaMemo" rows="4" placeholder="광고/협찬 이력, 기자 성향, 요청사항, 접촉 이력"></textarea></div>
+              <div class="field" style="margin-top:10px"><label>관리 메모</label><textarea id="mediaMemo" rows="4" placeholder="광고비 이력, 기자 성향, 요청사항, 접촉 이력"></textarea></div>
               <div class="actions" style="justify-content:flex-start;margin-top:10px">
                 <button class="btn primary" onclick="saveMediaRelation()">언론사 정보 저장</button>
                 <button class="btn danger" onclick="deleteSelectedMedia()">선택 언론사 삭제</button>
@@ -1361,7 +1410,7 @@
         <section class="page" id="page-ads">
           <div class="panel">
             <div class="section-head">
-              <h2 class="panel-title"><i data-lucide="wallet-cards"></i> 광고비/협찬 종합 대시보드</h2>
+              <h2 class="panel-title"><i data-lucide="wallet-cards"></i> 광고비 종합 대시보드</h2>
               <button class="btn primary no-print" id="printAds"><i data-lucide="printer"></i> 보고서 인쇄</button>
             </div>
             <div class="ad-filter-grid no-print">
@@ -1415,13 +1464,25 @@
                 <h2 class="panel-title"><i data-lucide="hash"></i> 모니터링 키워드</h2>
                 <span class="status-pill" id="keywordSourcePill">동기화 대기</span>
               </div>
-              <div class="field"><label>키워드 추가</label><input id="keywordInput" placeholder="예: 인카금융서비스, GA, 브랜드평판"></div>
+              <div class="keyword-category-grid">
+                <div class="field">
+                  <label>구분</label>
+                  <select id="keywordCategory">
+                    <option value="own">당사 보도</option>
+                    <option value="competitor">경쟁사</option>
+                    <option value="industry">업계 동향</option>
+                    <option value="regulation">규제/정책</option>
+                    <option value="other">기타</option>
+                  </select>
+                </div>
+                <div class="field"><label>키워드 추가</label><input id="keywordInput" placeholder="예: 인카금융서비스, GA, 브랜드평판"></div>
+              </div>
               <div class="keyword-actions">
                 <button class="btn primary" id="keywordAddButton" onclick="addKeyword()">추가</button>
                 <button class="btn" id="keywordSyncButton" onclick="syncKeywordsFromSupabase()">Supabase 동기화</button>
               </div>
               <div class="sync-note" id="keywordSyncStatus"></div>
-              <div class="meta" id="keywordList" style="margin-top:14px"></div>
+              <div class="keyword-group-list" id="keywordList"></div>
             </div>
             <div class="panel">
               <h2 class="panel-title"><i data-lucide="database"></i> 시스템 상태</h2>
@@ -1430,9 +1491,9 @@
                 <tr><th>화면 버전</th><td>Marketing PR Center</td></tr>
                 <tr><th>키워드 원본</th><td id="keywordSourceText">Supabase monitor_keywords</td></tr>
                 <tr><th>키워드 수</th><td id="keywordCountText">-</td></tr>
-                <tr><th>관리 데이터</th><td>키워드·언론사·기자·광고비는 Supabase 공유 저장, 실패 시 브라우저 임시 저장</td></tr>
+                <tr><th>관리 데이터</th><td>키워드·언론사·기자·광고비·스크랩은 Supabase 공유 저장만 사용</td></tr>
               </table>
-              <button class="btn danger" style="margin-top:12px" onclick="clearLocal()">로컬 관리 데이터 초기화</button>
+              <button class="btn danger" style="margin-top:12px" onclick="clearLocal()">브라우저 임시 캐시 삭제</button>
             </div>
           </div>
         </section>
@@ -1454,22 +1515,24 @@
       filtered: [],
       filters: { q:"", date:"", category:"", tone:"", risk:"" },
       analysis: { range:"all", start:"", end:"" },
-      keywordSource: "로컬 캐시",
+      keywordSource: "Supabase",
       keywordSyncMessage: "",
       keywordSyncTone: "",
       dataSource: "배포 데이터",
-      managementSource: "브라우저 저장",
+      managementSource: "Supabase DB",
       reportRuns: [],
       categoryLabels: {},
       toneLabels: {},
-      scraps: JSON.parse(localStorage.getItem("pr_scraps") || "[]"),
-      keywords: JSON.parse(localStorage.getItem("pr_keywords") || '["인카금융서비스","GA","브랜드평판"]'),
-      mediaRelations: JSON.parse(localStorage.getItem("pr_media_relations") || "[]"),
-      hiddenMedia: JSON.parse(localStorage.getItem("pr_hidden_media") || "[]"),
+      scraps: [],
+      keywords: [],
+      keywordRows: [],
+      mediaRelations: [],
+      hiddenMedia: [],
       selectedMedia: "",
-      reporters: JSON.parse(localStorage.getItem("pr_reporters") || "[]"),
-      ads: JSON.parse(localStorage.getItem("pr_ads") || "[]"),
+      reporters: [],
+      ads: [],
       adFilters: { year:"", month:"", media:"", type:"" },
+      responseType: "press",
       auth: null
     };
     const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
@@ -1484,13 +1547,15 @@
       risk:"리스크 대응 센터",
       media:"언론사 관리",
       reporters:"기자 관리",
-      ads:"광고비/협찬 관리",
+      ads:"광고비 관리",
       settings:"환경 설정"
     };
     const categoryOrder = ["own","regulation","competitor","industry","other"];
     const toneOrder = ["negative","neutral","positive"];
     const categoryFallback = { own:"당사 보도", regulation:"규제/정책", competitor:"경쟁사", industry:"업계 동향", other:"기타" };
     const toneFallback = { negative:"부정", neutral:"중립", positive:"긍정" };
+    const keywordCategoryOrder = ["own","competitor","industry","regulation","other"];
+    const legacyLocalKeys = ["pr_scraps","pr_keywords","pr_media_relations","pr_hidden_media","pr_reporters","pr_ads","marketing_pr_session_v1"];
     const portalPressNames = new Set([
       "google", "google.com", "news.google.com", "news.google.co.kr",
       "naver", "naver.com", "news.naver.com", "n.news.naver.com", "m.news.naver.com",
@@ -1606,15 +1671,15 @@
 
     function getStoredSession() {
       try {
-        const session = JSON.parse(localStorage.getItem(DASHBOARD_SESSION_KEY) || "null");
+        const session = JSON.parse(sessionStorage.getItem(DASHBOARD_SESSION_KEY) || "null");
         if (!session?.employee_no || !session?.session_token || !session?.session_expires_at) return null;
         if (new Date(session.session_expires_at).getTime() <= Date.now()) {
-          localStorage.removeItem(DASHBOARD_SESSION_KEY);
+          sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
           return null;
         }
         return session;
       } catch {
-        localStorage.removeItem(DASHBOARD_SESSION_KEY);
+        sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
         return null;
       }
     }
@@ -1661,7 +1726,7 @@
             setLoginStatus(result?.message || "사번 또는 비밀번호가 일치하지 않습니다.");
             return;
           }
-          localStorage.setItem(DASHBOARD_SESSION_KEY, JSON.stringify(result));
+          sessionStorage.setItem(DASHBOARD_SESSION_KEY, JSON.stringify(result));
           setLoginStatus("로그인 완료. 대시보드를 불러옵니다.", "ok");
           unlockDashboard(result);
           await loadDashboard();
@@ -1712,7 +1777,7 @@
       const data = text ? JSON.parse(text) : {};
       if (!response.ok) {
         if (response.status === 401) {
-          localStorage.removeItem(DASHBOARD_SESSION_KEY);
+          sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
           showLogin("세션이 만료되었습니다. 다시 로그인해 주세요.");
         }
         throw new Error(data?.error || `dashboard_api_${response.status}`);
@@ -1724,17 +1789,35 @@
       try {
         await dashboardApi("logout");
       } catch {}
-      localStorage.removeItem(DASHBOARD_SESSION_KEY);
+      sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
       state.auth = null;
       location.reload();
     }
 
+    function normalizeKeywordRows(items) {
+      if (!Array.isArray(items)) return [];
+      const seen = new Set();
+      return items
+        .map(item => {
+          const row = typeof item === "string" ? { keyword:item, category:"other", enabled:true } : item || {};
+          const keyword = String(row.keyword || "").trim();
+          const category = categoryOrder.includes(row.category) ? row.category : "other";
+          return { keyword, category, enabled: row.enabled !== false };
+        })
+        .filter(row => row.keyword && row.enabled)
+        .filter(row => {
+          const key = row.keyword.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+    }
+
     function applyKeywordSource(keywords, source = "Supabase") {
-      if (!Array.isArray(keywords)) return;
-      const normalized = uniq(keywords.map(keyword => String(keyword || "").trim()));
-      state.keywords = normalized;
+      const rows = normalizeKeywordRows(keywords);
+      state.keywordRows = rows;
+      state.keywords = rows.map(row => row.keyword);
       state.keywordSource = source;
-      localStorage.setItem("pr_keywords", JSON.stringify(state.keywords));
     }
 
     function setKeywordSyncStatus(message, tone = "") {
@@ -1750,7 +1833,7 @@
     }
 
     function setKeywordControlsDisabled(disabled) {
-      ["keywordAddButton", "keywordSyncButton", "keywordInput"].forEach(id => {
+      ["keywordAddButton", "keywordSyncButton", "keywordInput", "keywordCategory"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = disabled;
       });
@@ -1925,6 +2008,7 @@
           renderAnalysis();
         });
       });
+      setResponseType(state.responseType);
     }
 
     function switchPage(page) {
@@ -1980,7 +2064,7 @@
         ["데이터 원본", state.dataSource || "배포 데이터"],
         ["최근 실행", latestRunLabel, latestTimestamp],
         ["키워드 조건", `${state.keywords.length.toLocaleString("ko-KR")}개`, state.keywordSource || "Supabase"],
-        ["관리 데이터", state.managementSource || "브라우저 저장"],
+        ["관리 데이터", state.managementSource || "Supabase DB"],
       ];
       const target = document.getElementById("opsStatus");
       if (!target) return;
@@ -2069,7 +2153,7 @@
       target.innerHTML = rows ? `<div class="media-flow">${rows}</div>` : '<div class="empty">표시할 데이터가 없습니다.</div>';
     }
 
-    function articleCard(article, compact=false) {
+    function articleCard(article, compact=false, extraAction = "") {
       const key = article.id || article.link;
       const scraped = state.scraps.some(item => (item.id || item.link) === key);
       return `
@@ -2080,7 +2164,8 @@
             <span class="chip ${escapeHtml(article.category)}">${escapeHtml(article.category_label)}</span>
             <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(article.tone_label)}</span>
             <span class="chip">${escapeHtml(article.keyword || "키워드 없음")}</span>
-            <button class="btn scrap-toggle${scraped ? " is-scraped" : ""}" aria-pressed="${scraped ? "true" : "false"}" title="${scraped ? "스크랩 해제" : "스크랩"}" onclick="toggleScrapById('${escapeHtml(key)}')"><i data-lucide="bookmark"></i><span>스크랩</span></button>
+            <button class="btn scrap-toggle${scraped ? " is-scraped" : ""}" aria-pressed="${scraped ? "true" : "false"}" title="${scraped ? "스크랩 해제" : "스크랩"}" onclick='toggleScrapById(${jsArg(key)})'><i data-lucide="bookmark"></i><span>스크랩</span></button>
+            ${extraAction}
           </div>
           <a class="article-title" href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
           ${compact ? "" : `<div class="summary">${escapeHtml(article.summary || "기사 원문 기준으로 세부 내용을 확인하세요.")}</div>`}
@@ -2088,12 +2173,18 @@
       `;
     }
 
+    function riskResponseCard(article) {
+      const key = article.id || article.link;
+      const action = `<button class="btn scrap-toggle" title="이 기사 링크와 제목을 대응 초안 입력칸에 채웁니다." onclick='useArticleForResponse(${jsArg(key)})'><i data-lucide="link"></i><span>초안에 사용</span></button>`;
+      return articleCard(article, true, action);
+    }
+
     function renderArticles() {
       document.getElementById("resultCount").textContent = `${state.filtered.length.toLocaleString("ko-KR")}건`;
       document.getElementById("articleList").innerHTML = state.filtered.slice(0,160).map(a => articleCard(a)).join("") || '<div class="empty">표시할 기사가 없습니다.</div>';
       document.getElementById("topIssues").innerHTML = focusedItems().slice().sort((a,b) => b.score - a.score).slice(0,5).map(a => articleCard(a,true)).join("") || '<div class="empty">핵심 이슈가 없습니다.</div>';
       const risks = riskArticles().slice(0,20);
-      document.getElementById("riskArticles").innerHTML = risks.map(a => articleCard(a,true)).join("") || '<div class="empty">현재 당사 부정 리스크 기사가 없습니다.</div>';
+      document.getElementById("riskArticles").innerHTML = risks.map(a => riskResponseCard(a)).join("") || '<div class="empty">현재 당사 부정 리스크 기사가 없습니다.</div>';
     }
 
     function parseDateValue(value) {
@@ -2304,14 +2395,51 @@
       document.getElementById("scrapList").innerHTML = state.scraps.map(a => articleCard(a)).join("") || '<div class="empty">스크랩된 기사가 없습니다.</div>';
     }
 
-    function toggleScrapById(key) {
+    async function toggleScrapById(key) {
       const article = state.articles.find(a => (a.id || a.link) === key) || state.scraps.find(a => (a.id || a.link) === key);
       if (!article) return;
       const exists = state.scraps.findIndex(a => (a.id || a.link) === key);
-      if (exists >= 0) state.scraps.splice(exists,1);
-      else state.scraps.unshift(article);
-      localStorage.setItem("pr_scraps", JSON.stringify(state.scraps.slice(0,100)));
+      if (exists >= 0) {
+        const deleted = await deleteScrapFromSupabase(article);
+        if (!deleted) return alert("Supabase 스크랩 삭제에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
+        state.scraps.splice(exists,1);
+      } else {
+        const saved = await saveScrapToSupabase(article);
+        if (!saved) return alert("Supabase 스크랩 저장에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
+        state.scraps.unshift(article);
+      }
       render();
+    }
+
+    async function loadScrapsFromSupabase() {
+      const rows = await supabaseRest("article_scraps?select=article_hash,article_snapshot,created_at&order=created_at.desc&limit=100");
+      if (!Array.isArray(rows)) {
+        state.scraps = [];
+        return false;
+      }
+      state.scraps = rows
+        .map(row => {
+          const fromArticles = state.articles.find(article => (article.article_hash || article.id) === row.article_hash);
+          return fromArticles || normalize({ ...(row.article_snapshot || {}), id: row.article_hash, article_hash: row.article_hash });
+        })
+        .filter(article => article && article.title);
+      return true;
+    }
+
+    async function saveScrapToSupabase(article) {
+      const articleHash = article.article_hash || article.id || article.link;
+      if (!articleHash) return false;
+      return Boolean(await supabaseRest("article_scraps?on_conflict=article_hash", {
+        method: "POST",
+        headers: { Prefer:"resolution=merge-duplicates,return=minimal" },
+        body: [{ article_hash: articleHash, article_snapshot: article, created_by: state.auth?.employee_no || "" }],
+      }));
+    }
+
+    async function deleteScrapFromSupabase(article) {
+      const articleHash = article.article_hash || article.id || article.link;
+      if (!articleHash) return false;
+      return Boolean(await supabaseRest(`article_scraps?article_hash=eq.${encodeURIComponent(articleHash)}`, { method: "DELETE" }));
     }
 
     function renderMedia() {
@@ -2400,18 +2528,16 @@
           hidden: false,
         }]),
       });
+      if (!saved) return alert("Supabase 저장에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
       state.hiddenMedia = state.hiddenMedia.filter(name => name !== item.name);
-      localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
       const existing = state.mediaRelations.findIndex(row => row.name === item.name);
       if (existing >= 0) state.mediaRelations[existing] = item;
       else state.mediaRelations.unshift(item);
-      localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
-      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
+      state.managementSource = "Supabase DB";
       ["mediaName","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("mediaRelation").value = "우호";
       document.getElementById("mediaGrade").value = "A";
-      if (saved) await loadManagementDataFromSupabase();
-      else alert("Supabase 저장에 실패해 브라우저에만 임시 저장했습니다.");
+      await loadManagementDataFromSupabase();
       renderMedia();
     }
 
@@ -2433,12 +2559,11 @@
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify([{ name: press, hidden: true }]),
       });
+      if (!saved) return alert("Supabase 삭제에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
       state.mediaRelations = state.mediaRelations.filter(item => item.name !== press);
       if (!state.hiddenMedia.includes(press)) state.hiddenMedia.push(press);
-      localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
-      localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
-      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
-      if (saved) await loadManagementDataFromSupabase();
+      state.managementSource = "Supabase DB";
+      await loadManagementDataFromSupabase();
       renderMedia();
     }
 
@@ -2458,9 +2583,9 @@
         headers: { Prefer: "return=minimal" },
         body: JSON.stringify({ hidden: false }),
       });
+      if (!saved) return alert("Supabase 숨김 해제에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
       state.hiddenMedia = [];
-      localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
-      if (saved) await loadManagementDataFromSupabase();
+      await loadManagementDataFromSupabase();
       renderMedia();
     }
 
@@ -2484,13 +2609,12 @@
           memo: item.memo,
         }]),
       });
+      if (!saved) return alert("Supabase 저장에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
       if (Array.isArray(saved) && saved[0]) item.id = saved[0].id;
       state.reporters.unshift(item);
-      localStorage.setItem("pr_reporters", JSON.stringify(state.reporters));
-      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
+      state.managementSource = "Supabase DB";
       ["reporterName","reporterMedia","reporterMemo"].forEach(id => document.getElementById(id).value = "");
-      if (saved) await loadManagementDataFromSupabase();
-      else alert("Supabase 저장에 실패해 브라우저에만 임시 저장했습니다.");
+      await loadManagementDataFromSupabase();
       renderReporters();
     }
 
@@ -2500,9 +2624,11 @@
     }
     async function removeReporter(idx) {
       const item = state.reporters[idx];
-      if (item?.id) await supabaseRest(`reporters?id=eq.${encodeURIComponent(item.id)}`, { method: "DELETE" });
+      if (item?.id) {
+        const deleted = await supabaseRest(`reporters?id=eq.${encodeURIComponent(item.id)}`, { method: "DELETE" });
+        if (!deleted) return alert("Supabase 삭제에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
+      }
       state.reporters.splice(idx,1);
-      localStorage.setItem("pr_reporters", JSON.stringify(state.reporters));
       renderReporters();
     }
 
@@ -2526,13 +2652,12 @@
           memo: item.memo,
         }]),
       });
+      if (!saved) return alert("Supabase 저장에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
       if (Array.isArray(saved) && saved[0]) item.id = saved[0].id;
       state.ads.unshift(item);
-      localStorage.setItem("pr_ads", JSON.stringify(state.ads));
-      state.managementSource = saved ? "Supabase DB" : "브라우저 저장";
+      state.managementSource = "Supabase DB";
       ["adMedia","adMonth","adAmount","adMemo"].forEach(id => document.getElementById(id).value = "");
-      if (saved) await loadManagementDataFromSupabase();
-      else alert("Supabase 저장에 실패해 브라우저에만 임시 저장했습니다.");
+      await loadManagementDataFromSupabase();
       renderAds();
     }
 
@@ -2635,13 +2760,13 @@
           <div class="ad-kpi"><b>${activeMonths.toLocaleString("ko-KR")}개월</b><span>집행 월수</span></div>
           <div class="ad-kpi"><b>${escapeHtml(topMedia?.[0] || "-")}</b><span>최대 집행 매체</span></div>
         </div>
-      ` : '<div class="empty">광고비/협찬 집행 내역을 등록하면 대시보드가 표시됩니다.</div>';
+      ` : '<div class="empty">광고비 집행 내역을 등록하면 대시보드가 표시됩니다.</div>';
       document.getElementById("adMonthlyChart").innerHTML = monthlyRows || '<div class="empty">월별 데이터 없음</div>';
       document.getElementById("adMediaBars").innerHTML = mediaBars || '<div class="empty">매체별 데이터 없음</div>';
       document.getElementById("adTypeBars").innerHTML = typeBars || '<div class="empty">구분별 데이터 없음</div>';
       document.getElementById("adReportNote").textContent = ads.length
         ? `선택 조건 기준 총 ${ads.length.toLocaleString("ko-KR")}건, ${money(total)}이 집행되었습니다. 월평균 집행액은 ${money(avgMonthly)}이며, 최대 집행 매체는 ${topMedia?.[0] || "-"}입니다.`
-        : "선택 조건에 해당하는 광고비/협찬 집행 내역이 없습니다.";
+        : "선택 조건에 해당하는 광고비 집행 내역이 없습니다.";
     }
 
     function printAdReport() {
@@ -2651,20 +2776,37 @@
     }
     async function removeAd(idx) {
       const item = state.ads[idx];
-      if (item?.id) await supabaseRest(`ad_spends?id=eq.${encodeURIComponent(item.id)}`, { method: "DELETE" });
+      if (item?.id) {
+        const deleted = await supabaseRest(`ad_spends?id=eq.${encodeURIComponent(item.id)}`, { method: "DELETE" });
+        if (!deleted) return alert("Supabase 삭제에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
+      }
       state.ads.splice(idx,1);
-      localStorage.setItem("pr_ads", JSON.stringify(state.ads));
       renderAds();
     }
 
     function renderKeywords() {
       const list = document.getElementById("keywordList");
       if (list) {
-        list.innerHTML = state.keywords.map(k => `
-          <span class="chip">${escapeHtml(k)}
-            <button onclick="removeKeyword(decodeURIComponent('${encodeURIComponent(k)}'))" style="border:0;background:transparent;cursor:pointer;color:var(--red)">×</button>
-          </span>
-        `).join("") || '<span class="chip">등록된 키워드 없음</span>';
+        const groups = keywordCategoryOrder.map(category => {
+          const rows = state.keywordRows.filter(row => row.category === category);
+          if (!rows.length) return "";
+          return `
+            <div class="keyword-group">
+              <div class="keyword-group-title">
+                <span>${escapeHtml(categoryLabel(category))}</span>
+                <span>${rows.length.toLocaleString("ko-KR")}개</span>
+              </div>
+              <div class="meta">
+                ${rows.map(row => `
+                  <span class="chip">${escapeHtml(row.keyword)}
+                    <button onclick='removeKeyword(${jsArg(row.keyword)})' title="키워드 삭제" style="border:0;background:transparent;cursor:pointer;color:var(--red)">×</button>
+                  </span>
+                `).join("")}
+              </div>
+            </div>
+          `;
+        }).join("");
+        list.innerHTML = groups || '<div class="empty">등록된 키워드가 없습니다.</div>';
       }
       const countText = document.getElementById("keywordCountText");
       if (countText) countText.textContent = `${state.keywords.length.toLocaleString("ko-KR")}개`;
@@ -2684,6 +2826,7 @@
 
     async function addKeyword() {
       const input = document.getElementById("keywordInput");
+      const category = document.getElementById("keywordCategory")?.value || "other";
       const value = input.value.trim();
       if (!value) return;
       if (state.keywords.includes(value)) {
@@ -2692,7 +2835,7 @@
       }
       setKeywordControlsDisabled(true);
       setKeywordSyncStatus("Supabase에 키워드 저장 중...", "warn");
-      const saved = await saveKeywordToSupabase(value);
+      const saved = await saveKeywordToSupabase(value, category);
       if (!saved) {
         setKeywordSyncStatus("키워드 저장 실패: Supabase에 반영되지 않았습니다.", "error");
         alert("키워드를 Supabase에 저장하지 못했습니다. 화면만 바꾸지 않고 취소했습니다.");
@@ -2701,7 +2844,7 @@
         return;
       }
       const loaded = await loadKeywordsFromSupabase({ announce: true });
-      if (!loaded && !state.keywords.includes(value)) applyKeywordSource([...state.keywords, value], "Supabase 저장 완료");
+      if (!loaded) setKeywordSyncStatus("저장은 완료됐지만 최신 목록을 다시 불러오지 못했습니다. 동기화를 다시 눌러 주세요.", "warn");
       input.value = "";
       renderKeywords();
       setKeywordControlsDisabled(false);
@@ -2720,7 +2863,7 @@
         return;
       }
       const loaded = await loadKeywordsFromSupabase({ announce: true });
-      if (!loaded) applyKeywordSource(state.keywords.filter(k => k !== value), "Supabase 삭제 완료");
+      if (!loaded) setKeywordSyncStatus("삭제는 완료됐지만 최신 목록을 다시 불러오지 못했습니다. 동기화를 다시 눌러 주세요.", "warn");
       renderKeywords();
       setKeywordControlsDisabled(false);
     }
@@ -2742,13 +2885,13 @@
       }
     }
 
-    async function saveKeywordToSupabase(keyword) {
+    async function saveKeywordToSupabase(keyword, category = "other") {
       if (!keyword) return false;
       try {
         const result = await supabaseRest("monitor_keywords?on_conflict=keyword", {
           method:"POST",
           headers: { Prefer:"resolution=merge-duplicates,return=minimal" },
-          body: [{ keyword, enabled:true }],
+          body: [{ keyword, category, enabled:true }],
         });
         return Boolean(result);
       } catch {
@@ -2805,8 +2948,6 @@
             memo: row.memo || "",
           }));
         state.hiddenMedia = mediaRows.filter(row => row.hidden).map(row => row.name);
-        localStorage.setItem("pr_media_relations", JSON.stringify(state.mediaRelations));
-        localStorage.setItem("pr_hidden_media", JSON.stringify(state.hiddenMedia));
         loaded = true;
       }
       if (Array.isArray(reporterRows)) {
@@ -2818,7 +2959,6 @@
           date: row.contact_date || "",
           memo: row.memo || "",
         }));
-        localStorage.setItem("pr_reporters", JSON.stringify(state.reporters));
         loaded = true;
       }
       if (Array.isArray(adRows)) {
@@ -2830,14 +2970,73 @@
           type: row.spend_type || "광고",
           memo: row.memo || "",
         }));
-        localStorage.setItem("pr_ads", JSON.stringify(state.ads));
         loaded = true;
       }
-      state.managementSource = loaded ? "Supabase DB" : "브라우저 저장";
+      state.managementSource = loaded ? "Supabase DB" : "Supabase 연결 필요";
       return loaded;
     }
 
+    function setResponseType(type) {
+      state.responseType = type === "internal" ? "internal" : "press";
+      document.querySelectorAll(".response-type-btn").forEach(button => {
+        const active = button.dataset.responseType === state.responseType;
+        button.classList.toggle("active", active);
+        button.classList.toggle("primary", active);
+      });
+    }
+
+    function findArticleByKey(key) {
+      return state.articles.find(article => (article.id || article.link) === key)
+        || state.scraps.find(article => (article.id || article.link) === key);
+    }
+
+    function fillResponseFromArticle(article) {
+      if (!article) return;
+      const urlInput = document.getElementById("issueUrl");
+      const textInput = document.getElementById("issueInput");
+      if (urlInput) urlInput.value = article.link || "";
+      if (textInput) {
+        const nextText = [
+          `기사 제목: ${article.title || ""}`,
+          `언론사: ${article.press || article.source || ""}`,
+          `보도 시각: ${article.published_label || article.date || ""}`,
+          `요약: ${article.summary || ""}`,
+          "",
+          "확인된 사실:",
+          "",
+          "쟁점:",
+          "",
+          "요청 대응 방향:",
+        ].join("\n").trim();
+        if (!textInput.value.trim() || confirm("현재 입력한 핵심 내용을 선택한 기사 정보로 교체할까요?")) {
+          textInput.value = nextText;
+        }
+      }
+      document.getElementById("responseOutput")?.scrollIntoView({ behavior:"smooth", block:"nearest" });
+    }
+
+    function useArticleForResponse(key) {
+      fillResponseFromArticle(findArticleByKey(key));
+    }
+
+    function useTopRiskArticle() {
+      const article = riskArticles()[0];
+      if (!article) return alert("현재 바로 사용할 리스크 기사가 없습니다.");
+      fillResponseFromArticle(article);
+    }
+
+    async function pasteIssueUrl() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) return alert("클립보드에 붙여넣을 링크가 없습니다.");
+        document.getElementById("issueUrl").value = text.trim();
+      } catch {
+        alert("브라우저 권한 때문에 자동 붙여넣기를 할 수 없습니다. 입력칸을 길게 눌러 붙여넣어 주세요.");
+      }
+    }
+
     async function generateResponse(type) {
+      setResponseType(type);
       const text = document.getElementById("issueInput").value.trim();
       const url = document.getElementById("issueUrl").value.trim();
       if (!text) return alert("핵심 내용을 입력해 주세요.");
@@ -2906,8 +3105,9 @@
     }
 
     function clearLocal() {
-      if (!confirm("스크랩, 기자, 광고비 등 로컬 관리 데이터를 초기화할까요?")) return;
-      ["pr_scraps","pr_keywords","pr_media_relations","pr_hidden_media","pr_reporters","pr_ads"].forEach(key => localStorage.removeItem(key));
+      if (!confirm("이전 버전에서 남은 브라우저 임시 캐시만 삭제할까요? Supabase 데이터는 삭제되지 않습니다.")) return;
+      legacyLocalKeys.forEach(key => localStorage.removeItem(key));
+      sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
       location.reload();
     }
 
@@ -2951,6 +3151,7 @@
         await loadKeywordsFromSupabase();
         await loadManagementDataFromSupabase();
         state.articles = sortByLatest((data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` })));
+        await loadScrapsFromSupabase();
         optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
         optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
@@ -3072,9 +3273,11 @@
 
     async function fetchSupabaseKeywords() {
       try {
-        const rows = await supabaseRest("monitor_keywords?select=keyword&enabled=eq.true&order=created_at.asc");
+        const rows = await supabaseRest("monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc");
         if (!Array.isArray(rows)) return null;
-        return rows.map(row => row.keyword).filter(Boolean);
+        return rows
+          .map(row => ({ keyword: row.keyword, category: row.category || "other", enabled: row.enabled !== false }))
+          .filter(row => row.keyword);
       } catch {
         return null;
       }
@@ -3104,8 +3307,10 @@
         await loadKeywordsFromSupabase();
         await loadManagementDataFromSupabase();
         state.articles = sortByLatest((data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` })));
+        await loadScrapsFromSupabase();
       } catch {
         state.articles = [];
+        state.scraps = [];
       }
       optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
       optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);

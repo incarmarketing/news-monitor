@@ -1,0 +1,62 @@
+$ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+$Root = (Resolve-Path "$PSScriptRoot\..").Path
+$PortableGit = Join-Path $env:LOCALAPPDATA "Programs\news-monitor-tools\mingit\cmd"
+$PortableGh = Join-Path $env:LOCALAPPDATA "Programs\news-monitor-tools\gh\bin"
+$PortableSupabase = Join-Path $env:LOCALAPPDATA "Programs\news-monitor-tools\supabase"
+$VenvActivate = Join-Path $Root ".venv\Scripts\Activate.ps1"
+
+if (Test-Path $PortableGit) {
+    $env:Path = "$PortableGit;$env:Path"
+}
+if (Test-Path $PortableGh) {
+    $env:Path = "$PortableGh;$env:Path"
+}
+if (Test-Path $PortableSupabase) {
+    $env:Path = "$PortableSupabase;$env:Path"
+}
+
+Set-Location $Root
+
+if (Test-Path $VenvActivate) {
+    . $VenvActivate
+}
+
+Write-Host "news-monitor dev shell"
+Write-Host "root: $Root"
+
+try {
+    $gitVersion = git --version
+    Write-Host "git: $gitVersion"
+} catch {
+    Write-Host "git: not available"
+}
+
+try {
+    $pythonVersion = python --version
+    Write-Host "python: $pythonVersion"
+} catch {
+    Write-Host "python: not available"
+}
+
+try {
+    $supabaseVersion = supabase --version
+    Write-Host "supabase: $supabaseVersion"
+} catch {
+    Write-Host "supabase: not available"
+}
+
+try {
+    $ghVersion = (gh --version | Select-Object -First 1)
+    Write-Host "gh: $ghVersion"
+} catch {
+    Write-Host "gh: not available"
+}
+
+Write-Host ""
+Write-Host "Next:"
+Write-Host "  git status --short --branch"
+Write-Host "  python run_once.py"
+Write-Host ""
+Write-Host "Tip: run as '. .\tools\dev-shell.ps1' to keep PATH and venv activation in the current PowerShell session."
