@@ -735,6 +735,18 @@
     .keyword-count { color:var(--incar-dark); font-size:13px; font-weight:900; text-align:right; }
     .focus-box { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; color:var(--muted); font-size:13px; font-weight:800; min-height:62px; }
     .focus-box strong { display:block; color:var(--incar-dark); font-size:15px; margin-bottom:4px; }
+    .response-output {
+      margin-top:12px;
+      white-space:pre-wrap;
+      overflow:visible;
+      max-height:none;
+      color:#182230;
+      line-height:1.62;
+      font-size:13px;
+      font-weight:800;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+    }
     .report-shell {
       background:#fff;
       border:1px solid var(--line);
@@ -1167,7 +1179,7 @@
                 <button class="btn primary" onclick="generateResponse('press')">언론 해명용</button>
                 <button class="btn" onclick="copyResponse()">복사</button>
               </div>
-              <div class="focus-box" id="responseOutput" style="margin-top:12px;white-space:pre-line">왼쪽 입력값을 바탕으로 대응 초안을 생성합니다.</div>
+              <div class="focus-box response-output" id="responseOutput">왼쪽 입력값을 바탕으로 대응 초안을 생성합니다.</div>
             </div>
           </div>
         </section>
@@ -1470,11 +1482,20 @@
     const isUnresolvedPress = press => ["언론사 확인", "언론사", "미확인"].includes(normalizePressLabel(press));
     const jsArg = value => JSON.stringify(String(value ?? ""));
     const articleTimeValue = article => {
-      const value = article.published_at || article.pub_date || article.date || "";
-      const parsed = new Date(value);
-      return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+      const value = article.published_at || article.pub_date || article.pub_date_raw || "";
+      const published = value instanceof Date ? value : new Date(value);
+      if (!Number.isNaN(published.getTime())) return published.getTime();
+      const dated = parseDateValue(article.date || "");
+      return dated ? dated.getTime() : 0;
     };
-    const sortByLatest = items => [...items].sort((a,b) => articleTimeValue(b) - articleTimeValue(a));
+    const latestArticleSort = (a,b) => {
+      const timeDiff = articleTimeValue(b) - articleTimeValue(a);
+      if (timeDiff) return timeDiff;
+      const scoreDiff = Number(b.score || 0) - Number(a.score || 0);
+      if (scoreDiff) return scoreDiff;
+      return String(a.title || "").localeCompare(String(b.title || ""), "ko");
+    };
+    const sortByLatest = items => [...items].sort(latestArticleSort);
     const isManagedPress = press => press && !isPortalPress(press) && !isUnresolvedPress(press) && !state.hiddenMedia.includes(press);
     const managedMediaArticles = () => state.articles.filter(article => isManagedPress(article.press));
 
@@ -1690,7 +1711,7 @@
           && (!state.filters.category || article.category === state.filters.category)
           && (!state.filters.tone || article.tone === state.filters.tone)
           && (!state.filters.risk || article.risk === state.filters.risk);
-      });
+      }).sort(latestArticleSort);
     }
 
     function renderHero() {
@@ -1780,7 +1801,7 @@
     function riskArticles(items = state.articles) {
       return items
         .filter(isCompanyNegative)
-        .sort((a,b) => b.score - a.score);
+        .sort((a,b) => latestArticleSort(a, b) || b.score - a.score);
     }
 
     function renderBars(targetId, entries, labeler = v => v) {
@@ -2633,7 +2654,11 @@
       });
       if (!response.ok) throw new Error(`generate_failed_${response.status}`);
       const data = await response.json();
-      return data.draft || "";
+      const draft = data.draft || "";
+      if (data.finishReason === "MAX_TOKENS") {
+        return `${draft}\n\n[작성 참고]\nAI 응답이 길이 제한에 도달했습니다. 핵심 내용을 줄여 다시 생성하면 더 완결된 초안을 받을 수 있습니다.`;
+      }
+      return draft;
     }
 
     function fallbackResponseDraft(type, text, url) {
@@ -2703,7 +2728,7 @@
         applyKeywordSource(data.keywords, "새로고침 데이터");
         await loadKeywordsFromSupabase();
         await loadManagementDataFromSupabase();
-        state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
+        state.articles = sortByLatest((data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` })));
         optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
         optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
@@ -2800,7 +2825,7 @@
 
         const query = [
           "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status",
-          "order=report_date.desc,score.desc",
+          "order=pub_date.desc.nullslast,report_date.desc,score.desc",
           "limit=2000",
         ].join("&");
         const response = await fetch(`${config.url.replace(/\/$/,"")}/rest/v1/news_articles?${query}`, {
@@ -2900,7 +2925,7 @@
         applyKeywordSource(data.keywords, "배포 데이터");
         await loadKeywordsFromSupabase();
         await loadManagementDataFromSupabase();
-        state.articles = (data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }));
+        state.articles = sortByLatest((data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` })));
       } catch {
         state.articles = [];
       }

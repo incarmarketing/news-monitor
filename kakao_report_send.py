@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
@@ -18,6 +18,7 @@ LOG_DIR = BASE_DIR / "logs"
 KAKAO_OAUTH = "https://kauth.kakao.com/oauth/token"
 KAKAO_API = "https://kapi.kakao.com"
 DEFAULT_REPORT_URL = "https://incarmarketing.github.io/news-monitor/"
+KST = timezone(timedelta(hours=9))
 
 
 def refresh_access_token() -> str:
@@ -41,7 +42,7 @@ def refresh_access_token() -> str:
 
 
 def load_latest_daily() -> dict:
-    today_file = DAILY_DIR / f"{date.today().isoformat()}.json"
+    today_file = DAILY_DIR / f"{today_kst().isoformat()}.json"
     if today_file.exists():
         return json.loads(today_file.read_text(encoding="utf-8"))
 
@@ -49,6 +50,10 @@ def load_latest_daily() -> dict:
     if not files:
         raise FileNotFoundError("No daily report archive found.")
     return json.loads(files[0].read_text(encoding="utf-8"))
+
+
+def today_kst() -> date:
+    return datetime.now(KST).date()
 
 
 def latest_html_path() -> Path | None:
@@ -80,11 +85,11 @@ def build_message(report: dict) -> str:
     own_total = metrics.get("by_category", {}).get("own", 0)
     risk = metrics.get("risk_level", "-")
     window = report.get("window", {})
-    window_label = window.get("short_label") or window.get("label") or "현재 기준"
+    window_label = absolute_window_label(window) or window.get("label") or "현재 기준"
 
     header = [
         f"[AI 언론 브리핑] {report.get('date', '')}",
-        f"{window_label} · 리스크 {risk}",
+        f"수집 {window_label} · 리스크 {risk}",
         f"당사 {own_total}건",
         (
             f"긍정 {own_tone.get('positive', 0)} · "
@@ -99,6 +104,27 @@ def build_message(report: dict) -> str:
         lines += [f"- {compact(issue, 38)}" for issue in sections["issues"][:2]]
 
     return "\n".join(lines)[:360]
+
+
+def absolute_window_label(window: dict) -> str:
+    start = parse_iso_datetime(window.get("start", ""))
+    end = parse_iso_datetime(window.get("end", ""))
+    if not start or not end:
+        return ""
+    start = start.astimezone(KST)
+    end = end.astimezone(KST)
+    if start.date() == end.date():
+        return f"{start:%m/%d %H:%M}~{end:%H:%M}"
+    return f"{start:%m/%d %H:%M}~{end:%m/%d %H:%M}"
+
+
+def parse_iso_datetime(value: str) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def compact(text: str, limit: int) -> str:

@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
 
   const type = body.type === "press" ? "press" : "internal";
   const model = (Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash").replace(/^models\//, "");
+  const maxOutputTokens = Number(Deno.env.get("GEMINI_MAX_OUTPUT_TOKENS") || "3200") || 3200;
   const prompt = buildPrompt({ type, issue, url: body.url || "", context: body.context });
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.25,
-          maxOutputTokens: 1400,
+          maxOutputTokens,
         },
       }),
     },
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "empty_gemini_response" }, 502);
   }
 
-  return jsonResponse({ ok: true, draft, model });
+  return jsonResponse({ ok: true, draft, model, finishReason: data?.candidates?.[0]?.finishReason || "" });
 });
 
 function buildPrompt(input: { type: "internal" | "press"; issue: string; url: string; context: unknown }) {
@@ -111,7 +112,10 @@ function buildPrompt(input: { type: "internal" | "press"; issue: string; url: st
     "- 과장 표현 금지",
     "- 사실관계가 불명확하면 '확인 중'으로 표현",
     "- 법적 책임 인정처럼 보일 수 있는 표현 금지",
-    "- 바로 보고서에 붙일 수 있게 제목과 항목을 간결하게 구성",
+    "- 바로 보고서에 붙일 수 있게 제목과 항목을 명확하게 구성",
+    "- 전체 분량은 1,200~1,800자 내외로 작성",
+    "- 각 항목은 2~4문장으로 작성하고 마지막 항목까지 완결",
+    "- 문장 중간에서 끝내지 말고 대응 원칙까지 마무리",
     `- 항목 구성: ${format.join(" / ")}`,
   ].join("\n");
 }
