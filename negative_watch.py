@@ -37,19 +37,22 @@ def now_kst() -> datetime:
 def is_active_time(current: datetime | None = None) -> bool:
     """Return whether the watcher should run now.
 
-    Defaults to weekdays 07:00-18:59 KST. Set NEGATIVE_WATCH_ALWAYS_ON=true to
-    monitor every scheduled run.
+    Defaults to 24/7. Set NEGATIVE_WATCH_DAYS=weekdays and/or
+    NEGATIVE_WATCH_START_HOUR / NEGATIVE_WATCH_END_HOUR to narrow the window.
     """
     if os.getenv("NEGATIVE_WATCH_ALWAYS_ON", "").lower() in {"1", "true", "yes", "y"}:
         return True
 
     current = current or now_kst()
-    if current.weekday() >= 5:
+    days = os.getenv("NEGATIVE_WATCH_DAYS", "all").lower()
+    if days in {"weekday", "weekdays", "business"} and current.weekday() >= 5:
         return False
 
-    start_hour = int(os.getenv("NEGATIVE_WATCH_START_HOUR", "7"))
-    end_hour = int(os.getenv("NEGATIVE_WATCH_END_HOUR", "18"))
-    return start_hour <= current.hour <= end_hour
+    start_hour = int(os.getenv("NEGATIVE_WATCH_START_HOUR", "0"))
+    end_hour = int(os.getenv("NEGATIVE_WATCH_END_HOUR", "23"))
+    if start_hour <= end_hour:
+        return start_hour <= current.hour <= end_hour
+    return current.hour >= start_hour or current.hour <= end_hour
 
 
 def load_state() -> dict:

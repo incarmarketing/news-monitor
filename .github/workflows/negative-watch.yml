@@ -46,8 +46,9 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           NEGATIVE_WATCH_MINUTES: "5"
-          NEGATIVE_WATCH_START_HOUR: "7"
-          NEGATIVE_WATCH_END_HOUR: "18"
+          NEGATIVE_WATCH_ALWAYS_ON: "true"
+          NEGATIVE_WATCH_START_HOUR: "0"
+          NEGATIVE_WATCH_END_HOUR: "23"
 
       - name: Persist sent alert state
         run: |

@@ -1363,8 +1363,10 @@
       .watch-radar { width:70px; height:70px; }
       .notification-top { display:grid; }
     }
+    @page { size:A4 landscape; margin:7mm; }
     @media print {
-      body { height:auto; overflow:visible; background:#fff; }
+      * { box-shadow:none !important; }
+      html,body { width:100%; height:auto; overflow:visible; background:#fff; color:#111827; font-size:9px; line-height:1.25; }
       .sidebar,.topbar,.mobile-tabs,.no-print { display:none !important; }
       .app,.main { display:block; height:auto; overflow:visible; }
       .page-wrap { max-width:none; padding:0; }
@@ -1372,15 +1374,65 @@
       #page-analysis { display:block !important; }
       body.print-ads #page-analysis { display:none !important; }
       body.print-ads #page-ads { display:block !important; }
-      .report-shell,.panel,.article,.report-kpi { box-shadow:none; break-inside:avoid; }
-      .report-head { background:#111827 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .report-shell,.panel,.article,.report-kpi { break-inside:avoid; }
+      .report-shell { border:0; border-radius:0; overflow:visible; }
+      .report-head {
+        padding:8px 10px;
+        background:#fff !important;
+        color:#111827;
+        border-bottom:2px solid var(--incar);
+        grid-template-columns:1fr;
+        gap:4px;
+        -webkit-print-color-adjust:exact;
+        print-color-adjust:exact;
+      }
+      .report-badge {
+        padding:2px 6px;
+        border-color:#b7c4e8;
+        color:var(--incar-dark);
+        font-size:7px;
+        letter-spacing:.04em;
+      }
+      .report-head h2 { margin:3px 0 2px; font-size:16px; line-height:1.1; }
+      .report-meta { color:#475467; font-size:8px; line-height:1.25; }
       .report-controls { display:none !important; }
+      .report-body { padding:6px 0 0; gap:5px; }
+      .report-kpis { grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+      .report-kpi { min-height:34px; padding:5px 6px; border-radius:5px; }
+      .report-kpi .num { font-size:13px; }
+      .report-kpi .label { margin-top:3px; font-size:7px; }
+      .report-message { padding:5px 7px; border-radius:5px; font-size:8px; line-height:1.25; }
+      .report-section-title { margin-bottom:5px; font-size:9px; gap:4px; }
+      #page-analysis .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+      .analysis-volume-panel { display:none; }
+      #page-analysis .panel { padding:6px; border-radius:5px; }
+      .keyword-board { gap:4px; }
+      .keyword-row { grid-template-columns:minmax(70px,.6fr) 1fr 30px; gap:5px; padding:4px 5px; border-radius:5px; }
+      .keyword-row:nth-child(n+7) { display:none; }
+      .keyword-name,.keyword-count { font-size:7px; line-height:1.15; }
+      .keyword-track { height:5px; }
+      .focus-box { display:none; }
+      #insights { gap:4px; }
+      #insights .article:nth-child(n+4) { display:none; }
+      .report-evidence { grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+      .evidence-section { padding:5px; border-radius:5px; }
+      .evidence-section.primary { grid-row:auto; }
+      .evidence-section .report-section-title { margin-bottom:4px; padding-bottom:3px; font-size:8px; }
+      .evidence-section .feed { gap:4px; }
+      .evidence-section .article:nth-child(n+3) { display:none; }
+      .article { padding:4px 5px; border-radius:5px; }
+      .article.compact { padding:4px 5px; }
+      .article .meta { display:flex; gap:3px; margin:0 0 3px; }
+      .article .meta .chip { min-height:0; padding:1px 4px; font-size:6px; border-radius:99px; }
+      .article .meta .chip:nth-child(n+4) { display:none; }
+      .article-actions,.article .summary { display:none !important; }
+      .article-title,.article.compact .article-title { margin:0; font-size:7px; line-height:1.2; -webkit-line-clamp:2; }
       body.print-ads .ad-entry-form,
       body.print-ads .ad-filter-grid,
       body.print-ads .ad-row-actions { display:none !important; }
       body.print-ads .ad-dashboard-grid { grid-template-columns:1fr; }
       body.print-ads .ad-table-wrap { overflow:visible; }
-      .chart { height:170px; }
+      .chart { height:80px; }
       a { text-decoration:none; }
     }
   </style>
@@ -2524,23 +2576,15 @@
     }
 
     function isNegativeWatchActiveNow(now = new Date()) {
-      const day = now.getDay();
-      const hour = now.getHours();
-      return day >= 1 && day <= 5 && hour >= 7 && hour <= 18;
+      return true;
     }
 
     function nextNegativeWatchStart(now = new Date()) {
       const next = new Date(now);
       next.setSeconds(0, 0);
-      if (isNegativeWatchActiveNow(now)) return next;
-      if (now.getDay() >= 1 && now.getDay() <= 5 && now.getHours() < 7) {
-        next.setHours(7, 0, 0, 0);
-        return next;
-      }
-      do {
-        next.setDate(next.getDate() + 1);
-        next.setHours(7, 0, 0, 0);
-      } while (next.getDay() === 0 || next.getDay() === 6);
+      const remainder = next.getMinutes() % 5;
+      if (remainder) next.setMinutes(next.getMinutes() + (5 - remainder));
+      if (!remainder && next < now) next.setMinutes(next.getMinutes() + 5);
       return next;
     }
 
@@ -2568,30 +2612,20 @@
     function negativeWatchHealth(latest) {
       const now = new Date();
       const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
-      const active = isNegativeWatchActiveNow(now);
       const ageMinutes = latestDate ? Math.round((now - latestDate) / 60000) : null;
       if (!latestDate) {
         return {
           tone: "warn",
           title: "부정기사 감시 대기",
-          summary: "아직 수행 로그가 없습니다. GitHub Actions와 외부 cron 설정을 확인해야 합니다.",
+          summary: "아직 24시간 감시 로그가 없습니다. GitHub Actions와 외부 cron 설정을 확인해야 합니다.",
           nextRun: formatDateTime(nextNegativeWatchStart(now)),
-        };
-      }
-      if (!active) {
-        return {
-          tone: "ok",
-          title: "업무시간 감시 종료",
-          summary: `감시 시간은 평일 07:00~18:59 KST입니다. 마지막 수행은 ${formatDateTime(latestDate)}입니다.`,
-          nextRun: formatDateTime(nextNegativeWatchStart(now)),
-          ageMinutes,
         };
       }
       if (ageMinutes !== null && ageMinutes > 8) {
         return {
           tone: "error",
           title: "부정기사 감시 지연",
-          summary: `마지막 수행이 ${ageMinutes}분 전입니다. 5분 호출 기준보다 늦어 외부 cron 설정 확인이 필요합니다.`,
+          summary: `마지막 수행이 ${ageMinutes}분 전입니다. 24시간 5분 호출 기준보다 늦어 외부 cron 설정 확인이 필요합니다.`,
           nextRun: "즉시 확인 필요",
           ageMinutes,
         };
@@ -2617,7 +2651,7 @@
         alert_sent:"알림 발송",
         alert_failed:"알림 실패",
         scanned:"탐색 완료",
-        skipped:"업무시간 외",
+        skipped:"감시 제외",
         dry_run:"테스트",
         waiting:"기록 대기",
       }[status] || status;
@@ -2632,13 +2666,13 @@
           <h3 class="watch-title">${escapeHtml(health.title)}</h3>
           <div class="watch-copy">
             ${escapeHtml(health.summary)}<br>
-            최근 탐색 범위 ${minutesBack.toLocaleString("ko-KR")}분 · 기사 ${scanned.toLocaleString("ko-KR")}건 중 부정 ${negative.toLocaleString("ko-KR")}건, 신규 ${fresh.toLocaleString("ko-KR")}건.
+            최근 ${minutesBack.toLocaleString("ko-KR")}분 수집분을 24시간 감시 · 기사 ${scanned.toLocaleString("ko-KR")}건 중 부정 ${negative.toLocaleString("ko-KR")}건, 신규 ${fresh.toLocaleString("ko-KR")}건.
           </div>
           <div class="watch-meta">
             <span class="status-pill ${health.tone}">${escapeHtml(statusLabel)}</span>
             <span class="status-pill ${negative ? "warn" : "ok"}">부정 ${negative.toLocaleString("ko-KR")}건</span>
-            <span class="status-pill">탐색 범위 ${minutesBack.toLocaleString("ko-KR")}분</span>
-            <span class="status-pill">예상 호출 ${expectedMinutes}분</span>
+            <span class="status-pill">검사 범위 ${minutesBack.toLocaleString("ko-KR")}분</span>
+            <span class="status-pill">24시간 ${expectedMinutes}분 주기</span>
             ${actualCadence ? `<span class="status-pill ${cadenceTone}">실제 호출 약 ${actualCadence.toLocaleString("ko-KR")}분</span>` : ""}
             <span class="status-pill">다음 ${escapeHtml(health.nextRun)}</span>
           </div>

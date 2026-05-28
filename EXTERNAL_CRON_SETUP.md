@@ -15,9 +15,16 @@ GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필
 
 주의: 이 토큰은 외부 cron 서비스에 입력되므로, 저장 후 노출되지 않게 관리해야 합니다.
 
-## 1-1. 자동 등록 스크립트로 한 번에 만들기
+## 1-1. 클라우드에서 자동 등록하기
 
-cron-job.org API key와 GitHub 토큰을 준비했다면 아래 환경변수를 설정한 뒤 스크립트를 실행하면 됩니다.
+로컬 PC에 키를 두고 실행하지 않으려면 GitHub 저장소의 Settings > Secrets and variables > Actions에 아래 두 값을 저장합니다.
+
+- `CRONJOB_API_KEY`: cron-job.org API key
+- `GITHUB_DISPATCH_TOKEN`: GitHub fine-grained token
+
+그 다음 GitHub Actions > `Sync External Cron` > Run workflow를 실행합니다. 이 워크플로는 GitHub 클라우드 러너에서 `setup_cronjob_org.py`를 실행하므로 어느 PC가 켜져 있는지와 무관하게 cron-job.org 작업을 생성/갱신합니다. 이후에는 매일 한 번 같은 설정을 다시 확인합니다.
+
+로컬에서 수동으로 확인해야 할 때만 아래처럼 실행합니다.
 
 ```powershell
 $env:CRONJOB_API_KEY="cron-job.org API key"
@@ -36,9 +43,9 @@ python setup_cronjob_org.py
 
 cron-job.org API key는 cron-job.org Console > Settings에서 생성합니다. cron-job.org 공식 문서에 따르면 API는 `Authorization: Bearer <API_KEY>` 방식으로 인증하며, 요청 payload는 JSON으로 보냅니다.
 
-## 2. 부정기사 5분 감지 호출
+## 2. 부정기사 24시간 5분 감지 호출
 
-외부 cron 서비스에서 아래 요청을 5분마다 실행합니다. `negative_watch.py`는 DB에 `minutes_back=5`로 기록되므로, 실제 실행 주기도 5분이어야 기사 탐색 공백이 생기지 않습니다.
+외부 cron 서비스에서 아래 요청을 24시간 내내 5분마다 실행합니다. `negative_watch.py`는 기본적으로 24/7로 동작하며 DB에는 `minutes_back=5`로 기록합니다. 즉 한 번 실행될 때 최근 5분 수집분을 검사하고, 실제 호출 주기도 5분이어야 기사 탐색 공백이 생기지 않습니다.
 
 - Method: `POST`
 - URL:
@@ -68,10 +75,9 @@ Content-Type: application/json
 */5 * * * *
 ```
 
-감시 스크립트 안에서 평일 07:00~18:59 KST만 실제 감지하고, 그 외 시간에는 조용히 종료합니다.
-`setup_cronjob_org.py`를 실행하면 `news-monitor negative watch` 작업이 cron-job.org에서 5분 단위로 생성/업데이트됩니다. 적용 후에는 `check_cronjob_org.py`로 minutes 값이 `[0, 5, 10, ..., 55]`인지 확인합니다.
+`setup_cronjob_org.py`를 실행하면 `news-monitor negative watch` 작업이 cron-job.org에서 매일 00:00~23:59 KST, 5분 단위로 생성/업데이트됩니다. 적용 후에는 `check_cronjob_org.py`로 minutes 값이 `[0, 5, 10, ..., 55]`, hours 값이 `[0, 1, ..., 23]`인지 확인합니다.
 
-대시보드의 `최근 탐색 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `실제 호출 약 10분`처럼 표시되면 GitHub Actions 코드가 아니라 외부 cron-job.org 작업이 아직 10분 단위로 남아 있다는 뜻이므로, API key가 있는 환경에서 `setup_cronjob_org.py`를 다시 실행해야 합니다. 평일 19:00 이후에는 감시가 종료되므로 마지막 로그가 18:50 또는 18:55로 남는 것은 정상입니다.
+대시보드의 `검사 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `실제 호출 약 10분`처럼 표시되면 GitHub Actions 코드가 아니라 외부 cron-job.org 작업이 아직 10분 단위로 남아 있다는 뜻입니다. 이 경우 GitHub Actions의 `Sync External Cron`을 실행해 외부 cron을 다시 동기화합니다.
 
 ## 3. 일일 보고서 호출
 

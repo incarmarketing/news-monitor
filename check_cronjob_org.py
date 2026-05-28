@@ -19,6 +19,7 @@ TARGET_TITLES = {
 }
 NEGATIVE_WATCH_TITLE = "news-monitor negative watch"
 EXPECTED_NEGATIVE_MINUTES = list(range(0, 60, 5))
+EXPECTED_NEGATIVE_HOURS = list(range(24))
 
 
 def require_env(name: str) -> str:
@@ -53,17 +54,32 @@ def schedule_minutes(job: dict) -> list[int]:
     return sorted(int(value) for value in minutes)
 
 
+def schedule_hours(job: dict) -> list[int]:
+    schedule = job.get("schedule") or {}
+    hours = schedule.get("hours") or []
+    return sorted(int(value) for value in hours)
+
+
 def print_negative_watch_schedule_warning(job: dict) -> None:
     if job.get("title") != NEGATIVE_WATCH_TITLE:
         return
     minutes = schedule_minutes(job)
-    if minutes == EXPECTED_NEGATIVE_MINUTES:
-        print("negative-watch cadence=5min OK")
+    hours = schedule_hours(job)
+    minutes_ok = minutes == EXPECTED_NEGATIVE_MINUTES
+    hours_ok = hours == EXPECTED_NEGATIVE_HOURS
+    if minutes_ok and hours_ok:
+        print("negative-watch cadence=5min/24h OK")
         return
-    print(
-        "WARNING: negative-watch cron minutes should be "
-        f"{EXPECTED_NEGATIVE_MINUTES}, current={minutes or 'unknown'}"
-    )
+    if not minutes_ok:
+        print(
+            "WARNING: negative-watch cron minutes should be "
+            f"{EXPECTED_NEGATIVE_MINUTES}, current={minutes or 'unknown'}"
+        )
+    if not hours_ok:
+        print(
+            "WARNING: negative-watch cron hours should be "
+            f"{EXPECTED_NEGATIVE_HOURS}, current={hours or 'unknown'}"
+        )
 
 
 def main() -> None:

@@ -1,0 +1,46 @@
+name: Sync External Cron
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 18 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check cloud cron secrets
+        id: secrets
+        env:
+          CRONJOB_API_KEY: ${{ secrets.CRONJOB_API_KEY }}
+          GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$CRONJOB_API_KEY" ] || [ -z "$GITHUB_DISPATCH_TOKEN" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CRONJOB_API_KEY and GITHUB_DISPATCH_TOKEN are required to sync cron-job.org."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install cron sync dependencies
+        if: steps.secrets.outputs.ready == 'true'
+        run: python -m pip install requests python-dotenv
+
+      - name: Sync cron-job.org jobs
+        if: steps.secrets.outputs.ready == 'true'
+        run: python setup_cronjob_org.py
+        env:
+          CRONJOB_API_KEY: ${{ secrets.CRONJOB_API_KEY }}
+          GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
