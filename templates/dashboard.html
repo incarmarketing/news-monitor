@@ -1217,10 +1217,10 @@
       border:1px solid #e3e9f3;
       border-radius:8px;
       background:#fff;
-      padding:10px 11px;
+      padding:11px 12px;
       display:grid;
       grid-template-columns:minmax(120px,.7fr) 1fr auto;
-      gap:10px;
+      gap:12px;
       align-items:center;
       text-align:left;
       cursor:pointer;
@@ -1237,17 +1237,23 @@
     }
     .press-track { height:9px; border-radius:999px; background:#eef2f7; overflow:hidden; }
     .press-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#27398c,#5b7cfa); }
+    .press-bar-block {
+      min-width:0;
+      display:grid;
+      gap:8px;
+    }
     .press-meta {
       display:flex;
       flex-wrap:wrap;
-      gap:5px;
+      gap:6px;
+      row-gap:6px;
       min-width:0;
     }
     .press-meta span {
       display:inline-flex;
-      min-height:21px;
+      min-height:20px;
       align-items:center;
-      padding:3px 7px;
+      padding:2px 7px;
       border:1px solid #e3e9f3;
       border-radius:999px;
       background:#f8fafc;
@@ -1259,6 +1265,37 @@
     .press-meta .risk { border-color:#fecdd3; background:#fff1f2; color:#b91c1c; }
     .press-meta .own { border-color:#c7d7fe; background:#eef4ff; color:var(--incar); }
     .press-count { color:var(--incar-dark); font-size:13px; font-weight:900; white-space:nowrap; }
+    .insight-feed { display:grid; gap:12px; }
+    .insight-item {
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:14px 15px 15px;
+      background:#fff;
+      display:grid;
+      gap:9px;
+    }
+    .insight-badge {
+      width:max-content;
+      max-width:100%;
+      display:inline-flex;
+      align-items:center;
+      border:1px solid #dbe3f1;
+      border-radius:999px;
+      background:#f8fafc;
+      color:#475467;
+      font-size:12px;
+      font-weight:900;
+      line-height:1;
+      padding:4px 9px;
+    }
+    .insight-text {
+      color:#050b20;
+      font-size:16px;
+      font-weight:900;
+      line-height:1.55;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+    }
     .focus-box { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; color:var(--muted); font-size:13px; font-weight:800; min-height:62px; }
     .focus-box strong { display:block; color:var(--incar-dark); font-size:15px; margin-bottom:4px; }
     .response-output {
@@ -1705,11 +1742,15 @@
       #page-analysis .press-name,
       #page-analysis .press-count { font-size:6.8px; line-height:1.15; }
       #page-analysis .press-track { height:4px; }
+      #page-analysis .press-bar-block { gap:3px; }
       #page-analysis .press-meta { gap:2px; }
       #page-analysis .press-meta span { min-height:0; padding:1px 3px; font-size:5.6px; }
       #page-analysis .focus-box { display:none; }
       #page-analysis #insights { gap:4px; }
-      #page-analysis #insights .article:nth-child(n+4) { display:none; }
+      #page-analysis #insights .insight-item { gap:3px; padding:5px 6px; border-radius:5px; }
+      #page-analysis #insights .insight-item:nth-child(n+4) { display:none; }
+      #page-analysis #insights .insight-badge { padding:2px 5px; font-size:5.8px; }
+      #page-analysis #insights .insight-text { font-size:7px; line-height:1.28; }
       #page-analysis .report-evidence { grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
       #page-analysis .evidence-section { padding:5px; border-radius:5px; }
       #page-analysis .evidence-section.primary { grid-row:auto; }
@@ -3489,7 +3530,7 @@
         return `
           <button class="press-influence-row" type="button" onclick='showMediaArticles(${jsArg(press)})' title="${escapeHtml(press)} ${value.toLocaleString("ko-KR")}건">
             <div class="press-name">${escapeHtml(press)}</div>
-            <div>
+            <div class="press-bar-block">
               <div class="press-track"><div class="press-fill" style="width:${width}%"></div></div>
               <div class="press-meta">
                 <span>${share}%</span>
@@ -3546,7 +3587,9 @@
         topPress ? `가장 많이 등장한 언론사는 ${topPress[0]}입니다.` : "언론사 분포 데이터가 부족합니다.",
         neg ? `당사 부정 기사 ${neg}건은 리스크 대응 센터에서 확인이 필요합니다.` : "당사 직접 부정성 이슈는 현재 낮은 상태입니다."
       ];
-      document.getElementById("insights").innerHTML = messages.map(text => `<div class="article"><div class="meta"><span class="chip">Insight</span></div><div class="article-title" style="margin-bottom:0">${escapeHtml(text)}</div></div>`).join("");
+      document.getElementById("insights").innerHTML = messages
+        .map(text => `<div class="insight-item"><span class="insight-badge">Insight</span><div class="insight-text">${escapeHtml(text)}</div></div>`)
+        .join("");
     }
 
     function renderAnalysisEvidence(items) {
