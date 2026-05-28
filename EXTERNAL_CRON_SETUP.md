@@ -71,6 +71,8 @@ Content-Type: application/json
 감시 스크립트 안에서 평일 07:00~18:59 KST만 실제 감지하고, 그 외 시간에는 조용히 종료합니다.
 `setup_cronjob_org.py`를 실행하면 `news-monitor negative watch` 작업이 cron-job.org에서 5분 단위로 생성/업데이트됩니다. 적용 후에는 `check_cronjob_org.py`로 minutes 값이 `[0, 5, 10, ..., 55]`인지 확인합니다.
 
+대시보드의 `최근 탐색 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `실제 호출 약 10분`처럼 표시되면 GitHub Actions 코드가 아니라 외부 cron-job.org 작업이 아직 10분 단위로 남아 있다는 뜻이므로, API key가 있는 환경에서 `setup_cronjob_org.py`를 다시 실행해야 합니다. 평일 19:00 이후에는 감시가 종료되므로 마지막 로그가 18:50 또는 18:55로 남는 것은 정상입니다.
+
 ## 3. 일일 보고서 호출
 
 외부 cron 서비스에서 아래 URL을 호출합니다.
