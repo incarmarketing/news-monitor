@@ -29,10 +29,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 load_dotenv()
 console = Console()
 
-PRESS_ALIAS_MAP = {
-    "MHN포토": "MHN스포츠",
-    "엠에이치앤포토": "MHN스포츠",
-}
+PRESS_ALIAS_MAP = {}
 
 NON_PRESS_TITLE_LABELS = {
     "포토",
@@ -80,6 +77,19 @@ STATIC_HOSTS = {
     "w3.org",
 }
 
+EXCLUDED_PRESS_HOSTS = {
+    "mhnse.com",
+    "mhns.co.kr",
+    "mhnsports.com",
+}
+
+EXCLUDED_PRESS_NAMES = {
+    "MHN스포츠",
+    "MHN포토",
+    "엠에이치앤포토",
+    "mhn포토",
+}
+
 DOMAIN_PRESS_MAP = {
     "fins.co.kr": "보험저널",
     "news2day.co.kr": "뉴스투데이",
@@ -95,9 +105,6 @@ DOMAIN_PRESS_MAP = {
     "newsis.com": "뉴시스",
     "news1.kr": "뉴스1",
     "insnews.co.kr": "보험매일",
-    "mhnse.com": "MHN스포츠",
-    "mhns.co.kr": "MHN스포츠",
-    "mhnsports.com": "MHN스포츠",
     "mt.co.kr": "머니투데이",
     "biz.heraldcorp.com": "헤럴드경제",
     "heraldcorp.com": "헤럴드경제",
@@ -370,7 +377,7 @@ def is_likely_press_label(value: str) -> bool:
         return False
     return bool(
         re.search(r"(뉴스|신문|경제|일보|저널|매일|타임스|투데이|데일리|포스트|방송|스포츠|신보|이슈|프레스)$", candidate)
-        or candidate in {"더벨", "EBN", "FETV", "CEO스코어데일리", "CBC뉴스", "MHN스포츠"}
+        or candidate in {"더벨", "EBN", "FETV", "CEO스코어데일리", "CBC뉴스"}
     )
 
 
@@ -463,6 +470,28 @@ def canonical_host(value: str) -> str:
     return value
 
 
+def article_host(article: dict) -> str:
+    link = str(article.get("link") or article.get("url") or "")
+    return canonical_host(link)
+
+
+def is_excluded_press_article(article: dict) -> bool:
+    raw_link = str(article.get("link") or article.get("url") or "").lower()
+    host = article_host(article)
+    names = {
+        str(article.get("source") or "").strip(),
+        str(article.get("press") or "").strip(),
+    }
+    title = str(article.get("title") or "")
+    if host in EXCLUDED_PRESS_HOSTS or any(blocked in raw_link for blocked in EXCLUDED_PRESS_HOSTS):
+        return True
+    if any(name in EXCLUDED_PRESS_NAMES for name in names):
+        return True
+    if any(name.lower().startswith("mhn") for name in names if name):
+        return True
+    return bool(re.match(r"^\s*\[(?:MHN포토|MHN스포츠|엠에이치앤포토)\]", title, re.I))
+
+
 def is_rejected_original_url(value: str) -> bool:
     host = (urlparse(value).hostname or "").removeprefix("www.").lower()
     if not host or host in PORTAL_HOSTS or host in STATIC_HOSTS:
@@ -496,6 +525,8 @@ def normalize_for_dedup(title: str) -> str:
 def apply_exclude_filter(articles: list[dict]) -> list[dict]:
     result = []
     for article in articles:
+        if is_excluded_press_article(article):
+            continue
         text = article.get("title", "") + " " + article.get("description", "")
         if not any(word in text for word in config.EXCLUDE_KEYWORDS):
             result.append(article)

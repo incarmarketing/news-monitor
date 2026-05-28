@@ -2347,9 +2347,6 @@
       "newsis.com":"뉴시스",
       "news1.kr":"뉴스1",
       "insnews.co.kr":"보험매일",
-      "mhnse.com":"MHN스포츠",
-      "mhns.co.kr":"MHN스포츠",
-      "mhnsports.com":"MHN스포츠",
       "mt.co.kr":"머니투데이",
       "biz.heraldcorp.com":"헤럴드경제",
       "heraldcorp.com":"헤럴드경제",
@@ -2402,10 +2399,7 @@
       "joongangnews.com":"중앙뉴스",
       "ceoscoredaily.com":"CEO스코어데일리"
     };
-    const pressAliasMap = {
-      "MHN포토":"MHN스포츠",
-      "엠에이치앤포토":"MHN스포츠"
-    };
+    const pressAliasMap = {};
 
     const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     const uniq = (items) => Array.from(new Set(items.filter(Boolean)));
@@ -2469,6 +2463,25 @@
     const isPortalPress = press => portalPressNames.has(canonicalPressKey(press));
     const isUnresolvedPress = press => ["언론사 확인", "언론사", "미확인"].includes(normalizePressLabel(press));
     const jsArg = value => JSON.stringify(String(value ?? ""));
+    const excludedPressHosts = new Set(["mhnse.com", "mhns.co.kr", "mhnsports.com"]);
+    const excludedPressNames = new Set(["MHN스포츠", "MHN포토", "엠에이치앤포토", "mhn포토"]);
+    function articleHost(article) {
+      try {
+        return canonicalPressKey(new URL(article?.link || article?.url || "").hostname);
+      } catch {
+        return canonicalPressKey(article?.link || article?.url || "");
+      }
+    }
+    function isExcludedPressArticle(article) {
+      const host = articleHost(article);
+      const linkText = String(article?.link || article?.url || "").toLowerCase();
+      const names = [article?.press, article?.source].map(value => normalizePressLabel(value));
+      if (excludedPressHosts.has(host)) return true;
+      if ([...excludedPressHosts].some(blocked => linkText.includes(blocked))) return true;
+      if (names.some(name => excludedPressNames.has(name))) return true;
+      if (names.some(name => String(name || "").toLowerCase().startsWith("mhn"))) return true;
+      return /^\s*\[(?:MHN포토|MHN스포츠|엠에이치앤포토)\]/i.test(article?.title || "");
+    }
     const broadReputationKeywords = new Set(["브랜드평판", "브랜드 평판", "평판"]);
     const monitoringContextTerms = [
       "인카금융", "인카금융서비스", "보험", "보험사", "생명보험", "손해보험",
@@ -2481,6 +2494,7 @@
       return Array.from(broadReputationKeywords).some(item => normalizeKeywordKey(item) === normalized);
     };
     function isRelevantDashboardArticle(article) {
+      if (isExcludedPressArticle(article)) return false;
       if (!isBroadReputationKeyword(article.keyword)) return true;
       if (["own", "regulation", "competitor", "industry"].includes(article.category)) return true;
       const text = [article.title, article.summary, article.keyword, article.press, article.source].join(" ");
@@ -2715,7 +2729,7 @@
       if (candidate.length > 14) return false;
       if (/[<>{}0-9]|시대|명암|기획|브리핑|단독|특징주|투자|판례/.test(candidate)) return false;
       return /(뉴스|신문|경제|일보|저널|매일|타임스|투데이|데일리|포스트|방송|스포츠|신보|이슈|프레스)$/.test(candidate)
-        || ["더벨", "EBN", "FETV", "CEO스코어데일리", "CBC뉴스", "MHN스포츠"].includes(candidate);
+        || ["더벨", "EBN", "FETV", "CEO스코어데일리", "CBC뉴스"].includes(candidate);
     }
 
     function categoryDetail(article) {

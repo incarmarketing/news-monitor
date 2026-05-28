@@ -7,6 +7,7 @@ import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 import report_window
 import supabase_store
@@ -17,6 +18,17 @@ ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 KST = timezone(timedelta(hours=9))
 SLOT_ORDER = {"08": 1, "13": 2, "18": 3}
 RISK_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
+EXCLUDED_PRESS_HOSTS = {
+    "mhnse.com",
+    "mhns.co.kr",
+    "mhnsports.com",
+}
+EXCLUDED_PRESS_NAMES = {
+    "MHN스포츠",
+    "MHN포토",
+    "엠에이치앤포토",
+    "mhn포토",
+}
 
 
 def today_kst() -> date:
@@ -71,6 +83,32 @@ def lighten(article: dict) -> dict:
         "_tone": article.get("_tone", "neutral"),
         "_cluster_size": article.get("_cluster_size", 1),
     }
+
+
+def canonical_host(value: str) -> str:
+    value = (value or "").strip().lower()
+    if not value:
+        return ""
+    parsed = urlparse(value if "://" in value else f"https://{value}")
+    host = parsed.hostname or value
+    return host.removeprefix("www.").removeprefix("m.").split("/", 1)[0]
+
+
+def is_excluded_article(article: dict) -> bool:
+    raw_link = str(article.get("link") or article.get("url") or "")
+    host = canonical_host(raw_link)
+    names = {
+        str(article.get("source") or "").strip(),
+        str(article.get("press") or "").strip(),
+    }
+    title = str(article.get("title") or "")
+    if host in EXCLUDED_PRESS_HOSTS or any(blocked in raw_link.lower() for blocked in EXCLUDED_PRESS_HOSTS):
+        return True
+    if any(name in EXCLUDED_PRESS_NAMES for name in names):
+        return True
+    if any(name.lower().startswith("mhn") for name in names if name):
+        return True
+    return bool(re.match(r"^\s*\[(?:MHN포토|MHN스포츠|엠에이치앤포토)\]", title, re.I))
 
 
 def load_archive(path: Path) -> dict | None:
@@ -206,6 +244,8 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
         if RISK_ORDER.get(risk, 0) > RISK_ORDER.get(daily["risk"], 0):
             daily["risk"] = risk
         for article in day.get("articles", []):
+            if is_excluded_article(article):
+                continue
             keyword = str(article.get("keyword") or "").strip()
             source = str(article.get("source") or article.get("press") or "").strip()
             tone = article.get("_tone") or article.get("tone")
@@ -262,6 +302,8 @@ def collect_top_articles(daily_data: list[dict], limit: int = 20) -> list[dict]:
     articles = []
     for day in daily_data:
         for article in day.get("articles", []):
+            if is_excluded_article(article):
+                continue
             copied = dict(article)
             window = day.get("window", {})
             copied["_date"] = f"{day.get('date', '')} {window.get('short_label') or window.get('slot', '')}".strip()
