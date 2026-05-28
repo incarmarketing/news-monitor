@@ -172,6 +172,7 @@ python check_cronjob_org.py
 
 ## 관련 문서
 
+- `docs/PR_PLATFORM_BUILDUP.md`: PR 운영센터 제품 빌드업 기준서
 - `GITHUB_ACTIONS_SETUP.md`: GitHub Actions 설정
 - `EXTERNAL_CRON_SETUP.md`: cron-job.org 외부 호출 설정
 - `SUPABASE_EDGE_FUNCTION_SETUP.md`: Supabase Edge Function 설정
