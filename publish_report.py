@@ -112,8 +112,11 @@ def publish_period_report(period: str) -> None:
         return
 
     archive_dir = PUBLIC_DIR / period
+    legacy_dir = PUBLIC_DIR / "period_reports"
     archive_dir.mkdir(parents=True, exist_ok=True)
+    legacy_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, PUBLIC_DIR / f"{period}.html")
+    shutil.copy2(source, legacy_dir / f"{period}.html")
     shutil.copy2(source, archive_dir / source.name)
     print(f"Published {period} report: {source.name}")
 

@@ -26,8 +26,8 @@ GitHub Pages 대시보드 / 보고서 배포
 
 - 통합 대시보드: `https://incarmarketing.github.io/news-monitor/dashboard.html`
 - 최신 일일 보고서: `https://incarmarketing.github.io/news-monitor/`
-- 주간 보고서: `https://incarmarketing.github.io/news-monitor/period_reports/weekly.html`
-- 월간 보고서: `https://incarmarketing.github.io/news-monitor/period_reports/monthly.html`
+- 주간 보고서: `https://incarmarketing.github.io/news-monitor/weekly.html`
+- 월간 보고서: `https://incarmarketing.github.io/news-monitor/monthly.html`
 
 ## 자동 실행 기준
 
