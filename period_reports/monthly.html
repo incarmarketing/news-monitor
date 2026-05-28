@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>월간 언론 동향 한장 보고서</title>
+<title>월간 미디어 모니터링 리포트</title>
 <style>
   :root {
     --ink:#101828;
@@ -11,8 +11,8 @@
     --line:#d7dde8;
     --paper:#ffffff;
     --bg:#eef2f7;
-    --navy:#172554;
-    --blue:#274690;
+    --navy:#13224a;
+    --blue:#2454c6;
     --green:#15803d;
     --amber:#b45309;
     --red:#b91c1c;
@@ -65,17 +65,18 @@
   .report-head {
     display:grid;
     grid-template-columns:minmax(0,1fr) auto;
-    gap:14px;
-    padding:15px 18px 10px;
-    border-bottom:1px solid var(--line);
-    background:#fff;
+    gap:16px;
+    padding:18px 20px 14px;
+    border-bottom:0;
+    background:linear-gradient(135deg,#101828 0%,#132a63 68%,#2454c6 100%);
+    color:#fff;
   }
   .eyebrow {
     display:flex;
     flex-wrap:wrap;
     align-items:center;
     gap:8px;
-    color:var(--muted);
+    color:#dbe7ff;
     font-size:10.5px;
     font-weight:900;
   }
@@ -83,37 +84,38 @@
     display:inline-flex;
     width:max-content;
     padding:3px 8px;
-    border:1px solid #b9c7ec;
+    border:1px solid rgba(255,255,255,.36);
     border-radius:999px;
-    color:var(--navy);
-    background:#f4f7ff;
+    color:#eff6ff;
+    background:rgba(255,255,255,.12);
     letter-spacing:.06em;
   }
   h1 {
     margin:5px 0 4px;
-    color:var(--navy);
-    font-size:26px;
+    color:#fff;
+    font-size:27px;
     line-height:1.14;
     letter-spacing:0;
   }
   .headline {
     margin:0;
     max-width:840px;
-    color:#1d2939;
+    color:#eaf1ff;
     font-size:14px;
     font-weight:900;
     line-height:1.42;
   }
   .risk-panel {
     min-width:178px;
-    border:1px solid var(--line);
+    border:1px solid rgba(255,255,255,.28);
     border-radius:8px;
     padding:10px;
+    background:rgba(255,255,255,.12);
     display:grid;
     gap:6px;
     align-content:center;
   }
-  .risk-label { color:var(--muted); font-size:10px; font-weight:900; }
+  .risk-label { color:#dbe7ff; font-size:10px; font-weight:900; }
   .risk-level {
     font-size:25px;
     line-height:1;
@@ -122,18 +124,18 @@
   .risk-level.low { color:var(--green); }
   .risk-level.medium { color:var(--amber); }
   .risk-level.high { color:var(--red); }
-  .risk-meta { color:var(--muted); font-size:10.5px; font-weight:800; }
+  .risk-meta { color:#eaf1ff; font-size:10.5px; font-weight:800; }
   .kpi-grid {
     display:grid;
     grid-template-columns:repeat(6,minmax(0,1fr));
     gap:6px;
-    padding:8px 12px;
-    background:#f8fafc;
+    padding:10px 14px;
+    background:#f5f8fc;
     border-bottom:1px solid var(--line);
   }
   .kpi {
     min-height:50px;
-    padding:8px 9px;
+    padding:9px 10px;
     border:1px solid var(--line);
     border-radius:8px;
     background:#fff;
@@ -155,8 +157,8 @@
   .content-grid {
     display:grid;
     grid-template-columns:1.1fr .9fr;
-    gap:8px;
-    padding:8px 12px 0;
+    gap:10px;
+    padding:10px 14px 0;
     align-items:start;
   }
   .panel {
@@ -164,10 +166,10 @@
     border:1px solid var(--line);
     border-radius:8px;
     background:#fff;
-    padding:9px;
+    padding:10px;
   }
   .panel h2 {
-    margin:0 0 6px;
+    margin:0 0 7px;
     color:var(--navy);
     font-size:12.5px;
     font-weight:900;
@@ -453,38 +455,47 @@
     .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
     h1 { font-size:22px; }
   }
-  @page { size:A4 landscape; margin:5mm; }
+  @page { size:A4 landscape; margin:6mm; }
   @media print {
-    body { background:#fff; font-size:8px; line-height:1.16; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { background:#fff; font-size:8.8px; line-height:1.2; }
     .toolbar { display:none; }
     .sheet {
       width:auto;
-      min-height:0;
+      min-height:188mm;
       margin:0;
       border:0;
       border-radius:0;
       box-shadow:none;
       overflow:visible;
-      zoom:.82;
+      display:grid;
+      grid-template-rows:auto auto auto auto 1fr auto;
     }
-    .report-head { padding:0 0 3px; gap:6px; }
-    .badge { padding:2px 6px; font-size:7px; }
-    h1 { margin:2px 0 2px; font-size:15px; }
-    .headline { font-size:8px; line-height:1.16; }
-    .eyebrow,.risk-meta { font-size:6.7px; }
-    .risk-panel { min-width:120px; padding:4px 5px; gap:2px; border-radius:5px; }
-    .risk-label { font-size:6.2px; }
-    .risk-level { font-size:14px; }
-    .kpi-grid { gap:2px; padding:3px 0; background:#fff; }
-    .kpi { min-height:27px; padding:3px 5px; border-radius:4px; }
-    .kpi b { font-size:11.5px; }
-    .kpi span { margin-top:2px; font-size:6.2px; }
-    .content-grid { gap:3px; padding:3px 0 0; }
-    .panel { padding:4px; border-radius:4px; break-inside:avoid; page-break-inside:avoid; }
-    .panel h2 { margin-bottom:2px; font-size:7.5px; }
-    .panel h2 span { font-size:6.1px; }
-    .analysis-body { max-height:68px; font-size:6.6px; line-height:1.12; }
-    .analysis-body h2 { margin:3px 0 1px; padding-left:3px; border-left-width:2px; font-size:7px; }
+    .report-head {
+      grid-template-columns:minmax(0,1fr) 142px;
+      padding:7px 9px 8px;
+      gap:8px;
+      border-radius:7px;
+    }
+    .badge { padding:2px 6px; font-size:7.2px; }
+    h1 { margin:3px 0 3px; font-size:18px; }
+    .headline { font-size:8.6px; line-height:1.2; }
+    .eyebrow,.risk-meta { font-size:6.9px; }
+    .risk-panel { min-width:132px; padding:6px 7px; gap:3px; border-radius:6px; }
+    .risk-label { font-size:6.4px; }
+    .risk-level { font-size:16px; }
+    .kpi-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:4px; padding:5px 0; background:#fff; }
+    .kpi { min-height:35px; padding:5px 7px; border-radius:5px; }
+    .kpi b { font-size:14px; }
+    .kpi span { margin-top:3px; font-size:7px; }
+    .content-grid { grid-template-columns:1.08fr .92fr; gap:5px; padding:5px 0 0; }
+    .sheet > .content-grid:last-of-type { align-items:stretch; }
+    .sheet > .content-grid:last-of-type .panel { min-height:100%; }
+    .panel { padding:6px; border-radius:5px; break-inside:avoid; page-break-inside:avoid; }
+    .panel h2 { margin-bottom:4px; font-size:8.5px; }
+    .panel h2 span { font-size:6.5px; }
+    .analysis-body { max-height:92px; font-size:7.4px; line-height:1.17; }
+    .analysis-body h2 { margin:4px 0 2px; padding-left:4px; border-left-width:2px; font-size:7.8px; }
     .analysis-body p { margin-bottom:3px; }
     .analysis-body ul { margin-top:2px; padding-left:10px; }
     .analysis-body li { margin:0; }
@@ -492,33 +503,33 @@
     .tracking-card { gap:1px 5px; padding:3px 4px; border-radius:5px; }
     .tracking-card b,.tracking-card span { font-size:6.5px; line-height:1.12; }
     .tracking-card strong { font-size:6.8px; }
-    .mix-grid { gap:5px; }
-    .mix-row { grid-template-columns:38px 1fr 22px; gap:3px; margin-bottom:2px; font-size:6.5px; }
-    .track { height:3px; }
-    .trend { height:48px; gap:1px; padding-top:6px; }
-    .bar-wrap { height:30px; }
-    .bar-label { top:-8px; font-size:5.8px; }
-    .day { gap:0; font-size:5.6px; }
-    .article-table { font-size:6.4px; }
-    .article-table th,.article-table td { padding:1px 2px; }
-    .article-table th { font-size:5.9px; }
-    .article-table .meta { font-size:5.7px; }
-    .rank { width:18px; }
-    .score { width:28px; }
-    .footer { margin-top:2px; padding:2px 0 0; font-size:5.9px; }
-    .density-grid { gap:2px; margin-bottom:3px; }
-    .density-item { padding:3px 4px; border-radius:5px; }
-    .density-item b { font-size:7.3px; }
-    .density-item span { margin-top:1px; font-size:6.1px; }
+    .mix-grid { grid-template-columns:1fr 1fr; gap:5px; }
+    .mix-row { grid-template-columns:45px 1fr 28px; gap:4px; margin-bottom:3px; font-size:7.1px; }
+    .track { height:4px; }
+    .trend { height:58px; gap:2px; padding-top:8px; }
+    .bar-wrap { height:38px; }
+    .bar-label { top:-10px; font-size:6.1px; }
+    .day { gap:1px; font-size:5.9px; }
+    .article-table { font-size:6.8px; }
+    .article-table th,.article-table td { padding:2px 3px; }
+    .article-table th { font-size:6px; }
+    .article-table .meta { font-size:5.8px; }
+    .rank { width:20px; }
+    .score { width:30px; }
+    .footer { margin-top:4px; padding:3px 0 0; font-size:6.2px; align-self:end; }
+    .density-grid { gap:3px; margin-bottom:4px; }
+    .density-item { padding:4px 5px; border-radius:5px; }
+    .density-item b { font-size:8.1px; }
+    .density-item span { margin-top:2px; font-size:6.3px; }
     .ledger-table,
-    .mini-table { font-size:6.1px; }
+    .mini-table { font-size:6.6px; }
     .ledger-table th,
     .ledger-table td,
     .mini-table th,
     .mini-table td { padding:2px 3px; }
     .ledger-table th,
-    .mini-table th { font-size:5.5px; }
-    .risk-pill { min-width:32px; padding:1px 3px; font-size:5.8px; }
+    .mini-table th { font-size:5.8px; }
+    .risk-pill { min-width:34px; padding:1px 3px; font-size:5.9px; }
     .rank-wrap { gap:4px; }
     .rank-box h3 { margin-bottom:2px; font-size:7.2px; }
   }
@@ -529,60 +540,60 @@
 <main class="sheet">
   <header class="report-head">
     <div>
-      <div class="eyebrow"><span class="badge">MONTHLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-01 ~ 2026-05-29</span><span>2026.05.29 00:05</span></div>
-      <h1>월간 언론 동향 한장 보고서</h1>
-      <p class="headline">당사 부정 이슈 4건, 주의 이상 2일로 리스크 관찰 강도가 높은 기간입니다.</p>
+      <div class="eyebrow"><span class="badge">MONTHLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-01 ~ 2026-05-29</span><span>2026.05.29 00:38</span></div>
+      <h1>월간 미디어 모니터링 리포트</h1>
+      <p class="headline">당사 직접 부정 4건과 주의 이상 2일이 확인된 고위험 관찰 구간입니다.</p>
     </div>
     <aside class="risk-panel">
-      <div class="risk-label">종합 리스크</div>
+      <div class="risk-label">리스크 등급</div>
       <div class="risk-level high">HIGH</div>
-      <div class="risk-meta">당사 부정 4건 · HIGH 1일 · MEDIUM 1일</div>
+      <div class="risk-meta">당사 부정 4건 · H 1일 · M 1일</div>
     </aside>
   </header>
 
   <section class="kpi-grid">
-    <div class="kpi"><b>1715</b><span>전체 수집</span></div>
+    <div class="kpi"><b>1715</b><span>수집 기사</span></div>
     <div class="kpi"><b>694</b><span>분석 기사</span></div>
     <div class="kpi"><b>77</b><span>당사 언급</span></div>
     <div class="kpi"><b>4</b><span>당사 부정</span></div>
     <div class="kpi"><b>132</b><span>정책/감독</span></div>
-    <div class="kpi"><b>1463</b><span>GA/보험사</span></div>
+    <div class="kpi"><b>1463</b><span>GA/보험 동향</span></div>
   </section>
 
   <section class="content-grid">
     <div class="panel">
-      <h2>기간 관찰 요약 <span>16일 · 16구간</span></h2>
-      <div class="analysis-body"><h2>기간 핵심 분석</h2>
-<p>월간 기준 전체 1715건 중 분석 기사 694건이 집계되었습니다. 당사 언급은 77건, 주의 이상 일수는 2일입니다.</p>
-<h2>숫자로 본 흐름</h2>
+      <h2>요약 분석 <span>16일 · 16구간</span></h2>
+      <div class="analysis-body"><h2>핵심 브리핑</h2>
+<p>월간 기준 수집 기사 1715건 중 분석 기사 694건이 집계되었습니다. 당사 언급은 77건, 주의 이상 일자는 2일입니다.</p>
+<h2>숫자로 본 변화</h2>
 <ul>
 <li>기사량: 16일/16구간 기준 일평균 107.2건입니다.</li>
-<li>당사 보도: 당사 언급 77건, 당사 부정 4건입니다.</li>
-<li>시장 동향: 경쟁/업계 동향 1463건, 규제·제도 132건입니다.</li>
+<li>당사 노출: 당사 언급 77건, 당사 직접 부정 4건입니다.</li>
+<li>시장 신호: GA/보험 동향 1463건, 정책·감독 132건입니다.</li>
 </ul>
-<h2>리스크 관찰 메모</h2>
+<h2>추적 신호</h2>
 <ul>
-<li>인카금융: 반복 노출 여부와 확산 매체가 핵심 관찰 축입니다.</li>
-<li>당사 부정 기사: 직접 언급 부정 이슈와 후속 보도 여부가 별도 관리 대상입니다.</li>
-<li>GA/보험사 동향: 시장 기사량과 정책성 이슈의 동반 상승 여부가 주요 신호입니다.</li>
+<li>인카금융: 반복 노출 여부와 확산 매체가 기간 비교의 핵심 기준입니다.</li>
+<li>당사 직접 부정: 원문 성격과 후속 보도 여부를 별도 흐름으로 추적합니다.</li>
+<li>GA/보험 동향: 시장 기사량과 정책성 이슈가 동시에 늘어나는 구간을 관찰합니다.</li>
 </ul></div>
     </div>
     <div class="panel">
-      <h2>누적 데이터 보드 <span>관찰 지표 · 반복 노출</span></h2>
+      <h2>누적 지표 <span>관찰 지표 · 반복 노출</span></h2>
       <div class="density-grid">
 
         <div class="density-item"><b>1,715 / 694</b><span>수집/분석 · 분석 전환 40%</span></div>
 
-        <div class="density-item"><b>16일 · 16회</b><span>운영 구간 · 일평균 107.2건</span></div>
+        <div class="density-item"><b>16일 · 16회</b><span>모니터링 구간 · 일평균 107.2건</span></div>
 
         <div class="density-item"><b>253건</b><span>최대 기사량 · 일 단위 최고 수집량</span></div>
 
-        <div class="density-item"><b>손해보험</b><span>관리축 · 반복 노출 상위 키워드</span></div>
+        <div class="density-item"><b>손해보험</b><span>핵심 키워드 · 반복 노출 상위 키워드</span></div>
 
       </div>
       <div class="rank-wrap">
         <div class="rank-box">
-          <h3>키워드 TOP</h3>
+          <h3>노출 키워드</h3>
           <table class="mini-table">
             <thead><tr><th>키워드</th><th>건</th><th>부정</th></tr></thead>
             <tbody>
@@ -595,11 +606,13 @@
 
               <tr><td>인카금융</td><td class="num">53</td><td class="num">4</td></tr>
 
+              <tr><td>GA 보험</td><td class="num">39</td><td class="num">0</td></tr>
+
             </tbody>
           </table>
         </div>
         <div class="rank-box">
-          <h3>매체 TOP</h3>
+          <h3>영향 매체</h3>
           <table class="mini-table">
             <thead><tr><th>매체</th><th>건</th><th>비중</th></tr></thead>
             <tbody>
@@ -612,6 +625,8 @@
 
               <tr><td>보험신보</td><td class="num">7</td><td class="num">1%</td></tr>
 
+              <tr><td>보험저널</td><td class="num">7</td><td class="num">1%</td></tr>
+
             </tbody>
           </table>
         </div>
@@ -621,7 +636,7 @@
 
   <section class="content-grid">
     <div class="panel">
-      <h2>기사량 흐름 <span>최근 최대 12일</span></h2>
+      <h2>일자별 노출 흐름 <span>최근 최대 12일</span></h2>
       <div class="trend">
 
         <div class="day">
@@ -736,7 +751,7 @@
     </div>
     <div class="mix-grid">
       <div class="panel">
-        <h2>분류 비중</h2>
+        <h2>관심 영역</h2>
 
         <div class="mix-row">
           <span>당사</span>
@@ -751,7 +766,7 @@
         </div>
 
         <div class="mix-row">
-          <span>GA/보험사</span>
+          <span>GA/보험</span>
           <div class="track"><div class="fill market" style="width:85.3%"></div></div>
           <span>1463</span>
         </div>
@@ -764,10 +779,10 @@
 
       </div>
       <div class="panel">
-        <h2>부정 리스크 구조</h2>
+        <h2>리스크 구조</h2>
 
         <div class="mix-row">
-          <span>전체 부정</span>
+          <span>부정 논조</span>
           <div class="track"><div class="fill negative" style="width:4%"></div></div>
           <span>26</span>
         </div>
@@ -779,7 +794,7 @@
         </div>
 
         <div class="mix-row">
-          <span>주의 일수</span>
+          <span>주의 일자</span>
           <div class="track"><div class="fill watch-days" style="width:12%"></div></div>
           <span>2</span>
         </div>
@@ -796,12 +811,34 @@
 
   <section class="content-grid">
     <div class="panel">
-      <h2>누적 관리 로그 <span>최근 6일 · 일 단위 집계</span></h2>
+      <h2>일자별 모니터링 로그 <span>최근 8일 · 일 단위 집계</span></h2>
       <table class="ledger-table">
         <thead>
           <tr><th>일자</th><th>수집</th><th>분석</th><th>당사</th><th>정책</th><th>GA/보험</th><th>부정</th><th>상태</th></tr>
         </thead>
         <tbody>
+
+          <tr>
+            <td>05-21</td>
+            <td class="num">122</td>
+            <td class="num">44</td>
+            <td class="num">0</td>
+            <td class="num">10</td>
+            <td class="num">111</td>
+            <td class="num">0</td>
+            <td><span class="risk-pill low">LOW</span></td>
+          </tr>
+
+          <tr>
+            <td>05-22</td>
+            <td class="num">100</td>
+            <td class="num">44</td>
+            <td class="num">0</td>
+            <td class="num">5</td>
+            <td class="num">94</td>
+            <td class="num">0</td>
+            <td><span class="risk-pill low">LOW</span></td>
+          </tr>
 
           <tr>
             <td>05-23</td>
@@ -873,7 +910,7 @@
       </table>
     </div>
     <div class="panel article-panel">
-      <h2>주요 근거 기사 <span>상위 6건 · 점수순</span></h2>
+      <h2>근거 기사 <span>상위 10건 · 점수순</span></h2>
       <table class="article-table">
         <thead><tr><th class="rank">#</th><th>기사</th><th class="score">점수</th></tr></thead>
         <tbody>
@@ -932,13 +969,49 @@
           <td class="score">30</td>
         </tr>
 
+        <tr>
+          <td class="rank">7</td>
+          <td class="title-cell">
+            <a href="https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605171546230960102977" target="_blank">[더벨]인카금융, 1200% 룰 전 영업망 확장 박차</a>
+            <div class="meta">2026-05-19 일일 마감 · NAVER · 인카금융</div>
+          </td>
+          <td class="score">25</td>
+        </tr>
+
+        <tr>
+          <td class="rank">8</td>
+          <td class="title-cell">
+            <a href="https://www.thebell.co.kr/free/content/ArticleView.asp?key=202604281430386400105527" target="_blank">[더벨][GA 톱티어의 조건] 인카금융, 정착률 57% '최하위 티어'</a>
+            <div class="meta">2026-05-08 · NAVER · 인카금융</div>
+          </td>
+          <td class="score">22</td>
+        </tr>
+
+        <tr>
+          <td class="rank">9</td>
+          <td class="title-cell">
+            <a href="https://news.google.com/rss/articles/CBMiVkFVX3lxTE9lX2xLRW4xTEtfQnozN2JUaWZNVEppNF9zMmdlSG5aZnNqbUVHMHpYOUNzVHBGdFJSaEFPMFV4dFhUR0lRWkZLaWRrbV9neTlaRGx0OXpn?oc=5" target="_blank">인카금융서비스, 3분기 누적 최대 실적 달성… 매출 1조 눈 앞 - 중앙일보</a>
+            <div class="meta">2026-05-08 · GOOGLE · 인카금융</div>
+          </td>
+          <td class="score">20</td>
+        </tr>
+
+        <tr>
+          <td class="rank">10</td>
+          <td class="title-cell">
+            <a href="https://news.google.com/rss/articles/CBMic0FVX3lxTE1QNzNkbUcteXF4QjdrTWlrWHpCSnVMeXBLWVlPRXFxT1gzUGk3cjF6YTk5em4yRjUxX05IMHRpT1lmaDZjanFjaXhfOW9mMGF1eEJnU2U2LTVMNURjZW8zTzE0VkJyTjRNa3hYS0ZDV2pLXzg?oc=5" target="_blank">인카금융서비스 최대주주 최병채, 인카금융서비스 주식등의 수 6만2308주 증가…총 지분율 43.1% - 디지털투데이</a>
+            <div class="meta">2026-05-08 · GOOGLE · 인카금융</div>
+          </td>
+          <td class="score">20</td>
+        </tr>
+
         </tbody>
       </table>
     </div>
   </section>
 
   <footer class="footer">
-    <span>월간 언론 동향 보고서 · 부정 리스크는 당사 직접 언급과 HIGH/MEDIUM 구간 기준으로 추적</span>
+    <span>월간 미디어 모니터링 리포트 · 기준: 당사 직접 부정 기사, HIGH/MEDIUM 일자, 반복 노출 키워드</span>
     <span>인카금융서비스 마케팅부</span>
   </footer>
 </main>

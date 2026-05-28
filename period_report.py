@@ -104,17 +104,17 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 {top_text}
 
 작성 형식:
-## 기간 핵심 분석
-2문장. 기간 전체의 결론을 먼저 제시합니다.
+## 핵심 브리핑
+2문장. 기간 전체에서 보고받는 사람이 먼저 알아야 할 사실을 압축해 씁니다.
 
-## 숫자로 본 흐름
+## 숫자로 본 변화
 - 기사량
-- 당사 보도
-- 부정/규제성 이슈
+- 당사 노출
+- 부정/정책성 이슈
 각 항목은 한 문장으로만 씁니다.
 
-## 리스크 관찰 메모
-3개 bullet. 판단에 필요한 관찰 축과 현재 신호를 같이 씁니다. 실행을 지시하는 문장은 쓰지 않습니다.
+## 추적 신호
+3개 bullet. 판단에 필요한 관찰 축과 현재 신호를 같이 씁니다. 제언이나 실행 지시처럼 읽히는 문장은 쓰지 않습니다.
 
 작성 제한:
 - 전체 650자 이내.
@@ -147,18 +147,18 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
         keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
     if keyword_counts:
         top_keyword = sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
-    return f"""## 기간 핵심 분석
-{period_label} 기준 전체 {aggregate['total_collected']}건 중 분석 기사 {aggregate['total_after_cluster']}건이 집계되었습니다. 당사 언급은 {aggregate['by_category']['own']}건, 주의 이상 일수는 {risk_days}일입니다.
+    return f"""## 핵심 브리핑
+{period_label} 기준 수집 기사 {aggregate['total_collected']}건 중 분석 기사 {aggregate['total_after_cluster']}건이 집계되었습니다. 당사 언급은 {aggregate['by_category']['own']}건, 주의 이상 일자는 {risk_days}일입니다.
 
-## 숫자로 본 흐름
+## 숫자로 본 변화
 - 기사량: {aggregate['period_days']}일/{aggregate.get('period_windows', aggregate['period_days'])}구간 기준 일평균 {aggregate['avg_daily_collected']}건입니다.
-- 당사 보도: 당사 언급 {aggregate['by_category']['own']}건, 당사 부정 {own_negative_total}건입니다.
-- 시장 동향: 경쟁/업계 동향 {market}건, 규제·제도 {aggregate['by_category']['regulation']}건입니다.
+- 당사 노출: 당사 언급 {aggregate['by_category']['own']}건, 당사 직접 부정 {own_negative_total}건입니다.
+- 시장 신호: GA/보험 동향 {market}건, 정책·감독 {aggregate['by_category']['regulation']}건입니다.
 
-## 리스크 관찰 메모
-- {top_keyword}: 반복 노출 여부와 확산 매체가 핵심 관찰 축입니다.
-- 당사 부정 기사: 직접 언급 부정 이슈와 후속 보도 여부가 별도 관리 대상입니다.
-- GA/보험사 동향: 시장 기사량과 정책성 이슈의 동반 상승 여부가 주요 신호입니다."""
+## 추적 신호
+- {top_keyword}: 반복 노출 여부와 확산 매체가 기간 비교의 핵심 기준입니다.
+- 당사 직접 부정: 원문 성격과 후속 보도 여부를 별도 흐름으로 추적합니다.
+- GA/보험 동향: 시장 기사량과 정책성 이슈가 동시에 늘어나는 구간을 관찰합니다."""
 
 
 def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
@@ -181,15 +181,15 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     period_days = max(aggregate.get("period_days", 0), 1)
     total_collected = max(aggregate.get("total_collected", 0), 1)
     if risk_level == "HIGH":
-        headline = f"당사 부정 이슈 {own_negative}건, 주의 이상 {watch_days}일로 리스크 관찰 강도가 높은 기간입니다."
+        headline = f"당사 직접 부정 {own_negative}건과 주의 이상 {watch_days}일이 확인된 고위험 관찰 구간입니다."
     elif own_negative:
-        headline = f"당사 직접 부정 이슈 {own_negative}건이 포착되어 부정 추이를 별도 추적하는 기간입니다."
+        headline = f"당사 직접 부정 {own_negative}건이 포착되어 부정 논조의 확산 여부를 별도 추적하는 구간입니다."
     elif own:
-        headline = f"당사 언급 {own}건이 관찰됐고 직접 부정 리스크는 낮은 상태로 유지됐습니다."
+        headline = f"당사 언급 {own}건이 관찰됐고, 직접 부정 리스크는 낮은 수준으로 유지됐습니다."
     elif regulation >= max(3, market):
-        headline = "정책·감독 이슈 비중이 높아 제도 변화와 업계 반응이 주요 관찰 축입니다."
+        headline = "정책·감독 이슈 비중이 높아 제도 변화와 업계 반응이 주요 관찰 축으로 나타났습니다."
     else:
-        headline = f"GA/보험사 동향 {market}건을 중심으로 시장 흐름을 추적하는 구간입니다."
+        headline = f"GA/보험 동향 {market}건을 중심으로 시장 노출 흐름을 추적하는 구간입니다."
 
     tracking_points = [
         {
@@ -212,20 +212,20 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     categories = [
         {"key": "own", "label": "당사", "value": own, "share": aggregate["category_share"].get("own", 0)},
         {"key": "regulation", "label": "정책", "value": regulation, "share": aggregate["category_share"].get("regulation", 0)},
-        {"key": "market", "label": "GA/보험사", "value": market, "share": aggregate["category_share"].get("competitor", 0) + aggregate["category_share"].get("industry", 0)},
+        {"key": "market", "label": "GA/보험", "value": market, "share": aggregate["category_share"].get("competitor", 0) + aggregate["category_share"].get("industry", 0)},
         {"key": "other", "label": "기타", "value": cats.get("other", 0), "share": aggregate["category_share"].get("other", 0)},
     ]
     risk_mix = [
-        {"key": "negative", "label": "전체 부정", "value": tones.get("negative", 0), "share": round(tones.get("negative", 0) / total_after_cluster * 100)},
+        {"key": "negative", "label": "부정 논조", "value": tones.get("negative", 0), "share": round(tones.get("negative", 0) / total_after_cluster * 100)},
         {"key": "own-negative", "label": "당사 부정", "value": own_negative, "share": round(own_negative / total_after_cluster * 100)},
-        {"key": "watch-days", "label": "주의 일수", "value": watch_days, "share": round(watch_days / period_days * 100)},
+        {"key": "watch-days", "label": "주의 일자", "value": watch_days, "share": round(watch_days / period_days * 100)},
         {"key": "neutral", "label": "중립 기사", "value": tones.get("neutral", 0), "share": round(tones.get("neutral", 0) / total_after_cluster * 100)},
     ]
     density_rows = [
         {"label": "수집/분석", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"분석 전환 {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
-        {"label": "운영 구간", "value": f"{aggregate.get('period_days', 0)}일 · {aggregate.get('period_windows', 0)}회", "note": f"일평균 {aggregate.get('avg_daily_collected', 0)}건"},
+        {"label": "모니터링 구간", "value": f"{aggregate.get('period_days', 0)}일 · {aggregate.get('period_windows', 0)}회", "note": f"일평균 {aggregate.get('avg_daily_collected', 0)}건"},
         {"label": "최대 기사량", "value": f"{aggregate.get('max_daily_total', 0):,}건", "note": "일 단위 최고 수집량"},
-        {"label": "관리축", "value": top_keyword, "note": "반복 노출 상위 키워드"},
+        {"label": "핵심 키워드", "value": top_keyword, "note": "반복 노출 상위 키워드"},
     ]
     keyword_rows = [
         {
@@ -250,7 +250,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
             "market": row.get("market", 0),
             "negative": row.get("negative", 0),
         }
-        for row in aggregate.get("daily_volume", [])[-6:]
+        for row in aggregate.get("daily_volume", [])[-8:]
     ]
     return {
         "headline": headline,
@@ -376,7 +376,7 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
         max_trend_total=max_trend_total,
         max_neg=max_neg,
         ai_report_html=markdown_to_html(ai_report),
-        top_articles=top_articles[:8],
+        top_articles=top_articles[:10],
     )
 
     out_path = LOG_DIR / f"{output_slug}_report_{now_kst().strftime('%Y%m%d_%H%M')}.html"
