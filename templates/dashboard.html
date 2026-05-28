@@ -870,64 +870,109 @@
     .sync-note { margin-top:10px; color:var(--muted); font-size:12px; font-weight:800; min-height:18px; }
     .keyword-volume {
       display:grid;
-      gap:10px;
+      gap:12px;
       min-width:0;
     }
-    .keyword-total-chart {
-      min-height:242px;
+    .keyword-volume-summary {
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(86px,1fr));
-      gap:16px;
-      align-items:end;
-      padding:10px 4px 0;
-      border-bottom:1px solid var(--line);
-      overflow:visible;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+    }
+    .keyword-volume-stat {
+      min-width:0;
+      min-height:58px;
+      display:grid;
+      gap:3px;
+      align-content:center;
+      padding:10px 12px;
+      border:1px solid #e3e9f3;
+      border-radius:8px;
+      background:#f8fafc;
+    }
+    .keyword-volume-stat b {
+      color:#101828;
+      font-size:18px;
+      line-height:1.05;
+    }
+    .keyword-volume-stat span {
+      color:#667085;
+      font-size:11px;
+      font-weight:900;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .keyword-total-chart {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px 14px;
+      min-height:0;
+      padding:2px 0 0;
+      align-items:stretch;
     }
     .keyword-total-item {
       min-width:0;
-      min-height:232px;
+      min-height:74px;
       display:grid;
-      grid-template-rows:178px auto;
+      grid-template-columns:30px minmax(0,1fr);
       gap:10px;
-      align-items:end;
+      align-items:center;
+      padding:10px 12px;
+      border:1px solid #e3e9f3;
+      border-radius:8px;
+      background:#fff;
+      box-shadow:0 1px 2px rgba(16,24,40,.035);
     }
-    .keyword-total-bar-wrap {
-      position:relative;
-      height:170px;
+    .keyword-total-item.has-risk {
+      border-color:#fecdd3;
+      background:linear-gradient(90deg,#fff8f8,#fff);
+    }
+    .keyword-rank {
+      width:30px;
+      height:30px;
+      display:grid;
+      place-items:center;
+      border-radius:8px;
+      background:#eef2ff;
+      color:#27398c;
+      font-size:12px;
+      font-weight:900;
+    }
+    .keyword-total-main { min-width:0; display:grid; gap:7px; }
+    .keyword-total-head {
       display:flex;
-      align-items:flex-end;
-      justify-content:center;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
       min-width:0;
     }
+    .keyword-total-track {
+      height:12px;
+      border-radius:999px;
+      background:#eef2f7;
+      overflow:hidden;
+    }
     .keyword-total-bar {
-      width:min(34px,56%);
-      min-height:5px;
-      border-radius:8px 8px 0 0;
-      background:linear-gradient(180deg,#5b7cfa,#27398c);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.25);
+      height:100%;
+      min-width:6px;
+      border-radius:inherit;
+      background:linear-gradient(90deg,var(--bar-color,#27398c),#6d8aff);
     }
     .keyword-total-value {
-      position:absolute;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:calc(var(--bar-height, 0px) + 6px);
-      color:#0f172a;
-      font-size:11px;
+      color:#101828;
+      font-size:13px;
       font-weight:900;
       line-height:1;
       white-space:nowrap;
     }
     .keyword-total-label {
-      display:flex;
-      align-items:flex-start;
-      justify-content:center;
-      min-height:42px;
+      min-height:0;
       min-width:0;
-      color:#475467;
-      font-size:11px;
+      color:#101828;
+      font-size:13px;
       font-weight:900;
       line-height:1.25;
-      text-align:center;
+      text-align:left;
       word-break:keep-all;
       overflow:hidden;
     }
@@ -936,6 +981,29 @@
       -webkit-line-clamp:2;
       -webkit-box-orient:vertical;
       overflow:hidden;
+    }
+    .keyword-total-meta {
+      display:flex;
+      flex-wrap:wrap;
+      gap:5px;
+      color:#667085;
+      font-size:10px;
+      font-weight:900;
+    }
+    .keyword-total-meta span {
+      display:inline-flex;
+      align-items:center;
+      min-height:22px;
+      padding:3px 7px;
+      border:1px solid #e3e9f3;
+      border-radius:999px;
+      background:#f8fafc;
+      white-space:nowrap;
+    }
+    .keyword-total-meta .negative {
+      border-color:#fecdd3;
+      background:#fff1f2;
+      color:#b91c1c;
     }
     .keyword-mobile-list {
       display:none;
@@ -1426,6 +1494,7 @@
       }
       #volumeChart.chart { padding-top:0; }
       .keyword-volume { gap:0; }
+      .keyword-volume-summary { display:none; }
       .keyword-total-chart { display:none; }
       .keyword-mobile-list { display:grid; }
       .keyword-count { text-align:left; }
@@ -3129,23 +3198,47 @@
     }
 
     function renderVolumeChart(items = state.articles) {
-      const entries = topBy(items.filter(article => article.keyword), "keyword", 12);
+      const keywordItems = items.filter(article => article.keyword);
+      const entries = topBy(keywordItems, "keyword", 12);
       if (!entries.length) {
         document.getElementById("volumeChart").innerHTML = '<div class="empty">표시할 데이터가 없습니다.</div>';
         return;
       }
+      const total = Math.max(keywordItems.length, 1);
       const max = Math.max(...entries.map(([, value]) => value), 1);
-      const colors = ["#27398c", "#16a34a", "#d97706", "#7c3aed", "#dc2626", "#0891b2", "#475569", "#be185d"];
+      const negativeTotal = keywordItems.filter(article => article.tone === "negative").length;
+      const topShare = Math.round(entries[0][1] / total * 100);
+      const colors = ["#27398c", "#16a34a", "#d97706", "#0891b2", "#7c3aed", "#dc2626", "#475569", "#be185d"];
+      const summary = `
+        <div class="keyword-volume-summary">
+          <div class="keyword-volume-stat"><b>${keywordItems.length.toLocaleString("ko-KR")}</b><span>키워드 매칭 기사</span></div>
+          <div class="keyword-volume-stat"><b>${topShare}%</b><span>1위 항목 점유율</span></div>
+          <div class="keyword-volume-stat"><b>${negativeTotal.toLocaleString("ko-KR")}</b><span>부정 논조 포함</span></div>
+        </div>
+      `;
       const bars = entries.map(([keyword, value], idx) => {
-        const height = value ? Math.max(10, value / max * 160) : 4;
+        const width = value ? Math.max(5, value / max * 100) : 3;
         const color = colors[idx % colors.length];
+        const related = keywordItems.filter(article => article.keyword === keyword);
+        const negative = related.filter(article => article.tone === "negative").length;
+        const topCategory = topBy(related, "category", 1)[0];
+        const share = Math.round(value / total * 100);
+        const categoryText = topCategory ? categoryLabel(topCategory[0]) : "미분류";
         return `
-          <div class="keyword-total-item" title="${escapeHtml(keyword)} ${value.toLocaleString("ko-KR")}건">
-            <div class="keyword-total-bar-wrap" style="--bar-height:${height}px">
-              <div class="keyword-total-value">${value.toLocaleString("ko-KR")}</div>
-              <div class="keyword-total-bar" style="height:${height}px;background:linear-gradient(180deg,${color},#172554)"></div>
+          <div class="keyword-total-item${negative ? " has-risk" : ""}" title="${escapeHtml(keyword)} ${value.toLocaleString("ko-KR")}건">
+            <div class="keyword-rank">${idx + 1}</div>
+            <div class="keyword-total-main">
+              <div class="keyword-total-head">
+                <div class="keyword-total-label"><span>${escapeHtml(keyword)}</span></div>
+                <div class="keyword-total-value">${value.toLocaleString("ko-KR")}건</div>
+              </div>
+              <div class="keyword-total-track"><div class="keyword-total-bar" style="width:${width}%;--bar-color:${color}"></div></div>
+              <div class="keyword-total-meta">
+                <span>점유 ${share}%</span>
+                <span>${escapeHtml(categoryText)}</span>
+                ${negative ? `<span class="negative">부정 ${negative.toLocaleString("ko-KR")}건</span>` : ""}
+              </div>
             </div>
-            <div class="keyword-total-label"><span>${escapeHtml(keyword)}</span></div>
           </div>
         `;
       }).join("");
@@ -3156,7 +3249,7 @@
           <div class="keyword-mobile-track"><div class="keyword-mobile-fill" style="width:${Math.max(5, value / max * 100)}%"></div></div>
         </div>
       `).join("");
-      document.getElementById("volumeChart").innerHTML = `<div class="keyword-volume"><div class="keyword-total-chart">${bars}</div><div class="keyword-mobile-list">${mobileRows}</div></div>`;
+      document.getElementById("volumeChart").innerHTML = `<div class="keyword-volume">${summary}<div class="keyword-total-chart">${bars}</div><div class="keyword-mobile-list">${mobileRows}</div></div>`;
     }
 
     function renderToneBoard(targetId, items) {
