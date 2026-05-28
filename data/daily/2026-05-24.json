@@ -9,19 +9,19 @@
     "end": "2026-05-24T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 26,
-    "total_after_cluster": 22,
+    "total_collected": 23,
+    "total_after_cluster": 19,
     "by_category": {
       "own": 0,
       "regulation": 2,
-      "competitor": 13,
+      "competitor": 10,
       "industry": 10,
       "other": 1
     },
     "by_tone": {
       "negative": 0,
       "positive": 0,
-      "neutral": 26
+      "neutral": 23
     },
     "own_negative": 0,
     "own_total": 0,
@@ -161,42 +161,6 @@
       "keyword": "손해보험",
       "description": "전재수 민주당 부산시장 후보는 부산진구 NH투자증권빌딩, 김부겸 민주당 대구시장 후보는 달서구 한화손해보험빌딩에서 선거사무소 개소식을 열었다. 김경수 민주당 경남지사 후보의 선거사무소는 창원시 성산구...",
       "pub_date": "Sun, 24 May 2026 06:01:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[mhn포토] 안재희, 버디 브이로 마무리",
-      "link": "https://mhnse.com/news/articleView.html?idxno=1387107",
-      "source": "mhn포토",
-      "keyword": "손해보험",
-      "description": "본선·6,670야드)에서 한국여자프로골프(KLPGA) 아홉 번째 대회인 ‘제14회 E1 채리티 오픈’(총상금 10억 원 우승상금 1억 8천만 원) 2라운드가 열렸다. 안재희(DB손해보험)가 17번홀 경기를 펼치고 있다.",
-      "pub_date": "Sun, 24 May 2026 01:32:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[mhn포토] 안재희, 버디 성공 후 파이팅",
-      "link": "https://mhnse.com/news/articleView.html?idxno=1387102",
-      "source": "mhn포토",
-      "keyword": "손해보험",
-      "description": "본선·6,670야드)에서 한국여자프로골프(KLPGA) 아홉 번째 대회인 ‘제14회 E1 채리티 오픈’(총상금 10억 원 우승상금 1억 8천만 원) 2라운드가 열렸다. 안재희(DB손해보험)가 17번홀 경기를 펼치고 있다.",
-      "pub_date": "Sun, 24 May 2026 01:32:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "[mhn포토] 엄지 척 안재희, 버디 성공했어요",
-      "link": "https://mhnse.com/news/articleView.html?idxno=1387099",
-      "source": "mhn포토",
-      "keyword": "손해보험",
-      "description": "본선·6,670야드)에서 한국여자프로골프(KLPGA) 아홉 번째 대회인 ‘제14회 E1 채리티 오픈’(총상금 10억 원 우승상금 1억 8천만 원) 2라운드가 열렸다. 안재희(DB손해보험)가 17번홀 경기를 펼치고 있다.",
-      "pub_date": "Sun, 24 May 2026 01:31:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
