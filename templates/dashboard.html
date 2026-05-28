@@ -1124,6 +1124,52 @@
       border-color:var(--incar);
       color:#fff;
     }
+    .release-layout {
+      display:grid;
+      grid-template-columns:minmax(0,.95fr) minmax(380px,1.05fr);
+      gap:16px;
+      align-items:start;
+    }
+    .form-span-2 { grid-column:1 / -1; }
+    .release-output {
+      min-height:520px;
+      max-height:none;
+      white-space:pre-wrap;
+      color:#182230;
+      line-height:1.64;
+      font-size:13px;
+      font-weight:800;
+      overflow:visible;
+    }
+    .release-output.is-empty {
+      color:var(--muted);
+      display:grid;
+      place-items:center;
+      text-align:center;
+    }
+    .release-quick {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+      margin-top:12px;
+    }
+    .release-quick .focus-box {
+      min-height:76px;
+      display:grid;
+      align-content:center;
+    }
+    .release-quick b {
+      display:block;
+      color:var(--incar-dark);
+      font-size:17px;
+      line-height:1;
+      margin-bottom:5px;
+    }
+    .release-quick span {
+      color:var(--muted);
+      font-size:11px;
+      font-weight:900;
+    }
     .keyword-category-grid {
       display:grid;
       grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
@@ -1319,6 +1365,8 @@
         min-width:38px;
       }
       .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
+      .release-layout { grid-template-columns:1fr; }
+      .release-quick { grid-template-columns:1fr; }
       .hero-briefs,.media-flow,.insight-grid,.ad-kpis,.ops-grid { grid-template-columns:1fr; }
       .ad-dashboard-grid,.ad-filter-grid,.ad-summary-grid { grid-template-columns:1fr; }
       .ad-filter-grid { padding:13px; gap:11px; }
@@ -1342,6 +1390,7 @@
       .hero { padding:18px; }
       .hero h2 { font-size:23px; }
       .metric-grid,.form-grid { grid-template-columns:1fr; }
+      .form-span-2 { grid-column:auto; }
       .keyword-category-grid,.url-input-row { grid-template-columns:1fr; }
       .url-input-row .btn { width:100%; justify-content:center; }
       .actions .btn span { display:none; }
@@ -1517,6 +1566,7 @@
         <button class="nav" data-page="analysis"><i data-lucide="pie-chart"></i> 미디어 분석 리포트</button>
         <button class="nav" data-page="scrap"><i data-lucide="bookmark"></i> 주요 기사 스크랩</button>
         <button class="nav danger" data-page="risk"><i data-lucide="siren"></i> 리스크 대응 센터</button>
+        <button class="nav" data-page="release"><i data-lucide="file-pen-line"></i> 보도자료 작성</button>
         <div class="group-title">Relationship & Budget</div>
         <button class="nav" data-page="media"><i data-lucide="newspaper"></i> 언론사 관리</button>
         <button class="nav" data-page="reporters"><i data-lucide="users"></i> 기자 관리</button>
@@ -1732,6 +1782,66 @@
           </div>
         </section>
 
+        <section class="page" id="page-release">
+          <div class="release-layout">
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="file-pen-line"></i> 보도자료 작성</h2>
+              <div class="form-grid">
+                <div class="field">
+                  <label>자료 유형</label>
+                  <select id="releaseType">
+                    <option>성과 발표</option>
+                    <option>서비스/상품</option>
+                    <option>캠페인/행사</option>
+                    <option>제휴/협약</option>
+                    <option>수상/인증</option>
+                    <option>안내/입장</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>작성 톤</label>
+                  <select id="releaseTone">
+                    <option>공식/전문</option>
+                    <option>홍보/친근</option>
+                    <option>위기관리/중립</option>
+                  </select>
+                </div>
+                <div class="field"><label>배포 예정일</label><input id="releaseDate" type="date"></div>
+                <div class="field"><label>담당 부서</label><input id="releaseTeam" placeholder="예: 마케팅부"></div>
+                <div class="field form-span-2"><label>핵심 주제</label><input id="releaseTopic" placeholder="예: 인카금융서비스, GA 업계 디지털 영업지원 강화"></div>
+                <div class="field form-span-2"><label>희망 제목</label><input id="releaseHeadline" placeholder="비워두면 자동으로 제목을 구성합니다."></div>
+                <div class="field form-span-2"><label>리드문 핵심</label><textarea id="releaseLead" rows="3" placeholder="누가, 무엇을, 왜 발표하는지 한두 문장으로 입력하세요."></textarea></div>
+                <div class="field form-span-2"><label>본문 주요 내용</label><textarea id="releaseBody" rows="7" placeholder="주요 내용, 배경, 기대 효과를 줄바꿈으로 입력하세요."></textarea></div>
+                <div class="field form-span-2"><label>근거 수치 / 팩트</label><textarea id="releaseProof" rows="4" placeholder="실적, 일정, 참여 규모, 수상명, 수치 등 확인된 사실을 입력하세요."></textarea></div>
+                <div class="field"><label>인용자</label><input id="releaseQuoteName" placeholder="예: 홍길동"></div>
+                <div class="field"><label>직함</label><input id="releaseQuoteTitle" placeholder="예: 마케팅부장"></div>
+                <div class="field form-span-2"><label>인용문 핵심</label><textarea id="releaseQuotePoint" rows="3" placeholder="강조하고 싶은 메시지를 입력하세요."></textarea></div>
+                <div class="field"><label>문의처</label><input id="releaseContact" placeholder="예: 마케팅부 02-0000-0000"></div>
+                <div class="field"><label>참고 URL</label><input id="releaseSourceUrl" type="url" inputmode="url" placeholder="관련 기사/자료 링크"></div>
+              </div>
+              <div class="actions" style="justify-content:flex-start;margin-top:12px">
+                <button class="btn primary" onclick="generatePressRelease()"><i data-lucide="sparkles"></i><span>초안 생성</span></button>
+                <button class="btn" onclick="fillReleaseFromLatestArticle()"><i data-lucide="newspaper"></i><span>최근 당사 보도 반영</span></button>
+                <button class="btn" onclick="resetPressReleaseForm()"><i data-lucide="rotate-ccw"></i><span>초기화</span></button>
+              </div>
+              <div class="release-quick">
+                <div class="focus-box"><b id="releaseOwnCount">0</b><span>최근 당사 보도</span></div>
+                <div class="focus-box"><b id="releasePositiveCount">0</b><span>긍정/중립 소재</span></div>
+                <div class="focus-box"><b id="releaseRiskCount">0</b><span>검토 필요 소재</span></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="section-head">
+                <h2 class="panel-title"><i data-lucide="file-text"></i> 보도자료 초안</h2>
+                <div class="actions">
+                  <button class="btn" onclick="copyPressRelease()"><i data-lucide="copy"></i><span>복사</span></button>
+                </div>
+              </div>
+              <div class="focus-box release-output is-empty" id="pressReleaseOutput">입력값을 바탕으로 보도자료 초안을 생성합니다.</div>
+            </div>
+          </div>
+        </section>
+
         <section class="page" id="page-media">
           <div class="grid-2">
             <div class="panel">
@@ -1928,6 +2038,7 @@
     <button data-page="monitor"><i data-lucide="radio"></i><span>모니터링</span></button>
     <button data-page="analysis"><i data-lucide="pie-chart"></i><span>분석</span></button>
     <button data-page="risk"><i data-lucide="siren"></i><span>대응</span></button>
+    <button data-page="release"><i data-lucide="file-pen-line"></i><span>작성</span></button>
     <button data-page="settings"><i data-lucide="settings"></i><span>설정</span></button>
   </nav>
 
@@ -1974,6 +2085,7 @@
       analysis:"미디어 분석 리포트",
       scrap:"주요 기사 스크랩",
       risk:"리스크 대응 센터",
+      release:"보도자료 작성",
       media:"언론사 관리",
       reporters:"기자 관리",
       ads:"광고비 관리",
@@ -2545,6 +2657,7 @@
         });
       });
       setResponseType(state.responseType);
+      preparePressReleaseDefaults();
     }
 
     function switchPage(page) {
@@ -3977,6 +4090,208 @@
       alert("대응 초안이 복사되었습니다.");
     }
 
+    function releaseValue(id) {
+      return document.getElementById(id)?.value.trim() || "";
+    }
+
+    function setReleaseValue(id, value, { overwrite = false } = {}) {
+      const target = document.getElementById(id);
+      if (!target) return;
+      if (overwrite || !target.value.trim()) target.value = value || "";
+    }
+
+    function preparePressReleaseDefaults() {
+      const date = document.getElementById("releaseDate");
+      if (date && !date.value) date.value = new Date().toISOString().slice(0, 10);
+      setReleaseValue("releaseTeam", "마케팅부");
+      renderPressReleaseStats();
+    }
+
+    function releaseLines(value) {
+      return String(value || "")
+        .split(/\n|;|ㆍ|•/)
+        .map(line => line.replace(/^[-*]\s*/, "").trim())
+        .filter(Boolean);
+    }
+
+    function releaseDateLabel(value) {
+      if (!value) return new Date().toLocaleDateString("ko-KR");
+      const [year, month, day] = value.split("-");
+      return `${year}년 ${Number(month)}월 ${Number(day)}일`;
+    }
+
+    function releaseLeadSentence(data) {
+      if (data.lead) return data.lead;
+      const typeMessage = {
+        "성과 발표": "주요 성과와 향후 계획을 공개했다",
+        "서비스/상품": "고객 편의와 영업 현장 지원을 강화하는 신규 서비스를 선보였다",
+        "캠페인/행사": "고객 및 파트너와의 접점을 넓히기 위한 캠페인을 진행한다",
+        "제휴/협약": "전략적 협력을 통해 서비스 경쟁력 강화에 나선다",
+        "수상/인증": "대외 평가에서 의미 있는 성과를 인정받았다",
+        "안내/입장": "관련 사안에 대한 공식 입장과 향후 대응 방향을 밝혔다",
+      }[data.type] || "주요 내용을 공식 발표했다";
+      return `인카금융서비스는 ${releaseDateLabel(data.date)} ${data.topic}와 관련해 ${typeMessage}.`;
+    }
+
+    function releaseHeadline(data) {
+      if (data.headline) return data.headline;
+      const suffix = {
+        "성과 발표": "성과 발표",
+        "서비스/상품": "서비스 경쟁력 강화",
+        "캠페인/행사": "캠페인 진행",
+        "제휴/협약": "전략적 협력 추진",
+        "수상/인증": "대외 성과 인정",
+        "안내/입장": "공식 입장 발표",
+      }[data.type] || "소식 발표";
+      return `인카금융서비스, ${data.topic || suffix} ${suffix}`;
+    }
+
+    function releaseSubTitle(data) {
+      const proof = releaseLines(data.proof)[0];
+      if (proof) return proof;
+      if (data.tone === "위기관리/중립") return "확인된 사실을 중심으로 정확하고 신중하게 설명";
+      if (data.tone === "홍보/친근") return "고객과 영업 현장이 체감할 수 있는 변화에 초점";
+      return "업계 신뢰도와 지속 성장 기반을 강화하는 커뮤니케이션";
+    }
+
+    function buildPressReleaseDraft() {
+      const data = {
+        type: releaseValue("releaseType"),
+        tone: releaseValue("releaseTone"),
+        date: releaseValue("releaseDate"),
+        team: releaseValue("releaseTeam") || "마케팅부",
+        topic: releaseValue("releaseTopic"),
+        headline: releaseValue("releaseHeadline"),
+        lead: releaseValue("releaseLead"),
+        body: releaseValue("releaseBody"),
+        proof: releaseValue("releaseProof"),
+        quoteName: releaseValue("releaseQuoteName"),
+        quoteTitle: releaseValue("releaseQuoteTitle"),
+        quotePoint: releaseValue("releaseQuotePoint"),
+        contact: releaseValue("releaseContact"),
+        sourceUrl: releaseValue("releaseSourceUrl"),
+      };
+      const bodyLines = releaseLines(data.body);
+      const proofLines = releaseLines(data.proof);
+      const headline = releaseHeadline(data);
+      const lead = releaseLeadSentence(data);
+      const firstParagraph = data.lead
+        ? `인카금융서비스는 ${releaseDateLabel(data.date)} ${data.topic || "주요 현안"}과 관련해 다음 내용을 발표했다. ${lead}`
+        : lead;
+      const subtitle = releaseSubTitle(data);
+      const paragraphs = bodyLines.length ? bodyLines : [
+        "이번 발표는 고객 신뢰와 영업 현장 지원 역량을 높이기 위한 실행 과제의 하나로 마련됐다.",
+        "인카금융서비스는 관련 부서와 협업해 실행 계획을 구체화하고, 향후 진행 상황을 단계적으로 공유할 예정이다.",
+      ];
+      const quote = data.quotePoint
+        ? `"${data.quotePoint}"${data.quoteName ? `라고 ${data.quoteName}${data.quoteTitle ? ` ${data.quoteTitle}` : ""}은 말했다.` : "라고 회사 관계자는 말했다."}`
+        : `"이번 발표가 고객과 영업 현장에 실질적인 도움이 될 수 있도록 실행력을 높이겠다"고 회사 관계자는 말했다.`;
+      const proofBlock = proofLines.length
+        ? proofLines.map(line => `- ${line}`).join("\n")
+        : "- 배포 전 수치, 일정, 명칭, 외부 인용 가능 여부를 최종 확인";
+      const bodyBlock = paragraphs.map(line => `${line}`).join("\n\n");
+      const contact = data.contact || `${data.team} 보도자료 담당`;
+      return [
+        "[보도자료 초안]",
+        `배포일: ${releaseDateLabel(data.date)} | 배포: ${data.team}`,
+        "",
+        `제목: ${headline}`,
+        `부제: ${subtitle}`,
+        "",
+        "[본문]",
+        firstParagraph,
+        "",
+        bodyBlock,
+        "",
+        quote,
+        "",
+        "[주요 근거]",
+        proofBlock,
+        "",
+        "[회사 소개]",
+        "인카금융서비스는 보험 판매 전문성과 영업 지원 역량을 바탕으로 고객에게 적합한 금융·보험 서비스를 제공하는 GA 기업입니다. 회사는 현장 중심의 서비스 경쟁력과 책임 있는 커뮤니케이션을 강화하고 있습니다.",
+        "",
+        `[문의] ${contact}`,
+        data.sourceUrl ? `[참고] ${data.sourceUrl}` : "",
+        "",
+        "[배포 전 확인]",
+        "- 제목, 수치, 일정, 고유명사, 직함 최종 확인",
+        "- 법무·컴플라이언스 검토 필요 여부 확인",
+        "- 이미지, 로고, 첨부자료, 기자 문의 응대 담당자 확인",
+      ].filter(Boolean).join("\n");
+    }
+
+    function generatePressRelease() {
+      const topic = releaseValue("releaseTopic");
+      const lead = releaseValue("releaseLead");
+      const body = releaseValue("releaseBody");
+      if (!topic && !lead && !body) return alert("핵심 주제나 본문 주요 내용을 입력해 주세요.");
+      if (!confirm("보도자료 초안을 생성할까요?")) return;
+      const output = document.getElementById("pressReleaseOutput");
+      output.textContent = buildPressReleaseDraft();
+      output.classList.remove("is-empty");
+    }
+
+    function fillReleaseFromLatestArticle() {
+      const article = state.articles
+        .filter(item => item.category === "own")
+        .sort((a,b) => {
+          const toneScore = tone => tone === "positive" ? 0 : tone === "neutral" ? 1 : 2;
+          return toneScore(a.tone) - toneScore(b.tone) || latestArticleSort(a,b);
+        })[0];
+      if (!article) return alert("반영할 최근 당사 보도가 없습니다.");
+      setReleaseValue("releaseTopic", article.keyword || article.title || "", { overwrite:true });
+      setReleaseValue("releaseHeadline", article.title || "", { overwrite:false });
+      setReleaseValue("releaseLead", article.summary || `${article.press || "언론"} 보도 내용을 바탕으로 홍보 메시지를 정리합니다.`, { overwrite:true });
+      setReleaseValue("releaseBody", [
+        article.summary || article.title || "",
+        `${article.press || "언론사"} 보도에서 확인된 핵심 키워드는 '${article.keyword || "관련 이슈"}'입니다.`,
+        "당사 관점에서 고객 신뢰, 영업 현장 지원, 업계 내 차별성을 중심으로 메시지를 정리합니다.",
+      ].filter(Boolean).join("\n"), { overwrite:true });
+      setReleaseValue("releaseProof", [
+        `보도 언론사: ${article.press || article.source || "확인 필요"}`,
+        `보도 시각: ${article.published_label || article.date || "확인 필요"}`,
+        `분류/논조: ${article.category_label || ""} / ${article.tone_label || ""}`,
+      ].join("\n"), { overwrite:true });
+      setReleaseValue("releaseSourceUrl", article.link || "", { overwrite:true });
+      switchPage("release");
+      document.getElementById("releaseTopic")?.focus();
+    }
+
+    function copyPressRelease() {
+      const output = document.getElementById("pressReleaseOutput");
+      const text = output?.textContent?.trim() || "";
+      if (!text || output.classList.contains("is-empty")) return alert("복사할 보도자료 초안이 없습니다.");
+      navigator.clipboard?.writeText(text);
+      alert("보도자료 초안이 복사되었습니다.");
+    }
+
+    function resetPressReleaseForm() {
+      if (!confirm("보도자료 입력값과 초안을 초기화할까요?")) return;
+      [
+        "releaseTopic","releaseHeadline","releaseLead","releaseBody","releaseProof",
+        "releaseQuoteName","releaseQuoteTitle","releaseQuotePoint","releaseContact","releaseSourceUrl"
+      ].forEach(id => setReleaseValue(id, "", { overwrite:true }));
+      preparePressReleaseDefaults();
+      const output = document.getElementById("pressReleaseOutput");
+      if (output) {
+        output.textContent = "입력값을 바탕으로 보도자료 초안을 생성합니다.";
+        output.classList.add("is-empty");
+      }
+    }
+
+    function renderPressReleaseStats() {
+      const own = state.articles.filter(article => article.category === "own");
+      const usable = own.filter(article => article.tone !== "negative");
+      const risk = own.filter(article => article.tone === "negative");
+      const ownTarget = document.getElementById("releaseOwnCount");
+      const usableTarget = document.getElementById("releasePositiveCount");
+      const riskTarget = document.getElementById("releaseRiskCount");
+      if (ownTarget) ownTarget.textContent = own.length.toLocaleString("ko-KR");
+      if (usableTarget) usableTarget.textContent = usable.length.toLocaleString("ko-KR");
+      if (riskTarget) riskTarget.textContent = risk.length.toLocaleString("ko-KR");
+    }
+
     function exportCsv() {
       const headers = ["date","press","category_label","tone_label","risk","keyword","title","link"];
       const rows = state.filtered.map(a => headers.map(key => `"${String(a[key] || "").replace(/"/g,'""')}"`).join(","));
@@ -4004,6 +4319,7 @@
       renderArticles();
       renderAnalysis();
       renderScraps();
+      renderPressReleaseStats();
       renderMedia();
       renderReporters();
       renderAds();
