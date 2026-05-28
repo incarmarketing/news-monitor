@@ -630,7 +630,14 @@
     .watch-title { margin:0 0 7px; color:var(--incar-dark); font-size:17px; font-weight:900; }
     .watch-copy { color:#344054; font-size:13px; font-weight:800; line-height:1.55; }
     .watch-meta { margin-top:10px; display:flex; flex-wrap:wrap; gap:7px; }
-    .notification-list { display:grid; gap:8px; }
+    .ops-row { align-items:stretch; }
+    .ops-row > .panel { height:100%; }
+    .notification-panel {
+      display:flex;
+      flex-direction:column;
+      min-height:178px;
+    }
+    .notification-list { display:grid; gap:8px; align-content:start; }
     .notification-item {
       width:100%;
       border:1px solid var(--line);
@@ -652,6 +659,23 @@
       font-weight:900;
     }
     .notification-meta { color:var(--muted); font-size:12px; font-weight:800; }
+    .notification-more {
+      margin-top:auto;
+      width:100%;
+      min-height:34px;
+      border:1px dashed #cbd7ec;
+      border-radius:8px;
+      background:#f8fbff;
+      color:var(--incar);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      font-size:12px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .notification-more:hover { background:#eef4ff; border-style:solid; }
     .status-ok { color:var(--green); }
     .status-fail { color:var(--red); }
     .modal-backdrop {
@@ -1349,7 +1373,7 @@
             <div class="ops-grid" id="opsStatus"></div>
           </div>
 
-          <div class="grid-2">
+          <div class="grid-2 ops-row">
             <div class="panel watch-card">
               <h2 class="panel-title"><i data-lucide="scan-search"></i> 부정기사 탐색</h2>
               <div class="watch-asset" id="negativeWatchAsset">
@@ -1361,7 +1385,7 @@
                 </div>
               </div>
             </div>
-            <div class="panel">
+            <div class="panel notification-panel">
               <h2 class="panel-title"><i data-lucide="message-circle"></i> 알림톡 발송 이력</h2>
               <div class="notification-list" id="notificationHistory"></div>
             </div>
@@ -1711,6 +1735,7 @@
       adFilters: { year:"", month:"", media:"", type:"" },
       responseType: "press",
       notifications: [],
+      notificationExpanded: false,
       negativeWatchRuns: [],
       issueAutoFilled: false,
       riskHoldTimer: null,
@@ -2320,7 +2345,8 @@
     function renderNotificationHistory() {
       const target = document.getElementById("notificationHistory");
       if (!target) return;
-      const rows = state.notifications.slice(0, 5);
+      const collapsedCount = 2;
+      const rows = state.notificationExpanded ? state.notifications : state.notifications.slice(0, collapsedCount);
       target.innerHTML = rows.map((item, index) => {
         const ok = item.status === "success";
         return `
@@ -2333,6 +2359,27 @@
           </button>
         `;
       }).join("") || '<div class="empty">아직 발송 이력이 없습니다.</div>';
+    }
+
+    const renderNotificationHistoryBase = renderNotificationHistory;
+    renderNotificationHistory = function() {
+      renderNotificationHistoryBase();
+      const target = document.getElementById("notificationHistory");
+      const collapsedCount = 2;
+      if (!target || state.notifications.length <= collapsedCount) return;
+      const remaining = state.notifications.length - collapsedCount;
+      target.insertAdjacentHTML("beforeend", `
+        <button class="notification-more" onclick="toggleNotificationHistory()" aria-expanded="${state.notificationExpanded ? "true" : "false"}">
+          <i data-lucide="${state.notificationExpanded ? "chevron-up" : "chevron-down"}"></i>
+          <span>${state.notificationExpanded ? "접기" : `${remaining.toLocaleString("ko-KR")}건 더 보기`}</span>
+        </button>
+      `);
+      lucide.createIcons();
+    };
+
+    function toggleNotificationHistory() {
+      state.notificationExpanded = !state.notificationExpanded;
+      renderNotificationHistory();
     }
 
     function notificationTypeLabel(type) {
@@ -3232,6 +3279,18 @@
       }
     }
 
+    async function fetchAllSupabaseRows(tableName, query, pageSize = 1000, maxRows = 10000) {
+      const rows = [];
+      for (let offset = 0; offset < maxRows; offset += pageSize) {
+        const connector = query ? "&" : "";
+        const page = await supabaseRest(`${tableName}?${query}${connector}limit=${pageSize}&offset=${offset}`);
+        if (!Array.isArray(page)) return offset === 0 ? null : rows;
+        rows.push(...page);
+        if (page.length < pageSize) break;
+      }
+      return rows;
+    }
+
     async function loadManagementDataFromSupabase() {
       const [mediaRows, reporterRows, adRows] = await Promise.all([
         supabaseRest("media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
@@ -3624,9 +3683,8 @@
         const query = [
           "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status",
           "order=pub_date.desc.nullslast,report_date.desc,score.desc",
-          "limit=2000",
         ].join("&");
-        const rows = await supabaseRest(`news_articles?${query}`);
+        const rows = await fetchAllSupabaseRows("news_articles", query, 1000, 10000);
         if (!Array.isArray(rows)) return null;
         const keywords = await fetchSupabaseKeywords();
         const reportRuns = await fetchSupabaseReportRuns();
@@ -3683,7 +3741,7 @@
         const query = [
           "select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at",
           "order=sent_at.desc,created_at.desc",
-          "limit=20",
+          "limit=100",
         ].join("&");
         const rows = await supabaseRest(`notification_sends?${query}`);
         return Array.isArray(rows) ? rows : [];
