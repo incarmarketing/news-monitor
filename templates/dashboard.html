@@ -308,12 +308,12 @@
       background:#fff;
       border:1px solid var(--line);
       border-radius:8px;
-      padding:12px 14px;
-      min-height:64px;
+      padding:10px 12px;
+      min-height:56px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px;
+      gap:10px;
       box-shadow:0 1px 2px rgba(16,24,40,.04);
     }
     .metric::before {
@@ -329,8 +329,8 @@
     .metric.market::before { background:var(--green); }
     .metric.own::before { background:var(--blue); }
     .metric-icon {
-      width:36px;
-      height:36px;
+      width:32px;
+      height:32px;
       border-radius:8px;
       display:grid;
       place-items:center;
@@ -341,8 +341,24 @@
     }
     .metric.negative .metric-icon { color:var(--red); background:#fff1f2; border-color:#fecdd3; }
     .metric.market .metric-icon { color:var(--green); background:#f0fdf4; border-color:#bbf7d0; }
-    .metric-copy { min-width:0; display:grid; gap:4px; justify-items:end; text-align:right; }
-    .metric strong { color:var(--incar-dark); font-size:26px; line-height:1; }
+    .metric-copy {
+      min-width:0;
+      width:100%;
+      display:flex;
+      align-items:baseline;
+      justify-content:flex-end;
+      gap:7px;
+      text-align:right;
+      white-space:nowrap;
+    }
+    .metric strong { color:var(--incar-dark); font-size:23px; line-height:1; }
+    .metric strong::after {
+      content:"건";
+      margin-left:2px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+    }
     .metric span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.2; }
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
     .grid-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
@@ -672,20 +688,20 @@
     }
     .watch-card {
       position:relative;
-      min-height:176px;
+      min-height:auto;
       overflow:hidden;
       border:1px solid #cfe0ff;
       background:linear-gradient(135deg,#f8fbff 0%,#eef5ff 100%);
     }
     .watch-asset {
       display:grid;
-      grid-template-columns:86px minmax(0,1fr);
-      gap:16px;
+      grid-template-columns:74px minmax(0,1fr);
+      gap:12px;
       align-items:center;
     }
     .watch-radar {
-      width:76px;
-      height:76px;
+      width:66px;
+      height:66px;
       border-radius:50%;
       position:relative;
       display:grid;
@@ -704,8 +720,8 @@
     }
     .watch-radar::after { inset:18px; border-color:rgba(220,38,38,.18); }
     .watch-sweep {
-      width:34px;
-      height:34px;
+      width:30px;
+      height:30px;
       border-radius:100% 0 0 0;
       transform-origin:100% 100%;
       background:linear-gradient(45deg,rgba(39,57,140,.36),rgba(39,57,140,0));
@@ -716,27 +732,27 @@
     }
     .watch-radar i { color:var(--incar); z-index:1; }
     @keyframes radarSweep { to { transform:rotate(360deg); } }
-    .watch-title { margin:0 0 5px; color:var(--incar-dark); font-size:17px; font-weight:900; }
-    .watch-copy { color:#344054; font-size:13px; font-weight:800; line-height:1.42; display:grid; gap:3px; }
-    .watch-copy strong { color:#182230; font-size:14px; line-height:1.3; }
+    .watch-title { margin:0 0 4px; color:var(--incar-dark); font-size:16px; font-weight:900; }
+    .watch-copy { color:#344054; font-size:13px; font-weight:800; line-height:1.38; display:grid; gap:2px; }
+    .watch-copy strong { color:#182230; font-size:13px; line-height:1.3; }
     .watch-copy span { color:var(--muted); font-size:12px; font-weight:800; }
-    .watch-meta { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
-    .ops-row { align-items:stretch; }
-    .ops-row > .panel { height:100%; }
+    .watch-meta { margin-top:7px; display:flex; flex-wrap:wrap; gap:6px; }
+    .ops-row { align-items:start; }
+    .ops-row > .panel { height:auto; }
     .notification-panel {
       display:flex;
       flex-direction:column;
-      min-height:178px;
+      min-height:auto;
     }
-    .notification-list { display:grid; gap:8px; align-content:start; }
+    .notification-list { display:grid; gap:7px; align-content:start; }
     .notification-item {
       width:100%;
       border:1px solid var(--line);
       background:#fff;
       border-radius:8px;
-      padding:11px;
+      padding:9px 10px;
       display:grid;
-      gap:5px;
+      gap:4px;
       text-align:left;
       cursor:pointer;
     }
@@ -751,12 +767,13 @@
     }
     .notification-meta { color:var(--muted); font-size:12px; font-weight:800; }
     .notification-more {
-      margin-top:auto;
-      width:100%;
-      min-height:34px;
-      border:1px dashed #cbd7ec;
+      justify-self:start;
+      margin-top:2px;
+      min-height:30px;
+      padding:0 12px;
+      border:1px solid #cbd7ec;
       border-radius:8px;
-      background:#f8fbff;
+      background:#fff;
       color:var(--incar);
       display:flex;
       align-items:center;
@@ -1370,8 +1387,8 @@
       .ad-kpi { min-height:72px; padding:13px; }
       .ad-kpi b { font-size:20px; }
       .ad-chart-card { padding:13px; }
-      .watch-asset { grid-template-columns:1fr; }
-      .watch-radar { width:70px; height:70px; }
+      .watch-asset { grid-template-columns:60px minmax(0,1fr); gap:10px; }
+      .watch-radar { width:56px; height:56px; }
       .notification-top { display:grid; }
     }
     @page { size:A4 landscape; margin:7mm; }
@@ -1547,19 +1564,19 @@
           <div class="metric-grid">
             <div class="metric">
               <div class="metric-icon"><i data-lucide="newspaper"></i></div>
-              <div class="metric-copy"><span>분석 기사</span><strong id="metricTotal">0</strong></div>
+              <div class="metric-copy"><span>분석기사</span><strong id="metricTotal">0</strong></div>
             </div>
             <div class="metric own">
               <div class="metric-icon"><i data-lucide="building-2"></i></div>
-              <div class="metric-copy"><span>당사</span><strong id="metricOwn">0</strong></div>
+              <div class="metric-copy"><span>당사언급</span><strong id="metricOwn">0</strong></div>
             </div>
             <div class="metric negative">
               <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
-              <div class="metric-copy"><span>부정 기사</span><strong id="metricNegative">0</strong></div>
+              <div class="metric-copy"><span>부정기사</span><strong id="metricNegative">0</strong></div>
             </div>
             <div class="metric market">
               <div class="metric-icon"><i data-lucide="activity"></i></div>
-              <div class="metric-copy"><span>GA/보험사 동향</span><strong id="metricMarket">0</strong></div>
+              <div class="metric-copy"><span>GA/보험사</span><strong id="metricMarket">0</strong></div>
             </div>
           </div>
 
@@ -2612,28 +2629,6 @@
       return next;
     }
 
-    function median(values) {
-      if (!values.length) return null;
-      const sorted = [...values].sort((a,b) => a - b);
-      const middle = Math.floor(sorted.length / 2);
-      return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-    }
-
-    function actualNegativeWatchCadence() {
-      const dates = state.negativeWatchRuns
-        .map(row => watchDate(row.scanned_at || row.created_at))
-        .filter(Boolean)
-        .sort((a,b) => a - b)
-        .slice(-8);
-      const gaps = [];
-      for (let idx = 1; idx < dates.length; idx += 1) {
-        const minutes = (dates[idx] - dates[idx - 1]) / 60000;
-        if (minutes > 0.5 && minutes < 90) gaps.push(minutes);
-      }
-      const value = median(gaps);
-      return value ? Math.round(value) : null;
-    }
-
     function negativeWatchHealth(latest) {
       const now = new Date();
       const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
@@ -2670,28 +2665,20 @@
       const latest = state.negativeWatchRuns[0];
       const health = negativeWatchHealth(latest);
       const expectedMinutes = 5;
-      const actualCadence = actualNegativeWatchCadence();
-      const scanned = Number(latest?.scanned_count || 0);
-      const negative = Number(latest?.negative_count || 0);
-      const fresh = Number(latest?.new_negative_count || 0);
       const minutesBack = Number(latest?.minutes_back || 5);
-      const cadenceTone = actualCadence && actualCadence > expectedMinutes + 5 ? "warn" : "";
       const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
       const latestLabel = latestDate ? formatDateTime(latestDate) : "최근 수행 없음";
-      const cadenceLabel = actualCadence
-        ? `실제 약 ${actualCadence.toLocaleString("ko-KR")}분`
-        : "실제 주기 계산 중";
+      const checkLabel = latest ? `최근 ${minutesBack.toLocaleString("ko-KR")}분 검사 완료` : "최근 수행 기록 대기";
       target.innerHTML = `
         <div class="watch-radar"><span class="watch-sweep"></span><i data-lucide="radar"></i></div>
         <div>
           <h3 class="watch-title">${escapeHtml(health.title)}</h3>
           <div class="watch-copy">
-            <strong>최근 ${minutesBack.toLocaleString("ko-KR")}분 검사: 기사 ${scanned.toLocaleString("ko-KR")} · 부정 ${negative.toLocaleString("ko-KR")} · 신규 ${fresh.toLocaleString("ko-KR")}</strong>
+            <strong>${escapeHtml(checkLabel)}</strong>
             <span>${escapeHtml(latestLabel)} · ${escapeHtml(health.summary)}</span>
           </div>
           <div class="watch-meta">
             <span class="status-pill ${health.tone}">24시간 ${expectedMinutes}분 주기</span>
-            <span class="status-pill ${cadenceTone}">${escapeHtml(cadenceLabel)}</span>
             ${health.tone === "error" ? '<span class="status-pill error">서비스 점검</span>' : ""}
           </div>
         </div>
@@ -2723,11 +2710,10 @@
       const target = document.getElementById("notificationHistory");
       const collapsedCount = 2;
       if (!target || state.notifications.length <= collapsedCount) return;
-      const remaining = state.notifications.length - collapsedCount;
       target.insertAdjacentHTML("beforeend", `
         <button class="notification-more" onclick="toggleNotificationHistory()" aria-expanded="${state.notificationExpanded ? "true" : "false"}">
           <i data-lucide="${state.notificationExpanded ? "chevron-up" : "chevron-down"}"></i>
-          <span>${state.notificationExpanded ? "접기" : `${remaining.toLocaleString("ko-KR")}건 더 보기`}</span>
+          <span>${state.notificationExpanded ? "접기" : "더보기"}</span>
         </button>
       `);
       lucide.createIcons();
