@@ -46,19 +46,13 @@ def publish() -> Path:
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
 
     index_target = PUBLIC_DIR / "index.html"
+    archive = latest_archive_report()
     try:
         source = latest_report()
     except FileNotFoundError:
         source = None
 
-    if source:
-        archive_target = REPORTS_DIR / source.name
-        shutil.copy2(source, archive_target)
-        shutil.copy2(source, index_target)
-        print(f"Published latest report: {source.name}")
-        print(f"Static index: {index_target}")
-        print(f"Static archive: {archive_target}")
-    elif archive := latest_archive_report():
+    if archive:
         report_name, html_body = archive
         archive_target = REPORTS_DIR / report_name
         archive_target.write_text(html_body, encoding="utf-8")
@@ -66,13 +60,20 @@ def publish() -> Path:
         print(f"Published latest archived report: {report_name}")
         print(f"Static index: {index_target}")
         print(f"Static archive: {archive_target}")
+    elif source:
+        archive_target = REPORTS_DIR / source.name
+        shutil.copy2(source, archive_target)
+        shutil.copy2(source, index_target)
+        print(f"Published latest report: {source.name}")
+        print(f"Static index: {index_target}")
+        print(f"Static archive: {archive_target}")
     else:
         index_target.write_text(
             """<!DOCTYPE html>
 <html lang="ko">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI 언론 브리핑</title></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>언론 동향 보고서</title></head>
 <body style="font-family:Malgun Gothic,Arial,sans-serif; padding:32px;">
-<h1>AI 언론 브리핑</h1>
+<h1>언론 동향 보고서</h1>
 <p>현재 배포된 일일 보고서가 없습니다. 주간/월간 보고서는 아래 링크에서 확인하세요.</p>
 <ul><li><a href="./weekly.html">주간 보고서</a></li><li><a href="./monthly.html">월간 보고서</a></li></ul>
 </body></html>

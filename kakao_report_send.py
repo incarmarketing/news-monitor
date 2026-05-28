@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
@@ -85,22 +86,20 @@ def build_message(report: dict) -> str:
     window_label = absolute_window_label(window) or window.get("label") or "현재 기준"
 
     header = [
-        f"[AI 언론 브리핑] {report.get('date', '')}",
-        f"수집 {window_label} · 리스크 {risk}",
-        f"당사 {own_total}건",
+        f"언론 동향 {report.get('date', '')} · {window_label}",
         (
-            f"긍정 {own_tone.get('positive', 0)} · "
-            f"중립 {own_tone.get('neutral', 0)} · "
-            f"부정 {own_tone.get('negative', metrics.get('own_negative', 0))}"
+            f"리스크 {risk} · 당사 {own_total}건 · "
+            f"부정 {own_tone.get('negative', metrics.get('own_negative', 0))}건"
         ),
+        f"긍정 {own_tone.get('positive', 0)} · 중립 {own_tone.get('neutral', 0)}",
     ]
 
-    lines = header + ["", "오늘의 판단", compact(sections["conclusion"], 48)]
+    lines = header + ["", "동향 분석", compact(sections["conclusion"], 52)]
     if sections["issues"]:
         lines += ["", "핵심 이슈"]
         lines += [f"- {compact(issue, 38)}" for issue in sections["issues"][:2]]
 
-    return "\n".join(lines)[:360]
+    return "\n".join(lines)[:320]
 
 
 def absolute_window_label(window: dict) -> str:
@@ -148,7 +147,7 @@ def parse_briefing(briefing: str) -> dict:
             continue
         section_map.setdefault(current, []).append(line.strip("- ").strip())
 
-    conclusion = first_text(section_map, ["최종 결론", "오늘의 판단", "본문"])
+    conclusion = first_text(section_map, ["최종 결론", "동향 분석", "오늘의 판단", "본문"])
     issues = section_map.get("핵심 이슈", [])
     if not conclusion:
         conclusion = "특이 리스크 없음. 전체 보고서에서 근거 기사와 지표를 확인하세요."
@@ -188,7 +187,7 @@ def main() -> None:
     report = load_latest_daily()
     link = report_link()
     text = build_message(report)
-    title = f"일일 언론 브리핑 {report.get('date', '')}"
+    title = f"일일 언론 동향 {report.get('date', '')}"
     try:
         token = refresh_access_token()
         result = send_text_to_me(token, text, link)

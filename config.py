@@ -32,6 +32,6 @@ SCHEDULE_TIMES = ["08:00", "13:00", "18:00"]
 GEMINI_MODEL = "gemini-2.5-pro"
 MAX_TOKENS = 4096
 
-EMAIL_SUBJECT_PREFIX = "[AI 언론 브리핑]"
+EMAIL_SUBJECT_PREFIX = "[언론 동향]"
 COMPANY_NAME = "인카금융서비스"
 TEAM_NAME = "마케팅부"

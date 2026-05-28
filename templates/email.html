@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ subject_prefix }} {{ date_str }}</title>
+<title>언론 동향 보고서 {{ date_str }}</title>
 <style>
   :root {
     --navy: #172554;
@@ -529,10 +529,10 @@
     background: #f8fafc;
   }
 
-  @page { size: A4; margin: 10mm; }
+  @page { size: A4; margin: 8mm; }
 
   @media print {
-    body { background: #fff; font-size: 10.8px; }
+    body { background: #fff; font-size: 9.6px; line-height: 1.38; }
     .toolbar { display: none; }
     .page {
       width: auto;
@@ -543,40 +543,56 @@
       overflow: visible;
     }
     .hero {
-      padding: 0 0 12px;
+      padding: 0 0 8px;
       color: #0f172a;
       background: #fff;
       border-bottom: 2px solid var(--navy);
     }
+    .hero-top { gap: 10px; align-items: center; }
     .hero-meta,
     .eyebrow { color: var(--muted); }
     .brand-logo { display: none; }
-    h1 { font-size: 18px; }
+    h1 { margin: 4px 0; font-size: 16px; }
     .risk-summary {
       color: #0f172a;
       background: #fff;
       border-color: var(--line);
-      min-height: 58px;
-      flex-basis: 260px;
-      padding: 8px;
+      min-height: 46px;
+      flex-basis: 220px;
+      padding: 6px;
     }
     .risk-badge {
-      flex-basis: 64px;
-      min-height: 44px;
+      flex-basis: 58px;
+      min-height: 38px;
     }
     .risk-copy,
     .risk-message { color: #0f172a; }
     .risk-sub { color: var(--muted); }
-    .risk-message { font-size: 11px; }
-    .kpis { grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px 0; background: #fff; }
-    .kpi { min-height: 62px; padding: 8px; }
-    .kpi .num { font-size: 18px; }
-    .content { padding: 12px 0; }
-    .judgement { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-    .panel { padding: 10px; border-radius: 6px; }
-    .issue-grid { gap: 8px; }
-    .issue { padding: 9px; border-radius: 6px; }
+    .risk-message { font-size: 10px; }
+    .risk-value { font-size: 15px; }
+    .kpis { grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 7px 0; background: #fff; }
+    .kpi { min-height: 46px; padding: 6px; border-radius: 5px; }
+    .kpi .num { font-size: 15px; }
+    .kpi .label { margin-top: 3px; font-size: 9px; }
+    .kpi .sub { margin-top: 2px; font-size: 8.5px; }
+    .content { padding: 8px 0 0; }
+    .section-title { margin-bottom: 5px; font-size: 10.5px; }
+    .judgement { grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+    .panel { padding: 7px; border-radius: 5px; }
+    .conclusion,
+    .actions { border-top-width: 2px; }
+    .conclusion p,
+    .interpretation p { font-size: 9.5px; line-height: 1.36; }
+    .issues { margin-bottom: 6px; }
+    .issue-grid { gap: 6px; }
+    .issue { padding: 7px; border-radius: 5px; }
+    .issue-num { width: 20px; height: 20px; font-size: 9px; }
+    .issue-title { margin-top: 5px; font-size: 10.5px; }
+    .issue-detail { margin-top: 3px; font-size: 9px; }
+    .keywords { gap: 4px; margin-bottom: 7px; }
+    .keyword { padding: 2px 6px; font-size: 8.8px; }
     .evidence {
+      padding-top: 7px;
       break-inside: auto;
       page-break-inside: auto;
     }
@@ -584,36 +600,44 @@
       display: none;
     }
     .tab-panel {
-      display: block;
-      margin-bottom: 10px;
+      display: none !important;
+      margin-bottom: 0;
+    }
+    .tab-panel.active {
+      display: block !important;
     }
     .tab-panel h3 {
-      margin: 0 0 6px;
-      font-size: 12px;
+      margin: 0 0 4px;
+      font-size: 10px;
       color: var(--navy);
     }
+    .tab-desc { display: none; }
     .article-list {
-      gap: 4px;
+      gap: 0;
     }
     .article-list li {
       grid-template-columns: 82px 1fr 54px;
-      padding: 5px 0;
+      padding: 3px 0;
       break-inside: avoid;
       page-break-inside: avoid;
     }
+    .article-list li:nth-child(n+6) { display: none; }
+    .article-id { min-width: 22px; height: 16px; font-size: 8px; }
     .tag {
       padding: 2px 5px;
-      font-size: 9px;
+      font-size: 8px;
     }
+    a { font-size: 9px; line-height: 1.25; }
     .source {
-      font-size: 9.5px;
+      margin-top: 2px;
+      font-size: 8px;
     }
     .impact {
-      font-size: 9px;
-      padding: 3px 4px;
+      font-size: 8px;
+      padding: 2px 4px;
     }
-    .methodology { padding: 8px; gap: 6px; }
-    .footer { padding: 8px 0 0; background: #fff; }
+    .methodology { display: none; }
+    .footer { padding: 6px 0 0; background: #fff; font-size: 8.5px; }
   }
 
   @media screen and (max-width: 720px) {
@@ -802,7 +826,7 @@
             <img class="brand-logo" src="assets/logo.png" alt="INCAR">
             <div class="eyebrow">{{ subject_prefix }}</div>
           </div>
-          <h1>언론 모니터링 보고서</h1>
+          <h1>일일 언론 동향 보고서</h1>
           <div class="hero-meta">{{ company }} · {{ team }} · {{ date_str }} · {{ window.label }} 기준</div>
         </div>
         <div class="risk-summary">
@@ -844,7 +868,7 @@
     <section class="content">
       <div class="judgement">
         <div class="panel conclusion">
-          <h2 class="section-title">오늘의 판단</h2>
+          <h2 class="section-title">동향 분석</h2>
           <p>{{ sections.conclusion }}</p>
         </div>
         <div class="panel interpretation">
@@ -932,7 +956,7 @@
     </section>
 
     <footer class="footer">
-      AI 자동 초안입니다. 긍정/부정은 당사 직접 언급 기사 기준이며, 대외 대응 전 원문과 사실관계를 확인하세요.
+      긍정/부정은 당사 직접 언급 기사 기준입니다. 대외 대응 전 원문과 사실관계를 확인하세요.
     </footer>
   </main>
 </body>

@@ -405,7 +405,7 @@ def build_article_tabs(clustered: list[dict], sections: dict) -> list[dict]:
         {
             "id": "evidence",
             "label": "분석 근거",
-            "description": "오늘의 판단과 핵심 이슈에 직접 연결되는 기사입니다.",
+            "description": "동향 분석과 핵심 이슈에 직접 연결되는 기사입니다.",
             "articles": enrich_articles(select_evidence_articles(clustered, sections, limit=8)),
         },
         {

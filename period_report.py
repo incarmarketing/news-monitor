@@ -30,7 +30,8 @@ LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 KST = timezone(timedelta(hours=9))
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+PERIOD_REPORT_DISABLE_AI = os.getenv("PERIOD_REPORT_DISABLE_AI", "").lower() in {"1", "true", "yes", "y"}
+GEMINI_API_KEY = "" if PERIOD_REPORT_DISABLE_AI else os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -51,12 +52,12 @@ def _fmt_count(value: int | float) -> str:
 
 def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: str) -> str:
     if not GEMINI_API_KEY:
-        return "GEMINI_API_KEY가 없어 AI 종합 분석을 생성하지 않았습니다."
+        return fallback_period_summary(aggregate, top_articles, period_label)
 
     top_text = "\n".join(
         f"- {a.get('_date', '')} | {a.get('_tone', 'neutral')} | 점수 {a.get('_score', 0)} | "
         f"{a.get('title', '')[:90]}"
-        for a in top_articles[:25]
+        for a in top_articles[:14]
     )
     volume_text = "\n".join(
         f"- {d['date']}: 수집 {d['total']}건, 분석 {d['analyzed']}건, 당사 {d['own']}건, "
@@ -73,7 +74,7 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 아래 누적 데이터를 바탕으로 {period_label} 보고서 본문을 작성하세요.
 
 분석 목적:
-- 일일 브리핑처럼 기사 나열을 하지 말고, 기간 전체의 변화와 반복 패턴을 해석합니다.
+- 일일 보고서처럼 기사 나열을 하지 말고, 기간 전체의 변화와 반복 패턴을 해석합니다.
 - 사내 보고용으로 간결하지만, 고객에게 제안해도 어색하지 않은 수준의 전문적인 문장으로 씁니다.
 - 당사가 직접 언급되지 않은 부정 이슈는 업계 리스크로만 다루고, 당사 부정 이슈처럼 표현하지 않습니다.
 
@@ -102,22 +103,20 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 {top_text}
 
 작성 형식:
-## 기간 핵심 판단
-2~3문장. 기간 전체의 결론을 먼저 제시합니다.
+## 기간 핵심 분석
+2문장. 기간 전체의 결론을 먼저 제시합니다.
 
-## 통계로 본 흐름
-- 기사량 변화
-- 당사 보도 흐름
-- 부정/규제성 이슈 흐름
-각 항목은 1~2문장으로 씁니다.
+## 숫자로 본 흐름
+- 기사량
+- 당사 보도
+- 부정/규제성 이슈
+각 항목은 한 문장으로만 씁니다.
 
-## 누적 핵심 이슈
-3개 이내. 각 이슈는 제목과 해석을 한 줄씩만 씁니다.
-
-## 다음 기간 관찰 포인트
-3~5개 bullet. 실제 모니터링에 도움이 되는 키워드와 관찰 이유를 같이 씁니다.
+## 다음 관찰 포인트
+3개 bullet. 실제 모니터링에 도움이 되는 키워드와 관찰 이유를 같이 씁니다.
 
 작성 제한:
+- 전체 650자 이내.
 - 마크다운 굵게 표시(**)를 쓰지 마세요.
 - ###, #### 제목을 쓰지 마세요.
 - 근거 없는 추측을 쓰지 마세요.
@@ -131,6 +130,29 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
             generation_config={"max_output_tokens": config.MAX_TOKENS, "temperature": 0.45},
         )
     return response.text
+
+
+def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_label: str) -> str:
+    market = aggregate["by_category"]["competitor"] + aggregate["by_category"]["industry"]
+    risk_days = aggregate["risk_distribution"]["HIGH"] + aggregate["risk_distribution"]["MEDIUM"]
+    own_negative_total = sum(d.get("value", 0) for d in aggregate.get("daily_own_negative", []))
+    top_keyword = "-"
+    for article in top_articles:
+        if article.get("keyword"):
+            top_keyword = article["keyword"]
+            break
+    return f"""## 기간 핵심 분석
+{period_label} 기준 전체 {aggregate['total_collected']}건 중 분석 기사 {aggregate['total_after_cluster']}건이 집계되었습니다. 당사 언급은 {aggregate['by_category']['own']}건, 주의 이상 일수는 {risk_days}일입니다.
+
+## 숫자로 본 흐름
+- 기사량: {aggregate['period_days']}일/{aggregate.get('period_windows', aggregate['period_days'])}구간 기준 일평균 {aggregate['avg_daily_collected']}건입니다.
+- 당사 보도: 당사 언급 {aggregate['by_category']['own']}건, 당사 부정 {own_negative_total}건입니다.
+- 시장 동향: 경쟁/업계 동향 {market}건, 규제·제도 {aggregate['by_category']['regulation']}건입니다.
+
+## 다음 관찰 포인트
+- {top_keyword}: 반복 노출 여부와 확산 매체를 확인합니다.
+- 당사 부정 기사: 원문 사실관계와 후속 보도를 우선 점검합니다.
+- GA/보험사 동향: 당사 커뮤니케이션 소재로 활용 가능한 흐름을 선별합니다."""
 
 
 def markdown_to_html(md: str) -> str:
@@ -200,6 +222,9 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
 
     aggregate = archiver.aggregate_metrics(daily_data)
     top_articles = archiver.collect_top_articles(daily_data, limit=20)
+    trend_days = aggregate.get("daily_volume", [])[-12:]
+    risk_trend_days = aggregate.get("daily_own_negative", [])[-12:]
+    max_trend_total = max((d["total"] for d in trend_days), default=0)
 
     console.print(
         f"[green]OK[/] {aggregate['period_days']}일/{aggregate.get('period_windows', len(daily_data))}구간 데이터 로드 | "
@@ -228,9 +253,12 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
         company=config.COMPANY_NAME,
         team=config.TEAM_NAME,
         aggregate=aggregate,
+        trend_days=trend_days,
+        risk_trend_days=risk_trend_days,
+        max_trend_total=max_trend_total,
         max_neg=max_neg,
         ai_report_html=markdown_to_html(ai_report),
-        top_articles=top_articles[:12],
+        top_articles=top_articles[:8],
     )
 
     out_path = LOG_DIR / f"{output_slug}_report_{now_kst().strftime('%Y%m%d_%H%M')}.html"
