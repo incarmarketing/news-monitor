@@ -18,6 +18,7 @@ from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn
 from rich.table import Table
 
 import config
+import analyzer
 import report_window
 import supabase_store
 
@@ -147,6 +148,18 @@ DOMAIN_PRESS_MAP = {
     "fnnews.com": "파이낸셜뉴스",
 }
 
+AMBIGUOUS_COLLECTION_KEYWORDS = {"메가", "GA"}
+
+COLLECTION_CONTEXT_WORDS = [
+    "인카금융", "인카금융서비스",
+    "보험", "보험사", "생명보험", "손해보험", "보험대리점", "법인보험대리점",
+    "보험설계사", "설계사", "보험GA", "보험 GA", "GA 보험", "GA업계",
+    "대형 GA", "GA채널", "금융서비스",
+    "금감원", "금융감독원", "금융위", "금융위원회", "보험업법",
+    "수수료", "1200%", "정착지원금", "불완전판매", "내부통제",
+    "브랜드평판", "손보", "생보",
+]
+
 NAVER_OFFICE_ID_MAP = {
     "001": "연합뉴스",
     "005": "국민일보",
@@ -196,12 +209,14 @@ def collect_news() -> list[dict]:
     before = len(all_articles)
     articles = deduplicate(all_articles)
     after_dedup = len(articles)
+    articles = apply_relevance_filter(articles)
+    after_relevance = len(articles)
     articles = apply_exclude_filter(articles)
     after_exclude = len(articles)
     articles = apply_collection_window_filter(articles, window)
     after_window = len(articles)
 
-    print_collection_stats(stats, before, after_dedup, after_exclude, after_window, window["label"])
+    print_collection_stats(stats, before, after_dedup, after_relevance, after_exclude, after_window, window["label"])
     return articles
 
 
@@ -465,6 +480,38 @@ def apply_exclude_filter(articles: list[dict]) -> list[dict]:
     return result
 
 
+def apply_relevance_filter(articles: list[dict]) -> list[dict]:
+    return [article for article in articles if is_relevant_article(article)]
+
+
+def is_relevant_article(article: dict) -> bool:
+    text = f"{article.get('title', '')} {article.get('description', '')}"
+    keyword = str(article.get("keyword", "")).strip()
+    if not text.strip():
+        return False
+
+    if has_collection_context(text):
+        return True
+
+    if keyword and keyword in text and not keyword_requires_context(keyword):
+        return True
+
+    return False
+
+
+def has_collection_context(text: str) -> bool:
+    if analyzer.contains_competitor_word(text):
+        return True
+    return any(word in text for word in COLLECTION_CONTEXT_WORDS)
+
+
+def keyword_requires_context(keyword: str) -> bool:
+    normalized = re.sub(r"\s+", "", keyword)
+    if normalized in AMBIGUOUS_COLLECTION_KEYWORDS:
+        return True
+    return len(normalized) <= 2
+
+
 def apply_recency_filter(articles: list[dict], hours_back: int) -> list[dict]:
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours_back)
     result = []
@@ -502,6 +549,7 @@ def print_collection_stats(
     stats: list[tuple[str, int, int]],
     before: int,
     dedup: int,
+    relevant: int,
     excluded: int,
     in_window: int,
     window_label: str,
@@ -514,6 +562,7 @@ def print_collection_stats(
         table.add_row(keyword, str(naver), str(google))
     console.print(table)
     console.print(
-        f"[green]수집 {before}건[/] -> 중복제거 {dedup}건 -> 제외어 필터 {excluded}건 "
+        f"[green]수집 {before}건[/] -> 중복제거 {dedup}건 -> 업종 관련성 {relevant}건 "
+        f"-> 제외어 필터 {excluded}건 "
         f"-> {window_label} {in_window}건"
     )

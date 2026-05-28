@@ -17,7 +17,7 @@ REGULATION_WORDS = [
 
 COMPETITOR_WORDS = [
     "굿리치", "에이플러스에셋", "리치앤코", "한화생명금융서비스", "마이금융파트너",
-    "DB금융서비스", "메가", "글로벌금융판매", "지에이코리아", "GA코리아",
+    "DB금융서비스", "메가", "메가금융서비스", "글로벌금융판매", "지에이코리아", "GA코리아",
     "한국보험금융", "프라임에셋", "리더스금융판매", "유퍼스트",
     "피플라이프", "메트라이프금융서비스", "삼성생명금융서비스", "메트리치",
     "더블유에셋", "라이프원", "더비전에셋", "DB MnS", "유금융서비스",
@@ -33,6 +33,15 @@ COMPETITOR_WORDS = [
     "메리츠화재", "한화손해보험", "한화손보", "흥국화재", "롯데손해보험",
     "롯데손보", "NH농협손해보험", "농협손보", "MG손해보험", "AXA손해보험",
     "악사손보", "AIG손해보험", "캐롯손해보험", "카카오페이손해보험",
+]
+
+AMBIGUOUS_COMPETITOR_WORDS = {"메가"}
+
+DOMAIN_CONTEXT_WORDS = [
+    "보험", "보험사", "생명보험", "손해보험", "보험대리점", "법인보험대리점",
+    "GA", "보험GA", "보험설계사", "설계사", "영업가족", "금융서비스",
+    "금감원", "금융감독원", "금융위", "금융위원회", "보험업법", "1200%",
+    "수수료", "정착지원금", "불완전판매", "내부통제", "브랜드평판",
 ]
 
 INDUSTRY_WORDS = [
@@ -126,13 +135,43 @@ def categorize(article: dict) -> str:
     text = article.get("title", "") + " " + article.get("description", "")
     if any(keyword in text for keyword in OWN_NAMES):
         return "own"
-    if any(keyword in text for keyword in COMPETITOR_WORDS):
+    if contains_competitor_word(text):
         return "competitor"
     if any(keyword in text for keyword in REGULATION_WORDS):
         return "regulation"
     if any(keyword in text for keyword in INDUSTRY_WORDS):
         return "industry"
     return "other"
+
+
+def contains_competitor_word(text: str) -> bool:
+    for keyword in COMPETITOR_WORDS:
+        if keyword in AMBIGUOUS_COMPETITOR_WORDS:
+            if is_ambiguous_competitor_match(text, keyword):
+                return True
+            continue
+        if keyword in text:
+            return True
+    return False
+
+
+def is_ambiguous_competitor_match(text: str, keyword: str) -> bool:
+    if re.search(rf"{re.escape(keyword)}(금융|보험|GA|에셋|대리점|서비스)", text):
+        return True
+    standalone = re.search(rf"(?<![0-9A-Za-z가-힣]){re.escape(keyword)}(?![0-9A-Za-z가-힣])", text)
+    return bool(standalone and has_domain_context(text))
+
+
+def has_domain_context(text: str) -> bool:
+    if any(word in text for word in OWN_NAMES):
+        return True
+    if any(word in text for word in REGULATION_WORDS):
+        return True
+    if any(word in text for word in INDUSTRY_WORDS):
+        return True
+    if any(word in text for word in DOMAIN_CONTEXT_WORDS):
+        return True
+    return False
 
 
 def analyze_tone(article: dict) -> str:
