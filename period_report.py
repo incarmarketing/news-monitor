@@ -107,17 +107,17 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 ## 핵심 브리핑
 2문장. 기간 전체에서 보고받는 사람이 먼저 알아야 할 사실을 압축해 씁니다.
 
-## 숫자로 본 변화
-- 기사량
-- 당사 노출
-- 부정/정책성 이슈
-각 항목은 한 문장으로만 씁니다.
+## 기간 해석
+3문장. 원문 수집량과 중복 정리 후 분석 기사 수가 다른 이유, 당사 노출 비중, 업계/정책 흐름을 해석합니다.
 
-## 추적 신호
-3개 bullet. 판단에 필요한 관찰 축과 현재 신호를 같이 씁니다. 제언이나 실행 지시처럼 읽히는 문장은 쓰지 않습니다.
+## 리스크 판독
+3개 bullet. 당사 직접 부정, 정책/감독, GA/보험사 동향을 각각 해석합니다. 화면 숫자를 그대로 반복하지 말고 의미를 설명합니다.
+
+## 관찰 포인트
+2개 bullet. 다음 기간에도 비교해야 할 반복 신호를 씁니다.
 
 작성 제한:
-- 전체 650자 이내.
+- 전체 900자 이내.
 - 마크다운 굵게 표시(**)를 쓰지 마세요.
 - ###, #### 제목을 쓰지 마세요.
 - 근거 없는 추측을 쓰지 마세요.
@@ -138,6 +138,11 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
     market = aggregate["by_category"]["competitor"] + aggregate["by_category"]["industry"]
     risk_days = aggregate["risk_distribution"]["HIGH"] + aggregate["risk_distribution"]["MEDIUM"]
     own_negative_total = sum(d.get("value", 0) for d in aggregate.get("daily_own_negative", []))
+    total_collected = aggregate.get("total_collected", 0)
+    total_after_cluster = aggregate.get("total_after_cluster", 0)
+    regulation = aggregate["by_category"]["regulation"]
+    own = aggregate["by_category"]["own"]
+    conversion = round(total_after_cluster / max(total_collected, 1) * 100)
     top_keyword = "-"
     keyword_counts: dict[str, int] = {}
     for article in top_articles:
@@ -148,17 +153,19 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
     if keyword_counts:
         top_keyword = sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
     return f"""## 핵심 브리핑
-{period_label} 기준 수집 기사 {aggregate['total_collected']}건 중 분석 기사 {aggregate['total_after_cluster']}건이 집계되었습니다. 당사 언급은 {aggregate['by_category']['own']}건, 주의 이상 일자는 {risk_days}일입니다.
+{period_label} 기준 원문 수집은 {total_collected}건, 중복 정리 후 분석 기사는 {total_after_cluster}건입니다. 당사 언급은 {own}건이며, 주의 이상 일자는 {risk_days}일로 집계됐습니다.
 
-## 숫자로 본 변화
-- 기사량: {aggregate['period_days']}일/{aggregate.get('period_windows', aggregate['period_days'])}구간 기준 일평균 {aggregate['avg_daily_collected']}건입니다.
-- 당사 노출: 당사 언급 {aggregate['by_category']['own']}건, 당사 직접 부정 {own_negative_total}건입니다.
-- 시장 신호: GA/보험 동향 {market}건, 정책·감독 {aggregate['by_category']['regulation']}건입니다.
+## 기간 해석
+원문 수집 건수는 슬롯별 검색량을 합산한 값이고, 분석 기사는 중복 링크와 유사 기사를 정리한 실제 검토 기준입니다. 분석 전환율은 {conversion}%로, 같은 이슈가 반복 노출된 비중을 함께 보여줍니다. 당사 직접 보도보다 GA/보험사 및 정책성 보도의 흐름이 더 큰 비중을 차지했습니다.
 
-## 추적 신호
+## 리스크 판독
+- 당사 직접 부정: {own_negative_total}건으로, 당사 평판 리스크는 별도 흐름으로 분리해 봐야 합니다.
+- 정책/감독: {regulation}건으로, 제도 변화가 업계 보도량을 끌어올리는지 보는 축입니다.
+- GA/보험사 동향: {market}건으로, 당사 직접 이슈보다 시장 환경 신호가 강한 구간입니다.
+
+## 관찰 포인트
 - {top_keyword}: 반복 노출 여부와 확산 매체가 기간 비교의 핵심 기준입니다.
-- 당사 직접 부정: 원문 성격과 후속 보도 여부를 별도 흐름으로 추적합니다.
-- GA/보험 동향: 시장 기사량과 정책성 이슈가 동시에 늘어나는 구간을 관찰합니다."""
+- 기사량 변화: 특정 일자에 수집량이 튄 경우 동일 이슈의 재확산인지 신규 이슈인지 구분해야 합니다."""
 
 
 def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
@@ -222,7 +229,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         {"key": "neutral", "label": "중립 기사", "value": tones.get("neutral", 0), "share": round(tones.get("neutral", 0) / total_after_cluster * 100)},
     ]
     density_rows = [
-        {"label": "수집/분석", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"분석 전환 {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
+        {"label": "원문/분석", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"중복 정리 후 {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
         {"label": "모니터링 구간", "value": f"{aggregate.get('period_days', 0)}일 · {aggregate.get('period_windows', 0)}회", "note": f"일평균 {aggregate.get('avg_daily_collected', 0)}건"},
         {"label": "최대 기사량", "value": f"{aggregate.get('max_daily_total', 0):,}건", "note": "일 단위 최고 수집량"},
         {"label": "핵심 키워드", "value": top_keyword, "note": "반복 노출 상위 키워드"},
@@ -344,7 +351,8 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
 
     console.print(
         f"[green]OK[/] {aggregate['period_days']}일/{aggregate.get('period_windows', len(daily_data))}구간 데이터 로드 | "
-        f"전체 {_fmt_count(aggregate['total_collected'])}건 | "
+        f"원문 {_fmt_count(aggregate['total_collected'])}건 | "
+        f"분석 {_fmt_count(aggregate['total_after_cluster'])}건 | "
         f"당사 {aggregate['by_category']['own']}건 | "
         f"부정 {aggregate['by_tone']['negative']}건"
     )

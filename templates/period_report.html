@@ -183,12 +183,18 @@
     font-size:9.5px;
     font-weight:900;
   }
+  .summary-panel {
+    min-height:252px;
+  }
+  .summary-panel .analysis-body {
+    min-height:214px;
+    max-height:none;
+  }
   .analysis-body {
-    max-height:128px;
     overflow:hidden;
     color:#182230;
-    font-size:10.8px;
-    line-height:1.36;
+    font-size:11.3px;
+    line-height:1.45;
   }
   .analysis-body h2 {
     margin:8px 0 4px;
@@ -202,6 +208,12 @@
   .analysis-body p { margin:0 0 6px; }
   .analysis-body ul { margin:4px 0 0; padding-left:15px; }
   .analysis-body li { margin:2px 0; }
+  .trend-log-grid {
+    align-items:stretch;
+  }
+  .trend-log-grid > .panel {
+    height:100%;
+  }
   .tracking-list {
     display:grid;
     gap:5px;
@@ -494,7 +506,9 @@
     .panel { padding:6px; border-radius:5px; break-inside:avoid; page-break-inside:avoid; }
     .panel h2 { margin-bottom:4px; font-size:8.5px; }
     .panel h2 span { font-size:6.5px; }
-    .analysis-body { max-height:92px; font-size:7.4px; line-height:1.17; }
+    .summary-panel { min-height:90px; }
+    .summary-panel .analysis-body { min-height:74px; }
+    .analysis-body { max-height:none; font-size:7.2px; line-height:1.18; }
     .analysis-body h2 { margin:4px 0 2px; padding-left:4px; border-left-width:2px; font-size:7.8px; }
     .analysis-body p { margin-bottom:3px; }
     .analysis-body ul { margin-top:2px; padding-left:10px; }
@@ -552,8 +566,8 @@
   </header>
 
   <section class="kpi-grid">
-    <div class="kpi"><b>{{ aggregate.total_collected }}</b><span>수집 기사</span></div>
     <div class="kpi"><b>{{ aggregate.total_after_cluster }}</b><span>분석 기사</span></div>
+    <div class="kpi"><b>{{ aggregate.total_collected }}</b><span>수집 원문</span></div>
     <div class="kpi"><b>{{ aggregate.by_category.own }}</b><span>당사 언급</span></div>
     <div class="kpi"><b>{{ report_context.own_negative }}</b><span>당사 부정</span></div>
     <div class="kpi"><b>{{ aggregate.by_category.regulation }}</b><span>정책/감독</span></div>
@@ -561,7 +575,7 @@
   </section>
 
   <section class="content-grid">
-    <div class="panel">
+    <div class="panel summary-panel">
       <h2>요약 분석 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
       <div class="analysis-body">{{ ai_report_html | safe }}</div>
     </div>
@@ -599,7 +613,7 @@
     </div>
   </section>
 
-  <section class="content-grid">
+  <section class="content-grid trend-log-grid">
     <div class="panel">
       <h2>일자별 노출 흐름 <span>최근 최대 12일</span></h2>
       <div class="trend">
@@ -615,31 +629,6 @@
         {% endfor %}
       </div>
     </div>
-    <div class="mix-grid">
-      <div class="panel">
-        <h2>관심 영역</h2>
-        {% for item in report_context.categories %}
-        <div class="mix-row">
-          <span>{{ item.label }}</span>
-          <div class="track"><div class="fill {{ item.key }}" style="width:{{ item.share }}%"></div></div>
-          <span>{{ item.value }}</span>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="panel">
-        <h2>리스크 구조</h2>
-        {% for item in report_context.risk_mix %}
-        <div class="mix-row">
-          <span>{{ item.label }}</span>
-          <div class="track"><div class="fill {{ item.key }}" style="width:{{ item.share }}%"></div></div>
-          <span>{{ item.value }}</span>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  <section class="content-grid">
     <div class="panel">
       <h2>일자별 모니터링 로그 <span>최근 {{ report_context.daily_rows|length }}일 · 일 단위 집계</span></h2>
       <table class="ledger-table">
@@ -661,6 +650,31 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+  </section>
+
+  <section class="content-grid">
+    <div class="mix-grid">
+      <div class="panel">
+        <h2>관심 영역</h2>
+        {% for item in report_context.categories %}
+        <div class="mix-row">
+          <span>{{ item.label }}</span>
+          <div class="track"><div class="fill {{ item.key }}" style="width:{{ item.share }}%"></div></div>
+          <span>{{ item.value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="panel">
+        <h2>리스크 구조</h2>
+        {% for item in report_context.risk_mix %}
+        <div class="mix-row">
+          <span>{{ item.label }}</span>
+          <div class="track"><div class="fill {{ item.key }}" style="width:{{ item.share }}%"></div></div>
+          <span>{{ item.value }}</span>
+        </div>
+        {% endfor %}
+      </div>
     </div>
     <div class="panel article-panel">
       <h2>근거 기사 <span>상위 {{ top_articles[:10]|length }}건 · 점수순</span></h2>
