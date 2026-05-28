@@ -529,7 +529,7 @@
 <main class="sheet">
   <header class="report-head">
     <div>
-      <div class="eyebrow"><span class="badge">WEEKLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-25 ~ 2026-05-28</span><span>2026.05.28 23:57</span></div>
+      <div class="eyebrow"><span class="badge">WEEKLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-25 ~ 2026-05-29</span><span>2026.05.29 00:04</span></div>
       <h1>주간 언론 동향 한장 보고서</h1>
       <p class="headline">당사 직접 부정 이슈 1건이 포착되어 부정 추이를 별도 추적하는 기간입니다.</p>
     </div>
@@ -848,5 +848,10 @@
     <span>인카금융서비스 마케팅부</span>
   </footer>
 </main>
+<script>
+  if (new URLSearchParams(window.location.search).get("print") === "1") {
+    window.addEventListener("load", () => setTimeout(() => window.print(), 500));
+  }
+</script>
 </body>
 </html>

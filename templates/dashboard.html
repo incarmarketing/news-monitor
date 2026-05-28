@@ -3831,7 +3831,24 @@
       printCleanupTimer = setTimeout(clearPrintMode, 60000);
     }
 
+    function periodReportUrlForAnalysis() {
+      if (state.analysis.range === "7") return "./weekly.html";
+      if (state.analysis.range === "30" || state.analysis.range === "all") return "./monthly.html";
+      return "";
+    }
+
+    function openPeriodReportForPrint() {
+      const reportUrl = periodReportUrlForAnalysis();
+      if (!reportUrl) return false;
+      const separator = reportUrl.includes("?") ? "&" : "?";
+      const url = `${reportUrl}${separator}print=1&v=${Date.now()}`;
+      const opened = window.open(url, "_blank", "noopener");
+      if (!opened) window.location.href = url;
+      return true;
+    }
+
     function printAnalysisReport() {
+      if (openPeriodReportForPrint()) return;
       document.body.classList.add("print-analysis");
       window.print();
       schedulePrintCleanup();
