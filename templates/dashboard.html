@@ -2875,6 +2875,35 @@
       return latest ? items.filter(a => a.date === latest) : items;
     }
 
+    function uniqueArticleItems(items) {
+      const seen = new Set();
+      return items.filter(article => {
+        const key = article.id || article.link || `${article.date || ""}:${article.title || ""}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function issuePriority(article) {
+      return Number(article.score || 0)
+        + (isCompanyMentionArticle(article) ? 1000 : 0)
+        + (article.category === "own" ? 400 : 0)
+        + (article.tone === "negative" ? 120 : 0);
+    }
+
+    function homeIssueItems(limit = 5) {
+      const latest = latestDate(state.articles);
+      const dayItems = latest ? state.articles.filter(article => article.date === latest) : state.articles;
+      const companyItems = dayItems
+        .filter(isCompanyMentionArticle)
+        .sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b));
+      const otherItems = dayItems
+        .filter(article => !isCompanyMentionArticle(article))
+        .sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b));
+      return uniqueArticleItems([...companyItems, ...otherItems]).slice(0, limit);
+    }
+
     function optionList(select, values, labeler = v => v) {
       select.innerHTML = '<option value="">전체</option>' + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(labeler(v))}</option>`).join("");
     }
@@ -2992,7 +3021,7 @@
       riskEl.textContent = risk;
       riskEl.className = "risk-value";
       riskEl.closest(".risk-card").className = `risk-card risk-${String(risk).toLowerCase()}`;
-      document.getElementById("issueTitle").innerHTML = `<i data-lucide="activity"></i> ${hasActiveFilter({ ignoreDetail:true }) ? "선택 조건 주요 관찰 이슈" : "최신 주요 관찰 이슈"}`;
+      document.getElementById("issueTitle").innerHTML = '<i data-lucide="activity"></i> 최신 주요 관찰 이슈';
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
       document.getElementById("metricTotal").textContent = current.length.toLocaleString("ko-KR");
       document.getElementById("metricOwn").textContent = (cats.own || 0).toLocaleString("ko-KR");
@@ -3316,7 +3345,7 @@
     function renderArticles() {
       document.getElementById("resultCount").textContent = `${state.filtered.length.toLocaleString("ko-KR")}건`;
       document.getElementById("articleList").innerHTML = state.filtered.slice(0,160).map(a => articleCard(a)).join("") || '<div class="empty">표시할 기사가 없습니다.</div>';
-      document.getElementById("topIssues").innerHTML = dashboardFocusedItems().slice().sort((a,b) => b.score - a.score).slice(0,5).map(a => articleCard(a,true)).join("") || '<div class="empty">주요 관찰 이슈가 없습니다.</div>';
+      document.getElementById("topIssues").innerHTML = homeIssueItems(5).map(a => articleCard(a,true)).join("") || '<div class="empty">주요 관찰 이슈가 없습니다.</div>';
       const risks = riskArticles().slice(0,20);
       document.getElementById("riskArticles").innerHTML = risks.map(a => riskResponseCard(a)).join("") || '<div class="empty">현재 당사 부정 리스크 기사가 없습니다.</div>';
       renderFlowFilterBar();
