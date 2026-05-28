@@ -200,21 +200,39 @@
   .analysis-body p { margin:0 0 6px; }
   .analysis-body ul { margin:4px 0 0; padding-left:15px; }
   .analysis-body li { margin:2px 0; }
-  .action-list {
+  .tracking-list {
     display:grid;
-    gap:7px;
-  }
-  .action {
-    display:grid;
-    grid-template-columns:54px minmax(0,1fr);
     gap:8px;
-    padding:8px;
+  }
+  .tracking-card {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:6px 10px;
+    padding:9px 10px;
     border:1px solid #e4e9f2;
     border-radius:7px;
     background:#fbfdff;
   }
-  .action b { color:var(--blue); font-size:10.5px; }
-  .action span { color:#344054; font-size:10.5px; font-weight:800; line-height:1.35; }
+  .tracking-card b {
+    display:block;
+    color:var(--navy);
+    font-size:10.5px;
+    line-height:1.2;
+  }
+  .tracking-card strong {
+    color:var(--blue);
+    font-size:12px;
+    line-height:1.1;
+    white-space:nowrap;
+    text-align:right;
+  }
+  .tracking-card span {
+    grid-column:1/-1;
+    color:#344054;
+    font-size:10.3px;
+    font-weight:800;
+    line-height:1.35;
+  }
   .mix-grid {
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -242,6 +260,8 @@
   .fill.market { background:var(--cyan); }
   .fill.other { background:#94a3b8; }
   .fill.negative { background:var(--red); }
+  .fill.own-negative { background:#e11d48; }
+  .fill.watch-days { background:var(--amber); }
   .fill.neutral { background:var(--slate); }
   .fill.positive { background:var(--green); }
   .trend {
@@ -368,9 +388,10 @@
     .analysis-body p { margin-bottom:3px; }
     .analysis-body ul { margin-top:2px; padding-left:10px; }
     .analysis-body li { margin:0; }
-    .action-list { gap:3px; }
-    .action { grid-template-columns:34px 1fr; gap:4px; padding:4px; border-radius:5px; }
-    .action b,.action span { font-size:7.2px; line-height:1.2; }
+    .tracking-list { gap:3px; }
+    .tracking-card { gap:2px 5px; padding:4px; border-radius:5px; }
+    .tracking-card b,.tracking-card span { font-size:7.2px; line-height:1.2; }
+    .tracking-card strong { font-size:7.8px; }
     .mix-grid { gap:5px; }
     .mix-row { grid-template-columns:42px 1fr 26px; gap:4px; margin-bottom:3px; font-size:7.2px; }
     .track { height:4px; }
@@ -393,9 +414,9 @@
 <main class="sheet">
   <header class="report-head">
     <div>
-      <div class="eyebrow"><span class="badge">MONTHLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-01 ~ 2026-05-28</span><span>2026.05.28 21:50</span></div>
+      <div class="eyebrow"><span class="badge">MONTHLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-01 ~ 2026-05-28</span><span>2026.05.28 23:01</span></div>
       <h1>월간 언론 동향 한장 보고서</h1>
-      <p class="headline">당사 부정 이슈 4건이 확인되어 사실관계와 후속 보도 점검이 최우선입니다.</p>
+      <p class="headline">당사 부정 이슈 4건, 주의 이상 2일로 리스크 관찰 강도가 높은 기간입니다.</p>
     </div>
     <aside class="risk-panel">
       <div class="risk-label">종합 리스크</div>
@@ -415,7 +436,7 @@
 
   <section class="content-grid">
     <div class="panel">
-      <h2>핵심 분석 <span>16일 · 16구간</span></h2>
+      <h2>기간 관찰 요약 <span>16일 · 16구간</span></h2>
       <div class="analysis-body"><h2>기간 핵심 분석</h2>
 <p>월간 기준 전체 1723건 중 분석 기사 700건이 집계되었습니다. 당사 언급은 77건, 주의 이상 일수는 2일입니다.</p>
 <h2>숫자로 본 흐름</h2>
@@ -424,22 +445,22 @@
 <li>당사 보도: 당사 언급 77건, 당사 부정 4건입니다.</li>
 <li>시장 동향: 경쟁/업계 동향 1463건, 규제·제도 132건입니다.</li>
 </ul>
-<h2>다음 관찰 포인트</h2>
+<h2>리스크 관찰 메모</h2>
 <ul>
-<li>인카금융: 반복 노출 여부와 확산 매체를 확인합니다.</li>
-<li>당사 부정 기사: 원문 사실관계와 후속 보도를 우선 점검합니다.</li>
-<li>GA/보험사 동향: 당사 커뮤니케이션 소재로 활용 가능한 흐름을 선별합니다.</li>
+<li>인카금융: 반복 노출 여부와 확산 매체가 핵심 관찰 축입니다.</li>
+<li>당사 부정 기사: 직접 언급 부정 이슈와 후속 보도 여부가 별도 관리 대상입니다.</li>
+<li>GA/보험사 동향: 시장 기사량과 정책성 이슈의 동반 상승 여부가 주요 신호입니다.</li>
 </ul></div>
     </div>
     <div class="panel">
-      <h2>다음 액션 <span>인카금융</span></h2>
-      <div class="action-list">
+      <h2>트래킹 기준 <span>관찰 지표 · 기간 비교</span></h2>
+      <div class="tracking-list">
 
-        <div class="action"><b>리스크</b><span>당사 부정 기사 원문, 후속 보도, 댓글 확산 여부를 먼저 확인합니다.</span></div>
+        <div class="tracking-card"><b>당사 부정</b><strong>4건</strong><span>직접 언급 부정 기사와 후속 보도 발생 여부를 분리해 추적합니다.</span></div>
 
-        <div class="action"><b>동향</b><span>인카금융 키워드의 반복 노출과 관련 매체 확산을 추적합니다.</span></div>
+        <div class="tracking-card"><b>주의 구간</b><strong>2일</strong><span>HIGH/MEDIUM으로 분류된 날짜 수입니다. 기간 내 리스크 밀도를 판단하는 기준입니다.</span></div>
 
-        <div class="action"><b>활용</b><span>긍정 보도와 업계 흐름 중 사내·영업 조직에 공유할 메시지를 선별합니다.</span></div>
+        <div class="tracking-card"><b>주요 축</b><strong>인카금융</strong><span>반복 노출된 키워드와 관련 매체 확산 여부가 기간 비교 기준입니다.</span></div>
 
       </div>
     </div>
@@ -590,24 +611,24 @@
 
       </div>
       <div class="panel">
-        <h2>논조 비중</h2>
+        <h2>부정 리스크 구조</h2>
 
         <div class="mix-row">
-          <span>부정</span>
-          <div class="track"><div class="fill negative" style="width:2%"></div></div>
+          <span>전체 부정</span>
+          <div class="track"><div class="fill negative" style="width:4%"></div></div>
           <span>26</span>
         </div>
 
         <div class="mix-row">
-          <span>중립</span>
-          <div class="track"><div class="fill neutral" style="width:96%"></div></div>
-          <span>1649</span>
+          <span>당사 부정</span>
+          <div class="track"><div class="fill own-negative" style="width:1%"></div></div>
+          <span>4</span>
         </div>
 
         <div class="mix-row">
-          <span>긍정</span>
-          <div class="track"><div class="fill positive" style="width:3%"></div></div>
-          <span>48</span>
+          <span>주의 일수</span>
+          <div class="track"><div class="fill watch-days" style="width:12%"></div></div>
+          <span>2</span>
         </div>
 
       </div>
@@ -795,7 +816,7 @@
   </section>
 
   <footer class="footer">
-    <span>월간 언론 동향 보고서 · 긍정/부정은 당사 직접 언급 기준으로 검토</span>
+    <span>월간 언론 동향 보고서 · 부정 리스크는 당사 직접 언급과 HIGH/MEDIUM 구간 기준으로 추적</span>
     <span>인카금융서비스 마케팅부</span>
   </footer>
 </main>

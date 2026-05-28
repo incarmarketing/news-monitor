@@ -76,7 +76,8 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 
 분석 목적:
 - 일일 보고서처럼 기사 나열을 하지 말고, 기간 전체의 변화와 반복 패턴을 해석합니다.
-- 사내 보고용으로 간결하지만, 고객에게 제안해도 어색하지 않은 수준의 전문적인 문장으로 씁니다.
+- 사내 보고용으로 간결하지만, 의사결정자가 바로 상황을 파악할 수 있는 전문적인 문장으로 씁니다.
+- 제언, 실행 지시, 활용 방안보다 관찰 사실, 변동 방향, 추적해야 할 신호를 우선합니다.
 - 당사가 직접 언급되지 않은 부정 이슈는 업계 리스크로만 다루고, 당사 부정 이슈처럼 표현하지 않습니다.
 
 누적 지표:
@@ -87,7 +88,6 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 - 당사 언급: {aggregate['by_category']['own']}건
 - 규제/제도: {aggregate['by_category']['regulation']}건
 - 경쟁/업계: {aggregate['by_category']['competitor'] + aggregate['by_category']['industry']}건
-- 긍정 톤: {aggregate['by_tone']['positive']}건
 - 중립 톤: {aggregate['by_tone']['neutral']}건
 - 부정 톤: {aggregate['by_tone']['negative']}건
 - HIGH 일수: {aggregate['risk_distribution']['HIGH']}일
@@ -113,8 +113,8 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 - 부정/규제성 이슈
 각 항목은 한 문장으로만 씁니다.
 
-## 다음 관찰 포인트
-3개 bullet. 실제 모니터링에 도움이 되는 키워드와 관찰 이유를 같이 씁니다.
+## 리스크 관찰 메모
+3개 bullet. 판단에 필요한 관찰 축과 현재 신호를 같이 씁니다. 실행을 지시하는 문장은 쓰지 않습니다.
 
 작성 제한:
 - 전체 650자 이내.
@@ -122,6 +122,7 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 - ###, #### 제목을 쓰지 마세요.
 - 근거 없는 추측을 쓰지 마세요.
 - 긴 문장보다 짧고 판단이 분명한 문장을 우선하세요.
+- "공유", "활용", "선별", "대응하세요", "확인합니다"처럼 실행 제안으로 읽히는 표현을 피하세요.
 """
 
     with console.status(f"[cyan]Gemini AI {period_label} 보고서 작성 중...[/]", spinner="dots"):
@@ -138,10 +139,14 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
     risk_days = aggregate["risk_distribution"]["HIGH"] + aggregate["risk_distribution"]["MEDIUM"]
     own_negative_total = sum(d.get("value", 0) for d in aggregate.get("daily_own_negative", []))
     top_keyword = "-"
+    keyword_counts: dict[str, int] = {}
     for article in top_articles:
-        if article.get("keyword"):
-            top_keyword = article["keyword"]
-            break
+        keyword = (article.get("keyword") or "").strip()
+        if not keyword:
+            continue
+        keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
+    if keyword_counts:
+        top_keyword = sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
     return f"""## 기간 핵심 분석
 {period_label} 기준 전체 {aggregate['total_collected']}건 중 분석 기사 {aggregate['total_after_cluster']}건이 집계되었습니다. 당사 언급은 {aggregate['by_category']['own']}건, 주의 이상 일수는 {risk_days}일입니다.
 
@@ -150,10 +155,10 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
 - 당사 보도: 당사 언급 {aggregate['by_category']['own']}건, 당사 부정 {own_negative_total}건입니다.
 - 시장 동향: 경쟁/업계 동향 {market}건, 규제·제도 {aggregate['by_category']['regulation']}건입니다.
 
-## 다음 관찰 포인트
-- {top_keyword}: 반복 노출 여부와 확산 매체를 확인합니다.
-- 당사 부정 기사: 원문 사실관계와 후속 보도를 우선 점검합니다.
-- GA/보험사 동향: 당사 커뮤니케이션 소재로 활용 가능한 흐름을 선별합니다."""
+## 리스크 관찰 메모
+- {top_keyword}: 반복 노출 여부와 확산 매체가 핵심 관찰 축입니다.
+- 당사 부정 기사: 직접 언급 부정 이슈와 후속 보도 여부가 별도 관리 대상입니다.
+- GA/보험사 동향: 시장 기사량과 정책성 이슈의 동반 상승 여부가 주요 신호입니다."""
 
 
 def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
@@ -176,29 +181,35 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     if keyword_counts:
         top_keyword = sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
 
+    watch_days = risk_distribution.get("HIGH", 0) + risk_distribution.get("MEDIUM", 0)
+    total_after_cluster = max(aggregate.get("total_after_cluster", 0), 1)
+    period_days = max(aggregate.get("period_days", 0), 1)
     if risk_level == "HIGH":
-        headline = f"당사 부정 이슈 {own_negative}건이 확인되어 사실관계와 후속 보도 점검이 최우선입니다."
+        headline = f"당사 부정 이슈 {own_negative}건, 주의 이상 {watch_days}일로 리스크 관찰 강도가 높은 기간입니다."
     elif own_negative:
-        headline = f"당사 부정 이슈 {own_negative}건이 있어 리스크 대응센터에서 원문 확인이 필요합니다."
+        headline = f"당사 직접 부정 이슈 {own_negative}건이 포착되어 부정 추이를 별도 추적하는 기간입니다."
     elif own:
-        headline = f"당사 보도 {own}건이 관찰됐고 직접 부정 리스크는 낮은 상태입니다."
+        headline = f"당사 언급 {own}건이 관찰됐고 직접 부정 리스크는 낮은 상태로 유지됐습니다."
     elif regulation >= max(3, market):
-        headline = "정책·감독 이슈 비중이 높아 제도 변화와 업계 반응 추적이 필요합니다."
+        headline = "정책·감독 이슈 비중이 높아 제도 변화와 업계 반응이 주요 관찰 축입니다."
     else:
-        headline = f"GA/보험사 동향 {market}건을 중심으로 시장 흐름을 관찰하는 구간입니다."
+        headline = f"GA/보험사 동향 {market}건을 중심으로 시장 흐름을 추적하는 구간입니다."
 
-    actions = [
+    tracking_points = [
         {
-            "title": "리스크",
-            "body": "당사 부정 기사 원문, 후속 보도, 댓글 확산 여부를 먼저 확인합니다." if own_negative else "현재 당사 직접 부정 이슈는 낮지만 신규 부정 기사 감시는 유지합니다.",
+            "title": "당사 부정",
+            "value": f"{own_negative}건",
+            "body": "직접 언급 부정 기사와 후속 보도 발생 여부를 분리해 추적합니다." if own_negative else "직접 언급 부정 기사는 없고 신규 발생 여부만 추적합니다.",
         },
         {
-            "title": "동향",
-            "body": f"{top_keyword} 키워드의 반복 노출과 관련 매체 확산을 추적합니다.",
+            "title": "주의 구간",
+            "value": f"{watch_days}일",
+            "body": "HIGH/MEDIUM으로 분류된 날짜 수입니다. 기간 내 리스크 밀도를 판단하는 기준입니다.",
         },
         {
-            "title": "활용",
-            "body": "긍정 보도와 업계 흐름 중 사내·영업 조직에 공유할 메시지를 선별합니다.",
+            "title": "주요 축",
+            "value": top_keyword,
+            "body": "반복 노출된 키워드와 관련 매체 확산 여부가 기간 비교 기준입니다.",
         },
     ]
 
@@ -208,11 +219,10 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         {"key": "market", "label": "GA/보험사", "value": market, "share": aggregate["category_share"].get("competitor", 0) + aggregate["category_share"].get("industry", 0)},
         {"key": "other", "label": "기타", "value": cats.get("other", 0), "share": aggregate["category_share"].get("other", 0)},
     ]
-    tone_total = max(sum(tones.values()), 1)
-    tones_view = [
-        {"key": "negative", "label": "부정", "value": tones.get("negative", 0), "share": round(tones.get("negative", 0) / tone_total * 100)},
-        {"key": "neutral", "label": "중립", "value": tones.get("neutral", 0), "share": round(tones.get("neutral", 0) / tone_total * 100)},
-        {"key": "positive", "label": "긍정", "value": tones.get("positive", 0), "share": round(tones.get("positive", 0) / tone_total * 100)},
+    risk_mix = [
+        {"key": "negative", "label": "전체 부정", "value": tones.get("negative", 0), "share": round(tones.get("negative", 0) / total_after_cluster * 100)},
+        {"key": "own-negative", "label": "당사 부정", "value": own_negative, "share": round(own_negative / total_after_cluster * 100)},
+        {"key": "watch-days", "label": "주의 일수", "value": watch_days, "share": round(watch_days / period_days * 100)},
     ]
     return {
         "headline": headline,
@@ -220,9 +230,10 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         "own_negative": own_negative,
         "market": market,
         "top_keyword": top_keyword,
-        "actions": actions,
+        "watch_days": watch_days,
+        "tracking_points": tracking_points,
         "categories": categories,
-        "tones": tones_view,
+        "risk_mix": risk_mix,
     }
 
 

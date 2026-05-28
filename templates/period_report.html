@@ -200,21 +200,39 @@
   .analysis-body p { margin:0 0 6px; }
   .analysis-body ul { margin:4px 0 0; padding-left:15px; }
   .analysis-body li { margin:2px 0; }
-  .action-list {
+  .tracking-list {
     display:grid;
-    gap:7px;
-  }
-  .action {
-    display:grid;
-    grid-template-columns:54px minmax(0,1fr);
     gap:8px;
-    padding:8px;
+  }
+  .tracking-card {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:6px 10px;
+    padding:9px 10px;
     border:1px solid #e4e9f2;
     border-radius:7px;
     background:#fbfdff;
   }
-  .action b { color:var(--blue); font-size:10.5px; }
-  .action span { color:#344054; font-size:10.5px; font-weight:800; line-height:1.35; }
+  .tracking-card b {
+    display:block;
+    color:var(--navy);
+    font-size:10.5px;
+    line-height:1.2;
+  }
+  .tracking-card strong {
+    color:var(--blue);
+    font-size:12px;
+    line-height:1.1;
+    white-space:nowrap;
+    text-align:right;
+  }
+  .tracking-card span {
+    grid-column:1/-1;
+    color:#344054;
+    font-size:10.3px;
+    font-weight:800;
+    line-height:1.35;
+  }
   .mix-grid {
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -242,6 +260,8 @@
   .fill.market { background:var(--cyan); }
   .fill.other { background:#94a3b8; }
   .fill.negative { background:var(--red); }
+  .fill.own-negative { background:#e11d48; }
+  .fill.watch-days { background:var(--amber); }
   .fill.neutral { background:var(--slate); }
   .fill.positive { background:var(--green); }
   .trend {
@@ -368,9 +388,10 @@
     .analysis-body p { margin-bottom:3px; }
     .analysis-body ul { margin-top:2px; padding-left:10px; }
     .analysis-body li { margin:0; }
-    .action-list { gap:3px; }
-    .action { grid-template-columns:34px 1fr; gap:4px; padding:4px; border-radius:5px; }
-    .action b,.action span { font-size:7.2px; line-height:1.2; }
+    .tracking-list { gap:3px; }
+    .tracking-card { gap:2px 5px; padding:4px; border-radius:5px; }
+    .tracking-card b,.tracking-card span { font-size:7.2px; line-height:1.2; }
+    .tracking-card strong { font-size:7.8px; }
     .mix-grid { gap:5px; }
     .mix-row { grid-template-columns:42px 1fr 26px; gap:4px; margin-bottom:3px; font-size:7.2px; }
     .track { height:4px; }
@@ -415,14 +436,14 @@
 
   <section class="content-grid">
     <div class="panel">
-      <h2>핵심 분석 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
+      <h2>기간 관찰 요약 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
       <div class="analysis-body">{{ ai_report_html | safe }}</div>
     </div>
     <div class="panel">
-      <h2>다음 액션 <span>{{ report_context.top_keyword }}</span></h2>
-      <div class="action-list">
-        {% for item in report_context.actions %}
-        <div class="action"><b>{{ item.title }}</b><span>{{ item.body }}</span></div>
+      <h2>트래킹 기준 <span>관찰 지표 · 기간 비교</span></h2>
+      <div class="tracking-list">
+        {% for item in report_context.tracking_points %}
+        <div class="tracking-card"><b>{{ item.title }}</b><strong>{{ item.value }}</strong><span>{{ item.body }}</span></div>
         {% endfor %}
       </div>
     </div>
@@ -456,8 +477,8 @@
         {% endfor %}
       </div>
       <div class="panel">
-        <h2>논조 비중</h2>
-        {% for item in report_context.tones %}
+        <h2>부정 리스크 구조</h2>
+        {% for item in report_context.risk_mix %}
         <div class="mix-row">
           <span>{{ item.label }}</span>
           <div class="track"><div class="fill {{ item.key }}" style="width:{{ item.share }}%"></div></div>
@@ -505,7 +526,7 @@
   </section>
 
   <footer class="footer">
-    <span>{{ period_label }} 언론 동향 보고서 · 긍정/부정은 당사 직접 언급 기준으로 검토</span>
+    <span>{{ period_label }} 언론 동향 보고서 · 부정 리스크는 당사 직접 언급과 HIGH/MEDIUM 구간 기준으로 추적</span>
     <span>{{ company }} {{ team }}</span>
   </footer>
 </main>
