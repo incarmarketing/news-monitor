@@ -11,7 +11,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 import archiver
-from supabase_store import save_notification_send
+from supabase_store import notification_already_sent, save_notification_send
 
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
@@ -83,23 +83,59 @@ def build_message(report: dict) -> str:
     own_total = metrics.get("by_category", {}).get("own", 0)
     risk = metrics.get("risk_level", "-")
     window = report.get("window", {})
-    window_label = absolute_window_label(window) or window.get("label") or "현재 기준"
+    window_label = kakao_window_label(window)
 
     header = [
-        f"언론 동향 {report.get('date', '')} · {window_label}",
+        f"언론 동향 {short_report_date(report.get('date', ''))} {window_label['name']}".strip(),
+        f"기준 {window_label['range']} · 리스크 {risk}",
         (
-            f"리스크 {risk} · 당사 {own_total}건 · "
-            f"부정 {own_tone.get('negative', metrics.get('own_negative', 0))}건"
+            f"당사 {own_total} · 부정 "
+            f"{own_tone.get('negative', metrics.get('own_negative', 0))} · "
+            f"긍정 {own_tone.get('positive', 0)} · 중립 {own_tone.get('neutral', 0)}"
         ),
-        f"긍정 {own_tone.get('positive', 0)} · 중립 {own_tone.get('neutral', 0)}",
     ]
 
-    lines = header + ["", "동향 분석", compact(sections["conclusion"], 52)]
+    lines = header + ["", "동향 분석", compact(sections["conclusion"], 46, ellipsis=False)]
     if sections["issues"]:
         lines += ["", "핵심 이슈"]
-        lines += [f"- {compact(issue, 38)}" for issue in sections["issues"][:2]]
+        lines += [f"- {compact_issue(issue, 32)}" for issue in sections["issues"][:2]]
 
-    return "\n".join(lines)[:320]
+    return "\n".join(lines)[:300]
+
+
+def notification_title(report: dict) -> str:
+    window = report.get("window", {})
+    slot = window.get("slot") or os.getenv("REPORT_SLOT", "").strip() or "auto"
+    return f"일일 언론 동향 {report.get('date', '')} {slot}"
+
+
+def short_report_date(value: str) -> str:
+    if not value:
+        return ""
+    try:
+        return datetime.fromisoformat(value).strftime("%m/%d")
+    except ValueError:
+        return value[5:] if len(value) >= 10 else value
+
+
+def kakao_window_label(window: dict) -> dict[str, str]:
+    slot = str(window.get("slot") or os.getenv("REPORT_SLOT", "")).zfill(2)
+    name_by_slot = {"08": "아침", "13": "점심", "18": "마감"}
+    fallback_name = window.get("report_label") or ""
+    start = parse_iso_datetime(window.get("start", ""))
+    end = parse_iso_datetime(window.get("end", ""))
+    if start and end:
+        start = start.astimezone(KST)
+        end = end.astimezone(KST)
+        if slot == "08" and start.date() != end.date():
+            range_label = f"전일 {start:%H}시~{end:%H}시"
+        elif start.date() == end.date():
+            range_label = f"{start:%H}시~{end:%H}시"
+        else:
+            range_label = f"{start:%m/%d %H시}~{end:%m/%d %H시}"
+    else:
+        range_label = window.get("short_label") or window.get("label") or "현재"
+    return {"name": name_by_slot.get(slot, fallback_name).strip(), "range": range_label}
 
 
 def absolute_window_label(window: dict) -> str:
@@ -123,11 +159,22 @@ def parse_iso_datetime(value: str) -> datetime | None:
         return None
 
 
-def compact(text: str, limit: int) -> str:
+def compact(text: str, limit: int, *, ellipsis: bool = True) -> str:
     cleaned = re.sub(r"\[[\d,\s]+\]\s*", "", text or "")
     cleaned = re.sub(r"\s+", " ", cleaned)
     cleaned = cleaned.replace("핵심 이슈", "").strip()
-    return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
+    if len(cleaned) <= limit:
+        return cleaned
+    if ellipsis and limit > 1:
+        return cleaned[: limit - 1].rstrip() + "…"
+    return cleaned[:limit].rstrip()
+
+
+def compact_issue(text: str, limit: int) -> str:
+    cleaned = compact(text, 120, ellipsis=False).lstrip("- ").strip()
+    head = re.split(r"[:：]", cleaned, 1)[0].strip() or cleaned
+    head = re.split(r"[.!?。]", head, 1)[0].strip() or head
+    return compact(head, limit, ellipsis=False)
 
 
 def parse_briefing(briefing: str) -> dict:
@@ -187,7 +234,11 @@ def main() -> None:
     report = load_latest_daily()
     link = report_link()
     text = build_message(report)
-    title = f"일일 언론 동향 {report.get('date', '')}"
+    title = notification_title(report)
+    if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent("daily_report", title):
+        print(f"Kakao daily report already sent: {title}")
+        print("Set FORCE_KAKAO_SEND=1 to send again intentionally.")
+        return
     try:
         token = refresh_access_token()
         result = send_text_to_me(token, text, link)

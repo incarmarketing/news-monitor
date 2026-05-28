@@ -24,13 +24,25 @@ def begin() -> None:
     event_name = os.getenv("GITHUB_EVENT_NAME", "")
     if event_name != "schedule":
         manual_slot = os.getenv("MANUAL_REPORT_SLOT", "").strip()
-        if manual_slot not in {"08", "13", "18"}:
+        is_slot_dispatch = manual_slot in {"08", "13", "18"}
+        if not is_slot_dispatch:
             manual_slot = "manual"
-        github_output("should_run", "true")
-        github_output("should_mark", "false")
+        marker_path = ""
+        should_mark = "false"
+        should_run = "true"
+        if event_name == "workflow_dispatch" and is_slot_dispatch:
+            today = datetime.now(KST).strftime("%Y-%m-%d")
+            marker = STATE_DIR / f"{today}-{manual_slot}.txt"
+            marker_path = marker.as_posix()
+            should_mark = "true"
+            if marker.exists() and not os.getenv("FORCE_KAKAO_SEND"):
+                should_run = "false"
+                print(f"Already completed manually dispatched slot: {marker}")
+        github_output("should_run", should_run)
+        github_output("should_mark", should_mark)
         github_output("should_period", "false")
         github_output("kst_hour", manual_slot)
-        github_output("marker_path", "")
+        github_output("marker_path", marker_path)
         return
 
     now = datetime.now(KST)

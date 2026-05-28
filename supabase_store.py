@@ -8,6 +8,7 @@ import os
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
+from urllib.parse import quote
 
 import requests
 from dotenv import load_dotenv
@@ -187,6 +188,25 @@ def save_notification_send(
         request("POST", "notification_sends", data=json.dumps([{key: row.get(key) for key in NOTIFICATION_COLUMNS}], ensure_ascii=False))
     except Exception as error:
         print(f"Supabase notification log skipped: {error}")
+
+
+def notification_already_sent(message_type: str, title: str, status: str = "success") -> bool:
+    """Return True when the same notification title already has a successful send log."""
+    if not is_enabled() or not message_type or not title:
+        return False
+    query = (
+        "notification_sends?select=id"
+        f"&message_type=eq.{quote(message_type, safe='')}"
+        f"&title=eq.{quote(title, safe='')}"
+        f"&status=eq.{quote(status, safe='')}"
+        "&limit=1"
+    )
+    try:
+        rows = request("GET", query).json()
+        return bool(rows)
+    except Exception as error:
+        print(f"Supabase notification duplicate check skipped: {error}")
+        return False
 
 
 def save_negative_watch_run(

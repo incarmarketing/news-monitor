@@ -657,6 +657,20 @@
     .media-article-title { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .media-article-title .chip { font-size:12px; }
     .media-head-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+    .media-range {
+      flex-wrap:nowrap;
+      padding:3px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#f8fafc;
+    }
+    .media-range .btn {
+      min-height:30px;
+      padding:6px 10px;
+      border-color:transparent;
+      background:transparent;
+      font-size:12px;
+    }
     .media-summary-note { color:var(--muted); font-size:12px; font-weight:900; white-space:nowrap; }
     .ad-dashboard-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:16px; margin-top:16px; }
     .ad-filter-grid {
@@ -2181,7 +2195,7 @@
         <section class="page" id="page-media">
           <div class="grid-2">
             <div class="panel">
-              <h2 class="panel-title"><i data-lucide="newspaper"></i> 당사 보도 언론사 현황</h2>
+              <h2 class="panel-title"><i data-lucide="newspaper"></i> 언론사 보도 현황</h2>
               <div class="bars" id="sourceBars"></div>
             </div>
             <div class="panel">
@@ -2226,8 +2240,13 @@
           </div>
           <div class="panel" style="margin-top:14px">
             <div class="section-head">
-              <h2 class="panel-title"><i data-lucide="clipboard-list"></i> 당사 보도 언론사 관리 목록</h2>
+              <h2 class="panel-title"><i data-lucide="clipboard-list"></i> 언론사 관리 목록</h2>
               <div class="media-head-actions">
+                <div class="segmented media-range" id="mediaRangePreset" aria-label="언론사 보도량 기준">
+                  <button class="btn active" data-media-range="all" onclick="setMediaRange('all')">전체</button>
+                  <button class="btn" data-media-range="7" onclick="setMediaRange('7')">주간</button>
+                  <button class="btn" data-media-range="30" onclick="setMediaRange('30')">월간</button>
+                </div>
                 <span class="media-summary-note" id="mediaListSummary"></span>
                 <button class="btn" id="mediaMoreButton" onclick="toggleMediaList()">더보기</button>
                 <button class="btn" onclick="resetHiddenMedia()">숨김 초기화</button>
@@ -2399,6 +2418,7 @@
       pressAliases: [],
       hiddenMedia: [],
       selectedMedia: "",
+      mediaRange: "all",
       mediaExpanded: false,
       reporters: [],
       ads: [],
@@ -3476,6 +3496,37 @@
       return `${state.analysis.start || "-"} ~ ${state.analysis.end || "-"}`;
     }
 
+    function mediaRangeLabel() {
+      if (state.mediaRange === "7") return "최근 7일";
+      if (state.mediaRange === "30") return "최근 30일";
+      return "전체 누적";
+    }
+
+    function mediaPeriodArticles(items = managedMediaArticles()) {
+      if (state.mediaRange === "all") return items;
+      const dates = sortedDates(items.length ? items : state.articles);
+      const end = dates[dates.length - 1] || "";
+      const endDate = parseDateValue(end);
+      if (!endDate) return items;
+      endDate.setDate(endDate.getDate() - Number(state.mediaRange) + 1);
+      const start = endDate.toISOString().slice(0, 10);
+      return items.filter(article => (!start || article.date >= start) && (!end || article.date <= end));
+    }
+
+    function updateMediaRangeButtons() {
+      document.querySelectorAll("[data-media-range]").forEach(button => {
+        button.classList.toggle("active", button.dataset.mediaRange === state.mediaRange);
+      });
+    }
+
+    function setMediaRange(range) {
+      state.mediaRange = range || "all";
+      state.selectedMedia = "";
+      updateMediaRangeButtons();
+      renderMedia();
+      lucide.createIcons();
+    }
+
     function analysisRisk(items) {
       const ownNegative = companyNegativeCount(items);
       const tones = countBy(items, "tone");
@@ -3615,24 +3666,9 @@
       }
 
       const total = Math.max(pressItems.length, 1);
-      const pressNames = uniq(pressItems.map(article => article.press));
-      const hasNegative = press => pressItems.some(article => article.press === press && article.tone === "negative");
-      const hasOwn = press => pressItems.some(article => article.press === press && article.category === "own");
-      const riskPresses = pressNames.filter(hasNegative);
-      const carePresses = pressNames.filter(press => {
-        const relation = state.mediaRelations.find(item => item.name === press);
-        return !relation || hasNegative(press) || hasOwn(press);
-      });
-      const entries = topBy(pressItems, "press", 6);
+      const entries = topBy(pressItems, "press", 10);
       const max = Math.max(...entries.map(([, value]) => value), 1);
 
-      const summary = `
-        <div class="press-influence-summary">
-          <div class="press-influence-stat"><b>${pressNames.length.toLocaleString("ko-KR")}</b><span>활성 언론사</span></div>
-          <div class="press-influence-stat"><b>${riskPresses.length.toLocaleString("ko-KR")}</b><span>부정 논조 포함</span></div>
-          <div class="press-influence-stat"><b>${carePresses.length.toLocaleString("ko-KR")}</b><span>관리 확인 필요</span></div>
-        </div>
-      `;
       const rows = entries.map(([press, value]) => {
         const related = pressItems.filter(article => article.press === press);
         const share = Math.round(value / total * 100);
@@ -3661,7 +3697,7 @@
           </button>
         `;
       }).join("");
-      target.innerHTML = `${summary}<div class="press-influence-list">${rows}</div>`;
+      target.innerHTML = `<div class="press-influence-list top-ten">${rows}</div>`;
     }
 
     function renderKeywordTree(targetId, items) {
@@ -3815,9 +3851,10 @@
     }
 
     function renderMedia() {
-      const mediaArticles = managedMediaArticles();
-      const companyArticles = companyMentionMediaArticles();
-      const sourceCounts = countBy(companyArticles, "press");
+      updateMediaRangeButtons();
+      const mediaArticles = mediaPeriodArticles(managedMediaArticles());
+      const companyArticles = mediaArticles.filter(isCompanyMentionArticle);
+      const sourceCounts = countBy(mediaArticles, "press");
       const sourceEntries = Object.entries(sourceCounts).sort((a,b) => b[1] - a[1]).slice(0,15);
       renderBars("sourceBars", sourceEntries);
 
@@ -3832,7 +3869,11 @@
       const visibleNames = state.mediaExpanded ? sourceNames : sourceNames.slice(0, 15);
       const hiddenCount = Math.max(0, sourceNames.length - visibleNames.length);
       const summary = document.getElementById("mediaListSummary");
-      if (summary) summary.textContent = sourceNames.length ? `${visibleNames.length}/${sourceNames.length}개 표시` : "";
+      if (summary) {
+        summary.textContent = sourceNames.length
+          ? `${mediaRangeLabel()} · ${mediaArticles.length.toLocaleString("ko-KR")}건 · ${visibleNames.length}/${sourceNames.length}개사`
+          : mediaRangeLabel();
+      }
       const moreButton = document.getElementById("mediaMoreButton");
       if (moreButton) {
         moreButton.style.display = sourceNames.length > 15 ? "inline-flex" : "none";
@@ -3843,9 +3884,10 @@
       const rows = visibleNames.map(press => {
         const articles = mediaArticles.filter(a => a.press === press);
         const companyRows = companyArticles.filter(a => a.press === press);
-        const count = companyRows.length || articles.length;
-        const neg = companyRows.filter(a => a.tone === "negative").length;
-        const pos = companyRows.filter(a => a.tone === "positive").length;
+        const count = articles.length;
+        const ownCount = companyRows.length;
+        const neg = articles.filter(a => a.tone === "negative").length;
+        const pos = articles.filter(a => a.tone === "positive").length;
         const relation = state.mediaRelations.find(item => item.name === press);
         const status = relation?.status || (neg ? "주의" : pos ? "우호" : "중립");
         const grade = relation?.grade || (count >= 10 ? "A" : count >= 4 ? "B" : "C");
@@ -3855,6 +3897,7 @@
             <td><strong>${escapeHtml(press)}</strong></td>
             <td>${aliases.length ? aliases.map(host => `<span class="chip">${escapeHtml(host)}</span>`).join(" ") : "-"}</td>
             <td>${count ? `<button class="media-count-button" onclick='showMediaArticles(${jsArg(press)})'>${count}건</button>` : "-"}</td>
+            <td>${ownCount ? `${ownCount.toLocaleString("ko-KR")}건` : "-"}</td>
             <td>${pos}/${neg}</td>
             <td>${escapeHtml(status)}</td>
             <td><span class="chip">${escapeHtml(grade)}</span></td>
@@ -3867,7 +3910,7 @@
           </tr>
         `;
       }).join("");
-      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>주소 보정</th><th>보도량</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="10">언론사 데이터가 없습니다.</td></tr>'}`;
+      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>주소 보정</th><th>${mediaRangeLabel()} 보도량</th><th>당사 언급</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="11">언론사 데이터가 없습니다.</td></tr>'}`;
       renderMediaArticleList();
     }
 
@@ -3880,9 +3923,9 @@
       const target = document.getElementById("mediaArticleList");
       if (!target) return;
       const scope = document.getElementById("mediaArticleScope");
-      const all = sortByLatest(state.selectedMedia ? managedMediaArticles() : companyMentionMediaArticles());
+      const all = sortByLatest(mediaPeriodArticles(managedMediaArticles()));
       const items = state.selectedMedia ? all.filter(article => article.press === state.selectedMedia) : all.slice(0, 20);
-      if (scope) scope.textContent = state.selectedMedia || "전체";
+      if (scope) scope.textContent = state.selectedMedia || mediaRangeLabel();
       target.innerHTML = items.length
         ? items.map(article => articleCard(article, true)).join("")
         : '<div class="empty">해당 언론사의 기사가 없습니다.</div>';
@@ -3891,7 +3934,12 @@
     function showMediaArticles(press) {
       state.selectedMedia = press;
       renderMediaArticleList();
-      document.getElementById("mediaArticleList")?.scrollIntoView({ behavior:"smooth", block:"start" });
+      if (!document.getElementById("page-media")?.classList.contains("active")) {
+        switchPage("media");
+      }
+      setTimeout(() => {
+        document.getElementById("mediaArticleList")?.scrollIntoView({ behavior:"smooth", block:"start" });
+      }, 0);
     }
 
     function clearMediaArticleView() {
