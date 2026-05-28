@@ -1,6 +1,6 @@
 # 외부 Cron으로 GitHub Actions 호출하기
 
-GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다.
+GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다. 현재 `Negative Article Watch`는 GitHub 클라우드 러너 안에서 5분 간격으로 반복 감시하도록 구성되어 있고, cron-job.org는 이 실행을 한 번 더 깨우는 보조 장치입니다.
 
 ## 1. GitHub 토큰 만들기
 
@@ -45,7 +45,7 @@ cron-job.org API key는 cron-job.org Console > Settings에서 생성합니다. c
 
 ## 2. 부정기사 24시간 5분 감지 호출
 
-외부 cron 서비스에서 아래 요청을 24시간 내내 5분마다 실행합니다. `negative_watch.py`는 기본적으로 24/7로 동작하며 DB에는 `minutes_back=5`로 기록합니다. 즉 한 번 실행될 때 최근 5분 수집분을 검사하고, 실제 호출 주기도 5분이어야 기사 탐색 공백이 생기지 않습니다.
+외부 cron 서비스에서 아래 요청을 24시간 내내 5분마다 실행할 수 있습니다. 다만 기본 GitHub Actions도 30분마다 클라우드 러너를 띄운 뒤 러너 안에서 5분 간격으로 6회 감시합니다. `negative_watch.py`는 기본적으로 24/7로 동작하며 DB에는 `minutes_back=5`로 기록합니다.
 
 - Method: `POST`
 - URL:
@@ -77,7 +77,7 @@ Content-Type: application/json
 
 `setup_cronjob_org.py`를 실행하면 `news-monitor negative watch` 작업이 cron-job.org에서 매일 00:00~23:59 KST, 5분 단위로 생성/업데이트됩니다. 적용 후에는 `check_cronjob_org.py`로 minutes 값이 `[0, 5, 10, ..., 55]`, hours 값이 `[0, 1, ..., 23]`인지 확인합니다.
 
-대시보드의 `검사 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `실제 호출 약 10분`처럼 표시되면 GitHub Actions 코드가 아니라 외부 cron-job.org 작업이 아직 10분 단위로 남아 있다는 뜻입니다. 이 경우 GitHub Actions의 `Sync External Cron`을 실행해 외부 cron을 다시 동기화합니다.
+대시보드의 `검사 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `실제 약 10분`처럼 표시되면 최근 감시 기록이 아직 5분 단위로 충분히 쌓이지 않았거나 외부 cron-job.org 작업이 예전 설정으로 남아 있다는 뜻입니다. 이 경우 GitHub Actions의 `Negative Article Watch`와 `Sync External Cron`을 함께 확인합니다.
 
 ## 3. 일일 보고서 호출
 

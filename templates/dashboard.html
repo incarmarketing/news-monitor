@@ -716,9 +716,11 @@
     }
     .watch-radar i { color:var(--incar); z-index:1; }
     @keyframes radarSweep { to { transform:rotate(360deg); } }
-    .watch-title { margin:0 0 7px; color:var(--incar-dark); font-size:17px; font-weight:900; }
-    .watch-copy { color:#344054; font-size:13px; font-weight:800; line-height:1.55; }
-    .watch-meta { margin-top:10px; display:flex; flex-wrap:wrap; gap:7px; }
+    .watch-title { margin:0 0 5px; color:var(--incar-dark); font-size:17px; font-weight:900; }
+    .watch-copy { color:#344054; font-size:13px; font-weight:800; line-height:1.42; display:grid; gap:3px; }
+    .watch-copy strong { color:#182230; font-size:14px; line-height:1.3; }
+    .watch-copy span { color:var(--muted); font-size:12px; font-weight:800; }
+    .watch-meta { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
     .ops-row { align-items:stretch; }
     .ops-row > .panel { height:100%; }
     .notification-panel {
@@ -2599,7 +2601,8 @@
       const dates = state.negativeWatchRuns
         .map(row => watchDate(row.scanned_at || row.created_at))
         .filter(Boolean)
-        .sort((a,b) => a - b);
+        .sort((a,b) => a - b)
+        .slice(-8);
       const gaps = [];
       for (let idx = 1; idx < dates.length; idx += 1) {
         const minutes = (dates[idx] - dates[idx - 1]) / 60000;
@@ -2616,24 +2619,24 @@
       if (!latestDate) {
         return {
           tone: "warn",
-          title: "부정기사 감시 대기",
-          summary: "아직 24시간 감시 로그가 없습니다. GitHub Actions와 외부 cron 설정을 확인해야 합니다.",
+          title: "감시 대기",
+          summary: "실행 로그 없음",
           nextRun: formatDateTime(nextNegativeWatchStart(now)),
         };
       }
       if (ageMinutes !== null && ageMinutes > 8) {
         return {
           tone: "error",
-          title: "부정기사 감시 지연",
-          summary: `마지막 수행이 ${ageMinutes}분 전입니다. 24시간 5분 호출 기준보다 늦어 외부 cron 설정 확인이 필요합니다.`,
+          title: `지연 ${ageMinutes}분`,
+          summary: "외부 cron 확인 필요",
           nextRun: "즉시 확인 필요",
           ageMinutes,
         };
       }
       return {
         tone: "ok",
-        title: "부정기사 감시 정상",
-        summary: `최근 수행 ${formatDateTime(latestDate)} 기준으로 정상 감시 중입니다.`,
+        title: "정상 감시",
+        summary: "24시간 감시 중",
         nextRun: "5분 이내",
         ageMinutes,
       };
@@ -2646,35 +2649,28 @@
       const health = negativeWatchHealth(latest);
       const expectedMinutes = 5;
       const actualCadence = actualNegativeWatchCadence();
-      const status = latest?.status || "waiting";
-      const statusLabel = {
-        alert_sent:"알림 발송",
-        alert_failed:"알림 실패",
-        scanned:"탐색 완료",
-        skipped:"감시 제외",
-        dry_run:"테스트",
-        waiting:"기록 대기",
-      }[status] || status;
       const scanned = Number(latest?.scanned_count || 0);
       const negative = Number(latest?.negative_count || 0);
       const fresh = Number(latest?.new_negative_count || 0);
       const minutesBack = Number(latest?.minutes_back || 5);
       const cadenceTone = actualCadence && actualCadence > expectedMinutes + 2 ? "warn" : "";
+      const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
+      const latestLabel = latestDate ? formatDateTime(latestDate) : "최근 수행 없음";
+      const cadenceLabel = actualCadence
+        ? `실제 약 ${actualCadence.toLocaleString("ko-KR")}분`
+        : "실제 주기 계산 중";
       target.innerHTML = `
         <div class="watch-radar"><span class="watch-sweep"></span><i data-lucide="radar"></i></div>
         <div>
           <h3 class="watch-title">${escapeHtml(health.title)}</h3>
           <div class="watch-copy">
-            ${escapeHtml(health.summary)}<br>
-            최근 ${minutesBack.toLocaleString("ko-KR")}분 수집분을 24시간 감시 · 기사 ${scanned.toLocaleString("ko-KR")}건 중 부정 ${negative.toLocaleString("ko-KR")}건, 신규 ${fresh.toLocaleString("ko-KR")}건.
+            <strong>최근 ${minutesBack.toLocaleString("ko-KR")}분 검사: 기사 ${scanned.toLocaleString("ko-KR")} · 부정 ${negative.toLocaleString("ko-KR")} · 신규 ${fresh.toLocaleString("ko-KR")}</strong>
+            <span>${escapeHtml(latestLabel)} · ${escapeHtml(health.summary)}</span>
           </div>
           <div class="watch-meta">
-            <span class="status-pill ${health.tone}">${escapeHtml(statusLabel)}</span>
-            <span class="status-pill ${negative ? "warn" : "ok"}">부정 ${negative.toLocaleString("ko-KR")}건</span>
-            <span class="status-pill">검사 범위 ${minutesBack.toLocaleString("ko-KR")}분</span>
-            <span class="status-pill">24시간 ${expectedMinutes}분 주기</span>
-            ${actualCadence ? `<span class="status-pill ${cadenceTone}">실제 호출 약 ${actualCadence.toLocaleString("ko-KR")}분</span>` : ""}
-            <span class="status-pill">다음 ${escapeHtml(health.nextRun)}</span>
+            <span class="status-pill ${health.tone}">24시간 ${expectedMinutes}분 주기</span>
+            <span class="status-pill ${cadenceTone}">${escapeHtml(cadenceLabel)}</span>
+            ${health.tone === "error" ? '<span class="status-pill error">cron 미동기화</span>' : ""}
           </div>
         </div>
       `;
