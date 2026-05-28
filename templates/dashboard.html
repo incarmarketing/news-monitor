@@ -210,11 +210,11 @@
     .btn.scrap-toggle {
       min-height:30px;
       padding:5px 10px;
-      margin-left:auto;
       color:#475467;
       border-color:#d8dee8;
       background:#fff;
       flex:0 0 auto;
+      white-space:nowrap;
     }
     .btn.scrap-toggle.is-scraped {
       color:#fff;
@@ -384,7 +384,30 @@
     }
     .article-title:hover { color:var(--incar); text-decoration:underline; }
     .summary { color:#475569; font-size:13px; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .meta { display:flex; flex-wrap:wrap; gap:7px; row-gap:8px; align-items:center; color:var(--muted); font-size:12px; font-weight:800; }
+    .meta {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px;
+      align-items:start;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+    }
+    .meta-chips {
+      min-width:0;
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      row-gap:8px;
+      align-items:center;
+    }
+    .article-actions {
+      display:flex;
+      gap:6px;
+      align-items:flex-start;
+      justify-content:flex-end;
+      flex-wrap:nowrap;
+    }
     .chip {
       border:1px solid var(--line);
       background:#fff;
@@ -1258,8 +1281,9 @@
       .article.compact { padding:13px; }
       .article-title { font-size:15px; }
       .article.compact .article-title { margin-top:10px; }
-      .article .meta { gap:6px; row-gap:7px; }
+      .article .meta { grid-template-columns:minmax(0,1fr) auto; gap:8px; }
       .article .meta .chip { padding:3px 8px; font-size:11px; min-height:24px; }
+      .article-actions .btn span { display:none; }
       .btn.scrap-toggle { margin-left:0; min-height:28px; }
       .toolbar { gap:8px; }
       .tone-buttons { grid-template-columns:1fr; }
@@ -1569,6 +1593,10 @@
                   <datalist id="sourceOptions"></datalist>
                 </div>
                 <div class="field">
+                  <label>언론사 주소/도메인</label>
+                  <input id="mediaDomain" placeholder="예: insnews.co.kr">
+                </div>
+                <div class="field">
                   <label>관계 상태</label>
                   <select id="mediaRelation">
                     <option>우호</option>
@@ -1763,6 +1791,7 @@
       keywords: [],
       keywordRows: [],
       mediaRelations: [],
+      pressAliases: [],
       hiddenMedia: [],
       selectedMedia: "",
       reporters: [],
@@ -1870,7 +1899,10 @@
       "breaknews.com":"브레이크뉴스",
       "safetimes.co.kr":"세이프타임즈",
       "xportsnews.com":"엑스포츠뉴스",
-      "fnnews.com":"파이낸셜뉴스"
+      "fnnews.com":"파이낸셜뉴스",
+      "tokenpost.kr":"토큰포스트",
+      "joongangnews.com":"중앙뉴스",
+      "ceoscoredaily.com":"CEO스코어데일리"
     };
     const pressAliasMap = {
       "MHN포토":"MHN스포츠",
@@ -1883,7 +1915,54 @@
     const topBy = (items,key,limit=8) => Object.entries(countBy(items,key)).sort((a,b) => b[1] - a[1]).slice(0,limit);
     const categoryLabel = key => state.categoryLabels[key] || categoryFallback[key] || key;
     const toneLabel = key => state.toneLabels[key] || toneFallback[key] || key;
-    const canonicalPressKey = press => String(press || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+    const canonicalPressKey = press => {
+      const raw = String(press || "").trim().toLowerCase();
+      if (!raw) return "";
+      try {
+        const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
+        return url.hostname.replace(/^www\./, "").replace(/^m\./, "");
+      } catch {
+        return raw
+          .replace(/^https?:\/\//, "")
+          .replace(/^www\./, "")
+          .replace(/^m\./, "")
+          .split(/[/?#]/)[0]
+          .replace(/\/$/, "");
+      }
+    };
+    const normalizeAliasRows = rows => Array.isArray(rows)
+      ? rows.map(row => ({
+          host: canonicalPressKey(row.host),
+          pressName: normalizePressLabel(row.press_name || row.pressName || "")
+        })).filter(row => row.host && row.pressName)
+      : [];
+    function pressAliasFor(article, fallbackPress = "") {
+      const candidates = [
+        article?.link,
+        article?.source,
+        article?.press,
+        fallbackPress
+      ].map(canonicalPressKey).filter(Boolean);
+      const found = state.pressAliases.find(alias =>
+        candidates.some(host => host === alias.host || host.endsWith(`.${alias.host}`))
+      );
+      return found?.pressName || "";
+    }
+    function domainsForPress(press) {
+      return state.pressAliases
+        .filter(alias => alias.pressName === press)
+        .map(alias => alias.host);
+    }
+    function applyPressAliasesToLoadedArticles() {
+      state.articles = sortByLatest(state.articles.map(article => ({
+        ...article,
+        press: pressAliasFor(article, article.press) || article.press
+      })));
+      state.scraps = state.scraps.map(article => ({
+        ...article,
+        press: pressAliasFor(article, article.press) || article.press
+      }));
+    }
     const normalizePressLabel = press => {
       const value = String(press || "").replace(/\s+/g, " ").replace(/\s+\|\s*(네이버|다음|구글|네이트).*$/i, "").trim();
       const aliased = pressAliasMap[value] || value;
@@ -2084,6 +2163,8 @@
       const titlePress = extractPressFromTitle(article.title || "");
       const rawPress = normalizePressLabel(article.press);
       const source = normalizePressLabel(article.source);
+      const alias = pressAliasFor(article, rawPress || source || titlePress);
+      if (alias) return alias;
       if (rawPress && !isPortalPress(rawPress) && !isUnresolvedPress(rawPress)) return pressDomainMap[canonicalPressKey(rawPress)] || rawPress;
       if (source && !isPortalPress(source) && !isUnresolvedPress(source)) return pressDomainMap[canonicalPressKey(source)] || source;
       if (titlePress) return normalizePressLabel(titlePress);
@@ -2207,6 +2288,10 @@
       if (appBound) return;
       appBound = true;
       document.querySelectorAll("[data-page]").forEach(btn => btn.addEventListener("click", () => switchPage(btn.dataset.page)));
+      document.addEventListener("click", event => {
+        const flowCard = event.target.closest("[data-flow-detail]");
+        if (flowCard) openCategoryDetail(flowCard.dataset.flowDetail || "");
+      });
       const map = { searchInput:"q", dateFilter:"date", categoryFilter:"category", toneFilter:"tone", riskFilter:"risk" };
       Object.entries(map).forEach(([id,key]) => {
         const el = document.getElementById(id);
@@ -2288,7 +2373,7 @@
     function applyFilters() {
       const q = state.filters.q.toLowerCase();
       state.filtered = state.articles.filter(article => {
-        const haystack = [article.title, article.keyword, article.press, article.category_label, article.tone_label].join(" ").toLowerCase();
+        const haystack = [article.title, article.keyword, article.press, article.category_label, article.category_detail, article.tone_label].join(" ").toLowerCase();
         return (!q || haystack.includes(q))
           && (!state.filters.date || article.date === state.filters.date)
           && (!state.filters.category || article.category === state.filters.category)
@@ -2509,7 +2594,7 @@
         const share = Math.round(value / total * 100);
         const negative = items.filter(a => a.category_detail === key && a.tone === "negative").length;
         return `
-          <button class="flow-card" type="button" onclick="openCategoryDetail(${jsArg(key)})">
+          <button class="flow-card" type="button" data-flow-detail="${escapeHtml(key)}">
             <strong><span>${escapeHtml(key)}</span><span>${value.toLocaleString("ko-KR")}건</span></strong>
             <div class="flow-sub">비중 ${share}% · 부정 ${negative}건</div>
             <div class="flow-track"><span style="width:${Math.max(4, share)}%"></span></div>
@@ -2521,8 +2606,10 @@
 
     function openCategoryDetail(detail) {
       if (!detail) return;
-      if (!hasActiveFilter()) {
-        const date = latestDate(focusedItems());
+      const shouldScopeLatest = !hasActiveFilter();
+      const baseItems = focusedItems();
+      if (shouldScopeLatest) {
+        const date = latestDate(baseItems);
         if (date) {
           state.filters.date = date;
           const dateFilter = document.getElementById("dateFilter");
@@ -2530,9 +2617,8 @@
         }
       }
       state.filters.detail = detail;
-      applyFilters();
+      render();
       switchPage("monitor");
-      renderArticles();
     }
 
     function clearCategoryDetail() {
@@ -2559,16 +2645,18 @@
     function articleCard(article, compact=false, extraAction = "", attrs = "", extraClass = "") {
       const key = article.id || article.link;
       const scraped = state.scraps.some(item => (item.id || item.link) === key);
+      const defaultAction = `<button class="btn scrap-toggle${scraped ? " is-scraped" : ""}" aria-pressed="${scraped ? "true" : "false"}" title="${scraped ? "스크랩 해제" : "스크랩"}" onclick='toggleScrapById(${jsArg(key)})'><i data-lucide="bookmark"></i><span>스크랩</span></button>`;
       return `
         <article class="article${compact ? " compact" : ""}${extraClass ? " " + extraClass : ""}" ${attrs}>
           <div class="meta">
-            <span class="chip time">${escapeHtml(article.published_label || article.date || "-")}</span>
-            <span class="chip">${escapeHtml(article.press)}</span>
-            <span class="chip ${escapeHtml(article.category)}">${escapeHtml(article.category_label)}</span>
-            <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(article.tone_label)}</span>
-            <span class="chip">${escapeHtml(article.keyword || "키워드 없음")}</span>
-            <button class="btn scrap-toggle${scraped ? " is-scraped" : ""}" aria-pressed="${scraped ? "true" : "false"}" title="${scraped ? "스크랩 해제" : "스크랩"}" onclick='toggleScrapById(${jsArg(key)})'><i data-lucide="bookmark"></i><span>스크랩</span></button>
-            ${extraAction}
+            <span class="meta-chips">
+              <span class="chip time">${escapeHtml(article.published_label || article.date || "-")}</span>
+              <span class="chip">${escapeHtml(article.press)}</span>
+              <span class="chip ${escapeHtml(article.category)}">${escapeHtml(article.category_label)}</span>
+              <span class="chip ${escapeHtml(article.tone)}">${escapeHtml(article.tone_label)}</span>
+              <span class="chip">${escapeHtml(article.keyword || "키워드 없음")}</span>
+            </span>
+            <span class="article-actions">${extraAction || defaultAction}</span>
           </div>
           <a class="article-title" href="${escapeHtml(article.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(article.title)}</a>
           ${compact ? "" : `<div class="summary">${escapeHtml(article.summary || "기사 원문 기준으로 세부 내용을 확인하세요.")}</div>`}
@@ -2873,9 +2961,11 @@
         const relation = state.mediaRelations.find(item => item.name === press);
         const status = relation?.status || (neg ? "주의" : pos ? "우호" : "중립");
         const grade = relation?.grade || (count >= 10 ? "A" : count >= 4 ? "B" : "C");
+        const aliases = domainsForPress(press);
         return `
           <tr>
             <td><strong>${escapeHtml(press)}</strong></td>
+            <td>${aliases.length ? aliases.map(host => `<span class="chip">${escapeHtml(host)}</span>`).join(" ") : "-"}</td>
             <td>${count ? `<button class="media-count-button" onclick='showMediaArticles(${jsArg(press)})'>${count}건</button>` : "-"}</td>
             <td>${pos}/${neg}</td>
             <td>${escapeHtml(status)}</td>
@@ -2889,7 +2979,7 @@
           </tr>
         `;
       }).join("");
-      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>보도량</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="9">언론사 데이터가 없습니다.</td></tr>'}`;
+      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>주소 보정</th><th>보도량</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="10">언론사 데이터가 없습니다.</td></tr>'}`;
       renderMediaArticleList();
     }
 
@@ -2916,9 +3006,25 @@
       renderMediaArticleList();
     }
 
+    async function savePressAliasForMedia(pressName, domain) {
+      const host = canonicalPressKey(domain);
+      if (!pressName || !host) return true;
+      const saved = await supabaseRest("press_aliases?on_conflict=host", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{ host, press_name: pressName }]),
+      });
+      if (saved) {
+        const withoutCurrent = state.pressAliases.filter(alias => alias.host !== host);
+        state.pressAliases = [{ host, pressName }, ...withoutCurrent];
+      }
+      return Boolean(saved);
+    }
+
     async function saveMediaRelation() {
       const item = {
         name: document.getElementById("mediaName").value.trim(),
+        domain: canonicalPressKey(document.getElementById("mediaDomain")?.value || ""),
         status: document.getElementById("mediaRelation").value,
         grade: document.getElementById("mediaGrade").value,
         owner: document.getElementById("mediaOwner").value.trim(),
@@ -2940,21 +3046,27 @@
         }]),
       });
       if (!saved) return alert("Supabase 저장에 실패했습니다. 화면 상태는 변경하지 않았습니다.");
+      const aliasSaved = await savePressAliasForMedia(item.name, item.domain);
+      if (!aliasSaved) return alert("언론사 정보는 저장됐지만 주소 보정값 저장에 실패했습니다.");
       state.hiddenMedia = state.hiddenMedia.filter(name => name !== item.name);
       const existing = state.mediaRelations.findIndex(row => row.name === item.name);
       if (existing >= 0) state.mediaRelations[existing] = item;
       else state.mediaRelations.unshift(item);
       state.managementSource = "Supabase DB";
-      ["mediaName","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
+      ["mediaName","mediaDomain","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("mediaRelation").value = "우호";
       document.getElementById("mediaGrade").value = "A";
       await loadManagementDataFromSupabase();
+      applyPressAliasesToLoadedArticles();
+      applyFilters();
       renderMedia();
+      renderArticles();
     }
 
     function editMediaRelation(press) {
       const relation = state.mediaRelations.find(item => item.name === press) || { name: press, status: "중립", grade: "B", owner: "", contactDate: "", memo: "" };
       document.getElementById("mediaName").value = relation.name;
+      document.getElementById("mediaDomain").value = domainsForPress(relation.name)[0] || "";
       document.getElementById("mediaRelation").value = relation.status;
       document.getElementById("mediaGrade").value = relation.grade || "B";
       document.getElementById("mediaOwner").value = relation.owner || "";
@@ -2982,7 +3094,7 @@
       const press = document.getElementById("mediaName").value.trim();
       if (!press) return alert("삭제할 언론사를 먼저 관리 화면에 불러오거나 입력해 주세요.");
       await removeMediaRelation(press);
-      ["mediaName","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
+      ["mediaName","mediaDomain","mediaOwner","mediaContactDate","mediaMemo"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("mediaRelation").value = "우호";
       document.getElementById("mediaGrade").value = "A";
     }
@@ -3357,10 +3469,11 @@
     }
 
     async function loadManagementDataFromSupabase() {
-      const [mediaRows, reporterRows, adRows] = await Promise.all([
+      const [mediaRows, reporterRows, adRows, aliasRows] = await Promise.all([
         supabaseRest("media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
         supabaseRest("reporters?select=id,name,media,status,contact_date,memo&order=updated_at.desc"),
         supabaseRest("ad_spends?select=id,media,spend_month,amount,spend_type,memo&order=spend_month.desc,updated_at.desc"),
+        supabaseRest("press_aliases?select=host,press_name&order=press_name.asc,host.asc"),
       ]);
       let loaded = false;
       if (Array.isArray(mediaRows)) {
@@ -3397,6 +3510,10 @@
           type: row.spend_type || "광고",
           memo: row.memo || "",
         }));
+        loaded = true;
+      }
+      if (Array.isArray(aliasRows)) {
+        state.pressAliases = normalizeAliasRows(aliasRows);
         loaded = true;
       }
       state.managementSource = loaded ? "Supabase DB" : "Supabase 연결 필요";
