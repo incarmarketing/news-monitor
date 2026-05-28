@@ -36,9 +36,9 @@ python setup_cronjob_org.py
 
 cron-job.org API key는 cron-job.org Console > Settings에서 생성합니다. cron-job.org 공식 문서에 따르면 API는 `Authorization: Bearer <API_KEY>` 방식으로 인증하며, 요청 payload는 JSON으로 보냅니다.
 
-## 2. 부정기사 10분 감지 호출
+## 2. 부정기사 5분 감지 호출
 
-외부 cron 서비스에서 아래 요청을 10분마다 실행합니다.
+외부 cron 서비스에서 아래 요청을 5분마다 실행합니다. `negative_watch.py`는 DB에 `minutes_back=5`로 기록되므로, 실제 실행 주기도 5분이어야 기사 탐색 공백이 생기지 않습니다.
 
 - Method: `POST`
 - URL:
@@ -65,10 +65,11 @@ Content-Type: application/json
 권장 cron:
 
 ```text
-*/10 * * * *
+*/5 * * * *
 ```
 
 감시 스크립트 안에서 평일 07:00~18:59 KST만 실제 감지하고, 그 외 시간에는 조용히 종료합니다.
+`setup_cronjob_org.py`를 실행하면 `news-monitor negative watch` 작업이 cron-job.org에서 5분 단위로 생성/업데이트됩니다. 적용 후에는 `check_cronjob_org.py`로 minutes 값이 `[0, 5, 10, ..., 55]`인지 확인합니다.
 
 ## 3. 일일 보고서 호출
 

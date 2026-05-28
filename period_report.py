@@ -79,6 +79,7 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 
 누적 지표:
 - 분석 일수: {aggregate['period_days']}일
+- 모니터링 구간: {aggregate.get('period_windows', aggregate['period_days'])}회
 - 전체 수집: {aggregate['total_collected']}건
 - 분석 기사: {aggregate['total_after_cluster']}건
 - 당사 언급: {aggregate['by_category']['own']}건
@@ -201,7 +202,7 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
     top_articles = archiver.collect_top_articles(daily_data, limit=20)
 
     console.print(
-        f"[green]OK[/] {len(daily_data)}일치 데이터 로드 | "
+        f"[green]OK[/] {aggregate['period_days']}일/{aggregate.get('period_windows', len(daily_data))}구간 데이터 로드 | "
         f"전체 {_fmt_count(aggregate['total_collected'])}건 | "
         f"당사 {aggregate['by_category']['own']}건 | "
         f"부정 {aggregate['by_tone']['negative']}건"

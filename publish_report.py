@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import shutil
-import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -13,7 +12,6 @@ import dashboard_builder
 
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
-ARCHIVE_DIR = BASE_DIR / "data" / "daily"
 PUBLIC_DIR = BASE_DIR / "public"
 REPORTS_DIR = PUBLIC_DIR / "reports"
 PERIOD_DIR = BASE_DIR / "period_reports"
@@ -28,12 +26,11 @@ def latest_report() -> Path:
 
 
 def latest_archive_report() -> tuple[str, str] | None:
-    files = sorted(ARCHIVE_DIR.glob("*.json"), key=lambda p: p.name, reverse=True)
-    if not files:
+    archives = archiver.load_all_archives()
+    if not archives:
         return None
 
-    source = files[0]
-    payload = json.loads(source.read_text(encoding="utf-8"))
+    payload = archives[-1]
     timestamp = datetime.fromisoformat(payload["timestamp"])
     report_name = f"briefing_{timestamp.strftime('%Y%m%d_%H%M')}.html"
     report_md = payload.get("briefing", "")

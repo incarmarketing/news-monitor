@@ -12,9 +12,9 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import supabase_store
 import config
+import archiver
 
 BASE_DIR = Path(__file__).parent
-ARCHIVE_DIR = BASE_DIR / "data" / "daily"
 PUBLIC_DIR = BASE_DIR / "public"
 PUBLIC_DATA_DIR = PUBLIC_DIR / "data"
 TEMPLATE_DIR = BASE_DIR / "templates"
@@ -36,15 +36,7 @@ TONE_LABELS = {
 
 
 def load_daily_archives() -> list[dict]:
-    if not ARCHIVE_DIR.exists():
-        return []
-    archives = []
-    for path in sorted(ARCHIVE_DIR.glob("*.json")):
-        try:
-            archives.append(json.loads(path.read_text(encoding="utf-8")))
-        except json.JSONDecodeError:
-            print(f"Skip invalid archive: {path}")
-    return archives
+    return archiver.load_all_archives()
 
 
 def build_articles(archives: list[dict]) -> list[dict]:

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -13,6 +15,8 @@ BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
 ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 KST = timezone(timedelta(hours=9))
+SLOT_ORDER = {"08": 1, "13": 2, "18": 3}
+RISK_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 
 
 def today_kst() -> date:
@@ -26,7 +30,7 @@ def now_kst() -> datetime:
 def save_daily(articles: list[dict], briefing: str, metrics: dict) -> Path:
     report_date = today_kst()
     window = report_window.current_window()
-    target = ARCHIVE_DIR / f"{report_date.isoformat()}.json"
+    target = archive_path(report_date, window.get("slot", ""))
     payload = {
         "date": report_date.isoformat(),
         "timestamp": now_kst().isoformat(),
@@ -49,6 +53,11 @@ def save_daily(articles: list[dict], briefing: str, metrics: dict) -> Path:
     return target
 
 
+def archive_path(report_date: date, slot: str = "") -> Path:
+    suffix = f"-{slot}" if slot else ""
+    return ARCHIVE_DIR / f"{report_date.isoformat()}{suffix}.json"
+
+
 def lighten(article: dict) -> dict:
     return {
         "title": article.get("title", ""),
@@ -64,11 +73,77 @@ def lighten(article: dict) -> dict:
     }
 
 
-def load_day(target_date: date) -> dict | None:
-    target = ARCHIVE_DIR / f"{target_date.isoformat()}.json"
-    if not target.exists():
+def load_archive(path: Path) -> dict | None:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Skip invalid archive: {path} ({exc})")
         return None
-    return json.loads(target.read_text(encoding="utf-8"))
+
+
+def archive_sort_key(payload: dict) -> tuple[str, int, str]:
+    window = payload.get("window", {})
+    date_value = payload.get("date", "")
+    slot = str(window.get("slot", ""))
+    timestamp = payload.get("timestamp", "")
+    return (date_value, SLOT_ORDER.get(slot, 0), timestamp)
+
+
+def archive_key(payload: dict) -> tuple[str, str]:
+    window = payload.get("window", {})
+    return (payload.get("date", ""), str(window.get("slot", "")))
+
+
+def is_slot_archive(path: Path) -> bool:
+    return bool(re.match(r"^\d{4}-\d{2}-\d{2}-\d{2}\.json$", path.name))
+
+
+def load_all_archives() -> list[dict]:
+    """Load all daily archives, keeping one record per date/slot.
+
+    Legacy files named YYYY-MM-DD.json are still accepted. If both a legacy file
+    and a slot-specific file exist for the same date/slot, the slot file wins.
+    """
+    if not ARCHIVE_DIR.exists():
+        return []
+
+    by_key: dict[tuple[str, str], tuple[dict, bool]] = {}
+    for path in sorted(ARCHIVE_DIR.glob("*.json")):
+        payload = load_archive(path)
+        if not payload:
+            continue
+        key = archive_key(payload)
+        slot_file = is_slot_archive(path)
+        existing = by_key.get(key)
+        if not existing:
+            by_key[key] = (payload, slot_file)
+            continue
+        existing_payload, existing_slot_file = existing
+        should_replace = (
+            slot_file and not existing_slot_file
+        ) or (
+            slot_file == existing_slot_file
+            and payload.get("timestamp", "") > existing_payload.get("timestamp", "")
+        )
+        if should_replace:
+            by_key[key] = (payload, slot_file)
+
+    return sorted((payload for payload, _ in by_key.values()), key=archive_sort_key)
+
+
+def load_day_slots(target_date: date) -> list[dict]:
+    target = target_date.isoformat()
+    return [archive for archive in load_all_archives() if archive.get("date") == target]
+
+
+def load_day(target_date: date) -> dict | None:
+    items = load_day_slots(target_date)
+    return items[-1] if items else None
+
+
+def load_latest() -> dict | None:
+    items = load_all_archives()
+    return items[-1] if items else None
 
 
 def load_yesterday() -> dict | None:
@@ -79,27 +154,31 @@ def load_range(days: int, end_date: date | None = None) -> list[dict]:
     end = end_date or today_kst()
     out = []
     for i in range(days):
-        item = load_day(end - timedelta(days=i))
-        if item:
-            out.append(item)
-    return out
+        out.extend(load_day_slots(end - timedelta(days=i)))
+    return sorted(out, key=archive_sort_key)
 
 
 def load_between(start_date: date, end_date: date) -> list[dict]:
     out = []
     current = start_date
     while current <= end_date:
-        item = load_day(current)
-        if item:
-            out.append(item)
+        out.extend(load_day_slots(current))
         current += timedelta(days=1)
-    return out
+    return sorted(out, key=archive_sort_key)
 
 
 def aggregate_metrics(daily_data: list[dict]) -> dict:
     cats = {"own": 0, "regulation": 0, "competitor": 0, "industry": 0, "other": 0}
     tones = {"negative": 0, "positive": 0, "neutral": 0}
     risk_days = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    by_date: dict[str, dict] = defaultdict(lambda: {
+        "date": "",
+        "total": 0,
+        "analyzed": 0,
+        "own": 0,
+        "own_negative": 0,
+        "risk": "LOW",
+    })
 
     for day in daily_data:
         metrics = day.get("metrics", {})
@@ -108,25 +187,27 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
         for key, value in metrics.get("by_tone", {}).items():
             tones[key] = tones.get(key, 0) + value
         risk = metrics.get("risk_level", "LOW")
-        risk_days[risk] = risk_days.get(risk, 0) + 1
+        date_value = day.get("date", "")
+        daily = by_date[date_value]
+        daily["date"] = date_value
+        daily["total"] += metrics.get("total_collected", 0)
+        daily["analyzed"] += metrics.get("total_after_cluster", 0)
+        daily["own"] += metrics.get("by_category", {}).get("own", 0)
+        daily["own_negative"] += metrics.get("own_negative", 0)
+        if RISK_ORDER.get(risk, 0) > RISK_ORDER.get(daily["risk"], 0):
+            daily["risk"] = risk
 
-    sorted_days = sorted(daily_data, key=lambda x: x["date"])
-    daily_volume = [
-        {
-            "date": d["date"],
-            "total": d.get("metrics", {}).get("total_collected", 0),
-            "analyzed": d.get("metrics", {}).get("total_after_cluster", 0),
-            "own": d.get("metrics", {}).get("by_category", {}).get("own", 0),
-            "risk": d.get("metrics", {}).get("risk_level", "LOW"),
-            "own_negative": d.get("metrics", {}).get("own_negative", 0),
-        }
-        for d in sorted_days
-    ]
+    daily_volume = sorted(by_date.values(), key=lambda row: row["date"])
+    for row in daily_volume:
+        risk_days[row["risk"]] = risk_days.get(row["risk"], 0) + 1
+
     total_articles = sum(d.get("metrics", {}).get("total_collected", 0) for d in daily_data)
     max_daily_total = max((d["total"] for d in daily_volume), default=0)
+    period_days = len(daily_volume)
 
     return {
-        "period_days": len(daily_data),
+        "period_days": period_days,
+        "period_windows": len(daily_data),
         "total_collected": total_articles,
         "total_after_cluster": sum(d.get("metrics", {}).get("total_after_cluster", 0) for d in daily_data),
         "by_category": cats,
@@ -134,14 +215,14 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
         "risk_distribution": risk_days,
         "daily_volume": daily_volume,
         "max_daily_total": max_daily_total,
-        "avg_daily_collected": round(total_articles / len(daily_data), 1) if daily_data else 0,
+        "avg_daily_collected": round(total_articles / period_days, 1) if period_days else 0,
         "category_share": {
             key: round((value / total_articles * 100), 1) if total_articles else 0
             for key, value in cats.items()
         },
         "daily_own_negative": [
-            {"date": d["date"], "value": d.get("metrics", {}).get("own_negative", 0)}
-            for d in sorted_days
+            {"date": d["date"], "value": d.get("own_negative", 0)}
+            for d in daily_volume
         ],
     }
 
@@ -151,7 +232,8 @@ def collect_top_articles(daily_data: list[dict], limit: int = 20) -> list[dict]:
     for day in daily_data:
         for article in day.get("articles", []):
             copied = dict(article)
-            copied["_date"] = day.get("date", "")
+            window = day.get("window", {})
+            copied["_date"] = f"{day.get('date', '')} {window.get('short_label') or window.get('slot', '')}".strip()
             articles.append(copied)
     articles.sort(key=lambda x: x.get("_score", 0), reverse=True)
     return articles[:limit]

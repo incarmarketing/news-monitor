@@ -17,6 +17,8 @@ TARGET_TITLES = {
     "news-monitor weekly report",
     "news-monitor monthly report",
 }
+NEGATIVE_WATCH_TITLE = "news-monitor negative watch"
+EXPECTED_NEGATIVE_MINUTES = list(range(0, 60, 5))
 
 
 def require_env(name: str) -> str:
@@ -45,6 +47,25 @@ def get_json(api_key: str, path: str) -> dict:
     return response.json()
 
 
+def schedule_minutes(job: dict) -> list[int]:
+    schedule = job.get("schedule") or {}
+    minutes = schedule.get("minutes") or []
+    return sorted(int(value) for value in minutes)
+
+
+def print_negative_watch_schedule_warning(job: dict) -> None:
+    if job.get("title") != NEGATIVE_WATCH_TITLE:
+        return
+    minutes = schedule_minutes(job)
+    if minutes == EXPECTED_NEGATIVE_MINUTES:
+        print("negative-watch cadence=5min OK")
+        return
+    print(
+        "WARNING: negative-watch cron minutes should be "
+        f"{EXPECTED_NEGATIVE_MINUTES}, current={minutes or 'unknown'}"
+    )
+
+
 def main() -> None:
     load_dotenv()
     api_key = require_env("CRONJOB_API_KEY")
@@ -62,6 +83,7 @@ def main() -> None:
         print(f"enabled={job.get('enabled')} lastStatus={job.get('lastStatus')} lastExecution={fmt_ts(job.get('lastExecution'))}")
         print(f"nextExecution={fmt_ts(job.get('nextExecution'))}")
         print(f"schedule={job.get('schedule')}")
+        print_negative_watch_schedule_warning(job)
 
         history = get_json(api_key, f"/jobs/{job_id}/history")
         predictions = history.get("predictions", [])

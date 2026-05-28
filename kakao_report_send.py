@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-import json
 import os
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+import archiver
 from supabase_store import save_notification_send
 
 BASE_DIR = Path(__file__).parent
-DAILY_DIR = BASE_DIR / "data" / "daily"
 LOG_DIR = BASE_DIR / "logs"
 
 KAKAO_OAUTH = "https://kauth.kakao.com/oauth/token"
@@ -43,18 +42,10 @@ def refresh_access_token() -> str:
 
 
 def load_latest_daily() -> dict:
-    today_file = DAILY_DIR / f"{today_kst().isoformat()}.json"
-    if today_file.exists():
-        return json.loads(today_file.read_text(encoding="utf-8"))
-
-    files = sorted(DAILY_DIR.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
-    if not files:
+    latest = archiver.load_latest()
+    if not latest:
         raise FileNotFoundError("No daily report archive found.")
-    return json.loads(files[0].read_text(encoding="utf-8"))
-
-
-def today_kst() -> date:
-    return datetime.now(KST).date()
+    return latest
 
 
 def latest_html_path() -> Path | None:
