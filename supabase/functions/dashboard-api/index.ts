@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       return await handleRest(payload, session);
     }
     if (action === "trigger_collection") {
-      return await triggerCollection(session);
+      return await triggerCollection(session, payload);
     }
     if (action === "logout") {
       return await revokeSession(sessionToken);
@@ -119,7 +119,7 @@ async function revokeSession(token: string) {
   return jsonResponse(result, result.ok ? 200 : 502);
 }
 
-async function triggerCollection(session: SessionInfo) {
+async function triggerCollection(session: SessionInfo, payload: Record<string, unknown>) {
   if (!["admin", "editor"].includes(session.role || "")) {
     return jsonResponse({ error: "write_not_allowed" }, 403);
   }
@@ -129,6 +129,9 @@ async function triggerCollection(session: SessionInfo) {
   const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
   const workflow = Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml";
   const ref = Deno.env.get("GITHUB_REF") || "main";
+  const periodReports = sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
+  const sendKakao = payload.send_kakao === true || String(payload.send_kakao || "").toLowerCase() === "true";
+  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto");
 
   if (!token) {
     return jsonResponse({ error: "missing_github_dispatch_token" }, 500);
@@ -147,9 +150,9 @@ async function triggerCollection(session: SessionInfo) {
       body: JSON.stringify({
         ref,
         inputs: {
-          period_reports: "none",
-          send_kakao: "false",
-          report_slot: "auto",
+          period_reports: periodReports,
+          send_kakao: String(sendKakao),
+          report_slot: reportSlot,
         },
       }),
     },
@@ -164,9 +167,19 @@ async function triggerCollection(session: SessionInfo) {
     ok: true,
     workflow,
     ref,
+    inputs: {
+      period_reports: periodReports,
+      send_kakao: sendKakao,
+      report_slot: reportSlot,
+    },
     requested_by: session.employee_no,
     requested_at: new Date().toISOString(),
   });
+}
+
+function sanitizeChoice(value: unknown, allowed: string[], fallback: string) {
+  const normalized = String(value || "").trim();
+  return allowed.includes(normalized) ? normalized : fallback;
 }
 
 async function supabaseRpc(functionName: string, body: Record<string, unknown>) {
