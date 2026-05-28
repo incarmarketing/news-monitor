@@ -1451,7 +1451,7 @@
 
           <div class="grid-2">
             <div class="panel">
-              <h2 class="panel-title" id="issueTitle"><i data-lucide="activity"></i> 최신 모니터링 핵심 이슈</h2>
+              <h2 class="panel-title" id="issueTitle"><i data-lucide="activity"></i> 최신 주요 관찰 이슈</h2>
               <div class="feed" id="topIssues"></div>
             </div>
             <div class="panel">
@@ -2243,12 +2243,12 @@
     }
 
     function formatPublishedAt(date, fallbackDate = "") {
-      if (!date) return fallbackDate ? `${fallbackDate} 보도` : "보도시각 미확인";
+      if (!date) return fallbackDate || "시각 미확인";
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
       const hour = String(date.getHours()).padStart(2, "0");
       const minute = String(date.getMinutes()).padStart(2, "0");
-      return `${month}-${day} ${hour}:${minute} 보도`;
+      return `${month}-${day} ${hour}:${minute}`;
     }
 
     function formatDateTime(value, fallback = "-") {
@@ -2266,18 +2266,37 @@
       return uniq(items.map(a => a.date)).sort().reverse()[0] || "";
     }
 
-    function hasActiveFilter() {
-      return Object.values(state.filters).some(Boolean);
+    function hasActiveFilter(options = {}) {
+      return Object.entries(state.filters).some(([key, value]) => value && !(options.ignoreDetail && key === "detail"));
     }
 
-    function contextLabel() {
-      return hasActiveFilter() ? "필터 적용 기준" : "최신 모니터링 기준";
+    function contextLabel(options = {}) {
+      return hasActiveFilter(options) ? "선택 조건 분석" : "최신 수집 데이터";
     }
 
     function focusedItems() {
       if (hasActiveFilter()) return state.filtered;
       const latest = latestDate(state.filtered);
       return latest ? state.filtered.filter(a => a.date === latest) : state.filtered;
+    }
+
+    function dashboardFilteredItems() {
+      const q = state.filters.q.toLowerCase();
+      return state.articles.filter(article => {
+        const haystack = [article.title, article.keyword, article.press, article.category_label, article.category_detail, article.tone_label].join(" ").toLowerCase();
+        return (!q || haystack.includes(q))
+          && (!state.filters.date || article.date === state.filters.date)
+          && (!state.filters.category || article.category === state.filters.category)
+          && (!state.filters.tone || article.tone === state.filters.tone)
+          && (!state.filters.risk || article.risk === state.filters.risk);
+      }).sort(latestArticleSort);
+    }
+
+    function dashboardFocusedItems() {
+      const items = dashboardFilteredItems();
+      if (hasActiveFilter({ ignoreDetail:true })) return items;
+      const latest = latestDate(items);
+      return latest ? items.filter(a => a.date === latest) : items;
     }
 
     function optionList(select, values, labeler = v => v) {
@@ -2384,19 +2403,19 @@
     }
 
     function renderHero() {
-      const current = focusedItems();
+      const current = dashboardFocusedItems();
       const cats = countBy(current,"category");
       const tones = countBy(current,"tone");
       const risk = current.find(a => a.risk)?.risk || "-";
       const topKeyword = topBy(current,"keyword",1)[0]?.[0] || "주요 키워드 없음";
       const market = (cats.competitor || 0) + (cats.industry || 0);
       document.getElementById("headline").textContent = `${topKeyword} 중심으로 ${current.length}건 관찰`;
-      document.getElementById("heroMeta").textContent = `${latestDate(current) || "-"} · ${contextLabel()}`;
+      document.getElementById("heroMeta").textContent = `${latestDate(current) || "-"} · ${contextLabel({ ignoreDetail:true })}`;
       const riskEl = document.getElementById("riskValue");
       riskEl.textContent = risk;
       riskEl.className = "risk-value";
       riskEl.closest(".risk-card").className = `risk-card risk-${String(risk).toLowerCase()}`;
-      document.getElementById("issueTitle").innerHTML = `<i data-lucide="activity"></i> ${hasActiveFilter() ? "필터 기준 핵심 이슈" : "최신 모니터링 핵심 이슈"}`;
+      document.getElementById("issueTitle").innerHTML = `<i data-lucide="activity"></i> ${hasActiveFilter({ ignoreDetail:true }) ? "선택 조건 주요 관찰 이슈" : "최신 주요 관찰 이슈"}`;
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
       renderHeroBriefs(current, cats, tones, market);
       document.getElementById("metricTotal").textContent = current.length.toLocaleString("ko-KR");
@@ -2637,8 +2656,8 @@
       }
       target.classList.add("active");
       target.innerHTML = `
-        <span>선택 분류: ${escapeHtml(state.filters.detail)}</span>
-        <button type="button" onclick="clearCategoryDetail()">해제</button>
+        <span>분류 조건: ${escapeHtml(state.filters.detail)}</span>
+        <button type="button" onclick="clearCategoryDetail()">조건 해제</button>
       `;
     }
 
@@ -2680,7 +2699,7 @@
     function renderArticles() {
       document.getElementById("resultCount").textContent = `${state.filtered.length.toLocaleString("ko-KR")}건`;
       document.getElementById("articleList").innerHTML = state.filtered.slice(0,160).map(a => articleCard(a)).join("") || '<div class="empty">표시할 기사가 없습니다.</div>';
-      document.getElementById("topIssues").innerHTML = focusedItems().slice().sort((a,b) => b.score - a.score).slice(0,5).map(a => articleCard(a,true)).join("") || '<div class="empty">핵심 이슈가 없습니다.</div>';
+      document.getElementById("topIssues").innerHTML = dashboardFocusedItems().slice().sort((a,b) => b.score - a.score).slice(0,5).map(a => articleCard(a,true)).join("") || '<div class="empty">주요 관찰 이슈가 없습니다.</div>';
       const risks = riskArticles().slice(0,20);
       document.getElementById("riskArticles").innerHTML = risks.map(a => riskResponseCard(a)).join("") || '<div class="empty">현재 당사 부정 리스크 기사가 없습니다.</div>';
       renderFlowFilterBar();
@@ -2757,8 +2776,8 @@
     }
 
     function renderAnalysis() {
-      const cats = countBy(focusedItems(),"category");
-      renderCategoryFlow("categoryBars", focusedItems());
+      const dashboardCurrent = dashboardFocusedItems();
+      renderCategoryFlow("categoryBars", dashboardCurrent);
 
       const items = analysisItems();
       const reportCats = countBy(items,"category");
