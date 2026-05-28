@@ -289,19 +289,8 @@
     .risk-card.risk-high .risk-value { color:#be123c; }
     .risk-label { color:var(--muted); font-size:11px; font-weight:900; margin-bottom:0; }
     .risk-hint { display:none; }
-    .hero-briefs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:10px; }
-    .hero-brief {
-      border:1px solid var(--line);
-      border-radius:8px;
-      padding:10px 11px;
-      background:#fff;
-      min-height:58px;
-      display:grid;
-      align-content:start;
-    }
-    .hero-brief b { display:block; color:var(--incar-dark); font-size:11px; margin-bottom:4px; }
-    .hero-brief span { color:#475467; font-size:12px; font-weight:800; line-height:1.35; }
     .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
+    .hero-metrics { margin:12px 0 0; }
     .metric {
       position:relative;
       overflow:hidden;
@@ -344,12 +333,10 @@
     .metric-copy {
       min-width:0;
       width:100%;
-      display:flex;
-      align-items:baseline;
-      justify-content:flex-end;
+      display:grid;
+      justify-items:end;
       gap:7px;
       text-align:right;
-      white-space:nowrap;
     }
     .metric strong { color:var(--incar-dark); font-size:23px; line-height:1; }
     .metric strong::after {
@@ -360,6 +347,24 @@
       font-weight:900;
     }
     .metric span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.2; }
+    .metric-copy-main {
+      display:flex;
+      align-items:baseline;
+      justify-content:flex-end;
+      gap:7px;
+      white-space:nowrap;
+    }
+    .metric-copy small {
+      display:block;
+      max-width:100%;
+      color:#667085;
+      font-size:11px;
+      font-weight:800;
+      line-height:1.25;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
     .grid-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
     .panel {
@@ -1523,7 +1528,7 @@
       .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
       .release-layout { grid-template-columns:1fr; }
       .release-quick { grid-template-columns:1fr; }
-      .hero-briefs,.media-flow,.insight-grid,.ad-kpis,.ops-grid { grid-template-columns:1fr; }
+      .media-flow,.insight-grid,.ad-kpis,.ops-grid { grid-template-columns:1fr; }
       .ad-dashboard-grid,.ad-filter-grid,.ad-summary-grid { grid-template-columns:1fr; }
       .ad-filter-grid { padding:13px; gap:11px; }
       .ad-filter-grid .btn { width:100%; justify-content:center; }
@@ -1817,27 +1822,37 @@
               </div>
               <h2 id="headline">언론 데이터를 불러오는 중입니다.</h2>
               <div class="hero-meta" id="heroMeta">수집 구간과 최신 이슈를 확인하고 있습니다.</div>
+              <div class="metric-grid hero-metrics">
+                <div class="metric">
+                  <div class="metric-icon"><i data-lucide="newspaper"></i></div>
+                  <div class="metric-copy">
+                    <div class="metric-copy-main"><span>분석기사</span><strong id="metricTotal">0</strong></div>
+                    <small id="metricTotalNote">분석 기준 확인 중</small>
+                  </div>
+                </div>
+                <div class="metric own">
+                  <div class="metric-icon"><i data-lucide="building-2"></i></div>
+                  <div class="metric-copy">
+                    <div class="metric-copy-main"><span>당사언급</span><strong id="metricOwn">0</strong></div>
+                    <small id="metricOwnNote">당사 리스크 확인 중</small>
+                  </div>
+                </div>
+                <div class="metric negative">
+                  <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
+                  <div class="metric-copy">
+                    <div class="metric-copy-main"><span>부정기사</span><strong id="metricNegative">0</strong></div>
+                    <small id="metricNegativeNote">부정 논조 확인 중</small>
+                  </div>
+                </div>
+                <div class="metric market">
+                  <div class="metric-icon"><i data-lucide="activity"></i></div>
+                  <div class="metric-copy">
+                    <div class="metric-copy-main"><span>GA/보험사</span><strong id="metricMarket">0</strong></div>
+                    <small id="metricMarketNote">시장 동향 확인 중</small>
+                  </div>
+                </div>
+              </div>
               <div class="judgement" id="judgement">현재 언론 상황을 분석합니다.</div>
-              <div class="hero-briefs" id="heroBriefs"></div>
-            </div>
-          </div>
-
-          <div class="metric-grid">
-            <div class="metric">
-              <div class="metric-icon"><i data-lucide="newspaper"></i></div>
-              <div class="metric-copy"><span>분석기사</span><strong id="metricTotal">0</strong></div>
-            </div>
-            <div class="metric own">
-              <div class="metric-icon"><i data-lucide="building-2"></i></div>
-              <div class="metric-copy"><span>당사언급</span><strong id="metricOwn">0</strong></div>
-            </div>
-            <div class="metric negative">
-              <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
-              <div class="metric-copy"><span>부정기사</span><strong id="metricNegative">0</strong></div>
-            </div>
-            <div class="metric market">
-              <div class="metric-icon"><i data-lucide="activity"></i></div>
-              <div class="metric-copy"><span>GA/보험사</span><strong id="metricMarket">0</strong></div>
             </div>
           </div>
 
@@ -2924,11 +2939,11 @@
       riskEl.closest(".risk-card").className = `risk-card risk-${String(risk).toLowerCase()}`;
       document.getElementById("issueTitle").innerHTML = `<i data-lucide="activity"></i> ${hasActiveFilter({ ignoreDetail:true }) ? "선택 조건 주요 관찰 이슈" : "최신 주요 관찰 이슈"}`;
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
-      renderHeroBriefs(current, cats, tones, market);
       document.getElementById("metricTotal").textContent = current.length.toLocaleString("ko-KR");
       document.getElementById("metricOwn").textContent = (cats.own || 0).toLocaleString("ko-KR");
       document.getElementById("metricNegative").textContent = (tones.negative || 0).toLocaleString("ko-KR");
       document.getElementById("metricMarket").textContent = market.toLocaleString("ko-KR");
+      renderHeroMetricNotes(current, cats, tones, market, topKeyword);
     }
 
     function renderOpsStatus() {
@@ -3103,18 +3118,17 @@
       return first === last ? `${first} 기준` : `${first} ~ ${last} 기준`;
     }
 
-    function renderHeroBriefs(items, cats, tones, market) {
+    function renderHeroMetricNotes(items, cats, tones, market, topKeywordLabel) {
       const topKeyword = topBy(items, "keyword", 1)[0];
       const ownNegative = companyNegativeCount(items);
-      const cards = [
-        ["분석 기준", `${dateRangeLabel(items)} · 누적 ${state.articles.length.toLocaleString("ko-KR")}건`],
-        ["핵심 키워드", topKeyword ? `${topKeyword[0]} · ${topKeyword[1]}건` : "관찰 키워드 없음"],
-        ["당사/리스크", `당사 ${cats.own || 0}건 · 당사 부정 ${ownNegative}건`],
-        ["GA/보험사", `동향 ${market}건 · 긍정 ${tones.positive || 0} · 부정 ${tones.negative || 0}`]
-      ];
-      document.getElementById("heroBriefs").innerHTML = cards.map(([title, value]) =>
-        `<div class="hero-brief"><b>${escapeHtml(title)}</b><span>${escapeHtml(value)}</span></div>`
-      ).join("");
+      const setText = (id, value) => {
+        const target = document.getElementById(id);
+        if (target) target.textContent = value;
+      };
+      setText("metricTotalNote", topKeyword ? `${dateRangeLabel(items)} · 핵심 ${topKeyword[0]} ${topKeyword[1].toLocaleString("ko-KR")}건` : `${dateRangeLabel(items)} · ${topKeywordLabel}`);
+      setText("metricOwnNote", `당사 부정 ${ownNegative.toLocaleString("ko-KR")}건`);
+      setText("metricNegativeNote", "전체 부정 논조");
+      setText("metricMarketNote", `긍정 ${tones.positive || 0} · 부정 ${tones.negative || 0}`);
     }
 
     function buildJudgement(items,cats,tones) {
