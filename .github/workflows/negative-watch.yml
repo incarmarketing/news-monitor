@@ -3,7 +3,7 @@ name: Negative Article Watch
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0,30 * * * *"
+    - cron: "0 */4 * * *"
 
 permissions:
   contents: write
@@ -15,6 +15,7 @@ concurrency:
 jobs:
   watch:
     runs-on: ubuntu-latest
+    timeout-minutes: 250
 
     steps:
       - name: Checkout
@@ -37,18 +38,16 @@ jobs:
       - name: Watch negative articles
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            for iteration in 1 2 3 4 5 6; do
-              echo "::group::Negative watch iteration ${iteration}/6"
-              python negative_watch.py
-              echo "::endgroup::"
-              if [ "$iteration" != "6" ]; then
-                sleep 300
-              fi
-            done
-          else
+          iterations="${NEGATIVE_WATCH_ITERATIONS:-48}"
+          interval="${NEGATIVE_WATCH_INTERVAL_SECONDS:-300}"
+          for iteration in $(seq 1 "$iterations"); do
+            echo "::group::Negative watch iteration ${iteration}/${iterations}"
             python negative_watch.py
-          fi
+            echo "::endgroup::"
+            if [ "$iteration" != "$iterations" ]; then
+              sleep "$interval"
+            fi
+          done
         env:
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
@@ -62,6 +61,8 @@ jobs:
           NEGATIVE_WATCH_ALWAYS_ON: "true"
           NEGATIVE_WATCH_START_HOUR: "0"
           NEGATIVE_WATCH_END_HOUR: "23"
+          NEGATIVE_WATCH_ITERATIONS: "48"
+          NEGATIVE_WATCH_INTERVAL_SECONDS: "300"
 
       - name: Persist sent alert state
         run: |

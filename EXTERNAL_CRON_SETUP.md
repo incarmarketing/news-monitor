@@ -1,6 +1,6 @@
 # 외부 Cron으로 GitHub Actions 호출하기
 
-GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다. 현재 `Negative Article Watch`는 GitHub 클라우드 러너 안에서 5분 간격으로 반복 감시하도록 구성되어 있고, cron-job.org는 이 실행을 한 번 더 깨우는 보조 장치입니다.
+GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다. 현재 `Negative Article Watch`는 4시간마다 GitHub 클라우드 러너를 띄우고, 러너 안에서 5분 간격으로 48회 반복 감시하도록 구성되어 있습니다. cron-job.org는 이 실행을 한 번 더 깨우는 보조 장치입니다.
 
 ## 1. GitHub 토큰 만들기
 
@@ -45,7 +45,7 @@ cron-job.org API key는 cron-job.org Console > Settings에서 생성합니다. c
 
 ## 2. 부정기사 24시간 5분 감지 호출
 
-외부 cron 서비스에서 아래 요청을 24시간 내내 5분마다 실행할 수 있습니다. 다만 기본 GitHub Actions도 30분마다 클라우드 러너를 띄운 뒤 러너 안에서 5분 간격으로 6회 감시합니다. `negative_watch.py`는 기본적으로 24/7로 동작하며 DB에는 `minutes_back=5`로 기록합니다.
+외부 cron 서비스에서 아래 요청을 24시간 내내 5분마다 실행할 수 있습니다. 다만 기본 GitHub Actions도 4시간마다 클라우드 러너를 띄운 뒤 러너 안에서 5분 간격으로 48회 감시합니다. `negative_watch.py`는 기본적으로 24/7로 동작하며 DB에는 `minutes_back=5`로 기록합니다.
 
 - Method: `POST`
 - URL:
