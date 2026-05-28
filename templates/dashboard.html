@@ -1202,6 +1202,15 @@
       font-weight:900;
       line-height:1.55;
     }
+    .executive-summary {
+      background:#fff;
+      border-color:#d7e0f3;
+      border-left-color:var(--incar);
+      font-size:16px;
+    }
+    .report-insight-grid { align-items:stretch; }
+    .report-insight-grid > .panel { height:100%; }
+    .report-evidence-panel { border-color:#cfd8ea; }
     .report-section-title {
       margin:0 0 12px;
       color:var(--incar-dark);
@@ -1398,8 +1407,21 @@
       .report-head h2 { margin:3px 0 2px; font-size:16px; line-height:1.1; }
       .report-meta { color:#475467; font-size:8px; line-height:1.25; }
       .report-controls { display:none !important; }
-      .report-body { padding:6px 0 0; gap:5px; }
-      .report-kpis { grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+      .executive-report-body {
+        padding:6px 0 0;
+        gap:5px;
+        display:grid;
+        grid-template-columns:.88fr 1.12fr;
+        grid-template-areas:
+          "kpis summary"
+          "insights evidence";
+      }
+      .executive-kpis { grid-area:kpis; }
+      .executive-summary { grid-area:summary; min-height:34px; display:flex; align-items:center; }
+      .report-insight-grid { grid-area:insights; display:grid; grid-template-columns:1fr; gap:5px; }
+      .report-evidence-panel { grid-area:evidence; }
+      .report-volume-row { display:none !important; }
+      .report-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
       .report-kpi { min-height:34px; padding:5px 6px; border-radius:5px; }
       .report-kpi .num { font-size:13px; }
       .report-kpi .label { margin-top:3px; font-size:7px; }
@@ -1622,35 +1644,35 @@
               <div class="field"><label>종료 기준일</label><input id="analysisEnd" type="date"></div>
               <button class="btn" id="applyAnalysisRange"><i data-lucide="search"></i><span>분석 적용</span></button>
             </div>
-            <div class="report-body">
-              <div class="report-kpis">
+            <div class="report-body executive-report-body">
+              <div class="report-kpis executive-kpis">
                 <div class="report-kpi"><div class="num" id="analysisTotal">0</div><div class="label">전체 기사</div></div>
                 <div class="report-kpi"><div class="num" id="analysisOwn">0</div><div class="label">당사</div></div>
                 <div class="report-kpi"><div class="num" id="analysisNegative">0</div><div class="label">부정 톤</div></div>
                 <div class="report-kpi"><div class="num" id="analysisRegulation">0</div><div class="label">정책</div></div>
                 <div class="report-kpi"><div class="num" id="analysisRisk">LOW</div><div class="label">리스크 레벨</div></div>
               </div>
-              <div class="report-message" id="analysisMessage">분석 데이터를 불러오는 중입니다.</div>
+              <div class="report-message executive-summary" id="analysisMessage">분석 데이터를 불러오는 중입니다.</div>
 
-              <div class="grid-2">
+              <div class="grid-2 report-volume-row">
                 <div class="panel analysis-volume-panel">
                   <h2 class="report-section-title"><i data-lucide="bar-chart-3"></i> 항목별 기사량</h2>
                   <div class="chart" id="volumeChart"></div>
                 </div>
               </div>
 
-              <div class="grid-2">
-                <div class="panel">
+              <div class="grid-2 report-insight-grid">
+                <div class="panel report-keyword-panel">
                   <h2 class="report-section-title"><i data-lucide="cloud"></i> 주요 키워드</h2>
                   <div class="keyword-board" id="keywordTree"></div>
                 </div>
-                <div class="panel">
+                <div class="panel report-insights-panel">
                   <h2 class="report-section-title"><i data-lucide="list-checks"></i> 자동 해석</h2>
                   <div class="feed" id="insights"></div>
                 </div>
               </div>
 
-              <div class="panel">
+              <div class="panel report-evidence-panel">
                 <h2 class="report-section-title"><i data-lucide="newspaper"></i> 분석 근거 기사</h2>
                 <div class="report-evidence" id="analysisEvidence"></div>
               </div>
