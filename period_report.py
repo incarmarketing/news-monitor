@@ -171,19 +171,15 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     risk_distribution = aggregate.get("risk_distribution", {})
     risk_level = "HIGH" if risk_distribution.get("HIGH", 0) or own_negative >= 3 else "MEDIUM" if risk_distribution.get("MEDIUM", 0) or own_negative else "LOW"
 
-    top_keyword = "-"
-    keyword_counts: dict[str, int] = {}
-    for article in top_articles:
-        keyword = (article.get("keyword") or "").strip()
-        if not keyword:
-            continue
-        keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
-    if keyword_counts:
-        top_keyword = sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+    top_keywords = aggregate.get("top_keywords", [])
+    top_sources = aggregate.get("top_sources", [])
+    risk_keywords = aggregate.get("risk_keywords", [])
+    top_keyword = top_keywords[0]["keyword"] if top_keywords else "-"
 
     watch_days = risk_distribution.get("HIGH", 0) + risk_distribution.get("MEDIUM", 0)
     total_after_cluster = max(aggregate.get("total_after_cluster", 0), 1)
     period_days = max(aggregate.get("period_days", 0), 1)
+    total_collected = max(aggregate.get("total_collected", 0), 1)
     if risk_level == "HIGH":
         headline = f"당사 부정 이슈 {own_negative}건, 주의 이상 {watch_days}일로 리스크 관찰 강도가 높은 기간입니다."
     elif own_negative:
@@ -223,6 +219,38 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         {"key": "negative", "label": "전체 부정", "value": tones.get("negative", 0), "share": round(tones.get("negative", 0) / total_after_cluster * 100)},
         {"key": "own-negative", "label": "당사 부정", "value": own_negative, "share": round(own_negative / total_after_cluster * 100)},
         {"key": "watch-days", "label": "주의 일수", "value": watch_days, "share": round(watch_days / period_days * 100)},
+        {"key": "neutral", "label": "중립 기사", "value": tones.get("neutral", 0), "share": round(tones.get("neutral", 0) / total_after_cluster * 100)},
+    ]
+    density_rows = [
+        {"label": "수집/분석", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"분석 전환 {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
+        {"label": "운영 구간", "value": f"{aggregate.get('period_days', 0)}일 · {aggregate.get('period_windows', 0)}회", "note": f"일평균 {aggregate.get('avg_daily_collected', 0)}건"},
+        {"label": "최대 기사량", "value": f"{aggregate.get('max_daily_total', 0):,}건", "note": "일 단위 최고 수집량"},
+        {"label": "관리축", "value": top_keyword, "note": "반복 노출 상위 키워드"},
+    ]
+    keyword_rows = [
+        {
+            "keyword": item.get("keyword", "-"),
+            "count": item.get("count", 0),
+            "share": round(item.get("count", 0) / total_after_cluster * 100),
+            "risk": next((risk_item.get("count", 0) for risk_item in risk_keywords if risk_item.get("keyword") == item.get("keyword")), 0),
+        }
+        for item in top_keywords[:8]
+    ]
+    source_rows = [
+        {
+            "source": item.get("source", "-"),
+            "count": item.get("count", 0),
+            "share": round(item.get("count", 0) / total_after_cluster * 100),
+        }
+        for item in top_sources[:6]
+    ]
+    daily_rows = [
+        {
+            **row,
+            "market": row.get("market", 0),
+            "negative": row.get("negative", 0),
+        }
+        for row in aggregate.get("daily_volume", [])[-6:]
     ]
     return {
         "headline": headline,
@@ -234,6 +262,10 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         "tracking_points": tracking_points,
         "categories": categories,
         "risk_mix": risk_mix,
+        "density_rows": density_rows,
+        "keyword_rows": keyword_rows,
+        "source_rows": source_rows,
+        "daily_rows": daily_rows,
     }
 
 

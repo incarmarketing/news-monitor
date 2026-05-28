@@ -171,11 +171,17 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
     cats = {"own": 0, "regulation": 0, "competitor": 0, "industry": 0, "other": 0}
     tones = {"negative": 0, "positive": 0, "neutral": 0}
     risk_days = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    keyword_counts: dict[str, int] = defaultdict(int)
+    source_counts: dict[str, int] = defaultdict(int)
+    risk_keyword_counts: dict[str, int] = defaultdict(int)
     by_date: dict[str, dict] = defaultdict(lambda: {
         "date": "",
         "total": 0,
         "analyzed": 0,
         "own": 0,
+        "regulation": 0,
+        "market": 0,
+        "negative": 0,
         "own_negative": 0,
         "risk": "LOW",
     })
@@ -193,9 +199,22 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
         daily["total"] += metrics.get("total_collected", 0)
         daily["analyzed"] += metrics.get("total_after_cluster", 0)
         daily["own"] += metrics.get("by_category", {}).get("own", 0)
+        daily["regulation"] += metrics.get("by_category", {}).get("regulation", 0)
+        daily["market"] += metrics.get("by_category", {}).get("competitor", 0) + metrics.get("by_category", {}).get("industry", 0)
+        daily["negative"] += metrics.get("by_tone", {}).get("negative", 0)
         daily["own_negative"] += metrics.get("own_negative", 0)
         if RISK_ORDER.get(risk, 0) > RISK_ORDER.get(daily["risk"], 0):
             daily["risk"] = risk
+        for article in day.get("articles", []):
+            keyword = str(article.get("keyword") or "").strip()
+            source = str(article.get("source") or article.get("press") or "").strip()
+            tone = article.get("_tone") or article.get("tone")
+            if keyword:
+                keyword_counts[keyword] += 1
+                if tone == "negative":
+                    risk_keyword_counts[keyword] += 1
+            if source:
+                source_counts[source] += 1
 
     daily_volume = sorted(by_date.values(), key=lambda row: row["date"])
     for row in daily_volume:
@@ -220,6 +239,18 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
             key: round((value / total_articles * 100), 1) if total_articles else 0
             for key, value in cats.items()
         },
+        "top_keywords": [
+            {"keyword": key, "count": value}
+            for key, value in sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0]))[:12]
+        ],
+        "top_sources": [
+            {"source": key, "count": value}
+            for key, value in sorted(source_counts.items(), key=lambda item: (-item[1], item[0]))[:10]
+        ],
+        "risk_keywords": [
+            {"keyword": key, "count": value}
+            for key, value in sorted(risk_keyword_counts.items(), key=lambda item: (-item[1], item[0]))[:8]
+        ],
         "daily_own_negative": [
             {"date": d["date"], "value": d.get("own_negative", 0)}
             for d in daily_volume
