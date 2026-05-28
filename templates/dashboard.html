@@ -2323,6 +2323,23 @@
     const isPortalPress = press => portalPressNames.has(canonicalPressKey(press));
     const isUnresolvedPress = press => ["언론사 확인", "언론사", "미확인"].includes(normalizePressLabel(press));
     const jsArg = value => JSON.stringify(String(value ?? ""));
+    const broadReputationKeywords = new Set(["브랜드평판", "브랜드 평판", "평판"]);
+    const monitoringContextTerms = [
+      "인카금융", "인카금융서비스", "보험", "보험사", "생명보험", "손해보험",
+      "보험대리점", "법인보험대리점", "GA", "보험GA", "보험설계사", "설계사",
+      "금융서비스", "금감원", "금융감독원", "금융위", "금융위원회", "손보", "생보"
+    ];
+    const normalizeKeywordKey = value => String(value || "").replace(/\s+/g, "");
+    const isBroadReputationKeyword = keyword => {
+      const normalized = normalizeKeywordKey(keyword);
+      return Array.from(broadReputationKeywords).some(item => normalizeKeywordKey(item) === normalized);
+    };
+    function isRelevantDashboardArticle(article) {
+      if (!isBroadReputationKeyword(article.keyword)) return true;
+      if (["own", "regulation", "competitor", "industry"].includes(article.category)) return true;
+      const text = [article.title, article.summary, article.keyword, article.press, article.source].join(" ");
+      return monitoringContextTerms.some(term => text.includes(term));
+    }
     const isCompanyMentionArticle = article => {
       const text = [article.title, article.summary, article.keyword, article.category_label].join(" ");
       return article.category === "own" || companyMentionTerms.some(term => text.includes(term));
@@ -4458,7 +4475,9 @@
         applyKeywordSource(data.keywords, "새로고침 데이터");
         await loadKeywordsFromSupabase();
         await loadManagementDataFromSupabase();
-        state.articles = sortByLatest((data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` })));
+        state.articles = sortByLatest((data.articles || [])
+          .map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }))
+          .filter(isRelevantDashboardArticle));
         await loadScrapsFromSupabase();
         optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
@@ -4649,7 +4668,9 @@
         applyKeywordSource(data.keywords, "배포 데이터");
         await loadKeywordsFromSupabase();
         await loadManagementDataFromSupabase();
-        state.articles = sortByLatest((data.articles || []).map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` })));
+        state.articles = sortByLatest((data.articles || [])
+          .map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }))
+          .filter(isRelevantDashboardArticle));
         await loadScrapsFromSupabase();
       } catch {
         state.articles = [];

@@ -148,7 +148,13 @@ DOMAIN_PRESS_MAP = {
     "fnnews.com": "파이낸셜뉴스",
 }
 
-AMBIGUOUS_COLLECTION_KEYWORDS = {"메가", "GA"}
+AMBIGUOUS_COLLECTION_KEYWORDS = {"메가", "GA", "브랜드평판", "브랜드 평판", "평판"}
+BROAD_REPUTATION_KEYWORDS = {"브랜드평판", "브랜드 평판", "평판"}
+CONTEXTUAL_REPUTATION_QUERIES = [
+    "보험대리점 브랜드평판",
+    "GA 브랜드평판",
+    "인카금융서비스 브랜드평판",
+]
 
 COLLECTION_CONTEXT_WORDS = [
     "인카금융", "인카금융서비스",
@@ -158,7 +164,7 @@ COLLECTION_CONTEXT_WORDS = [
     "보험 GA", "GA 보험", "GA업계", "대형 GA", "GA채널", "금융서비스",
     "금감원", "금융감독원", "금융위", "금융위원회", "보험업법",
     "수수료", "1200%", "정착지원금", "불완전판매", "내부통제",
-    "브랜드평판", "손보", "생보",
+    "손보", "생보",
 ]
 
 NAVER_OFFICE_ID_MAP = {
@@ -225,10 +231,25 @@ def load_collection_keywords() -> list[str]:
     try:
         keywords = supabase_store.load_monitor_keywords()
         if keywords:
-            return keywords
+            return normalize_collection_keywords(keywords)
     except Exception as exc:
         console.print(f"[yellow]Supabase keyword config skipped:[/] {exc}")
-    return config.KEYWORDS
+    return normalize_collection_keywords(config.KEYWORDS)
+
+
+def normalize_collection_keywords(keywords: list[str]) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for raw_keyword in keywords:
+        keyword = str(raw_keyword).strip()
+        if not keyword:
+            continue
+        expanded = CONTEXTUAL_REPUTATION_QUERIES if is_broad_reputation_keyword(keyword) else [keyword]
+        for item in expanded:
+            if item not in seen:
+                normalized.append(item)
+                seen.add(item)
+    return normalized
 
 
 def fetch_naver_news(keyword: str) -> list[dict]:
@@ -511,6 +532,11 @@ def keyword_requires_context(keyword: str) -> bool:
     if normalized in AMBIGUOUS_COLLECTION_KEYWORDS:
         return True
     return len(normalized) <= 2
+
+
+def is_broad_reputation_keyword(keyword: str) -> bool:
+    normalized = re.sub(r"\s+", "", keyword)
+    return normalized in {re.sub(r"\s+", "", item) for item in BROAD_REPUTATION_KEYWORDS}
 
 
 def apply_recency_filter(articles: list[dict], hours_back: int) -> list[dict]:

@@ -9,19 +9,19 @@
     "end": "2026-05-28T18:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 97,
-    "total_after_cluster": 39,
+    "total_collected": 89,
+    "total_after_cluster": 33,
     "by_category": {
       "own": 0,
       "regulation": 12,
       "competitor": 63,
       "industry": 12,
-      "other": 10
+      "other": 2
     },
     "by_tone": {
       "negative": 0,
       "positive": 0,
-      "neutral": 97
+      "neutral": 89
     },
     "own_negative": 0,
     "own_total": 0,
@@ -237,78 +237,6 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 3
-    },
-    {
-      "title": "방탄소년단(BTS) 1위, 5월 스타 브랜드평판 정상..2위 임영웅·3위 유재석",
-      "link": "http://www.breaknews.com/1210463",
-      "source": "브레이크뉴스",
-      "keyword": "브랜드평판",
-      "description": "브레이크뉴스 박동제 기자= 그룹 방탄소년단(BTS)이 5월 스타 브랜드평판 1위를 차지했다. 방탄소년단에 이어 2위는 가수 임영웅, 3위는 방송인 유재석이 이름을...",
-      "pub_date": "Thu, 28 May 2026 17:02:00 +0900",
-      "_score": 11,
-      "_category": "other",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "빗썸, 가상화폐거래소 5월 브랜드평판 1위 지켜...2위 업비트",
-      "link": "http://www.joseilbo.com/news/news_read.php?uid=569088&class=18&grp=",
-      "source": "조세일보",
-      "keyword": "브랜드평판",
-      "description": "한국기업평판연구서의 가상화폐거래소 브랜드평판 5월 빅데이터 분석결과, 1위는 빗썸인 것으로 분석됐다. 그 뒤를 이어 업비트와 코인원 순으로 각각 2, 3위로 집계됐다. 지난달 조사에 이어 연이은 브랜드평판...",
-      "pub_date": "Thu, 28 May 2026 16:30:00 +0900",
-      "_score": 11,
-      "_category": "other",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "SK리츠, 5월 리츠 브랜드평판 1위…롯데리츠·KB스타리츠 뒤이어",
-      "link": "http://www.popcornnews.net/news/articleView.html?idxno=122459",
-      "source": "팝콘뉴스",
-      "keyword": "브랜드평판",
-      "description": "연구소에 따르면 리츠 브랜드평판 1위를 기록한 SK리츠는 참여지수 13만9992 미디어지수 12만3610 소통지수 49만7204 커뮤니티지수 25만7699 시장지수 28만4987이 되면서 브랜드평판지수 130만3493으로 분석됐다. 이는...",
-      "pub_date": "Thu, 28 May 2026 14:32:00 +0900",
-      "_score": 11,
-      "_category": "other",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "미래에셋자산운용, 5월 ETF 발행기업 브랜드평판 1위...삼성자산운용·한...",
-      "link": "http://www.popcornnews.net/news/articleView.html?idxno=122479",
-      "source": "팝콘뉴스",
-      "keyword": "브랜드평판",
-      "description": "미래에셋자산운용이 5월 ETF 발행기업 브랜드평판 1위를 기록했다. 이어 2위에는 삼성자산운용, 3위는 한국투자신탁운용이 각각 선정돼 뒤를 이었다. 한국기업평판연구소는 지난달 28일부터 한 달간 ETF...",
-      "pub_date": "Thu, 28 May 2026 14:32:00 +0900",
-      "_score": 11,
-      "_category": "other",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "시행사 2026년 5월 브랜드평판...DK아시아, BS산업, 신영 順",
-      "link": "https://www.energy-news.co.kr/news/articleView.html?idxno=225719",
-      "source": "에너지경제",
-      "keyword": "브랜드평판",
-      "description": "​국내 시행사 브랜드평판 2026년 5월 빅데이터 분석결과, 1위 DK아시아 2위 BS산업 3위 신영 순으로 분석됐다. ​한국기업평판연구소는 2026년 4월 28일부터 2026년 5월 28일까지 시행사 브랜드 17개의...",
-      "pub_date": "Thu, 28 May 2026 13:04:00 +0900",
-      "_score": 11,
-      "_category": "other",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
-      "title": "아기화장품 2026년 5월 브랜드평판...몽디에스, 아토팜, 일리윤 順",
-      "link": "https://www.energy-news.co.kr/news/articleView.html?idxno=225718",
-      "source": "에너지경제",
-      "keyword": "브랜드평판",
-      "description": "​아기화장품 브랜드평판 2026년 5월 빅데이터 분석결과, 1위 몽디에스 2위 아토팜 3위 일리윤 순으로 분석됐다. 아기 화장품은 만3세 이하의 영유아 화장품을 말한다. 영유아용 샴푸·린스·로션·오일 등...",
-      "pub_date": "Thu, 28 May 2026 13:00:00 +0900",
-      "_score": 11,
-      "_category": "other",
-      "_tone": "neutral",
-      "_cluster_size": 1
     },
     {
       "title": "HMM 나무호, 두바이서 본격 수리 착수…전쟁보험 첫 사례 되나",
