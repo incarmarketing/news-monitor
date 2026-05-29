@@ -2524,13 +2524,13 @@
       auth: null
     };
     const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
-    const TEMP_LOGIN_BYPASS_UNTIL = "2026-06-02T00:00:00+09:00";
+    const TEMP_LOGIN_BYPASS_UNTIL = "2026-06-08T23:59:59+09:00";
     const TEMP_LOGIN_BYPASS_SESSION = {
       ok: true,
       employee_no: "1611499",
       display_name: "최진우",
       role: "admin",
-      session_token: "temporary-local-bypass",
+      session_token: "86090727ba1b0f6e7cd756952d221c2f2c0648a76894019087bb6488cb0b3fce",
       session_expires_at: TEMP_LOGIN_BYPASS_UNTIL,
       temporary: true
     };
@@ -2816,6 +2816,8 @@
           <span class="auth-chip"><b>권한</b>${escapeHtml(session.role || "viewer")}</span>
         `;
       }
+      const logoutButton = document.getElementById("logoutButton");
+      if (logoutButton) logoutButton.style.display = session.temporary ? "none" : "";
     }
 
     function bindLogin() {
@@ -2899,6 +2901,10 @@
     }
 
     async function logoutDashboard() {
+      if (state.auth?.temporary) {
+        location.reload();
+        return;
+      }
       try {
         await dashboardApi("logout");
       } catch {}
