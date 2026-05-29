@@ -1675,6 +1675,41 @@
     .table { width:100%; border-collapse:collapse; font-size:13px; }
     .table th,.table td { border-bottom:1px solid var(--line); padding:12px 10px; text-align:left; vertical-align:top; }
     .table th { color:var(--muted); font-size:12px; font-weight:900; background:#f8fafc; }
+    .media-table th,
+    .media-table td { vertical-align:middle; }
+    .media-table th:nth-child(2),
+    .media-table td:nth-child(2),
+    .media-table th:nth-child(3),
+    .media-table td:nth-child(3),
+    .media-table th:nth-child(4),
+    .media-table td:nth-child(4),
+    .media-table th:nth-child(5),
+    .media-table td:nth-child(5),
+    .media-table th:nth-child(6),
+    .media-table td:nth-child(6),
+    .media-table th:nth-child(7),
+    .media-table td:nth-child(7),
+    .media-table th:nth-child(8),
+    .media-table td:nth-child(8),
+    .media-table th:nth-child(9),
+    .media-table td:nth-child(9),
+    .media-table th:nth-child(11),
+    .media-table td:nth-child(11) {
+      text-align:center;
+    }
+    .media-table td:nth-child(10) {
+      text-align:left;
+      color:#344054;
+      font-weight:800;
+    }
+    .media-table td:nth-child(7) .chip {
+      min-width:28px;
+      justify-content:center;
+    }
+    .media-table td:nth-child(11) .btn {
+      margin:0 auto;
+      justify-content:center;
+    }
     .empty { border:1px dashed var(--line); border-radius:10px; padding:28px; color:var(--muted); text-align:center; font-weight:900; background:#fff; }
     .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .mobile-tabs { display:none; }
@@ -2380,7 +2415,7 @@
                 <button class="btn" onclick="resetHiddenMedia()">숨김 초기화</button>
               </div>
             </div>
-            <table class="table" id="mediaTable"></table>
+            <table class="table media-table" id="mediaTable"></table>
           </div>
           <div class="panel" style="margin-top:14px">
             <div class="section-head">
