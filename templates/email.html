@@ -75,10 +75,10 @@
   }
   .report-head {
     display:grid;
-    grid-template-columns:minmax(0,1fr) 260px;
-    gap:18px;
-    align-items:stretch;
-    padding:22px 24px 18px;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:22px;
+    align-items:end;
+    padding:24px 26px 20px;
     background:#fff;
     border-bottom:3px solid var(--navy);
   }
@@ -89,6 +89,25 @@
     margin-bottom:10px;
   }
   .brand img { width:98px; height:auto; display:block; }
+  .report-kicker {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:7px;
+    margin-bottom:11px;
+  }
+  .report-chip {
+    display:inline-flex;
+    align-items:center;
+    min-height:24px;
+    padding:0 9px;
+    border:1px solid #cbd7ea;
+    border-radius:999px;
+    background:#f8fbff;
+    color:var(--navy);
+    font-size:11px;
+    font-weight:900;
+  }
   .eyebrow {
     color:var(--blue);
     font-size:11px;
@@ -109,22 +128,23 @@
   }
   .risk-box {
     display:grid;
-    grid-template-columns:72px minmax(0,1fr);
-    gap:12px;
+    grid-template-columns:auto minmax(0,1fr);
+    gap:13px;
     align-items:center;
-    padding:13px;
-    border:1px solid var(--line);
-    border-radius:8px;
-    background:#f8fbff;
+    min-width:304px;
   }
   .risk-pill {
-    min-height:58px;
-    border-radius:7px;
-    display:grid;
-    place-items:center;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:76px;
+    min-height:46px;
+    padding:0 15px;
+    border-radius:8px;
     color:#fff;
     font-size:18px;
     font-weight:900;
+    letter-spacing:.02em;
   }
   .risk-pill.LOW { background:var(--green); }
   .risk-pill.MEDIUM { background:var(--amber); }
@@ -146,6 +166,10 @@
     color:var(--muted);
     font-size:11px;
     font-weight:800;
+  }
+  .risk-copy {
+    padding-left:13px;
+    border-left:1px solid var(--line);
   }
   .kpi-strip {
     display:grid;
@@ -190,7 +214,7 @@
   }
   .report-grid {
     display:grid;
-    grid-template-columns:minmax(0,1.35fr) minmax(340px,.8fr);
+    grid-template-columns:minmax(0,1fr) minmax(390px,.72fr);
     gap:14px;
     padding:16px;
     background:#f8fafc;
@@ -211,6 +235,7 @@
   }
   .analysis-main {
     border-left:5px solid var(--blue);
+    background:linear-gradient(90deg,#f7fbff 0%,#fff 54%);
   }
   .analysis-main p,
   .analysis-copy p {
@@ -268,6 +293,55 @@
     font-weight:800;
   }
   .actions ul { margin:0; padding-left:17px; }
+  .summary-grid {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+  .summary-card {
+    min-height:86px;
+    padding:12px;
+    border:1px solid #dbe4f2;
+    border-radius:8px;
+    background:#fff;
+  }
+  .summary-card span {
+    display:block;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:900;
+  }
+  .summary-card strong {
+    display:block;
+    margin-top:7px;
+    color:var(--navy);
+    font-size:20px;
+    line-height:1;
+  }
+  .summary-card small {
+    display:block;
+    margin-top:8px;
+    color:#475467;
+    font-size:11px;
+    font-weight:800;
+    line-height:1.35;
+  }
+  .brief-note {
+    display:grid;
+    gap:7px;
+  }
+  .brief-note div {
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    padding:8px 0;
+    border-bottom:1px solid #e5ebf4;
+    color:#344054;
+    font-size:12px;
+    font-weight:900;
+  }
+  .brief-note div:last-child { border-bottom:0; }
+  .brief-note span { color:var(--muted); font-weight:900; }
   .keywords {
     display:flex;
     flex-wrap:wrap;
@@ -398,18 +472,20 @@
       overflow:visible;
     }
     .report-head {
-      grid-template-columns:minmax(0,1fr) 220px;
-      padding:0 0 6px;
+      grid-template-columns:minmax(0,1fr) auto;
+      padding:0 0 7px;
       gap:9px;
       border-bottom-width:2px;
     }
-    .brand { margin-bottom:4px; gap:8px; }
-    .brand img { display:none; }
+    .report-kicker { gap:4px; margin-bottom:4px; }
+    .report-chip { min-height:16px; padding:0 5px; font-size:6.8px; }
+    .brand { display:none; }
     .eyebrow { font-size:7.8px; }
     h1 { font-size:15px; }
     .meta { margin-top:3px; font-size:7.8px; }
-    .risk-box { grid-template-columns:52px minmax(0,1fr); gap:6px; padding:5px; border-radius:5px; }
-    .risk-pill { min-height:34px; border-radius:4px; font-size:12px; }
+    .risk-box { grid-template-columns:auto minmax(0,1fr); gap:6px; min-width:190px; }
+    .risk-copy { padding-left:7px; }
+    .risk-pill { min-width:46px; min-height:30px; padding:0 7px; border-radius:5px; font-size:10px; }
     .risk-label { font-size:7px; }
     .risk-message { margin-top:1px; font-size:8.2px; }
     .risk-sub { margin-top:1px; font-size:7.4px; }
@@ -443,6 +519,13 @@
     .issue-detail { margin-top:2px; font-size:7px; }
     .actions { border-left-width:3px; }
     .actions ul { padding-left:10px; }
+    .summary-grid { gap:5px; }
+    .summary-card { min-height:44px; padding:5px; border-radius:5px; }
+    .summary-card span { font-size:6.7px; }
+    .summary-card strong { margin-top:3px; font-size:11px; }
+    .summary-card small { margin-top:3px; font-size:6.7px; }
+    .brief-note { gap:2px; }
+    .brief-note div { padding:3px 0; gap:6px; font-size:7px; }
     .keywords { gap:3px; }
     .keyword { padding:2px 4px; border-radius:4px; font-size:6.8px; }
     .evidence-list { gap:3px; }
@@ -489,14 +572,16 @@
     .report-head,
     .report-grid { grid-template-columns:1fr; }
     .report-head { padding:20px 16px 16px; }
-    .brand img { width:88px; }
+    .report-kicker { margin-bottom:9px; }
+    .brand { display:none; }
     h1 { font-size:22px; }
-    .risk-box { grid-template-columns:66px minmax(0,1fr); }
+    .risk-box { min-width:0; }
     .kpi-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .kpi:nth-child(2n) { border-right:0; }
     .kpi:last-child { grid-column:1/-1; }
     .report-grid { padding:12px; }
     .issue-grid { grid-template-columns:1fr; }
+    .summary-grid { grid-template-columns:1fr; }
     .evidence-list li { grid-template-columns:1fr; }
     .impact { justify-self:start; }
     .method-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -512,22 +597,20 @@
   <main class="page">
     <header class="report-head">
       <div>
-        <div class="brand">
-          <img src="assets/logo.png" alt="INCAR">
-          <div>
-            <div class="eyebrow">{{ subject_prefix }}</div>
-            <div class="meta">{{ company }} · {{ team }}</div>
-          </div>
+        <div class="report-kicker">
+          <span class="report-chip">{{ subject_prefix }}</span>
+          <span class="report-chip">{{ window.label }} 기준</span>
+          <span class="report-chip">{{ date_str }}</span>
         </div>
-        <h1>일일 언론 동향 한장 보고서</h1>
-        <div class="meta">{{ date_str }} · {{ window.label }} 기준</div>
+        <h1>일일 언론 동향 보고서</h1>
+        <div class="meta">{{ company }} {{ team }} · 당일 모니터링 브리핑</div>
       </div>
       <aside class="risk-box">
         <div class="risk-pill {{ metrics.risk_level }}">{{ metrics.risk_level }}</div>
-        <div>
-          <div class="risk-label">리스크 판단</div>
+        <div class="risk-copy">
+          <div class="risk-label">리스크 레벨</div>
           <div class="risk-message">{{ risk_message }}</div>
-          <div class="risk-sub">{{ window.short_label }} · 당사 부정 {{ metrics.own_negative }}건</div>
+          <div class="risk-sub">당사 부정 {{ metrics.own_negative }}건 · {{ window.short_label }}</div>
         </div>
       </aside>
     </header>
@@ -564,6 +647,29 @@
           {% endfor %}
         </section>
 
+        <section class="summary-grid">
+          <article class="summary-card">
+            <span>당사 보도</span>
+            <strong>{{ metrics.by_category.own }}건</strong>
+            <small>긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }} · 부정 {{ metrics.own_by_tone.negative }}</small>
+          </article>
+          <article class="summary-card">
+            <span>정책/감독</span>
+            <strong>{{ metrics.by_category.regulation }}건</strong>
+            <small>감독, 법안, 수수료, 설계사 이슈 관찰</small>
+          </article>
+          <article class="summary-card">
+            <span>경쟁/GA</span>
+            <strong>{{ metrics.by_category.competitor }}건</strong>
+            <small>대형 GA, 제휴, 실적, 브랜드 흐름</small>
+          </article>
+          <article class="summary-card">
+            <span>보험사/업계</span>
+            <strong>{{ metrics.by_category.industry }}건</strong>
+            <small>보험사 전략과 시장 분위기 확인</small>
+          </article>
+        </section>
+
         {% if sections.action_html %}
         <section class="panel actions">
           <h2 class="panel-title">대응 필요 사항</h2>
@@ -581,6 +687,16 @@
           </div>
         </section>
         {% endif %}
+
+        <section class="panel">
+          <h2 class="panel-title">보고 기준</h2>
+          <div class="brief-note">
+            <div><span>수집 구간</span><b>{{ window.label }}</b></div>
+            <div><span>수집/분석</span><b>{{ metrics.total_collected }}건 / {{ metrics.total_after_cluster }}건</b></div>
+            <div><span>데이터 출처</span><b>{{ methodology.sources }}</b></div>
+            <div><span>검색 키워드</span><b>{{ methodology.keywords }}개</b></div>
+          </div>
+        </section>
       </div>
 
       <aside class="stack">
@@ -609,15 +725,6 @@
           {% endif %}
         </section>
 
-        <section class="panel">
-          <h2 class="panel-title">보고서 기준</h2>
-          <div class="method-grid">
-            <div class="method"><span>출처</span><b>{{ methodology.sources }}</b></div>
-            <div class="method"><span>기간</span><b>{{ methodology.window }}</b></div>
-            <div class="method"><span>키워드</span><b>{{ methodology.keywords }}개</b></div>
-            <div class="method"><span>분석</span><b>{{ methodology.candidates }}건</b></div>
-          </div>
-        </section>
       </aside>
     </section>
 
