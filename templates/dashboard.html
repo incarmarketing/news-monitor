@@ -924,21 +924,22 @@
       position:relative;
       z-index:1;
       display:grid;
-      gap:10px;
-      margin-top:14px;
-      padding-top:14px;
+      gap:7px;
+      margin-top:8px;
+      padding-top:8px;
       border-top:1px solid rgba(255,255,255,.12);
     }
     .watch-stat-grid {
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:8px;
+      gap:6px;
     }
     .watch-stat {
       border:1px solid rgba(255,255,255,.14);
       border-radius:8px;
       background:rgba(255,255,255,.06);
-      padding:9px 10px;
+      min-height:48px;
+      padding:6px 8px;
       color:#fff;
       text-align:left;
       cursor:pointer;
@@ -951,14 +952,13 @@
     }
     .watch-stat strong {
       display:block;
-      margin-top:5px;
+      margin-top:4px;
       color:#fff;
-      font-size:18px;
+      font-size:15px;
       line-height:1;
     }
     .watch-stat small {
-      display:block;
-      margin-top:5px;
+      display:none;
       color:#d8e3ff;
       font-size:10.5px;
       font-weight:800;
@@ -998,16 +998,16 @@
     .watch-command-row {
       display:flex;
       flex-wrap:wrap;
-      gap:7px;
+      gap:6px;
     }
     .watch-command {
       border:1px solid rgba(255,255,255,.16);
       border-radius:999px;
       background:rgba(255,255,255,.08);
       color:#e7edff;
-      min-height:28px;
-      padding:0 10px;
-      font-size:11px;
+      min-height:24px;
+      padding:0 9px;
+      font-size:10.5px;
       font-weight:900;
       cursor:pointer;
     }
@@ -3568,21 +3568,11 @@
     }
 
     function dashboardFilteredItems() {
-      const q = state.filters.q.toLowerCase();
-      return state.articles.filter(article => {
-        const haystack = [article.title, article.keyword, article.press, article.category_label, article.category_detail, article.tone_label].join(" ").toLowerCase();
-        return (!q || haystack.includes(q))
-          && (!state.filters.start || article.date >= state.filters.start)
-          && (!state.filters.end || article.date <= state.filters.end)
-          && (!state.filters.category || article.category === state.filters.category)
-          && (!state.filters.tone || article.tone === state.filters.tone)
-          && (!state.filters.risk || article.risk === state.filters.risk);
-      }).sort(latestArticleSort);
+      return state.articles.slice().sort(latestArticleSort);
     }
 
     function dashboardFocusedItems() {
       const items = dashboardFilteredItems();
-      if (hasActiveFilter({ ignoreDetail:true })) return items;
       const latest = latestDate(items);
       return latest ? items.filter(a => a.date === latest) : items;
     }
@@ -3861,7 +3851,11 @@
         isCompanyNegative(article)
         || article.tone === "negative"
       ));
-      return (candidates.length ? candidates : riskArticles()).sort((a,b) => (
+      const fallback = state.articles.filter(article => (
+        isCompanyNegative(article)
+        || article.tone === "negative"
+      ));
+      return (candidates.length ? candidates : fallback).sort((a,b) => (
         issuePriority(b) - issuePriority(a) || latestArticleSort(a,b)
       ));
     }
@@ -3920,12 +3914,7 @@
       const negative = Number(latest?.negative_count ?? candidates.length ?? 0);
       const fresh = Number(latest?.new_negative_count ?? candidates.length ?? 0);
       const status = health?.tone === "error" ? "점검 필요" : candidates.length ? "확인 필요" : "정상";
-      const groupHtml = groups.map(group => `
-        <button class="watch-issue" type="button" onclick='openWatchIssue(${jsArg(group.key)}, ${jsArg(group.category)})'>
-          <b><span>${escapeHtml(group.key)}</span><span>${group.count.toLocaleString("ko-KR")}건</span></b>
-          <span>${escapeHtml(group.latest?.published_label || group.latest?.date || "최근")} · 부정 ${group.negative.toLocaleString("ko-KR")}건 · 당사 ${group.ownNegative.toLocaleString("ko-KR")}건</span>
-        </button>
-      `).join("");
+      const primaryGroup = groups[0];
       target.innerHTML = `
         <div class="watch-stat-grid">
           <button class="watch-stat" type="button" onclick="openWatchCandidates()">
@@ -3944,26 +3933,38 @@
             <small>검사 ${scanned.toLocaleString("ko-KR")}건 · 부정 ${negative.toLocaleString("ko-KR")}건</small>
           </button>
         </div>
-        ${groupHtml ? `<div class="watch-issue-list">${groupHtml}</div>` : '<div class="watch-empty-note">최근 감시 구간에서 당사 부정 후보가 없습니다. 정책·업계 부정은 별도 흐름으로만 관찰합니다.</div>'}
         <div class="watch-command-row">
           <button class="watch-command" type="button" onclick="openWatchCandidates()">부정 후보 보기</button>
+          ${primaryGroup ? `<button class="watch-command" type="button" onclick='openWatchIssue(${jsArg(primaryGroup.key)}, ${jsArg(primaryGroup.category)})'>${escapeHtml(primaryGroup.key)}</button>` : ""}
           <button class="watch-command" type="button" onclick="switchPage('risk')">대응 센터</button>
           <button class="watch-command" type="button" onclick="openWatchCandidates('own')">당사 부정만</button>
         </div>
       `;
     }
 
+    function watchFilterDateRange(items) {
+      const dates = sortedDates(items);
+      return { start: dates[0] || "", end: dates[dates.length - 1] || "" };
+    }
+
+    function watchCandidatesFor(mode = "all", category = "") {
+      return negativeWatchCandidateArticles().filter(article => {
+        if (mode === "own" && !isCompanyNegative(article)) return false;
+        if (category && article.category !== category) return false;
+        return true;
+      });
+    }
+
     function openWatchCandidates(mode = "all") {
-      const latest = latestDate(dashboardFocusedItems());
+      const candidates = watchCandidatesFor(mode);
+      const range = watchFilterDateRange(candidates);
       state.filters.q = "";
       state.filters.category = mode === "own" ? "own" : "";
       state.filters.tone = "negative";
       state.filters.risk = "";
       state.filters.detail = "";
-      if (latest) {
-        state.filters.start = latest;
-        state.filters.end = latest;
-      }
+      state.filters.start = range.start;
+      state.filters.end = range.end;
       syncFilterInputs();
       applyFilters();
       render();
@@ -3971,17 +3972,16 @@
     }
 
     function openWatchIssue(keyword, category = "") {
-      const latest = latestDate(dashboardFocusedItems());
+      const candidates = watchCandidatesFor("all", category);
+      const range = watchFilterDateRange(candidates);
       const broadLabel = /[\/]|리스크|부정/.test(keyword || "");
       state.filters.q = category || broadLabel ? "" : (keyword || "");
       state.filters.category = category || "";
       state.filters.tone = "negative";
       state.filters.risk = "";
       state.filters.detail = "";
-      if (latest) {
-        state.filters.start = latest;
-        state.filters.end = latest;
-      }
+      state.filters.start = range.start;
+      state.filters.end = range.end;
       syncFilterInputs();
       applyFilters();
       render();
