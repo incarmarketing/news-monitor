@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="dashboard-version" content="dashboard-20260529-report-insight">
+  <meta name="dashboard-version" content="dashboard-20260529-scrap-ai">
   <title>인카금융서비스 언론관리</title>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -1593,6 +1593,107 @@
       border-color:var(--incar);
       color:#fff;
     }
+    .scrap-workspace {
+      display:grid;
+      grid-template-columns:minmax(360px,.78fr) minmax(0,1.22fr);
+      gap:18px;
+      align-items:start;
+    }
+    .scrap-ai-panel {
+      position:sticky;
+      top:86px;
+      display:grid;
+      gap:12px;
+      background:linear-gradient(180deg,#fff 0%,#f8fbff 100%);
+    }
+    .scrap-ai-head {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .scrap-ai-head .panel-title { margin-bottom:6px; }
+    .scrap-ai-head p {
+      margin:0;
+      color:#667085;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.45;
+      word-break:keep-all;
+    }
+    .scrap-ai-count {
+      flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      min-height:28px;
+      padding:0 10px;
+      border:1px solid #c7d7fe;
+      border-radius:999px;
+      background:#eef4ff;
+      color:var(--incar);
+      font-size:12px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .scrap-preset-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .scrap-preset-row .btn {
+      min-height:32px;
+      padding:6px 10px;
+      font-size:12px;
+      background:#fff;
+    }
+    #scrapAnalysisPrompt {
+      width:100%;
+      resize:vertical;
+      min-height:104px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:12px;
+      color:#182230;
+      font-size:13px;
+      font-weight:800;
+      line-height:1.55;
+      outline:none;
+      background:#fff;
+    }
+    #scrapAnalysisPrompt:focus {
+      border-color:#9eb1dc;
+      box-shadow:0 0 0 3px rgba(39,57,140,.08);
+    }
+    .scrap-ai-actions {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .scrap-analysis-output {
+      min-height:220px;
+      max-height:560px;
+      overflow:auto;
+      border:1px solid #dbe7ff;
+      border-radius:8px;
+      background:#fff;
+      padding:14px;
+      color:#182230;
+      font-size:13px;
+      font-weight:800;
+      line-height:1.65;
+      white-space:pre-wrap;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+    }
+    .scrap-analysis-output.is-empty {
+      color:#667085;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      min-height:150px;
+      background:#fbfdff;
+    }
     .release-layout {
       display:grid;
       grid-template-columns:minmax(0,.95fr) minmax(380px,1.05fr);
@@ -2011,6 +2112,8 @@
       }
       .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
       .release-layout { grid-template-columns:1fr; }
+      .scrap-workspace { grid-template-columns:1fr; }
+      .scrap-ai-panel { position:static; }
       .release-quick { grid-template-columns:1fr; }
       .media-flow,.insight-grid,.ad-kpis,.ops-grid { grid-template-columns:1fr; }
       .ad-dashboard-grid,.ad-filter-grid,.ad-summary-grid { grid-template-columns:1fr; }
@@ -2046,6 +2149,10 @@
       .keyword-category-grid,.url-input-row { grid-template-columns:1fr; }
       .url-input-row .btn { width:100%; justify-content:center; }
       .actions .btn span { display:none; }
+      .scrap-ai-head { display:grid; gap:10px; }
+      .scrap-ai-actions { justify-content:stretch; }
+      .scrap-ai-actions .btn { flex:1 1 0; }
+      .scrap-analysis-output { max-height:420px; }
       .monitor-head { display:grid; grid-template-columns:1fr; }
       .monitor-head-actions {
         margin-left:0;
@@ -2539,9 +2646,32 @@
         </section>
 
         <section class="page" id="page-scrap">
-          <div class="panel">
-            <h2 class="panel-title"><i data-lucide="bookmark"></i> 주요 기사 스크랩</h2>
-            <div class="feed" id="scrapList"></div>
+          <div class="scrap-workspace">
+            <div class="panel scrap-ai-panel">
+              <div class="scrap-ai-head">
+                <div>
+                  <h2 class="panel-title"><i data-lucide="sparkles"></i> 스크랩 AI 분석</h2>
+                  <p>스크랩한 기사만 근거로 원하는 관점의 분석 메모를 생성합니다.</p>
+                </div>
+                <span class="scrap-ai-count" id="scrapAnalysisStatus">스크랩 0건</span>
+              </div>
+              <div class="scrap-preset-row">
+                <button class="btn" onclick='setScrapAnalysisPrompt("임원 보고용으로 핵심 판단, 리스크, 후속 확인 포인트를 간결하게 정리해줘.")'>임원 보고</button>
+                <button class="btn" onclick='setScrapAnalysisPrompt("홍보 대응 관점에서 부정 이슈와 우호적으로 활용할 수 있는 기사 흐름을 나눠 분석해줘.")'>홍보 대응</button>
+                <button class="btn" onclick='setScrapAnalysisPrompt("기사들의 공통 흐름과 반복 키워드를 바탕으로 다음 모니터링 포인트를 뽑아줘.")'>동향 점검</button>
+              </div>
+              <textarea id="scrapAnalysisPrompt" rows="4" placeholder="원하는 분석 방향을 말씀해주세요. 예: 이 기사들을 임원 보고용으로 리스크 중심 분석해줘."></textarea>
+              <div class="scrap-ai-actions">
+                <button class="btn primary" onclick="analyzeScraps()"><i data-lucide="wand-sparkles"></i><span>스크랩 분석</span></button>
+                <button class="btn" onclick="copyScrapAnalysis()"><i data-lucide="copy"></i><span>결과 복사</span></button>
+              </div>
+              <div class="scrap-analysis-output is-empty" id="scrapAnalysisOutput">스크랩 기사를 선택한 뒤 분석 방향을 입력하면 결과가 표시됩니다.</div>
+            </div>
+
+            <div class="panel">
+              <h2 class="panel-title"><i data-lucide="bookmark"></i> 주요 기사 스크랩</h2>
+              <div class="feed" id="scrapList"></div>
+            </div>
           </div>
         </section>
 
@@ -4415,6 +4545,161 @@
 
     function renderScraps() {
       document.getElementById("scrapList").innerHTML = state.scraps.map(a => articleCard(a)).join("") || '<div class="empty">스크랩된 기사가 없습니다.</div>';
+      updateScrapAnalysisStatus();
+    }
+
+    function updateScrapAnalysisStatus(message = "") {
+      const target = document.getElementById("scrapAnalysisStatus");
+      if (!target) return;
+      const count = state.scraps.length;
+      target.textContent = message || `스크랩 ${count.toLocaleString("ko-KR")}건`;
+    }
+
+    function setScrapAnalysisPrompt(text) {
+      const target = document.getElementById("scrapAnalysisPrompt");
+      if (!target) return;
+      target.value = text;
+      target.focus();
+    }
+
+    function scrapAnalysisArticles() {
+      return state.scraps.slice(0, 40).map(article => ({
+        title: article.title || "",
+        summary: article.summary || "",
+        press: article.press || "",
+        date: article.date || "",
+        published_label: article.published_label || "",
+        link: article.link || "",
+        keyword: article.keyword || "",
+        category_label: article.category_label || categoryLabel(article.category),
+        tone_label: article.tone_label || toneLabel(article.tone),
+        risk: article.risk || "",
+      }));
+    }
+
+    async function analyzeScraps() {
+      const articles = scrapAnalysisArticles();
+      if (!articles.length) return alert("먼저 분석할 기사를 스크랩해 주세요.");
+      const promptInput = document.getElementById("scrapAnalysisPrompt");
+      const output = document.getElementById("scrapAnalysisOutput");
+      const prompt = (promptInput?.value || "").trim() || "스크랩 기사들을 기준으로 핵심 이슈, 리스크, 활용 포인트를 분석해줘.";
+      if (output) {
+        output.classList.remove("is-empty");
+        output.textContent = "AI가 스크랩 기사들을 근거별로 묶어 분석 중입니다...";
+      }
+      updateScrapAnalysisStatus("분석 중");
+      try {
+        const result = await requestScrapAnalysis(prompt, articles);
+        const analysis = result.analysis || result.draft || "";
+        if (!analysis) throw new Error("empty_scrap_analysis");
+        if (output) output.textContent = analysis + (result.finishReason === "MAX_TOKENS" ? "\n\n[작성 참고]\nAI 응답이 길이 제한에 도달했습니다. 분석 범위를 좁혀 다시 요청하면 더 완결된 결과를 받을 수 있습니다." : "");
+        updateScrapAnalysisStatus(`${articles.length.toLocaleString("ko-KR")}건 분석`);
+      } catch (error) {
+        if (output) {
+          output.textContent = fallbackScrapAnalysis(prompt, articles, error);
+          output.classList.remove("is-empty");
+        }
+        updateScrapAnalysisStatus("기본 분석");
+      }
+      lucide.createIcons();
+    }
+
+    async function requestScrapAnalysis(prompt, articles) {
+      const config = await fetchSupabaseConfig(true);
+      if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+      const baseUrl = config.url.replace(/\/$/,"");
+      const headers = {
+        apikey: config.anon_key,
+        Authorization: `Bearer ${config.anon_key}`,
+        "Content-Type": "application/json",
+      };
+
+      const primary = await fetch(`${baseUrl}/functions/v1/analyze-scraps`, {
+        method: "POST",
+        cache: "no-store",
+        headers,
+        body: JSON.stringify({ prompt, articles }),
+      });
+      if (primary.ok) return primary.json();
+
+      const fallbackIssue = buildScrapAnalysisIssue(prompt, articles);
+      const fallback = await fetch(`${baseUrl}/functions/v1/generate-risk-response`, {
+        method: "POST",
+        cache: "no-store",
+        headers,
+        body: JSON.stringify({
+          type: "internal",
+          issue: fallbackIssue,
+          context: { mode: "scrap_analysis", article_count: articles.length, articles },
+        }),
+      });
+      if (!fallback.ok) throw new Error(`scrap_analysis_failed_${primary.status}_${fallback.status}`);
+      return fallback.json();
+    }
+
+    function buildScrapAnalysisIssue(prompt, articles) {
+      const articleText = articles.map((article, index) => [
+        `[${index + 1}] ${article.press || "언론사 미확인"} / ${article.published_label || article.date || "-"} / ${article.category_label || "-"} / ${article.tone_label || "-"}`,
+        `제목: ${article.title || "제목 없음"}`,
+        `요약: ${article.summary || "요약 없음"}`,
+      ].join("\n")).join("\n\n");
+      return [
+        "스크랩 기사 묶음 분석 요청입니다.",
+        `사용자 요청: ${prompt}`,
+        "",
+        "요구사항:",
+        "- 아래 기사만 근거로 분석",
+        "- 단순 요약이 아니라 공통 흐름, 리스크, 활용 포인트를 도출",
+        "- 판단마다 기사 번호를 근거로 표시",
+        "- Markdown 제목 기호와 굵게 표시는 사용하지 않음",
+        "",
+        "스크랩 기사:",
+        articleText,
+      ].join("\n");
+    }
+
+    function fallbackScrapAnalysis(prompt, articles, error) {
+      const byPress = countValues(articles, a => a.press || "언론사 미확인");
+      const byTone = countValues(articles, a => a.tone_label || "논조 미확인");
+      const byCategory = countValues(articles, a => a.category_label || "분류 미확인");
+      const topPress = Object.entries(byPress).sort((a,b) => b[1]-a[1]).slice(0,3);
+      const topCategories = Object.entries(byCategory).sort((a,b) => b[1]-a[1]).slice(0,3);
+      const negative = articles.filter(article => /부정|risk|negative/i.test(`${article.tone_label} ${article.risk}`));
+      const own = articles.filter(article => /당사|인카/.test(`${article.category_label} ${article.title} ${article.summary}`));
+      const topTitles = articles.slice(0,5).map((article, index) => `- [${index + 1}] ${article.press || "언론사 미확인"}: ${article.title || "제목 없음"}`).join("\n");
+      return [
+        "스크랩 기본 분석",
+        "",
+        `분석 요청: ${prompt}`,
+        `대상 기사: ${articles.length.toLocaleString("ko-KR")}건`,
+        `주요 언론사: ${topPress.map(([name,count]) => `${name} ${count}건`).join(", ") || "확인 필요"}`,
+        `주요 분류: ${topCategories.map(([name,count]) => `${name} ${count}건`).join(", ") || "확인 필요"}`,
+        `논조 분포: ${Object.entries(byTone).map(([name,count]) => `${name} ${count}건`).join(", ") || "확인 필요"}`,
+        "",
+        "핵심 판단",
+        `- 스크랩 기준으로 당사 관련 기사는 ${own.length.toLocaleString("ko-KR")}건, 부정 또는 리스크 논조는 ${negative.length.toLocaleString("ko-KR")}건입니다.`,
+        "- AI 분석 함수 연결이 되면 기사 간 맥락과 근거 번호를 붙인 상세 분석으로 확장됩니다.",
+        "",
+        "우선 확인 기사",
+        topTitles || "- 스크랩 기사 없음",
+        "",
+        `[연결 참고] Gemini 분석 호출이 실패해 브라우저 기본 분석을 표시했습니다. (${error?.message || "unknown"})`,
+      ].join("\n");
+    }
+
+    function countValues(items, getter) {
+      return items.reduce((acc, item) => {
+        const value = getter(item) || "미분류";
+        acc[value] = (acc[value] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function copyScrapAnalysis() {
+      const text = document.getElementById("scrapAnalysisOutput")?.textContent || "";
+      if (!text.trim() || text.includes("스크랩 기사를 선택한 뒤")) return alert("복사할 분석 결과가 없습니다.");
+      navigator.clipboard?.writeText(text);
+      alert("스크랩 분석 결과가 복사되었습니다.");
     }
 
     async function toggleScrapById(key) {
