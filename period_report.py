@@ -105,19 +105,19 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 
 작성 형식:
 ## 핵심 브리핑
-2문장. 기간 전체에서 보고받는 사람이 먼저 알아야 할 사실을 압축해 씁니다.
+3문장. 기간 전체에서 보고받는 사람이 먼저 알아야 할 사실과 가장 큰 변화 축을 압축해 씁니다.
 
 ## 기간 해석
-3문장. 원문 수집량과 중복 정리 후 분석 기사 수가 다른 이유, 당사 노출 비중, 업계/정책 흐름을 해석합니다.
+4문장. 원문 수집량과 중복 정리 후 분석 기사 수가 다른 이유, 당사 노출 비중, 업계/정책 흐름, 특정 일자 변동을 해석합니다.
 
 ## 리스크 판독
-3개 bullet. 당사 직접 부정, 정책/감독, GA/보험사 동향을 각각 해석합니다. 화면 숫자를 그대로 반복하지 말고 의미를 설명합니다.
+4개 bullet. 당사 직접 부정, 일반 부정 논조, 정책/감독, GA/보험사 동향을 각각 해석합니다. 화면 숫자를 그대로 반복하지 말고 의미를 설명합니다.
 
 ## 관찰 포인트
-2개 bullet. 다음 기간에도 비교해야 할 반복 신호를 씁니다.
+3개 bullet. 다음 기간에도 비교해야 할 반복 신호를 씁니다.
 
 작성 제한:
-- 전체 900자 이내.
+- 전체 1,150자 이내.
 - 마크다운 굵게 표시(**)를 쓰지 마세요.
 - ###, #### 제목을 쓰지 마세요.
 - 근거 없는 추측을 쓰지 마세요.
@@ -142,33 +142,52 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
     total_after_cluster = aggregate.get("total_after_cluster", 0)
     regulation = aggregate["by_category"]["regulation"]
     own = aggregate["by_category"]["own"]
+    negative = aggregate["by_tone"].get("negative", 0)
+    neutral = aggregate["by_tone"].get("neutral", 0)
     conversion = round(total_after_cluster / max(total_collected, 1) * 100)
-    top_keyword = "-"
-    keyword_counts: dict[str, int] = {}
-    for article in top_articles:
-        keyword = (article.get("keyword") or "").strip()
-        if not keyword:
-            continue
-        keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
-    if keyword_counts:
-        top_keyword = sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
+    top_keyword = aggregate.get("top_keywords", [{}])[0].get("keyword", "-") if aggregate.get("top_keywords") else "-"
+    top_keyword_count = aggregate.get("top_keywords", [{}])[0].get("count", 0) if aggregate.get("top_keywords") else 0
+    top_source = aggregate.get("top_sources", [{}])[0].get("source", "-") if aggregate.get("top_sources") else "-"
+    top_source_count = aggregate.get("top_sources", [{}])[0].get("count", 0) if aggregate.get("top_sources") else 0
+    daily_volume = aggregate.get("daily_volume", [])
+    peak_day = max(daily_volume, key=lambda row: row.get("total", 0), default={})
+    latest_day = daily_volume[-1] if daily_volume else {}
+    risk_dates = [
+        row.get("date", "")[5:]
+        for row in daily_volume
+        if row.get("risk") in {"HIGH", "MEDIUM"}
+    ]
+    risk_date_text = ", ".join(risk_dates) if risk_dates else "없음"
     return f"""## 핵심 브리핑
-{period_label} 기준 원문 수집은 {total_collected}건, 중복 정리 후 분석 기사는 {total_after_cluster}건입니다. 당사 언급은 {own}건이며, 주의 이상 일자는 {risk_days}일로 집계됐습니다.
+{period_label} 기준 원문 수집은 {total_collected}건, 중복 정리 후 분석 기사는 {total_after_cluster}건입니다. 당사 언급은 {own}건이며, 당사 직접 부정은 {own_negative_total}건으로 별도 추적 대상입니다. 전체 흐름은 {top_keyword} 키워드와 GA/보험사 동향이 주도했고, 주의 이상 일자는 {risk_days}일로 제한적입니다.
 
 ## 기간 해석
-원문 수집 건수는 슬롯별 검색량을 합산한 값이고, 분석 기사는 중복 링크와 유사 기사를 정리한 실제 검토 기준입니다. 분석 전환율은 {conversion}%로, 같은 이슈가 반복 노출된 비중을 함께 보여줍니다. 당사 직접 보도보다 GA/보험사 및 정책성 보도의 흐름이 더 큰 비중을 차지했습니다.
+원문 수집 건수는 슬롯별 검색량을 합산한 값이고, 분석 기사는 중복 링크와 유사 기사를 정리한 실제 검토 기준입니다. 분석 전환율은 {conversion}%로, 같은 이슈가 여러 매체와 포털 경로에서 반복 노출된 비중을 함께 보여줍니다. 당사 직접 보도보다 GA/보험사 및 정책성 보도의 흐름이 더 큰 비중을 차지했습니다. 일자별로는 {peak_day.get('date', '-')}에 {peak_day.get('total', 0)}건으로 노출이 가장 컸고, 최근 기준일 {latest_day.get('date', '-')}은 {latest_day.get('total', 0)}건으로 마감됐습니다.
 
 ## 리스크 판독
-- 당사 직접 부정: {own_negative_total}건으로, 당사 평판 리스크는 별도 흐름으로 분리해 봐야 합니다.
-- 정책/감독: {regulation}건으로, 제도 변화가 업계 보도량을 끌어올리는지 보는 축입니다.
+- 당사 직접 부정: {own_negative_total}건으로, 일반 업계 부정 기사와 분리해 관리해야 하는 평판 신호입니다.
+- 일반 부정 논조: {negative}건으로, 대부분 당사 직접 이슈보다 업계·상품·제도 환경의 부정 흐름으로 읽힙니다.
+- 정책/감독: {regulation}건으로, 제도 변화가 업계 보도량을 끌어올리는지 확인하는 축입니다.
 - GA/보험사 동향: {market}건으로, 당사 직접 이슈보다 시장 환경 신호가 강한 구간입니다.
 
 ## 관찰 포인트
-- {top_keyword}: 반복 노출 여부와 확산 매체가 기간 비교의 핵심 기준입니다.
-- 기사량 변화: 특정 일자에 수집량이 튄 경우 동일 이슈의 재확산인지 신규 이슈인지 구분해야 합니다."""
+- {top_keyword}: {top_keyword_count}건 관찰되어 다음 기간에도 반복 노출 여부를 비교해야 합니다.
+- {top_source}: {top_source_count}건으로 영향 매체 상위에 있어 포털/원매체 보정 여부를 함께 봐야 합니다.
+- 주의 관찰일: {risk_date_text} 구간이 리스크 판정일이며, 동일 이슈의 재확산인지 신규 이슈인지 분리해 봐야 합니다."""
 
 
 def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
+    def pct(value: int | float, denominator: int | float) -> int:
+        if not denominator:
+            return 0
+        return max(0, min(100, round(value / denominator * 100)))
+
+    def bar_share(value: int | float) -> int:
+        value = max(0, min(100, round(value)))
+        if value and value < 4:
+            return 4
+        return value
+
     cats = aggregate["by_category"]
     tones = aggregate["by_tone"]
     own = cats.get("own", 0)
@@ -187,6 +206,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     total_after_cluster = max(aggregate.get("total_after_cluster", 0), 1)
     period_days = max(aggregate.get("period_days", 0), 1)
     total_collected = max(aggregate.get("total_collected", 0), 1)
+    tone_total = max(sum(tones.values()), total_collected, 1)
     if risk_level == "HIGH":
         headline = f"당사 직접 부정 {own_negative}건과 주의 이상 {watch_days}일이 확인된 고위험 관찰 구간입니다."
     elif own_negative:
@@ -216,17 +236,32 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         },
     ]
 
+    category_items = [
+        ("own", "당사", own, pct(own, total_collected), "인카금융서비스 직접 언급 보도입니다. 브랜드평판·실적·당사 이슈 노출을 별도로 봅니다."),
+        ("regulation", "정책", regulation, pct(regulation, total_collected), "법안·감독·제도성 기사입니다. 업계 리스크의 배경 신호로 해석합니다."),
+        ("market", "GA/보험", market, pct(market, total_collected), "GA·보험사·보험상품 관련 보도입니다. 시장 환경 변화의 주된 관찰 축입니다."),
+        ("other", "기타", cats.get("other", 0), pct(cats.get("other", 0), total_collected), "핵심 분류와 직접 연결되지 않는 잔여 기사입니다."),
+    ]
     categories = [
-        {"key": "own", "label": "당사", "value": own, "share": aggregate["category_share"].get("own", 0)},
-        {"key": "regulation", "label": "정책", "value": regulation, "share": aggregate["category_share"].get("regulation", 0)},
-        {"key": "market", "label": "GA/보험", "value": market, "share": aggregate["category_share"].get("competitor", 0) + aggregate["category_share"].get("industry", 0)},
-        {"key": "other", "label": "기타", "value": cats.get("other", 0), "share": aggregate["category_share"].get("other", 0)},
+        {"key": key, "label": label, "value": f"{value:,}건", "share": share, "bar_share": bar_share(share), "note": note}
+        for key, label, value, share, note in category_items
+    ]
+    risk_items = [
+        ("negative", "부정 논조", tones.get("negative", 0), pct(tones.get("negative", 0), tone_total), "전체 수집 기사 중 부정 톤으로 분류된 기사입니다."),
+        ("own-negative", "당사 부정", own_negative, pct(own_negative, tone_total), "당사가 직접 언급된 부정 기사입니다. 일반 부정 기사와 분리해 봅니다."),
+        ("watch-days", "주의 관찰일", watch_days, pct(watch_days, period_days), "HIGH 또는 MEDIUM으로 판정된 일자 수입니다. 기사 건수가 아니라 날짜 기준입니다."),
+        ("neutral", "중립 논조", tones.get("neutral", 0), pct(tones.get("neutral", 0), tone_total), "사실 전달형 기사 비중입니다. 기본 노출량의 바탕 흐름입니다."),
     ]
     risk_mix = [
-        {"key": "negative", "label": "부정 논조", "value": tones.get("negative", 0), "share": round(tones.get("negative", 0) / total_after_cluster * 100)},
-        {"key": "own-negative", "label": "당사 부정", "value": own_negative, "share": round(own_negative / total_after_cluster * 100)},
-        {"key": "watch-days", "label": "주의 일자", "value": watch_days, "share": round(watch_days / period_days * 100)},
-        {"key": "neutral", "label": "중립 기사", "value": tones.get("neutral", 0), "share": round(tones.get("neutral", 0) / total_after_cluster * 100)},
+        {
+            "key": key,
+            "label": label,
+            "value": f"{value:,}일" if key == "watch-days" else f"{value:,}건",
+            "share": share,
+            "bar_share": bar_share(share),
+            "note": note,
+        }
+        for key, label, value, share, note in risk_items
     ]
     density_rows = [
         {"label": "원문/분석", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"중복 정리 후 {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
@@ -251,6 +286,36 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         }
         for item in top_sources[:6]
     ]
+    daily_volume = aggregate.get("daily_volume", [])
+    peak_day = max(daily_volume, key=lambda row: row.get("total", 0), default={})
+    latest_day = daily_volume[-1] if daily_volume else {}
+    risk_dates = [
+        row.get("date", "")[5:]
+        for row in daily_volume
+        if row.get("risk") in {"HIGH", "MEDIUM"}
+    ]
+    risk_date_text = ", ".join(risk_dates) if risk_dates else "없음"
+    top_source = top_sources[0].get("source", "-") if top_sources else "-"
+    top_source_count = top_sources[0].get("count", 0) if top_sources else 0
+    negative_count = tones.get("negative", 0)
+    interpretation_notes = [
+        {
+            "title": "노출 구조",
+            "body": f"{top_keyword} 키워드가 상위 반복 축이며, GA/보험 동향 {market:,}건이 전체 흐름을 주도합니다. 당사 언급은 {own:,}건으로 별도 성과·평판 축에서 보는 것이 적절합니다.",
+        },
+        {
+            "title": "리스크 구조",
+            "body": f"부정 논조 {negative_count:,}건 중 당사 직접 부정은 {own_negative:,}건입니다. 나머지는 업계·상품·제도 환경 리스크로 읽어야 과잉 대응을 줄일 수 있습니다.",
+        },
+        {
+            "title": "일자 신호",
+            "body": f"최대 노출일은 {peak_day.get('date', '-')} {peak_day.get('total', 0):,}건, 최근 기준일은 {latest_day.get('date', '-')} {latest_day.get('total', 0):,}건입니다. 주의 관찰일은 {risk_date_text}입니다.",
+        },
+        {
+            "title": "매체 기준",
+            "body": f"상위 매체는 {top_source} {top_source_count:,}건입니다. 포털 경유 기사와 원매체명이 섞이면 영향 매체 해석이 흔들리므로 매체명 보정 상태를 함께 봐야 합니다.",
+        },
+    ]
     daily_rows = [
         {
             **row,
@@ -272,6 +337,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         "density_rows": density_rows,
         "keyword_rows": keyword_rows,
         "source_rows": source_rows,
+        "interpretation_notes": interpretation_notes,
         "daily_rows": daily_rows,
     }
 
