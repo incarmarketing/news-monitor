@@ -730,68 +730,192 @@
     }
     .watch-card {
       position:relative;
-      min-height:210px;
+      min-height:260px;
       overflow:hidden;
-      border:1px solid #cfe0ff;
-      background:linear-gradient(135deg,#f8fbff 0%,#eef5ff 100%);
+      border:1px solid rgba(39,57,140,.24);
+      background:
+        linear-gradient(135deg, rgba(8,16,44,.98) 0%, rgba(28,45,116,.96) 64%, rgba(39,57,140,.92) 100%);
       display:flex;
       flex-direction:column;
+      color:#fff;
+      box-shadow:0 18px 44px rgba(17,28,82,.18);
+    }
+    .watch-card::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size:24px 24px;
+      mask-image:linear-gradient(90deg, rgba(0,0,0,.84), rgba(0,0,0,.18));
+      pointer-events:none;
+    }
+    .watch-card::after {
+      content:"";
+      position:absolute;
+      right:-64px;
+      top:-90px;
+      width:260px;
+      height:260px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.13);
+      box-shadow:0 0 0 42px rgba(255,255,255,.025), 0 0 0 92px rgba(255,255,255,.018);
+      pointer-events:none;
+    }
+    .watch-card .panel-title {
+      position:relative;
+      z-index:1;
+      color:#fff;
+    }
+    .watch-card .panel-title i { color:#b9c8ff; }
+    .watch-card .status-pill {
+      background:rgba(255,255,255,.08);
+      color:#e7edff;
+      border-color:rgba(255,255,255,.18);
+    }
+    .watch-card .status-pill.ok {
+      background:rgba(22,163,74,.18);
+      color:#d9fbe8;
+      border-color:rgba(74,222,128,.28);
+    }
+    .watch-card .status-pill.error {
+      background:rgba(220,38,38,.2);
+      color:#ffe4e6;
+      border-color:rgba(248,113,113,.34);
     }
     .watch-asset {
       flex:1;
       display:grid;
-      grid-template-columns:122px minmax(0,1fr);
-      gap:18px;
+      grid-template-columns:180px minmax(0,1fr);
+      gap:22px;
       align-items:center;
-      min-height:142px;
+      min-height:184px;
+      position:relative;
+      z-index:1;
+    }
+    .watch-visual {
+      display:grid;
+      gap:12px;
+      justify-items:center;
     }
     .watch-radar {
-      width:110px;
-      height:110px;
+      width:168px;
+      height:168px;
       border-radius:50%;
       position:relative;
       display:grid;
       place-items:center;
-      background:#fff;
-      border:1px solid #d8e4ff;
-      box-shadow:0 12px 28px rgba(39,57,140,.12);
+      overflow:hidden;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,.14) 0 2px, transparent 3px),
+        radial-gradient(circle at center, rgba(39,57,140,.18), rgba(11,22,59,.94) 68%),
+        conic-gradient(from 90deg, rgba(91,124,250,.2), rgba(16,185,129,.08), rgba(91,124,250,.2));
+      border:1px solid rgba(201,214,255,.5);
+      box-shadow:inset 0 0 26px rgba(121,145,255,.22), 0 20px 45px rgba(4,10,31,.34);
     }
     .watch-radar::before,
     .watch-radar::after {
       content:"";
       position:absolute;
-      inset:14px;
+      inset:18px;
       border-radius:50%;
-      border:2px solid rgba(39,57,140,.18);
+      border:1px solid rgba(206,220,255,.28);
     }
-    .watch-radar::after { inset:28px; border-color:rgba(220,38,38,.18); }
+    .watch-radar::after { inset:44px; border-color:rgba(206,220,255,.2); }
+    .watch-crosshair {
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(90deg, transparent calc(50% - .5px), rgba(206,220,255,.28) 50%, transparent calc(50% + .5px)),
+        linear-gradient(0deg, transparent calc(50% - .5px), rgba(206,220,255,.28) 50%, transparent calc(50% + .5px));
+    }
     .watch-sweep {
-      width:50px;
-      height:50px;
+      width:84px;
+      height:84px;
       border-radius:100% 0 0 0;
       transform-origin:100% 100%;
-      background:linear-gradient(45deg,rgba(39,57,140,.36),rgba(39,57,140,0));
-      animation:radarSweep 1.8s linear infinite;
+      background:linear-gradient(45deg,rgba(86,122,255,.52),rgba(67,220,156,.16) 45%,rgba(39,57,140,0));
+      animation:radarSweep 2.4s linear infinite;
       position:absolute;
-      left:5px;
-      top:5px;
+      left:0;
+      top:0;
     }
-    .watch-radar i { color:var(--incar); z-index:1; width:32px; height:32px; stroke-width:2.2; }
+    .watch-blip {
+      position:absolute;
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      background:#8ff3c3;
+      box-shadow:0 0 0 4px rgba(143,243,195,.12), 0 0 18px rgba(143,243,195,.66);
+      animation:watchPulse 2s ease-in-out infinite;
+    }
+    .watch-blip.b1 { left:57%; top:28%; animation-delay:.1s; }
+    .watch-blip.b2 { left:31%; top:61%; animation-delay:.75s; }
+    .watch-blip.b3 { left:68%; top:67%; animation-delay:1.25s; }
+    .watch-orbit {
+      position:absolute;
+      inset:70px;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.42);
+      box-shadow:0 0 18px rgba(91,124,250,.22);
+    }
+    .watch-radar i { color:#eef4ff; z-index:1; width:30px; height:30px; stroke-width:2.1; filter:drop-shadow(0 4px 12px rgba(91,124,250,.52)); }
     @keyframes radarSweep { to { transform:rotate(360deg); } }
-    .watch-title { margin:0 0 7px; color:var(--incar-dark); font-size:18px; font-weight:900; }
-    .watch-copy { color:#344054; font-size:13px; font-weight:800; line-height:1.46; display:grid; gap:4px; }
-    .watch-copy strong { color:#182230; font-size:15px; line-height:1.35; }
-    .watch-copy span { color:var(--muted); font-size:12.5px; font-weight:800; }
-    .watch-meta { margin-top:12px; display:flex; flex-wrap:wrap; gap:7px; }
+    @keyframes watchPulse {
+      0%,100% { transform:scale(.88); opacity:.64; }
+      50% { transform:scale(1.25); opacity:1; }
+    }
+    .watch-signal {
+      width:132px;
+      height:8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.1);
+    }
+    .watch-signal span {
+      display:block;
+      height:100%;
+      width:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg,#6ee7b7,#93c5fd);
+      box-shadow:0 0 16px rgba(110,231,183,.38);
+    }
+    .watch-radar.tone-error .watch-sweep {
+      background:linear-gradient(45deg,rgba(248,113,113,.62),rgba(251,191,36,.2) 45%,rgba(220,38,38,0));
+    }
+    .watch-radar.tone-error .watch-blip {
+      background:#fecaca;
+      box-shadow:0 0 0 4px rgba(248,113,113,.16), 0 0 18px rgba(248,113,113,.66);
+    }
+    .watch-radar.tone-warn .watch-sweep {
+      background:linear-gradient(45deg,rgba(251,191,36,.6),rgba(147,197,253,.16) 45%,rgba(39,57,140,0));
+    }
+    .watch-radar.tone-warn .watch-blip {
+      background:#fde68a;
+      box-shadow:0 0 0 4px rgba(251,191,36,.14), 0 0 18px rgba(251,191,36,.58);
+    }
+    .watch-radar.tone-error + .watch-signal span { background:linear-gradient(90deg,#f87171,#fbbf24); }
+    .watch-radar.tone-warn + .watch-signal span { background:linear-gradient(90deg,#fbbf24,#93c5fd); }
+    .watch-info {
+      min-width:0;
+      padding:14px 0;
+    }
+    .watch-title { margin:0 0 8px; color:#fff; font-size:24px; font-weight:900; letter-spacing:-.03em; }
+    .watch-copy { color:#d8e3ff; font-size:13px; font-weight:800; line-height:1.55; display:grid; gap:5px; }
+    .watch-copy strong { color:#fff; font-size:16px; line-height:1.35; }
+    .watch-copy span { color:#b9c8e8; font-size:12.5px; font-weight:800; }
+    .watch-meta { margin-top:16px; display:flex; flex-wrap:wrap; gap:8px; }
     .ops-row { align-items:stretch; }
     .ops-row > .panel {
-      min-height:210px;
+      min-height:260px;
       height:100%;
     }
     .notification-panel {
       display:flex;
       flex-direction:column;
-      min-height:210px;
+      min-height:260px;
     }
     .notification-list { display:grid; gap:7px; align-content:start; }
     .notification-item {
@@ -1847,11 +1971,17 @@
       .ad-kpi b { font-size:20px; }
       .ad-chart-card { padding:13px; }
       .watch-card,.notification-panel,.ops-row > .panel { min-height:auto; }
-      .watch-asset { grid-template-columns:84px minmax(0,1fr); gap:12px; min-height:96px; }
-      .watch-radar { width:78px; height:78px; }
-      .watch-radar::before { inset:10px; }
-      .watch-radar::after { inset:20px; }
-      .watch-sweep { width:35px; height:35px; }
+      .watch-card { padding-bottom:16px; }
+      .watch-asset { grid-template-columns:112px minmax(0,1fr); gap:14px; min-height:126px; }
+      .watch-radar { width:104px; height:104px; }
+      .watch-radar::before { inset:13px; }
+      .watch-radar::after { inset:29px; }
+      .watch-sweep { width:52px; height:52px; }
+      .watch-orbit { inset:43px; }
+      .watch-blip { width:5px; height:5px; }
+      .watch-signal { width:92px; height:7px; }
+      .watch-title { font-size:19px; }
+      .watch-copy strong { font-size:14px; }
       .notification-top { display:grid; }
     }
     @page { size:A4 landscape; margin:7mm; }
@@ -2118,8 +2248,19 @@
             <div class="panel watch-card">
               <h2 class="panel-title"><i data-lucide="scan-search"></i> 부정기사 탐색</h2>
               <div class="watch-asset" id="negativeWatchAsset">
-                <div class="watch-radar"><span class="watch-sweep"></span><i data-lucide="radar"></i></div>
-                <div>
+                <div class="watch-visual">
+                  <div class="watch-radar">
+                    <span class="watch-crosshair"></span>
+                    <span class="watch-sweep"></span>
+                    <span class="watch-orbit"></span>
+                    <span class="watch-blip b1"></span>
+                    <span class="watch-blip b2"></span>
+                    <span class="watch-blip b3"></span>
+                    <i data-lucide="radar"></i>
+                  </div>
+                  <div class="watch-signal"><span></span></div>
+                </div>
+                <div class="watch-info">
                   <h3 class="watch-title">부정기사 감시 상태</h3>
                   <div class="watch-copy">최근 수행 기록을 불러오는 중입니다.</div>
                   <div class="watch-meta"></div>
@@ -3410,9 +3551,21 @@
       const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
       const latestLabel = latestDate ? formatDateTime(latestDate) : "최근 수행 없음";
       const checkLabel = latest ? `최근 ${minutesBack.toLocaleString("ko-KR")}분 검사 완료` : "최근 수행 기록 대기";
+      const signalWidth = health.tone === "error" ? 32 : latest ? 100 : 46;
       target.innerHTML = `
-        <div class="watch-radar"><span class="watch-sweep"></span><i data-lucide="radar"></i></div>
-        <div>
+        <div class="watch-visual">
+          <div class="watch-radar tone-${escapeHtml(health.tone)}">
+            <span class="watch-crosshair"></span>
+            <span class="watch-sweep"></span>
+            <span class="watch-orbit"></span>
+            <span class="watch-blip b1"></span>
+            <span class="watch-blip b2"></span>
+            <span class="watch-blip b3"></span>
+            <i data-lucide="radar"></i>
+          </div>
+          <div class="watch-signal"><span style="width:${signalWidth}%"></span></div>
+        </div>
+        <div class="watch-info">
           <h3 class="watch-title">${escapeHtml(health.title)}</h3>
           <div class="watch-copy">
             <strong>${escapeHtml(checkLabel)}</strong>
