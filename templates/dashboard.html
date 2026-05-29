@@ -2590,8 +2590,8 @@
                 <label>분석 기간</label>
                 <div class="segmented" id="analysisPreset">
                   <a class="btn" href="./index.html"><i data-lucide="file-text"></i><span>일일 보고서</span></a>
-                  <button class="btn" data-range="7">주간</button>
-                  <button class="btn active" data-range="30">월간</button>
+                  <button class="btn active" data-range="7">주간</button>
+                  <button class="btn" data-range="30">월간</button>
                   <button class="btn" data-range="custom">선택 구간</button>
                 </div>
               </div>
@@ -2970,7 +2970,7 @@
       articles: [],
       filtered: [],
       filters: { q:"", start:"", end:"", category:"", tone:"", risk:"", detail:"" },
-      analysis: { range:"30", start:"", end:"" },
+      analysis: { range:"7", start:"", end:"" },
       keywordSource: "Supabase",
       keywordSyncMessage: "",
       keywordSyncTone: "",
@@ -4255,7 +4255,7 @@
     }
 
     function analysisItems() {
-      if (!state.analysis.start && !state.analysis.end) setAnalysisRange("30");
+      if (!state.analysis.start && !state.analysis.end) setAnalysisRange("7");
       return state.articles.filter(article => {
         return (!state.analysis.start || article.date >= state.analysis.start)
           && (!state.analysis.end || article.date <= state.analysis.end);
@@ -6463,7 +6463,7 @@
       optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
       optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
       optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
-      if (options.resetAnalysis) setAnalysisRange(state.analysis.range || "30");
+      if (options.resetAnalysis) setAnalysisRange(state.analysis.range || "7");
       updateAnalysisPresetButtons();
       render();
     }
@@ -6683,7 +6683,7 @@
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
         optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
         optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
-        setAnalysisRange("30");
+        setAnalysisRange("7");
         updateAnalysisPresetButtons();
         render();
       }
