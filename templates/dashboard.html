@@ -2592,9 +2592,12 @@
       negativeWatchRuns: [],
       issueAutoFilled: false,
       riskHoldTimer: null,
+      autoRefreshTimer: null,
+      autoRefreshInFlight: false,
       auth: null
     };
     const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
+    const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     const TEMP_LOGIN_BYPASS_UNTIL = "2026-06-08T23:59:59+09:00";
     const TEMP_LOGIN_BYPASS_SESSION = {
       ok: true,
@@ -5204,43 +5207,67 @@
       if (target) target.textContent = text;
     }
 
-    async function refreshDashboardData() {
+    function currentClockLabel() {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+    }
+
+    async function applyDashboardPayload(data, keywordSourceLabel, options = {}) {
+      state.dataSource = data.source || "배포 데이터";
+      state.reportRuns = data.report_runs || [];
+      state.notifications = data.notification_sends || [];
+      state.negativeWatchRuns = data.negative_watch_runs || [];
+      state.categoryLabels = data.category_labels || {};
+      state.toneLabels = data.tone_labels || {};
+      applyKeywordSource(data.keywords, keywordSourceLabel);
+      await loadKeywordsFromSupabase();
+      await loadManagementDataFromSupabase();
+      state.articles = sortByLatest((data.articles || [])
+        .map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }))
+        .filter(isRelevantDashboardArticle));
+      await loadScrapsFromSupabase();
+      optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
+      optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
+      optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
+      if (options.resetAnalysis) setAnalysisRange(state.analysis.range || "30");
+      updateAnalysisPresetButtons();
+      render();
+    }
+
+    async function refreshDashboardData(options = {}) {
+      if (state.autoRefreshInFlight) return;
+      state.autoRefreshInFlight = true;
+      const runCollection = options.runCollection !== false;
+      const auto = options.auto === true;
       const button = document.getElementById("refreshArticles");
-      if (button) button.disabled = true;
-      setRefreshStatus("최신 데이터 확인 중...");
+      if (!auto && button) button.disabled = true;
+      setRefreshStatus(auto ? "자동 갱신 중..." : "최신 데이터 확인 중...");
       try {
         const before = dataSignature(state.articles);
-        const dispatched = await triggerCollectionRun();
+        const dispatched = runCollection ? await triggerCollectionRun() : false;
         if (dispatched) {
           setRefreshStatus("수집/분석 실행 중...");
         }
         const data = dispatched
           ? await waitForFreshDashboardData(before)
           : await fetchDashboardData(true);
-        state.dataSource = data.source || "배포 데이터";
-        state.reportRuns = data.report_runs || [];
-        state.notifications = data.notification_sends || [];
-        state.negativeWatchRuns = data.negative_watch_runs || [];
-        state.categoryLabels = data.category_labels || {};
-        state.toneLabels = data.tone_labels || {};
-        applyKeywordSource(data.keywords, "새로고침 데이터");
-        await loadKeywordsFromSupabase();
-        await loadManagementDataFromSupabase();
-        state.articles = sortByLatest((data.articles || [])
-          .map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }))
-          .filter(isRelevantDashboardArticle));
-        await loadScrapsFromSupabase();
-        optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
-        optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
-        optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
-        render();
-        const now = new Date();
-        setRefreshStatus(`반영 완료 ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`);
+        await applyDashboardPayload(data, auto ? "자동 갱신 데이터" : "새로고침 데이터");
+        setRefreshStatus(`${auto ? "자동 갱신" : "반영 완료"} ${currentClockLabel()}`);
       } catch {
-        setRefreshStatus("새로고침 실패");
+        setRefreshStatus(auto ? "자동 갱신 실패" : "새로고침 실패");
       } finally {
-        if (button) button.disabled = false;
+        if (!auto && button) button.disabled = false;
+        state.autoRefreshInFlight = false;
       }
+    }
+
+    function startAutoRefresh() {
+      if (state.autoRefreshTimer) clearInterval(state.autoRefreshTimer);
+      state.autoRefreshTimer = setInterval(() => {
+        if (document.hidden) return;
+        refreshDashboardData({ auto:true, runCollection:false });
+      }, AUTO_REFRESH_INTERVAL_MS);
+      setRefreshStatus(`자동 갱신 대기 · ${Math.round(AUTO_REFRESH_INTERVAL_MS / 60000)}분 주기`);
     }
 
     function dataSignature(items) {
@@ -5250,6 +5277,12 @@
         .reverse()[0] || "";
       return `${items.length}:${latest}`;
     }
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && state.auth) {
+        refreshDashboardData({ auto:true, runCollection:false });
+      }
+    });
 
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -5409,29 +5442,18 @@
       bind();
       try {
         const data = await fetchDashboardData();
-        state.dataSource = data.source || "배포 데이터";
-        state.reportRuns = data.report_runs || [];
-        state.notifications = data.notification_sends || [];
-        state.negativeWatchRuns = data.negative_watch_runs || [];
-        state.categoryLabels = data.category_labels || {};
-        state.toneLabels = data.tone_labels || {};
-        applyKeywordSource(data.keywords, "배포 데이터");
-        await loadKeywordsFromSupabase();
-        await loadManagementDataFromSupabase();
-        state.articles = sortByLatest((data.articles || [])
-          .map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }))
-          .filter(isRelevantDashboardArticle));
-        await loadScrapsFromSupabase();
+        await applyDashboardPayload(data, "배포 데이터", { resetAnalysis:true });
       } catch {
         state.articles = [];
         state.scraps = [];
+        optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
+        optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
+        optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
+        setAnalysisRange("30");
+        updateAnalysisPresetButtons();
+        render();
       }
-      optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
-      optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
-      optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
-      setAnalysisRange("30");
-      updateAnalysisPresetButtons();
-      render();
+      startAutoRefresh();
     }
 
     async function boot() {
