@@ -2022,7 +2022,6 @@
         </div>
         <div class="actions">
           <span class="auth-user" id="authUser"></span>
-          <a class="btn" href="./index.html"><i data-lucide="file-text"></i><span>일일 보고서</span></a>
           <button class="btn" id="exportCsv"><i data-lucide="download"></i><span>CSV 출력</span></button>
           <button class="btn" id="logoutButton"><i data-lucide="log-out"></i><span>로그아웃</span></button>
         </div>
@@ -2150,9 +2149,9 @@
               <div class="field">
                 <label>분석 기간</label>
                 <div class="segmented" id="analysisPreset">
-                  <button class="btn active" data-range="all">전체</button>
+                  <a class="btn" href="./index.html"><i data-lucide="file-text"></i><span>일일 보고서</span></a>
                   <button class="btn" data-range="7">주간</button>
-                  <button class="btn" data-range="30">월간</button>
+                  <button class="btn active" data-range="30">월간</button>
                   <button class="btn" data-range="custom">선택 구간</button>
                 </div>
               </div>
@@ -2531,7 +2530,7 @@
       articles: [],
       filtered: [],
       filters: { q:"", start:"", end:"", category:"", tone:"", risk:"", detail:"" },
-      analysis: { range:"all", start:"", end:"" },
+      analysis: { range:"30", start:"", end:"" },
       keywordSource: "Supabase",
       keywordSyncMessage: "",
       keywordSyncTone: "",
@@ -3656,7 +3655,7 @@
     }
 
     function analysisItems() {
-      if (!state.analysis.start && !state.analysis.end) setAnalysisRange("all");
+      if (!state.analysis.start && !state.analysis.end) setAnalysisRange("30");
       return state.articles.filter(article => {
         return (!state.analysis.start || article.date >= state.analysis.start)
           && (!state.analysis.end || article.date <= state.analysis.end);
@@ -5332,7 +5331,7 @@
       optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
       optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
       optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
-      setAnalysisRange("all");
+      setAnalysisRange("30");
       updateAnalysisPresetButtons();
       render();
     }
