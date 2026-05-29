@@ -2141,7 +2141,6 @@
                   <div class="report-badge">MEDIA ANALYSIS REPORT</div>
                   <h2>미디어 분석 리포트</h2>
                 </div>
-                <div class="report-meta" id="analysisMeta"><span class="meta-tag"><b>상태</b> 기간 선택 대기</span></div>
               </div>
               <div class="report-head-actions no-print">
                 <button class="btn primary report-print-button" id="printAnalysis"><i data-lucide="printer"></i><span>인쇄 / PDF 저장</span></button>
@@ -3743,11 +3742,6 @@
       document.getElementById("analysisRisk").textContent = risk;
       const riskCard = document.getElementById("analysisRiskCard");
       if (riskCard) riskCard.className = `report-kpi risk-${risk.toLowerCase()}`;
-      document.getElementById("analysisMeta").innerHTML = `
-        <span class="meta-tag"><b>회사</b>인카금융서비스</span>
-        <span class="meta-tag"><b>부서</b>마케팅부</span>
-        <span class="meta-tag"><b>기간</b>${escapeHtml(analysisPeriodLabel())}</span>
-      `;
       document.getElementById("analysisMessage").textContent = buildAnalysisMessage(items, reportCats, tones);
 
       renderVolumeChart(items);
