@@ -225,6 +225,15 @@
     .btn:hover { border-color:#b9c7dc; background:#f8fafc; }
     .btn.primary { background:var(--incar); border-color:var(--incar); color:#fff; }
     .btn.danger { color:var(--red); border-color:#fecdd3; }
+    .btn:disabled {
+      opacity:.45;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+    .btn:disabled:hover {
+      background:#fff;
+      border-color:var(--line);
+    }
     .btn.scrap-toggle {
       min-height:30px;
       padding:5px 10px;
@@ -1735,6 +1744,193 @@
       min-height:150px;
       background:#fbfdff;
     }
+    .scrap-report-modal { width:min(1020px,100%); }
+    .scrap-report-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:flex-end;
+    }
+    .scrap-report-preview {
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#f4f6f9;
+      padding:14px;
+      max-height:min(680px,calc(100vh - 190px));
+      overflow:auto;
+    }
+    .scrap-onepage-report {
+      width:100%;
+      max-width:860px;
+      margin:0 auto;
+      background:#fff;
+      border:1px solid #d8dee8;
+      border-radius:10px;
+      overflow:hidden;
+      box-shadow:0 12px 34px rgba(15,23,42,.08);
+      color:#111827;
+    }
+    .scrap-report-head {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:18px;
+      align-items:start;
+      padding:22px 24px;
+      background:linear-gradient(135deg,#111827,#27398c);
+      color:#fff;
+    }
+    .scrap-report-kicker {
+      width:max-content;
+      border:1px solid rgba(255,255,255,.34);
+      border-radius:999px;
+      padding:5px 10px;
+      color:#dbe7ff;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+    .scrap-report-head h1 {
+      margin:10px 0 8px;
+      color:#fff;
+      font-size:28px;
+      line-height:1.18;
+      letter-spacing:0;
+    }
+    .scrap-report-head p {
+      margin:0;
+      color:#dbe7ff;
+      font-size:13px;
+      font-weight:800;
+      line-height:1.5;
+      word-break:keep-all;
+    }
+    .scrap-risk-pill {
+      min-width:92px;
+      min-height:58px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.28);
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      font-weight:900;
+      text-align:center;
+    }
+    .scrap-risk-pill span { display:block; font-size:10px; opacity:.82; }
+    .scrap-risk-pill strong { display:block; font-size:20px; line-height:1.15; }
+    .scrap-risk-pill.risk-low { background:#0f8f55; }
+    .scrap-risk-pill.risk-medium { background:#b45309; }
+    .scrap-risk-pill.risk-high { background:#b91c1c; }
+    .scrap-report-body {
+      padding:20px 24px 24px;
+      display:grid;
+      gap:14px;
+    }
+    .scrap-report-summary {
+      border:1px solid #dbe7ff;
+      border-left:4px solid var(--incar);
+      border-radius:8px;
+      padding:14px;
+      background:#f8fbff;
+      font-size:15px;
+      font-weight:900;
+      line-height:1.6;
+      word-break:keep-all;
+    }
+    .scrap-report-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+    .scrap-report-section {
+      border:1px solid #e3e9f3;
+      border-radius:8px;
+      padding:14px;
+      background:#fff;
+    }
+    .scrap-report-section h2 {
+      margin:0 0 10px;
+      color:var(--incar-dark);
+      font-size:15px;
+      line-height:1.2;
+    }
+    .scrap-report-item {
+      display:grid;
+      gap:5px;
+      padding:9px 0;
+      border-top:1px solid #eef2f7;
+    }
+    .scrap-report-item:first-of-type { border-top:0; padding-top:0; }
+    .scrap-report-item b {
+      color:#101828;
+      font-size:13px;
+      line-height:1.35;
+    }
+    .scrap-report-item p {
+      margin:0;
+      color:#475467;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.55;
+      word-break:keep-all;
+    }
+    .scrap-report-evidence {
+      color:#27398c;
+      font-size:11px;
+      font-weight:900;
+    }
+    .scrap-report-followups {
+      margin:0;
+      padding-left:18px;
+      color:#344054;
+      font-size:12px;
+      font-weight:850;
+      line-height:1.7;
+    }
+    .scrap-evidence-list {
+      display:grid;
+      gap:8px;
+    }
+    .scrap-evidence-card {
+      display:grid;
+      grid-template-columns:34px minmax(0,1fr);
+      gap:10px;
+      border:1px solid #e3e9f3;
+      border-radius:8px;
+      padding:10px;
+      background:#fbfdff;
+    }
+    .scrap-evidence-no {
+      width:30px;
+      height:30px;
+      display:grid;
+      place-items:center;
+      border-radius:8px;
+      background:#eef4ff;
+      color:var(--incar);
+      font-size:11px;
+      font-weight:900;
+    }
+    .scrap-evidence-meta {
+      color:#667085;
+      font-size:10px;
+      font-weight:900;
+      margin-bottom:3px;
+    }
+    .scrap-evidence-card h3 {
+      margin:0 0 4px;
+      color:#101828;
+      font-size:13px;
+      line-height:1.38;
+    }
+    .scrap-evidence-card p {
+      margin:0;
+      color:#475467;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.5;
+      word-break:keep-all;
+    }
     .release-layout {
       display:grid;
       grid-template-columns:minmax(0,.95fr) minmax(380px,1.05fr);
@@ -2194,6 +2390,10 @@
       .scrap-ai-actions { justify-content:stretch; }
       .scrap-ai-actions .btn { flex:1 1 0; }
       .scrap-analysis-output { max-height:420px; }
+      .scrap-report-head,
+      .scrap-report-grid { grid-template-columns:1fr; }
+      .scrap-report-head h1 { font-size:23px; }
+      .scrap-risk-pill { width:max-content; min-width:84px; }
       .monitor-head { display:grid; grid-template-columns:1fr; }
       .monitor-head-actions {
         margin-left:0;
@@ -2704,6 +2904,8 @@
               <textarea id="scrapAnalysisPrompt" rows="4" placeholder="원하는 분석 방향을 말씀해주세요. 예: 이 기사들을 임원 보고용으로 리스크 중심 분석해줘."></textarea>
               <div class="scrap-ai-actions">
                 <button class="btn primary" onclick="analyzeScraps()"><i data-lucide="wand-sparkles"></i><span>스크랩 분석</span></button>
+                <button class="btn" id="scrapReportButton" onclick="openScrapReport()" disabled><i data-lucide="file-text"></i><span>보고서 보기</span></button>
+                <button class="btn" id="scrapJsonButton" onclick="copyScrapReportJson()" disabled><i data-lucide="braces"></i><span>JSON 복사</span></button>
                 <button class="btn" onclick="copyScrapAnalysis()"><i data-lucide="copy"></i><span>결과 복사</span></button>
               </div>
               <div class="scrap-analysis-output is-empty" id="scrapAnalysisOutput">스크랩 기사를 선택한 뒤 분석 방향을 입력하면 결과가 표시됩니다.</div>
@@ -3015,6 +3217,26 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="scrapReportModal" onclick="if(event.target === this) closeScrapReport()">
+    <div class="modal scrap-report-modal" role="dialog" aria-modal="true" aria-labelledby="scrapReportModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="scrapReportModalTitle">스크랩 분석 한장 보고서</h2>
+          <div class="notification-meta">HTML 보고서 · JSON 데이터 동시 생성</div>
+        </div>
+        <div class="scrap-report-actions">
+          <button class="btn primary" onclick="printScrapReport()"><i data-lucide="printer"></i><span>PDF 저장</span></button>
+          <button class="btn" onclick="copyScrapReportHtml()"><i data-lucide="code"></i><span>HTML 복사</span></button>
+          <button class="btn" onclick="copyScrapReportJson()"><i data-lucide="braces"></i><span>JSON 복사</span></button>
+          <button class="btn" onclick="closeScrapReport()"><i data-lucide="x"></i><span>닫기</span></button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="scrap-report-preview" id="scrapReportPreview"></div>
+      </div>
+    </div>
+  </div>
+
   <nav class="mobile-tabs" id="mobileTabs">
     <button class="active" data-page="home"><i data-lucide="layout-dashboard"></i><span>홈</span></button>
     <button data-page="monitor"><i data-lucide="radio"></i><span>모니터링</span></button>
@@ -3039,6 +3261,9 @@
       categoryLabels: {},
       toneLabels: {},
       scraps: [],
+      scrapAnalysisReport: null,
+      scrapAnalysisJson: null,
+      scrapAnalysisHtml: "",
       keywords: [],
       keywordRows: [],
       mediaRelations: [],
@@ -4642,6 +4867,13 @@
       target.textContent = message || `스크랩 ${count.toLocaleString("ko-KR")}건`;
     }
 
+    function setScrapReportActions(enabled) {
+      ["scrapReportButton", "scrapJsonButton"].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.disabled = !enabled;
+      });
+    }
+
     function setScrapAnalysisPrompt(text) {
       const target = document.getElementById("scrapAnalysisPrompt");
       if (!target) return;
@@ -4674,18 +4906,44 @@
         output.classList.remove("is-empty");
         output.textContent = "AI가 스크랩 기사들을 근거별로 묶어 분석 중입니다...";
       }
+      state.scrapAnalysisReport = null;
+      state.scrapAnalysisJson = null;
+      state.scrapAnalysisHtml = "";
+      setScrapReportActions(false);
       updateScrapAnalysisStatus("분석 중");
       try {
         const result = await requestScrapAnalysis(prompt, articles);
         const analysis = result.analysis || result.draft || "";
         if (!analysis) throw new Error("empty_scrap_analysis");
         if (output) output.textContent = analysis + (result.finishReason === "MAX_TOKENS" ? "\n\n[작성 참고]\nAI 응답이 길이 제한에 도달했습니다. 분석 범위를 좁혀 다시 요청하면 더 완결된 결과를 받을 수 있습니다." : "");
+        state.scrapAnalysisReport = buildScrapReportFromResult(result, prompt, articles, analysis);
+        state.scrapAnalysisJson = {
+          prompt,
+          generatedAt: new Date().toISOString(),
+          articleCount: articles.length,
+          report: state.scrapAnalysisReport,
+          articles,
+        };
+        state.scrapAnalysisHtml = buildScrapReportDocument(state.scrapAnalysisReport);
+        setScrapReportActions(true);
         updateScrapAnalysisStatus(`${articles.length.toLocaleString("ko-KR")}건 분석`);
       } catch (error) {
+        const fallbackText = fallbackScrapAnalysis(prompt, articles, error);
         if (output) {
-          output.textContent = fallbackScrapAnalysis(prompt, articles, error);
+          output.textContent = fallbackText;
           output.classList.remove("is-empty");
         }
+        state.scrapAnalysisReport = buildFallbackScrapReport(prompt, articles, fallbackText);
+        state.scrapAnalysisJson = {
+          prompt,
+          generatedAt: new Date().toISOString(),
+          articleCount: articles.length,
+          fallback: true,
+          report: state.scrapAnalysisReport,
+          articles,
+        };
+        state.scrapAnalysisHtml = buildScrapReportDocument(state.scrapAnalysisReport);
+        setScrapReportActions(true);
         updateScrapAnalysisStatus("기본 분석");
       }
       lucide.createIcons();
@@ -4772,6 +5030,240 @@
         "",
         `[연결 참고] Gemini 분석 호출이 실패해 브라우저 기본 분석을 표시했습니다. (${error?.message || "unknown"})`,
       ].join("\n");
+    }
+
+    function buildScrapReportFromResult(result, prompt, articles, analysisText = "") {
+      return normalizeClientScrapReport(result?.report || null, prompt, articles, analysisText);
+    }
+
+    function buildFallbackScrapReport(prompt, articles, analysisText = "") {
+      return normalizeClientScrapReport(null, prompt, articles, analysisText);
+    }
+
+    function normalizeClientScrapReport(report, prompt, articles, analysisText = "") {
+      const negative = articles.filter(article => /부정|negative|risk/i.test(`${article.tone_label} ${article.risk}`));
+      const own = articles.filter(article => /당사|인카/.test(`${article.category_label} ${article.title} ${article.summary}`));
+      const riskLevel = report?.riskLevel || (negative.length >= 2 ? "MEDIUM" : negative.length ? "LOW" : "LOW");
+      const evidenceArticles = Array.isArray(report?.evidenceArticles) && report.evidenceArticles.length
+        ? report.evidenceArticles
+        : articles.slice(0, 5).map((article, index) => ({
+          no: index + 1,
+          press: article.press || "언론사 미확인",
+          title: article.title || "제목 없음",
+          summary: article.summary || "요약 없음",
+          tone: article.tone_label || "논조 미확인",
+          link: article.link || "",
+        }));
+      const defaultSummary = `스크랩 ${articles.length.toLocaleString("ko-KR")}건 기준으로 당사 관련 ${own.length.toLocaleString("ko-KR")}건, 부정 또는 리스크 논조 ${negative.length.toLocaleString("ko-KR")}건이 확인됐습니다.`;
+      return {
+        title: cleanReportText(report?.title || "스크랩 기사 분석 보고서", 80),
+        subtitle: cleanReportText(report?.subtitle || prompt, 140),
+        riskLevel: ["LOW", "MEDIUM", "HIGH"].includes(String(riskLevel).toUpperCase()) ? String(riskLevel).toUpperCase() : "LOW",
+        executiveSummary: cleanReportText(report?.executiveSummary || defaultSummary, 520),
+        keyFindings: normalizeReportItems(report?.keyFindings, articles, "핵심 판단", analysisText),
+        risks: normalizeReportItems(report?.risks, articles, "리스크", analysisText),
+        opportunities: normalizeReportItems(report?.opportunities, articles, "활용 포인트", analysisText),
+        followUps: normalizeReportFollowUps(report?.followUps, negative.length),
+        evidenceArticles: evidenceArticles.slice(0, 5).map((article, index) => ({
+          no: Number(article.no) || index + 1,
+          press: cleanReportText(article.press || "언론사 미확인", 50),
+          title: cleanReportText(article.title || "제목 없음", 150),
+          summary: cleanReportText(article.summary || "요약 없음", 260),
+          tone: cleanReportText(article.tone || "", 30),
+          link: String(article.link || ""),
+        })),
+      };
+    }
+
+    function normalizeReportItems(items, articles, label, analysisText = "") {
+      if (Array.isArray(items) && items.length) {
+        return items.slice(0, 4).map((item, index) => ({
+          title: cleanReportText(item?.title || `${label} ${index + 1}`, 70),
+          body: cleanReportText(item?.body || "근거 기사 확인이 필요합니다.", 300),
+          evidence: normalizeReportEvidence(item?.evidence, articles.length),
+        }));
+      }
+      const first = articles[0];
+      const body = analysisText
+        ? cleanReportText(analysisText.split("\n").find(line => line.trim().startsWith("-")) || "스크랩 기사 간 공통 흐름 확인이 필요합니다.", 300)
+        : "스크랩 기사 간 공통 흐름 확인이 필요합니다.";
+      return [{
+        title: `${label} 확인`,
+        body: first ? body : "분석 대상 기사가 없습니다.",
+        evidence: first ? [1] : [],
+      }];
+    }
+
+    function normalizeReportEvidence(values, max) {
+      return (Array.isArray(values) ? values : [])
+        .map(value => Number(value))
+        .filter(value => Number.isInteger(value) && value >= 1 && value <= max)
+        .slice(0, 4);
+    }
+
+    function normalizeReportFollowUps(items, negativeCount) {
+      const rows = Array.isArray(items) ? items.map(item => cleanReportText(item, 120)).filter(Boolean) : [];
+      if (rows.length) return rows.slice(0, 5);
+      return [
+        negativeCount ? "부정 논조 기사 원문과 사실관계 우선 확인" : "주요 기사 원문과 반복 보도 여부 확인",
+        "동일 이슈 후속 보도 및 관련 키워드 추가 모니터링",
+        "임원 보고 또는 유관부서 공유가 필요한 쟁점 선별",
+      ];
+    }
+
+    function cleanReportText(value, max = 300) {
+      const text = String(value || "").replace(/\s+/g, " ").trim();
+      return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+    }
+
+    function formatEvidence(values) {
+      return Array.isArray(values) && values.length ? `근거 [${values.join(", ")}]` : "근거 확인";
+    }
+
+    function reportItemHtml(item) {
+      return `
+        <div class="scrap-report-item">
+          <b>${escapeHtml(item.title)}</b>
+          <p>${escapeHtml(item.body)}</p>
+          <div class="scrap-report-evidence">${escapeHtml(formatEvidence(item.evidence))}</div>
+        </div>
+      `;
+    }
+
+    function reportSectionHtml(title, items) {
+      return `
+        <section class="scrap-report-section">
+          <h2>${escapeHtml(title)}</h2>
+          ${(items || []).map(reportItemHtml).join("")}
+        </section>
+      `;
+    }
+
+    function buildScrapReportInner(report) {
+      const risk = String(report?.riskLevel || "LOW").toLowerCase();
+      const generated = new Date().toLocaleString("ko-KR", { hour12:false });
+      return `
+        <article class="scrap-onepage-report" id="scrapReportCanvas">
+          <header class="scrap-report-head">
+            <div>
+              <div class="scrap-report-kicker">SCRAP MEDIA REPORT</div>
+              <h1>${escapeHtml(report.title)}</h1>
+              <p>${escapeHtml(report.subtitle)} · ${escapeHtml(generated)}</p>
+            </div>
+            <div class="scrap-risk-pill risk-${escapeHtml(risk)}">
+              <span>리스크</span>
+              <strong>${escapeHtml(report.riskLevel)}</strong>
+            </div>
+          </header>
+          <div class="scrap-report-body">
+            <div class="scrap-report-summary">${escapeHtml(report.executiveSummary)}</div>
+            <div class="scrap-report-grid">
+              ${reportSectionHtml("핵심 판단", report.keyFindings)}
+              ${reportSectionHtml("리스크", report.risks)}
+              ${reportSectionHtml("활용 포인트", report.opportunities)}
+              <section class="scrap-report-section">
+                <h2>후속 확인</h2>
+                <ol class="scrap-report-followups">
+                  ${(report.followUps || []).map(item => `<li>${escapeHtml(item)}</li>`).join("")}
+                </ol>
+              </section>
+            </div>
+            <section class="scrap-report-section">
+              <h2>근거 기사</h2>
+              <div class="scrap-evidence-list">
+                ${(report.evidenceArticles || []).map(article => `
+                  <div class="scrap-evidence-card">
+                    <div class="scrap-evidence-no">${String(article.no).padStart(2, "0")}</div>
+                    <div>
+                      <div class="scrap-evidence-meta">${escapeHtml(article.press)}${article.tone ? " · " + escapeHtml(article.tone) : ""}</div>
+                      <h3>${escapeHtml(article.title)}</h3>
+                      <p>${escapeHtml(article.summary)}</p>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </section>
+          </div>
+        </article>
+      `;
+    }
+
+    function scrapReportDocumentStyles() {
+      return `
+        @page { size:A4 portrait; margin:8mm; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:#fff; color:#111827; font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        .scrap-onepage-report { width:100%; max-width:190mm; margin:0 auto; border:1px solid #d8dee8; border-radius:8px; overflow:hidden; }
+        .scrap-report-head { display:grid; grid-template-columns:1fr auto; gap:14px; align-items:start; padding:16px 18px; background:linear-gradient(135deg,#111827,#27398c); color:#fff; }
+        .scrap-report-kicker { width:max-content; border:1px solid rgba(255,255,255,.34); border-radius:999px; padding:4px 8px; color:#dbe7ff; font-size:9px; font-weight:900; }
+        .scrap-report-head h1 { margin:8px 0 6px; color:#fff; font-size:22px; line-height:1.18; }
+        .scrap-report-head p { margin:0; color:#dbe7ff; font-size:10px; font-weight:800; line-height:1.4; }
+        .scrap-risk-pill { min-width:72px; min-height:48px; display:grid; place-items:center; border-radius:8px; color:#fff; font-weight:900; text-align:center; }
+        .scrap-risk-pill span { display:block; font-size:8px; opacity:.82; }
+        .scrap-risk-pill strong { display:block; font-size:16px; line-height:1.1; }
+        .risk-low { background:#0f8f55; } .risk-medium { background:#b45309; } .risk-high { background:#b91c1c; }
+        .scrap-report-body { padding:14px 16px 16px; display:grid; gap:10px; }
+        .scrap-report-summary { border:1px solid #dbe7ff; border-left:4px solid #27398c; border-radius:6px; padding:10px; background:#f8fbff; font-size:11px; font-weight:900; line-height:1.5; }
+        .scrap-report-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+        .scrap-report-section { border:1px solid #e3e9f3; border-radius:6px; padding:10px; background:#fff; break-inside:avoid; }
+        .scrap-report-section h2 { margin:0 0 7px; color:#111c52; font-size:11px; }
+        .scrap-report-item { display:grid; gap:3px; padding:6px 0; border-top:1px solid #eef2f7; }
+        .scrap-report-item:first-of-type { border-top:0; padding-top:0; }
+        .scrap-report-item b { color:#101828; font-size:10px; line-height:1.3; }
+        .scrap-report-item p { margin:0; color:#475467; font-size:9px; font-weight:800; line-height:1.45; }
+        .scrap-report-evidence { color:#27398c; font-size:8px; font-weight:900; }
+        .scrap-report-followups { margin:0; padding-left:14px; color:#344054; font-size:9px; font-weight:850; line-height:1.55; }
+        .scrap-evidence-list { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+        .scrap-evidence-card { display:grid; grid-template-columns:28px 1fr; gap:7px; border:1px solid #e3e9f3; border-radius:6px; padding:7px; background:#fbfdff; break-inside:avoid; }
+        .scrap-evidence-no { width:24px; height:24px; display:grid; place-items:center; border-radius:6px; background:#eef4ff; color:#27398c; font-size:8px; font-weight:900; }
+        .scrap-evidence-meta { color:#667085; font-size:8px; font-weight:900; margin-bottom:2px; }
+        .scrap-evidence-card h3 { margin:0 0 3px; color:#101828; font-size:9.5px; line-height:1.3; }
+        .scrap-evidence-card p { margin:0; color:#475467; font-size:8.5px; font-weight:800; line-height:1.4; }
+      `;
+    }
+
+    function buildScrapReportDocument(report) {
+      return `<!DOCTYPE html>
+        <html lang="ko">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${escapeHtml(report?.title || "스크랩 기사 분석 보고서")}</title>
+          <style>${scrapReportDocumentStyles()}</style>
+        </head>
+        <body>${buildScrapReportInner(report)}</body>
+        </html>`;
+    }
+
+    function openScrapReport() {
+      if (!state.scrapAnalysisReport) return alert("먼저 스크랩 분석을 실행해 주세요.");
+      state.scrapAnalysisHtml = buildScrapReportDocument(state.scrapAnalysisReport);
+      const preview = document.getElementById("scrapReportPreview");
+      if (preview) preview.innerHTML = buildScrapReportInner(state.scrapAnalysisReport);
+      document.getElementById("scrapReportModal")?.classList.add("active");
+      lucide.createIcons();
+    }
+
+    function closeScrapReport() {
+      document.getElementById("scrapReportModal")?.classList.remove("active");
+    }
+
+    function printScrapReport() {
+      if (!state.scrapAnalysisReport) return alert("먼저 스크랩 분석을 실행해 주세요.");
+      printHtmlDocument(state.scrapAnalysisHtml || buildScrapReportDocument(state.scrapAnalysisReport));
+    }
+
+    function copyScrapReportHtml() {
+      if (!state.scrapAnalysisReport) return alert("복사할 보고서가 없습니다.");
+      const html = state.scrapAnalysisHtml || buildScrapReportDocument(state.scrapAnalysisReport);
+      navigator.clipboard?.writeText(html);
+      alert("한장 보고서 HTML 코드가 복사되었습니다.");
+    }
+
+    function copyScrapReportJson() {
+      if (!state.scrapAnalysisJson) return alert("복사할 JSON이 없습니다.");
+      navigator.clipboard?.writeText(JSON.stringify(state.scrapAnalysisJson, null, 2));
+      alert("보고서 JSON이 복사되었습니다.");
     }
 
     function countValues(items, getter) {
