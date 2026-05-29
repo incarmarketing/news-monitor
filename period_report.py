@@ -188,6 +188,47 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
             return 4
         return value
 
+    def article_category(article: dict) -> str:
+        return article.get("_category") or article.get("category") or ""
+
+    def article_tone(article: dict) -> str:
+        return article.get("_tone") or article.get("tone") or "neutral"
+
+    def clean_article_title(title: str) -> str:
+        title = re.sub(r"\s+", " ", title or "").strip()
+        return title
+
+    def article_meta(article: dict) -> str:
+        parts = [
+            article.get("_date") or article.get("date") or "-",
+            article.get("source") or article.get("press") or "-",
+            article.get("keyword") or "-",
+        ]
+        return " · ".join(str(part) for part in parts if part)
+
+    def article_brief(article: dict) -> dict:
+        return {
+            "title": clean_article_title(article.get("title", "")),
+            "link": article.get("link", "#"),
+            "meta": article_meta(article),
+            "score": article.get("_score", article.get("score", 0)),
+        }
+
+    def pick_articles(predicate, limit: int = 3) -> list[dict]:
+        selected: list[dict] = []
+        seen: set[str] = set()
+        for article in sorted(top_articles, key=lambda item: item.get("_score", item.get("score", 0)), reverse=True):
+            if not predicate(article):
+                continue
+            key = article.get("link") or article.get("title", "")
+            if key in seen:
+                continue
+            seen.add(key)
+            selected.append(article_brief(article))
+            if len(selected) >= limit:
+                break
+        return selected
+
     cats = aggregate["by_category"]
     tones = aggregate["by_tone"]
     own = cats.get("own", 0)
@@ -316,6 +357,35 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
             "body": f"상위 매체는 {top_source} {top_source_count:,}건입니다. 포털 경유 기사와 원매체명이 섞이면 영향 매체 해석이 흔들리므로 매체명 보정 상태를 함께 봐야 합니다.",
         },
     ]
+    evidence_groups = [
+        {
+            "title": "당사 기사 판단",
+            "count": own,
+            "judgment": (
+                f"당사 언급 {own:,}건 중 직접 부정은 {own_negative:,}건입니다. "
+                "긍정·중립 보도와 부정 보도를 분리해 브랜드 노출 성과와 평판 리스크를 함께 봅니다."
+            ),
+            "articles": pick_articles(lambda article: article_category(article) == "own", 3),
+        },
+        {
+            "title": "정책/감독 판단",
+            "count": regulation,
+            "judgment": (
+                f"정책/감독 보도는 {regulation:,}건입니다. "
+                "당사 직접 이슈가 아니더라도 GA·보험 영업 환경에 영향을 줄 수 있는 제도 변화 신호입니다."
+            ),
+            "articles": pick_articles(lambda article: article_category(article) == "regulation", 3),
+        },
+        {
+            "title": "부정 논조 판단",
+            "count": negative_count,
+            "judgment": (
+                f"부정 논조 {negative_count:,}건 중 당사 직접 부정은 {own_negative:,}건입니다. "
+                "나머지는 업계·상품·제도성 부정 이슈로 구분해 과잉 대응을 줄이는 기준으로 봅니다."
+            ),
+            "articles": pick_articles(lambda article: article_tone(article) == "negative", 3),
+        },
+    ]
     daily_rows = [
         {
             **row,
@@ -338,6 +408,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         "keyword_rows": keyword_rows,
         "source_rows": source_rows,
         "interpretation_notes": interpretation_notes,
+        "evidence_groups": evidence_groups,
         "daily_rows": daily_rows,
     }
 
@@ -410,10 +481,11 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
         return None
 
     aggregate = archiver.aggregate_metrics(daily_data)
-    top_articles = archiver.collect_top_articles(daily_data, limit=20)
+    top_articles = archiver.collect_top_articles(daily_data, limit=800)
     trend_days = aggregate.get("daily_volume", [])[-12:]
     risk_trend_days = aggregate.get("daily_own_negative", [])[-12:]
     max_trend_total = max((d["total"] for d in trend_days), default=0)
+    max_own_trend_total = max((d.get("own", 0) for d in trend_days), default=0)
 
     console.print(
         f"[green]OK[/] {aggregate['period_days']}일/{aggregate.get('period_windows', len(daily_data))}구간 데이터 로드 | "
@@ -448,6 +520,7 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
         trend_days=trend_days,
         risk_trend_days=risk_trend_days,
         max_trend_total=max_trend_total,
+        max_own_trend_total=max_own_trend_total,
         max_neg=max_neg,
         ai_report_html=markdown_to_html(ai_report),
         top_articles=top_articles[:10],

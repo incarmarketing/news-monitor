@@ -183,6 +183,9 @@
     font-size:9.5px;
     font-weight:900;
   }
+  .metrics-panel {
+    min-height:252px;
+  }
   .summary-panel {
     min-height:252px;
   }
@@ -361,6 +364,66 @@
   }
   .bar.risk-HIGH { background:var(--red); }
   .bar.risk-MEDIUM { background:var(--amber); }
+  .own-trend {
+    margin-top:12px;
+    padding-top:8px;
+    border-top:1px solid #e7ecf4;
+  }
+  .own-trend-head {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    color:var(--navy);
+    font-size:9.5px;
+    font-weight:900;
+    margin-bottom:5px;
+  }
+  .own-trend-head span {
+    color:var(--muted);
+    font-size:8.7px;
+  }
+  .own-trend-bars {
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(22px,1fr);
+    gap:5px;
+    align-items:end;
+    height:54px;
+  }
+  .own-day {
+    display:grid;
+    gap:2px;
+    align-items:end;
+    justify-items:center;
+    color:var(--muted);
+    font-size:7.5px;
+    font-weight:900;
+  }
+  .own-bar-wrap {
+    height:34px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    width:100%;
+  }
+  .own-bar {
+    width:46%;
+    min-height:3px;
+    border-radius:999px 999px 0 0;
+    background:linear-gradient(180deg,#2563eb,#172554);
+    position:relative;
+  }
+  .own-bar.zero { background:#dbe3ef; }
+  .own-bar-label {
+    position:absolute;
+    top:-11px;
+    left:50%;
+    transform:translateX(-50%);
+    color:var(--navy);
+    font-size:7px;
+    font-weight:900;
+  }
   .bar-label {
     position:absolute;
     top:-14px;
@@ -412,35 +475,35 @@
   }
   .density-grid {
     display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:5px;
-    margin-bottom:7px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+    margin-bottom:9px;
   }
   .density-item {
     min-width:0;
     border:1px solid #e4e9f2;
     border-radius:7px;
-    padding:6px 7px;
+    padding:9px 10px;
     background:#fbfdff;
+    min-height:58px;
   }
   .density-item b {
     display:block;
     color:var(--navy);
-    font-size:11px;
-    line-height:1.1;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    font-size:13px;
+    line-height:1.18;
+    white-space:normal;
+    overflow-wrap:anywhere;
   }
   .density-item span {
     display:block;
-    margin-top:3px;
+    margin-top:5px;
     color:var(--muted);
-    font-size:8.8px;
+    font-size:9.2px;
     font-weight:900;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    line-height:1.28;
+    white-space:normal;
+    overflow-wrap:anywhere;
   }
   .ledger-table,
   .mini-table {
@@ -474,6 +537,13 @@
     font-weight:900;
     text-align:right;
   }
+  .mini-table td:first-child {
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
   .risk-pill {
     display:inline-flex;
     min-width:44px;
@@ -488,6 +558,74 @@
   .risk-pill.high { background:#fee2e2; color:var(--red); }
   .risk-pill.medium { background:#fef3c7; color:var(--amber); }
   .risk-pill.low { background:#dcfce7; color:var(--green); }
+  .evidence-groups {
+    display:grid;
+    gap:8px;
+  }
+  .evidence-group {
+    border:1px solid #e4e9f2;
+    border-radius:8px;
+    background:#fbfdff;
+    padding:8px;
+  }
+  .evidence-group h3 {
+    margin:0 0 3px;
+    color:var(--navy);
+    font-size:10.5px;
+    line-height:1.2;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .evidence-group h3 span {
+    color:var(--muted);
+    font-size:8.5px;
+    font-weight:900;
+    white-space:nowrap;
+  }
+  .evidence-judgment {
+    margin:0 0 6px;
+    color:#344054;
+    font-size:8.8px;
+    font-weight:800;
+    line-height:1.35;
+  }
+  .evidence-list {
+    display:grid;
+    gap:5px;
+  }
+  .evidence-card {
+    display:block;
+    padding:5px 6px;
+    border:1px solid #e7ecf4;
+    border-radius:6px;
+    background:#fff;
+    text-decoration:none;
+  }
+  .evidence-card b {
+    display:block;
+    color:#111827;
+    font-size:9.4px;
+    line-height:1.28;
+    font-weight:900;
+  }
+  .evidence-card span {
+    display:block;
+    margin-top:2px;
+    color:#98a2b3;
+    font-size:8px;
+    font-weight:800;
+    line-height:1.25;
+  }
+  .evidence-empty {
+    padding:7px;
+    border:1px dashed #cbd5e1;
+    border-radius:6px;
+    color:var(--muted);
+    font-size:8.7px;
+    font-weight:800;
+    background:#fff;
+  }
   .rank-wrap {
     display:grid;
     grid-template-columns:1fr .86fr;
@@ -579,6 +717,13 @@
     .bar-wrap { height:38px; }
     .bar-label { top:-10px; font-size:6.1px; }
     .day { gap:1px; font-size:5.9px; }
+    .own-trend { margin-top:5px; padding-top:4px; }
+    .own-trend-head { margin-bottom:2px; font-size:6.5px; }
+    .own-trend-head span { font-size:5.8px; }
+    .own-trend-bars { height:31px; gap:2px; }
+    .own-day { gap:1px; font-size:5.4px; }
+    .own-bar-wrap { height:18px; }
+    .own-bar-label { top:-8px; font-size:5.4px; }
     .article-table { font-size:6.8px; }
     .article-table th,.article-table td { padding:2px 3px; }
     .article-table th { font-size:6px; }
@@ -586,10 +731,10 @@
     .rank { width:20px; }
     .score { width:30px; }
     .footer { margin-top:4px; padding:3px 0 0; font-size:6.2px; align-self:end; }
-    .density-grid { gap:3px; margin-bottom:4px; }
-    .density-item { padding:4px 5px; border-radius:5px; }
-    .density-item b { font-size:8.1px; }
-    .density-item span { margin-top:2px; font-size:6.3px; }
+    .density-grid { gap:4px; margin-bottom:4px; }
+    .density-item { min-height:38px; padding:5px 6px; border-radius:5px; }
+    .density-item b { font-size:7.8px; line-height:1.12; }
+    .density-item span { margin-top:2px; font-size:5.9px; line-height:1.15; }
     .ledger-table,
     .mini-table { font-size:6.6px; }
     .ledger-table th,
@@ -601,6 +746,16 @@
     .risk-pill { min-width:34px; padding:1px 3px; font-size:5.9px; }
     .rank-wrap { gap:4px; }
     .rank-box h3 { margin-bottom:2px; font-size:7.2px; }
+    .evidence-groups { gap:4px; }
+    .evidence-group { padding:4px; border-radius:5px; }
+    .evidence-group h3 { margin-bottom:1px; font-size:6.9px; }
+    .evidence-group h3 span { font-size:5.7px; }
+    .evidence-judgment { margin-bottom:3px; font-size:5.9px; line-height:1.16; }
+    .evidence-list { gap:2px; }
+    .evidence-card { padding:2px 3px; border-radius:4px; }
+    .evidence-card b { font-size:6.2px; line-height:1.16; }
+    .evidence-card span { margin-top:1px; font-size:5.4px; }
+    .evidence-empty { padding:3px; font-size:5.8px; }
   }
 </style>
 </head>
@@ -634,7 +789,7 @@
       <h2>요약 분석 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
       <div class="analysis-body">{{ ai_report_html | safe }}</div>
     </div>
-    <div class="panel">
+    <div class="panel metrics-panel">
       <h2>누적 지표 <span>관찰 지표 · 반복 노출</span></h2>
       <div class="density-grid">
         {% for item in report_context.density_rows %}
@@ -682,6 +837,21 @@
           <div>{{ d.date[5:] }}</div>
         </div>
         {% endfor %}
+      </div>
+      <div class="own-trend">
+        <div class="own-trend-head">당사 노출 흐름 <span>일자별 당사 직접 언급 기사</span></div>
+        <div class="own-trend-bars">
+          {% for d in trend_days %}
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar{% if d.own == 0 %} zero{% endif %}" style="height:{{ (d.own / max_own_trend_total * 100) if max_own_trend_total > 0 else 4 }}%">
+                {% if d.own > 0 %}<span class="own-bar-label">{{ d.own }}</span>{% endif %}
+              </div>
+            </div>
+            <div>{{ d.date[5:] }}</div>
+          </div>
+          {% endfor %}
+        </div>
       </div>
     </div>
     <div class="panel">
@@ -747,22 +917,26 @@
       </div>
     </div>
     <div class="panel article-panel">
-      <h2>근거 기사 <span>상위 {{ top_articles[:10]|length }}건 · 점수순</span></h2>
-      <table class="article-table">
-        <thead><tr><th class="rank">#</th><th>기사</th><th class="score">점수</th></tr></thead>
-        <tbody>
-        {% for a in top_articles[:10] %}
-        <tr>
-          <td class="rank">{{ loop.index }}</td>
-          <td class="title-cell">
-            <a href="{{ a.link }}" target="_blank">{{ a.title }}</a>
-            <div class="meta">{{ a._date }} · {{ a.source|default("-", true)|upper }} · {{ a.keyword|default("-", true) }}</div>
-          </td>
-          <td class="score">{{ a._score }}</td>
-        </tr>
+      <h2>판단 관련 기사 <span>당사 · 정책/감독 · 부정 논조</span></h2>
+      <div class="evidence-groups">
+        {% for group in report_context.evidence_groups %}
+        <section class="evidence-group">
+          <h3>{{ group.title }} <span>{{ group.count }}건 기준</span></h3>
+          <p class="evidence-judgment">{{ group.judgment }}</p>
+          <div class="evidence-list">
+            {% for a in group.articles %}
+            <a class="evidence-card" href="{{ a.link }}" target="_blank">
+              <b>{{ a.title }}</b>
+              <span>{{ a.meta }}</span>
+            </a>
+            {% endfor %}
+            {% if not group.articles %}
+            <div class="evidence-empty">해당 기준에 맞는 대표 기사가 없습니다.</div>
+            {% endif %}
+          </div>
+        </section>
         {% endfor %}
-        </tbody>
-      </table>
+      </div>
     </div>
   </section>
 

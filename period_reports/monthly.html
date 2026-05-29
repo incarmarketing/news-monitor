@@ -183,6 +183,9 @@
     font-size:9.5px;
     font-weight:900;
   }
+  .metrics-panel {
+    min-height:252px;
+  }
   .summary-panel {
     min-height:252px;
   }
@@ -361,6 +364,66 @@
   }
   .bar.risk-HIGH { background:var(--red); }
   .bar.risk-MEDIUM { background:var(--amber); }
+  .own-trend {
+    margin-top:12px;
+    padding-top:8px;
+    border-top:1px solid #e7ecf4;
+  }
+  .own-trend-head {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    color:var(--navy);
+    font-size:9.5px;
+    font-weight:900;
+    margin-bottom:5px;
+  }
+  .own-trend-head span {
+    color:var(--muted);
+    font-size:8.7px;
+  }
+  .own-trend-bars {
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(22px,1fr);
+    gap:5px;
+    align-items:end;
+    height:54px;
+  }
+  .own-day {
+    display:grid;
+    gap:2px;
+    align-items:end;
+    justify-items:center;
+    color:var(--muted);
+    font-size:7.5px;
+    font-weight:900;
+  }
+  .own-bar-wrap {
+    height:34px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    width:100%;
+  }
+  .own-bar {
+    width:46%;
+    min-height:3px;
+    border-radius:999px 999px 0 0;
+    background:linear-gradient(180deg,#2563eb,#172554);
+    position:relative;
+  }
+  .own-bar.zero { background:#dbe3ef; }
+  .own-bar-label {
+    position:absolute;
+    top:-11px;
+    left:50%;
+    transform:translateX(-50%);
+    color:var(--navy);
+    font-size:7px;
+    font-weight:900;
+  }
   .bar-label {
     position:absolute;
     top:-14px;
@@ -412,35 +475,35 @@
   }
   .density-grid {
     display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:5px;
-    margin-bottom:7px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+    margin-bottom:9px;
   }
   .density-item {
     min-width:0;
     border:1px solid #e4e9f2;
     border-radius:7px;
-    padding:6px 7px;
+    padding:9px 10px;
     background:#fbfdff;
+    min-height:58px;
   }
   .density-item b {
     display:block;
     color:var(--navy);
-    font-size:11px;
-    line-height:1.1;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    font-size:13px;
+    line-height:1.18;
+    white-space:normal;
+    overflow-wrap:anywhere;
   }
   .density-item span {
     display:block;
-    margin-top:3px;
+    margin-top:5px;
     color:var(--muted);
-    font-size:8.8px;
+    font-size:9.2px;
     font-weight:900;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    line-height:1.28;
+    white-space:normal;
+    overflow-wrap:anywhere;
   }
   .ledger-table,
   .mini-table {
@@ -474,6 +537,13 @@
     font-weight:900;
     text-align:right;
   }
+  .mini-table td:first-child {
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
   .risk-pill {
     display:inline-flex;
     min-width:44px;
@@ -488,6 +558,74 @@
   .risk-pill.high { background:#fee2e2; color:var(--red); }
   .risk-pill.medium { background:#fef3c7; color:var(--amber); }
   .risk-pill.low { background:#dcfce7; color:var(--green); }
+  .evidence-groups {
+    display:grid;
+    gap:8px;
+  }
+  .evidence-group {
+    border:1px solid #e4e9f2;
+    border-radius:8px;
+    background:#fbfdff;
+    padding:8px;
+  }
+  .evidence-group h3 {
+    margin:0 0 3px;
+    color:var(--navy);
+    font-size:10.5px;
+    line-height:1.2;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .evidence-group h3 span {
+    color:var(--muted);
+    font-size:8.5px;
+    font-weight:900;
+    white-space:nowrap;
+  }
+  .evidence-judgment {
+    margin:0 0 6px;
+    color:#344054;
+    font-size:8.8px;
+    font-weight:800;
+    line-height:1.35;
+  }
+  .evidence-list {
+    display:grid;
+    gap:5px;
+  }
+  .evidence-card {
+    display:block;
+    padding:5px 6px;
+    border:1px solid #e7ecf4;
+    border-radius:6px;
+    background:#fff;
+    text-decoration:none;
+  }
+  .evidence-card b {
+    display:block;
+    color:#111827;
+    font-size:9.4px;
+    line-height:1.28;
+    font-weight:900;
+  }
+  .evidence-card span {
+    display:block;
+    margin-top:2px;
+    color:#98a2b3;
+    font-size:8px;
+    font-weight:800;
+    line-height:1.25;
+  }
+  .evidence-empty {
+    padding:7px;
+    border:1px dashed #cbd5e1;
+    border-radius:6px;
+    color:var(--muted);
+    font-size:8.7px;
+    font-weight:800;
+    background:#fff;
+  }
   .rank-wrap {
     display:grid;
     grid-template-columns:1fr .86fr;
@@ -579,6 +717,13 @@
     .bar-wrap { height:38px; }
     .bar-label { top:-10px; font-size:6.1px; }
     .day { gap:1px; font-size:5.9px; }
+    .own-trend { margin-top:5px; padding-top:4px; }
+    .own-trend-head { margin-bottom:2px; font-size:6.5px; }
+    .own-trend-head span { font-size:5.8px; }
+    .own-trend-bars { height:31px; gap:2px; }
+    .own-day { gap:1px; font-size:5.4px; }
+    .own-bar-wrap { height:18px; }
+    .own-bar-label { top:-8px; font-size:5.4px; }
     .article-table { font-size:6.8px; }
     .article-table th,.article-table td { padding:2px 3px; }
     .article-table th { font-size:6px; }
@@ -586,10 +731,10 @@
     .rank { width:20px; }
     .score { width:30px; }
     .footer { margin-top:4px; padding:3px 0 0; font-size:6.2px; align-self:end; }
-    .density-grid { gap:3px; margin-bottom:4px; }
-    .density-item { padding:4px 5px; border-radius:5px; }
-    .density-item b { font-size:8.1px; }
-    .density-item span { margin-top:2px; font-size:6.3px; }
+    .density-grid { gap:4px; margin-bottom:4px; }
+    .density-item { min-height:38px; padding:5px 6px; border-radius:5px; }
+    .density-item b { font-size:7.8px; line-height:1.12; }
+    .density-item span { margin-top:2px; font-size:5.9px; line-height:1.15; }
     .ledger-table,
     .mini-table { font-size:6.6px; }
     .ledger-table th,
@@ -601,6 +746,16 @@
     .risk-pill { min-width:34px; padding:1px 3px; font-size:5.9px; }
     .rank-wrap { gap:4px; }
     .rank-box h3 { margin-bottom:2px; font-size:7.2px; }
+    .evidence-groups { gap:4px; }
+    .evidence-group { padding:4px; border-radius:5px; }
+    .evidence-group h3 { margin-bottom:1px; font-size:6.9px; }
+    .evidence-group h3 span { font-size:5.7px; }
+    .evidence-judgment { margin-bottom:3px; font-size:5.9px; line-height:1.16; }
+    .evidence-list { gap:2px; }
+    .evidence-card { padding:2px 3px; border-radius:4px; }
+    .evidence-card b { font-size:6.2px; line-height:1.16; }
+    .evidence-card span { margin-top:1px; font-size:5.4px; }
+    .evidence-empty { padding:3px; font-size:5.8px; }
   }
 </style>
 </head>
@@ -609,7 +764,7 @@
 <main class="sheet">
   <header class="report-head">
     <div>
-      <div class="eyebrow"><span class="badge">MONTHLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-01 ~ 2026-05-29</span><span>2026.05.29 09:00</span></div>
+      <div class="eyebrow"><span class="badge">MONTHLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-05-01 ~ 2026-05-29</span><span>2026.05.29 09:11</span></div>
       <h1>월간 미디어 모니터링 리포트</h1>
       <p class="headline">당사 직접 부정 4건과 주의 이상 2일이 확인된 고위험 관찰 구간입니다.</p>
     </div>
@@ -650,7 +805,7 @@
 <li>주의 관찰일: 05-08, 05-27 구간이 리스크 판정일이며, 동일 이슈의 재확산인지 신규 이슈인지 분리해 봐야 합니다.</li>
 </ul></div>
     </div>
-    <div class="panel">
+    <div class="panel metrics-panel">
       <h2>누적 지표 <span>관찰 지표 · 반복 노출</span></h2>
       <div class="density-grid">
         
@@ -819,6 +974,120 @@
           <div>05-29</div>
         </div>
         
+      </div>
+      <div class="own-trend">
+        <div class="own-trend-head">당사 노출 흐름 <span>일자별 당사 직접 언급 기사</span></div>
+        <div class="own-trend-bars">
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar" style="height:33.33333333333333%">
+                <span class="own-bar-label">2</span>
+              </div>
+            </div>
+            <div>05-18</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar" style="height:100.0%">
+                <span class="own-bar-label">6</span>
+              </div>
+            </div>
+            <div>05-19</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar" style="height:16.666666666666664%">
+                <span class="own-bar-label">1</span>
+              </div>
+            </div>
+            <div>05-20</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar zero" style="height:0.0%">
+                
+              </div>
+            </div>
+            <div>05-21</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar zero" style="height:0.0%">
+                
+              </div>
+            </div>
+            <div>05-22</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar zero" style="height:0.0%">
+                
+              </div>
+            </div>
+            <div>05-23</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar zero" style="height:0.0%">
+                
+              </div>
+            </div>
+            <div>05-24</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar" style="height:33.33333333333333%">
+                <span class="own-bar-label">2</span>
+              </div>
+            </div>
+            <div>05-25</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar zero" style="height:0.0%">
+                
+              </div>
+            </div>
+            <div>05-26</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar" style="height:16.666666666666664%">
+                <span class="own-bar-label">1</span>
+              </div>
+            </div>
+            <div>05-27</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar zero" style="height:0.0%">
+                
+              </div>
+            </div>
+            <div>05-28</div>
+          </div>
+          
+          <div class="own-day">
+            <div class="own-bar-wrap">
+              <div class="own-bar zero" style="height:0.0%">
+                
+              </div>
+            </div>
+            <div>05-29</div>
+          </div>
+          
+        </div>
       </div>
     </div>
     <div class="panel">
@@ -1018,103 +1287,82 @@
       </div>
     </div>
     <div class="panel article-panel">
-      <h2>근거 기사 <span>상위 10건 · 점수순</span></h2>
-      <table class="article-table">
-        <thead><tr><th class="rank">#</th><th>기사</th><th class="score">점수</th></tr></thead>
-        <tbody>
+      <h2>판단 관련 기사 <span>당사 · 정책/감독 · 부정 논조</span></h2>
+      <div class="evidence-groups">
         
-        <tr>
-          <td class="rank">1</td>
-          <td class="title-cell">
-            <a href="https://www.energy-news.co.kr/news/articleView.html?idxno=225385" target="_blank">인카금융서비스, 독립 보험대리점 2026년 5월 브랜드평판 1위</a>
-            <div class="meta">2026-05-14 · NAVER · 인카금융</div>
-          </td>
-          <td class="score">30</td>
-        </tr>
+        <section class="evidence-group">
+          <h3>당사 기사 판단 <span>77건 기준</span></h3>
+          <p class="evidence-judgment">당사 언급 77건 중 직접 부정은 4건입니다. 긍정·중립 보도와 부정 보도를 분리해 브랜드 노출 성과와 평판 리스크를 함께 봅니다.</p>
+          <div class="evidence-list">
+            
+            <a class="evidence-card" href="https://www.energy-news.co.kr/news/articleView.html?idxno=225385" target="_blank">
+              <b>인카금융서비스, 독립 보험대리점 2026년 5월 브랜드평판 1위</b>
+              <span>2026-05-14 · naver · 인카금융</span>
+            </a>
+            
+            <a class="evidence-card" href="https://www.cbci.co.kr/news/articleView.html?idxno=574466" target="_blank">
+              <b>독립 보험대리점(GA) 브랜드평판 2026년 5월, 인카금융서비스 1위…한화...</b>
+              <span>2026-05-14 · naver · 인카금융</span>
+            </a>
+            
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMid0FVX3lxTE1Vdzl4NE84VkkxVEpWY3FJdWlmdVRKbW9rd182blMyelpNRnVoT3F4M3RVVkloMXlXYUI4X2pkZE1KRmxXVktKZzIwb0RhWk5STEc1bDdUS0lvdEUzUEFZeXF6RnpqTlpOVFhiVUNqYUhiX2xrNkVn0gF3QVVfeXFMTVV3OXg0TzhWSTFUSlZjcUl1aWZ1VEptb2t3XzZuUzJ6Wk1GdWhPcXgzdFVWSWgxeVdhQjhfamRkTUpGbFdWS0pnMjBvRGFaTlJMRzVsN1RLSW90RTNQQVl5cXpGempOWk5UWGJVQ2phSGJfbGs2RWc?oc=5" target="_blank">
+              <b>국내 독립 보험대리점(GA) 5월 브랜드평판... 인카금융서비스 1위, 한화생명금융서비스 2위, 에이플러스에셋 3위 - 핀포인트뉴스</b>
+              <span>2026-05-14 · google · 인카금융</span>
+            </a>
+            
+            
+          </div>
+        </section>
         
-        <tr>
-          <td class="rank">2</td>
-          <td class="title-cell">
-            <a href="https://www.cbci.co.kr/news/articleView.html?idxno=574466" target="_blank">독립 보험대리점(GA) 브랜드평판 2026년 5월, 인카금융서비스 1위…한화...</a>
-            <div class="meta">2026-05-14 · NAVER · 인카금융</div>
-          </td>
-          <td class="score">30</td>
-        </tr>
+        <section class="evidence-group">
+          <h3>정책/감독 판단 <span>134건 기준</span></h3>
+          <p class="evidence-judgment">정책/감독 보도는 134건입니다. 당사 직접 이슈가 아니더라도 GA·보험 영업 환경에 영향을 줄 수 있는 제도 변화 신호입니다.</p>
+          <div class="evidence-list">
+            
+            <a class="evidence-card" href="https://n.news.naver.com/mnews/article/293/0000084640?sid=101" target="_blank">
+              <b>[대기업집단 공시 대해부] 반도체 이후 준비하는 삼성</b>
+              <span>2026-05-14 · naver · 보험 마케팅</span>
+            </a>
+            
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMiW0FVX3lxTE9VSndOMWx4WHVYZUx4MkNqTVlWc1hTZW9pQ2oycUNIdk9MV3QtNGRDbWY0Y2lIWkk5WHZwVVlPYzhOUkJIcGNueXdGcFIyUW9EVi1rbHVROUN2RmM?oc=5" target="_blank">
+              <b>‘요양시설 종신보험 판매’ 금감원 검사 착수…1호에 한화라이프랩 - KBS 뉴스</b>
+              <span>2026-05-14 · google · 생명보험</span>
+            </a>
+            
+            <a class="evidence-card" href="http://www.newslock.co.kr/news/articleView.html?idxno=130120" target="_blank">
+              <b>금감원, '요양시설 종신보험 의혹' 한화라이프랩 검사 착수…GA 내부통...</b>
+              <span>2026-05-14 · naver · GA 보험</span>
+            </a>
+            
+            
+          </div>
+        </section>
         
-        <tr>
-          <td class="rank">3</td>
-          <td class="title-cell">
-            <a href="https://news.google.com/rss/articles/CBMid0FVX3lxTE1Vdzl4NE84VkkxVEpWY3FJdWlmdVRKbW9rd182blMyelpNRnVoT3F4M3RVVkloMXlXYUI4X2pkZE1KRmxXVktKZzIwb0RhWk5STEc1bDdUS0lvdEUzUEFZeXF6RnpqTlpOVFhiVUNqYUhiX2xrNkVn0gF3QVVfeXFMTVV3OXg0TzhWSTFUSlZjcUl1aWZ1VEptb2t3XzZuUzJ6Wk1GdWhPcXgzdFVWSWgxeVdhQjhfamRkTUpGbFdWS0pnMjBvRGFaTlJMRzVsN1RLSW90RTNQQVl5cXpGempOWk5UWGJVQ2phSGJfbGs2RWc?oc=5" target="_blank">국내 독립 보험대리점(GA) 5월 브랜드평판... 인카금융서비스 1위, 한화생명금융서비스 2위, 에이플러스에셋 3위 - 핀포인트뉴스</a>
-            <div class="meta">2026-05-14 · GOOGLE · 인카금융</div>
-          </td>
-          <td class="score">30</td>
-        </tr>
+        <section class="evidence-group">
+          <h3>부정 논조 판단 <span>26건 기준</span></h3>
+          <p class="evidence-judgment">부정 논조 26건 중 당사 직접 부정은 4건입니다. 나머지는 업계·상품·제도성 부정 이슈로 구분해 과잉 대응을 줄이는 기준으로 봅니다.</p>
+          <div class="evidence-list">
+            
+            <a class="evidence-card" href="https://www.thebell.co.kr/free/content/ArticleView.asp?key=202604281430386400105527" target="_blank">
+              <b>[더벨][GA 톱티어의 조건] 인카금융, 정착률 57% '최하위 티어'</b>
+              <span>2026-05-08 · naver · 인카금융</span>
+            </a>
+            
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMiekFVX3lxTE5LNDZ1N2RVR0pXbnNTRVNGQjZUaVJuV1RTQmF3U0tEb3hRUngyN3hUREg2cERCZFN1WUFZWkYxMlYtY0V5dEZsUmxmVUlfa1diQUlZc2pFZzR4RlZVd2J1UnJ2UVhwYk1KemVObkRxdG1tSDZrSzk5Zmd3?oc=5" target="_blank">
+              <b>29억 가로챈 보험 대리점… ‘인카금융’ 관리 부실 논란 - 서울신문</b>
+              <span>2026-05-08 · google · 인카금융</span>
+            </a>
+            
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMiVEFVX3lxTE1MWW8tYkJLSTJ1QUowdkxBUC03MEFnZktnaWk3WUM2b2xvTDdnOEpwdDhJbE8wY3FiU3ZyTEQ0dWJGN0tDWmRPVDFaNkVoYjRzVGp6eg?oc=5" target="_blank">
+              <b>[인카금융스캔들]③'보험 꺾기' 넘어 '불법 사채놀이'까지...대형GA사의 약탈 영업 민낯 - :: 위즈경제 ::</b>
+              <span>2026-05-08 · google · 인카금융</span>
+            </a>
+            
+            
+          </div>
+        </section>
         
-        <tr>
-          <td class="rank">4</td>
-          <td class="title-cell">
-            <a href="https://news.google.com/rss/articles/CBMie0FVX3lxTE82V3FhamRSR1JKWldJRkpSVG1NNV9xU1YyVG1HZGtVdURSWnI4a2g1alFyaFo4aHhNQjdlR1dvVDZHdnlWMDFyUGNLTFE5Z1d2M0Y4YVh5M1lxU1k5ZWxUN2VzQzlwNjJvcm96b2dEOFlSYXBtSUFjNXYwWQ?oc=5" target="_blank">인카금융서비스, 독립 보험대리점 브랜드평판 5월 1위...한화생명금융서비스 뒤이어 - 빅데이터뉴스</a>
-            <div class="meta">2026-05-14 · GOOGLE · 인카금융</div>
-          </td>
-          <td class="score">30</td>
-        </tr>
-        
-        <tr>
-          <td class="rank">5</td>
-          <td class="title-cell">
-            <a href="https://news.google.com/rss/articles/CBMib0FVX3lxTFBodS11Y2wtdEZ1N0l1cVNnMGxWWU9TOGdzN2N5Z29MaGhjVjFRSTN6N2pSbmc5RkVNd3FGWlNtekNleWVGQnZ3MWxfTHZRZjQ2Xzl4TThjNWh5WVJESUYxc2czVFRGSUZiOVlrdnJMNA?oc=5" target="_blank">KDB생명 4월 GA 생보실적 M/S…인카금융서비스 1위 탈환, 메타리치 11계단 상승 - 보험저널</a>
-            <div class="meta">2026-05-15 오전 08~13시 · GOOGLE · 인카금융</div>
-          </td>
-          <td class="score">30</td>
-        </tr>
-        
-        <tr>
-          <td class="rank">6</td>
-          <td class="title-cell">
-            <a href="https://news.google.com/rss/articles/CBMib0FVX3lxTE1MX1lNS2tNYVpuQm1xRGt6eEpnTDFNa3lLYnIwWmY0NlZtVHdUdlp5Um4wX1hGNzIxU1lqSm9La2FaSVhac01vQlA3TENtTkN0Ym9NVzUybkZUaXVSSmtSY3lDc2RhUG1CckQ1LUs1SQ?oc=5" target="_blank">메트라이프생명 4월 GA 생보실적 M/S…사랑모아금융서비스 1위 탈환, 인카금융서비스와 선두권 형성 - 보험저널</a>
-            <div class="meta">2026-05-15 오전 08~13시 · GOOGLE · 인카금융</div>
-          </td>
-          <td class="score">30</td>
-        </tr>
-        
-        <tr>
-          <td class="rank">7</td>
-          <td class="title-cell">
-            <a href="https://www.thebell.co.kr/free/content/ArticleView.asp?key=202605171546230960102977" target="_blank">[더벨]인카금융, 1200% 룰 전 영업망 확장 박차</a>
-            <div class="meta">2026-05-19 일일 마감 · NAVER · 인카금융</div>
-          </td>
-          <td class="score">25</td>
-        </tr>
-        
-        <tr>
-          <td class="rank">8</td>
-          <td class="title-cell">
-            <a href="https://www.thebell.co.kr/free/content/ArticleView.asp?key=202604281430386400105527" target="_blank">[더벨][GA 톱티어의 조건] 인카금융, 정착률 57% '최하위 티어'</a>
-            <div class="meta">2026-05-08 · NAVER · 인카금융</div>
-          </td>
-          <td class="score">22</td>
-        </tr>
-        
-        <tr>
-          <td class="rank">9</td>
-          <td class="title-cell">
-            <a href="https://news.google.com/rss/articles/CBMiVkFVX3lxTE9lX2xLRW4xTEtfQnozN2JUaWZNVEppNF9zMmdlSG5aZnNqbUVHMHpYOUNzVHBGdFJSaEFPMFV4dFhUR0lRWkZLaWRrbV9neTlaRGx0OXpn?oc=5" target="_blank">인카금융서비스, 3분기 누적 최대 실적 달성… 매출 1조 눈 앞 - 중앙일보</a>
-            <div class="meta">2026-05-08 · GOOGLE · 인카금융</div>
-          </td>
-          <td class="score">20</td>
-        </tr>
-        
-        <tr>
-          <td class="rank">10</td>
-          <td class="title-cell">
-            <a href="https://news.google.com/rss/articles/CBMic0FVX3lxTE1QNzNkbUcteXF4QjdrTWlrWHpCSnVMeXBLWVlPRXFxT1gzUGk3cjF6YTk5em4yRjUxX05IMHRpT1lmaDZjanFjaXhfOW9mMGF1eEJnU2U2LTVMNURjZW8zTzE0VkJyTjRNa3hYS0ZDV2pLXzg?oc=5" target="_blank">인카금융서비스 최대주주 최병채, 인카금융서비스 주식등의 수 6만2308주 증가…총 지분율 43.1% - 디지털투데이</a>
-            <div class="meta">2026-05-08 · GOOGLE · 인카금융</div>
-          </td>
-          <td class="score">20</td>
-        </tr>
-        
-        </tbody>
-      </table>
+      </div>
     </div>
   </section>
 
