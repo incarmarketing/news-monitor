@@ -1063,7 +1063,7 @@
     }
     .keyword-volume-summary {
       display:grid;
-      grid-template-columns:1.22fr .9fr .98fr;
+      grid-template-columns:1fr 1fr 1fr;
       gap:10px;
       align-items:stretch;
     }
@@ -1071,11 +1071,11 @@
       position:relative;
       overflow:hidden;
       min-width:0;
-      min-height:112px;
+      min-height:116px;
       display:grid;
-      gap:9px;
-      align-content:space-between;
-      padding:14px;
+      gap:10px;
+      align-content:start;
+      padding:14px 14px 13px;
       border:1px solid #d9e3f4;
       border-radius:10px;
       background:#fff;
@@ -1092,13 +1092,14 @@
       background:#27398c;
     }
     .keyword-volume-card.direction { grid-template-columns:minmax(0,1fr) 54px; column-gap:12px; }
+    .keyword-volume-card.own::before { background:#2563eb; }
     .keyword-volume-card.distribution::before { background:#0f766e; }
     .keyword-volume-card.risk::before { background:#b91c1c; }
     .keyword-volume-card.risk.is-clear::before { background:#16a34a; }
     .keyword-card-kicker {
       position:relative;
       z-index:1;
-      color:#667085;
+      color:#475467;
       font-size:11px;
       font-weight:900;
       line-height:1;
@@ -1107,7 +1108,7 @@
       position:relative;
       z-index:1;
       color:#101828;
-      font-size:18px;
+      font-size:17px;
       font-weight:900;
       line-height:1.26;
       letter-spacing:-.02em;
@@ -1124,7 +1125,7 @@
     }
     .keyword-card-value {
       color:#101828;
-      font-size:24px;
+      font-size:22px;
       font-weight:900;
       line-height:1;
       letter-spacing:-.02em;
@@ -1143,75 +1144,31 @@
       line-height:1.42;
       word-break:keep-all;
     }
-    .keyword-card-cue {
+    .keyword-card-note strong { color:#101828; }
+    .keyword-card-actions {
       position:relative;
       z-index:1;
-      align-self:stretch;
       display:grid;
-      place-items:center;
-      border:1px solid #dbe4f7;
-      border-radius:8px;
-      background:#f7faff;
-      color:#27398c;
-      font-weight:900;
+      gap:4px;
+      color:#344054;
       font-size:12px;
+      font-weight:850;
+      line-height:1.38;
+      word-break:keep-all;
     }
-    .keyword-card-cue strong {
-      display:block;
-      color:#101828;
-      font-size:24px;
-      line-height:1;
-      margin-bottom:4px;
-    }
-    .keyword-concentration-scale {
+    .keyword-card-actions span {
       position:relative;
-      z-index:1;
-      height:12px;
-      border-radius:999px;
-      background:
-        linear-gradient(90deg,#dbeafe 0 33%,#bfdbfe 33% 66%,#27398c 66% 100%);
+      padding-left:11px;
     }
-    .keyword-concentration-scale::after {
+    .keyword-card-actions span::before {
       content:"";
       position:absolute;
-      left:clamp(6px, var(--focus, 0%), calc(100% - 6px));
-      top:50%;
-      width:12px;
-      height:12px;
-      border:3px solid #fff;
+      left:0;
+      top:.62em;
+      width:4px;
+      height:4px;
       border-radius:50%;
-      background:#111827;
-      transform:translate(-50%,-50%);
-      box-shadow:0 2px 8px rgba(15,23,42,.25);
-    }
-    .keyword-scale-labels {
-      position:relative;
-      z-index:1;
-      display:flex;
-      justify-content:space-between;
-      color:#667085;
-      font-size:10px;
-      font-weight:900;
-    }
-    .keyword-risk-line {
-      position:relative;
-      z-index:1;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:8px 10px;
-      border:1px solid #fee2e2;
-      border-radius:8px;
-      background:#fff7f7;
-      color:#991b1b;
-      font-size:12px;
-      font-weight:900;
-    }
-    .keyword-volume-card.risk.is-clear .keyword-risk-line {
-      border-color:#dcfce7;
-      background:#f7fdf9;
-      color:#166534;
+      background:#27398c;
     }
     .keyword-total-chart {
       display:grid;
@@ -1811,7 +1768,7 @@
     .report-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
     .report-kpi {
       position:relative;
-      overflow:visible;
+      overflow:hidden;
       border:1px solid var(--line);
       border-radius:8px;
       padding:10px 12px;
@@ -1868,10 +1825,11 @@
       align-items:baseline;
       justify-content:flex-end;
       gap:7px;
-      white-space:nowrap;
+      white-space:normal;
+      min-width:0;
     }
-    .report-kpi-main span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.2; }
-    .report-kpi .num { color:var(--incar-dark); font-size:24px; font-weight:900; line-height:1; }
+    .report-kpi-main span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.2; word-break:keep-all; }
+    .report-kpi .num { color:var(--incar-dark); font-size:24px; font-weight:900; line-height:1; max-width:100%; overflow-wrap:anywhere; }
     .report-kpi:not(#analysisRiskCard) .num::after {
       content:"건";
       margin-left:2px;
@@ -1895,6 +1853,17 @@
     .report-kpi.risk-low .num { color:#166534; }
     .report-kpi.risk-medium .num { color:#9a3412; }
     .report-kpi.risk-high .num { color:#be123c; }
+    #analysisRiskCard .report-kpi-main {
+      display:grid;
+      justify-items:end;
+      gap:4px;
+    }
+    #analysisRiskCard .report-kpi-main span { font-size:11px; }
+    #analysisRiskCard .num {
+      font-size:20px;
+      letter-spacing:-.02em;
+      line-height:1.05;
+    }
     .report-message {
       border:1px solid #c7d7fe;
       border-left:4px solid var(--incar);
@@ -2104,11 +2073,10 @@
       .keyword-volume { gap:10px; }
       .keyword-volume-summary { display:grid; grid-template-columns:1fr; gap:8px; }
       .keyword-volume-card { min-height:auto; padding:11px 12px 11px 14px; }
-      .keyword-volume-card.direction { grid-template-columns:minmax(0,1fr) 44px; column-gap:9px; }
       .keyword-card-title { font-size:15px; }
       .keyword-card-value { font-size:21px; }
       .keyword-card-note { font-size:11.5px; }
-      .keyword-card-cue strong { font-size:20px; }
+      .keyword-card-actions { font-size:11.5px; }
       .keyword-total-chart { display:none; }
       .keyword-mobile-list { display:grid; }
       .keyword-count { text-align:left; }
@@ -2215,6 +2183,7 @@
       #page-analysis .report-kpi-main { gap:3px; }
       #page-analysis .report-kpi-main span { font-size:6.8px; }
       #page-analysis .report-kpi .num { font-size:14px; }
+      #page-analysis #analysisRiskCard .num { font-size:10px; line-height:1; }
       #page-analysis .report-kpi .num::after { font-size:6px; }
       #page-analysis .report-kpi small { display:none; }
       #page-analysis .report-message { padding:6px 8px; border-radius:5px; font-size:8px; line-height:1.28; }
@@ -2223,20 +2192,17 @@
       #page-analysis .analysis-volume-panel { display:block !important; }
       #page-analysis #volumeChart.chart { display:block; height:auto; border:0; padding:0; }
       #page-analysis .keyword-volume { gap:5px; }
-      #page-analysis .keyword-volume-summary { display:grid; grid-template-columns:1.18fr .9fr .98fr; gap:5px; }
-      #page-analysis .keyword-volume-card { min-height:42px; padding:5px 6px 5px 8px; border-radius:5px; gap:3px; }
+      #page-analysis .keyword-volume-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+      #page-analysis .keyword-volume-card { min-height:50px; padding:5px 6px 5px 8px; border-radius:5px; gap:3px; }
       #page-analysis .keyword-volume-card::before { top:5px; bottom:5px; width:2px; }
-      #page-analysis .keyword-volume-card.direction { grid-template-columns:minmax(0,1fr) 22px; column-gap:4px; }
       #page-analysis .keyword-card-kicker { font-size:5.7px; }
       #page-analysis .keyword-card-title { font-size:8px; line-height:1.12; }
       #page-analysis .keyword-card-value { font-size:10px; }
       #page-analysis .keyword-card-unit,
       #page-analysis .keyword-card-note { font-size:5.8px; line-height:1.2; }
-      #page-analysis .keyword-card-cue { border-radius:4px; font-size:5.5px; }
-      #page-analysis .keyword-card-cue strong { font-size:10px; margin-bottom:1px; }
-      #page-analysis .keyword-concentration-scale { height:5px; }
-      #page-analysis .keyword-scale-labels { font-size:5.4px; }
-      #page-analysis .keyword-risk-line { padding:2px 4px; border-radius:4px; font-size:5.8px; }
+      #page-analysis .keyword-card-actions { gap:2px; font-size:5.7px; line-height:1.18; }
+      #page-analysis .keyword-card-actions span { padding-left:6px; }
+      #page-analysis .keyword-card-actions span::before { width:2.5px; height:2.5px; }
       #page-analysis .keyword-total-chart { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
       #page-analysis .keyword-total-item { min-height:34px; grid-template-columns:18px minmax(0,1fr); gap:4px; padding:4px 5px; border-radius:5px; }
       #page-analysis .keyword-total-item:nth-child(n+9) { display:none; }
@@ -2548,7 +2514,7 @@
 
               <div class="grid-2 report-volume-row">
                 <div class="panel analysis-volume-panel">
-                  <h2 class="report-section-title"><i data-lucide="bar-chart-3"></i> 노출 집중도</h2>
+                  <h2 class="report-section-title"><i data-lucide="bar-chart-3"></i> 이슈 우선순위</h2>
                   <div class="chart" id="volumeChart"></div>
                 </div>
               </div>
@@ -3885,7 +3851,7 @@
     function buildJudgement(items,cats,tones) {
       if (!items.length) return "현재 표시할 언론 데이터가 없습니다.";
       if (companyNegativeCount(items) > 0) return "당사 직접 부정성 이슈가 있어 원문 확인과 대응 상태 등록이 필요합니다.";
-      if ((cats.regulation || 0) >= 3) return "정책성 보도가 많아 업계 영향과 당사 관련성을 우선 확인해야 합니다.";
+      if ((cats.regulation || 0) >= 3) return "정책성 보도가 많아 업계 영향과 당사 관련성을 먼저 점검해야 합니다.";
       if ((cats.own || 0) > 0) return "당사 보도가 관찰되고 있으며 보도 톤과 확산 매체를 함께 추적할 필요가 있습니다.";
       return "당사 직접 리스크는 낮고 GA 및 보험사 동향 중심의 관찰 구간입니다.";
     }
@@ -4123,7 +4089,7 @@
       const regulation = cats.regulation || 0;
       const market = (cats.competitor || 0) + (cats.industry || 0);
       const topKeywordText = topKeyword ? ` 최다 반복 키워드는 "${topKeyword[0]}"입니다.` : "";
-      if (ownNegative) return `당사 관련 부정 보도 ${ownNegative}건이 확인됐습니다. 보고서에서는 해당 기사 제목과 요약을 우선 확인하고, 동일 이슈의 반복 보도인지 별도 쟁점인지 분리해 대응 우선순위를 정리해야 합니다.${topKeywordText}`;
+      if (ownNegative) return `당사 관련 부정 보도 ${ownNegative}건이 확인됐습니다. 보고서에서는 해당 기사 제목과 요약을 먼저 점검하고, 동일 이슈의 반복 보도인지 별도 쟁점인지 분리해 대응 순서를 정리해야 합니다.${topKeywordText}`;
       if (regulation >= Math.max(3, own, market * 0.6)) return `정책·감독 이슈가 보도 흐름을 주도합니다. 당사 직접 부정 이슈는 낮지만 수수료, 감독, 법안, 설계사 관련 보도가 반복될 경우 GA 영업환경 이슈로 확산될 수 있습니다.${topKeywordText}`;
       if (own) return `당사 보도 ${own}건이 확인됐고 직접 부정 이슈는 낮습니다. 이번 구간은 리스크 대응보다 보도 톤, 반복 노출 매체, 후속 확산 가능성을 점검하는 홍보 성과 분석에 가깝습니다.${topKeywordText}`;
       return `당사 직접 보도보다 GA·보험사 시장 동향 ${market}건이 중심입니다. 경쟁사 제휴, 보험사 채널 전략, 정책 변화가 우리 영업환경에 미칠 수 있는 영향을 보는 모니터링 구간입니다.${topKeywordText}`;
@@ -4162,54 +4128,64 @@
       const total = Math.max(keywordItems.length, 1);
       const max = Math.max(...entries.map(([, value]) => value), 1);
       const negativeTotal = keywordItems.filter(article => article.tone === "negative").length;
-      const negativeShare = Math.round(negativeTotal / total * 100);
       const topShare = Math.round(entries[0][1] / total * 100);
       const topKeyword = entries[0];
-      const keywordCount = Object.keys(countBy(keywordItems, "keyword")).length;
       const topRelated = keywordItems.filter(article => article.keyword === topKeyword[0]);
       const topCategory = topBy(topRelated, "category", 1)[0];
       const topCategoryText = topCategory ? categoryLabel(topCategory[0]) : "미분류";
-      const concentrationTitle = topShare >= 35 ? "쏠림 강함" : topShare >= 22 ? "집중 관찰" : "분산형";
-      const concentrationNote = topShare >= 35
-        ? "상위 키워드가 흐름을 끌고 있습니다."
-        : topShare >= 22
-          ? "1위 키워드는 보이지만 과도한 쏠림은 아닙니다."
-          : "이슈가 여러 키워드로 나뉘어 있습니다.";
+      const reportCats = countBy(items, "category");
+      const ownTotal = reportCats.own || 0;
+      const ownNegative = items.filter(isCompanyNegative).length;
+      const regulationTotal = reportCats.regulation || 0;
+      const marketTotal = (reportCats.industry || 0) + (reportCats.competitor || 0);
       const topNegativeKeyword = topBy(keywordItems.filter(article => article.tone === "negative"), "keyword", 1)[0];
-      const riskTitle = negativeTotal ? "주의 신호 있음" : "주의 신호 낮음";
-      const riskNote = negativeTotal
-        ? `${topNegativeKeyword ? `"${topNegativeKeyword[0]}" ${topNegativeKeyword[1]}건` : "부정 톤"}을 먼저 확인`
-        : "부정 톤 없이 노출 구조만 확인";
+      const ownAction = ownNegative
+        ? "당사 부정 원문과 사실관계부터 분리"
+        : ownTotal
+          ? "당사 보도 톤과 확산 매체 점검"
+          : "당사 직접 이슈 없이 업계 동향으로 관리";
+      const riskAction = negativeTotal
+        ? `${topNegativeKeyword ? topNegativeKeyword[0] : "부정 톤"} 중심으로 반복 보도 여부 확인`
+        : regulationTotal
+          ? "규제 후속 보도와 당사 관련성 관찰"
+          : "단기 대응보다 시장 흐름 모니터링";
       const colors = ["#27398c", "#16a34a", "#d97706", "#0891b2", "#7c3aed", "#dc2626", "#475569", "#be185d"];
       const summary = `
         <div class="keyword-volume-summary">
           <div class="keyword-volume-card direction">
-            <div>
-              <div class="keyword-card-kicker">우선 확인</div>
-              <div class="keyword-card-title">${escapeHtml(topKeyword[0])}</div>
-              <div class="keyword-card-main">
-                <span class="keyword-card-value">${topKeyword[1].toLocaleString("ko-KR")}</span>
-                <span class="keyword-card-unit">건 · 전체 ${topShare}%</span>
-              </div>
-              <div class="keyword-card-note">${escapeHtml(topCategoryText)} 중심. 아래 1번 항목에서 기사 성격을 먼저 확인하세요.</div>
+            <div class="keyword-card-kicker">핵심 이슈</div>
+            <div class="keyword-card-title">${escapeHtml(topKeyword[0])}</div>
+            <div class="keyword-card-main">
+              <span class="keyword-card-value">${topKeyword[1].toLocaleString("ko-KR")}</span>
+              <span class="keyword-card-unit">건 · ${topShare}%</span>
             </div>
-            <div class="keyword-card-cue"><strong>1</strong>항목</div>
+            <div class="keyword-card-note"><strong>${escapeHtml(topCategoryText)}</strong> 성격의 노출이 가장 큽니다.</div>
+            <div class="keyword-card-actions">
+              <span>${topShare >= 30 ? "단일 이슈 확산 여부를 우선 점검" : "여러 이슈 중 대표 흐름으로만 해석"}</span>
+            </div>
           </div>
-          <div class="keyword-volume-card distribution">
-            <div class="keyword-card-kicker">분포 판단</div>
-            <div class="keyword-card-title">${escapeHtml(concentrationTitle)}</div>
-            <div class="keyword-concentration-scale" style="--focus:${Math.min(100, topShare)}%"></div>
-            <div class="keyword-scale-labels"><span>분산</span><span>집중</span></div>
-            <div class="keyword-card-note">${keywordCount.toLocaleString("ko-KR")}개 키워드 · ${escapeHtml(concentrationNote)}</div>
+          <div class="keyword-volume-card own">
+            <div class="keyword-card-kicker">당사 영향</div>
+            <div class="keyword-card-title">${ownNegative ? "부정 원문 확인 필요" : ownTotal ? "직접 보도 관리" : "직접 영향 낮음"}</div>
+            <div class="keyword-card-main">
+              <span class="keyword-card-value">${ownTotal.toLocaleString("ko-KR")}</span>
+              <span class="keyword-card-unit">건 · 부정 ${ownNegative.toLocaleString("ko-KR")}</span>
+            </div>
+            <div class="keyword-card-actions">
+              <span>${escapeHtml(ownAction)}</span>
+            </div>
           </div>
           <div class="keyword-volume-card risk${negativeTotal ? "" : " is-clear"}">
-            <div class="keyword-card-kicker">주의 신호</div>
-            <div class="keyword-card-title">${escapeHtml(riskTitle)}</div>
+            <div class="keyword-card-kicker">규제·위험</div>
+            <div class="keyword-card-title">${negativeTotal ? "부정 논조 존재" : regulationTotal ? "정책 흐름 관찰" : "위험 신호 낮음"}</div>
             <div class="keyword-card-main">
-              <span class="keyword-card-value">${negativeTotal.toLocaleString("ko-KR")}</span>
-              <span class="keyword-card-unit">건 · ${negativeShare}%</span>
+              <span class="keyword-card-value">${regulationTotal.toLocaleString("ko-KR")}</span>
+              <span class="keyword-card-unit">정책 · 부정 ${negativeTotal.toLocaleString("ko-KR")}</span>
             </div>
-            <div class="keyword-risk-line"><span>${escapeHtml(riskNote)}</span><span>${negativeTotal ? "확인" : "안정"}</span></div>
+            <div class="keyword-card-actions">
+              <span>${escapeHtml(riskAction)}</span>
+              <span>GA/보험사 동향 ${marketTotal.toLocaleString("ko-KR")}건과 함께 판단</span>
+            </div>
           </div>
         </div>
       `;
@@ -5253,11 +5229,13 @@
         .risk-panel {
           border:1.5px solid #111827;
           border-radius:7px;
-          padding:4mm;
+          padding:3.5mm;
           display:grid;
           align-content:center;
-          gap:3mm;
+          gap:2mm;
           text-align:center;
+          min-width:0;
+          overflow:hidden;
         }
         .risk-panel span {
           color:#64748b;
@@ -5266,9 +5244,11 @@
           letter-spacing:.08em;
         }
         .risk-panel strong {
-          font-size:34px;
+          font-size:28px;
           line-height:1;
-          letter-spacing:.04em;
+          letter-spacing:-.02em;
+          max-width:100%;
+          overflow-wrap:anywhere;
         }
         .risk-panel.low strong { color:#047857; }
         .risk-panel.medium strong { color:#b45309; }
