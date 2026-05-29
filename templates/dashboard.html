@@ -1091,7 +1091,18 @@
       border-radius:99px;
       background:#27398c;
     }
-    .keyword-volume-card.direction { grid-template-columns:minmax(0,1fr) 54px; column-gap:12px; }
+    .keyword-volume-card.direction { grid-template-columns:1fr; }
+    .keyword-volume-card.is-clickable,
+    .keyword-total-item {
+      cursor:pointer;
+    }
+    .keyword-volume-card.is-clickable:hover,
+    .keyword-total-item:hover,
+    .keyword-total-item:focus-visible {
+      border-color:#9eb1dc;
+      box-shadow:0 10px 22px rgba(16,24,40,.075);
+      outline:none;
+    }
     .keyword-volume-card.own::before { background:#2563eb; }
     .keyword-volume-card.distribution::before { background:#0f766e; }
     .keyword-volume-card.risk::before { background:#b91c1c; }
@@ -1169,6 +1180,36 @@
       height:4px;
       border-radius:50%;
       background:#27398c;
+    }
+    .keyword-card-actions button,
+    .keyword-meta-button {
+      width:max-content;
+      max-width:100%;
+      min-height:22px;
+      border:1px solid #e3e9f3;
+      border-radius:999px;
+      background:#f8fafc;
+      color:#344054;
+      padding:3px 8px;
+      font-size:11px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .keyword-card-actions button:hover,
+    .keyword-meta-button:hover {
+      border-color:#9eb1dc;
+      background:#eef4ff;
+      color:var(--incar);
+    }
+    .keyword-meta-button.negative {
+      border-color:#fecdd3;
+      background:#fff1f2;
+      color:#b91c1c;
+    }
+    .keyword-meta-button.negative:hover {
+      border-color:#fda4af;
+      background:#ffe4e6;
+      color:#9f1239;
     }
     .keyword-total-chart {
       display:grid;
@@ -4052,6 +4093,52 @@
       switchPage("monitor");
     }
 
+    function scopeMonitorToAnalysisPeriod() {
+      if (!document.getElementById("page-analysis")?.classList.contains("active")) return;
+      if (state.analysis.start) state.filters.start = state.analysis.start;
+      if (state.analysis.end) state.filters.end = state.analysis.end;
+    }
+
+    function openKeywordArticles(keyword, tone = "") {
+      if (!keyword) return;
+      scopeMonitorToAnalysisPeriod();
+      state.filters.q = keyword;
+      state.filters.category = "";
+      state.filters.tone = tone || "";
+      state.filters.risk = "";
+      state.filters.detail = "";
+      syncFilterInputs();
+      render();
+      switchPage("monitor");
+      setTimeout(() => document.getElementById("articleList")?.scrollIntoView({ behavior:"smooth", block:"start" }), 0);
+    }
+
+    function openCategoryArticles(category = "", tone = "") {
+      scopeMonitorToAnalysisPeriod();
+      state.filters.q = "";
+      state.filters.category = category || "";
+      state.filters.tone = tone || "";
+      state.filters.risk = "";
+      state.filters.detail = "";
+      syncFilterInputs();
+      render();
+      switchPage("monitor");
+      setTimeout(() => document.getElementById("articleList")?.scrollIntoView({ behavior:"smooth", block:"start" }), 0);
+    }
+
+    function openToneArticles(tone = "") {
+      scopeMonitorToAnalysisPeriod();
+      state.filters.q = "";
+      state.filters.category = "";
+      state.filters.tone = tone || "";
+      state.filters.risk = "";
+      state.filters.detail = "";
+      syncFilterInputs();
+      render();
+      switchPage("monitor");
+      setTimeout(() => document.getElementById("articleList")?.scrollIntoView({ behavior:"smooth", block:"start" }), 0);
+    }
+
     function clearCategoryDetail() {
       state.filters.detail = "";
       applyFilters();
@@ -4270,7 +4357,7 @@
       const marketTotal = (reportCats.industry || 0) + (reportCats.competitor || 0);
       const topNegativeKeyword = topBy(keywordItems.filter(article => article.tone === "negative"), "keyword", 1)[0];
       const ownAction = ownNegative
-        ? "당사 부정 원문과 사실관계부터 분리"
+        ? "당사 부정 보도와 사실관계부터 분리"
         : ownTotal
           ? "당사 보도 톤과 확산 매체 점검"
           : "당사 직접 이슈 없이 업계 동향으로 관리";
@@ -4282,7 +4369,7 @@
       const colors = ["#27398c", "#16a34a", "#d97706", "#0891b2", "#7c3aed", "#dc2626", "#475569", "#be185d"];
       const summary = `
         <div class="keyword-volume-summary">
-          <div class="keyword-volume-card direction">
+          <div class="keyword-volume-card direction is-clickable" role="button" tabindex="0" onclick='openKeywordArticles(${jsArg(topKeyword[0])})' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openKeywordArticles(${jsArg(topKeyword[0])})}'>
             <div class="keyword-card-kicker">핵심 이슈</div>
             <div class="keyword-card-title">${escapeHtml(topKeyword[0])}</div>
             <div class="keyword-card-main">
@@ -4291,21 +4378,21 @@
             </div>
             <div class="keyword-card-note"><strong>${escapeHtml(topCategoryText)}</strong> 성격의 노출이 가장 큽니다.</div>
             <div class="keyword-card-actions">
-              <span>${topShare >= 30 ? "단일 이슈 확산 여부를 우선 점검" : "여러 이슈 중 대표 흐름으로만 해석"}</span>
+              <button type="button" onclick='event.stopPropagation();openKeywordArticles(${jsArg(topKeyword[0])})'>관련 기사 보기</button>
             </div>
           </div>
-          <div class="keyword-volume-card own">
+          <div class="keyword-volume-card own is-clickable" role="button" tabindex="0" onclick='openCategoryArticles("own", ${ownNegative ? '"negative"' : '""'})' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openCategoryArticles("own", ${ownNegative ? '"negative"' : '""'})}'>
             <div class="keyword-card-kicker">당사 영향</div>
-            <div class="keyword-card-title">${ownNegative ? "부정 원문 확인 필요" : ownTotal ? "직접 보도 관리" : "직접 영향 낮음"}</div>
+            <div class="keyword-card-title">${ownNegative ? "부정 보도 확인 필요" : ownTotal ? "직접 보도 관리" : "직접 영향 낮음"}</div>
             <div class="keyword-card-main">
               <span class="keyword-card-value">${ownTotal.toLocaleString("ko-KR")}</span>
               <span class="keyword-card-unit">건 · 부정 ${ownNegative.toLocaleString("ko-KR")}</span>
             </div>
             <div class="keyword-card-actions">
-              <span>${escapeHtml(ownAction)}</span>
+              <button type="button" onclick='event.stopPropagation();openCategoryArticles("own", ${ownNegative ? '"negative"' : '""'})'>${ownNegative ? "당사 부정 기사 보기" : "당사 기사 보기"}</button>
             </div>
           </div>
-          <div class="keyword-volume-card risk${negativeTotal ? "" : " is-clear"}">
+          <div class="keyword-volume-card risk${negativeTotal ? "" : " is-clear"} is-clickable" role="button" tabindex="0" onclick='${negativeTotal ? 'openToneArticles("negative")' : 'openCategoryArticles("regulation")'}' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();${negativeTotal ? 'openToneArticles("negative")' : 'openCategoryArticles("regulation")'}}'>
             <div class="keyword-card-kicker">규제·위험</div>
             <div class="keyword-card-title">${negativeTotal ? "부정 논조 존재" : regulationTotal ? "정책 흐름 관찰" : "위험 신호 낮음"}</div>
             <div class="keyword-card-main">
@@ -4313,7 +4400,7 @@
               <span class="keyword-card-unit">정책 · 부정 ${negativeTotal.toLocaleString("ko-KR")}</span>
             </div>
             <div class="keyword-card-actions">
-              <span>${escapeHtml(riskAction)}</span>
+              <button type="button" onclick='event.stopPropagation();${negativeTotal ? 'openToneArticles("negative")' : 'openCategoryArticles("regulation")'}'>${negativeTotal ? "부정 기사 보기" : "정책 기사 보기"}</button>
               <span>GA/보험사 동향 ${marketTotal.toLocaleString("ko-KR")}건과 함께 판단</span>
             </div>
           </div>
@@ -4328,7 +4415,7 @@
         const share = Math.round(value / total * 100);
         const categoryText = topCategory ? categoryLabel(topCategory[0]) : "미분류";
         return `
-          <div class="keyword-total-item${negative ? " has-risk" : ""}" title="${escapeHtml(keyword)} ${value.toLocaleString("ko-KR")}건">
+          <div class="keyword-total-item${negative ? " has-risk" : ""}" role="button" tabindex="0" title="${escapeHtml(keyword)} ${value.toLocaleString("ko-KR")}건" onclick='openKeywordArticles(${jsArg(keyword)})' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openKeywordArticles(${jsArg(keyword)})}'>
             <div class="keyword-rank">${idx + 1}</div>
             <div class="keyword-total-main">
               <div class="keyword-total-head">
@@ -4339,14 +4426,14 @@
               <div class="keyword-total-meta">
                 <span>점유 ${share}%</span>
                 <span>${escapeHtml(categoryText)}</span>
-                ${negative ? `<span class="negative">부정 ${negative.toLocaleString("ko-KR")}건</span>` : ""}
+                ${negative ? `<button class="keyword-meta-button negative" type="button" onclick='event.stopPropagation();openKeywordArticles(${jsArg(keyword)}, "negative")'>부정 ${negative.toLocaleString("ko-KR")}건</button>` : ""}
               </div>
             </div>
           </div>
         `;
       }).join("");
       const mobileRows = entries.slice(0,8).map(([keyword, value]) => `
-        <div class="keyword-mobile-row" title="${escapeHtml(keyword)} ${value.toLocaleString("ko-KR")}건">
+        <div class="keyword-mobile-row" role="button" tabindex="0" title="${escapeHtml(keyword)} ${value.toLocaleString("ko-KR")}건" onclick='openKeywordArticles(${jsArg(keyword)})' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openKeywordArticles(${jsArg(keyword)})}'>
           <div class="keyword-mobile-name">${escapeHtml(keyword)}</div>
           <div class="keyword-mobile-count">${value.toLocaleString("ko-KR")}건</div>
           <div class="keyword-mobile-track"><div class="keyword-mobile-fill" style="width:${Math.max(5, value / max * 100)}%"></div></div>
