@@ -920,105 +920,6 @@
     .watch-copy strong { color:#fff; font-size:16px; line-height:1.35; }
     .watch-copy span { color:#b9c8e8; font-size:12.5px; font-weight:800; }
     .watch-meta { margin-top:16px; display:flex; flex-wrap:wrap; gap:8px; }
-    .watch-center {
-      position:relative;
-      z-index:1;
-      display:grid;
-      gap:7px;
-      margin-top:8px;
-      padding-top:8px;
-      border-top:1px solid rgba(255,255,255,.12);
-    }
-    .watch-stat-grid {
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:6px;
-    }
-    .watch-stat {
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:8px;
-      background:rgba(255,255,255,.06);
-      min-height:48px;
-      padding:6px 8px;
-      color:#fff;
-      text-align:left;
-      cursor:pointer;
-    }
-    .watch-stat span {
-      display:block;
-      color:#b9c8e8;
-      font-size:10px;
-      font-weight:900;
-    }
-    .watch-stat strong {
-      display:block;
-      margin-top:4px;
-      color:#fff;
-      font-size:15px;
-      line-height:1;
-    }
-    .watch-stat small {
-      display:none;
-      color:#d8e3ff;
-      font-size:10.5px;
-      font-weight:800;
-      line-height:1.3;
-    }
-    .watch-issue-list {
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:8px;
-    }
-    .watch-issue {
-      border:1px solid rgba(255,255,255,.14);
-      border-radius:8px;
-      background:rgba(9,18,52,.24);
-      padding:9px 10px;
-      color:#fff;
-      text-align:left;
-      cursor:pointer;
-      min-height:72px;
-    }
-    .watch-issue b {
-      display:flex;
-      justify-content:space-between;
-      gap:8px;
-      color:#fff;
-      font-size:12px;
-      line-height:1.3;
-    }
-    .watch-issue span {
-      display:block;
-      margin-top:6px;
-      color:#b9c8e8;
-      font-size:10.5px;
-      font-weight:800;
-      line-height:1.35;
-    }
-    .watch-command-row {
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-    }
-    .watch-command {
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:999px;
-      background:rgba(255,255,255,.08);
-      color:#e7edff;
-      min-height:24px;
-      padding:0 9px;
-      font-size:10.5px;
-      font-weight:900;
-      cursor:pointer;
-    }
-    .watch-empty-note {
-      border:1px dashed rgba(255,255,255,.18);
-      border-radius:8px;
-      padding:10px;
-      color:#d8e3ff;
-      font-size:12px;
-      font-weight:800;
-    }
     .ops-row { align-items:stretch; }
     .ops-row > .panel {
       min-height:260px;
@@ -1052,7 +953,8 @@
     }
     .notification-meta { color:var(--muted); font-size:12px; font-weight:800; }
     .notification-more {
-      justify-self:start;
+      justify-self:stretch;
+      width:100%;
       margin-top:2px;
       min-height:30px;
       padding:0 12px;
@@ -1111,6 +1013,14 @@
       font-size:13px;
       font-weight:800;
       line-height:1.6;
+    }
+    .notification-list-modal { width:min(720px,100%); }
+    .notification-modal-list {
+      display:grid;
+      gap:8px;
+      max-height:min(560px,calc(100vh - 176px));
+      overflow:auto;
+      padding-right:4px;
     }
     .risk-drop-hint {
       margin-top:8px;
@@ -2225,8 +2135,6 @@
       .watch-risk-badge span { font-size:9px; }
       .watch-risk-badge strong { min-width:34px; font-size:11px; }
       .watch-asset { grid-template-columns:112px minmax(0,1fr); gap:14px; min-height:126px; }
-      .watch-stat-grid,.watch-issue-list { grid-template-columns:1fr; }
-      .watch-center { margin-top:10px; padding-top:10px; }
       .watch-radar { width:104px; height:104px; }
       .watch-radar::before { inset:13px; }
       .watch-radar::after { inset:29px; }
@@ -2529,7 +2437,6 @@
                   <div class="watch-meta"></div>
                 </div>
               </div>
-              <div class="watch-center" id="negativeWatchCenter"></div>
             </div>
             <div class="panel notification-panel">
               <h2 class="panel-title"><i data-lucide="message-circle"></i> 알림톡 발송 이력</h2>
@@ -2956,6 +2863,21 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="notificationListModal" onclick="if(event.target === this) closeNotificationListModal()">
+    <div class="modal notification-list-modal" role="dialog" aria-modal="true" aria-labelledby="notificationListModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="notificationListModalTitle">알림톡 발송 이력</h2>
+          <div class="notification-meta">최근 발송 내역 전체</div>
+        </div>
+        <button class="btn" onclick="closeNotificationListModal()"><i data-lucide="x"></i><span>닫기</span></button>
+      </div>
+      <div class="modal-body">
+        <div class="notification-modal-list" id="notificationModalList"></div>
+      </div>
+    </div>
+  </div>
+
   <nav class="mobile-tabs" id="mobileTabs">
     <button class="active" data-page="home"><i data-lucide="layout-dashboard"></i><span>홈</span></button>
     <button data-page="monitor"><i data-lucide="radio"></i><span>모니터링</span></button>
@@ -2993,7 +2915,6 @@
       adFilters: { year:"", month:"", media:"", type:"" },
       responseType: "press",
       notifications: [],
-      notificationExpanded: false,
       negativeWatchRuns: [],
       issueAutoFilled: false,
       riskHoldTimer: null,
@@ -3842,22 +3763,6 @@
           </div>
         </div>
       `;
-      renderNegativeWatchCenter(latest, health);
-    }
-
-    function negativeWatchCandidateArticles() {
-      const scoped = dashboardFocusedItems();
-      const candidates = scoped.filter(article => (
-        isCompanyNegative(article)
-        || article.tone === "negative"
-      ));
-      const fallback = state.articles.filter(article => (
-        isCompanyNegative(article)
-        || article.tone === "negative"
-      ));
-      return (candidates.length ? candidates : fallback).sort((a,b) => (
-        issuePriority(b) - issuePriority(a) || latestArticleSort(a,b)
-      ));
     }
 
     function watchRiskLevel(items) {
@@ -3867,132 +3772,11 @@
       return analysisRisk(items);
     }
 
-    function watchGroupLabel(article) {
-      const labels = {
-        own: "당사 부정",
-        regulation: "정책/감독",
-        competitor: "경쟁/보험사",
-        industry: "GA/업계",
-        other: "기타 리스크",
-      };
-      if (labels[article.category]) return labels[article.category];
-      const text = [article.title, article.summary, article.keyword, article.category_label, article.category_detail].join(" ");
-      if (isCompanyMentionArticle(article)) return "당사 부정";
-      if (/금감원|금융당국|감독|규제|정책|법안|제도|1200|수수료|근로자성/.test(text)) return "정책/감독";
-      if (/보험사|생명|손해|화재|라이프|DB|KB|삼성|현대|한화|메리츠|흥국|교보|미래에셋|롯데|NH/.test(text)) return "경쟁/보험사";
-      if (/GA|보험대리점|대리점|설계사|시책|스카우트|리크루팅|영업조직/.test(text)) return "GA/업계";
-      return "기타 리스크";
-    }
-
-    function watchIssueGroups(items, limit = 3) {
-      const groups = new Map();
-      items.forEach(article => {
-        const key = watchGroupLabel(article);
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(article);
-      });
-      return [...groups.entries()]
-        .map(([key, rows]) => ({
-          key,
-          count: rows.length,
-          category: ["own","regulation","competitor","industry","other"].includes(rows[0]?.category) ? rows[0].category : "",
-          ownNegative: rows.filter(isCompanyNegative).length,
-          negative: rows.filter(article => article.tone === "negative").length,
-          latest: rows.slice().sort(latestArticleSort)[0],
-        }))
-        .sort((a,b) => b.ownNegative - a.ownNegative || b.negative - a.negative || b.count - a.count)
-        .slice(0, limit);
-    }
-
-    function renderNegativeWatchCenter(latest, health) {
-      const target = document.getElementById("negativeWatchCenter");
-      if (!target) return;
-      const candidates = negativeWatchCandidateArticles();
-      const scoped = dashboardFocusedItems();
-      const groups = watchIssueGroups(candidates);
-      const scanned = Number(latest?.scanned_count ?? scoped.length ?? 0);
-      const negative = Number(latest?.negative_count ?? candidates.length ?? 0);
-      const fresh = Number(latest?.new_negative_count ?? candidates.length ?? 0);
-      const status = health?.tone === "error" ? "점검 필요" : candidates.length ? "확인 필요" : "정상";
-      const primaryGroup = groups[0];
-      target.innerHTML = `
-        <div class="watch-stat-grid">
-          <button class="watch-stat" type="button" onclick="openWatchCandidates()">
-            <span>새 부정 후보</span>
-            <strong>${fresh.toLocaleString("ko-KR")}</strong>
-            <small>최근 감시 기준</small>
-          </button>
-          <button class="watch-stat" type="button" onclick="openWatchCandidates()">
-            <span>확인 대상</span>
-            <strong>${candidates.length.toLocaleString("ko-KR")}</strong>
-             <small>부정 톤 기사</small>
-          </button>
-          <button class="watch-stat" type="button" onclick="openWatchCandidates()">
-            <span>감시 상태</span>
-            <strong>${escapeHtml(status)}</strong>
-            <small>검사 ${scanned.toLocaleString("ko-KR")}건 · 부정 ${negative.toLocaleString("ko-KR")}건</small>
-          </button>
-        </div>
-        <div class="watch-command-row">
-          <button class="watch-command" type="button" onclick="openWatchCandidates()">부정 후보 보기</button>
-          ${primaryGroup ? `<button class="watch-command" type="button" onclick='openWatchIssue(${jsArg(primaryGroup.key)}, ${jsArg(primaryGroup.category)})'>${escapeHtml(primaryGroup.key)}</button>` : ""}
-          <button class="watch-command" type="button" onclick="switchPage('risk')">대응 센터</button>
-          <button class="watch-command" type="button" onclick="openWatchCandidates('own')">당사 부정만</button>
-        </div>
-      `;
-    }
-
-    function watchFilterDateRange(items) {
-      const dates = sortedDates(items);
-      return { start: dates[0] || "", end: dates[dates.length - 1] || "" };
-    }
-
-    function watchCandidatesFor(mode = "all", category = "") {
-      return negativeWatchCandidateArticles().filter(article => {
-        if (mode === "own" && !isCompanyNegative(article)) return false;
-        if (category && article.category !== category) return false;
-        return true;
-      });
-    }
-
-    function openWatchCandidates(mode = "all") {
-      const candidates = watchCandidatesFor(mode);
-      const range = watchFilterDateRange(candidates);
-      state.filters.q = "";
-      state.filters.category = mode === "own" ? "own" : "";
-      state.filters.tone = "negative";
-      state.filters.risk = "";
-      state.filters.detail = "";
-      state.filters.start = range.start;
-      state.filters.end = range.end;
-      syncFilterInputs();
-      applyFilters();
-      render();
-      switchPage("monitor");
-    }
-
-    function openWatchIssue(keyword, category = "") {
-      const candidates = watchCandidatesFor("all", category);
-      const range = watchFilterDateRange(candidates);
-      const broadLabel = /[\/]|리스크|부정/.test(keyword || "");
-      state.filters.q = category || broadLabel ? "" : (keyword || "");
-      state.filters.category = category || "";
-      state.filters.tone = "negative";
-      state.filters.risk = "";
-      state.filters.detail = "";
-      state.filters.start = range.start;
-      state.filters.end = range.end;
-      syncFilterInputs();
-      applyFilters();
-      render();
-      switchPage("monitor");
-    }
-
     function renderNotificationHistory() {
       const target = document.getElementById("notificationHistory");
       if (!target) return;
       const collapsedCount = 2;
-      const rows = state.notificationExpanded ? state.notifications : state.notifications.slice(0, collapsedCount);
+      const rows = state.notifications.slice(0, collapsedCount);
       target.innerHTML = rows.map((item, index) => {
         const ok = item.status === "success";
         return `
@@ -4014,17 +3798,35 @@
       const collapsedCount = 2;
       if (!target || state.notifications.length <= collapsedCount) return;
       target.insertAdjacentHTML("beforeend", `
-        <button class="notification-more" onclick="toggleNotificationHistory()" aria-expanded="${state.notificationExpanded ? "true" : "false"}">
-          <i data-lucide="${state.notificationExpanded ? "chevron-up" : "chevron-down"}"></i>
-          <span>${state.notificationExpanded ? "접기" : "더보기"}</span>
+        <button class="notification-more" onclick="openNotificationListModal()">
+          <i data-lucide="list"></i>
+          <span>전체 이력 보기 ${state.notifications.length.toLocaleString("ko-KR")}건</span>
         </button>
       `);
       lucide.createIcons();
     };
 
-    function toggleNotificationHistory() {
-      state.notificationExpanded = !state.notificationExpanded;
-      renderNotificationHistory();
+    function openNotificationListModal() {
+      const target = document.getElementById("notificationModalList");
+      if (!target) return;
+      target.innerHTML = state.notifications.map((item, index) => {
+        const ok = item.status === "success";
+        return `
+          <button class="notification-item" onclick="openNotificationModal(${index})">
+            <span class="notification-top">
+              <span>${escapeHtml(item.title || notificationTypeLabel(item.message_type))}</span>
+              <span class="${ok ? "status-ok" : "status-fail"}">${ok ? "성공" : "실패"}</span>
+            </span>
+            <span class="notification-meta">${escapeHtml(formatDateTime(item.sent_at || item.created_at))} · ${escapeHtml(notificationTypeLabel(item.message_type))}</span>
+          </button>
+        `;
+      }).join("") || '<div class="empty">아직 발송 이력이 없습니다.</div>';
+      document.getElementById("notificationListModal")?.classList.add("active");
+      lucide.createIcons();
+    }
+
+    function closeNotificationListModal() {
+      document.getElementById("notificationListModal")?.classList.remove("active");
     }
 
     function notificationTypeLabel(type) {
@@ -4039,6 +3841,7 @@
     function openNotificationModal(index) {
       const item = state.notifications[index];
       if (!item) return;
+      closeNotificationListModal();
       document.getElementById("notificationModalTitle").textContent = item.title || notificationTypeLabel(item.message_type);
       document.getElementById("notificationModalMeta").textContent = `${formatDateTime(item.sent_at || item.created_at)} · ${item.status === "success" ? "성공" : "실패"}${item.error ? " · " + item.error : ""}`;
       document.getElementById("notificationModalBody").textContent = item.body || "발송 본문이 저장되지 않았습니다.";
