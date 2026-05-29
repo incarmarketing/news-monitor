@@ -248,33 +248,27 @@
     .page.active { display:block; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
     .hero {
-      position:relative;
       border-radius:8px;
       color:var(--ink);
       background:#fff;
       border:1px solid var(--line);
-      padding:20px 18px 16px;
+      padding:16px;
       margin-bottom:12px;
       box-shadow:0 1px 2px rgba(16,24,40,.04);
     }
     .hero .eyebrow {
       display:inline-flex;
-      align-items:center;
-      min-height:30px;
       width:max-content;
       border:1px solid #c7d7fe;
       border-radius:999px;
-      padding:0 12px;
+      padding:4px 9px;
       background:#eef4ff;
       color:#27398c;
-      font-size:14px;
-      line-height:1;
-      letter-spacing:.03em;
-      font-weight:900;
+      font-size:11px;
     }
     .hero h2 { display:none; }
-    .brief-topline { display:flex; flex-wrap:wrap; align-items:center; gap:8px; min-height:30px; padding-right:170px; }
-    .hero-meta { display:none; }
+    .brief-topline { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .hero-meta { margin-top:8px; color:var(--muted); font-size:13px; font-weight:800; }
     .judgement {
       margin-top:11px;
       padding:11px 13px;
@@ -287,47 +281,32 @@
       line-height:1.45;
       font-weight:900;
     }
-    .risk-card {
-      position:absolute;
-      top:18px;
-      right:18px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:0;
-    }
+    .risk-card { display:inline-flex; align-items:center; gap:6px; }
     .risk-state {
       display:inline-flex;
       align-items:center;
       justify-content:center;
       width:max-content;
-      min-width:54px;
-      min-height:30px;
-      padding:0 12px;
+      min-width:0;
+      padding:4px 9px;
       border:1px solid var(--line);
       border-radius:999px;
       background:#fff;
-      box-shadow:0 0 0 0 rgba(39,57,140,.2);
-      animation:riskPulse 2.4s ease-in-out infinite;
     }
     .risk-card.risk-low .risk-state { background:#f0fdf4; border-color:#bbf7d0; }
     .risk-card.risk-medium .risk-state { background:#fffbeb; border-color:#fde68a; }
     .risk-card.risk-high .risk-state { background:#fff1f2; border-color:#fecdd3; }
     .risk-value {
       color:#0f172a;
-      font-size:14px;
+      font-size:12px;
       font-weight:900;
       line-height:1;
     }
     .risk-card.risk-low .risk-value { color:#166534; }
     .risk-card.risk-medium .risk-value { color:#9a3412; }
     .risk-card.risk-high .risk-value { color:#be123c; }
-    .risk-label { color:var(--muted); font-size:13px; font-weight:900; margin-bottom:0; }
+    .risk-label { color:var(--muted); font-size:11px; font-weight:900; margin-bottom:0; }
     .risk-hint { display:none; }
-    @keyframes riskPulse {
-      0%, 100% { box-shadow:0 0 0 0 rgba(39,57,140,0); opacity:1; }
-      50% { box-shadow:0 0 0 5px rgba(39,57,140,.08); opacity:.9; }
-    }
     .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
     .hero-metrics { margin:12px 0 0; }
     .metric {
@@ -790,6 +769,46 @@
       color:#fff;
     }
     .watch-card .panel-title i { color:#b9c8ff; }
+    .watch-risk-badge {
+      position:absolute;
+      top:14px;
+      right:16px;
+      z-index:2;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-height:30px;
+      padding:0 10px 0 12px;
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:999px;
+      background:rgba(10,20,54,.34);
+      color:#e7edff;
+      box-shadow:0 0 0 0 rgba(147,197,253,0);
+      backdrop-filter:blur(8px);
+      animation:watchRiskPulse 2.5s ease-in-out infinite;
+    }
+    .watch-risk-badge span {
+      color:#b9c8e8;
+      font-size:11px;
+      font-weight:900;
+      line-height:1;
+    }
+    .watch-risk-badge strong {
+      min-width:40px;
+      color:#fff;
+      font-size:13px;
+      font-weight:900;
+      line-height:1;
+      text-align:center;
+      letter-spacing:.02em;
+    }
+    .watch-risk-badge.risk-low strong { color:#86efac; }
+    .watch-risk-badge.risk-medium strong { color:#fcd34d; }
+    .watch-risk-badge.risk-high strong { color:#fca5a5; }
+    @keyframes watchRiskPulse {
+      0%,100% { box-shadow:0 0 0 0 rgba(147,197,253,0); opacity:1; }
+      50% { box-shadow:0 0 0 5px rgba(147,197,253,.09); opacity:.92; }
+    }
     .watch-card .status-pill {
       background:rgba(255,255,255,.08);
       color:#e7edff;
@@ -2070,11 +2089,6 @@
       .login-screen { padding:16px; }
       .login-card { padding:22px; }
       .hero { padding:18px; }
-      .risk-card {
-        position:static;
-        margin-top:10px;
-      }
-      .brief-topline { padding-right:0; }
       .hero h2 { font-size:23px; }
       .metric-grid,.form-grid { grid-template-columns:1fr; }
       .form-span-2 { grid-column:auto; }
@@ -2135,6 +2149,9 @@
       .ad-chart-card { padding:13px; }
       .watch-card,.notification-panel,.ops-row > .panel { min-height:auto; }
       .watch-card { padding-bottom:16px; }
+      .watch-risk-badge { top:12px; right:12px; min-height:26px; padding:0 8px; gap:6px; }
+      .watch-risk-badge span { font-size:9px; }
+      .watch-risk-badge strong { min-width:34px; font-size:11px; }
       .watch-asset { grid-template-columns:112px minmax(0,1fr); gap:14px; min-height:126px; }
       .watch-radar { width:104px; height:104px; }
       .watch-radar::before { inset:13px; }
@@ -2420,6 +2437,10 @@
           <div class="grid-2 ops-row">
             <div class="panel watch-card">
               <h2 class="panel-title"><i data-lucide="scan-search"></i> 부정기사 탐색</h2>
+              <div class="watch-risk-badge risk-low" id="watchRiskBadge">
+                <span>리스크 레벨</span>
+                <strong>LOW</strong>
+              </div>
               <div class="watch-asset" id="negativeWatchAsset">
                 <div class="watch-visual">
                   <div class="watch-radar">
@@ -3631,7 +3652,7 @@
       const topKeyword = topBy(current,"keyword",1)[0]?.[0] || "주요 키워드 없음";
       const market = (cats.competitor || 0) + (cats.industry || 0);
       document.getElementById("headline").textContent = `${topKeyword} 중심으로 ${current.length}건 관찰`;
-      document.getElementById("heroMeta").textContent = "";
+      document.getElementById("heroMeta").textContent = `${latestDate(current) || "-"} · ${contextLabel({ ignoreDetail:true })}`;
       const riskEl = document.getElementById("riskValue");
       riskEl.textContent = risk;
       riskEl.className = "risk-value";
@@ -3719,6 +3740,14 @@
       if (!target) return;
       const latest = state.negativeWatchRuns[0];
       const health = negativeWatchHealth(latest);
+      const riskItems = dashboardFocusedItems();
+      const risk = riskItems.find(article => article.risk)?.risk || analysisRisk(riskItems);
+      const riskBadge = document.getElementById("watchRiskBadge");
+      if (riskBadge) {
+        riskBadge.className = `watch-risk-badge risk-${String(risk).toLowerCase()}`;
+        const riskValue = riskBadge.querySelector("strong");
+        if (riskValue) riskValue.textContent = risk;
+      }
       const expectedMinutes = 5;
       const minutesBack = Number(latest?.minutes_back || 5);
       const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
