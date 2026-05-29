@@ -4057,11 +4057,11 @@
       const ownNegative = companyNegativeCount(items);
       const regulation = cats.regulation || 0;
       const market = (cats.competitor || 0) + (cats.industry || 0);
-      const topKeywordText = topKeyword ? `"${topKeyword[0]}"` : "주요 키워드";
-      if (ownNegative) return `선택 기간은 당사 직접 부정 ${ownNegative}건이 포함된 관찰 구간입니다. ${topKeywordText} 관련 보도가 리스크의 출발점인지, 단순 동시 노출인지 근거 기사에서 분리해 보는 것이 핵심입니다.`;
-      if (regulation >= Math.max(3, own, market * 0.6)) return `정책/감독 보도가 흐름을 주도합니다. 당사 직접 리스크는 낮더라도 제도 변화가 GA·보험사 보도량을 끌어올리는 구간이므로, 숫자보다 규제 키워드의 반복성을 봐야 합니다.`;
-      if (own) return `당사 보도 ${own}건이 확인되며 직접 부정은 낮습니다. 이 구간은 리스크 대응보다 어떤 매체와 키워드에서 당사 노출이 반복되는지 확인하는 홍보 성과형 분석에 가깝습니다.`;
-      return `당사 직접 보도보다 GA/보험사 동향 ${market}건이 중심입니다. 당장 회사 이슈로 해석하기보다 시장 분위기와 경쟁 구도의 변화를 읽는 모니터링 구간입니다.`;
+      const topKeywordText = topKeyword ? ` 최다 반복 키워드는 "${topKeyword[0]}"입니다.` : "";
+      if (ownNegative) return `당사 관련 부정 보도 ${ownNegative}건이 확인됐습니다. 보고서에서는 해당 기사 제목과 요약을 우선 확인하고, 동일 이슈의 반복 보도인지 별도 쟁점인지 분리해 대응 우선순위를 정리해야 합니다.${topKeywordText}`;
+      if (regulation >= Math.max(3, own, market * 0.6)) return `정책·감독 이슈가 보도 흐름을 주도합니다. 당사 직접 부정 이슈는 낮지만 수수료, 감독, 법안, 설계사 관련 보도가 반복될 경우 GA 영업환경 이슈로 확산될 수 있습니다.${topKeywordText}`;
+      if (own) return `당사 보도 ${own}건이 확인됐고 직접 부정 이슈는 낮습니다. 이번 구간은 리스크 대응보다 보도 톤, 반복 노출 매체, 후속 확산 가능성을 점검하는 홍보 성과 분석에 가깝습니다.${topKeywordText}`;
+      return `당사 직접 보도보다 GA·보험사 시장 동향 ${market}건이 중심입니다. 경쟁사 제휴, 보험사 채널 전략, 정책 변화가 우리 영업환경에 미칠 수 있는 영향을 보는 모니터링 구간입니다.${topKeywordText}`;
     }
 
     function renderAnalysis() {
@@ -4886,99 +4886,159 @@
       }, 250);
     }
 
+    function printCleanText(value) {
+      return String(value || "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/https?:\/\/\S+|www\.\S+|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?/gi, " ")
+        .replace(/\[[^\]]{1,18}\]\s*/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function printUsefulText(value) {
+      const cleaned = printCleanText(value);
+      if (!cleaned) return "";
+      if (/^(?:기사|뉴스)?\s*(?:주소|링크|url)\b/i.test(cleaned)) return "";
+      return cleaned;
+    }
+
+    function printPressName(article) {
+      const value = printCleanText(article?.press || article?.source || "");
+      if (!value || value === "언론사 확인") return "언론사 확인";
+      return value;
+    }
+
+    function printArticleHeadline(article) {
+      return printUsefulText(article.title)
+        || printUsefulText(article.headline)
+        || printUsefulText(article.summary)
+        || `${printPressName(article)} ${article.category_label || categoryLabel(article.category)} 보도`;
+    }
+
+    function printArticleSummary(article) {
+      return printUsefulText(article.summary)
+        || printUsefulText(article.description)
+        || `${printPressName(article)}에서 확인된 ${article.category_label || categoryLabel(article.category)} 기사입니다. ${article.keyword ? `"${printCleanText(article.keyword)}" 키워드로 수집됐으며 ` : ""}보도 톤은 ${article.tone_label || toneLabel(article.tone)}으로 분류됐습니다.`;
+    }
+
     function printMetric(label, value, note = "") {
       return `
         <div class="print-metric">
-          <div class="print-metric-label">${escapeHtml(label)}</div>
-          <div class="print-metric-value">${escapeHtml(value)}</div>
-          ${note ? `<div class="print-metric-note">${escapeHtml(note)}</div>` : ""}
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+          ${note ? `<small>${escapeHtml(note)}</small>` : ""}
         </div>
       `;
     }
 
-    function printArticleList(title, rows, emptyText = "해당 기사 없음") {
-      const items = rows.map((article, index) => {
-        const meta = [
-          article.published_label || article.date || "시각 미확인",
-          article.press || "언론사 확인",
-          article.category_label || categoryLabel(article.category),
-          article.tone_label || toneLabel(article.tone),
-          article.keyword || ""
-        ].filter(Boolean).join(" · ");
-        return `
-          <li class="print-article">
-            <div class="print-article-index">${String(index + 1).padStart(2, "0")}</div>
-            <div class="print-article-body">
-              <div class="print-article-meta">${escapeHtml(meta)}</div>
-              <div class="print-article-title">${escapeHtml(article.title || "제목 없음")}</div>
-              ${article.summary ? `<p>${escapeHtml(article.summary)}</p>` : ""}
-            </div>
-          </li>
-        `;
-      }).join("");
+    function printEvidenceCard(article, index, compact = false) {
+      const meta = [
+        article.published_label || article.date || "시각 미확인",
+        printPressName(article),
+        article.category_label || categoryLabel(article.category),
+        article.tone_label || toneLabel(article.tone),
+      ].filter(Boolean).map(printCleanText).filter(Boolean).join(" · ");
       return `
-        <section class="print-section">
-          <h2>${escapeHtml(title)}</h2>
-          ${items ? `<ol class="print-article-list">${items}</ol>` : `<div class="print-empty">${escapeHtml(emptyText)}</div>`}
+        <article class="print-evidence-card${compact ? " compact" : ""}">
+          <div class="print-evidence-no">${String(index + 1).padStart(2, "0")}</div>
+          <div class="print-evidence-body">
+            <div class="print-evidence-meta">${escapeHtml(meta)}</div>
+            <h3>${escapeHtml(printArticleHeadline(article))}</h3>
+            <p>${escapeHtml(printArticleSummary(article))}</p>
+          </div>
+        </article>
+      `;
+    }
+
+    function printArticleSection(title, rows, emptyText = "해당 기사 없음") {
+      const items = rows.map((article, index) => printEvidenceCard(article, index)).join("");
+      return `
+        <section class="print-section article-section">
+          <div class="print-section-head">
+            <h2>${escapeHtml(title)}</h2>
+            <span>${rows.length.toLocaleString("ko-KR")}건</span>
+          </div>
+          ${items ? `<div class="print-evidence-list">${items}</div>` : `<div class="print-empty">${escapeHtml(emptyText)}</div>`}
         </section>
       `;
     }
 
-    function buildAnalysisPrintInsights(items, cats, tones) {
-      if (!items.length) {
-        return [
-          "선택 기간에 표시할 모니터링 데이터가 없습니다. 분석 기간 또는 수집 상태를 먼저 확인해야 합니다."
-        ];
-      }
+    function buildExecutiveBrief(items, cats, tones) {
       const total = Math.max(items.length, 1);
-      const topKeyword = topBy(items, "keyword", 1)[0];
-      const pressPool = items.filter(article => isManagedPress(article.press) && article.press !== "언론사 확인");
-      const topPress = topBy(pressPool, "press", 1)[0];
       const own = cats.own || 0;
       const ownNegative = companyNegativeCount(items);
       const negative = tones.negative || 0;
       const regulation = cats.regulation || 0;
       const market = (cats.industry || 0) + (cats.competitor || 0);
-      const ownShare = Math.round(own / total * 100);
-      const negativeShare = Math.round(negative / total * 100);
+      const topKeyword = topBy(items.filter(article => article.keyword), "keyword", 1)[0];
+      const topPress = topBy(items.filter(article => isManagedPress(article.press) && article.press !== "언론사 확인"), "press", 1)[0];
       const regulationShare = Math.round(regulation / total * 100);
       const marketShare = Math.round(market / total * 100);
-      const insights = [];
+      const ownShare = Math.round(own / total * 100);
 
-      insights.push(
-        ownNegative
-          ? `당사 직접 부정 기사 ${ownNegative}건이 포함되어 원문 확인, 사실관계 정리, 내부 공유 여부 판단이 우선입니다.`
-          : `당사 직접 부정 기사는 확인되지 않았습니다. 이번 구간은 평판 리스크보다 업계 변화와 정책성 이슈를 읽는 성격이 강합니다.`
-      );
-      insights.push(
-        own
-          ? `당사 언급은 ${own}건으로 전체의 ${ownShare}%입니다. 보도 톤과 반복 매체를 함께 보면 홍보 성과와 리스크 신호를 분리할 수 있습니다.`
-          : "당사 직접 보도는 없습니다. 경쟁사와 보험업계 이슈가 당사 메시지에 줄 수 있는 간접 영향을 중심으로 보면 됩니다."
-      );
-      insights.push(
-        regulation
-          ? `정책/감독 이슈가 ${regulation}건(${regulationShare}%)입니다. 법안, 수수료, 감독 키워드의 후속 보도 여부가 다음 관찰 포인트입니다.`
-          : "정책/감독 이슈 비중은 낮습니다. 단기 대응보다 시장·경쟁 구도 변화의 맥락을 확인하는 구간입니다."
-      );
-      insights.push(
-        market
-          ? `GA/보험사 동향은 ${market}건(${marketShare}%)으로 관찰됐습니다. 제휴, 실적, 채널 전략 변화가 반복되는지 추적할 필요가 있습니다.`
-          : "GA/보험사 동향 신호가 많지 않습니다. 수집 키워드 또는 기간을 넓히면 비교 기준을 확보할 수 있습니다."
-      );
-      insights.push(
-        topKeyword
-          ? `최다 키워드는 "${topKeyword[0]}" ${topKeyword[1]}건입니다. 같은 키워드의 반복 노출인지, 서로 다른 이슈가 같은 단어로 묶인 것인지 분리해서 봐야 합니다.`
-          : "핵심 키워드가 충분히 축적되지 않았습니다. 키워드 설정과 기사 요약 저장 상태를 점검해야 합니다."
-      );
-      insights.push(
-        topPress
-          ? `${topPress[0]}에서 ${topPress[1]}건이 관찰됐습니다. 특정 매체 쏠림이 이어지면 언론사 관리의 관계 등급과 보도 성향을 함께 확인하는 편이 좋습니다.`
-          : "유효 언론사명이 부족합니다. 포털·도메인 보정이 누적될수록 매체 영향도 해석 정확도가 높아집니다."
-      );
-      if (negative) {
-        insights.push(`전체 부정 톤은 ${negative}건(${negativeShare}%)입니다. 당사 직접 부정과 업계 일반 부정을 분리해 대응 우선순위를 낮추거나 높여야 합니다.`);
+      if (!items.length) {
+        return {
+          label: "데이터 없음",
+          title: "선택 기간에 분석 가능한 기사가 없습니다.",
+          lead: "분석 기간, 수집 상태, Supabase 연결 상태를 확인해야 합니다.",
+          action: "기간 재설정 또는 수집 로그 확인",
+          points: ["분석 기사 0건", "리스크 판단 보류", "데이터 적재 상태 확인 필요"]
+        };
       }
-      return insights;
+
+      if (ownNegative) {
+        return {
+          label: "주의",
+          title: "당사 관련 부정 보도 확인, 원문 확인과 사실관계 정리가 필요합니다.",
+          lead: `이번 분석 기간에 당사 직접 부정 기사 ${ownNegative}건이 확인됐습니다. 동일 사안의 반복 보도인지, 서로 다른 쟁점인지 분리해 대응 우선순위를 정리해야 합니다.`,
+          action: "원문 확인 → 사실관계 메모 → 필요시 대응 초안 작성",
+          points: [
+            `당사 언급 ${own}건, 직접 부정 ${ownNegative}건`,
+            `전체 부정 톤 ${negative}건`,
+            topPress ? `주요 노출 매체 ${topPress[0]} ${topPress[1]}건` : "주요 노출 매체 확인 필요"
+          ]
+        };
+      }
+
+      if (own) {
+        return {
+          label: "안정",
+          title: "당사 보도는 확인되지만 직접 부정 이슈는 낮은 상태입니다.",
+          lead: `당사 언급 ${own}건이 확인됐고, 직접 부정 보도는 없습니다. 이번 구간은 리스크 대응보다 보도 톤과 반복 노출 매체를 확인하는 홍보 성과 점검에 가깝습니다.`,
+          action: "당사 보도 톤, 매체 반복성, 후속 확산 여부 확인",
+          points: [
+            `당사 노출 비중 ${ownShare}%`,
+            topKeyword ? `주요 키워드 ${topKeyword[0]} ${topKeyword[1]}건` : "주요 키워드 없음",
+            topPress ? `상위 매체 ${topPress[0]}` : "상위 매체 확인 필요"
+          ]
+        };
+      }
+
+      if (regulation >= Math.max(3, market * 0.6)) {
+        return {
+          label: "관찰",
+          title: "정책·감독 이슈가 보도 흐름을 주도하고 있습니다.",
+          lead: `정책/감독 기사가 ${regulation}건(${regulationShare}%)으로 두드러집니다. 당사 직접 이슈는 낮지만 GA·보험사 영업 환경에 영향을 줄 수 있는 제도 변화 신호를 관찰해야 합니다.`,
+          action: "감독, 법안, 수수료, 설계사 관련 후속 보도 추적",
+          points: [
+            `정책/감독 ${regulation}건`,
+            `GA/보험사 동향 ${market}건`,
+            topKeyword ? `반복 키워드 ${topKeyword[0]}` : "반복 키워드 확인 필요"
+          ]
+        };
+      }
+
+      return {
+        label: "동향",
+        title: "당사 직접 이슈보다 GA·보험사 시장 동향이 중심입니다.",
+        lead: `GA/보험사 동향 ${market}건(${marketShare}%)이 중심입니다. 현재는 회사 리스크보다 경쟁사 제휴, 보험사 채널 전략, 업계 분위기 변화를 읽는 구간입니다.`,
+        action: "경쟁사, 보험사, 제휴/실적 키워드의 반복성 확인",
+        points: [
+          `GA/보험사 동향 ${market}건`,
+          `당사 직접 보도 ${own}건`,
+          topKeyword ? `최다 키워드 ${topKeyword[0]}` : "최다 키워드 없음"
+        ]
+      };
     }
 
     function buildAnalysisNewspaperReport() {
@@ -4994,7 +5054,7 @@
       const marketCount = (cats.industry || 0) + (cats.competitor || 0);
       const topKeywords = topBy(items.filter(article => article.keyword), "keyword", 8);
       const topPress = topBy(items.filter(article => isManagedPress(article.press) && article.press !== "언론사 확인"), "press", 8);
-      const insights = buildAnalysisPrintInsights(items, cats, tones);
+      const brief = buildExecutiveBrief(items, cats, tones);
       const ownArticles = items.filter(isCompanyMentionArticle).sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b)).slice(0, 5);
       const riskToneArticles = items
         .filter(article => (article.category === "own" && article.tone === "negative") || article.tone === "negative")
@@ -5008,226 +5068,333 @@
         .filter(article => ["industry", "competitor"].includes(article.category))
         .sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b))
         .slice(0, 5);
-      const keywordRows = topKeywords.map(([name, count]) => `<span><b>${escapeHtml(name)}</b>${count.toLocaleString("ko-KR")}건</span>`).join("");
-      const pressRows = topPress.map(([name, count]) => `<span><b>${escapeHtml(name)}</b>${count.toLocaleString("ko-KR")}건</span>`).join("");
+      const priorityArticles = uniqueArticleItems([
+        ...items.filter(isCompanyNegative).sort((a,b) => latestArticleSort(a,b)),
+        ...ownArticles,
+        ...riskToneArticles,
+        ...policyArticles,
+        ...marketArticles,
+        ...items.slice().sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b))
+      ]).slice(0, 6);
+      const keywordRows = topKeywords.map(([name, count]) => {
+        const cleanName = printCleanText(name);
+        return cleanName ? `<div><span>${escapeHtml(cleanName)}</span><b>${count.toLocaleString("ko-KR")}건</b></div>` : "";
+      }).join("");
+      const pressRows = topPress.map(([name, count]) => {
+        const cleanName = printCleanText(name);
+        return cleanName ? `<div><span>${escapeHtml(cleanName)}</span><b>${count.toLocaleString("ko-KR")}건</b></div>` : "";
+      }).join("");
+      const briefPoints = brief.points.map(point => `<li>${escapeHtml(point)}</li>`).join("");
 
       const styles = `
-        @page { size:A4 portrait; margin:14mm 13mm; }
+        @page { size:A4 portrait; margin:8mm 9mm; }
         * { box-sizing:border-box; }
         body {
           margin:0;
           background:#fff;
           color:#111827;
-          font-family:"Noto Serif KR","Batang","Times New Roman",serif;
+          font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;
           -webkit-print-color-adjust:exact;
           print-color-adjust:exact;
         }
-        .newspaper-report {
+        .executive-report {
           width:100%;
-          max-width:190mm;
+          max-width:192mm;
           margin:0 auto;
           padding:0;
         }
-        .masthead {
-          border-top:4px solid #111827;
-          border-bottom:1px solid #111827;
-          padding:12px 0 10px;
-          text-align:center;
+        .report-masthead {
+          display:grid;
+          grid-template-columns:1fr auto;
+          gap:8mm;
+          align-items:end;
+          padding:0 0 4mm;
+          border-bottom:3px solid #111827;
         }
-        .masthead .eyebrow {
-          font-family:Arial,"Malgun Gothic",sans-serif;
+        .report-masthead .eyebrow {
           font-size:9px;
-          letter-spacing:.22em;
-          font-weight:700;
+          letter-spacing:.18em;
+          font-weight:900;
           color:#27398c;
           text-transform:uppercase;
         }
-        .masthead h1 {
-          margin:4px 0 2px;
-          font-size:35px;
+        .report-masthead h1 {
+          margin:2mm 0 0;
+          font-family:Georgia,"Times New Roman","Batang",serif;
+          font-size:30px;
           line-height:1.05;
           font-weight:900;
-          letter-spacing:-.03em;
+          letter-spacing:-.04em;
         }
-        .masthead .meta {
-          font-family:Arial,"Malgun Gothic",sans-serif;
+        .report-meta-box {
+          min-width:42mm;
+          border:1px solid #cbd5e1;
+          border-radius:6px;
+          padding:3mm 3.5mm;
           font-size:10px;
-          color:#475569;
-        }
-        .headline {
+          color:#334155;
           display:grid;
-          grid-template-columns:1.25fr .75fr;
-          gap:9mm;
-          padding:9mm 0 6mm;
-          border-bottom:2px solid #111827;
+          gap:1.5mm;
         }
-        .headline h2 {
+        .report-meta-box b { color:#111827; font-size:12px; }
+        .executive-brief {
+          display:grid;
+          grid-template-columns:1fr 43mm;
+          gap:5mm;
+          padding:4.5mm 0 3.5mm;
+          border-bottom:1px solid #111827;
+        }
+        .brief-main {
+          min-width:0;
+        }
+        .brief-label {
+          display:inline-flex;
+          align-items:center;
+          min-height:7mm;
+          padding:0 3mm;
+          border:1px solid #cbd5e1;
+          border-radius:999px;
+          color:#27398c;
+          font-size:10px;
+          font-weight:900;
+          margin-bottom:2mm;
+        }
+        .brief-main h2 {
           margin:0;
-          font-size:23px;
-          line-height:1.35;
+          color:#111827;
+          font-size:18.5px;
+          line-height:1.34;
           letter-spacing:-.03em;
-        }
-        .lead-copy {
-          margin:4mm 0 0;
-          font-size:13px;
-          line-height:1.75;
           word-break:keep-all;
         }
-        .risk-stamp {
-          justify-self:end;
-          align-self:start;
-          min-width:48mm;
-          border:1.5px solid #111827;
-          padding:5mm 5mm 4mm;
-          text-align:center;
-          font-family:Arial,"Malgun Gothic",sans-serif;
+        .brief-main p {
+          margin:2mm 0 0;
+          color:#334155;
+          font-size:11px;
+          line-height:1.58;
+          font-weight:800;
+          word-break:keep-all;
         }
-        .risk-stamp span {
-          display:block;
-          font-size:10px;
+        .brief-action {
+          margin-top:2.5mm;
+          padding:2.5mm 3mm;
+          border-left:4px solid #27398c;
+          background:#f6f8ff;
+          color:#111827;
+          font-size:11px;
+          line-height:1.55;
+          font-weight:900;
+        }
+        .risk-panel {
+          border:1.5px solid #111827;
+          border-radius:7px;
+          padding:4mm;
+          display:grid;
+          align-content:center;
+          gap:3mm;
+          text-align:center;
+        }
+        .risk-panel span {
           color:#64748b;
-          font-weight:700;
+          font-size:10px;
+          font-weight:900;
           letter-spacing:.08em;
         }
-        .risk-stamp strong {
-          display:block;
-          margin-top:2mm;
-          font-size:30px;
+        .risk-panel strong {
+          font-size:34px;
           line-height:1;
           letter-spacing:.04em;
         }
-        .risk-stamp.low strong { color:#047857; }
-        .risk-stamp.medium strong { color:#b45309; }
-        .risk-stamp.high strong { color:#b91c1c; }
+        .risk-panel.low strong { color:#047857; }
+        .risk-panel.medium strong { color:#b45309; }
+        .risk-panel.high strong { color:#b91c1c; }
         .print-metrics {
           display:grid;
           grid-template-columns:repeat(5, 1fr);
-          border-bottom:1px solid #111827;
-          margin-bottom:6mm;
+          gap:0;
+          border:1px solid #cbd5e1;
+          border-radius:7px;
+          overflow:hidden;
+          margin:3mm 0;
         }
         .print-metric {
-          min-height:24mm;
-          padding:4mm 3mm;
-          border-right:1px solid #cbd5e1;
-          font-family:Arial,"Malgun Gothic",sans-serif;
+          min-height:15mm;
+          padding:2.5mm 3mm;
+          border-right:1px solid #e2e8f0;
+          display:grid;
+          gap:1mm;
+          align-content:center;
         }
         .print-metric:last-child { border-right:0; }
-        .print-metric-label {
-          font-size:9px;
-          font-weight:700;
+        .print-metric span {
           color:#64748b;
-        }
-        .print-metric-value {
-          margin-top:1mm;
-          font-size:21px;
-          font-weight:900;
-          color:#111827;
-        }
-        .print-metric-note {
-          margin-top:1mm;
           font-size:9px;
-          color:#475569;
+          font-weight:900;
+        }
+        .print-metric strong {
+          color:#111827;
+          font-size:19px;
+          line-height:1;
+          font-weight:900;
+        }
+        .print-metric small {
+          color:#64748b;
+          font-size:8.5px;
+          font-weight:800;
           line-height:1.35;
+        }
+        .first-page-grid {
+          display:grid;
+          grid-template-columns:1.08fr .96fr .96fr;
+          gap:3.5mm;
+          align-items:start;
+        }
+        .brief-points,
+        .rank-box {
+          border:1px solid #cbd5e1;
+          border-radius:7px;
+          padding:3mm;
+          break-inside:avoid;
+        }
+        .brief-points h2,
+        .rank-box h2,
+        .print-section-head h2 {
+          margin:0;
+          color:#111827;
+          font-size:13px;
+          font-weight:900;
+          letter-spacing:-.02em;
+        }
+        .brief-points ol,
+        .brief-points ul {
+          margin:2mm 0 0;
+          padding-left:5mm;
+          color:#334155;
+          font-size:10px;
+          line-height:1.48;
+          font-weight:800;
+        }
+        .brief-points li { margin-bottom:1.4mm; }
+        .rank-list {
+          display:grid;
+          gap:1.3mm;
+          margin-top:2mm;
+        }
+        .rank-list div {
+          display:grid;
+          grid-template-columns:1fr auto;
+          gap:3mm;
+          padding-bottom:1.5mm;
+          border-bottom:1px solid #e2e8f0;
+          color:#334155;
+          font-size:10px;
+          font-weight:900;
+        }
+        .rank-list div:last-child { border-bottom:0; padding-bottom:0; }
+        .rank-list span { overflow-wrap:anywhere; }
+        .rank-list b { color:#111827; white-space:nowrap; }
+        .priority-news {
+          margin-top:3mm;
+          border-top:2px solid #111827;
+          padding-top:3mm;
+        }
+        .priority-news h2 {
+          margin:0 0 2mm;
+          font-size:14px;
+          color:#111827;
+          font-weight:900;
+        }
+        .priority-grid {
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:2mm 4mm;
         }
         .print-grid {
           display:grid;
           grid-template-columns:1fr 1fr;
-          gap:7mm;
+          gap:6mm;
+          margin-top:5mm;
+          break-before:page;
         }
         .print-section {
-          break-inside:avoid;
-          margin-bottom:7mm;
+          margin-bottom:5mm;
         }
-        .print-section h2 {
-          margin:0 0 3mm;
-          padding-bottom:1.5mm;
-          border-bottom:1px solid #111827;
-          font-family:Arial,"Malgun Gothic",sans-serif;
-          font-size:13px;
-          letter-spacing:-.02em;
-        }
-        .insight-list {
-          column-count:2;
-          column-gap:8mm;
-          margin:0;
-          padding-left:5mm;
-          font-size:11px;
-          line-height:1.65;
-          word-break:keep-all;
-        }
-        .insight-list li { break-inside:avoid; margin:0 0 2.5mm; }
-        .print-chip-grid {
-          display:grid;
-          grid-template-columns:1fr 1fr;
-          gap:2mm;
-          font-family:Arial,"Malgun Gothic",sans-serif;
-        }
-        .print-chip-grid span {
-          border-bottom:1px solid #e2e8f0;
-          padding:2mm 0;
-          font-size:10px;
+        .print-section-head {
           display:flex;
           justify-content:space-between;
+          align-items:center;
           gap:3mm;
+          border-bottom:1px solid #111827;
+          padding-bottom:1.5mm;
+          margin-bottom:2mm;
         }
-        .print-chip-grid b {
-          color:#111827;
-          font-weight:800;
+        .print-section-head span {
+          color:#64748b;
+          font-size:9px;
+          font-weight:900;
         }
-        .print-article-list {
-          list-style:none;
-          padding:0;
-          margin:0;
-        }
-        .print-article {
+        .print-evidence-list {
           display:grid;
-          grid-template-columns:9mm 1fr;
+          gap:0;
+        }
+        .print-evidence-card {
+          display:grid;
+          grid-template-columns:8mm 1fr;
           gap:3mm;
-          padding:3.2mm 0;
+          padding:2.5mm 0;
           border-bottom:1px solid #e2e8f0;
           break-inside:avoid;
         }
-        .print-article-index {
+        .print-evidence-card.compact {
+          padding:2mm 0;
+        }
+        .print-evidence-no {
+          color:#27398c;
           font-family:Georgia,"Times New Roman",serif;
           font-size:16px;
           line-height:1;
-          color:#27398c;
-          font-weight:800;
+          font-weight:900;
         }
-        .print-article-meta {
-          font-family:Arial,"Malgun Gothic",sans-serif;
-          font-size:9px;
+        .print-evidence-meta {
           color:#64748b;
+          font-size:8.5px;
+          font-weight:900;
           margin-bottom:1mm;
         }
-        .print-article-title {
-          font-size:12px;
-          line-height:1.45;
+        .print-evidence-card h3 {
+          margin:0;
+          font-size:11px;
+          line-height:1.42;
+          color:#111827;
+          font-weight:900;
+          word-break:keep-all;
+        }
+        .print-evidence-card p {
+          color:#334155;
+          font-size:9.4px;
+          line-height:1.5;
+          margin:0;
           font-weight:800;
           word-break:keep-all;
         }
-        .print-article p {
-          margin:1.5mm 0 0;
-          font-size:10px;
-          line-height:1.55;
-          color:#334155;
-          word-break:keep-all;
+        .priority-grid .print-evidence-card p {
+          margin-top:1mm;
         }
         .print-empty {
-          min-height:18mm;
+          min-height:20mm;
           border:1px dashed #cbd5e1;
+          border-radius:6px;
           display:flex;
           align-items:center;
           justify-content:center;
-          font-family:Arial,"Malgun Gothic",sans-serif;
-          font-size:10px;
           color:#64748b;
+          font-size:10px;
+          font-weight:900;
         }
         .footer-note {
           margin-top:5mm;
           padding-top:3mm;
           border-top:1px solid #111827;
-          font-family:Arial,"Malgun Gothic",sans-serif;
           font-size:9px;
           color:#64748b;
           display:flex;
@@ -5236,14 +5403,14 @@
         }
         @media screen {
           body { background:#f1f5f9; padding:18px; }
-          .newspaper-report {
+          .executive-report {
             background:#fff;
-            padding:14mm 13mm;
+            padding:10mm 11mm;
             box-shadow:0 18px 50px rgba(15,23,42,.18);
           }
         }
         @media print {
-          .newspaper-report { max-width:none; }
+          .executive-report { max-width:none; }
         }
       `;
 
@@ -5256,55 +5423,67 @@
             <style>${styles}</style>
           </head>
           <body>
-            <main class="newspaper-report">
-              <header class="masthead">
-                <div class="eyebrow">인카금융서비스 미디어 데스크</div>
-                <h1>미디어 분석 리포트</h1>
-                <div class="meta">기준 기간 ${escapeHtml(period)} · 생성 ${escapeHtml(generatedAt)}</div>
+            <main class="executive-report">
+              <header class="report-masthead">
+                <div>
+                  <div class="eyebrow">MEDIA MONITORING REPORT</div>
+                  <h1>미디어 모니터링 리포트</h1>
+                </div>
+                <div class="report-meta-box">
+                  <b>${escapeHtml(period)}</b>
+                  <span>생성 ${escapeHtml(generatedAt)}</span>
+                  <span>인카금융서비스 마케팅부</span>
+                </div>
               </header>
 
-              <section class="headline">
-                <div>
-                  <h2>${escapeHtml(buildAnalysisMessage(items, cats, tones))}</h2>
-                  <p class="lead-copy">선택 기간의 언론 노출을 당사 보도, 정책/감독, GA 및 보험사 동향으로 나누어 정리했습니다. 단순 기사량보다 반복 키워드, 매체 집중도, 부정 톤의 직접 관련성을 중심으로 판단합니다.</p>
+              <section class="executive-brief">
+                <div class="brief-main">
+                  <div class="brief-label">${escapeHtml(brief.label)}</div>
+                  <h2>${escapeHtml(brief.title)}</h2>
+                  <p>${escapeHtml(brief.lead)}</p>
+                  <div class="brief-action">${escapeHtml(brief.action)}</div>
                 </div>
-                <div class="risk-stamp ${risk.toLowerCase()}">
+                <aside class="risk-panel ${risk.toLowerCase()}">
                   <span>리스크 레벨</span>
                   <strong>${escapeHtml(risk)}</strong>
-                </div>
+                </aside>
               </section>
 
               <section class="print-metrics">
-                ${printMetric("분석 기사", items.length.toLocaleString("ko-KR"), "선택 기간 전체")}
+                ${printMetric("분석 기사", items.length.toLocaleString("ko-KR"), "분석 기간 전체")}
                 ${printMetric("당사 언급", ownCount.toLocaleString("ko-KR"), "직접 언급 기준")}
                 ${printMetric("부정 톤", negativeCount.toLocaleString("ko-KR"), "전체 부정 논조")}
                 ${printMetric("정책/감독", regulationCount.toLocaleString("ko-KR"), "규제·법안 포함")}
                 ${printMetric("GA/보험사", marketCount.toLocaleString("ko-KR"), "시장 동향")}
               </section>
 
-              <section class="print-section">
-                <h2>종합 판단</h2>
-                <ol class="insight-list">
-                  ${insights.map(text => `<li>${escapeHtml(text)}</li>`).join("")}
-                </ol>
-              </section>
-
-              <div class="print-grid">
-                <section class="print-section">
-                  <h2>주요 키워드</h2>
-                  <div class="print-chip-grid">${keywordRows || '<span><b>키워드 없음</b>0건</span>'}</div>
+              <div class="first-page-grid">
+                <section class="brief-points">
+                  <h2>보고 포인트</h2>
+                  <ul>${briefPoints}</ul>
                 </section>
-                <section class="print-section">
+                <section class="rank-box">
+                  <h2>주요 키워드</h2>
+                  <div class="rank-list">${keywordRows || '<div><span>키워드 없음</span><b>0건</b></div>'}</div>
+                </section>
+                <section class="rank-box">
                   <h2>상위 언론사</h2>
-                  <div class="print-chip-grid">${pressRows || '<span><b>유효 언론사 없음</b>0건</span>'}</div>
+                  <div class="rank-list">${pressRows || '<div><span>유효 언론사 없음</span><b>0건</b></div>'}</div>
                 </section>
               </div>
 
+              <section class="priority-news">
+                <h2>핵심 확인 기사</h2>
+                <div class="priority-grid">
+                  ${priorityArticles.map((article, index) => printEvidenceCard(article, index, true)).join("") || '<div class="print-empty">해당 기간 핵심 기사 없음</div>'}
+                </div>
+              </section>
+
               <div class="print-grid">
-                ${printArticleList("당사 기사", ownArticles)}
-                ${printArticleList("부정/리스크 기사", riskToneArticles)}
-                ${printArticleList("정책/감독 기사", policyArticles)}
-                ${printArticleList("GA/보험사 동향", marketArticles)}
+                ${printArticleSection("당사 기사", ownArticles, "해당 기간 당사 언급 기사 없음")}
+                ${printArticleSection("부정/리스크 기사", riskToneArticles, "해당 기간 부정 톤 기사 없음")}
+                ${printArticleSection("정책/감독 기사", policyArticles, "해당 기간 정책/감독 기사 없음")}
+                ${printArticleSection("GA/보험사 동향", marketArticles, "해당 기간 GA/보험사 동향 기사 없음")}
               </div>
 
               <footer class="footer-note">
