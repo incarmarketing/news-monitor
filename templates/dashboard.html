@@ -4454,11 +4454,74 @@
       printCleanupTimer = setTimeout(clearPrintMode, 60000);
     }
 
+    function buildPrintDocument(title, contentHtml, bodyClass = "") {
+      const styles = Array.from(document.querySelectorAll("style"))
+        .map(style => style.textContent || "")
+        .join("\n");
+      return `<!doctype html>
+        <html lang="ko">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${escapeHtml(title)}</title>
+            <style>
+              ${styles}
+              body { margin:0; background:#fff; }
+              .print-document { max-width:none; padding:0; }
+              @media screen {
+                body { background:#f3f6fb; padding:18px; }
+                .print-document { max-width:1180px; margin:0 auto; }
+              }
+            </style>
+          </head>
+          <body class="${escapeHtml(bodyClass)}">
+            <main class="print-document">
+              ${contentHtml}
+            </main>
+          </body>
+        </html>`;
+    }
+
+    function printHtmlDocument(html) {
+      const iframe = document.createElement("iframe");
+      iframe.title = "print-preview";
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "1px";
+      iframe.style.height = "1px";
+      iframe.style.opacity = "0";
+      iframe.style.pointerEvents = "none";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+
+      const cleanup = () => {
+        setTimeout(() => iframe.remove(), 1200);
+      };
+      const printWindow = iframe.contentWindow;
+      const printDocument = iframe.contentDocument || printWindow?.document;
+      if (!printWindow || !printDocument) {
+        iframe.remove();
+        return;
+      }
+      printWindow.addEventListener("afterprint", cleanup, { once:true });
+      printDocument.open();
+      printDocument.write(html);
+      printDocument.close();
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        setTimeout(cleanup, 120000);
+      }, 250);
+    }
+
     function printAnalysisReport() {
-      switchPage("analysis");
-      document.body.classList.add("print-analysis");
-      window.print();
-      schedulePrintCleanup();
+      const report = document.querySelector("#page-analysis .report-shell");
+      if (!report) return;
+      const clone = report.cloneNode(true);
+      clone.querySelectorAll(".no-print").forEach(node => node.remove());
+      const content = `<section class="page active" id="page-analysis">${clone.outerHTML}</section>`;
+      printHtmlDocument(buildPrintDocument("미디어 분석 리포트", content, "print-analysis"));
     }
 
     function printAdReport() {
