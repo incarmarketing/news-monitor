@@ -4518,13 +4518,438 @@
       }, 250);
     }
 
+    function printMetric(label, value, note = "") {
+      return `
+        <div class="print-metric">
+          <div class="print-metric-label">${escapeHtml(label)}</div>
+          <div class="print-metric-value">${escapeHtml(value)}</div>
+          ${note ? `<div class="print-metric-note">${escapeHtml(note)}</div>` : ""}
+        </div>
+      `;
+    }
+
+    function printArticleList(title, rows, emptyText = "해당 기사 없음") {
+      const items = rows.map((article, index) => {
+        const meta = [
+          article.published_label || article.date || "시각 미확인",
+          article.press || "언론사 확인",
+          article.category_label || categoryLabel(article.category),
+          article.tone_label || toneLabel(article.tone),
+          article.keyword || ""
+        ].filter(Boolean).join(" · ");
+        return `
+          <li class="print-article">
+            <div class="print-article-index">${String(index + 1).padStart(2, "0")}</div>
+            <div class="print-article-body">
+              <div class="print-article-meta">${escapeHtml(meta)}</div>
+              <div class="print-article-title">${escapeHtml(article.title || "제목 없음")}</div>
+              ${article.summary ? `<p>${escapeHtml(article.summary)}</p>` : ""}
+            </div>
+          </li>
+        `;
+      }).join("");
+      return `
+        <section class="print-section">
+          <h2>${escapeHtml(title)}</h2>
+          ${items ? `<ol class="print-article-list">${items}</ol>` : `<div class="print-empty">${escapeHtml(emptyText)}</div>`}
+        </section>
+      `;
+    }
+
+    function buildAnalysisPrintInsights(items, cats, tones) {
+      if (!items.length) {
+        return [
+          "선택 기간에 표시할 모니터링 데이터가 없습니다. 분석 기간 또는 수집 상태를 먼저 확인해야 합니다."
+        ];
+      }
+      const total = Math.max(items.length, 1);
+      const topKeyword = topBy(items, "keyword", 1)[0];
+      const pressPool = items.filter(article => isManagedPress(article.press) && article.press !== "언론사 확인");
+      const topPress = topBy(pressPool, "press", 1)[0];
+      const own = cats.own || 0;
+      const ownNegative = companyNegativeCount(items);
+      const negative = tones.negative || 0;
+      const regulation = cats.regulation || 0;
+      const market = (cats.industry || 0) + (cats.competitor || 0);
+      const ownShare = Math.round(own / total * 100);
+      const negativeShare = Math.round(negative / total * 100);
+      const regulationShare = Math.round(regulation / total * 100);
+      const marketShare = Math.round(market / total * 100);
+      const insights = [];
+
+      insights.push(
+        ownNegative
+          ? `당사 직접 부정 기사 ${ownNegative}건이 포함되어 원문 확인, 사실관계 정리, 내부 공유 여부 판단이 우선입니다.`
+          : `당사 직접 부정 기사는 확인되지 않았습니다. 이번 구간은 평판 리스크보다 업계 변화와 정책성 이슈를 읽는 성격이 강합니다.`
+      );
+      insights.push(
+        own
+          ? `당사 언급은 ${own}건으로 전체의 ${ownShare}%입니다. 보도 톤과 반복 매체를 함께 보면 홍보 성과와 리스크 신호를 분리할 수 있습니다.`
+          : "당사 직접 보도는 없습니다. 경쟁사와 보험업계 이슈가 당사 메시지에 줄 수 있는 간접 영향을 중심으로 보면 됩니다."
+      );
+      insights.push(
+        regulation
+          ? `정책/감독 이슈가 ${regulation}건(${regulationShare}%)입니다. 법안, 수수료, 감독 키워드의 후속 보도 여부가 다음 관찰 포인트입니다.`
+          : "정책/감독 이슈 비중은 낮습니다. 단기 대응보다 시장·경쟁 구도 변화의 맥락을 확인하는 구간입니다."
+      );
+      insights.push(
+        market
+          ? `GA/보험사 동향은 ${market}건(${marketShare}%)으로 관찰됐습니다. 제휴, 실적, 채널 전략 변화가 반복되는지 추적할 필요가 있습니다.`
+          : "GA/보험사 동향 신호가 많지 않습니다. 수집 키워드 또는 기간을 넓히면 비교 기준을 확보할 수 있습니다."
+      );
+      insights.push(
+        topKeyword
+          ? `최다 키워드는 "${topKeyword[0]}" ${topKeyword[1]}건입니다. 같은 키워드의 반복 노출인지, 서로 다른 이슈가 같은 단어로 묶인 것인지 분리해서 봐야 합니다.`
+          : "핵심 키워드가 충분히 축적되지 않았습니다. 키워드 설정과 기사 요약 저장 상태를 점검해야 합니다."
+      );
+      insights.push(
+        topPress
+          ? `${topPress[0]}에서 ${topPress[1]}건이 관찰됐습니다. 특정 매체 쏠림이 이어지면 언론사 관리의 관계 등급과 보도 성향을 함께 확인하는 편이 좋습니다.`
+          : "유효 언론사명이 부족합니다. 포털·도메인 보정이 누적될수록 매체 영향도 해석 정확도가 높아집니다."
+      );
+      if (negative) {
+        insights.push(`전체 부정 톤은 ${negative}건(${negativeShare}%)입니다. 당사 직접 부정과 업계 일반 부정을 분리해 대응 우선순위를 낮추거나 높여야 합니다.`);
+      }
+      return insights;
+    }
+
+    function buildAnalysisNewspaperReport() {
+      const items = analysisItems();
+      const cats = countBy(items, "category");
+      const tones = countBy(items, "tone");
+      const risk = analysisRisk(items);
+      const period = analysisPeriodLabel();
+      const generatedAt = currentClockLabel();
+      const ownCount = cats.own || 0;
+      const negativeCount = tones.negative || 0;
+      const regulationCount = cats.regulation || 0;
+      const marketCount = (cats.industry || 0) + (cats.competitor || 0);
+      const topKeywords = topBy(items.filter(article => article.keyword), "keyword", 8);
+      const topPress = topBy(items.filter(article => isManagedPress(article.press) && article.press !== "언론사 확인"), "press", 8);
+      const insights = buildAnalysisPrintInsights(items, cats, tones);
+      const ownArticles = items.filter(isCompanyMentionArticle).sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b)).slice(0, 5);
+      const riskToneArticles = items
+        .filter(article => (article.category === "own" && article.tone === "negative") || article.tone === "negative")
+        .sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b))
+        .slice(0, 5);
+      const policyArticles = items
+        .filter(article => article.category === "regulation")
+        .sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b))
+        .slice(0, 5);
+      const marketArticles = items
+        .filter(article => ["industry", "competitor"].includes(article.category))
+        .sort((a,b) => issuePriority(b) - issuePriority(a) || latestArticleSort(a,b))
+        .slice(0, 5);
+      const keywordRows = topKeywords.map(([name, count]) => `<span><b>${escapeHtml(name)}</b>${count.toLocaleString("ko-KR")}건</span>`).join("");
+      const pressRows = topPress.map(([name, count]) => `<span><b>${escapeHtml(name)}</b>${count.toLocaleString("ko-KR")}건</span>`).join("");
+
+      const styles = `
+        @page { size:A4 portrait; margin:14mm 13mm; }
+        * { box-sizing:border-box; }
+        body {
+          margin:0;
+          background:#fff;
+          color:#111827;
+          font-family:"Noto Serif KR","Batang","Times New Roman",serif;
+          -webkit-print-color-adjust:exact;
+          print-color-adjust:exact;
+        }
+        .newspaper-report {
+          width:100%;
+          max-width:190mm;
+          margin:0 auto;
+          padding:0;
+        }
+        .masthead {
+          border-top:4px solid #111827;
+          border-bottom:1px solid #111827;
+          padding:12px 0 10px;
+          text-align:center;
+        }
+        .masthead .eyebrow {
+          font-family:Arial,"Malgun Gothic",sans-serif;
+          font-size:9px;
+          letter-spacing:.22em;
+          font-weight:700;
+          color:#27398c;
+          text-transform:uppercase;
+        }
+        .masthead h1 {
+          margin:4px 0 2px;
+          font-size:35px;
+          line-height:1.05;
+          font-weight:900;
+          letter-spacing:-.03em;
+        }
+        .masthead .meta {
+          font-family:Arial,"Malgun Gothic",sans-serif;
+          font-size:10px;
+          color:#475569;
+        }
+        .headline {
+          display:grid;
+          grid-template-columns:1.25fr .75fr;
+          gap:9mm;
+          padding:9mm 0 6mm;
+          border-bottom:2px solid #111827;
+        }
+        .headline h2 {
+          margin:0;
+          font-size:23px;
+          line-height:1.35;
+          letter-spacing:-.03em;
+        }
+        .lead-copy {
+          margin:4mm 0 0;
+          font-size:13px;
+          line-height:1.75;
+          word-break:keep-all;
+        }
+        .risk-stamp {
+          justify-self:end;
+          align-self:start;
+          min-width:48mm;
+          border:1.5px solid #111827;
+          padding:5mm 5mm 4mm;
+          text-align:center;
+          font-family:Arial,"Malgun Gothic",sans-serif;
+        }
+        .risk-stamp span {
+          display:block;
+          font-size:10px;
+          color:#64748b;
+          font-weight:700;
+          letter-spacing:.08em;
+        }
+        .risk-stamp strong {
+          display:block;
+          margin-top:2mm;
+          font-size:30px;
+          line-height:1;
+          letter-spacing:.04em;
+        }
+        .risk-stamp.low strong { color:#047857; }
+        .risk-stamp.medium strong { color:#b45309; }
+        .risk-stamp.high strong { color:#b91c1c; }
+        .print-metrics {
+          display:grid;
+          grid-template-columns:repeat(5, 1fr);
+          border-bottom:1px solid #111827;
+          margin-bottom:6mm;
+        }
+        .print-metric {
+          min-height:24mm;
+          padding:4mm 3mm;
+          border-right:1px solid #cbd5e1;
+          font-family:Arial,"Malgun Gothic",sans-serif;
+        }
+        .print-metric:last-child { border-right:0; }
+        .print-metric-label {
+          font-size:9px;
+          font-weight:700;
+          color:#64748b;
+        }
+        .print-metric-value {
+          margin-top:1mm;
+          font-size:21px;
+          font-weight:900;
+          color:#111827;
+        }
+        .print-metric-note {
+          margin-top:1mm;
+          font-size:9px;
+          color:#475569;
+          line-height:1.35;
+        }
+        .print-grid {
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:7mm;
+        }
+        .print-section {
+          break-inside:avoid;
+          margin-bottom:7mm;
+        }
+        .print-section h2 {
+          margin:0 0 3mm;
+          padding-bottom:1.5mm;
+          border-bottom:1px solid #111827;
+          font-family:Arial,"Malgun Gothic",sans-serif;
+          font-size:13px;
+          letter-spacing:-.02em;
+        }
+        .insight-list {
+          column-count:2;
+          column-gap:8mm;
+          margin:0;
+          padding-left:5mm;
+          font-size:11px;
+          line-height:1.65;
+          word-break:keep-all;
+        }
+        .insight-list li { break-inside:avoid; margin:0 0 2.5mm; }
+        .print-chip-grid {
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:2mm;
+          font-family:Arial,"Malgun Gothic",sans-serif;
+        }
+        .print-chip-grid span {
+          border-bottom:1px solid #e2e8f0;
+          padding:2mm 0;
+          font-size:10px;
+          display:flex;
+          justify-content:space-between;
+          gap:3mm;
+        }
+        .print-chip-grid b {
+          color:#111827;
+          font-weight:800;
+        }
+        .print-article-list {
+          list-style:none;
+          padding:0;
+          margin:0;
+        }
+        .print-article {
+          display:grid;
+          grid-template-columns:9mm 1fr;
+          gap:3mm;
+          padding:3.2mm 0;
+          border-bottom:1px solid #e2e8f0;
+          break-inside:avoid;
+        }
+        .print-article-index {
+          font-family:Georgia,"Times New Roman",serif;
+          font-size:16px;
+          line-height:1;
+          color:#27398c;
+          font-weight:800;
+        }
+        .print-article-meta {
+          font-family:Arial,"Malgun Gothic",sans-serif;
+          font-size:9px;
+          color:#64748b;
+          margin-bottom:1mm;
+        }
+        .print-article-title {
+          font-size:12px;
+          line-height:1.45;
+          font-weight:800;
+          word-break:keep-all;
+        }
+        .print-article p {
+          margin:1.5mm 0 0;
+          font-size:10px;
+          line-height:1.55;
+          color:#334155;
+          word-break:keep-all;
+        }
+        .print-empty {
+          min-height:18mm;
+          border:1px dashed #cbd5e1;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-family:Arial,"Malgun Gothic",sans-serif;
+          font-size:10px;
+          color:#64748b;
+        }
+        .footer-note {
+          margin-top:5mm;
+          padding-top:3mm;
+          border-top:1px solid #111827;
+          font-family:Arial,"Malgun Gothic",sans-serif;
+          font-size:9px;
+          color:#64748b;
+          display:flex;
+          justify-content:space-between;
+          gap:6mm;
+        }
+        @media screen {
+          body { background:#f1f5f9; padding:18px; }
+          .newspaper-report {
+            background:#fff;
+            padding:14mm 13mm;
+            box-shadow:0 18px 50px rgba(15,23,42,.18);
+          }
+        }
+        @media print {
+          .newspaper-report { max-width:none; }
+        }
+      `;
+
+      return `<!doctype html>
+        <html lang="ko">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>미디어 분석 리포트</title>
+            <style>${styles}</style>
+          </head>
+          <body>
+            <main class="newspaper-report">
+              <header class="masthead">
+                <div class="eyebrow">인카금융서비스 미디어 데스크</div>
+                <h1>미디어 분석 리포트</h1>
+                <div class="meta">기준 기간 ${escapeHtml(period)} · 생성 ${escapeHtml(generatedAt)}</div>
+              </header>
+
+              <section class="headline">
+                <div>
+                  <h2>${escapeHtml(buildAnalysisMessage(items, cats, tones))}</h2>
+                  <p class="lead-copy">선택 기간의 언론 노출을 당사 보도, 정책/감독, GA 및 보험사 동향으로 나누어 정리했습니다. 단순 기사량보다 반복 키워드, 매체 집중도, 부정 톤의 직접 관련성을 중심으로 판단합니다.</p>
+                </div>
+                <div class="risk-stamp ${risk.toLowerCase()}">
+                  <span>리스크 레벨</span>
+                  <strong>${escapeHtml(risk)}</strong>
+                </div>
+              </section>
+
+              <section class="print-metrics">
+                ${printMetric("분석 기사", items.length.toLocaleString("ko-KR"), "선택 기간 전체")}
+                ${printMetric("당사 언급", ownCount.toLocaleString("ko-KR"), "직접 언급 기준")}
+                ${printMetric("부정 톤", negativeCount.toLocaleString("ko-KR"), "전체 부정 논조")}
+                ${printMetric("정책/감독", regulationCount.toLocaleString("ko-KR"), "규제·법안 포함")}
+                ${printMetric("GA/보험사", marketCount.toLocaleString("ko-KR"), "시장 동향")}
+              </section>
+
+              <section class="print-section">
+                <h2>종합 판단</h2>
+                <ol class="insight-list">
+                  ${insights.map(text => `<li>${escapeHtml(text)}</li>`).join("")}
+                </ol>
+              </section>
+
+              <div class="print-grid">
+                <section class="print-section">
+                  <h2>주요 키워드</h2>
+                  <div class="print-chip-grid">${keywordRows || '<span><b>키워드 없음</b>0건</span>'}</div>
+                </section>
+                <section class="print-section">
+                  <h2>상위 언론사</h2>
+                  <div class="print-chip-grid">${pressRows || '<span><b>유효 언론사 없음</b>0건</span>'}</div>
+                </section>
+              </div>
+
+              <div class="print-grid">
+                ${printArticleList("당사 기사", ownArticles)}
+                ${printArticleList("부정/리스크 기사", riskToneArticles)}
+                ${printArticleList("정책/감독 기사", policyArticles)}
+                ${printArticleList("GA/보험사 동향", marketArticles)}
+              </div>
+
+              <footer class="footer-note">
+                <span>언론 모니터링 데이터 기준 내부 참고자료</span>
+                <span>인카금융서비스 · 마케팅부</span>
+              </footer>
+            </main>
+          </body>
+        </html>`;
+    }
+
     function printAnalysisReport() {
-      const report = document.querySelector("#page-analysis .report-shell");
-      if (!report) return;
-      const clone = report.cloneNode(true);
-      clone.querySelectorAll(".no-print").forEach(node => node.remove());
-      const content = `<section class="page active" id="page-analysis">${clone.outerHTML}</section>`;
-      printHtmlDocument(buildPrintDocument("미디어 분석 리포트", content, "print-analysis"));
+      printHtmlDocument(buildAnalysisNewspaperReport());
     }
 
     function printAdReport() {
