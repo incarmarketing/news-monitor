@@ -500,6 +500,9 @@
       gap:10px;
       margin-bottom:14px;
     }
+    .monitor-toolbar {
+      grid-template-columns:minmax(220px,1.35fr) repeat(2,minmax(145px,.8fr)) repeat(3,minmax(108px,.72fr));
+    }
     .field label { display:block; margin-bottom:5px; color:var(--muted); font-size:12px; font-weight:900; }
     .field input,.field select,.field textarea {
       width:100%;
@@ -2074,9 +2077,10 @@
         </section>
 
         <section class="page" id="page-monitor">
-          <div class="toolbar">
+          <div class="toolbar monitor-toolbar">
             <div class="field"><label>검색어</label><input id="searchInput" type="search" placeholder="기사 제목, 키워드, 언론사 검색"></div>
-            <div class="field"><label>기준일</label><select id="dateFilter"><option value="">전체</option></select></div>
+            <div class="field"><label>시작 기준일</label><input id="monitorStart" type="date"></div>
+            <div class="field"><label>종료 기준일</label><input id="monitorEnd" type="date"></div>
             <div class="field"><label>분류</label><select id="categoryFilter"><option value="">전체</option></select></div>
             <div class="field"><label>논조</label><select id="toneFilter"><option value="">전체</option></select></div>
             <div class="field"><label>리스크</label><select id="riskFilter"><option value="">전체</option></select></div>
@@ -2489,7 +2493,7 @@
     const state = {
       articles: [],
       filtered: [],
-      filters: { q:"", date:"", category:"", tone:"", risk:"", detail:"" },
+      filters: { q:"", start:"", end:"", category:"", tone:"", risk:"", detail:"" },
       analysis: { range:"all", start:"", end:"" },
       keywordSource: "Supabase",
       keywordSyncMessage: "",
@@ -3075,7 +3079,8 @@
       return state.articles.filter(article => {
         const haystack = [article.title, article.keyword, article.press, article.category_label, article.category_detail, article.tone_label].join(" ").toLowerCase();
         return (!q || haystack.includes(q))
-          && (!state.filters.date || article.date === state.filters.date)
+          && (!state.filters.start || article.date >= state.filters.start)
+          && (!state.filters.end || article.date <= state.filters.end)
           && (!state.filters.category || article.category === state.filters.category)
           && (!state.filters.tone || article.tone === state.filters.tone)
           && (!state.filters.risk || article.risk === state.filters.risk);
@@ -3119,6 +3124,7 @@
     }
 
     function optionList(select, values, labeler = v => v) {
+      if (!select) return;
       select.innerHTML = '<option value="">전체</option>' + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(labeler(v))}</option>`).join("");
     }
 
@@ -3130,7 +3136,7 @@
         const flowCard = event.target.closest("[data-flow-detail]");
         if (flowCard) openCategoryDetail(flowCard.dataset.flowDetail || "");
       });
-      const map = { searchInput:"q", dateFilter:"date", categoryFilter:"category", toneFilter:"tone", riskFilter:"risk" };
+      const map = { searchInput:"q", monitorStart:"start", monitorEnd:"end", categoryFilter:"category", toneFilter:"tone", riskFilter:"risk" };
       Object.entries(map).forEach(([id,key]) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener("input", e => { state.filters[key] = e.target.value.trim(); render(); });
@@ -3214,7 +3220,8 @@
       state.filtered = state.articles.filter(article => {
         const haystack = [article.title, article.keyword, article.press, article.category_label, article.category_detail, article.tone_label].join(" ").toLowerCase();
         return (!q || haystack.includes(q))
-          && (!state.filters.date || article.date === state.filters.date)
+          && (!state.filters.start || article.date >= state.filters.start)
+          && (!state.filters.end || article.date <= state.filters.end)
           && (!state.filters.category || article.category === state.filters.category)
           && (!state.filters.tone || article.tone === state.filters.tone)
           && (!state.filters.risk || article.risk === state.filters.risk)
@@ -3491,9 +3498,12 @@
       if (shouldScopeLatest) {
         const date = latestDate(baseItems);
         if (date) {
-          state.filters.date = date;
-          const dateFilter = document.getElementById("dateFilter");
-          if (dateFilter) dateFilter.value = date;
+          state.filters.start = date;
+          state.filters.end = date;
+          const startFilter = document.getElementById("monitorStart");
+          const endFilter = document.getElementById("monitorEnd");
+          if (startFilter) startFilter.value = date;
+          if (endFilter) endFilter.value = date;
         }
       }
       state.filters.detail = detail;
@@ -5101,7 +5111,6 @@
           .map((article, index) => normalize({ ...article, id: article.id || article.article_hash || `article-${index}` }))
           .filter(isRelevantDashboardArticle));
         await loadScrapsFromSupabase();
-        optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
         optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
         optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
         optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
@@ -5298,7 +5307,6 @@
         state.articles = [];
         state.scraps = [];
       }
-      optionList(document.getElementById("dateFilter"), uniq(state.articles.map(a => a.date)).sort().reverse());
       optionList(document.getElementById("categoryFilter"), categoryOrder.filter(k => state.articles.some(a => a.category === k)), categoryLabel);
       optionList(document.getElementById("toneFilter"), toneOrder.filter(k => state.articles.some(a => a.tone === k)), toneLabel);
       optionList(document.getElementById("riskFilter"), uniq(state.articles.map(a => a.risk)).sort());
