@@ -1441,13 +1441,25 @@
       box-shadow:0 1px 2px rgba(16,24,40,.04);
     }
     .report-head {
-      padding:24px;
+      padding:20px 24px;
       background:linear-gradient(135deg,#111827 0%,#27398c 100%);
       color:#fff;
       display:grid;
       grid-template-columns:minmax(0,1fr) auto;
-      gap:18px;
-      align-items:start;
+      gap:22px;
+      align-items:center;
+    }
+    .report-head-main {
+      min-width:0;
+      display:grid;
+      gap:9px;
+    }
+    .report-head-actions {
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      flex:0 0 auto;
+      align-self:center;
     }
     .report-badge {
       display:inline-flex;
@@ -1460,7 +1472,21 @@
       font-weight:900;
       letter-spacing:.08em;
     }
-    .report-head h2 { margin:10px 0 6px; font-size:30px; line-height:1.22; letter-spacing:0; }
+    .report-title-line {
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+    .report-head h2 { margin:0; font-size:30px; line-height:1.18; letter-spacing:0; }
+    .report-print-button {
+      min-height:44px;
+      padding:0 19px;
+      border-color:rgba(255,255,255,.18);
+      background:rgba(255,255,255,.12);
+      box-shadow:none;
+    }
+    .report-print-button:hover { background:rgba(255,255,255,.18); }
     .report-meta {
       color:#dbe4ff;
       font-size:13px;
@@ -1714,7 +1740,14 @@
       .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .toolbar { grid-template-columns:1fr 1fr; }
       .toolbar .field:first-child { grid-column:1/-1; }
-      .report-head,.report-controls,.report-evidence { grid-template-columns:1fr; }
+      .report-head {
+        align-items:flex-start;
+        grid-template-columns:1fr;
+        gap:14px;
+      }
+      .report-head-actions { width:100%; justify-content:flex-start; }
+      .report-print-button { width:100%; justify-content:center; }
+      .report-controls,.report-evidence { grid-template-columns:1fr; }
       .report-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .report-kpi:last-child { grid-column:1/-1; }
       .report-controls .segmented { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
@@ -1814,11 +1847,12 @@
         color:#fff;
         border:0;
         border-radius:6px;
-        grid-template-columns:minmax(0,1fr);
+        display:block;
         gap:3px;
         -webkit-print-color-adjust:exact;
         print-color-adjust:exact;
       }
+      #page-analysis .report-head-main { gap:3px; }
       #page-analysis .report-badge {
         padding:2px 6px;
         border-color:rgba(255,255,255,.34);
@@ -2102,12 +2136,16 @@
         <section class="page" id="page-analysis">
           <div class="report-shell">
             <div class="report-head">
-              <div>
-                <div class="report-badge">MEDIA ANALYSIS REPORT</div>
-                <h2>미디어 분석 리포트</h2>
+              <div class="report-head-main">
+                <div class="report-title-line">
+                  <div class="report-badge">MEDIA ANALYSIS REPORT</div>
+                  <h2>미디어 분석 리포트</h2>
+                </div>
                 <div class="report-meta" id="analysisMeta"><span class="meta-tag"><b>상태</b> 기간 선택 대기</span></div>
               </div>
-              <button class="btn primary no-print" id="printAnalysis"><i data-lucide="printer"></i><span>인쇄 / PDF 저장</span></button>
+              <div class="report-head-actions no-print">
+                <button class="btn primary report-print-button" id="printAnalysis"><i data-lucide="printer"></i><span>인쇄 / PDF 저장</span></button>
+              </div>
             </div>
             <div class="report-controls no-print">
               <div class="field">
@@ -4388,24 +4426,8 @@
       printCleanupTimer = setTimeout(clearPrintMode, 60000);
     }
 
-    function periodReportUrlForAnalysis() {
-      if (state.analysis.range === "7") return "./weekly.html";
-      if (state.analysis.range === "30" || state.analysis.range === "all") return "./monthly.html";
-      return "";
-    }
-
-    function openPeriodReportForPrint() {
-      const reportUrl = periodReportUrlForAnalysis();
-      if (!reportUrl) return false;
-      const separator = reportUrl.includes("?") ? "&" : "?";
-      const url = `${reportUrl}${separator}print=1&v=${Date.now()}`;
-      const opened = window.open(url, "_blank", "noopener");
-      if (!opened) window.location.href = url;
-      return true;
-    }
-
     function printAnalysisReport() {
-      if (openPeriodReportForPrint()) return;
+      switchPage("analysis");
       document.body.classList.add("print-analysis");
       window.print();
       schedulePrintCleanup();
