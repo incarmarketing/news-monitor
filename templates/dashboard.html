@@ -248,27 +248,33 @@
     .page.active { display:block; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
     .hero {
+      position:relative;
       border-radius:8px;
       color:var(--ink);
       background:#fff;
       border:1px solid var(--line);
-      padding:16px;
+      padding:20px 18px 16px;
       margin-bottom:12px;
       box-shadow:0 1px 2px rgba(16,24,40,.04);
     }
     .hero .eyebrow {
       display:inline-flex;
+      align-items:center;
+      min-height:30px;
       width:max-content;
       border:1px solid #c7d7fe;
       border-radius:999px;
-      padding:4px 9px;
+      padding:0 12px;
       background:#eef4ff;
       color:#27398c;
-      font-size:11px;
+      font-size:14px;
+      line-height:1;
+      letter-spacing:.03em;
+      font-weight:900;
     }
     .hero h2 { display:none; }
-    .brief-topline { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-    .hero-meta { margin-top:8px; color:var(--muted); font-size:13px; font-weight:800; }
+    .brief-topline { display:flex; flex-wrap:wrap; align-items:center; gap:8px; min-height:30px; padding-right:170px; }
+    .hero-meta { display:none; }
     .judgement {
       margin-top:11px;
       padding:11px 13px;
@@ -281,32 +287,47 @@
       line-height:1.45;
       font-weight:900;
     }
-    .risk-card { display:inline-flex; align-items:center; gap:6px; }
+    .risk-card {
+      position:absolute;
+      top:18px;
+      right:18px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:0;
+    }
     .risk-state {
       display:inline-flex;
       align-items:center;
       justify-content:center;
       width:max-content;
-      min-width:0;
-      padding:4px 9px;
+      min-width:54px;
+      min-height:30px;
+      padding:0 12px;
       border:1px solid var(--line);
       border-radius:999px;
       background:#fff;
+      box-shadow:0 0 0 0 rgba(39,57,140,.2);
+      animation:riskPulse 2.4s ease-in-out infinite;
     }
     .risk-card.risk-low .risk-state { background:#f0fdf4; border-color:#bbf7d0; }
     .risk-card.risk-medium .risk-state { background:#fffbeb; border-color:#fde68a; }
     .risk-card.risk-high .risk-state { background:#fff1f2; border-color:#fecdd3; }
     .risk-value {
       color:#0f172a;
-      font-size:12px;
+      font-size:14px;
       font-weight:900;
       line-height:1;
     }
     .risk-card.risk-low .risk-value { color:#166534; }
     .risk-card.risk-medium .risk-value { color:#9a3412; }
     .risk-card.risk-high .risk-value { color:#be123c; }
-    .risk-label { color:var(--muted); font-size:11px; font-weight:900; margin-bottom:0; }
+    .risk-label { color:var(--muted); font-size:13px; font-weight:900; margin-bottom:0; }
     .risk-hint { display:none; }
+    @keyframes riskPulse {
+      0%, 100% { box-shadow:0 0 0 0 rgba(39,57,140,0); opacity:1; }
+      50% { box-shadow:0 0 0 5px rgba(39,57,140,.08); opacity:.9; }
+    }
     .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:12px; }
     .hero-metrics { margin:12px 0 0; }
     .metric {
@@ -2049,6 +2070,11 @@
       .login-screen { padding:16px; }
       .login-card { padding:22px; }
       .hero { padding:18px; }
+      .risk-card {
+        position:static;
+        margin-top:10px;
+      }
+      .brief-topline { padding-right:0; }
       .hero h2 { font-size:23px; }
       .metric-grid,.form-grid { grid-template-columns:1fr; }
       .form-span-2 { grid-column:auto; }
@@ -3605,7 +3631,7 @@
       const topKeyword = topBy(current,"keyword",1)[0]?.[0] || "주요 키워드 없음";
       const market = (cats.competitor || 0) + (cats.industry || 0);
       document.getElementById("headline").textContent = `${topKeyword} 중심으로 ${current.length}건 관찰`;
-      document.getElementById("heroMeta").textContent = `${latestDate(current) || "-"} · ${contextLabel({ ignoreDetail:true })}`;
+      document.getElementById("heroMeta").textContent = "";
       const riskEl = document.getElementById("riskValue");
       riskEl.textContent = risk;
       riskEl.className = "risk-value";
