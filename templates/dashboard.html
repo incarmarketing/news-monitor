@@ -1505,15 +1505,16 @@
     .report-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
     .report-kpi {
       position:relative;
-      overflow:hidden;
+      overflow:visible;
       border:1px solid var(--line);
       border-radius:8px;
-      padding:13px 14px;
+      padding:10px 12px;
       background:#fff;
-      min-height:78px;
-      display:grid;
-      align-content:center;
-      gap:7px;
+      min-height:68px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
       box-shadow:0 1px 2px rgba(16,24,40,.04);
     }
     .report-kpi::before {
@@ -1531,8 +1532,57 @@
     .report-kpi.risk-low::before { background:var(--green); }
     .report-kpi.risk-medium::before { background:var(--amber); }
     .report-kpi.risk-high::before { background:var(--red); }
-    .report-kpi .num { color:var(--incar-dark); font-size:25px; font-weight:900; line-height:1; }
-    .report-kpi .label { color:var(--muted); font-size:12px; font-weight:900; }
+    .report-kpi-icon {
+      width:32px;
+      height:32px;
+      border-radius:8px;
+      display:grid;
+      place-items:center;
+      color:var(--incar);
+      background:#f5f8ff;
+      border:1px solid #dbe7ff;
+      flex:0 0 auto;
+    }
+    .report-kpi.own .report-kpi-icon { color:var(--blue); background:#eff6ff; border-color:#bfdbfe; }
+    .report-kpi.negative .report-kpi-icon { color:var(--red); background:#fff1f2; border-color:#fecdd3; }
+    .report-kpi.policy .report-kpi-icon { color:#b45309; background:#fffbeb; border-color:#fde68a; }
+    .report-kpi.risk-low .report-kpi-icon { color:var(--green); background:#f0fdf4; border-color:#bbf7d0; }
+    .report-kpi.risk-medium .report-kpi-icon { color:#9a3412; background:#fffbeb; border-color:#fde68a; }
+    .report-kpi.risk-high .report-kpi-icon { color:var(--red); background:#fff1f2; border-color:#fecdd3; }
+    .report-kpi-copy {
+      min-width:0;
+      width:100%;
+      display:grid;
+      justify-items:end;
+      gap:6px;
+      text-align:right;
+    }
+    .report-kpi-main {
+      display:flex;
+      align-items:baseline;
+      justify-content:flex-end;
+      gap:7px;
+      white-space:nowrap;
+    }
+    .report-kpi-main span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.2; }
+    .report-kpi .num { color:var(--incar-dark); font-size:24px; font-weight:900; line-height:1; }
+    .report-kpi:not(#analysisRiskCard) .num::after {
+      content:"건";
+      margin-left:2px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+    }
+    .report-kpi small {
+      display:block;
+      max-width:100%;
+      color:#667085;
+      font-size:11px;
+      font-weight:800;
+      line-height:1.25;
+      white-space:normal;
+      word-break:keep-all;
+    }
     .report-kpi.risk-low { background:#f8fff9; border-color:#cbead5; }
     .report-kpi.risk-medium { background:#fffbeb; border-color:#fde68a; }
     .report-kpi.risk-high { background:#fff7f7; border-color:#fecdd3; }
@@ -1793,9 +1843,16 @@
       #page-analysis .report-insight-grid { grid-area:insights; display:grid; grid-template-columns:1fr; gap:5px; }
       #page-analysis .report-evidence-panel { grid-area:evidence; }
       #page-analysis .report-kpis { grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; }
-      #page-analysis .report-kpi { min-height:38px; padding:6px 8px; border-radius:5px; background:#fff; }
-      #page-analysis .report-kpi .num { font-size:15px; }
-      #page-analysis .report-kpi .label { margin-top:3px; font-size:7px; }
+      #page-analysis .report-kpi { min-height:42px; padding:5px 6px; border-radius:5px; gap:5px; background:#fff; }
+      #page-analysis .report-kpi::before { width:3px; }
+      #page-analysis .report-kpi-icon { width:20px; height:20px; border-radius:5px; }
+      #page-analysis .report-kpi-icon svg { width:11px; height:11px; }
+      #page-analysis .report-kpi-copy { gap:2px; }
+      #page-analysis .report-kpi-main { gap:3px; }
+      #page-analysis .report-kpi-main span { font-size:6.8px; }
+      #page-analysis .report-kpi .num { font-size:14px; }
+      #page-analysis .report-kpi .num::after { font-size:6px; }
+      #page-analysis .report-kpi small { display:none; }
       #page-analysis .report-message { padding:6px 8px; border-radius:5px; font-size:8px; line-height:1.28; }
       #page-analysis .report-section-title { margin-bottom:5px; font-size:9px; gap:4px; }
       #page-analysis .panel { padding:6px; border-radius:5px; }
@@ -1928,7 +1985,6 @@
         </div>
         <div class="actions">
           <span class="auth-user" id="authUser"></span>
-          <button class="btn mobile-menu" id="mobileMenuBtn"><i data-lucide="menu"></i></button>
           <a class="btn" href="./index.html"><i data-lucide="file-text"></i><span>일일 보고서</span></a>
           <button class="btn" id="exportCsv"><i data-lucide="download"></i><span>CSV 출력</span></button>
           <button class="btn" id="logoutButton"><i data-lucide="log-out"></i><span>로그아웃</span></button>
@@ -2065,11 +2121,41 @@
             </div>
             <div class="report-body executive-report-body">
               <div class="report-kpis executive-kpis">
-                <div class="report-kpi"><div class="num" id="analysisTotal">0</div><div class="label">분석 기사</div></div>
-                <div class="report-kpi own"><div class="num" id="analysisOwn">0</div><div class="label">당사</div></div>
-                <div class="report-kpi negative"><div class="num" id="analysisNegative">0</div><div class="label">부정 톤</div></div>
-                <div class="report-kpi policy"><div class="num" id="analysisRegulation">0</div><div class="label">정책</div></div>
-                <div class="report-kpi risk-low" id="analysisRiskCard"><div class="num" id="analysisRisk">LOW</div><div class="label">리스크 레벨</div></div>
+                <div class="report-kpi">
+                  <div class="report-kpi-icon"><i data-lucide="newspaper"></i></div>
+                  <div class="report-kpi-copy">
+                    <div class="report-kpi-main"><span>분석 기사</span><div class="num" id="analysisTotal">0</div></div>
+                    <small>선택 기간 기준</small>
+                  </div>
+                </div>
+                <div class="report-kpi own">
+                  <div class="report-kpi-icon"><i data-lucide="building-2"></i></div>
+                  <div class="report-kpi-copy">
+                    <div class="report-kpi-main"><span>당사</span><div class="num" id="analysisOwn">0</div></div>
+                    <small>직접 언급 기사</small>
+                  </div>
+                </div>
+                <div class="report-kpi negative">
+                  <div class="report-kpi-icon"><i data-lucide="triangle-alert"></i></div>
+                  <div class="report-kpi-copy">
+                    <div class="report-kpi-main"><span>부정 톤</span><div class="num" id="analysisNegative">0</div></div>
+                    <small>리스크성 논조</small>
+                  </div>
+                </div>
+                <div class="report-kpi policy">
+                  <div class="report-kpi-icon"><i data-lucide="landmark"></i></div>
+                  <div class="report-kpi-copy">
+                    <div class="report-kpi-main"><span>정책</span><div class="num" id="analysisRegulation">0</div></div>
+                    <small>규제/감독 이슈</small>
+                  </div>
+                </div>
+                <div class="report-kpi risk-low" id="analysisRiskCard">
+                  <div class="report-kpi-icon"><i data-lucide="shield-alert"></i></div>
+                  <div class="report-kpi-copy">
+                    <div class="report-kpi-main"><span>리스크 레벨</span><div class="num" id="analysisRisk">LOW</div></div>
+                    <small>현재 분석 구간</small>
+                  </div>
+                </div>
               </div>
               <div class="report-message executive-summary" id="analysisMessage">분석 데이터를 불러오는 중입니다.</div>
 
@@ -2434,6 +2520,17 @@
       auth: null
     };
     const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
+    const TEMP_LOGIN_BYPASS_UNTIL = "2026-06-02T00:00:00+09:00";
+    const TEMP_LOGIN_BYPASS_SESSION = {
+      ok: true,
+      employee_no: "1611499",
+      display_name: "최진우",
+      role: "admin",
+      session_token: "temporary-local-bypass",
+      session_expires_at: TEMP_LOGIN_BYPASS_UNTIL,
+      temporary: true
+    };
+    const dashboardDisplayNames = { "1611499": "최진우" };
     let appBound = false;
     let loginBound = false;
 
@@ -2655,7 +2752,20 @@
     const managedMediaArticles = () => state.articles.filter(article => isManagedPress(article.press));
     const companyMentionMediaArticles = () => state.articles.filter(article => isManagedPress(article.press) && isCompanyMentionArticle(article));
 
+    function isTemporaryLoginBypassActive() {
+      return new Date(TEMP_LOGIN_BYPASS_UNTIL).getTime() > Date.now();
+    }
+
+    function getTemporaryLoginBypassSession() {
+      return { ...TEMP_LOGIN_BYPASS_SESSION };
+    }
+
+    function displayNameForSession(session) {
+      return session?.display_name || dashboardDisplayNames[session?.employee_no] || session?.employee_no || "";
+    }
+
     function getStoredSession() {
+      if (isTemporaryLoginBypassActive()) return getTemporaryLoginBypassSession();
       try {
         const session = JSON.parse(sessionStorage.getItem(DASHBOARD_SESSION_KEY) || "null");
         if (!session?.employee_no || !session?.session_token || !session?.session_expires_at) return null;
@@ -2663,6 +2773,7 @@
           sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
           return null;
         }
+        session.display_name = displayNameForSession(session);
         return session;
       } catch {
         sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
@@ -2678,6 +2789,10 @@
     }
 
     function showLogin(message = "") {
+      if (isTemporaryLoginBypassActive()) {
+        unlockDashboard(getTemporaryLoginBypassSession());
+        return;
+      }
       document.getElementById("loginScreen")?.classList.remove("auth-locked");
       document.getElementById("appShell")?.classList.add("auth-locked");
       setLoginStatus(message);
@@ -2690,8 +2805,9 @@
       document.getElementById("appShell")?.classList.remove("auth-locked");
       const user = document.getElementById("authUser");
       if (user) {
+        const displayName = displayNameForSession(session);
         user.innerHTML = `
-          <span class="auth-chip"><b>사용자</b>${escapeHtml(session.display_name || session.employee_no)}</span>
+          <span class="auth-chip"><b>사용자</b>${escapeHtml(displayName)}</span>
           <span class="auth-chip"><b>사번</b>${escapeHtml(session.employee_no)}</span>
           <span class="auth-chip"><b>권한</b>${escapeHtml(session.role || "viewer")}</span>
         `;
@@ -2718,6 +2834,7 @@
             setLoginStatus(result?.message || "사번 또는 비밀번호가 일치하지 않습니다.");
             return;
           }
+          result.display_name = displayNameForSession(result);
           sessionStorage.setItem(DASHBOARD_SESSION_KEY, JSON.stringify(result));
           setLoginStatus("로그인 완료. 대시보드를 불러옵니다.", "ok");
           unlockDashboard(result);
@@ -2768,7 +2885,7 @@
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
       if (!response.ok) {
-        if (response.status === 401) {
+        if (response.status === 401 && !isTemporaryLoginBypassActive()) {
           sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
           showLogin("세션이 만료되었습니다. 다시 로그인해 주세요.");
         }
