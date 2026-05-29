@@ -2194,13 +2194,14 @@
     #analysisRiskCard .report-kpi-main {
       display:grid;
       justify-items:end;
-      gap:4px;
+      gap:3px;
     }
-    #analysisRiskCard .report-kpi-main span { font-size:11px; }
+    #analysisRiskCard .report-kpi-main span { font-size:10px; }
     #analysisRiskCard .num {
-      font-size:20px;
-      letter-spacing:-.02em;
-      line-height:1.05;
+      font-size:16px;
+      letter-spacing:0;
+      line-height:1;
+      white-space:nowrap;
     }
     .report-message {
       border:1px solid #c7d7fe;
@@ -5715,6 +5716,287 @@
         : "선택 조건에 해당하는 광고비 집행 내역이 없습니다.";
     }
 
+    function adReportFilterLabel() {
+      const filters = state.adFilters || {};
+      return [
+        filters.year ? `${filters.year}년` : "전체 연도",
+        filters.month ? `${filters.month}월` : "전체 월",
+        filters.media || "전체 매체",
+        filters.type || "전체 구분",
+      ].join(" · ");
+    }
+
+    function sumAdsBy(ads, keyFn) {
+      return ads.reduce((acc, item) => {
+        const key = keyFn(item) || "-";
+        acc[key] = (acc[key] || 0) + Number(item.amount || 0);
+        return acc;
+      }, {});
+    }
+
+    function adReportBars(entries, total, emptyText) {
+      if (!entries.length) return `<div class="ad-print-empty">${escapeHtml(emptyText)}</div>`;
+      const max = Math.max(...entries.map(([, value]) => value), 1);
+      return entries.map(([label, value]) => {
+        const share = total ? Math.round(value / total * 100) : 0;
+        const width = Math.max(3, value / max * 100);
+        return `
+          <div class="ad-print-bar-row">
+            <div class="ad-print-bar-label">${escapeHtml(label)}</div>
+            <div class="ad-print-bar-track"><span style="width:${width}%"></span></div>
+            <div class="ad-print-bar-value">${money(value)} <small>${share}%</small></div>
+          </div>`;
+      }).join("");
+    }
+
+    function buildAdReportDocument() {
+      const ads = filteredAds();
+      const total = ads.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+      const monthlyEntries = Object.entries(sumAdsBy(ads, item => item.month)).sort((a,b) => a[0].localeCompare(b[0]));
+      const mediaEntries = Object.entries(sumAdsBy(ads, item => item.media)).sort((a,b) => b[1] - a[1]).slice(0, 10);
+      const typeEntries = Object.entries(sumAdsBy(ads, item => item.type)).sort((a,b) => b[1] - a[1]);
+      const topMedia = mediaEntries[0];
+      const activeMonths = monthlyEntries.length;
+      const avgMonthly = activeMonths ? Math.round(total / activeMonths) : 0;
+      const generatedAt = new Intl.DateTimeFormat("ko-KR", {
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit",
+        hour:"2-digit",
+        minute:"2-digit",
+        hour12:false,
+      }).format(new Date());
+      const tableRows = ads.slice(0, 18).map(item => `
+        <tr>
+          <td>${escapeHtml(item.month || "-")}</td>
+          <td>${escapeHtml(item.media || "-")}</td>
+          <td>${escapeHtml(item.type || "-")}</td>
+          <td class="amount">${money(item.amount)}</td>
+          <td>${escapeHtml(item.memo || "-")}</td>
+        </tr>
+      `).join("");
+      const reportNote = ads.length
+        ? `선택 조건 기준 ${ads.length.toLocaleString("ko-KR")}건, 총 ${money(total)}이 집행되었습니다. 월평균 집행액은 ${money(avgMonthly)}이며 최대 집행 매체는 ${topMedia?.[0] || "-"}입니다.`
+        : "선택 조건에 해당하는 광고비/협찬 집행 내역이 없습니다.";
+
+      return `<!doctype html>
+        <html lang="ko">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>광고비 집행 리포트</title>
+            <style>
+              @page { size:A4 portrait; margin:10mm; }
+              * { box-sizing:border-box; }
+              body {
+                margin:0;
+                color:#111827;
+                background:#fff;
+                font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;
+                -webkit-print-color-adjust:exact;
+                print-color-adjust:exact;
+              }
+              .ad-print-report { max-width:190mm; margin:0 auto; }
+              .ad-print-head {
+                display:grid;
+                grid-template-columns:1fr auto;
+                gap:12mm;
+                align-items:end;
+                padding-bottom:5mm;
+                border-bottom:3px solid #111827;
+              }
+              .ad-print-eyebrow {
+                font-size:9px;
+                letter-spacing:.16em;
+                color:#27398c;
+                font-weight:900;
+              }
+              .ad-print-head h1 {
+                margin:2mm 0 0;
+                font-family:Georgia,"Times New Roman","Batang",serif;
+                font-size:27px;
+                line-height:1.08;
+                letter-spacing:-.04em;
+              }
+              .ad-print-meta {
+                min-width:46mm;
+                border:1px solid #cbd5e1;
+                border-radius:6px;
+                padding:3mm 3.5mm;
+                display:grid;
+                gap:1.3mm;
+                color:#334155;
+                font-size:9.5px;
+                font-weight:800;
+              }
+              .ad-print-meta b { color:#111827; font-size:11px; }
+              .ad-print-summary {
+                margin:4mm 0;
+                padding:3mm 3.5mm;
+                border:1px solid #c7d7fe;
+                border-left:4px solid #27398c;
+                border-radius:6px;
+                background:#f8fbff;
+                color:#111827;
+                font-size:11px;
+                line-height:1.5;
+                font-weight:900;
+              }
+              .ad-print-kpis {
+                display:grid;
+                grid-template-columns:repeat(4,1fr);
+                border:1px solid #cbd5e1;
+                border-radius:7px;
+                overflow:hidden;
+                margin-bottom:4mm;
+              }
+              .ad-print-kpi {
+                min-height:18mm;
+                padding:3mm;
+                border-right:1px solid #e2e8f0;
+                display:grid;
+                gap:1mm;
+                align-content:center;
+              }
+              .ad-print-kpi:last-child { border-right:0; }
+              .ad-print-kpi span { color:#64748b; font-size:8.8px; font-weight:900; }
+              .ad-print-kpi strong { color:#111827; font-size:17px; line-height:1.05; font-weight:900; word-break:keep-all; overflow-wrap:anywhere; }
+              .ad-print-grid {
+                display:grid;
+                grid-template-columns:1fr 1fr;
+                gap:4mm;
+              }
+              .ad-print-card {
+                border:1px solid #cbd5e1;
+                border-radius:7px;
+                padding:3.2mm;
+                break-inside:avoid;
+              }
+              .ad-print-card h2 {
+                margin:0 0 3mm;
+                color:#111827;
+                font-size:13px;
+                line-height:1.2;
+                font-weight:900;
+              }
+              .ad-print-bars { display:grid; gap:2.2mm; }
+              .ad-print-bar-row {
+                display:grid;
+                grid-template-columns:27mm 1fr 28mm;
+                gap:2.5mm;
+                align-items:center;
+                font-size:9.3px;
+                font-weight:900;
+              }
+              .ad-print-bar-label { color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+              .ad-print-bar-track {
+                height:5mm;
+                border-radius:99px;
+                background:#edf2f7;
+                overflow:hidden;
+              }
+              .ad-print-bar-track span {
+                display:block;
+                height:100%;
+                border-radius:inherit;
+                background:linear-gradient(90deg,#27398c,#5b7cfa);
+              }
+              .ad-print-bar-value { color:#111827; text-align:right; white-space:nowrap; }
+              .ad-print-bar-value small { color:#64748b; font-size:8px; }
+              .ad-print-empty {
+                min-height:20mm;
+                display:grid;
+                place-items:center;
+                border:1px dashed #cbd5e1;
+                border-radius:6px;
+                color:#64748b;
+                font-size:10px;
+                font-weight:900;
+              }
+              .ad-print-table-card {
+                grid-column:1/-1;
+                margin-top:4mm;
+              }
+              .ad-print-table {
+                width:100%;
+                border-collapse:collapse;
+                font-size:9px;
+                line-height:1.35;
+              }
+              .ad-print-table th {
+                padding:2.2mm;
+                border-bottom:1px solid #111827;
+                text-align:left;
+                color:#334155;
+                background:#f8fafc;
+                font-weight:900;
+              }
+              .ad-print-table td {
+                padding:2.2mm;
+                border-bottom:1px solid #e2e8f0;
+                vertical-align:top;
+                font-weight:800;
+              }
+              .ad-print-table .amount { text-align:right; white-space:nowrap; font-weight:900; }
+              @media screen {
+                body { background:#f1f5f9; padding:18px; }
+                .ad-print-report { background:#fff; padding:10mm; box-shadow:0 18px 50px rgba(15,23,42,.18); }
+              }
+            </style>
+          </head>
+          <body>
+            <main class="ad-print-report">
+              <header class="ad-print-head">
+                <div>
+                  <div class="ad-print-eyebrow">ADVERTISING SPEND REPORT</div>
+                  <h1>광고비/협찬 집행 리포트</h1>
+                </div>
+                <div class="ad-print-meta">
+                  <b>${escapeHtml(adReportFilterLabel())}</b>
+                  <span>생성 ${escapeHtml(generatedAt)}</span>
+                  <span>인카금융서비스 마케팅부</span>
+                </div>
+              </header>
+
+              <section class="ad-print-summary">${escapeHtml(reportNote)}</section>
+
+              <section class="ad-print-kpis">
+                <div class="ad-print-kpi"><span>총 집행액</span><strong>${money(total)}</strong></div>
+                <div class="ad-print-kpi"><span>집행 내역</span><strong>${ads.length.toLocaleString("ko-KR")}건</strong></div>
+                <div class="ad-print-kpi"><span>집행 월수</span><strong>${activeMonths.toLocaleString("ko-KR")}개월</strong></div>
+                <div class="ad-print-kpi"><span>최대 집행 매체</span><strong>${escapeHtml(topMedia?.[0] || "-")}</strong></div>
+              </section>
+
+              <section class="ad-print-grid">
+                <div class="ad-print-card">
+                  <h2>월별 집행 추이</h2>
+                  <div class="ad-print-bars">${adReportBars(monthlyEntries, total, "월별 데이터 없음")}</div>
+                </div>
+                <div class="ad-print-card">
+                  <h2>매체별 집행 현황</h2>
+                  <div class="ad-print-bars">${adReportBars(mediaEntries, total, "매체별 데이터 없음")}</div>
+                </div>
+                <div class="ad-print-card">
+                  <h2>집행 구분</h2>
+                  <div class="ad-print-bars">${adReportBars(typeEntries, total, "구분별 데이터 없음")}</div>
+                </div>
+                <div class="ad-print-card">
+                  <h2>보고 메모</h2>
+                  <div class="ad-print-summary" style="margin:0">${escapeHtml(reportNote)}</div>
+                </div>
+                <div class="ad-print-card ad-print-table-card">
+                  <h2>집행 내역</h2>
+                  <table class="ad-print-table">
+                    <thead><tr><th>월</th><th>매체</th><th>구분</th><th>금액</th><th>메모</th></tr></thead>
+                    <tbody>${tableRows || '<tr><td colspan="5">선택 조건에 해당하는 집행 내역이 없습니다.</td></tr>'}</tbody>
+                  </table>
+                </div>
+              </section>
+            </main>
+          </body>
+        </html>`;
+    }
+
     let printCleanupTimer = null;
 
     function clearPrintMode() {
@@ -6044,8 +6326,8 @@
         .report-meta-box b { color:#111827; font-size:12px; }
         .executive-brief {
           display:grid;
-          grid-template-columns:1fr 43mm;
-          gap:5mm;
+          grid-template-columns:1fr 31mm;
+          gap:4mm;
           padding:4.5mm 0 3.5mm;
           border-bottom:1px solid #111827;
         }
@@ -6092,25 +6374,29 @@
         }
         .risk-panel {
           border:1.5px solid #111827;
-          border-radius:7px;
-          padding:3.5mm;
+          border-radius:6px;
+          padding:2.4mm 2.8mm;
           display:grid;
           align-content:center;
-          gap:2mm;
+          justify-self:end;
+          width:31mm;
+          min-height:18mm;
+          gap:1.2mm;
           text-align:center;
           min-width:0;
           overflow:hidden;
         }
         .risk-panel span {
           color:#64748b;
-          font-size:10px;
+          font-size:7.5px;
           font-weight:900;
-          letter-spacing:.08em;
+          letter-spacing:.04em;
         }
         .risk-panel strong {
-          font-size:28px;
+          font-size:16px;
           line-height:1;
-          letter-spacing:-.02em;
+          letter-spacing:0;
+          white-space:nowrap;
           max-width:100%;
           overflow-wrap:anywhere;
         }
@@ -6409,9 +6695,7 @@
     }
 
     function printAdReport() {
-      document.body.classList.add("print-ads");
-      window.print();
-      schedulePrintCleanup();
+      printHtmlDocument(buildAdReportDocument());
     }
 
     window.addEventListener("afterprint", clearPrintMode);
