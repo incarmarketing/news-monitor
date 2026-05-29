@@ -1,6 +1,6 @@
 {
   "date": "2026-05-29",
-  "timestamp": "2026-05-29T18:02:01.647529+09:00",
+  "timestamp": "2026-05-29T18:20:28.949087+09:00",
   "window": {
     "slot": "18",
     "label": "당일 13:00~18:00",
@@ -9,30 +9,30 @@
     "end": "2026-05-29T18:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 82,
-    "total_after_cluster": 41,
+    "total_collected": 74,
+    "total_after_cluster": 42,
     "by_category": {
-      "own": 0,
-      "regulation": 10,
-      "competitor": 54,
-      "industry": 18,
+      "own": 1,
+      "regulation": 6,
+      "competitor": 51,
+      "industry": 16,
       "other": 0
     },
     "by_tone": {
       "negative": 0,
-      "positive": 0,
-      "neutral": 82
+      "positive": 1,
+      "neutral": 73
     },
     "own_negative": 0,
-    "own_total": 0,
+    "own_total": 1,
     "own_by_tone": {
-      "positive": 0,
+      "positive": 1,
       "neutral": 0,
       "negative": 0
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n당사 직접 보도 없이, 한화생명 신용등급 상향 등 경쟁사 동향이 부각됨.\n\n## 핵심 이슈\n- [9] 한화생명·손보 신용등급 상향: 글로벌 경쟁력 및 해외 사업 성장성을 긍정적으로 평가.\n- [2] GA업계 1200% 룰 대응: 스카우트비 선지급 등 우회 전략으로 일부 GA는 영향 적어.\n\n## 지표 해석\n당일 당사 직접 언급 및 부정 기사는 없었습니다. 한화생명의 신용등급 상향, AIG손해보험의 불완전판매 비율 등 개별 보험사 동향과 1200% 룰 관련 GA 업계 소식이 주로 관측되었습니다.\n\n## 분석 키워드\n한화생명, 1200% 룰, 신용등급 상향, GA, 불완전판매",
+  "briefing": "## 최종 결론\n당사 부정 이슈 없이 안정적이며, 업계 규제 및 경쟁사 동향이 주요.\n\n## 핵심 이슈\n- [3] 보험사-GA 제휴 강화: 업계 내 당사 등 GA 채널 위상 강화\n- [2] GA 1200%룰 규제: 수수료 선지급 등 업계 대응 방식 주목\n\n## 지표 해석\n당사 직접 언급 기사는 1건으로 긍정적 톤을 유지했습니다. 부정 이슈는 없었으며, 보험사 신용등급 상향 등 경쟁사 및 업계 동향 관련 보도가 다수였습니다.\n\n## 분석 키워드\n1200%룰, 한화생명 신용등급, 소비자보호, GA 제휴",
   "articles": [
     {
       "title": "[보험 이슈] AIG손해보험, 불완전판매·청약철회비율 2년 연속 최고 - 문화경제 CNB저널",
@@ -59,39 +59,15 @@
       "_cluster_size": 1
     },
     {
-      "title": "뱅크런 전에 부실금융사 정리 … 금융위 '신속정리제도' 추진",
-      "link": "https://www.mk.co.kr/article/12061480",
-      "source": "매일경제",
-      "keyword": "제도",
-      "description": "있는 '신속정리제도' 도입에 나선다. 디지털 거래가 활성화되면서 '뱅크런'(대규모 인출) 속도가 걷잡을 수 없이 빨라지고 있는 만큼 금융사 정리에도 패스트트랙 제도가 필요하다고 판단했기 때문이다. 29일 금융권에...",
-      "pub_date": "Fri, 29 May 2026 17:56:00 +0900",
-      "_score": 16,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "‘온라인’ 키움증권까지 출격…퇴직연금, 증권업계 새로운 격전지로",
-      "link": "https://www.ceoscoredaily.com/page/view/2026052914280622779",
-      "source": "ceoscoredaily.com",
-      "keyword": "글로벌금융",
-      "description": "29일 금융감독원에 따르면 현재 퇴직연금 사업자로 공식 인가를 받아 사업을 영위 중인 증권사는 총 15곳(DB... 미래에셋증권은 “연금자산 70조원 돌파로 증권업계 내 압도적 1위 입지를 더욱 강화했다”며 “글로벌...",
-      "pub_date": "Fri, 29 May 2026 17:46:00 +0900",
-      "_score": 15,
-      "_category": "regulation",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "금감원 소비자보호 평가, 과거 '양호' 손보사들도 고전",
-      "link": "https://www.sisaon.co.kr/news/articleView.html?idxno=201489",
-      "source": "시사오늘",
-      "keyword": "손해보험",
-      "description": "국내 손해보험사들이 금융소비자 권익 보호와 책임 경영을 연이어 강조하고 있지만, 정작 금융감독원이 실시한 최근 실태평가에서는 종합 등급 '양호' 이상을 획득한 손보사를 찾기 어려운 것으로 나타났다. 당국이...",
-      "pub_date": "Fri, 29 May 2026 16:44:00 +0900",
-      "_score": 12,
-      "_category": "regulation",
-      "_tone": "neutral",
+      "title": "GA와 손잡는 보험업계…푸본현대생명, 리더스에셋과 전략적 투자협약",
+      "link": "https://news.einfomax.co.kr/news/articleView.html?idxno=4417498",
+      "source": "news.einfomax.co.kr",
+      "keyword": "GA코리아",
+      "description": "삼성생명의 경우 지난해 7월 글로벌금융판매를 시작으로 지에이코리아, 영진에셋, 도하경영컨설팅, 인카금융, 토스인슈어런스 등 주요 GA들과 연이어 협약을 맺었다.",
+      "pub_date": "Fri, 29 May 2026 15:28:00 +0900",
+      "_score": 14,
+      "_category": "own",
+      "_tone": "positive",
       "_cluster_size": 1
     },
     {
@@ -115,6 +91,18 @@
       "pub_date": "Fri, 29 May 2026 07:13:12 GMT",
       "_score": 12,
       "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "금감원 소비자보호 평가, 과거 ‘양호’ 손보사들도 고전 - sisaon.co.kr",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE5yekVqSXJTTUxualBjTWdHbGhKY29vUVh5TGdfRXZlSWJISkRRSXd2ZWFDbWxOZW81QUVQc1hIbVJ6Zjltci15eUEzckx3ZEVDZlR4V3dMRFl0eGNBU0I0ODJlbU03WVRxVXhN?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "description": "금감원 소비자보호 평가, 과거 ‘양호’ 손보사들도 고전&nbsp;&nbsp;sisaon.co.kr",
+      "pub_date": "Fri, 29 May 2026 07:42:42 GMT",
+      "_score": 12,
+      "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 1
     },
@@ -287,24 +275,24 @@
       "_cluster_size": 1
     },
     {
-      "title": "티디엑스, AI 기반 '간단보험 청구·심사 자동화 플랫폼' 특허 등록 결정",
-      "link": "https://www.mt.co.kr/industry/2026/05/29/2026052913392447006",
-      "source": "머니투데이",
+      "title": "S&P 한화생명·손보 신용등급 'A+'로 상향, \"수익창출력과 재무건전성 우수\" - 비즈니스포스트",
+      "link": "https://news.google.com/rss/articles/CBMic0FVX3lxTFA5WnNseGNpZjBDdWRYQ2xIMl8zeE9DeWtXdXN6em9hUG45X09VbjlpM2tjTVJhQlBzaGY3X2tKbkVaOTJrZ0M2OV9LY1EyTXZjVW01NmxDdjlNbTZrZndGNDdENkdTSG55V0JLYk9mR0dPbDg?oc=5",
+      "source": "비즈니스포스트",
       "keyword": "손해보험",
-      "description": "또한, 경북창조경제혁신센터와 DB손해보험이 공동 운영하는 오픈이노베이션 프로그램 'DB G-Star Hub'에 9.4대 1의 경쟁률을 뚫고 최종 선정되었다. 이에 따라 티디엑스는 향후 6개월간 DB손해보험 현업 부서와 함께 'AI 기반...",
-      "pub_date": "Fri, 29 May 2026 16:47:00 +0900",
+      "description": "S&P 한화생명·손보 신용등급 'A+'로 상향, \"수익창출력과 재무건전성 우수\"&nbsp;&nbsp;비즈니스포스트",
+      "pub_date": "Fri, 29 May 2026 07:31:23 GMT",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 1
+      "_cluster_size": 2
     },
     {
-      "title": "[디지털보험 현주소]① 카카오페이손보 적자 끊을 승부수…장영근표 해...",
-      "link": "https://www.bloter.net/news/articleView.html?idxno=663948",
-      "source": "블로터",
-      "keyword": "손해보험",
-      "description": "카카오페이손해보험이 디지털 플랫폼을 기반으로 외형 성장에는 성공했지만 순손실은 지속되고 있다. 장영근 카카오페이손보 대표의 연임이 올해 말까지 확정된 가운데 장기 보장성보험 확대 전략이 적자를 끊을 핵심...",
-      "pub_date": "Fri, 29 May 2026 16:45:00 +0900",
+      "title": "미래에셋생명 K-ICS 167.6%로 하락…그룹 자본관리 부담 커졌다",
+      "link": "https://www.ddaily.co.kr/page/view/2026052917241856758",
+      "source": "ddaily.co.kr",
+      "keyword": "생명보험",
+      "description": "미래에셋그룹이 미래에셋생명 지분을 꾸준히 늘리며 지배력을 강화하는 가운데, 생명보험사를 둘러싼 그룹 차원의 자본 관리 필요성도 커지고 있다. 미래에셋생명이 29일 정정 공시한 분기보고서에 따르면 올해 1분기...",
+      "pub_date": "Fri, 29 May 2026 17:25:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -314,21 +302,9 @@
       "title": "한화생명 '인공지능(AI) 보험사' 전환 가속도",
       "link": "http://www.babytimes.co.kr/news/articleView.html?idxno=73125",
       "source": "babytimes.co.kr",
-      "keyword": "손해보험",
+      "keyword": "생명보험",
       "description": "특히 한화생명과 한화손해보험, 한화자산운용 등 한화 금융 계열사가 샌프란시스코에 개소한 '한화 AI센터(HAC)'는 글로벌 AI 트렌드와 사업 기회를 빠르게 감지하는 전초기지 역할을 한다. 현지 대학 및 AI 스타트업...",
       "pub_date": "Fri, 29 May 2026 16:36:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "미래에셋생명 K-ICS 167.6%로 하락…그룹 자본관리 부담 커졌다",
-      "link": "https://www.ddaily.co.kr/page/view/2026052917241856758",
-      "source": "ddaily.co.kr",
-      "keyword": "생명보험",
-      "description": "미래에셋그룹이 미래에셋생명 지분을 꾸준히 늘리며 지배력을 강화하는 가운데, 생명보험사를 둘러싼 그룹 차원의 자본 관리 필요성도 커지고 있다. 미래에셋생명이 29일 정정 공시한 분기보고서에 따르면 올해 1분기...",
-      "pub_date": "Fri, 29 May 2026 17:25:00 +0900",
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
@@ -347,18 +323,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "보험·중견자본, 저축은행으로 몰린다…자율 구조조정發 'M&A 시즌'",
-      "link": "http://www.srtimes.kr/news/articleView.html?idxno=204225",
-      "source": "srtimes.kr",
-      "keyword": "생명보험",
-      "description": "교보생명 관계자는 \"교보생명의 보험 역량과 지방은행급 인프라를 갖춘 SBI저축은행이 만나 차별화된 금융 포트폴리오를 구축하게 됐다\"며 \"양사의 강점을 바탕으로 고객 생애주기에 맞춘 금융 서비스를 더욱...",
-      "pub_date": "Fri, 29 May 2026 16:12:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "한화생명·한화손해보험, S&P 신용등급 상승으로 글로벌 경쟁력 입증",
       "link": "https://www.tokenpost.kr/news/economy/364334",
       "source": "tokenpost.kr",
@@ -369,6 +333,18 @@
       "_category": "competitor",
       "_tone": "neutral",
       "_cluster_size": 2
+    },
+    {
+      "title": "보험·중견자본, 저축은행으로 몰린다…자율 구조조정發 'M&A 시즌'",
+      "link": "http://www.srtimes.kr/news/articleView.html?idxno=204225",
+      "source": "srtimes.kr",
+      "keyword": "생명보험",
+      "description": "교보생명 관계자는 \"교보생명의 보험 역량과 지방은행급 인프라를 갖춘 SBI저축은행이 만나 차별화된 금융 포트폴리오를 구축하게 됐다\"며 \"양사의 강점을 바탕으로 고객 생애주기에 맞춘 금융 서비스를 더욱...",
+      "pub_date": "Fri, 29 May 2026 16:12:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
     },
     {
       "title": "종근당산업·하나더넥스트 라이프케어, 프리미엄 요양시설로 시니어케...",
@@ -407,30 +383,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "GA와 손잡는 보험업계…푸본현대생명, 리더스에셋과 전략적 투자협약",
-      "link": "https://news.einfomax.co.kr/news/articleView.html?idxno=4417498",
-      "source": "news.einfomax.co.kr",
-      "keyword": "생명보험",
-      "description": "작년 말 기준 유퍼스트는 4천121명의 설계사를 보유 중이며, 생명보험 13회차 계약유지율 92.41%를 기록하는 등 안정적인 계약 유지관리 역량과 소비자 중심 영업 기반을 갖췄다. 삼성생명의 경우 지난해 7월...",
-      "pub_date": "Fri, 29 May 2026 15:28:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "한화 보험 계열사, S&P 신용등급 나란히 A+ 획득",
-      "link": "https://news.tf.co.kr/read/economy/2327609.htm",
-      "source": "news.tf.co.kr",
-      "keyword": "생명보험",
-      "description": "생명·손해보험 간 시너지 측면에서 한화손보의 전략적 역할도 높이 평가했다. 한화손보 관계자는 \"이번 'A+' 등급 획득은 글로벌 무대에서 한화손보의 탄탄한 재무 구조와 이익 창출력을 공식적으로 인정받은 결과다...",
-      "pub_date": "Fri, 29 May 2026 15:16:00 +0900",
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 2
-    },
-    {
       "title": "장기고객 잡기 나선 흥국생명…보험료 할인 카드 꺼냈다 - 데일리안",
       "link": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE1JT25GTjJGYUFDVWVnVktIOU9oWjR3Q0otY0hHd0l6VG1IUnFtVkJ6MlFsdnhuQlR5a0ZqMUxYVDdtZkE0N2lYODRGOWFZd205MHl3ZlBoa9IBpgJBVV95cUxOUGJPcVNQUF94b0xhSDNLY0dfcVc0SktRTWgyam5jN2JyMnBENnozcjRzd0V4ak1pa3h2SS1LcWlwaUVBRlpaeXhRcTEyMTZnUEJSRmxvNTcwYWY0UXlGTUVqR202d21NQ0trNUFHTlFwR3dkM0dvWktfejY2bFFSMnpPdXhDWU4tbjhsTnd1OWdzOTFZNURkUlhYc3F2OXZYSjRoS3pQTTl2aEpMYkUzVWw4YWpfODNvby1PZ3BKY0kyMmI3UThCZk5aSFZlLWZvM0VXR0JnS01jVzhjNml6NThvSi01MXRYb3pyek9NQXNwYktCRlppdmhzTVFaenpONFdjUVVJRHBNa3BYdkVTZ25uOUl2T2VubHM4S2VvdGQ5d0pZdnc?oc=5",
       "source": "google",
@@ -452,7 +404,7 @@
       "_score": 8,
       "_category": "competitor",
       "_tone": "neutral",
-      "_cluster_size": 3
+      "_cluster_size": 2
     },
     {
       "title": "[보험 pick] 보험사, 공모전·체험형 프로그램 운영 '잇따라'",
@@ -460,6 +412,18 @@
       "source": "lcnews.co.kr",
       "keyword": "한화생명금융서비스",
       "description": "아시아 금융탐방 프로그램이 주어진다. 이 밖에 한화손해보험과 교보생명도 대학생 참여 프로그램을 확대하며 청년 세대와의 접점을 넓히고 있다. 단순 이벤트를 넘어 서비스 개선과 브랜드 공감대 형성 과정에...",
+      "pub_date": "Fri, 29 May 2026 15:12:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "한화 보험형제 함께 웃었다…S&P 신용등급 나란히 'A+'",
+      "link": "https://www.shinailbo.co.kr/news/articleView.html?idxno=5025510",
+      "source": "shinailbo.co.kr",
+      "keyword": "한화생명금융서비스",
+      "description": "특히 한화생명금융서비스를 포함한 광범위한 영업망을 기반으로 보장성보험 중심의 판매 전략을 이어가며 보험계약마진(CSM) 성장세를 지속할 것으로 전망했다. 해외 사업 성과도 긍정적으로 평가했다. S&P는...",
       "pub_date": "Fri, 29 May 2026 15:12:00 +0900",
       "_score": 8,
       "_category": "competitor",
@@ -503,26 +467,74 @@
       "_cluster_size": 1
     },
     {
-      "title": "BS그룹, 내부거래-계열사간 '밀어주기'...상장사 한곳도 없어",
-      "link": "http://www.newsfc.co.kr/news/articleView.html?idxno=78971",
-      "source": "newsfc.co.kr",
-      "keyword": "글로벌금융",
-      "description": "작년 1월 지속가능한 글로벌기업으로의 이미지 통합을 위해 'BS그룹'으로 그룹명을 공식 변경했다. 오랜... 금융감독원 전자공시시스템에 따르면 준 지주사 격인 BS보성의 경우 작년 매출액 140억원 중 계열사들이...",
-      "pub_date": "Fri, 29 May 2026 17:50:00 +0900",
+      "title": "[겜벤 투데이] 크래프톤, '마운틴듀 PMPS 2026 시즌 1 파이널' 개최 外",
+      "link": "http://www.worktoday.co.kr/news/articleView.html?idxno=85086",
+      "source": "겜벤 투데이",
+      "keyword": "메가",
+      "description": "일본 메가 니케 스토어에서 판매 중인 다양한 굿즈들도 선보일 예정이며, 일정 금액 이상의 상품 구매 시 '건걸 메탈 카드 컬렉션' 한정 프로모션 카드 1매를 특전으로 제공한다. 행사장 내부에는 아름다운 서울의...",
+      "pub_date": "Fri, 29 May 2026 17:54:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "레벨 인피니트 ‘승리의 여신: 니케’, 오프라인 팝업 스토어 ‘에리어...",
+      "link": "https://www.gamechosun.co.kr/webzine/article/view.php?no=222358",
+      "source": "gamechosun.co.kr",
+      "keyword": "메가",
+      "description": "뿐만 아니라 일본 메가 니케 스토어에서 판매 중인 다양한 굿즈들도 선보일 예정이며, 일정 금액 이상의 상품 구매 시 ‘건걸 메탈 카드 컬렉션’ 한정 프로모션 카드 1매를 특전으로 제공한다. 이와 함께 행사장...",
+      "pub_date": "Fri, 29 May 2026 17:38:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"신선한 학생 아이디어 받자\" 삼성화재, '리스크 관리 대회' 본선 발표회...",
+      "link": "https://www.asiaa.co.kr/news/articleView.html?idxno=250966",
+      "source": "asiaa.co.kr",
+      "keyword": "1200%",
+      "description": "총 상금은 1200만원 규모로 대상에 500만원, 최우수상에 300만원이 수여됐다. 삼성화재 관계자는 \"이번 대회가 미래 보험산업을 이끌 인재들과 함께 창의적인 리스크 관리 해법을 고민하고 아이디어를 축적하는 의미...",
+      "pub_date": "Fri, 29 May 2026 15:56:00 +0900",
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "박경만 서울시의원 후보, '문화가 숨쉬는 국제도시 여의도 재도약' 전략...",
+      "link": "https://www.gukjenews.com/news/articleView.html?idxno=3595509",
+      "source": "gukjenews.com",
+      "keyword": "1200%",
+      "description": "재건축 아파트 용적률을 최대 1200% 수준까지 높이는 방안과 기부채납 부담을 주민 의견을 반영해 조정하는 방안이 공약에 담겼다. ■ 여의도 국제도시 전략 및 실행과제는 박 후보는 여의도를 글로벌 도시로 키우기 위한...",
+      "pub_date": "Fri, 29 May 2026 15:56:00 +0900",
       "_score": 8,
       "_category": "regulation",
       "_tone": "neutral",
       "_cluster_size": 1
     },
     {
-      "title": "\"6월부터 원유 '공급 절벽' 심화…1970년대 '오일쇼크' 재연될 수도\"",
-      "link": "https://www.hankookilbo.com/news/article/A2026052909560004561?did=NA",
-      "source": "hankookilbo.com",
-      "keyword": "글로벌금융",
-      "description": "글로벌 석유업계 임원들과 전문가들이 원유 재고가 빠르게 소진되고 있다며 공급 절벽을 경고하고... 전문가들은 전 세계 원유 재고 소진 속도가 현 수준을 유지하면 6월 말~7월 초 1970년대 오일 쇼크나 2008년 금융위기...",
-      "pub_date": "Fri, 29 May 2026 17:46:00 +0900",
-      "_score": 8,
-      "_category": "regulation",
+      "title": "“환급률 꽤 높네”…그동안 낸 보험료보다 더 돌려주는 달러 연금보험 - 매일경제",
+      "link": "https://news.google.com/rss/articles/CBMiVEFVX3lxTFBWdE00SndoV2hHNzVvNzUzb2VrTThNaGJqeDdScFYwQ2R3bzFUOEJmeWgzNmFPLWhCT0l0eFotSHdja0xZb1hnMjFMSDIzb0JRYUxxOA?oc=5",
+      "source": "매일경제",
+      "keyword": "생명보험",
+      "description": "“환급률 꽤 높네”…그동안 낸 보험료보다 더 돌려주는 달러 연금보험&nbsp;&nbsp;매일경제",
+      "pub_date": "Fri, 29 May 2026 06:37:14 GMT",
+      "_score": 7,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험사 1분기 순익 4.5조…생보 선방·손보 부진",
+      "link": "https://www.newspost.kr/news/articleView.html?idxno=223249",
+      "source": "newspost.kr",
+      "keyword": "손해보험",
+      "description": "반면 손해보험사의 1분기 당기순이익은 2조1056억원으로 전년 동기 대비 2966억원(12.3%) 감소했다. 보험손익은 전년과 유사한 수준을 유지했지만, 금리 상승에 따른 채권평가손실 영향으로 투자손익이 2294억원...",
+      "pub_date": "Fri, 29 May 2026 17:50:00 +0900",
+      "_score": 4,
+      "_category": "industry",
       "_tone": "neutral",
       "_cluster_size": 1
     }
