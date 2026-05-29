@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="dashboard-version" content="dashboard-20260529-report-insight">
-  <title>Marketing PR Center</title>
+  <title>인카금융서비스 언론관리</title>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
@@ -146,8 +146,8 @@
       display:grid; place-items:center;
       font-weight:900;
     }
-    .brand-title { font-size:20px; font-weight:900; line-height:1; }
-    .brand-sub { margin-top:5px; color:#9ca3af; font-size:11px; font-weight:800; letter-spacing:.12em; }
+    .brand-title { font-size:18px; font-weight:900; line-height:1.15; letter-spacing:-.02em; }
+    .brand-sub { margin-top:5px; color:#b8c2d8; font-size:12px; font-weight:900; letter-spacing:0; }
     .menu { padding:0 12px 18px; }
     .group-title {
       margin:22px 0 8px;
@@ -1041,32 +1041,155 @@
     }
     .keyword-volume-summary {
       display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:8px;
+      grid-template-columns:1.22fr .9fr .98fr;
+      gap:10px;
+      align-items:stretch;
     }
-    .keyword-volume-stat {
+    .keyword-volume-card {
+      position:relative;
+      overflow:hidden;
       min-width:0;
-      min-height:58px;
+      min-height:112px;
       display:grid;
-      gap:3px;
-      align-content:center;
-      padding:10px 12px;
-      border:1px solid #e3e9f3;
-      border-radius:8px;
-      background:#f8fafc;
+      gap:9px;
+      align-content:space-between;
+      padding:14px;
+      border:1px solid #d9e3f4;
+      border-radius:10px;
+      background:#fff;
+      box-shadow:0 8px 18px rgba(16,24,40,.045);
     }
-    .keyword-volume-stat b {
-      color:#101828;
-      font-size:18px;
-      line-height:1.05;
+    .keyword-volume-card::before {
+      content:"";
+      position:absolute;
+      left:0;
+      top:12px;
+      bottom:12px;
+      width:4px;
+      border-radius:99px;
+      background:#27398c;
     }
-    .keyword-volume-stat span {
+    .keyword-volume-card.direction { grid-template-columns:minmax(0,1fr) 54px; column-gap:12px; }
+    .keyword-volume-card.distribution::before { background:#0f766e; }
+    .keyword-volume-card.risk::before { background:#b91c1c; }
+    .keyword-volume-card.risk.is-clear::before { background:#16a34a; }
+    .keyword-card-kicker {
+      position:relative;
+      z-index:1;
       color:#667085;
       font-size:11px;
       font-weight:900;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      line-height:1;
+    }
+    .keyword-card-title {
+      position:relative;
+      z-index:1;
+      color:#101828;
+      font-size:18px;
+      font-weight:900;
+      line-height:1.26;
+      letter-spacing:-.02em;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+    }
+    .keyword-card-main {
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:baseline;
+      gap:7px;
+      min-width:0;
+    }
+    .keyword-card-value {
+      color:#101828;
+      font-size:24px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:-.02em;
+    }
+    .keyword-card-unit {
+      color:#667085;
+      font-size:12px;
+      font-weight:900;
+    }
+    .keyword-card-note {
+      position:relative;
+      z-index:1;
+      color:#667085;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.42;
+      word-break:keep-all;
+    }
+    .keyword-card-cue {
+      position:relative;
+      z-index:1;
+      align-self:stretch;
+      display:grid;
+      place-items:center;
+      border:1px solid #dbe4f7;
+      border-radius:8px;
+      background:#f7faff;
+      color:#27398c;
+      font-weight:900;
+      font-size:12px;
+    }
+    .keyword-card-cue strong {
+      display:block;
+      color:#101828;
+      font-size:24px;
+      line-height:1;
+      margin-bottom:4px;
+    }
+    .keyword-concentration-scale {
+      position:relative;
+      z-index:1;
+      height:12px;
+      border-radius:999px;
+      background:
+        linear-gradient(90deg,#dbeafe 0 33%,#bfdbfe 33% 66%,#27398c 66% 100%);
+    }
+    .keyword-concentration-scale::after {
+      content:"";
+      position:absolute;
+      left:clamp(6px, var(--focus, 0%), calc(100% - 6px));
+      top:50%;
+      width:12px;
+      height:12px;
+      border:3px solid #fff;
+      border-radius:50%;
+      background:#111827;
+      transform:translate(-50%,-50%);
+      box-shadow:0 2px 8px rgba(15,23,42,.25);
+    }
+    .keyword-scale-labels {
+      position:relative;
+      z-index:1;
+      display:flex;
+      justify-content:space-between;
+      color:#667085;
+      font-size:10px;
+      font-weight:900;
+    }
+    .keyword-risk-line {
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 10px;
+      border:1px solid #fee2e2;
+      border-radius:8px;
+      background:#fff7f7;
+      color:#991b1b;
+      font-size:12px;
+      font-weight:900;
+    }
+    .keyword-volume-card.risk.is-clear .keyword-risk-line {
+      border-color:#dcfce7;
+      background:#f7fdf9;
+      color:#166534;
     }
     .keyword-total-chart {
       display:grid;
@@ -1430,10 +1553,11 @@
     .insight-item {
       border:1px solid var(--line);
       border-radius:8px;
-      padding:14px 15px 15px;
-      background:#fff;
+      padding:13px 14px;
+      background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
       display:grid;
-      gap:9px;
+      gap:7px;
+      box-shadow:0 1px 2px rgba(16,24,40,.035);
     }
     .insight-badge {
       width:max-content;
@@ -1449,10 +1573,17 @@
       line-height:1;
       padding:4px 9px;
     }
-    .insight-text {
-      color:#050b20;
-      font-size:16px;
+    .insight-title {
+      color:#101828;
+      font-size:15px;
       font-weight:900;
+      line-height:1.35;
+      letter-spacing:-.02em;
+    }
+    .insight-text {
+      color:#475467;
+      font-size:13px;
+      font-weight:800;
       line-height:1.55;
       word-break:keep-all;
       overflow-wrap:anywhere;
@@ -1948,8 +2079,14 @@
         gap:8px;
       }
       #volumeChart.chart { padding-top:0; }
-      .keyword-volume { gap:0; }
-      .keyword-volume-summary { display:none; }
+      .keyword-volume { gap:10px; }
+      .keyword-volume-summary { display:grid; grid-template-columns:1fr; gap:8px; }
+      .keyword-volume-card { min-height:auto; padding:11px 12px 11px 14px; }
+      .keyword-volume-card.direction { grid-template-columns:minmax(0,1fr) 44px; column-gap:9px; }
+      .keyword-card-title { font-size:15px; }
+      .keyword-card-value { font-size:21px; }
+      .keyword-card-note { font-size:11.5px; }
+      .keyword-card-cue strong { font-size:20px; }
       .keyword-total-chart { display:none; }
       .keyword-mobile-list { display:grid; }
       .keyword-count { text-align:left; }
@@ -2061,10 +2198,20 @@
       #page-analysis .analysis-volume-panel { display:block !important; }
       #page-analysis #volumeChart.chart { display:block; height:auto; border:0; padding:0; }
       #page-analysis .keyword-volume { gap:5px; }
-      #page-analysis .keyword-volume-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
-      #page-analysis .keyword-volume-stat { min-height:28px; padding:4px 6px; border-radius:5px; }
-      #page-analysis .keyword-volume-stat b { font-size:10px; }
-      #page-analysis .keyword-volume-stat span { font-size:6px; }
+      #page-analysis .keyword-volume-summary { display:grid; grid-template-columns:1.18fr .9fr .98fr; gap:5px; }
+      #page-analysis .keyword-volume-card { min-height:42px; padding:5px 6px 5px 8px; border-radius:5px; gap:3px; }
+      #page-analysis .keyword-volume-card::before { top:5px; bottom:5px; width:2px; }
+      #page-analysis .keyword-volume-card.direction { grid-template-columns:minmax(0,1fr) 22px; column-gap:4px; }
+      #page-analysis .keyword-card-kicker { font-size:5.7px; }
+      #page-analysis .keyword-card-title { font-size:8px; line-height:1.12; }
+      #page-analysis .keyword-card-value { font-size:10px; }
+      #page-analysis .keyword-card-unit,
+      #page-analysis .keyword-card-note { font-size:5.8px; line-height:1.2; }
+      #page-analysis .keyword-card-cue { border-radius:4px; font-size:5.5px; }
+      #page-analysis .keyword-card-cue strong { font-size:10px; margin-bottom:1px; }
+      #page-analysis .keyword-concentration-scale { height:5px; }
+      #page-analysis .keyword-scale-labels { font-size:5.4px; }
+      #page-analysis .keyword-risk-line { padding:2px 4px; border-radius:4px; font-size:5.8px; }
       #page-analysis .keyword-total-chart { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
       #page-analysis .keyword-total-item { min-height:34px; grid-template-columns:18px minmax(0,1fr); gap:4px; padding:4px 5px; border-radius:5px; }
       #page-analysis .keyword-total-item:nth-child(n+9) { display:none; }
@@ -2096,6 +2243,7 @@
       #page-analysis #insights .insight-item { gap:3px; padding:5px 6px; border-radius:5px; }
       #page-analysis #insights .insight-item:nth-child(n+4) { display:none; }
       #page-analysis #insights .insight-badge { padding:2px 5px; font-size:5.8px; }
+      #page-analysis #insights .insight-title { font-size:7.2px; line-height:1.2; }
       #page-analysis #insights .insight-text { font-size:7px; line-height:1.28; }
       #page-analysis .report-evidence { grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
       #page-analysis .evidence-section { padding:5px; border-radius:5px; }
@@ -2134,7 +2282,7 @@
   <div class="login-screen" id="loginScreen">
     <form class="login-card" id="loginForm">
       <div class="login-mark">PR</div>
-      <h1>Marketing PR Center</h1>
+      <h1>언론관리 대시보드</h1>
       <p>인카금융서비스 사번과 비밀번호로 접속하세요. 등록된 사용자만 대시보드를 열 수 있습니다.</p>
       <div class="login-form">
         <div class="field">
@@ -2157,8 +2305,8 @@
         <div class="brand-row">
           <div class="brand-mark">PR</div>
           <div>
-            <div class="brand-title">Marketing PR</div>
-            <div class="brand-sub">CONTROL CENTER</div>
+            <div class="brand-title">인카금융서비스</div>
+            <div class="brand-sub">마케팅부</div>
           </div>
         </div>
       </div>
@@ -2182,7 +2330,6 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <div class="eyebrow">인카금융서비스 · 마케팅부</div>
           <h1 id="pageTitle">통합 대시보드</h1>
         </div>
         <div class="actions">
@@ -2240,7 +2387,7 @@
           </div>
 
           <div class="panel">
-            <h2 class="panel-title"><i data-lucide="server-cog"></i> 운영 상태</h2>
+            <h2 class="panel-title"><i data-lucide="server-cog"></i> 운영 현황</h2>
             <div class="ops-grid" id="opsStatus"></div>
           </div>
 
@@ -2275,11 +2422,11 @@
 
           <div class="grid-2">
             <div class="panel">
-              <h2 class="panel-title" id="issueTitle"><i data-lucide="activity"></i> 최신 주요 관찰 이슈</h2>
+              <h2 class="panel-title" id="issueTitle"><i data-lucide="activity"></i> 주요 이슈</h2>
               <div class="feed" id="topIssues"></div>
             </div>
             <div class="panel">
-              <h2 class="panel-title"><i data-lucide="bar-chart-3"></i> 분류별 흐름</h2>
+              <h2 class="panel-title"><i data-lucide="bar-chart-3"></i> 이슈 분포</h2>
               <div class="bars" id="categoryBars"></div>
             </div>
           </div>
@@ -2377,18 +2524,18 @@
 
               <div class="grid-2 report-volume-row">
                 <div class="panel analysis-volume-panel">
-                  <h2 class="report-section-title"><i data-lucide="bar-chart-3"></i> 항목별 기사량</h2>
+                  <h2 class="report-section-title"><i data-lucide="bar-chart-3"></i> 노출 집중도</h2>
                   <div class="chart" id="volumeChart"></div>
                 </div>
               </div>
 
               <div class="grid-2 report-insight-grid">
                 <div class="panel report-press-panel">
-                  <h2 class="report-section-title"><i data-lucide="newspaper"></i> 언론사 영향도</h2>
+                  <h2 class="report-section-title"><i data-lucide="newspaper"></i> 언론사 활동</h2>
                   <div class="press-influence" id="pressInfluence"></div>
                 </div>
                 <div class="panel report-insights-panel">
-                  <h2 class="report-section-title"><i data-lucide="list-checks"></i> 자동 해석</h2>
+                  <h2 class="report-section-title"><i data-lucide="list-checks"></i> 핵심 인사이트</h2>
                   <div class="feed" id="insights"></div>
                 </div>
               </div>
@@ -2663,7 +2810,7 @@
               <h2 class="panel-title"><i data-lucide="database"></i> 시스템 상태</h2>
               <table class="table">
                 <tr><th>데이터 소스</th><td>Supabase 기사 DB + GitHub Pages 백업 JSON</td></tr>
-                <tr><th>화면 버전</th><td>Marketing PR Center</td></tr>
+                <tr><th>화면 버전</th><td>인카금융서비스 언론관리</td></tr>
                 <tr><th>키워드 원본</th><td id="keywordSourceText">Supabase monitor_keywords</td></tr>
                 <tr><th>키워드 수</th><td id="keywordCountText">-</td></tr>
                 <tr><th>관리 데이터</th><td>키워드·언론사·기자·광고비·스크랩은 Supabase 공유 저장만 사용</td></tr>
@@ -3431,7 +3578,7 @@
     function switchPage(page) {
       document.querySelectorAll(".page").forEach(item => item.classList.toggle("active", item.id === `page-${page}`));
       document.querySelectorAll("[data-page]").forEach(item => item.classList.toggle("active", item.dataset.page === page));
-      document.getElementById("pageTitle").textContent = pageTitles[page] || "Marketing PR Center";
+      document.getElementById("pageTitle").textContent = pageTitles[page] || "언론관리 대시보드";
       window.scrollTo({ top:0, behavior:"smooth" });
       lucide.createIcons();
     }
@@ -3463,7 +3610,7 @@
       riskEl.textContent = risk;
       riskEl.className = "risk-value";
       riskEl.closest(".risk-card").className = `risk-card risk-${String(risk).toLowerCase()}`;
-      document.getElementById("issueTitle").innerHTML = '<i data-lucide="activity"></i> 최신 주요 관찰 이슈';
+      document.getElementById("issueTitle").innerHTML = '<i data-lucide="activity"></i> 주요 이슈';
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
       document.getElementById("metricTotal").textContent = current.length.toLocaleString("ko-KR");
       document.getElementById("metricOwn").textContent = (cats.own || 0).toLocaleString("ko-KR");
@@ -3950,13 +4097,55 @@
       const total = Math.max(keywordItems.length, 1);
       const max = Math.max(...entries.map(([, value]) => value), 1);
       const negativeTotal = keywordItems.filter(article => article.tone === "negative").length;
+      const negativeShare = Math.round(negativeTotal / total * 100);
       const topShare = Math.round(entries[0][1] / total * 100);
+      const topKeyword = entries[0];
+      const keywordCount = Object.keys(countBy(keywordItems, "keyword")).length;
+      const topRelated = keywordItems.filter(article => article.keyword === topKeyword[0]);
+      const topCategory = topBy(topRelated, "category", 1)[0];
+      const topCategoryText = topCategory ? categoryLabel(topCategory[0]) : "미분류";
+      const concentrationTitle = topShare >= 35 ? "쏠림 강함" : topShare >= 22 ? "집중 관찰" : "분산형";
+      const concentrationNote = topShare >= 35
+        ? "상위 키워드가 흐름을 끌고 있습니다."
+        : topShare >= 22
+          ? "1위 키워드는 보이지만 과도한 쏠림은 아닙니다."
+          : "이슈가 여러 키워드로 나뉘어 있습니다.";
+      const topNegativeKeyword = topBy(keywordItems.filter(article => article.tone === "negative"), "keyword", 1)[0];
+      const riskTitle = negativeTotal ? "주의 신호 있음" : "주의 신호 낮음";
+      const riskNote = negativeTotal
+        ? `${topNegativeKeyword ? `"${topNegativeKeyword[0]}" ${topNegativeKeyword[1]}건` : "부정 톤"}을 먼저 확인`
+        : "부정 톤 없이 노출 구조만 확인";
       const colors = ["#27398c", "#16a34a", "#d97706", "#0891b2", "#7c3aed", "#dc2626", "#475569", "#be185d"];
       const summary = `
         <div class="keyword-volume-summary">
-          <div class="keyword-volume-stat"><b>${keywordItems.length.toLocaleString("ko-KR")}</b><span>키워드 매칭 기사</span></div>
-          <div class="keyword-volume-stat"><b>${topShare}%</b><span>1위 항목 점유율</span></div>
-          <div class="keyword-volume-stat"><b>${negativeTotal.toLocaleString("ko-KR")}</b><span>부정 논조 포함</span></div>
+          <div class="keyword-volume-card direction">
+            <div>
+              <div class="keyword-card-kicker">우선 확인</div>
+              <div class="keyword-card-title">${escapeHtml(topKeyword[0])}</div>
+              <div class="keyword-card-main">
+                <span class="keyword-card-value">${topKeyword[1].toLocaleString("ko-KR")}</span>
+                <span class="keyword-card-unit">건 · 전체 ${topShare}%</span>
+              </div>
+              <div class="keyword-card-note">${escapeHtml(topCategoryText)} 중심. 아래 1번 항목에서 기사 성격을 먼저 확인하세요.</div>
+            </div>
+            <div class="keyword-card-cue"><strong>1</strong>항목</div>
+          </div>
+          <div class="keyword-volume-card distribution">
+            <div class="keyword-card-kicker">분포 판단</div>
+            <div class="keyword-card-title">${escapeHtml(concentrationTitle)}</div>
+            <div class="keyword-concentration-scale" style="--focus:${Math.min(100, topShare)}%"></div>
+            <div class="keyword-scale-labels"><span>분산</span><span>집중</span></div>
+            <div class="keyword-card-note">${keywordCount.toLocaleString("ko-KR")}개 키워드 · ${escapeHtml(concentrationNote)}</div>
+          </div>
+          <div class="keyword-volume-card risk${negativeTotal ? "" : " is-clear"}">
+            <div class="keyword-card-kicker">주의 신호</div>
+            <div class="keyword-card-title">${escapeHtml(riskTitle)}</div>
+            <div class="keyword-card-main">
+              <span class="keyword-card-value">${negativeTotal.toLocaleString("ko-KR")}</span>
+              <span class="keyword-card-unit">건 · ${negativeShare}%</span>
+            </div>
+            <div class="keyword-risk-line"><span>${escapeHtml(riskNote)}</span><span>${negativeTotal ? "확인" : "안정"}</span></div>
+          </div>
         </div>
       `;
       const bars = entries.map(([keyword, value], idx) => {
@@ -4111,30 +4300,56 @@
       const ownShare = Math.round(own / total * 100);
       const negativeShare = Math.round(negative / total * 100);
       const messages = [
-        topKeyword
-          ? topKeywordShare >= 30
-            ? `"${topKeyword[0]}"가 전체의 ${topKeywordShare}%를 차지해 이슈가 한 축으로 쏠려 있습니다. 같은 키워드의 반복 보도인지 신규 쟁점 확산인지 분리해서 보는 구간입니다.`
-            : `"${topKeyword[0]}"가 최다 키워드지만 점유율은 ${topKeywordShare}%로 분산형 흐름입니다. 단일 이슈보다 복수 동향을 함께 보는 편이 맞습니다.`
-          : "키워드가 부족해 반복 노출 축을 판단하기 어렵습니다. 수집 키워드와 기사 요약 저장 상태를 먼저 확인해야 합니다.",
-        neg
-          ? `당사 직접 부정 ${neg}건이 포함되어 리스크 대응 센터에서 원문과 사실관계 연결이 필요합니다. 일반 부정 기사와 당사 직접 부정은 별도 관리해야 합니다.`
-          : negative
-            ? `부정 톤은 ${negative}건(${negativeShare}%)이나 당사 직접 부정은 없습니다. 현재는 회사 리스크보다 업계/정책 환경 리스크로 읽는 것이 자연스럽습니다.`
-            : "부정 톤이 낮아 당사 평판 리스크는 안정 구간입니다. 대신 기사량이 늘어난 키워드의 성격이 홍보 기회인지 업계 변화인지 구분해야 합니다.",
-        regulation >= market && regulation
-          ? `정책 이슈 비중이 ${regulationShare}%로 시장 동향보다 강합니다. 단순 보도량보다 감독·법안·수수료 같은 제도 키워드의 후속 보도 여부가 핵심 신호입니다.`
-          : `GA/보험사 동향이 ${marketShare}%로 당사 직접 노출 ${ownShare}%보다 큽니다. 이 화면은 당사 보도 성과보다 시장 환경 변화를 읽는 용도에 가깝습니다.`,
-        topPress
-          ? `${topPress[0]}에서 ${topPress[1]}건이 확인됐습니다. 특정 매체 쏠림이 이어지면 언론사 관리 화면에서 관계/등급/보도 성향을 같이 확인하는 것이 좋습니다.`
-          : "언론사명이 부족하거나 포털/도메인 형태로 남은 기사가 있습니다. 언론사 관리의 주소 보정을 보강하면 매체 영향도 해석이 더 정확해집니다.",
-        latest && priorAvg
-          ? latest[1] >= priorAvg * 1.4
-            ? `${latest[0]} 기사량은 ${latest[1]}건으로 이전 평균 ${priorAvg}건보다 높습니다. 특정 키워드 재노출인지 신규 이슈 유입인지 확인할 만한 변동입니다.`
-            : `${latest[0]} 기사량은 ${latest[1]}건으로 이전 평균 ${priorAvg}건 대비 큰 급증은 아닙니다. 현재는 누적 추세 중심으로 판단하는 구간입니다.`
-          : "일자별 비교를 하려면 최소 2일 이상의 수집 데이터가 더 필요합니다."
+        {
+          badge: "판단",
+          title: neg ? "당사 직접 리스크 확인" : "당사 직접 리스크 낮음",
+          text: neg
+            ? `당사 부정 ${neg}건은 일반 업계 부정과 분리해 원문, 사실관계, 대응 필요 여부를 먼저 확인해야 합니다.`
+            : negative
+              ? `부정 톤 ${negative}건은 있으나 당사 직접 부정은 없습니다. 현재는 회사 이슈보다 업계 환경 리스크로 보는 편이 맞습니다.`
+              : "부정 톤이 낮습니다. 단기 대응보다 홍보 기회와 반복 노출 매체를 확인하는 구간입니다."
+        },
+        {
+          badge: "초점",
+          title: topKeyword ? `핵심 키워드: ${topKeyword[0]}` : "핵심 키워드 부족",
+          text: topKeyword
+            ? topKeywordShare >= 30
+              ? `전체의 ${topKeywordShare}%가 한 키워드에 집중됩니다. 반복 기사인지 신규 확산인지 먼저 가르면 됩니다.`
+              : `점유율 ${topKeywordShare}%로 분산형 흐름입니다. 하나의 이슈보다 복수 동향을 함께 보는 구간입니다.`
+            : "키워드가 충분히 잡히지 않았습니다. 검색 키워드와 요약 저장 상태를 점검해야 합니다."
+        },
+        {
+          badge: "구도",
+          title: regulation >= market && regulation ? "정책/감독 신호 우세" : "시장 동향 중심",
+          text: regulation >= market && regulation
+            ? `정책 이슈가 ${regulationShare}%입니다. 감독, 법안, 수수료 키워드의 후속 보도 여부를 다음 신호로 봐야 합니다.`
+            : `GA/보험사 동향이 ${marketShare}%입니다. 당사 노출 ${ownShare}%보다 시장 변화 관찰 성격이 큽니다.`
+        },
+        {
+          badge: "관리",
+          title: topPress ? `주요 매체: ${topPress[0]}` : "매체명 보정 필요",
+          text: topPress
+            ? `${topPress[0]} ${topPress[1]}건 확인. 같은 매체 노출이 반복되면 언론사 관리에서 관계, 등급, 보도 성향을 함께 봐야 합니다.`
+            : "포털 또는 도메인명이 남은 기사가 있습니다. 언론사 주소 보정이 쌓일수록 매체 분석이 정확해집니다."
+        },
+        {
+          badge: "변화",
+          title: latest && priorAvg && latest[1] >= priorAvg * 1.4 ? "기사량 변동 감지" : "추세 안정",
+          text: latest && priorAvg
+            ? latest[1] >= priorAvg * 1.4
+              ? `${latest[0]} ${latest[1]}건으로 이전 평균 ${priorAvg}건보다 높습니다. 유입 키워드와 매체를 함께 확인하세요.`
+              : `${latest[0]} ${latest[1]}건으로 급증 구간은 아닙니다. 현재는 누적 패턴 중심으로 보는 것이 적절합니다.`
+            : "일자별 비교를 위해서는 최소 2일 이상의 수집 데이터가 더 필요합니다."
+        }
       ];
       document.getElementById("insights").innerHTML = messages
-        .map(text => `<div class="insight-item"><span class="insight-badge">Insight</span><div class="insight-text">${escapeHtml(text)}</div></div>`)
+        .map(item => `
+          <div class="insight-item">
+            <span class="insight-badge">${escapeHtml(item.badge)}</span>
+            <div class="insight-title">${escapeHtml(item.title)}</div>
+            <div class="insight-text">${escapeHtml(item.text)}</div>
+          </div>
+        `)
         .join("");
     }
 
@@ -5094,7 +5309,7 @@
 
               <footer class="footer-note">
                 <span>언론 모니터링 데이터 기준 내부 참고자료</span>
-                <span>인카금융서비스 · 마케팅부</span>
+                <span>언론 모니터링 리포트</span>
               </footer>
             </main>
           </body>
