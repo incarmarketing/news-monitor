@@ -22,6 +22,7 @@ const viewports = [
   { name: "mobile-360", width: 360, height: 820 },
   { name: "mobile-390", width: 390, height: 844 },
   { name: "mobile-430", width: 430, height: 932 },
+  { name: "mobile-landscape-600", width: 600, height: 390 },
   { name: "tablet-768", width: 768, height: 1024 },
   { name: "desktop-1366", width: 1366, height: 768 },
   { name: "desktop-1440", width: 1440, height: 900 },
@@ -279,6 +280,23 @@ async function collectLayout(page, context) {
       if (rect.bottom < -200 || rect.top > window.innerHeight + 6000) continue;
 
       const key = describeNode(el);
+      const monitorToolbar = el.closest?.(".monitor-toolbar");
+      if (monitorToolbar && (el.matches(".field") || el.matches("input,select"))) {
+        const toolbarRect = monitorToolbar.getBoundingClientRect();
+        const parentOverflow = rect.left < toolbarRect.left - 1 || rect.right > toolbarRect.right + 1;
+        if (parentOverflow && !seen.has(`${key}:parent`)) {
+          offenders.push({
+            selector: key,
+            text: compactNodeText(el.textContent || el.value || el.getAttribute("aria-label") || ""),
+            left: Math.round(rect.left),
+            right: Math.round(rect.right),
+            width: Math.round(rect.width),
+            parent: ".monitor-toolbar",
+          });
+          seen.add(`${key}:parent`);
+          if (offenders.length >= 15) break;
+        }
+      }
       if ((rect.left < -2 || rect.right > viewportWidth + 2) && !seen.has(key)) {
         offenders.push({
           selector: key,

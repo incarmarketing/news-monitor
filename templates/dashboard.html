@@ -537,6 +537,19 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
+    .monitor-toolbar input[type="date"] {
+      width:100%;
+      min-width:0;
+      max-width:100%;
+      min-inline-size:0;
+      inline-size:100%;
+      -webkit-appearance:none;
+      appearance:none;
+    }
+    .monitor-toolbar input[type="date"]::-webkit-date-and-time-value {
+      min-width:0;
+      text-align:left;
+    }
     .bars { display:grid; gap:10px; }
     .bar-row { display:grid; grid-template-columns:96px 1fr 46px; gap:10px; align-items:center; font-size:13px; color:var(--muted); font-weight:900; }
     .bar-row > div { min-width:0; }
@@ -2406,7 +2419,22 @@
       .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .toolbar { grid-template-columns:1fr 1fr; }
       .toolbar .field:first-child { grid-column:1/-1; }
-      .monitor-toolbar { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .monitor-toolbar {
+        grid-template-columns:minmax(0,1fr);
+        overflow:visible;
+      }
+      .monitor-toolbar .field {
+        grid-column:auto !important;
+        width:100%;
+        min-width:0;
+        max-width:100%;
+      }
+      .monitor-toolbar .field input,
+      .monitor-toolbar .field select {
+        width:100%;
+        min-width:0;
+        max-width:100%;
+      }
       .report-head {
         align-items:flex-start;
         grid-template-columns:1fr;
