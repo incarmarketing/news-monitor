@@ -3,9 +3,10 @@ name: Negative Article Watch
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 * * * *"
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -15,7 +16,7 @@ concurrency:
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 75
 
     steps:
       - name: Checkout
@@ -36,7 +37,18 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Watch negative articles
-        run: python negative_watch.py
+        shell: bash
+        run: |
+          iterations="${NEGATIVE_WATCH_ITERATIONS:-12}"
+          interval="${NEGATIVE_WATCH_INTERVAL_SECONDS:-300}"
+          for iteration in $(seq 1 "$iterations"); do
+            echo "::group::Negative watch iteration ${iteration}/${iterations}"
+            python negative_watch.py
+            echo "::endgroup::"
+            if [ "$iteration" != "$iterations" ]; then
+              sleep "$interval"
+            fi
+          done
         env:
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
@@ -50,6 +62,8 @@ jobs:
           NEGATIVE_WATCH_ALWAYS_ON: "true"
           NEGATIVE_WATCH_START_HOUR: "0"
           NEGATIVE_WATCH_END_HOUR: "23"
+          NEGATIVE_WATCH_ITERATIONS: "12"
+          NEGATIVE_WATCH_INTERVAL_SECONDS: "300"
           NEGATIVE_WATCH_MAX_CATCHUP_MINUTES: "1440"
           NEGATIVE_WATCH_REQUIRE_DB_LOG: "true"
 
@@ -67,3 +81,15 @@ jobs:
           git commit -m "Update negative watch state"
           git pull --rebase
           git push
+
+      - name: Queue next watch run
+        if: ${{ success() }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          curl -fsSL -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -d '{"ref":"main"}' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/negative-watch.yml/dispatches"

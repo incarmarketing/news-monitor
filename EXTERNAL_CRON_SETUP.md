@@ -1,6 +1,6 @@
 # 외부 Cron으로 GitHub Actions 호출하기
 
-GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다. 현재 `Negative Article Watch`는 GitHub 클라우드에서 5분마다 짧게 한 번 실행되며, 지연이 생기면 Supabase의 마지막 성공 시각 이후 구간을 자동으로 보정 검사합니다. cron-job.org는 이 실행을 한 번 더 깨우는 보조 장치입니다.
+GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다. 현재 `Negative Article Watch`는 GitHub 클라우드 러너 안에서 5분마다 검사하고, 1시간 단위로 다음 실행을 직접 예약합니다. 지연이 생기면 Supabase의 마지막 성공 시각 이후 구간을 자동으로 보정 검사합니다. cron-job.org는 이 실행을 한 번 더 깨우는 보조 장치입니다.
 
 ## 1. GitHub 토큰 만들기
 
@@ -45,7 +45,7 @@ cron-job.org API key는 cron-job.org Console > Settings에서 생성합니다. c
 
 ## 2. 부정기사 24시간 5분 감지 호출
 
-외부 cron 서비스에서 아래 요청을 24시간 내내 5분마다 실행할 수 있습니다. 기본 GitHub Actions도 `*/5 * * * *`로 같은 workflow를 실행합니다. `negative_watch.py`는 기본적으로 24/7로 동작하며 DB에는 보통 `minutes_back=5`로 기록합니다. 단, 실행 지연이 발생하면 마지막 성공 시각 이후를 보정하기 위해 `minutes_back`이 자동으로 커질 수 있습니다.
+외부 cron 서비스에서 아래 요청을 24시간 내내 5분마다 실행할 수 있습니다. 기본 GitHub Actions는 러너 내부에서 5분마다 검사하고, 다음 러너를 이어서 예약합니다. hourly schedule은 체인이 끊겼을 때 복구하는 안전장치입니다. `negative_watch.py`는 기본적으로 24/7로 동작하며 DB에는 보통 `minutes_back=5`로 기록합니다. 단, 실행 지연이 발생하면 마지막 성공 시각 이후를 보정하기 위해 `minutes_back`이 자동으로 커질 수 있습니다.
 
 - Method: `POST`
 - URL:
