@@ -155,13 +155,18 @@ DOMAIN_PRESS_MAP = {
     "fnnews.com": "파이낸셜뉴스",
 }
 
-AMBIGUOUS_COLLECTION_KEYWORDS = {"메가", "GA", "브랜드평판", "브랜드 평판", "평판"}
+KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
+AMBIGUOUS_COLLECTION_KEYWORDS = {"메가", "GA", "브랜드평판", "브랜드 평판", "평판", "글로벌금융"}
 BROAD_REPUTATION_KEYWORDS = {"브랜드평판", "브랜드 평판", "평판"}
 CONTEXTUAL_REPUTATION_QUERIES = [
     "보험대리점 브랜드평판",
     "GA 브랜드평판",
     "인카금융서비스 브랜드평판",
 ]
+CONTEXTUAL_COMPETITOR_QUERIES = {
+    "메가": ["메가금융서비스"],
+    "글로벌금융": ["글로벌금융판매"],
+}
 
 COLLECTION_CONTEXT_WORDS = [
     "인카금융", "인카금융서비스",
@@ -210,14 +215,17 @@ def collect_news() -> list[dict]:
         TaskProgressColumn(),
         console=console,
     ) as progress:
-        keywords = load_collection_keywords()
-        task = progress.add_task("[cyan]키워드 수집", total=len(keywords))
-        for keyword in keywords:
-            progress.update(task, description=f"[cyan]'{keyword}' 수집 중")
-            naver = fetch_naver_news(keyword)
-            google = fetch_google_news(keyword)
+        keyword_rows = load_collection_keywords()
+        task = progress.add_task("[cyan]키워드 수집", total=len(keyword_rows))
+        for row in keyword_rows:
+            query = row["query"]
+            label = row["keyword"]
+            category = row["category"]
+            progress.update(task, description=f"[cyan]'{label}' 수집 중")
+            naver = fetch_naver_news(query, label, category, row.get("strict_query", False))
+            google = fetch_google_news(query, label, category, row.get("strict_query", False))
             all_articles.extend(naver + google)
-            stats.append((keyword, len(naver), len(google)))
+            stats.append((f"{label} · {category_label(category)}", len(naver), len(google)))
             progress.advance(task)
 
     before = len(all_articles)
@@ -234,41 +242,99 @@ def collect_news() -> list[dict]:
     return articles
 
 
-def load_collection_keywords() -> list[str]:
+def load_collection_keywords() -> list[dict]:
     try:
-        keywords = supabase_store.load_monitor_keywords()
-        if keywords:
-            return normalize_collection_keywords(keywords)
+        rows = supabase_store.load_monitor_keyword_rows()
+        if rows:
+            return normalize_collection_keywords(rows)
     except Exception as exc:
         console.print(f"[yellow]Supabase keyword config skipped:[/] {exc}")
     return normalize_collection_keywords(config.KEYWORDS)
 
 
-def normalize_collection_keywords(keywords: list[str]) -> list[str]:
-    normalized: list[str] = []
-    seen: set[str] = set()
-    for raw_keyword in keywords:
-        keyword = str(raw_keyword).strip()
+def normalize_collection_keywords(keywords: list[str | dict]) -> list[dict]:
+    normalized: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in keywords:
+        if isinstance(item, dict):
+            keyword = str(item.get("keyword") or "").strip()
+            category = normalize_keyword_category(item.get("category"))
+        else:
+            keyword = str(item).strip()
+            category = infer_keyword_category(keyword)
         if not keyword:
             continue
-        expanded = CONTEXTUAL_REPUTATION_QUERIES if is_broad_reputation_keyword(keyword) else [keyword]
-        for item in expanded:
-            if item not in seen:
-                normalized.append(item)
-                seen.add(item)
+        expanded = expand_keyword_queries(keyword, category)
+        for query in expanded:
+            query = str(query).strip()
+            if not query:
+                continue
+            key = (keyword.lower(), query.lower(), category)
+            if key in seen:
+                continue
+            normalized.append(
+                {
+                    "keyword": keyword,
+                    "query": query,
+                    "category": category,
+                    "strict_query": query != keyword and category != "other",
+                }
+            )
+            seen.add(key)
     return normalized
 
 
-def fetch_naver_news(keyword: str) -> list[dict]:
+def normalize_keyword_category(value: object) -> str:
+    category = str(value or "other").strip()
+    return category if category in KEYWORD_CATEGORIES else "other"
+
+
+def infer_keyword_category(keyword: str) -> str:
+    text = keyword.strip()
+    if any(name in text for name in analyzer.OWN_NAMES):
+        return "own"
+    if is_broad_reputation_keyword(text) or any(word in text for word in ("GA", "보험", "설계사", "대리점")):
+        return "industry"
+    if any(word in text for word in ("금감원", "금융위", "감독", "규제", "법안")):
+        return "regulation"
+    return "other"
+
+
+def expand_keyword_queries(keyword: str, category: str) -> list[str]:
+    normalized = compact_keyword(keyword)
+    if category in {"industry", "competitor"} and normalized in CONTEXTUAL_COMPETITOR_QUERIES:
+        return CONTEXTUAL_COMPETITOR_QUERIES[normalized]
+    if category != "other" and is_broad_reputation_keyword(keyword):
+        return CONTEXTUAL_REPUTATION_QUERIES
+    return [keyword]
+
+
+def category_label(category: str) -> str:
+    return {
+        "own": "당사",
+        "industry": "GA",
+        "competitor": "보험사",
+        "regulation": "정책",
+        "other": "기타",
+    }.get(category, "기타")
+
+
+def fetch_naver_news(
+    query: str,
+    keyword: str | None = None,
+    keyword_category: str = "other",
+    strict_query: bool = False,
+) -> list[dict]:
     if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
         return []
 
+    keyword = keyword or query
     url = "https://openapi.naver.com/v1/search/news.json"
     headers = {
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
     }
-    params = {"query": keyword, "display": config.ARTICLES_PER_KEYWORD, "sort": "date"}
+    params = {"query": query, "display": config.ARTICLES_PER_KEYWORD, "sort": "date"}
 
     try:
         response = requests.get(url, headers=headers, params=params, timeout=10)
@@ -285,17 +351,26 @@ def fetch_naver_news(keyword: str) -> list[dict]:
                     "naver",
                 ),
                 "keyword": keyword,
+                "keyword_query": query,
+                "keyword_category": normalize_keyword_category(keyword_category),
+                "keyword_strict_query": strict_query,
                 "portal": "naver",
             }
             for item in response.json().get("items", [])
         ]
     except Exception as exc:
-        console.print(f"[red]Naver '{keyword}' 오류:[/] {exc}")
+        console.print(f"[red]Naver '{query}' 오류:[/] {exc}")
         return []
 
 
-def fetch_google_news(keyword: str) -> list[dict]:
-    encoded = requests.utils.quote(keyword)
+def fetch_google_news(
+    query: str,
+    keyword: str | None = None,
+    keyword_category: str = "other",
+    strict_query: bool = False,
+) -> list[dict]:
+    keyword = keyword or query
+    encoded = requests.utils.quote(query)
     url = f"https://news.google.com/rss/search?q={encoded}&hl=ko&gl=KR&ceid=KR:ko"
 
     try:
@@ -308,12 +383,15 @@ def fetch_google_news(keyword: str) -> list[dict]:
                 "pub_date": entry.get("published", ""),
                 "source": infer_press_name(entry.get("title", ""), entry.get("link", ""), "google"),
                 "keyword": keyword,
+                "keyword_query": query,
+                "keyword_category": normalize_keyword_category(keyword_category),
+                "keyword_strict_query": strict_query,
                 "portal": "google",
             }
             for entry in feed.entries[:config.ARTICLES_PER_KEYWORD]
         ]
     except Exception as exc:
-        console.print(f"[red]Google '{keyword}' 오류:[/] {exc}")
+        console.print(f"[red]Google '{query}' 오류:[/] {exc}")
         return []
 
 
@@ -540,16 +618,24 @@ def apply_relevance_filter(articles: list[dict]) -> list[dict]:
 def is_relevant_article(article: dict) -> bool:
     text = f"{article.get('title', '')} {article.get('description', '')}"
     keyword = str(article.get("keyword", "")).strip()
+    query = str(article.get("keyword_query") or keyword).strip()
+    category = normalize_keyword_category(article.get("keyword_category"))
     if not text.strip():
         return False
 
-    if has_collection_context(text):
-        return True
+    if category == "other":
+        return keyword_matches_text(text, keyword) or keyword_matches_text(text, query)
 
-    if keyword and keyword in text and not keyword_requires_context(keyword):
-        return True
+    if not article_matches_collection_keyword(article, text):
+        return False
 
-    return False
+    if category == "own":
+        return any(name in text for name in analyzer.OWN_NAMES)
+    if category == "regulation":
+        return has_collection_context(text) and any(word in text for word in analyzer.REGULATION_WORDS)
+    if category in {"industry", "competitor"}:
+        return has_collection_context(text)
+    return has_collection_context(text)
 
 
 def has_collection_context(text: str) -> bool:
@@ -558,16 +644,35 @@ def has_collection_context(text: str) -> bool:
     return any(word in text for word in COLLECTION_CONTEXT_WORDS)
 
 
+def article_matches_collection_keyword(article: dict, text: str) -> bool:
+    keyword = str(article.get("keyword") or "").strip()
+    query = str(article.get("keyword_query") or keyword).strip()
+    if article.get("keyword_strict_query"):
+        return keyword_matches_text(text, query)
+    return keyword_matches_text(text, query) or keyword_matches_text(text, keyword)
+
+
+def keyword_matches_text(text: str, keyword: str) -> bool:
+    keyword = str(keyword or "").strip()
+    if not keyword:
+        return False
+    return keyword in text or compact_keyword(keyword) in compact_keyword(text)
+
+
+def compact_keyword(value: str) -> str:
+    return re.sub(r"\s+", "", str(value or "")).lower()
+
+
 def keyword_requires_context(keyword: str) -> bool:
-    normalized = re.sub(r"\s+", "", keyword)
-    if normalized in AMBIGUOUS_COLLECTION_KEYWORDS:
+    normalized = compact_keyword(keyword)
+    if normalized in {compact_keyword(item) for item in AMBIGUOUS_COLLECTION_KEYWORDS}:
         return True
     return len(normalized) <= 2
 
 
 def is_broad_reputation_keyword(keyword: str) -> bool:
-    normalized = re.sub(r"\s+", "", keyword)
-    return normalized in {re.sub(r"\s+", "", item) for item in BROAD_REPUTATION_KEYWORDS}
+    normalized = compact_keyword(keyword)
+    return normalized in {compact_keyword(item) for item in BROAD_REPUTATION_KEYWORDS}
 
 
 def apply_recency_filter(articles: list[dict], hours_back: int) -> list[dict]:

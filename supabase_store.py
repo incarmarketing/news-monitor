@@ -292,11 +292,27 @@ def load_dashboard_articles(limit: int = 2000) -> list[dict]:
     return response.json()
 
 
-def load_monitor_keywords() -> list[str]:
+def load_monitor_keyword_rows() -> list[dict]:
     if not is_enabled():
         return []
     response = request(
         "GET",
-        "monitor_keywords?select=keyword&enabled=eq.true&order=category.asc,created_at.asc",
+        "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc",
     )
-    return [row["keyword"] for row in response.json() if row.get("keyword")]
+    rows = []
+    for row in response.json():
+        keyword = str(row.get("keyword") or "").strip()
+        if not keyword:
+            continue
+        rows.append(
+            {
+                "keyword": keyword,
+                "category": row.get("category") or "other",
+                "enabled": row.get("enabled", True) is not False,
+            }
+        )
+    return rows
+
+
+def load_monitor_keywords() -> list[str]:
+    return [row["keyword"] for row in load_monitor_keyword_rows()]

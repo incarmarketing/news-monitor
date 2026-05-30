@@ -193,14 +193,14 @@ def report_run_sort_key(row: dict) -> tuple[str, int, str]:
     )
 
 
-def load_dashboard_keywords() -> list[str]:
+def load_dashboard_keywords() -> list[dict]:
     try:
-        keywords = supabase_store.load_monitor_keywords()
-        if keywords:
-            return keywords
+        rows = supabase_store.load_monitor_keyword_rows()
+        if rows:
+            return rows
     except Exception as exc:
         print(f"Supabase keyword source skipped: {exc}")
-    return list(config.KEYWORDS)
+    return [{"keyword": keyword, "category": "other", "enabled": True} for keyword in config.KEYWORDS]
 
 
 def publish_dashboard() -> Path:

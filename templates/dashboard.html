@@ -3702,16 +3702,38 @@
       "보험대리점", "법인보험대리점", "GA", "보험GA", "보험설계사", "설계사",
       "금융서비스", "금감원", "금융감독원", "금융위", "금융위원회", "손보", "생보"
     ];
-    const normalizeKeywordKey = value => String(value || "").replace(/\s+/g, "");
+    const normalizeKeywordKey = value => String(value || "").replace(/\s+/g, "").toLowerCase();
+    const contextualKeywordAliases = {
+      "메가": ["메가금융서비스"],
+      "글로벌금융": ["글로벌금융판매"]
+    };
     const isBroadReputationKeyword = keyword => {
       const normalized = normalizeKeywordKey(keyword);
       return Array.from(broadReputationKeywords).some(item => normalizeKeywordKey(item) === normalized);
     };
+    function articleRelevanceText(article) {
+      return [article.title, article.summary, article.keyword, article.press, article.source].join(" ");
+    }
+    function configuredKeywordCategory(article) {
+      const key = normalizeKeywordKey(article.keyword);
+      const row = state.keywordRows.find(item => normalizeKeywordKey(item.keyword) === key);
+      return row?.category || article.category || "other";
+    }
+    function passesContextualKeywordGuard(article) {
+      const category = configuredKeywordCategory(article);
+      if (!["industry", "competitor"].includes(category)) return true;
+      const keywordKey = normalizeKeywordKey(article.keyword);
+      const aliases = contextualKeywordAliases[keywordKey];
+      if (!aliases) return true;
+      const textKey = normalizeKeywordKey(articleRelevanceText(article));
+      return aliases.some(alias => textKey.includes(normalizeKeywordKey(alias)));
+    }
     function isRelevantDashboardArticle(article) {
       if (isExcludedPressArticle(article)) return false;
+      if (!passesContextualKeywordGuard(article)) return false;
       if (!isBroadReputationKeyword(article.keyword)) return true;
       if (["own", "regulation", "competitor", "industry"].includes(article.category)) return true;
-      const text = [article.title, article.summary, article.keyword, article.press, article.source].join(" ");
+      const text = articleRelevanceText(article);
       return monitoringContextTerms.some(term => text.includes(term));
     }
     const isCompanyMentionArticle = article => {

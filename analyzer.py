@@ -91,6 +91,7 @@ CATEGORIES = {
     "competitor": COMPETITOR_WORDS,
     "industry": INDUSTRY_WORDS,
 }
+KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
 
 
 def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
@@ -139,6 +140,11 @@ def categorize(article: dict) -> str:
     text = article.get("title", "") + " " + article.get("description", "")
     if any(keyword in text for keyword in OWN_NAMES):
         return "own"
+    preferred = normalize_keyword_category(article.get("keyword_category"))
+    if preferred in {"regulation", "competitor", "industry"} and has_domain_context(text):
+        return preferred
+    if preferred == "other":
+        return "other"
     if contains_competitor_word(text):
         return "competitor"
     if any(keyword in text for keyword in REGULATION_WORDS):
@@ -146,6 +152,11 @@ def categorize(article: dict) -> str:
     if any(keyword in text for keyword in INDUSTRY_WORDS):
         return "industry"
     return "other"
+
+
+def normalize_keyword_category(value: object) -> str:
+    category = str(value or "").strip()
+    return category if category in KEYWORD_CATEGORIES else ""
 
 
 def contains_competitor_word(text: str) -> bool:
