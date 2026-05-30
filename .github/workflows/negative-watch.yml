@@ -3,7 +3,7 @@ name: Negative Article Watch
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "2-59/5 * * * *"
 
 permissions:
   actions: write
@@ -14,7 +14,7 @@ env:
 
 concurrency:
   group: negative-article-watch
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   watch:
