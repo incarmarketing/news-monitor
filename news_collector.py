@@ -167,6 +167,7 @@ CONTEXTUAL_COMPETITOR_QUERIES = {
     "메가": ["메가금융서비스"],
     "글로벌금융": ["글로벌금융판매"],
 }
+STALE_GOOGLE_REEXPOSURE_DAYS = int(os.getenv("STALE_GOOGLE_REEXPOSURE_DAYS", "14"))
 
 COLLECTION_CONTEXT_WORDS = [
     "인카금융", "인카금융서비스",
@@ -393,6 +394,78 @@ def fetch_google_news(
     except Exception as exc:
         console.print(f"[red]Google '{query}' 오류:[/] {exc}")
         return []
+
+
+def fetch_article_html(link: str, timeout: int = 6) -> tuple[str, str]:
+    if not link:
+        return "", ""
+    try:
+        response = requests.get(
+            link,
+            timeout=timeout,
+            headers={"User-Agent": "Mozilla/5.0 news-monitor/1.0"},
+            allow_redirects=True,
+        )
+        response.raise_for_status()
+        return response.text or "", response.url
+    except Exception:
+        return "", ""
+
+
+def parse_article_date_from_html(html: str) -> datetime | None:
+    if not html:
+        return None
+    patterns = [
+        r'property=["\']article:published_time["\']\s+content=["\']([^"\']+)["\']',
+        r'content=["\']([^"\']+)["\']\s+property=["\']article:published_time["\']',
+        r'name=["\']pubdate["\']\s+content=["\']([^"\']+)["\']',
+        r'itemprop=["\']datePublished["\'][^>]+content=["\']([^"\']+)["\']',
+        r'"datePublished"\s*:\s*"([^"]+)"',
+        r'"dateCreated"\s*:\s*"([^"]+)"',
+        r'"publishedDate"\s*:\s*"([^"]+)"',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html, re.I | re.S)
+        if match:
+            parsed = parse_pub_date(match.group(1))
+            if parsed:
+                return parsed
+    return None
+
+
+def article_title_text(article: dict) -> str:
+    return clean_html(f"{article.get('title', '')} {article.get('description', '')}")
+
+
+def is_stale_google_reexposure(article: dict, rss_date: datetime, window: dict) -> bool:
+    if article.get("portal") != "google":
+        return False
+    text = article_title_text(article)
+    looks_like_series = "스캔들" in text or bool(re.search(r"[①②③④⑤⑥⑦⑧⑨⑩]|\[[^\]]{2,30}\]\s*\d+", text))
+    if not looks_like_series:
+        return False
+    start = window["start"].astimezone(timezone.utc)
+    if rss_date < start:
+        return False
+    current = datetime.now(timezone.utc)
+    if current - rss_date > timedelta(days=1):
+        return False
+    return True
+
+
+def original_date_allows_article(article: dict, parsed: datetime, window: dict) -> bool:
+    html, final_url = fetch_article_html(article.get("link", ""))
+    original_url = extract_original_article_url(html, final_url)
+    if original_url:
+        article["_original_url"] = original_url
+        original_html, _ = fetch_article_html(original_url)
+        original_date = parse_article_date_from_html(original_html)
+        if original_date:
+            article["_original_pub_date"] = original_date.isoformat()
+            start = window["start"].astimezone(timezone.utc)
+            end = window["end"].astimezone(timezone.utc)
+            return start <= original_date <= end
+    return False
 
 
 def clean_html(text: str) -> str:
@@ -691,8 +764,15 @@ def apply_collection_window_filter(articles: list[dict], window: dict) -> list[d
     result = []
     for article in articles:
         parsed = parse_pub_date(article.get("pub_date", ""))
-        if not parsed or start <= parsed <= end:
+        if not parsed:
             result.append(article)
+            continue
+        if not (start <= parsed <= end):
+            continue
+        if is_stale_google_reexposure(article, parsed, window) and not original_date_allows_article(article, parsed, window):
+            article["_excluded_reason"] = "google_rss_reexposure_without_current_original_date"
+            continue
+        result.append(article)
     return result
 
 

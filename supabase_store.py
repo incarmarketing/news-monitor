@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import quote
@@ -248,6 +248,32 @@ def load_latest_negative_watch_run() -> dict | None:
     )
     rows = response.json()
     return rows[0] if rows else None
+
+
+def load_recent_negative_articles(minutes_back: int, limit: int = 20) -> list[dict]:
+    """Load company-negative articles recently inserted into the shared DB.
+
+    This catches articles discovered by scheduled reports even when the portal
+    RSS published time is older than the watcher's short polling window.
+    """
+    if not is_enabled():
+        return []
+    since = (datetime.now(timezone.utc) - timedelta(minutes=max(1, minutes_back))).isoformat()
+    query = (
+        "news_articles?"
+        "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
+        "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status,created_at"
+        "&category=eq.own"
+        "&tone=eq.negative"
+        f"&created_at=gte.{quote(since, safe='')}"
+        "&order=created_at.desc"
+        f"&limit={limit}"
+    )
+    try:
+        return request("GET", query).json()
+    except Exception as error:
+        print(f"Supabase recent negative article lookup skipped: {error}")
+        return []
 
 
 def normalize_article(article: dict, archive_payload: dict) -> dict:

@@ -84,6 +84,16 @@ jobs:
           SCHEDULE_CRON: ${{ github.event.schedule }}
           MANUAL_REPORT_SLOT: ${{ github.event.inputs.report_slot }}
 
+      - name: Record report start
+        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: python job_ledger.py report start
+        env:
+          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_PROVIDER: github_actions
+
       - name: Install dependencies
         if: steps.guard.outputs.should_run == 'true'
         run: python -m pip install -r requirements.txt
@@ -236,3 +246,14 @@ jobs:
           git commit -m "Archive briefing data"
           git pull --rebase
           git push
+
+      - name: Record report finish
+        if: always() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: python job_ledger.py report finish --status "$JOB_STATUS"
+        env:
+          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_PROVIDER: github_actions
+          JOB_STATUS: ${{ job.status }}

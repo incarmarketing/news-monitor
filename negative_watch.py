@@ -22,7 +22,13 @@ import analyzer
 import config
 import news_collector
 from kakao_report_send import KAKAO_API, refresh_access_token
-from supabase_store import load_latest_negative_watch_run, save_negative_watch_run, save_notification_send
+from supabase_store import (
+    load_latest_negative_watch_run,
+    load_recent_negative_articles,
+    notification_already_sent,
+    save_negative_watch_run,
+    save_notification_send,
+)
 
 KST = timezone(timedelta(hours=9))
 BASE_DIR = Path(__file__).parent
@@ -102,7 +108,7 @@ def save_state(state: dict) -> None:
 
 
 def article_key(article: dict) -> str:
-    raw = article.get("link") or article.get("title", "")
+    raw = article.get("article_hash") or article.get("link") or article.get("title", "")
     normalized = re.sub(r"\s+", " ", raw).strip().lower()
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
 
@@ -139,16 +145,58 @@ def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
     return negatives, metrics
 
 
+def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
+    lookback = max(minutes_back, int(os.getenv("NEGATIVE_WATCH_DB_LOOKBACK_MINUTES", "30")))
+    rows = load_recent_negative_articles(lookback)
+    articles = []
+    for row in rows:
+        articles.append(
+            {
+                "article_hash": row.get("article_hash", ""),
+                "title": row.get("title", ""),
+                "link": row.get("link", ""),
+                "description": row.get("summary", "") or row.get("raw", {}).get("description", ""),
+                "summary": row.get("summary", ""),
+                "source": row.get("source", ""),
+                "keyword": row.get("keyword", ""),
+                "pub_date": row.get("pub_date_raw") or row.get("pub_date", ""),
+                "created_at": row.get("created_at", ""),
+                "_category": row.get("category", "own"),
+                "_tone": row.get("tone", "negative"),
+                "_score": row.get("score", 0),
+                "_cluster_size": row.get("cluster_size", 1),
+                "_watch_source": "db",
+            }
+        )
+    return articles
+
+
+def merge_negative_candidates(*groups: list[dict]) -> list[dict]:
+    seen: set[str] = set()
+    merged: list[dict] = []
+    for group in groups:
+        for article in group:
+            key = article_key(article)
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(article)
+    return merged
+
+
 def compact(text: str, limit: int) -> str:
     cleaned = re.sub(r"\s+", " ", text or "").strip()
     return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
 
 
-def build_alert_message(articles: list[dict], metrics: dict, minutes_back: int) -> str:
+def build_alert_message(articles: list[dict], metrics: dict, minutes_back: int, db_count: int = 0) -> str:
     current = now_kst().strftime("%Y-%m-%d %H:%M")
+    scope = f"최근 {minutes_back}분"
+    if db_count:
+        scope += f" · DB 신규 {db_count}건 포함"
     lines = [
         "[부정기사 감지]",
-        f"{current} 기준 · 최근 {minutes_back}분",
+        f"{current} 기준 · {scope}",
         f"당사 부정 {len(articles)}건 / 당사 언급 {metrics.get('own_total', 0)}건",
         "",
         "확인 필요 기사",
@@ -228,22 +276,26 @@ def main() -> None:
 
     articles = collect_recent_company_news(minutes_back)
     negatives, metrics = find_negative_articles(articles)
+    db_negatives = collect_recent_db_negatives(minutes_back)
+    if db_negatives:
+        metrics["own_total"] = max(metrics.get("own_total", 0), len(db_negatives))
 
     state = load_state()
     sent = set(state.get("sent_keys", []))
-    new_negatives = [article for article in negatives if article_key(article) not in sent]
+    all_negatives = merge_negative_candidates(db_negatives, negatives)
+    new_negatives = [article for article in all_negatives if article_key(article) not in sent]
 
     print(
         f"Negative watcher scanned {len(articles)} company articles; "
-        f"negative={len(negatives)}, new={len(new_negatives)}"
+        f"rss_negative={len(negatives)}, db_negative={len(db_negatives)}, new={len(new_negatives)}"
     )
 
     if not new_negatives:
         record_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
-            scanned_count=len(articles),
-            negative_count=len(negatives),
+            scanned_count=len(articles) + len(db_negatives),
+            negative_count=len(all_negatives),
             new_negative_count=0,
             status="scanned",
             message="no new negative article",
@@ -255,24 +307,41 @@ def main() -> None:
         record_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
-            scanned_count=len(articles),
-            negative_count=len(negatives),
+            scanned_count=len(articles) + len(db_negatives),
+            negative_count=len(all_negatives),
             new_negative_count=len(new_negatives),
             status="dry_run",
             message="dry run",
         )
         print("Dry run: Kakao alert was not sent.")
-        print(build_alert_message(new_negatives, metrics, minutes_back))
+        print(build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives)))
         return
 
     link = new_negatives[0].get("link") or "https://incarmarketing.github.io/news-monitor/"
-    message = build_alert_message(new_negatives, metrics, minutes_back)
+    message = build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives))
+    alert_title = f"부정기사 감지 {article_key(new_negatives[0])}"
+    if notification_already_sent("negative_alert", alert_title):
+        print(f"Negative alert already sent: {alert_title}")
+        for article in new_negatives:
+            sent.add(article_key(article))
+        state["sent_keys"] = list(sent)
+        save_state(state)
+        record_watch_run(
+            scanned_at=scanned_at,
+            minutes_back=minutes_back,
+            scanned_count=len(articles) + len(db_negatives),
+            negative_count=len(all_negatives),
+            new_negative_count=0,
+            status="scanned",
+            message="duplicate alert already sent",
+        )
+        return
     try:
         token = refresh_access_token()
         result = send_kakao_alert(token, message, link)
         save_notification_send(
             message_type="negative_alert",
-            title="부정기사 감지 알림",
+            title=alert_title,
             body=message,
             link_url=link,
             status="success",
@@ -281,8 +350,8 @@ def main() -> None:
         record_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
-            scanned_count=len(articles),
-            negative_count=len(negatives),
+            scanned_count=len(articles) + len(db_negatives),
+            negative_count=len(all_negatives),
             new_negative_count=len(new_negatives),
             status="alert_sent",
             message=f"{len(new_negatives)} new negative article(s)",
@@ -291,7 +360,7 @@ def main() -> None:
     except Exception as error:
         save_notification_send(
             message_type="negative_alert",
-            title="부정기사 감지 알림",
+            title=alert_title,
             body=message,
             link_url=link,
             status="failed",
@@ -300,8 +369,8 @@ def main() -> None:
         record_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
-            scanned_count=len(articles),
-            negative_count=len(negatives),
+            scanned_count=len(articles) + len(db_negatives),
+            negative_count=len(all_negatives),
             new_negative_count=len(new_negatives),
             status="alert_failed",
             message=str(error),
