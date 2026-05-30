@@ -62,6 +62,14 @@ def begin() -> None:
         github_output("marker_path", "")
         print(f"Scheduled watcher skipped: current KST hour {kst_hour} is outside active windows.")
         return
+    if intended_hour and is_stale_slot(intended_hour, now):
+        github_output("should_run", "false")
+        github_output("should_mark", "false")
+        github_output("should_period", "false")
+        github_output("kst_hour", intended_hour)
+        github_output("marker_path", "")
+        print(f"Scheduled slot {intended_hour} is stale at current KST time {now.strftime('%H:%M')}.")
+        return
 
     today = now.strftime("%Y-%m-%d")
     weekday = now.isoweekday()
@@ -85,7 +93,33 @@ def begin() -> None:
 
 
 def scheduled_slot(cron: str) -> str:
-    return SCHEDULE_SLOT_MAP.get(" ".join((cron or "").split()), "")
+    normalized = " ".join((cron or "").strip().strip('"').strip("'").split())
+    if normalized in SCHEDULE_SLOT_MAP:
+        return SCHEDULE_SLOT_MAP[normalized]
+
+    parts = normalized.split()
+    if len(parts) != 5:
+        return ""
+    hour = parts[1].lstrip("0") or "0"
+    return {
+        "22": "07",
+        "23": "08",
+        "4": "13",
+        "9": "18",
+    }.get(hour, "")
+
+
+def is_stale_slot(slot: str, now: datetime) -> bool:
+    hour = now.hour
+    if slot == "07":
+        return hour >= 8
+    if slot == "08":
+        return hour >= 13
+    if slot == "13":
+        return hour >= 18
+    if slot == "18":
+        return hour < 18
+    return False
 
 
 def mark(marker_arg: str | None) -> None:

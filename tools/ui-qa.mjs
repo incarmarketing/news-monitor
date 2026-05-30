@@ -31,7 +31,7 @@ const targets = [
   {
     id: "dashboard",
     file: "public/dashboard.html",
-    states: ["home", "monitor", "analysis", "media", "ads", "risk", "release"],
+    states: ["home", "monitor", "monitor-category", "monitor-tone", "monitor-risk", "analysis", "media", "ads", "risk", "release"],
     prepare: prepareDashboardState,
   },
   {
@@ -154,14 +154,39 @@ async function prepareDashboardState(page, state) {
       window.lucide = { createIcons: () => {} };
     }
 
+    const actualPage = pageName.startsWith("monitor") ? "monitor" : pageName;
     if (typeof window.switchPage === "function") {
-      window.switchPage(pageName);
+      window.switchPage(actualPage);
     }
 
-    if (pageName === "monitor") {
+    if (actualPage === "monitor") {
+      const longRisk = "장기계약 해촉 민원 확산 가능성 점검 및 감독당국 대응 이슈";
+      const longArticle = {
+        id: "ui-qa-long-monitor-article",
+        link: "https://example.com/ui-qa-long-monitor-article",
+        title: "AIA생명 프리미어파트너스 대량해촉 관련 장기계약 민원 확산 가능성 점검",
+        press: "모바일화면점검용매우긴언론사명데일리",
+        category: "own",
+        category_label: "당사 언급",
+        tone: "negative",
+        tone_label: "부정",
+        keyword: "AIA생명 프리미어파트너스 대량해촉 장기계약 민원",
+        risk: longRisk,
+        summary: "모바일 필터와 기사 카드가 긴 값에서도 화면 밖으로 밀리지 않는지 확인하기 위한 점검 데이터입니다.",
+        date: "2026-05-30",
+        published_label: "05-30 18:00",
+      };
+      if (typeof state !== "undefined" && Array.isArray(state.articles)) {
+        state.articles = [longArticle, ...state.articles.filter((item) => item.id !== longArticle.id)];
+        state.filtered = state.articles.slice();
+      }
+      if (typeof render === "function") {
+        render();
+      }
+
       const search = document.getElementById("searchInput");
       if (search) {
-        search.value = "AIA생명 해촉 리스크 모바일 겹침 점검용 긴 검색어";
+        search.value = pageName === "monitor" ? "" : "AIA생명 해촉 리스크 모바일 겹침 점검용 긴 검색어";
         search.dispatchEvent(new Event("input", { bubbles: true }));
       }
 
@@ -172,14 +197,25 @@ async function prepareDashboardState(page, state) {
 
       const risk = document.getElementById("riskFilter");
       if (risk) {
-        let option = Array.from(risk.options).find((item) => item.value === "mobile-overflow-risk");
+        let option = Array.from(risk.options).find((item) => item.value === longRisk);
         if (!option) {
           option = document.createElement("option");
-          option.value = "mobile-overflow-risk";
-          option.textContent = "장기계약 해촉 민원 확산 가능성 점검";
+          option.value = longRisk;
+          option.textContent = longRisk;
           risk.appendChild(option);
         }
-        risk.value = option.value;
+      }
+
+      const category = document.getElementById("categoryFilter");
+      const tone = document.getElementById("toneFilter");
+      if (pageName === "monitor-category" && category) {
+        category.value = "own";
+        category.dispatchEvent(new Event("change", { bubbles: true }));
+      } else if (pageName === "monitor-tone" && tone) {
+        tone.value = "negative";
+        tone.dispatchEvent(new Event("change", { bubbles: true }));
+      } else if (pageName === "monitor-risk" && risk) {
+        risk.value = longRisk;
         risk.dispatchEvent(new Event("change", { bubbles: true }));
       }
     }
