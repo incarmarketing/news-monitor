@@ -4204,7 +4204,7 @@
     }
 
     function renderOpsStatus() {
-      const latestRun = state.reportRuns.slice().sort((a,b) => String(b.timestamp || b.report_date || "").localeCompare(String(a.timestamp || a.report_date || "")))[0];
+      const latestRun = state.reportRuns.slice().sort(reportRunCompare)[0];
       const latestRunLabel = latestRun
         ? `${latestRun.report_date || "-"} ${latestRun.report_slot || ""}`.trim()
         : "실행 로그 없음";
@@ -4221,6 +4221,13 @@
       target.innerHTML = cards.map(([title, value, sub]) =>
         `<div class="ops-card"><b>${escapeHtml(value)}</b><span>${escapeHtml(title)}${sub ? " · " + escapeHtml(sub) : ""}</span></div>`
       ).join("");
+    }
+
+    function reportRunCompare(a, b) {
+      const slotOrder = { "08":1, "13":2, "18":3 };
+      const aKey = `${a.report_date || ""}-${String(slotOrder[a.report_slot] || 0).padStart(2, "0")}-${a.timestamp || ""}`;
+      const bKey = `${b.report_date || ""}-${String(slotOrder[b.report_slot] || 0).padStart(2, "0")}-${b.timestamp || ""}`;
+      return bKey.localeCompare(aKey);
     }
 
     function watchDate(value) {
@@ -7731,7 +7738,7 @@
       try {
         const query = [
           "select=run_key,report_date,report_slot,timestamp,window_label,window_start,window_end,risk_level",
-          "order=timestamp.desc",
+          "order=report_date.desc,report_slot.desc,timestamp.desc",
           "limit=20",
         ].join("&");
         const rows = await supabaseRest(`report_runs?${query}`);

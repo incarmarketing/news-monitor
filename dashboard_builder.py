@@ -179,8 +179,18 @@ def build_report_runs(archives: list[dict]) -> list[dict]:
                 "risk_level": metrics.get("risk_level", "LOW"),
             }
         )
-    rows.sort(key=lambda row: row.get("timestamp") or row.get("report_date", ""), reverse=True)
+    rows.sort(key=report_run_sort_key, reverse=True)
     return rows
+
+
+def report_run_sort_key(row: dict) -> tuple[str, int, str]:
+    slot_order = {"08": 1, "13": 2, "18": 3}
+    slot = str(row.get("report_slot", ""))
+    return (
+        str(row.get("report_date", "")),
+        slot_order.get(slot, 0),
+        str(row.get("timestamp", "")),
+    )
 
 
 def load_dashboard_keywords() -> list[str]:

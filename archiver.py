@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
@@ -45,7 +46,7 @@ def save_daily(articles: list[dict], briefing: str, metrics: dict) -> Path:
     target = archive_path(report_date, window.get("slot", ""))
     payload = {
         "date": report_date.isoformat(),
-        "timestamp": now_kst().isoformat(),
+        "timestamp": archive_timestamp(window),
         "window": {
             "slot": window["slot"],
             "label": window["label"],
@@ -63,6 +64,12 @@ def save_daily(articles: list[dict], briefing: str, metrics: dict) -> Path:
     except Exception as exc:
         print(f"Supabase archive skipped: {exc}")
     return target
+
+
+def archive_timestamp(window: dict) -> str:
+    if os.getenv("REPORT_BACKFILL_ONLY", "").lower() in {"1", "true", "yes", "y"}:
+        return window["end"].isoformat()
+    return now_kst().isoformat()
 
 
 def archive_path(report_date: date, slot: str = "") -> Path:
