@@ -307,7 +307,6 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
     return template.render(
         subject_prefix=config.EMAIL_SUBJECT_PREFIX,
         date_str=datetime.now(KST).strftime("%Y.%m.%d %H:%M"),
-        basis_datetime=datetime.now(KST).strftime("%y-%m-%d %H:%M"),
         company=config.COMPANY_NAME,
         team=config.TEAM_NAME,
         metrics=metrics,
@@ -528,7 +527,7 @@ def risk_message(metrics: dict) -> str:
         return "당사 부정 이슈 확인 필요"
     if metrics["risk_level"] == "MEDIUM":
         return "주의 이슈 모니터링 필요"
-    return "당사 부정 이슈 없음"
+    return "직접 리스크 낮음"
 
 
 def markdown_to_html(markdown: str) -> str:

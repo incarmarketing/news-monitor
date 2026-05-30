@@ -177,7 +177,7 @@
   }
   .kpi-strip {
     display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
+    grid-template-columns:repeat(4,minmax(0,1fr));
     gap:0;
     border-bottom:1px solid var(--line);
   }
@@ -495,7 +495,7 @@
     .risk-label { font-size:7px; }
     .risk-message { margin-top:1px; font-size:8.2px; }
     .risk-sub { margin-top:1px; font-size:7.4px; }
-    .kpi-strip { grid-template-columns:repeat(5,minmax(0,1fr)); }
+    .kpi-strip { grid-template-columns:repeat(4,minmax(0,1fr)); }
     .kpi { min-height:34px; padding:5px 7px; }
     .kpi b { font-size:13px; }
     .kpi b::after { font-size:7px; }
@@ -581,12 +581,13 @@
     .report-kicker { margin-bottom:9px; }
     .brand { display:none; }
     h1 { font-size:22px; }
-    .risk-box { min-width:0; grid-template-columns:1fr; align-items:start; }
-    .risk-pill { width:max-content; min-width:72px; }
+    .risk-box { min-width:0; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:10px; }
+    .risk-pill { width:max-content; min-width:68px; }
     .risk-copy { padding-left:0; border-left:0; }
     .kpi-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .kpi { min-height:62px; padding:10px 12px; }
     .kpi:nth-child(2n) { border-right:0; }
-    .kpi:last-child { grid-column:1/-1; }
+    .kpi:last-child { grid-column:auto; }
     .report-grid { padding:12px; }
     .issue-grid { grid-template-columns:1fr; }
     .summary-grid { grid-template-columns:1fr; }
@@ -600,10 +601,11 @@
   @media screen and (max-width:380px) {
     .toolbar { grid-template-columns:1fr; }
     .report-head { padding:18px 12px 14px; }
-    .kpi-strip,
+    .kpi-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .method-grid { grid-template-columns:1fr; }
-    .kpi { border-right:0; border-bottom:1px solid var(--line); }
-    .kpi:last-child { grid-column:auto; border-bottom:0; }
+    .kpi { min-height:58px; padding:9px 10px; border-bottom:1px solid var(--line); }
+    .kpi:nth-child(2n) { border-right:0; }
+    .kpi:nth-last-child(-n+2) { border-bottom:0; }
     .report-grid { padding:10px; }
   }
 </style>
@@ -620,7 +622,6 @@
         <div class="report-kicker">
           <span class="report-chip">{{ subject_prefix }}</span>
           <span class="report-chip">{{ window.label }} 기준</span>
-          <span class="report-chip">{{ date_str }}</span>
         </div>
         <h1>일일 언론 동향 보고서</h1>
         <div class="meta">{{ company }} {{ team }} · 당일 모니터링 브리핑</div>
@@ -630,17 +631,16 @@
         <div class="risk-copy">
           <div class="risk-label">리스크 레벨</div>
           <div class="risk-message">{{ risk_message }}</div>
-          <div class="risk-sub">당사 부정 {{ metrics.own_negative }}건 · {{ window.short_label }}</div>
+          <div class="risk-sub">{{ window.short_label }} 기준</div>
         </div>
       </aside>
     </header>
 
     <section class="kpi-strip">
-      <div class="kpi"><b>{{ metrics.total_collected }}</b><span>구간 수집</span><small>{{ window.short_label }}</small></div>
       <div class="kpi"><b>{{ metrics.total_after_cluster }}</b><span>분석기사</span><small>중복 정리 후</small></div>
-      <div class="kpi"><b>{{ metrics.by_category.own }}</b><span>당사언급</span><small>긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }} · 부정 {{ metrics.own_by_tone.negative }}</small></div>
-      <div class="kpi"><b>{{ metrics.own_negative }}</b><span>당사 부정</span><small>직접 리스크 기준</small></div>
-      <div class="kpi"><b>{{ market_count }}</b><span>GA/보험사</span><small>{{ basis_datetime }}</small></div>
+      <div class="kpi"><b>{{ metrics.by_category.own }}</b><span>당사언급</span><small>부정 {{ metrics.own_negative }} · 긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }}</small></div>
+      <div class="kpi"><b>{{ metrics.by_category.regulation }}</b><span>정책/감독</span><small>감독, 법안, 수수료, 설계사</small></div>
+      <div class="kpi"><b>{{ market_count }}</b><span>GA/보험사</span><small>경쟁사와 업계 동향</small></div>
     </section>
 
     <section class="report-grid">
@@ -667,29 +667,6 @@
           {% endfor %}
         </section>
 
-        <section class="summary-grid">
-          <article class="summary-card">
-            <span>당사 보도</span>
-            <strong>{{ metrics.by_category.own }}건</strong>
-            <small>긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }} · 부정 {{ metrics.own_by_tone.negative }}</small>
-          </article>
-          <article class="summary-card">
-            <span>정책/감독</span>
-            <strong>{{ metrics.by_category.regulation }}건</strong>
-            <small>감독, 법안, 수수료, 설계사 이슈 관찰</small>
-          </article>
-          <article class="summary-card">
-            <span>경쟁/GA</span>
-            <strong>{{ metrics.by_category.competitor }}건</strong>
-            <small>대형 GA, 제휴, 실적, 브랜드 흐름</small>
-          </article>
-          <article class="summary-card">
-            <span>보험사/업계</span>
-            <strong>{{ metrics.by_category.industry }}건</strong>
-            <small>보험사 전략과 시장 분위기 확인</small>
-          </article>
-        </section>
-
         {% if sections.action_html %}
         <section class="panel actions">
           <h2 class="panel-title">대응 필요 사항</h2>
@@ -713,6 +690,7 @@
           <div class="brief-note">
             <div><span>수집 구간</span><b>{{ window.label }}</b></div>
             <div><span>수집/분석</span><b>{{ metrics.total_collected }}건 / {{ metrics.total_after_cluster }}건</b></div>
+            <div><span>생성 시각</span><b>{{ date_str }}</b></div>
             <div><span>데이터 출처</span><b>{{ methodology.sources }}</b></div>
             <div><span>검색 키워드</span><b>{{ methodology.keywords }}개</b></div>
           </div>
