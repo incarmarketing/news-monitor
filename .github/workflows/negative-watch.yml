@@ -2,8 +2,17 @@ name: Negative Article Watch
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Watch mode"
+        required: true
+        default: "single"
+        type: choice
+        options:
+          - single
+          - continuous
   schedule:
-    - cron: "2-59/5 * * * *"
+    - cron: "3 * * * *"
 
 permissions:
   actions: write
@@ -19,7 +28,7 @@ concurrency:
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 75
 
     steps:
       - name: Checkout
@@ -47,8 +56,22 @@ jobs:
           JOB_PROVIDER: github_actions
 
       - name: Watch negative articles
-        run: python negative_watch.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          iterations=1
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ] || [ "${WATCH_MODE}" = "continuous" ]; then
+            iterations=13
+          fi
+          for i in $(seq 1 "$iterations"); do
+            echo "Negative watch iteration ${i}/${iterations}"
+            python negative_watch.py
+            if [ "$i" -lt "$iterations" ]; then
+              sleep 300
+            fi
+          done
         env:
+          WATCH_MODE: ${{ github.event.inputs.mode || 'single' }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
