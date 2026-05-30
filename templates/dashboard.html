@@ -2948,7 +2948,7 @@
             <div class="panel watch-card">
               <h2 class="panel-title"><i data-lucide="scan-search"></i> 부정기사 탐색</h2>
               <div class="watch-risk-badge risk-low" id="watchRiskBadge">
-                <span>리스크 레벨</span>
+                <span>당사 리스크</span>
                 <strong>LOW</strong>
               </div>
               <div class="watch-asset" id="negativeWatchAsset">
@@ -3072,7 +3072,7 @@
                 <div class="report-kpi risk-low" id="analysisRiskCard">
                   <div class="report-kpi-icon"><i data-lucide="shield-alert"></i></div>
                   <div class="report-kpi-copy">
-                    <div class="report-kpi-main"><span>리스크 레벨</span><div class="num" id="analysisRisk">LOW</div></div>
+                    <div class="report-kpi-main"><span>당사 리스크</span><div class="num" id="analysisRisk">LOW</div></div>
                     <small>현재 분석 구간</small>
                   </div>
                 </div>
@@ -4376,9 +4376,6 @@
     }
 
     function watchRiskLevel(items) {
-      const levels = items.map(article => String(article.risk || "").toUpperCase());
-      if (levels.includes("HIGH")) return "HIGH";
-      if (levels.includes("MEDIUM")) return "MEDIUM";
       return analysisRisk(items);
     }
 
@@ -4502,6 +4499,12 @@
 
     function isCompanyNegative(article) {
       return article.category === "own" && article.tone === "negative";
+    }
+
+    function directArticleRiskLevel(article) {
+      if (!isCompanyNegative(article)) return "LOW";
+      const risk = String(article.risk_level || article.risk || "MEDIUM").toUpperCase();
+      return risk === "HIGH" ? "HIGH" : "MEDIUM";
     }
 
     function companyNegativeCount(items) {
@@ -4760,14 +4763,8 @@
 
     function analysisRisk(items) {
       const ownNegative = companyNegativeCount(items);
-      const tones = countBy(items, "tone");
-      const cats = countBy(items, "category");
-      const negative = tones.negative || 0;
-      const regulation = cats.regulation || 0;
       if (ownNegative >= 3) return "HIGH";
       if (ownNegative >= 1) return "MEDIUM";
-      if (negative >= 10 && regulation >= 3) return "MEDIUM";
-      if (regulation >= Math.max(8, Math.round(items.length * 0.24))) return "MEDIUM";
       return "LOW";
     }
 
@@ -6886,7 +6883,7 @@
                   <div class="brief-action">${escapeHtml(brief.action)}</div>
                 </div>
                 <aside class="risk-panel ${risk.toLowerCase()}">
-                  <span>리스크 레벨</span>
+                  <span>당사 리스크</span>
                   <strong>${escapeHtml(risk)}</strong>
                 </aside>
               </section>
@@ -7765,7 +7762,12 @@
             date: row.report_date || "",
             window: row.window_label || "",
             slot: row.report_slot || "",
-            risk: row.risk_level || "LOW",
+            risk_level: row.risk_level || "LOW",
+            risk: directArticleRiskLevel({
+              category: row.category || "other",
+              tone: row.tone || "neutral",
+              risk_level: row.risk_level || "LOW",
+            }),
             title: row.title || "",
             link: row.link || "",
             source: row.source || "",

@@ -276,6 +276,18 @@ def load_recent_negative_articles(minutes_back: int, limit: int = 20) -> list[di
         return []
 
 
+def article_risk_level(article: dict, metrics: dict | None = None) -> str:
+    """Return the direct company-risk level for a single article."""
+    category = article.get("_category") or article.get("category") or "other"
+    tone = article.get("_tone") or article.get("tone") or "neutral"
+    if category != "own" or tone != "negative":
+        return "LOW"
+
+    source = (metrics or {}).get("risk_level") or article.get("risk_level") or "MEDIUM"
+    risk = str(source).upper()
+    return risk if risk in {"MEDIUM", "HIGH"} else "MEDIUM"
+
+
 def normalize_article(article: dict, archive_payload: dict) -> dict:
     window = archive_payload.get("window", {})
     metrics = archive_payload.get("metrics", {})
@@ -286,7 +298,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "window_label": window.get("label", ""),
         "window_start": window.get("start"),
         "window_end": window.get("end"),
-        "risk_level": metrics.get("risk_level", "LOW"),
+        "risk_level": article_risk_level(article, metrics),
         "title": article.get("title", ""),
         "link": article.get("link", ""),
         "source": article.get("source", ""),
