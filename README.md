@@ -415,6 +415,20 @@ python negative_watch.py
 python check_cronjob_org.py
 ```
 
+모바일/PC UI 회귀검사:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ui-qa.ps1
+```
+
+스크린샷까지 남길 때:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\ui-qa.ps1 -Screenshots
+```
+
+이 검사는 `public/dashboard.html`과 `public/index.html`을 280px 모바일부터 1440px 데스크톱까지 열어 가로 넘침, 라벨 겹침 위험, 너무 작은 터치 영역을 확인합니다. 결과는 Git에 올리지 않는 `out/ui-qa` 아래에 저장됩니다.
+
 ## 배포 프로세스
 
 ### 일반 코드 수정
@@ -547,6 +561,7 @@ supabase/functions         Edge Functions
 .github/workflows          클라우드 자동 실행
 tools/preflight.ps1        작업 전 환경 점검
 tools/dev-shell.ps1        개발 셸 진입
+tools/ui-qa.ps1            모바일/PC 대시보드 UI 회귀검사
 ```
 
 ## 관련 문서

@@ -92,6 +92,31 @@ Show-Status "python executable" ($pythonExe -ne "") $pythonExe
 Show-Status "py launcher optional" (($pyPath -ne "") -or ($pythonExe -ne "")) $(if ($pyPath) { $pyPath } else { "not required when python.exe is available" })
 Show-Status ".venv python" ($venvPython -ne "") $venvPython
 
+$codexNodeRoot = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node"
+$nodePath = Get-CommandPath "node"
+$nodeExe = if ($nodePath) {
+    $nodePath
+} else {
+    First-ExistingPath @(
+        (Join-Path $codexNodeRoot "bin\node.exe"),
+        (Join-Path $Root ".tools\node\bin\node.exe")
+    )
+}
+$nodeModules = First-ExistingPath @(
+    (Join-Path $codexNodeRoot "node_modules"),
+    (Join-Path $Root "node_modules")
+)
+$playwrightModule = ""
+if ($nodeModules) {
+    $playwrightModule = First-ExistingPath @(
+        (Join-Path $nodeModules "playwright"),
+        (Join-Path $nodeModules ".pnpm\node_modules\playwright")
+    )
+}
+Show-Status "node executable" ($nodeExe -ne "") $nodeExe
+Show-Status "playwright module" ($playwrightModule -ne "") $playwrightModule
+Show-Status "ui qa script" (Test-Path (Join-Path $Root "tools\ui-qa.ps1")) "tools\ui-qa.ps1"
+
 $envPath = Join-Path $Root ".env"
 Show-Status ".env file" (Test-Path $envPath) $envPath
 
@@ -131,3 +156,4 @@ Write-Host "  . .\tools\dev-shell.ps1"
 Write-Host "  git pull --ff-only origin main"
 Write-Host "  git checkout -b codex/<task-name>"
 Write-Host "  git status --short"
+Write-Host "  powershell -ExecutionPolicy Bypass -File .\tools\ui-qa.ps1"

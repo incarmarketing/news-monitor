@@ -681,13 +681,14 @@
       background:#f8fafc;
     }
     .media-range .btn {
-      min-height:30px;
-      padding:6px 10px;
+      min-height:34px;
+      padding:7px 10px;
       border-color:transparent;
       background:transparent;
       font-size:12px;
     }
     .media-summary-note { color:var(--muted); font-size:12px; font-weight:900; white-space:nowrap; }
+    .media-table-empty { text-align:center !important; color:var(--muted); font-weight:900; }
     .ad-dashboard-grid { display:grid; grid-template-columns:1.2fr .8fr; gap:16px; margin-top:16px; }
     .ad-filter-grid {
       display:grid;
@@ -2419,6 +2420,96 @@
       .form-span-2 { grid-column:auto; }
       .keyword-category-grid,.url-input-row { grid-template-columns:1fr; }
       .url-input-row .btn { width:100%; justify-content:center; }
+      .response-mode {
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:8px;
+        overflow:visible;
+      }
+      .response-mode .btn {
+        width:100%;
+        min-width:0;
+        justify-content:center;
+        white-space:normal;
+        padding-inline:8px;
+      }
+      .response-mode .btn:last-child { grid-column:1/-1; }
+      .media-form-actions {
+        display:grid;
+        grid-template-columns:1fr;
+        gap:8px;
+        overflow:visible;
+      }
+      .media-form-actions .btn {
+        width:100%;
+        min-width:0;
+        justify-content:center;
+        white-space:normal;
+      }
+      .media-head-actions {
+        display:grid;
+        grid-template-columns:1fr;
+        width:100%;
+        gap:8px;
+      }
+      .media-range {
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        width:100%;
+      }
+      .media-range .btn { width:100%; min-width:0; justify-content:center; }
+      .media-summary-note { font-size:11px; line-height:1.35; }
+      .media-head-actions > .btn { width:100%; justify-content:center; }
+      .media-table,
+      .media-table tbody,
+      .media-table tr,
+      .media-table td {
+        display:block;
+        width:100%;
+        max-width:100%;
+      }
+      .media-table { border-collapse:separate; border-spacing:0; }
+      .media-table tr:first-child { display:none; }
+      .media-table tr {
+        margin-bottom:10px;
+        padding:10px 11px;
+        border:1px solid var(--line);
+        border-radius:8px;
+        background:#fff;
+      }
+      .media-table td {
+        display:grid;
+        grid-template-columns:minmax(82px,.42fr) minmax(0,1fr);
+        gap:8px;
+        align-items:center;
+        border-bottom:0;
+        padding:5px 0;
+        text-align:left !important;
+        font-size:12px;
+      }
+      .media-table td::before {
+        content:attr(data-label);
+        color:var(--muted);
+        font-size:10px;
+        font-weight:900;
+      }
+      .media-table td:first-child {
+        grid-template-columns:1fr;
+        padding-top:0;
+        font-size:14px;
+      }
+      .media-table td:first-child::before { display:none; }
+      .media-table td:last-child {
+        grid-template-columns:1fr;
+        padding-bottom:0;
+      }
+      .media-table td:last-child::before { display:none; }
+      .media-table td:last-child .btn { width:100%; justify-content:center; }
+      .media-table .media-table-empty {
+        display:block;
+        padding:16px 0;
+      }
+      .media-table .media-table-empty::before { display:none; }
       .actions .btn span { display:none; }
       .scrap-ai-head { display:grid; gap:10px; }
       .scrap-ai-actions { justify-content:stretch; }
@@ -2837,7 +2928,7 @@
               <span class="monitor-head-main"><i data-lucide="radio"></i> 실시간 모니터링 피드</span>
               <span class="monitor-head-actions">
                 <span id="refreshStatus" style="color:var(--muted);font-size:12px">대기 중</span>
-                <button class="btn" id="refreshArticles" style="min-height:30px;padding:4px 9px"><i data-lucide="refresh-cw"></i><span>새로고침</span></button>
+                <button class="btn" id="refreshArticles" style="min-height:36px;padding:6px 10px"><i data-lucide="refresh-cw"></i><span>새로고침</span></button>
                 <span id="resultCount" style="color:var(--muted);font-size:13px">0건</span>
               </span>
             </h2>
@@ -3099,7 +3190,7 @@
                 <div class="field"><label>최근 접촉일</label><input id="mediaContactDate" type="date"></div>
               </div>
               <div class="field" style="margin-top:10px"><label>관리 메모</label><textarea id="mediaMemo" rows="4" placeholder="광고비 이력, 기자 성향, 요청사항, 접촉 이력"></textarea></div>
-              <div class="actions" style="justify-content:flex-start;margin-top:10px">
+              <div class="actions media-form-actions" style="justify-content:flex-start;margin-top:10px">
                 <button class="btn primary" onclick="saveMediaRelation()">언론사 정보 저장</button>
                 <button class="btn danger" onclick="deleteSelectedMedia()">선택 언론사 삭제</button>
               </div>
@@ -5425,23 +5516,23 @@
         const aliases = domainsForPress(press);
         return `
           <tr>
-            <td><strong>${escapeHtml(press)}</strong></td>
-            <td>${aliases.length ? aliases.map(host => `<span class="chip">${escapeHtml(host)}</span>`).join(" ") : "-"}</td>
-            <td>${count ? `<button class="media-count-button" onclick='showMediaArticles(${jsArg(press)})'>${count}건</button>` : "-"}</td>
-            <td>${ownCount ? `${ownCount.toLocaleString("ko-KR")}건` : "-"}</td>
-            <td>${pos}/${neg}</td>
-            <td>${escapeHtml(status)}</td>
-            <td><span class="chip">${escapeHtml(grade)}</span></td>
-            <td>${escapeHtml(relation?.owner || "-")}</td>
-            <td>${escapeHtml(relation?.contactDate || "-")}</td>
-            <td>${escapeHtml(relation?.memo || "관리 메모 없음")}</td>
-            <td>
+            <td data-label="언론사"><strong>${escapeHtml(press)}</strong></td>
+            <td data-label="주소 보정">${aliases.length ? aliases.map(host => `<span class="chip">${escapeHtml(host)}</span>`).join(" ") : "-"}</td>
+            <td data-label="${mediaRangeLabel()} 보도량">${count ? `<button class="media-count-button" onclick='showMediaArticles(${jsArg(press)})'>${count}건</button>` : "-"}</td>
+            <td data-label="당사 언급">${ownCount ? `${ownCount.toLocaleString("ko-KR")}건` : "-"}</td>
+            <td data-label="긍정/부정">${pos}/${neg}</td>
+            <td data-label="관계">${escapeHtml(status)}</td>
+            <td data-label="등급"><span class="chip">${escapeHtml(grade)}</span></td>
+            <td data-label="담당자">${escapeHtml(relation?.owner || "-")}</td>
+            <td data-label="최근 접촉">${escapeHtml(relation?.contactDate || "-")}</td>
+            <td data-label="메모">${escapeHtml(relation?.memo || "관리 메모 없음")}</td>
+            <td data-label="관리">
               <button class="btn" onclick='editMediaRelation(${jsArg(press)})'>관리</button>
             </td>
           </tr>
         `;
       }).join("");
-      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>주소 보정</th><th>${mediaRangeLabel()} 보도량</th><th>당사 언급</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td colspan="11">언론사 데이터가 없습니다.</td></tr>'}`;
+      document.getElementById("mediaTable").innerHTML = `<tr><th>언론사</th><th>주소 보정</th><th>${mediaRangeLabel()} 보도량</th><th>당사 언급</th><th>긍정/부정</th><th>관계</th><th>등급</th><th>담당자</th><th>최근 접촉</th><th>메모</th><th></th></tr>${rows || '<tr><td class="media-table-empty" colspan="11">언론사 데이터가 없습니다.</td></tr>'}`;
       renderMediaArticleList();
     }
 
