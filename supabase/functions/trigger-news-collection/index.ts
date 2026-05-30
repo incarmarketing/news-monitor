@@ -155,7 +155,6 @@ async function ensureNegativeWatch(source: string) {
 
 function dueDailySlots() {
   const now = kstNowParts();
-  if (now.weekday === 0 || now.weekday === 6) return [];
   const grace = Number(Deno.env.get("WATCHDOG_REPORT_GRACE_MINUTES") || "7");
   return ["08", "13", "18"].filter((slot) => {
     const due = new Date(Date.UTC(now.year, now.month - 1, now.day, Number(slot) - 9, grace, 0));
@@ -168,7 +167,7 @@ async function dailyReportSucceeded(date: string, slot: string) {
     "report_runs",
     `select=run_key&report_date=eq.${encodeURIComponent(date)}&report_slot=eq.${encodeURIComponent(slot)}&limit=1`,
   );
-  const title = `일일 언론 동향 ${date} ${slot}`;
+  const title = `\uC77C\uC77C \uC5B8\uB860 \uB3D9\uD5A5 ${date} ${slot}`;
   const sendRows = await selectRows(
     "notification_sends",
     `select=id&message_type=eq.daily_report&title=eq.${encodeURIComponent(title)}&status=eq.success&limit=1`,

@@ -2,20 +2,32 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 KST = timezone(timedelta(hours=9))
 STATE_DIR = Path(".run-state")
-ACTIVE_KST_HOURS = {"07", "08", "13", "18"}
+PERIOD_SLOT = "07"
+DAILY_SLOTS = ("08", "13", "18")
 SCHEDULE_SLOT_MAP = {
     "*/5 22 * * *": "07",
     "*/5 23 * * *": "08",
     "*/5 4 * * *": "13",
     "*/5 9 * * *": "18",
 }
+SLOT_DUE_HOUR = {
+    "07": 7,
+    "08": 8,
+    "13": 13,
+    "18": 18,
+}
+DAILY_REPORT_TITLE_PREFIX = "\uc77c\uc77c \uc5b8\ub860 \ub3d9\ud5a5"
 
 
 def github_output(name: str, value: str) -> None:
@@ -29,67 +41,163 @@ def github_output(name: str, value: str) -> None:
 def begin() -> None:
     event_name = os.getenv("GITHUB_EVENT_NAME", "")
     if event_name != "schedule":
-        manual_slot = os.getenv("MANUAL_REPORT_SLOT", "").strip()
-        is_slot_dispatch = manual_slot in {"08", "13", "18"}
-        if not is_slot_dispatch:
-            manual_slot = "manual"
-        marker_path = ""
-        should_mark = "false"
-        should_run = "true"
-        if event_name == "workflow_dispatch" and is_slot_dispatch:
-            today = datetime.now(KST).strftime("%Y-%m-%d")
-            marker = STATE_DIR / f"{today}-{manual_slot}.txt"
-            marker_path = marker.as_posix()
-            should_mark = "true"
-            if marker.exists() and not os.getenv("FORCE_KAKAO_SEND"):
-                should_run = "false"
-                print(f"Already completed manually dispatched slot: {marker}")
-        github_output("should_run", should_run)
-        github_output("should_mark", should_mark)
-        github_output("should_period", "false")
-        github_output("kst_hour", manual_slot)
-        github_output("marker_path", marker_path)
+        begin_manual_or_push(event_name)
         return
 
     now = datetime.now(KST)
-    intended_hour = scheduled_slot(os.getenv("SCHEDULE_CRON", ""))
-    kst_hour = intended_hour or now.strftime("%H")
-    if kst_hour not in ACTIVE_KST_HOURS:
-        github_output("should_run", "false")
-        github_output("should_mark", "false")
-        github_output("should_period", "false")
-        github_output("kst_hour", "")
-        github_output("marker_path", "")
-        print(f"Scheduled watcher skipped: current KST hour {kst_hour} is outside active windows.")
-        return
-    if intended_hour and is_stale_slot(intended_hour, now):
-        github_output("should_run", "false")
-        github_output("should_mark", "false")
-        github_output("should_period", "false")
-        github_output("kst_hour", intended_hour)
-        github_output("marker_path", "")
-        print(f"Scheduled slot {intended_hour} is stale at current KST time {now.strftime('%H:%M')}.")
-        return
-
     today = now.strftime("%Y-%m-%d")
-    weekday = now.isoweekday()
-    day = now.day
-    marker_path = STATE_DIR / f"{today}-{kst_hour}.txt"
+    candidates = due_slots(now)
 
-    github_output("kst_hour", kst_hour)
-    github_output("should_period", "true" if kst_hour == "07" else "false")
-    github_output("marker_path", marker_path.as_posix())
-    github_output("should_mark", "true")
-    if kst_hour == "07" and weekday != 1 and day != 1:
-        github_output("should_run", "false")
-        print("Period report slot skipped: not Monday or first day of month.")
+    if not candidates:
+        skip_schedule(
+            "Scheduled watcher skipped: no report slot is due at "
+            f"KST {now.strftime('%Y-%m-%d %H:%M')}."
+        )
         return
-    if marker_path.exists():
-        github_output("should_run", "false")
-        print(f"Already completed scheduled slot: {marker_path}")
-    else:
+
+    for slot in candidates:
+        marker_path = STATE_DIR / f"{today}-{slot}.txt"
+        if slot_is_complete(today, slot, marker_path):
+            print(f"Already completed scheduled slot: {marker_path}")
+            continue
+
         github_output("should_run", "true")
-        print(f"Scheduled slot is open: {marker_path}")
+        github_output("should_mark", "true")
+        github_output("should_period", "true" if slot == PERIOD_SLOT else "false")
+        github_output("kst_hour", slot)
+        github_output("marker_path", marker_path.as_posix())
+        cron_slot = scheduled_slot(os.getenv("SCHEDULE_CRON", ""))
+        print(
+            "Scheduled slot is open: "
+            f"{marker_path} (current KST {now.strftime('%H:%M')}, cron_slot={cron_slot or 'watchdog'})"
+        )
+        return
+
+    skip_schedule(f"All due report slots already completed for {today}: {', '.join(candidates)}")
+
+
+def begin_manual_or_push(event_name: str) -> None:
+    manual_slot = os.getenv("MANUAL_REPORT_SLOT", "").strip()
+    is_slot_dispatch = manual_slot in DAILY_SLOTS
+    if not is_slot_dispatch:
+        manual_slot = "manual"
+
+    marker_path = ""
+    should_mark = "false"
+    should_run = "true"
+
+    if event_name == "workflow_dispatch" and is_slot_dispatch:
+        today = datetime.now(KST).strftime("%Y-%m-%d")
+        marker = STATE_DIR / f"{today}-{manual_slot}.txt"
+        marker_path = marker.as_posix()
+        should_mark = "true"
+        if not os.getenv("FORCE_KAKAO_SEND") and slot_is_complete(today, manual_slot, marker):
+            should_run = "false"
+            print(f"Already completed manually dispatched slot: {marker}")
+
+    github_output("should_run", should_run)
+    github_output("should_mark", should_mark)
+    github_output("should_period", "false")
+    github_output("kst_hour", manual_slot)
+    github_output("marker_path", marker_path)
+
+
+def skip_schedule(message: str) -> None:
+    github_output("should_run", "false")
+    github_output("should_mark", "false")
+    github_output("should_period", "false")
+    github_output("kst_hour", "")
+    github_output("marker_path", "")
+    print(message)
+
+
+def due_slots(now: datetime) -> list[str]:
+    slots: list[str] = []
+    if now.hour == SLOT_DUE_HOUR[PERIOD_SLOT] and period_report_due(now):
+        slots.append(PERIOD_SLOT)
+
+    slots.extend(slot for slot in DAILY_SLOTS if now.hour >= SLOT_DUE_HOUR[slot])
+
+    if now.hour > SLOT_DUE_HOUR[PERIOD_SLOT] and period_report_due(now):
+        slots.append(PERIOD_SLOT)
+    return slots
+
+
+def period_report_due(now: datetime) -> bool:
+    return now.isoweekday() == 1 or now.day == 1
+
+
+def slot_is_complete(report_date: str, slot: str, marker_path: Path) -> bool:
+    if slot == PERIOD_SLOT:
+        return marker_path.exists()
+
+    status = daily_report_succeeded(report_date, slot)
+    if status is True:
+        return True
+    if status is False:
+        if marker_path.exists():
+            print(
+                "Ignoring local marker because Supabase has no confirmed Kakao send "
+                f"for {report_date} {slot}: {marker_path}"
+            )
+        return False
+    return marker_path.exists()
+
+
+def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
+    try:
+        report_rows = supabase_select(
+            "report_runs",
+            f"select=run_key&report_date=eq.{quote(report_date)}"
+            f"&report_slot=eq.{quote(slot)}&limit=1",
+        )
+        title = f"{DAILY_REPORT_TITLE_PREFIX} {report_date} {slot}"
+        send_rows = supabase_select(
+            "notification_sends",
+            "select=id"
+            "&message_type=eq.daily_report"
+            f"&title=eq.{quote(title)}"
+            "&status=eq.success"
+            "&limit=1",
+        )
+    except RuntimeError as error:
+        print(f"Supabase completion check unavailable: {error}")
+        return None
+    return bool(report_rows) and bool(send_rows)
+
+
+def supabase_select(table: str, query: str) -> list[dict]:
+    url = (
+        os.getenv("SUPABASE_URL")
+        or os.getenv("PUBLIC_SUPABASE_URL")
+        or "https://moszekksbhprhevxdynb.supabase.co"
+    ).rstrip("/")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    if not url or not key:
+        raise RuntimeError("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing")
+
+    request = Request(
+        f"{url}/rest/v1/{table}?{query}",
+        method="GET",
+        headers={
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            body = response.read().decode("utf-8")
+    except HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")[:300]
+        raise RuntimeError(f"{table} query failed: {error.code} {detail}") from error
+    except URLError as error:
+        raise RuntimeError(f"{table} query failed: {error}") from error
+
+    parsed = json.loads(body or "[]")
+    if not isinstance(parsed, list):
+        raise RuntimeError(f"{table} query returned non-list response")
+    return parsed
 
 
 def scheduled_slot(cron: str) -> str:
@@ -107,19 +215,6 @@ def scheduled_slot(cron: str) -> str:
         "4": "13",
         "9": "18",
     }.get(hour, "")
-
-
-def is_stale_slot(slot: str, now: datetime) -> bool:
-    hour = now.hour
-    if slot == "07":
-        return hour >= 8
-    if slot == "08":
-        return hour >= 13
-    if slot == "13":
-        return hour >= 18
-    if slot == "18":
-        return hour < 18
-    return False
 
 
 def mark(marker_arg: str | None) -> None:

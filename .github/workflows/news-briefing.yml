@@ -41,10 +41,7 @@ on:
       - ".watch-state/**"
       - "data/daily/**"
   schedule:
-    - cron: "*/5 22 * * *" # 07:00-07:59 KST weekly/monthly watch window
-    - cron: "*/5 23 * * *" # 08:00-08:59 KST daily watch window
-    - cron: "*/5 4 * * *"  # 13:00-13:59 KST daily watch window
-    - cron: "*/5 9 * * *"  # 18:00-18:59 KST daily watch window
+    - cron: "*/5 * * * *" # watchdog: wake frequently, then send only missing due slots
 
 permissions:
   contents: write
@@ -86,6 +83,8 @@ jobs:
         env:
           SCHEDULE_CRON: ${{ github.event.schedule }}
           MANUAL_REPORT_SLOT: ${{ github.event.inputs.report_slot }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Record report start
         if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
