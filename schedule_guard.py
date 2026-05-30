@@ -10,6 +10,12 @@ from pathlib import Path
 KST = timezone(timedelta(hours=9))
 STATE_DIR = Path(".run-state")
 ACTIVE_KST_HOURS = {"07", "08", "13", "18"}
+SCHEDULE_SLOT_MAP = {
+    "*/5 22 * * *": "07",
+    "*/5 23 * * *": "08",
+    "*/5 4 * * *": "13",
+    "*/5 9 * * *": "18",
+}
 
 
 def github_output(name: str, value: str) -> None:
@@ -46,7 +52,8 @@ def begin() -> None:
         return
 
     now = datetime.now(KST)
-    kst_hour = now.strftime("%H")
+    intended_hour = scheduled_slot(os.getenv("SCHEDULE_CRON", ""))
+    kst_hour = intended_hour or now.strftime("%H")
     if kst_hour not in ACTIVE_KST_HOURS:
         github_output("should_run", "false")
         github_output("should_mark", "false")
@@ -75,6 +82,10 @@ def begin() -> None:
     else:
         github_output("should_run", "true")
         print(f"Scheduled slot is open: {marker_path}")
+
+
+def scheduled_slot(cron: str) -> str:
+    return SCHEDULE_SLOT_MAP.get(" ".join((cron or "").split()), "")
 
 
 def mark(marker_arg: str | None) -> None:

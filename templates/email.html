@@ -22,6 +22,7 @@
     --red-soft:#fff0f2;
   }
   * { box-sizing:border-box; }
+  html { max-width:100%; overflow-x:hidden; }
   body {
     margin:0;
     background:var(--bg);
@@ -107,6 +108,9 @@
     color:var(--navy);
     font-size:11px;
     font-weight:900;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .eyebrow {
     color:var(--blue);
@@ -401,6 +405,8 @@
     font-size:12.5px;
     font-weight:900;
     line-height:1.35;
+    overflow-wrap:anywhere;
+    word-break:keep-all;
   }
   .source {
     margin-top:4px;
@@ -575,7 +581,9 @@
     .report-kicker { margin-bottom:9px; }
     .brand { display:none; }
     h1 { font-size:22px; }
-    .risk-box { min-width:0; }
+    .risk-box { min-width:0; grid-template-columns:1fr; align-items:start; }
+    .risk-pill { width:max-content; min-width:72px; }
+    .risk-copy { padding-left:0; border-left:0; }
     .kpi-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .kpi:nth-child(2n) { border-right:0; }
     .kpi:last-child { grid-column:1/-1; }
@@ -583,8 +591,20 @@
     .issue-grid { grid-template-columns:1fr; }
     .summary-grid { grid-template-columns:1fr; }
     .evidence-list li { grid-template-columns:1fr; }
+    .article-tags { min-width:0; }
+    .article-id,
+    .tag { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
     .impact { justify-self:start; }
     .method-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
+  @media screen and (max-width:380px) {
+    .toolbar { grid-template-columns:1fr; }
+    .report-head { padding:18px 12px 14px; }
+    .kpi-strip,
+    .method-grid { grid-template-columns:1fr; }
+    .kpi { border-right:0; border-bottom:1px solid var(--line); }
+    .kpi:last-child { grid-column:auto; border-bottom:0; }
+    .report-grid { padding:10px; }
   }
 </style>
 </head>

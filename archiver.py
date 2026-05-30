@@ -78,6 +78,7 @@ def lighten(article: dict) -> dict:
         "keyword": article.get("keyword", ""),
         "description": article.get("description", "") or article.get("summary", ""),
         "pub_date": article.get("pub_date", ""),
+        "_report_id": article.get("_report_id"),
         "_score": article.get("_score", 0),
         "_category": article.get("_category", "other"),
         "_tone": article.get("_tone", "neutral"),

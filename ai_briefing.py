@@ -296,6 +296,7 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
 
 
 def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:
+    ensure_report_ids(clustered)
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
     template = env.get_template("email.html")
     y_metrics = yesterday.get("metrics") if yesterday else None
@@ -318,6 +319,12 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
         methodology=build_methodology(metrics),
         window=window,
     )
+
+
+def ensure_report_ids(articles: list[dict]) -> None:
+    if all(isinstance(article.get("_report_id"), int) for article in articles):
+        return
+    assign_report_ids(articles)
 
 
 def parse_report_sections(markdown: str, metrics: dict | None = None) -> dict:
@@ -351,6 +358,7 @@ def parse_keywords(raw: dict) -> list[str]:
 
 
 def select_evidence_articles(clustered: list[dict], sections: dict, limit: int = 12) -> list[dict]:
+    ensure_report_ids(clustered)
     selected: list[dict] = []
     seen_links: set[str] = set()
 
