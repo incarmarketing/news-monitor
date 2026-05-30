@@ -232,14 +232,22 @@ def save_negative_watch_run(
         "status": status,
         "message": message,
     }
-    try:
-        request(
-            "POST",
-            "negative_watch_runs?on_conflict=run_key",
-            data=json.dumps([{key: row.get(key) for key in NEGATIVE_WATCH_COLUMNS}], ensure_ascii=False),
-        )
-    except Exception as error:
-        print(f"Supabase negative watch log skipped: {error}")
+    request(
+        "POST",
+        "negative_watch_runs?on_conflict=run_key",
+        data=json.dumps([{key: row.get(key) for key in NEGATIVE_WATCH_COLUMNS}], ensure_ascii=False),
+    )
+
+
+def load_latest_negative_watch_run() -> dict | None:
+    if not is_enabled():
+        return None
+    response = request(
+        "GET",
+        "negative_watch_runs?select=scanned_at,status&order=scanned_at.desc,created_at.desc&limit=1",
+    )
+    rows = response.json()
+    return rows[0] if rows else None
 
 
 def normalize_article(article: dict, archive_payload: dict) -> dict:

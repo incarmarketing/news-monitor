@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 from datetime import datetime, timedelta, timezone
@@ -21,7 +22,7 @@ import analyzer
 import config
 import news_collector
 from kakao_report_send import KAKAO_API, refresh_access_token
-from supabase_store import save_negative_watch_run, save_notification_send
+from supabase_store import load_latest_negative_watch_run, save_negative_watch_run, save_notification_send
 
 KST = timezone(timedelta(hours=9))
 BASE_DIR = Path(__file__).parent
@@ -32,6 +33,35 @@ MAX_SENT_KEYS = 500
 
 def now_kst() -> datetime:
     return datetime.now(KST)
+
+
+def parse_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        normalized = value.replace("Z", "+00:00")
+        return datetime.fromisoformat(normalized).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def effective_minutes_back(default_minutes: int, current: datetime | None = None) -> int:
+    current = current or now_kst()
+    max_catchup = max(default_minutes, int(os.getenv("NEGATIVE_WATCH_MAX_CATCHUP_MINUTES", "1440")))
+    try:
+        latest = load_latest_negative_watch_run()
+    except Exception as error:
+        print("Negative watch latest-run lookup skipped:", error)
+        return default_minutes
+
+    latest_at = parse_datetime(str(latest.get("scanned_at", "")) if latest else "")
+    if not latest_at:
+        return default_minutes
+
+    elapsed_minutes = math.ceil((current.astimezone(timezone.utc) - latest_at).total_seconds() / 60) + 1
+    if elapsed_minutes <= default_minutes:
+        return default_minutes
+    return min(max(default_minutes, elapsed_minutes), max_catchup)
 
 
 def is_active_time(current: datetime | None = None) -> bool:
@@ -170,13 +200,18 @@ def record_watch_run(
             message=message,
         )
     except Exception as error:
-        print("Negative watch Supabase log skipped:", error)
+        print("Negative watch Supabase log failed:", error)
+        if os.getenv("NEGATIVE_WATCH_REQUIRE_DB_LOG", "").lower() in {"1", "true", "yes", "y"}:
+            raise
 
 
 def main() -> None:
     load_dotenv()
-    minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "5"))
+    base_minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "5"))
+    minutes_back = effective_minutes_back(base_minutes_back)
     scanned_at = now_kst().isoformat()
+    if minutes_back > base_minutes_back:
+        print(f"Negative watcher catch-up window expanded to {minutes_back} minutes.")
 
     if not is_active_time():
         record_watch_run(

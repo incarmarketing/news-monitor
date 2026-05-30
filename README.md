@@ -262,10 +262,10 @@ GitHub Actions의 `schedule`은 지연될 수 있습니다. 그래서 cron-job.o
 ### 10. 부정기사 감시 만들기
 
 1. `negative_watch.py`는 최근 `minutes_back=5` 범위의 기사를 검사합니다.
-2. GitHub Actions `Negative Article Watch`는 4시간마다 클라우드 러너를 띄웁니다.
-3. 그 러너 안에서 5분 간격으로 48회 감시합니다.
+2. GitHub Actions `Negative Article Watch`는 5분마다 짧게 한 번 실행됩니다.
+3. 실행이 늦어지면 Supabase의 마지막 성공 시각을 보고 누락 구간을 자동으로 보정 검사합니다.
 4. cron-job.org의 `news-monitor negative watch`는 이 workflow를 5분마다 한 번 더 깨우는 보조 장치입니다.
-5. 실행 결과는 Supabase `negative_watch_runs`에 저장합니다.
+5. 실행 결과는 Supabase `negative_watch_runs`에 저장하며, 저장 실패는 workflow 실패로 처리합니다.
 6. 대시보드에는 마지막 수행 시각, 상태, 최근 검사 결과만 간결하게 보여줍니다.
 
 중요한 구분:
@@ -508,10 +508,11 @@ git diff --check
 
 ### 부정기사 감시가 지연될 때
 
-1. GitHub Actions `Negative Article Watch` 로그에서 5분 간격 iteration이 도는지 봅니다.
-2. GitHub Actions `Sync External Cron`을 수동 실행합니다.
-3. `python check_cronjob_org.py`로 `negative-watch cadence=5min/24h OK`가 나오는지 확인합니다.
-4. 대시보드의 마지막 수행 시간이 5분대 안으로 돌아오는지 봅니다.
+1. GitHub Actions `Negative Article Watch`가 5분 단위로 새 실행을 만들고 있는지 봅니다.
+2. Supabase `negative_watch_runs`의 최신 `scanned_at`이 12분 이상 늦어졌는지 확인합니다.
+3. GitHub Secrets에 `CRONJOB_API_KEY`, `GITHUB_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 수동 실행합니다.
+4. `python check_cronjob_org.py`로 `negative-watch cadence=5min/24h OK`가 나오는지 확인합니다.
+5. 다음 실행에서 catch-up window가 자동 확장됐는지 로그를 확인합니다.
 
 ### 특정 PC에서만 되는 것처럼 보일 때
 
