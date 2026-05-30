@@ -1,0 +1,168 @@
+{
+  "date": "2026-05-31",
+  "timestamp": "2026-05-31T08:39:36.330478+09:00",
+  "window": {
+    "slot": "08",
+    "label": "전일 18:00~당일 08:00",
+    "short_label": "전일 18시 이후",
+    "start": "2026-05-30T18:00:00+09:00",
+    "end": "2026-05-31T08:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 10,
+    "total_after_cluster": 10,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 10,
+      "industry": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "positive": 0,
+      "neutral": 10
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW"
+  },
+  "briefing": "## 최종 결론\n당사 직접 보도 없이 업계 신상품 및 경쟁사 동향만 관찰됨.\n\n## 핵심 이슈\n- [1] 한화손보 일자리 창출: 경쟁사 긍정 평판 강화 및 인재 유치 활동\n- [10] 생보업계 대출보험 출시: 신상품 출시 임박, 관련 시장 동향 주시 필요\n\n## 지표 해석\n당사 직접 언급 기사는 없었으며, 부정적 보도 또한 발생하지 않았습니다. 보도는 생명/손해보험업계의 신규 상품 출시 및 경쟁사 동향에 집중되었습니다.\n\n## 분석 키워드\n한화손보, 대출보험, 보험사기, 펫보험",
+  "articles": [
+    {
+      "title": "[그레이트컴퍼니] 한화손보, ‘금융 일자리창출’ 맨 앞서 이끌어…삼성...",
+      "link": "https://www.ceoscoredaily.com/page/view/2026052910341826967",
+      "source": "ceoscoredaily.com",
+      "keyword": "손해보험",
+      "description": "한화손해보험이 ‘2025 그레이트컴퍼니 금융사 경영평가’ 일자리창출 부문에서 가장 높은 자리를 차지했다. 삼성생명은 전 부문에서 고른 성과를 거두며 보험사 경영평가에서 1위를 차지했으며, 금융사...",
+      "pub_date": "Sun, 31 May 2026 07:00:00 +0900",
+      "_report_id": 1,
+      "_score": 15,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "병원 안 가고 AI로 진단서 만들어 제출… 진화하는 보험사기",
+      "link": "https://biz.chosun.com/stock/finance/2026/05/31/QNE23NAZIBG5ZLNEWPJEIVOOLU/?utm_source=naver&utm_medium=original&utm_campaign=biz",
+      "source": "biz.chosun.com",
+      "keyword": "손해보험",
+      "description": "KB손해보험은 보험금 청구 건별 위험도를 분석해 이상 징후가 있는 청구 건을 자동 분류하는 체계를 구축했다. 카카오페이손해보험도 AI를 활용해 보험금 청구 서류와 반복 청구 사례를 분석하고 있다. DB손해보험은...",
+      "pub_date": "Sun, 31 May 2026 06:02:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "KB손보, 이륜차 배달업 종사자 안전교육 할인 특약 출시",
+      "link": "https://www.fetv.co.kr/news/articleView.html?idxno=303294",
+      "source": "fetv.co.kr",
+      "keyword": "손해보험",
+      "description": "KB손해보험은 이륜차 배달업 종사자가 안전교육을 받으면 보험료를 5% 할인해주는 '안전교육 이수 할인 특약'을 출시한다. 이 특약은 이륜차 배달업 종사자의 안전운전 문화를 확산하고 사고를 예방하기 위해 기획됐다....",
+      "pub_date": "Sun, 31 May 2026 06:00:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "체외충격파 '12회 이상' 이용 5%뿐…횟수 제한 실효성 논란",
+      "link": "https://www.yna.co.kr/view/AKR20260530057600002?input=1195m",
+      "source": "연합뉴스",
+      "keyword": "손해보험",
+      "description": "31일 5개 대형 손해보험사(삼성화재·현대해상·DB손해보험·KB손해보험·메리츠화재)의 '체외충격파치료 실손보험 청구 현황'에 따르면, 작년 체외충격파 12회 이상 이용자는 전체의 4.6%였다. 5회 미만이 78.5%로...",
+      "pub_date": "Sun, 31 May 2026 05:59:00 +0900",
+      "_report_id": 4,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"2시간마다 15분 쉬기\" 직접 해보니 달라진 봄철 장거리 운전",
+      "link": "https://www.korea.kr/news/reporterView.do?newsId=148964983&call_from=naver_news",
+      "source": "korea.kr",
+      "keyword": "손해보험",
+      "description": "실제로 AXA손해보험이 발표한 '2025 운전자 교통안전 의식 조사'에서도 응답자의 21.6%가 최근 6개월 내 졸음운전을 경험했다고 답했다. 매일 운전하는 사람일수록 그 비율은 더 높았다. 최근 서울과 충주를 오가며, 장거리...",
+      "pub_date": "Sun, 31 May 2026 00:21:00 +0900",
+      "_report_id": 5,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[포토]안재희,가볍게 띄운다",
+      "link": "https://www.edaily.co.kr/news/newspath.asp?newsid=02630566645454168",
+      "source": "이데일리",
+      "keyword": "손해보험",
+      "description": "더스타휴 골프&리조트(파72/예선 6,853yds, 본선 6,744 yds)에서 ‘Sh수협은행 MBN여자오픈’(총상금 10억 원, 우승상금 1억 8천만 원)2라운드가 열렸다. 안재희(DB손해보험)가 2번홀에서 경기를 치르고 있다.",
+      "pub_date": "Sat, 30 May 2026 21:26:00 +0900",
+      "_report_id": 6,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[포토]안재희,차분한 정조준",
+      "link": "https://www.edaily.co.kr/news/newspath.asp?newsid=02627286645454168",
+      "source": "이데일리",
+      "keyword": "손해보험",
+      "description": "더스타휴 골프&리조트(파72/예선 6,853yds, 본선 6,744 yds)에서 ‘Sh수협은행 MBN여자오픈’(총상금 10억 원, 우승상금 1억 8천만 원)2라운드가 열렸다. 안재희(DB손해보험)가 2번홀에서 경기를 치르고 있다.",
+      "pub_date": "Sat, 30 May 2026 21:25:00 +0900",
+      "_report_id": 7,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "정치권까지 뛰어든 펫보험… 진료비 표준화 타고 '질주'",
+      "link": "https://www.newsway.co.kr/news/view?ud=2026052914020610973",
+      "source": "newsway.co.kr",
+      "keyword": "손해보험",
+      "description": "손해보험업계에 따르면 지난해 펫보험 신계약 건수는 12만9714건으로 전년 대비 39.4% 증가했다. 보유계약 건수는 25만1822건으로 55.3% 늘었으며, 원수보험료 규모 역시 1287억4878만원으로 61.1% 성장했다. 반려동물 의료 환경...",
+      "pub_date": "Sat, 30 May 2026 18:02:00 +0900",
+      "_report_id": 8,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "2금융으로 발길 돌린 차주들…주담대 10조6000억원 증가",
+      "link": "https://economist.co.kr/article/view/ecn202605270026",
+      "source": "economist.co.kr",
+      "keyword": "생명보험",
+      "description": "이들 금융사에 자산운용·생명보험 등을 더한 비은행금융기관 전체 여신은 1분기 말 1455조1210억원으로 지난해 말(1430조8577억원)보다 24조2633억원 늘었다. 주담대 금리 하단 5% 육박 … 기준금리 인상 공포 선반영...",
+      "pub_date": "Sun, 31 May 2026 08:00:00 +0900",
+      "_report_id": 9,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[단독]사망·질병 시 대신 빚 갚아주는 ‘대출보험’…생보업계 내달 공...",
+      "link": "https://biz.heraldcorp.com/article/10760034?ref=naver",
+      "source": "헤럴드경제",
+      "keyword": "생명보험",
+      "description": "보험업권 상생기금 60억 투입…내달 지자체 입찰 대형사부터 디지털 보험사까지…신용생명보험 채비 30년 넘어도 연 5억 채 안돼…해외 시장 대비 ‘미미’ “정책자금 연계·상품 차별화로 시장 키울 수 있어” 30년...",
+      "pub_date": "Sun, 31 May 2026 06:08:00 +0900",
+      "_report_id": 10,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
