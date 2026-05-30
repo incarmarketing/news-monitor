@@ -118,6 +118,13 @@
       font-size:10px;
       font-weight:900;
     }
+    .auth-chip.auth-summary {
+      gap:7px;
+      color:#1f2937;
+      font-size:12.5px;
+      letter-spacing:0;
+      white-space:nowrap;
+    }
     .app {
       height:100vh;
       display:grid;
@@ -2892,7 +2899,6 @@
         </div>
         <div class="actions">
           <span class="auth-user" id="authUser"></span>
-          <button class="btn" id="exportCsv"><i data-lucide="download"></i><span>CSV 출력</span></button>
           <button class="btn" id="logoutButton"><i data-lucide="log-out"></i><span>로그아웃</span></button>
         </div>
       </header>
@@ -3004,6 +3010,7 @@
               <span class="monitor-head-actions">
                 <span id="refreshStatus" style="color:var(--muted);font-size:12px">대기 중</span>
                 <button class="btn" id="refreshArticles" style="min-height:36px;padding:6px 10px"><i data-lucide="refresh-cw"></i><span>새로고침</span></button>
+                <button class="btn" id="exportCsv" style="min-height:36px;padding:6px 10px"><i data-lucide="download"></i><span>CSV 출력</span></button>
                 <span id="resultCount" style="color:var(--muted);font-size:13px">0건</span>
               </span>
             </h2>
@@ -3771,6 +3778,16 @@
       return session?.display_name || dashboardDisplayNames[session?.employee_no] || session?.employee_no || "";
     }
 
+    function roleLabelForSession(session) {
+      const role = String(session?.role || "viewer").toLowerCase();
+      return {
+        admin: "관리자",
+        editor: "편집자",
+        reporter: "담당자",
+        viewer: "조회자",
+      }[role] || role;
+    }
+
     function getStoredSession() {
       if (isTemporaryLoginBypassActive()) return getTemporaryLoginBypassSession();
       try {
@@ -3813,10 +3830,9 @@
       const user = document.getElementById("authUser");
       if (user) {
         const displayName = displayNameForSession(session);
+        const summary = [displayName, session.employee_no, roleLabelForSession(session)].filter(Boolean).join(" ");
         user.innerHTML = `
-          <span class="auth-chip"><b>사용자</b>${escapeHtml(displayName)}</span>
-          <span class="auth-chip"><b>사번</b>${escapeHtml(session.employee_no)}</span>
-          <span class="auth-chip"><b>권한</b>${escapeHtml(session.role || "viewer")}</span>
+          <span class="auth-chip auth-summary">${escapeHtml(summary)}</span>
         `;
       }
       const logoutButton = document.getElementById("logoutButton");
@@ -4148,7 +4164,7 @@
         const el = document.getElementById(id);
         if (el) el.addEventListener("input", e => { state.filters[key] = e.target.value.trim(); render(); });
       });
-      document.getElementById("exportCsv").addEventListener("click", exportCsv);
+      document.getElementById("exportCsv")?.addEventListener("click", exportCsv);
       document.getElementById("logoutButton")?.addEventListener("click", logoutDashboard);
       document.getElementById("refreshArticles")?.addEventListener("click", () => refreshDashboardData());
       document.getElementById("keywordInput")?.addEventListener("keydown", event => {
