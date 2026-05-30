@@ -9,6 +9,9 @@ permissions:
   actions: write
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 concurrency:
   group: negative-article-watch
   cancel-in-progress: false
