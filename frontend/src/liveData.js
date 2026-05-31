@@ -7,6 +7,12 @@ const SUPABASE_CONFIG_PATHS = [
   "/supabase.json",
 ];
 
+const STATIC_DATA_PATHS = [
+  "/data/articles.json",
+  "/public/data/articles.json",
+  `${import.meta.env.BASE_URL || "/"}data/articles.json`,
+];
+
 function isExpired(session) {
   return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
 }
@@ -107,6 +113,63 @@ export async function verifyDashboardLogin(employeeNo, password) {
 
 export async function loadOperationalData() {
   const base = {
+    source: "static",
+    status: "loading",
+    message: "누적 데이터 확인 중",
+    articles: [],
+    notifications: [],
+    watchRuns: [],
+    reportRuns: [],
+    scraps: [],
+    mediaRelations: [],
+    reporters: [],
+    ads: [],
+    aliases: [],
+    session: null,
+  };
+
+  try {
+    const staticData = await loadStaticOperationalData();
+    if (staticData) return staticData;
+    return { ...base, status: "empty", message: "누적 데이터 없음" };
+  } catch (error) {
+    return { ...base, status: "error", message: error?.message || "누적 데이터 연결 실패" };
+  }
+}
+
+async function loadStaticOperationalData() {
+  for (const path of STATIC_DATA_PATHS) {
+    try {
+      const payload = await fetchJson(path);
+      const articles = Array.isArray(payload?.articles) ? payload.articles.map(normalizeArticle).filter(Boolean) : [];
+      const reportRuns = Array.isArray(payload?.report_runs) ? payload.report_runs.map(normalizeReportRun) : [];
+      if (!articles.length && !reportRuns.length) continue;
+      return {
+        source: "static",
+        status: "live",
+        message: `누적 데이터 ${articles.length.toLocaleString("ko-KR")}건`,
+        articles,
+        notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification) : [],
+        watchRuns: Array.isArray(payload?.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
+        reportRuns,
+        scraps: Array.isArray(payload?.scraps) ? payload.scraps.map(normalizeScrap).filter(Boolean) : [],
+        mediaRelations: Array.isArray(payload?.media_relations)
+          ? payload.media_relations.filter((row) => !row.hidden).map(normalizeMedia)
+          : [],
+        reporters: Array.isArray(payload?.reporters) ? payload.reporters.map(normalizeReporter) : [],
+        ads: Array.isArray(payload?.ads) ? payload.ads.map(normalizeAd) : [],
+        aliases: Array.isArray(payload?.aliases) ? payload.aliases : [],
+        session: null,
+      };
+    } catch {
+      // Try the next path.
+    }
+  }
+  return null;
+}
+
+async function loadOperationalDataFromSupabaseSession() {
+  const base = {
     source: "sample",
     status: "sample",
     message: "샘플 데이터",
@@ -205,23 +268,23 @@ function normalizeScrap(row) {
 
 function normalizeArticle(row) {
   if (!row?.title) return null;
-  const dateSource = row.report_date || row.pub_date || row.pub_date_raw || "";
+  const dateSource = row.report_date || row.date || row.pub_date || row.pub_date_raw || "";
   return {
-    id: row.article_hash || row.link || row.title,
-    date: String(row.report_date || dateSource || "").slice(0, 10),
-    time: formatTime(row.pub_date || row.pub_date_raw || row.report_date),
-    slot: row.report_slot || row.window_label || "",
+    id: row.article_hash || row.id || row.link || row.title,
+    date: String(row.report_date || row.date || dateSource || "").slice(0, 10),
+    time: formatTime(row.pub_date || row.pub_date_raw || row.report_date || row.date),
+    slot: row.report_slot || row.slot || row.window_label || row.window || "",
     source: row.source || "미확인",
     title: row.title,
     link: row.link || "#",
     keyword: row.keyword || "",
     summary: row.summary || "",
-    category: normalizeCategory(row.category),
-    tone: normalizeTone(row.tone || row.risk_level || row.status),
-    riskLevel: String(row.risk_level || "").toUpperCase(),
+    category: normalizeCategory(row.category_label || row.category),
+    tone: normalizeTone(row.tone || row.risk_level || row.risk || row.status),
+    riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),
     score: Number(row.score || 0),
     status: row.status || "분석 완료",
-    clusterSize: Number(row.cluster_size || 1),
+    clusterSize: Number(row.cluster_size || row.clusterSize || 1),
   };
 }
 
@@ -253,11 +316,11 @@ function normalizeWatchRun(row) {
 function normalizeReportRun(row) {
   const metrics = row?.metrics && typeof row.metrics === "object" ? row.metrics : {};
   return {
-    id: row?.run_key || `${row?.report_date || ""}-${row?.report_slot || ""}`,
-    date: String(row?.report_date || row?.timestamp || "").slice(0, 10),
-    slot: row?.report_slot || row?.window_label || "",
+    id: row?.run_key || row?.id || `${row?.report_date || row?.date || ""}-${row?.report_slot || row?.slot || ""}`,
+    date: String(row?.report_date || row?.date || row?.timestamp || "").slice(0, 10),
+    slot: row?.report_slot || row?.slot || row?.window_label || "",
     timestamp: row?.timestamp || "",
-    riskLevel: String(row?.risk_level || metrics.risk_level || "").toUpperCase(),
+    riskLevel: String(row?.risk_level || row?.riskLevel || metrics.risk_level || "").toUpperCase(),
     metrics,
   };
 }
@@ -298,6 +361,16 @@ function normalizeAd(row) {
 }
 
 export function normalizeTone(value) {
+  const text = String(value || "").trim();
+  const canonical = text.toLowerCase();
+  if (["exclude", "noise", "excluded"].includes(canonical) || /제외|노이즈/.test(text)) return "제외";
+  if (["negative", "high"].includes(canonical) || /부정|위험|악재/.test(text)) return "부정";
+  if (["caution", "medium", "warning"].includes(canonical) || /주의|경계/.test(text)) return "주의";
+  if (["positive"].includes(canonical) || /긍정|호재/.test(text)) return "긍정";
+  return "중립";
+}
+
+function normalizeToneLegacy(value) {
   const text = String(value || "").toLowerCase();
   if (text.includes("exclude") || text.includes("제외") || text.includes("노이즈")) return "제외";
   if (text.includes("negative") || text.includes("부정") || text.includes("high")) return "부정";
@@ -307,6 +380,21 @@ export function normalizeTone(value) {
 }
 
 function normalizeCategory(value) {
+  const text = String(value || "").trim();
+  const canonical = text.toLowerCase();
+  if (!text) return "미분류";
+  if (["own", "company"].includes(canonical) || /당사|인카/.test(text)) return "당사";
+  if (["regulation", "policy"].includes(canonical) || /정책|규제|당국|수수료/.test(text)) return "정책/규제";
+  if (["competitor"].includes(canonical)) return "보험사";
+  if (["industry", "market"].includes(canonical) || /업계|동향|시장/.test(text)) return "업계동향";
+  if (["other"].includes(canonical)) return "기타";
+  if (["exclude", "noise"].includes(canonical) || /제외|노이즈/.test(text)) return "제외";
+  if (/ga|글로벌금융|메가|설계사/.test(canonical)) return "GA";
+  if (/보험|생명|손해/.test(text)) return "보험사";
+  return text;
+}
+
+function normalizeCategoryLegacy(value) {
   const text = String(value || "").trim();
   if (!text) return "미분류";
   if (/own|company|당사|인카/i.test(text)) return "당사";

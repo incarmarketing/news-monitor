@@ -315,7 +315,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
     return {key: row.get(key) for key in ARTICLE_COLUMNS}
 
 
-def load_dashboard_articles(limit: int = 2000) -> list[dict]:
+def load_dashboard_articles(limit: int = 10000) -> list[dict]:
     if not is_enabled():
         return []
     response = request(
@@ -325,6 +325,62 @@ def load_dashboard_articles(limit: int = 2000) -> list[dict]:
             "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
             "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
             f"&order=report_date.desc,score.desc&limit={limit}"
+        ),
+    )
+    return response.json()
+
+
+def load_dashboard_report_runs(limit: int = 1000) -> list[dict]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        (
+            "report_runs?"
+            "select=run_key,report_date,report_slot,timestamp,window_label,window_start,window_end,risk_level,metrics"
+            f"&order=report_date.desc,report_slot.desc&limit={limit}"
+        ),
+    )
+    return response.json()
+
+
+def load_dashboard_notifications(limit: int = 80) -> list[dict]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        (
+            "notification_sends?"
+            "select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at"
+            f"&order=sent_at.desc&limit={limit}"
+        ),
+    )
+    return response.json()
+
+
+def load_dashboard_watch_runs(limit: int = 20) -> list[dict]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        (
+            "negative_watch_runs?"
+            "select=run_key,scanned_at,minutes_back,scanned_count,negative_count,new_negative_count,status,message"
+            f"&order=scanned_at.desc&limit={limit}"
+        ),
+    )
+    return response.json()
+
+
+def load_dashboard_scraps(limit: int = 100) -> list[dict]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        (
+            "article_scraps?"
+            "select=article_hash,article_snapshot,created_at"
+            f"&order=created_at.desc&limit={limit}"
         ),
     )
     return response.json()

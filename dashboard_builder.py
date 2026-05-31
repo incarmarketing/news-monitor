@@ -166,8 +166,12 @@ def build_summary(archives: list[dict], articles: list[dict]) -> dict:
 
 
 def build_report_runs(archives: list[dict]) -> list[dict]:
+    supabase_runs = load_supabase_report_runs()
+    if supabase_runs:
+        return supabase_runs
+
     rows = []
-    for archive in archives[-20:]:
+    for archive in archives:
         window = archive.get("window", {})
         metrics = archive.get("metrics", {})
         rows.append(
@@ -180,10 +184,47 @@ def build_report_runs(archives: list[dict]) -> list[dict]:
                 "window_start": window.get("start", ""),
                 "window_end": window.get("end", ""),
                 "risk_level": metrics.get("risk_level", "LOW"),
+                "metrics": metrics,
             }
         )
     rows.sort(key=report_run_sort_key, reverse=True)
     return rows
+
+
+def load_supabase_report_runs() -> list[dict]:
+    try:
+        rows = supabase_store.load_dashboard_report_runs()
+    except Exception as exc:
+        print(f"Supabase report run source skipped: {exc}")
+        return []
+    return rows if isinstance(rows, list) else []
+
+
+def load_supabase_notifications() -> list[dict]:
+    try:
+        rows = supabase_store.load_dashboard_notifications()
+    except Exception as exc:
+        print(f"Supabase notification source skipped: {exc}")
+        return []
+    return rows if isinstance(rows, list) else []
+
+
+def load_supabase_watch_runs() -> list[dict]:
+    try:
+        rows = supabase_store.load_dashboard_watch_runs()
+    except Exception as exc:
+        print(f"Supabase watch source skipped: {exc}")
+        return []
+    return rows if isinstance(rows, list) else []
+
+
+def load_supabase_scraps() -> list[dict]:
+    try:
+        rows = supabase_store.load_dashboard_scraps()
+    except Exception as exc:
+        print(f"Supabase scrap source skipped: {exc}")
+        return []
+    return rows if isinstance(rows, list) else []
 
 
 def report_run_sort_key(row: dict) -> tuple[str, int, str]:
@@ -212,20 +253,24 @@ def publish_dashboard() -> Path:
     summary = build_summary(archives, articles)
     report_runs = build_report_runs(archives)
     keywords = load_dashboard_keywords()
+    notifications = load_supabase_notifications()
+    watch_runs = load_supabase_watch_runs()
+    scraps = load_supabase_scraps()
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
-    # Do not publish article/report data as a static GitHub Pages JSON file.
-    # The dashboard now reads protected data through Supabase Edge Functions.
     (PUBLIC_DATA_DIR / "articles.json").write_text(
         json.dumps(
             {
-                "summary": {},
-                "articles": [],
+                "summary": summary,
+                "articles": articles,
                 "category_labels": CATEGORY_LABELS,
                 "tone_labels": TONE_LABELS,
-                "keywords": [],
-                "report_runs": [],
+                "keywords": keywords,
+                "report_runs": report_runs,
+                "notifications": notifications,
+                "watch_runs": watch_runs,
+                "scraps": scraps,
             },
             ensure_ascii=False,
             indent=2,
