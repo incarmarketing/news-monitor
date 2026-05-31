@@ -688,7 +688,12 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
           </article>
 
           <aside className="front-rail">
-            <ReportMetricBoard summary={summary} onOpenMonitoring={onOpenMonitoring} />
+            <ReportMetricBoard
+              summary={summary}
+              articles={reportArticles}
+              period={period}
+              onOpenMonitoring={onOpenMonitoring}
+            />
           </aside>
 
           <section className="paper-section story-grid">
@@ -723,13 +728,6 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
                   <b>일별 논조</b>
                 </div>
                 <ToneTrend rows={reportTrend} compact />
-              </section>
-              <section className="paper-section ledger-page">
-                <div className="paper-section-head">
-                  <span>Desk Ledger</span>
-                  <b>누적 관리 항목</b>
-                </div>
-                <ReportLedger articles={reportArticles} />
               </section>
               <section className="paper-section scrap-page">
                 <div className="paper-section-head">
@@ -804,7 +802,8 @@ function buildReportLead(period, data, articles, issues) {
   };
 }
 
-function ReportMetricBoard({ summary, onOpenMonitoring }) {
+function ReportMetricBoard({ summary, articles = [], period = "daily", onOpenMonitoring }) {
+  const showLedger = period !== "daily";
   const stats = [
     { label: "수집", value: summary.collected.toLocaleString("ko-KR"), preset: {} },
     { label: "분석", value: summary.analyzed.toLocaleString("ko-KR"), preset: {} },
@@ -812,7 +811,7 @@ function ReportMetricBoard({ summary, onOpenMonitoring }) {
     { label: "GA/보험사", value: summary.gaInsurance, preset: { category: "GA" } },
   ];
   return (
-    <section className="report-metric-board">
+    <section className={`report-metric-board ${showLedger ? "has-ledger" : ""}`}>
       <button className={`report-risk-line ${summary.risk.toLowerCase()}`} onClick={() => onOpenMonitoring?.({ category: "당사" })}>
         <span>리스크 레벨</span>
         <b>{summary.risk}</b>
@@ -826,6 +825,15 @@ function ReportMetricBoard({ summary, onOpenMonitoring }) {
           </button>
         ))}
       </div>
+      {showLedger && (
+        <div className="top-ledger">
+          <div className="top-ledger-head">
+            <span>Desk Ledger</span>
+            <b>누적 관리 항목</b>
+          </div>
+          <ReportLedger articles={articles} compact />
+        </div>
+      )}
     </section>
   );
 }
@@ -854,7 +862,7 @@ function ReportStory({ issue }) {
   );
 }
 
-function ReportLedger({ articles }) {
+function ReportLedger({ articles, compact = false }) {
   const rows = [
     { label: "당사 직접 언급", value: articles.filter(isOwnArticle).length, preset: "당사" },
     { label: "부정/주의 합산", value: articles.filter((item) => ["부정", "주의"].includes(item.tone)).length, preset: "리스크" },
@@ -862,7 +870,7 @@ function ReportLedger({ articles }) {
     { label: "제외/노이즈 후보", value: articles.filter((item) => item.tone === "제외" || item.category === "제외").length, preset: "정제" },
   ];
   return (
-    <div className="report-ledger">
+    <div className={`report-ledger ${compact ? "compact" : ""}`}>
       {rows.map((row) => (
         <article key={row.label}>
           <span>{row.label}</span>

@@ -1584,6 +1584,11 @@ button.kpi-card {
   height: 100%;
 }
 
+.report-metric-board.has-ledger {
+  align-content: start;
+  height: auto;
+}
+
 .report-risk-line {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1596,6 +1601,11 @@ button.kpi-card {
   border-radius: 8px;
   background: linear-gradient(135deg, #eaf8f2, #f8fbff);
   text-align: left;
+}
+
+.report-metric-board.has-ledger .report-risk-line {
+  min-height: 48px;
+  padding: 8px 10px;
 }
 
 .report-risk-line span {
@@ -1611,6 +1621,14 @@ button.kpi-card {
   font-size: 27px;
   line-height: 1;
   font-weight: 900;
+}
+
+.report-metric-board.has-ledger .report-risk-line b {
+  font-size: 20px;
+}
+
+.report-metric-board.has-ledger .report-risk-line em {
+  font-size: 10px;
 }
 
 .report-risk-line em {
@@ -1648,6 +1666,15 @@ button.kpi-card {
   border-radius: 8px;
   background: var(--paper-soft);
   text-align: left;
+}
+
+.report-metric-board.has-ledger .report-stat-grid button {
+  min-height: 52px;
+  padding: 8px;
+}
+
+.report-metric-board.has-ledger .report-stat-grid b {
+  font-size: 18px;
 }
 
 .report-stat-grid span {
@@ -1794,14 +1821,50 @@ button.kpi-card {
   min-height: 160px;
 }
 
+.scrap-page {
+  grid-column: 1 / -1;
+}
+
 .report-trend {
   height: 170px;
+}
+
+.top-ledger {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding-top: 2px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.top-ledger-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.top-ledger-head span {
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.top-ledger-head b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .report-ledger {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.report-ledger.compact {
+  gap: 6px;
 }
 
 .report-ledger article {
@@ -1814,16 +1877,28 @@ button.kpi-card {
   background: var(--paper-soft);
 }
 
+.report-ledger.compact article {
+  padding: 7px;
+}
+
 .report-ledger span {
   color: var(--muted);
   font-size: 11px;
   font-weight: 900;
 }
 
+.report-ledger.compact span {
+  font-size: 10px;
+}
+
 .report-ledger b {
   color: var(--ink);
   font-size: 16px;
   font-weight: 900;
+}
+
+.report-ledger.compact b {
+  font-size: 14px;
 }
 
 .report-ledger em {
