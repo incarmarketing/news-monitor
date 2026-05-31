@@ -44,13 +44,21 @@ def begin() -> None:
         begin_manual_or_push(event_name)
         return
 
+    cron = normalize_cron(os.getenv("SCHEDULE_CRON", ""))
     now = datetime.now(KST)
+    if is_period_schedule(cron):
+        begin_period_schedule(now)
+    else:
+        begin_daily_schedule(now, cron)
+
+
+def begin_daily_schedule(now: datetime, cron: str) -> None:
     today = now.strftime("%Y-%m-%d")
-    candidates = due_slots(now)
+    candidates = due_daily_slots(now)
 
     if not candidates:
         skip_schedule(
-            "Scheduled watcher skipped: no report slot is due at "
+            "Daily report watcher skipped: no daily slot is due at "
             f"KST {now.strftime('%Y-%m-%d %H:%M')}."
         )
         return
@@ -66,14 +74,37 @@ def begin() -> None:
         github_output("should_period", "true" if slot == PERIOD_SLOT else "false")
         github_output("kst_hour", slot)
         github_output("marker_path", marker_path.as_posix())
-        cron_slot = scheduled_slot(os.getenv("SCHEDULE_CRON", ""))
         print(
-            "Scheduled slot is open: "
-            f"{marker_path} (current KST {now.strftime('%H:%M')}, cron_slot={cron_slot or 'watchdog'})"
+            "Daily report slot is open: "
+            f"{marker_path} (current KST {now.strftime('%H:%M')}, cron={cron or 'watchdog'})"
         )
         return
 
-    skip_schedule(f"All due report slots already completed for {today}: {', '.join(candidates)}")
+    skip_schedule(f"All due daily report slots already completed for {today}: {', '.join(candidates)}")
+
+
+def begin_period_schedule(now: datetime) -> None:
+    today = now.strftime("%Y-%m-%d")
+    marker_path = STATE_DIR / f"{today}-{PERIOD_SLOT}.txt"
+    github_output("kst_hour", PERIOD_SLOT)
+    github_output("should_period", "true")
+    github_output("marker_path", marker_path.as_posix())
+    github_output("should_mark", "true")
+
+    if not period_report_due(now):
+        github_output("should_run", "false")
+        print("Period report slot skipped: not Monday or first day of month.")
+        return
+    if marker_path.exists():
+        github_output("should_run", "false")
+        print(f"Already completed period report slot: {marker_path}")
+        return
+
+    github_output("should_run", "true")
+    print(
+        "Period report slot is open: "
+        f"{marker_path} (current KST {now.strftime('%Y-%m-%d %H:%M')})"
+    )
 
 
 def begin_manual_or_push(event_name: str) -> None:
@@ -111,16 +142,8 @@ def skip_schedule(message: str) -> None:
     print(message)
 
 
-def due_slots(now: datetime) -> list[str]:
-    slots: list[str] = []
-    if now.hour == SLOT_DUE_HOUR[PERIOD_SLOT] and period_report_due(now):
-        slots.append(PERIOD_SLOT)
-
-    slots.extend(slot for slot in DAILY_SLOTS if now.hour >= SLOT_DUE_HOUR[slot])
-
-    if now.hour > SLOT_DUE_HOUR[PERIOD_SLOT] and period_report_due(now):
-        slots.append(PERIOD_SLOT)
-    return slots
+def due_daily_slots(now: datetime) -> list[str]:
+    return [slot for slot in DAILY_SLOTS if now.hour >= SLOT_DUE_HOUR[slot]]
 
 
 def period_report_due(now: datetime) -> bool:
@@ -201,7 +224,7 @@ def supabase_select(table: str, query: str) -> list[dict]:
 
 
 def scheduled_slot(cron: str) -> str:
-    normalized = " ".join((cron or "").strip().strip('"').strip("'").split())
+    normalized = normalize_cron(cron)
     if normalized in SCHEDULE_SLOT_MAP:
         return SCHEDULE_SLOT_MAP[normalized]
 
@@ -215,6 +238,14 @@ def scheduled_slot(cron: str) -> str:
         "4": "13",
         "9": "18",
     }.get(hour, "")
+
+
+def normalize_cron(cron: str) -> str:
+    return " ".join((cron or "").strip().strip('"').strip("'").split())
+
+
+def is_period_schedule(cron: str) -> bool:
+    return scheduled_slot(cron) == PERIOD_SLOT
 
 
 def mark(marker_arg: str | None) -> None:

@@ -15,14 +15,19 @@ def kst_datetime(year: int, month: int, day: int, hour: int, minute: int = 0) ->
 
 class ScheduleGuardTests(unittest.TestCase):
     def test_sunday_morning_daily_slot_is_due(self) -> None:
-        self.assertEqual(schedule_guard.due_slots(kst_datetime(2026, 5, 31, 8, 3)), ["08"])
+        self.assertEqual(schedule_guard.due_daily_slots(kst_datetime(2026, 5, 31, 8, 3)), ["08"])
 
     def test_missed_daily_slots_remain_due_until_done(self) -> None:
-        self.assertEqual(schedule_guard.due_slots(kst_datetime(2026, 5, 31, 13, 5)), ["08", "13"])
-        self.assertEqual(schedule_guard.due_slots(kst_datetime(2026, 5, 31, 18, 5)), ["08", "13", "18"])
+        self.assertEqual(schedule_guard.due_daily_slots(kst_datetime(2026, 5, 31, 13, 5)), ["08", "13"])
+        self.assertEqual(schedule_guard.due_daily_slots(kst_datetime(2026, 5, 31, 18, 5)), ["08", "13", "18"])
 
-    def test_period_report_does_not_block_daily_after_eight(self) -> None:
-        self.assertEqual(schedule_guard.due_slots(kst_datetime(2026, 6, 1, 8, 3)), ["08", "07"])
+    def test_daily_slots_never_include_period_report(self) -> None:
+        self.assertEqual(schedule_guard.due_daily_slots(kst_datetime(2026, 6, 1, 8, 3)), ["08"])
+        self.assertTrue(schedule_guard.period_report_due(kst_datetime(2026, 6, 1, 8, 3)))
+
+    def test_period_schedule_is_distinct_from_daily_watchdog(self) -> None:
+        self.assertTrue(schedule_guard.is_period_schedule("*/5 22 * * *"))
+        self.assertFalse(schedule_guard.is_period_schedule("*/5 23,0-14 * * *"))
 
     def test_marker_is_ignored_when_supabase_send_is_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
