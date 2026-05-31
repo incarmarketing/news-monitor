@@ -1,0 +1,315 @@
+const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
+
+const SUPABASE_CONFIG_PATHS = [
+  "/data/supabase.json",
+  "/public/data/supabase.json",
+  `${import.meta.env.BASE_URL || "/"}data/supabase.json`,
+  "/supabase.json",
+];
+
+function isExpired(session) {
+  return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
+}
+
+export function getStoredSession() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem(DASHBOARD_SESSION_KEY) || "null");
+    if (!session?.session_token || isExpired(session)) {
+      sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
+      return null;
+    }
+    return session;
+  } catch {
+    sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
+    return null;
+  }
+}
+
+export function saveDashboardSession(session) {
+  if (session?.session_token) {
+    sessionStorage.setItem(DASHBOARD_SESSION_KEY, JSON.stringify(session));
+  }
+}
+
+async function fetchJson(path, options) {
+  const response = await fetch(path, { cache: "no-store", ...options });
+  if (!response.ok) throw new Error(`request_${response.status}`);
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+export async function loadSupabaseConfig() {
+  for (const path of SUPABASE_CONFIG_PATHS) {
+    try {
+      const config = await fetchJson(path);
+      if (config?.url && config?.anon_key) return config;
+    } catch {
+      // Try the next path. The Vite dev server exposes /data through vite.config.js.
+    }
+  }
+  return null;
+}
+
+async function dashboardApi(config, session, action, payload = {}) {
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  if (!session?.session_token) throw new Error("missing_dashboard_session");
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/dashboard-api`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      apikey: config.anon_key,
+      Authorization: `Bearer ${config.anon_key}`,
+      "Content-Type": "application/json",
+      "X-Dashboard-Session": session.session_token,
+    },
+    body: JSON.stringify({ action, payload }),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) {
+    if (response.status === 401) sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
+    throw new Error(data?.error || `dashboard_api_${response.status}`);
+  }
+  return data;
+}
+
+async function rest(config, session, path) {
+  return dashboardApi(config, session, "rest", { path, method: "GET" });
+}
+
+async function fetchTable(config, session, table, query, pageSize = 1000, maxRows = 5000) {
+  const rows = [];
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const connector = query ? "&" : "";
+    const page = await rest(config, session, `${table}?${query}${connector}limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page)) return offset === 0 ? [] : rows;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
+}
+
+export async function verifyDashboardLogin(employeeNo, password) {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const session = await fetchJson(`${config.url.replace(/\/$/, "")}/rest/v1/rpc/verify_dashboard_login`, {
+    method: "POST",
+    headers: {
+      apikey: config.anon_key,
+      Authorization: `Bearer ${config.anon_key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_employee_no: employeeNo, p_password: password }),
+  });
+  if (session?.ok) saveDashboardSession(session);
+  return session;
+}
+
+export async function loadOperationalData() {
+  const base = {
+    source: "sample",
+    status: "sample",
+    message: "샘플 데이터",
+    articles: [],
+    notifications: [],
+    watchRuns: [],
+    scraps: [],
+    mediaRelations: [],
+    reporters: [],
+    ads: [],
+    aliases: [],
+    session: getStoredSession(),
+  };
+
+  try {
+    const config = await loadSupabaseConfig();
+    const session = getStoredSession();
+    if (!config?.url || !config?.anon_key) {
+      return { ...base, message: "Supabase 설정 대기" };
+    }
+    if (!session?.session_token) {
+      return { ...base, message: "운영 로그인 필요" };
+    }
+
+    const [articles, notifications, watchRuns, scraps, mediaRelations, reporters, ads, aliases] = await Promise.all([
+      fetchTable(
+        config,
+        session,
+        "news_articles",
+        [
+          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
+          "order=report_date.desc,score.desc",
+        ].join("&"),
+        1000,
+        3000,
+      ),
+      rest(
+        config,
+        session,
+        "notification_sends?select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=80",
+      ),
+      rest(
+        config,
+        session,
+        "negative_watch_runs?select=run_key,scanned_at,minutes_back,scanned_count,negative_count,new_negative_count,status,message&order=scanned_at.desc&limit=20",
+      ),
+      rest(
+        config,
+        session,
+        "article_scraps?select=article_hash,article_snapshot,created_at&order=created_at.desc&limit=100",
+      ),
+      rest(config, session, "media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
+      rest(config, session, "reporters?select=id,name,media,status,contact_date,memo,updated_at&order=updated_at.desc&limit=500"),
+      rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
+      rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
+    ]);
+
+    return {
+      source: "supabase",
+      status: "live",
+      message: "운영 DB 연결",
+      articles: Array.isArray(articles) ? articles.map(normalizeArticle).filter(Boolean) : [],
+      notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
+      watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
+      scraps: Array.isArray(scraps) ? scraps.map(normalizeScrap).filter(Boolean) : [],
+      mediaRelations: Array.isArray(mediaRelations) ? mediaRelations.filter((row) => !row.hidden).map(normalizeMedia) : [],
+      reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
+      ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
+      aliases: Array.isArray(aliases) ? aliases : [],
+      session,
+    };
+  } catch (error) {
+    return { ...base, status: "error", message: error?.message || "운영 데이터 연결 실패" };
+  }
+}
+
+function normalizeScrap(row) {
+  const snapshot = row?.article_snapshot || {};
+  const article = normalizeArticle({
+    ...snapshot,
+    article_hash: row?.article_hash || snapshot.article_hash || snapshot.id,
+  });
+  if (!article) return null;
+  return {
+    ...article,
+    scrapedAt: row?.created_at ? String(row.created_at).slice(0, 10) : "",
+  };
+}
+
+function normalizeArticle(row) {
+  if (!row?.title) return null;
+  const dateSource = row.report_date || row.pub_date || row.pub_date_raw || "";
+  return {
+    id: row.article_hash || row.link || row.title,
+    date: String(row.report_date || dateSource || "").slice(0, 10),
+    time: formatTime(row.pub_date || row.pub_date_raw || row.report_date),
+    slot: row.report_slot || row.window_label || "",
+    source: row.source || "미확인",
+    title: row.title,
+    link: row.link || "#",
+    keyword: row.keyword || "",
+    summary: row.summary || "",
+    category: normalizeCategory(row.category),
+    tone: normalizeTone(row.tone || row.risk_level || row.status),
+    riskLevel: String(row.risk_level || "").toUpperCase(),
+    score: Number(row.score || 0),
+    status: row.status || "분석 완료",
+    clusterSize: Number(row.cluster_size || 1),
+  };
+}
+
+function normalizeNotification(row) {
+  return {
+    id: row.id || `${row.sent_at}-${row.message_type}`,
+    time: formatTime(row.sent_at || row.created_at),
+    type: row.title || row.message_type || row.channel || "알림톡",
+    status: row.status === "success" || row.status === "sent" || row.status === "성공" ? "성공" : row.status || "확인",
+    body: row.body || row.error || "",
+    link: row.link_url || "",
+  };
+}
+
+function normalizeWatchRun(row) {
+  return {
+    id: row.run_key || row.scanned_at,
+    label: "부정기사 감시",
+    cadence: "24시간 · 5분",
+    latest: formatTime(row.scanned_at),
+    state: row.status === "ok" || row.status === "success" ? "정상" : row.status || "확인",
+    scanned: Number(row.scanned_count || 0),
+    negative: Number(row.negative_count || 0),
+    fresh: Number(row.new_negative_count || 0),
+    message: row.message || "",
+  };
+}
+
+function normalizeMedia(row) {
+  return {
+    name: row.name || "미확인",
+    status: row.status || "중립",
+    grade: row.grade || "B",
+    owner: row.owner || "",
+    contactDate: row.contact_date || "",
+    memo: row.memo || "",
+  };
+}
+
+function normalizeReporter(row) {
+  return {
+    id: row.id || `${row.media}-${row.name}`,
+    name: row.name || "미확인",
+    outlet: row.media || "미확인",
+    beat: row.memo || "-",
+    recent: "-",
+    status: row.status || "중립",
+    contactDate: row.contact_date || "",
+    memo: row.memo || "",
+  };
+}
+
+function normalizeAd(row) {
+  return {
+    id: row.id || `${row.media}-${row.spend_month}`,
+    month: row.spend_month || "",
+    media: row.media || "미확인",
+    amount: Number(row.amount || 0),
+    type: row.spend_type || "광고",
+    memo: row.memo || "",
+  };
+}
+
+export function normalizeTone(value) {
+  const text = String(value || "").toLowerCase();
+  if (text.includes("exclude") || text.includes("제외") || text.includes("노이즈")) return "제외";
+  if (text.includes("negative") || text.includes("부정") || text.includes("high")) return "부정";
+  if (text.includes("caution") || text.includes("주의") || text.includes("medium")) return "주의";
+  if (text.includes("positive") || text.includes("긍정")) return "긍정";
+  return "중립";
+}
+
+function normalizeCategory(value) {
+  const text = String(value || "").trim();
+  if (!text) return "미분류";
+  if (/own|company|당사|인카/i.test(text)) return "당사";
+  if (/ga|글로벌금융|메가금융|설계사/i.test(text)) return "GA";
+  if (/보험사|생명|손해/i.test(text)) return "보험사";
+  if (/정책|규제|당국|수수료|룰/i.test(text)) return "정책/규제";
+  if (/exclude|noise|제외|노이즈/i.test(text)) return "제외";
+  return text;
+}
+
+function formatTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    const raw = String(value);
+    const match = raw.match(/(\d{1,2}):(\d{2})/);
+    return match ? `${match[1].padStart(2, "0")}:${match[2]}` : raw.slice(0, 5);
+  }
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}

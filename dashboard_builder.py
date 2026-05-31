@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +19,7 @@ BASE_DIR = Path(__file__).parent
 PUBLIC_DIR = BASE_DIR / "public"
 PUBLIC_DATA_DIR = PUBLIC_DIR / "data"
 TEMPLATE_DIR = BASE_DIR / "templates"
+FRONTEND_DIST_DIR = BASE_DIR / "frontend" / "dist"
 DEFAULT_SUPABASE_PROJECT_REF = "moszekksbhprhevxdynb"
 
 CATEGORY_LABELS = {
@@ -231,6 +233,11 @@ def publish_dashboard() -> Path:
         encoding="utf-8",
     )
     publish_supabase_public_config()
+    rebuilt_target = publish_rebuilt_dashboard()
+    if rebuilt_target:
+        print(f"Published dashboard: {rebuilt_target}")
+        print(f"Dashboard articles: {len(articles)}")
+        return rebuilt_target
 
     env = Environment(
         loader=FileSystemLoader(TEMPLATE_DIR),
@@ -241,6 +248,26 @@ def publish_dashboard() -> Path:
     target.write_text(template.render(summary=summary), encoding="utf-8")
     print(f"Published dashboard: {target}")
     print(f"Dashboard articles: {len(articles)}")
+    return target
+
+
+def publish_rebuilt_dashboard() -> Path | None:
+    index_source = FRONTEND_DIST_DIR / "index.html"
+    if not index_source.exists():
+        print("Rebuilt frontend dist not found. Falling back to templates/dashboard.html.")
+        return None
+
+    assets_source = FRONTEND_DIST_DIR / "assets"
+    assets_target = PUBLIC_DIR / "assets"
+    if assets_source.exists():
+        assets_target.mkdir(parents=True, exist_ok=True)
+        for source in assets_source.iterdir():
+            if source.is_file():
+                shutil.copy2(source, assets_target / source.name)
+
+    target = PUBLIC_DIR / "dashboard.html"
+    target.write_text(index_source.read_text(encoding="utf-8"), encoding="utf-8")
+    print("Published rebuilt React dashboard.")
     return target
 
 

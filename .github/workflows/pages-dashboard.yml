@@ -10,6 +10,7 @@ on:
       - "templates/dashboard.html"
       - "templates/email.html"
       - "templates/period_report.html"
+      - "frontend/**"
       - "dashboard_builder.py"
       - "publish_report.py"
       - "supabase_store.py"
@@ -44,8 +45,19 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
+
+      - name: Build rebuilt dashboard
+        working-directory: frontend
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
 
       - name: Build static site from existing archives
         run: python publish_report.py
