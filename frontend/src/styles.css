@@ -1833,6 +1833,35 @@ button.kpi-card {
   grid-column: span 2;
 }
 
+.related-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  align-self: end;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.related-toggle button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.related-toggle button.active {
+  background: #fff;
+  color: var(--blue);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, .1);
+}
+
 .feed-row {
   grid-template-columns: 54px minmax(0, 1fr) auto 78px 28px;
 }
@@ -1843,6 +1872,42 @@ button.kpi-card {
 
 .feed-main {
   min-width: 0;
+}
+
+.feed-title-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.feed-title-line b {
+  min-width: 0;
+}
+
+.related-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 22px;
+  margin-top: 0;
+  padding: 3px 7px;
+  border: 1px solid #bed0ff;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.feed-row.related {
+  border-color: #cbd8ff;
+  background: #fbfcff;
+}
+
+.related-sources {
+  color: var(--blue) !important;
 }
 
 .feed-main p {
@@ -1859,6 +1924,48 @@ button.kpi-card {
   display: grid;
   place-items: center;
   color: var(--blue);
+}
+
+.related-details {
+  margin-top: 8px;
+}
+
+.related-details summary {
+  width: fit-content;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.related-details div {
+  display: grid;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.related-details a {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 48px;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.related-details a span,
+.related-details a em {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.related-details a b {
+  font-size: 12px;
 }
 
 .data-source-pill {
@@ -2220,6 +2327,19 @@ button.kpi-card {
 
   .management-toolbar,
   .filter-card {
+    grid-template-columns: 1fr;
+  }
+
+  .related-toggle {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .feed-title-line {
+    flex-wrap: wrap;
+  }
+
+  .related-details a {
     grid-template-columns: 1fr;
   }
 

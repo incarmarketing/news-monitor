@@ -285,6 +285,7 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
 
 function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring }) {
   const { summary } = data;
+  const groupedArticles = useMemo(() => buildRelatedArticleGroups(articles), [articles]);
   return (
     <main className="workspace">
       <PageTitle
@@ -307,8 +308,12 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           <Panel title="최신 주요 관찰 이슈" icon={Newspaper} meta="당사 언급 우선 포함">
             <IssueList issues={data.issues} />
           </Panel>
-          <Panel title="실시간 모니터링 피드" icon={Search} meta={`${articles.length.toLocaleString("ko-KR")}건`}>
-            <ArticleFeed rows={articles.slice(0, 8)} compact />
+          <Panel
+            title="실시간 모니터링 피드"
+            icon={Search}
+            meta={`${articles.length.toLocaleString("ko-KR")}건 · 묶음 ${groupedArticles.length.toLocaleString("ko-KR")}개`}
+          >
+            <ArticleFeed rows={groupedArticles.slice(0, 8)} compact />
             <button className="ghost-button full" onClick={() => setActiveSection("monitoring")}>
               전체 기사 보기
             </button>
@@ -342,6 +347,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
   const [tone, setTone] = useState("all");
   const [category, setCategory] = useState("all");
   const [source, setSource] = useState("all");
+  const [viewMode, setViewMode] = useState("related");
   const [visible, setVisible] = useState(30);
 
   const sources = useMemo(() => unique(articles.map((article) => article.source)).slice(0, 80), [articles]);
@@ -366,6 +372,11 @@ function Monitoring({ data, articles, monitoringPreset }) {
       );
     });
   }, [articles, category, query, source, tone]);
+  const grouped = useMemo(() => buildRelatedArticleGroups(filtered), [filtered]);
+  const visibleRows = viewMode === "related" ? grouped : filtered;
+  const feedMeta = viewMode === "related"
+    ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
+    : `${filtered.length.toLocaleString("ko-KR")}건`;
 
   return (
     <main className="workspace">
@@ -418,14 +429,23 @@ function Monitoring({ data, articles, monitoringPreset }) {
           setTone("all");
           setCategory("all");
           setSource("all");
+          setViewMode("related");
         }}>
           <Filter />초기화
         </button>
+        <div className="related-toggle" role="group" aria-label="기사 보기 방식">
+          <button type="button" className={viewMode === "related" ? "active" : ""} onClick={() => { setViewMode("related"); setVisible(30); }}>
+            관련순 묶기
+          </button>
+          <button type="button" className={viewMode === "latest" ? "active" : ""} onClick={() => { setViewMode("latest"); setVisible(30); }}>
+            최신순
+          </button>
+        </div>
       </section>
       <section className="monitoring-layout">
-        <Panel title="수집 기사 피드" icon={Newspaper} meta={`${filtered.length.toLocaleString("ko-KR")}건`}>
-          <ArticleFeed rows={filtered.slice(0, visible)} />
-          {filtered.length > visible && (
+        <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
+          <ArticleFeed rows={visibleRows.slice(0, visible)} />
+          {visibleRows.length > visible && (
             <button className="ghost-button full" onClick={() => setVisible((count) => count + 30)}>
               더보기
             </button>
@@ -1111,29 +1131,57 @@ function IssueList({ issues, compact = false }) {
 function ArticleFeed({ rows, compact = false }) {
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
-      {rows.map((row) => (
-        <article key={`${row.id || row.link || row.title}-${row.time}`} className="feed-row">
-          <time>{row.time || "-"}</time>
-          <div className="feed-main">
-            <b>{row.title}</b>
-            <span>{row.source} · {row.keyword || row.category} · {row.date || row.slot || ""}</span>
-            {!compact && row.summary && <p>{row.summary}</p>}
-          </div>
-          <Chip tone={row.tone}>{row.tone}</Chip>
-          <em>{row.status || "분석 완료"}</em>
-          {!compact && row.link && row.link !== "#" && (
-            <a
-              href={row.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="기사 열기"
-              onClick={(event) => openArticleLink(event, row.link)}
-            >
-              <ExternalLink />
-            </a>
-          )}
-        </article>
-      ))}
+      {rows.map((row) => {
+        const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
+        const hasRelated = related.length > 1;
+        return (
+          <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
+            <time>{row.time || "-"}</time>
+            <div className="feed-main">
+              <div className="feed-title-line">
+                <b>{row.title}</b>
+                {hasRelated && <span className="related-badge">관련 {related.length}건</span>}
+              </div>
+              <span>{row.source} · {row.keyword || row.category} · {row.date || row.slot || ""}</span>
+              {hasRelated && <span className="related-sources">{row.relatedSources}</span>}
+              {!compact && row.summary && <p>{row.summary}</p>}
+              {!compact && hasRelated && (
+                <details className="related-details">
+                  <summary>묶인 기사 보기</summary>
+                  <div>
+                    {related.slice(0, 8).map((item) => (
+                      <a
+                        key={`${item.id || item.link || item.title}-${item.source}`}
+                        href={item.link && item.link !== "#" ? item.link : undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(event) => item.link && item.link !== "#" ? openArticleLink(event, item.link) : undefined}
+                      >
+                        <span>{item.source}</span>
+                        <b>{item.title}</b>
+                        <em>{item.time || item.date || "-"}</em>
+                      </a>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+            <Chip tone={row.tone}>{row.tone}</Chip>
+            <em>{row.status || "분석 완료"}</em>
+            {!compact && row.link && row.link !== "#" && (
+              <a
+                href={row.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="기사 열기"
+                onClick={(event) => openArticleLink(event, row.link)}
+              >
+                <ExternalLink />
+              </a>
+            )}
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -1632,6 +1680,116 @@ function filterRowsByPeriod(articles, period) {
     const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
     return time >= minTime && time <= latestTime;
   });
+}
+
+function buildRelatedArticleGroups(articles = []) {
+  const groups = [];
+  articles.forEach((article, index) => {
+    const seed = articleGroupSeed(article);
+    const target = groups.find((group) => areRelatedArticleSeeds(seed, group.seed));
+    if (target) {
+      target.members.push(article);
+      target.seed = mergeGroupSeed(target.seed, seed);
+    } else {
+      groups.push({ seed, members: [article], index });
+    }
+  });
+
+  return groups
+    .map((group) => {
+      const members = [...group.members].sort(compareArticleImportance);
+      const representative = members[0] || {};
+      const sources = unique(members.map((item) => item.source).filter(Boolean));
+      return {
+        ...representative,
+        relatedArticles: members,
+        relatedCount: members.length,
+        relatedSources: sources.length
+          ? `${sources.slice(0, 5).join(" · ")}${sources.length > 5 ? ` 외 ${sources.length - 5}곳` : ""}`
+          : "",
+        clusterSize: Math.max(Number(representative.clusterSize || 1), members.length),
+      };
+    })
+    .sort((a, b) => {
+      if ((b.relatedCount || 1) !== (a.relatedCount || 1)) return (b.relatedCount || 1) - (a.relatedCount || 1);
+      return compareArticleImportance(a, b);
+    });
+}
+
+function articleGroupSeed(article) {
+  const canonical = normalizeGroupTitle(article.title || "");
+  const tokens = articleTokens(`${canonical} ${article.keyword || ""}`);
+  return {
+    canonical,
+    tokens,
+    tokenSet: new Set(tokens),
+  };
+}
+
+function mergeGroupSeed(current, next) {
+  const tokens = unique([...(current.tokens || []), ...(next.tokens || [])]);
+  return {
+    canonical: current.canonical.length >= next.canonical.length ? current.canonical : next.canonical,
+    tokens,
+    tokenSet: new Set(tokens),
+  };
+}
+
+function areRelatedArticleSeeds(a, b) {
+  if (!a.canonical || !b.canonical) return false;
+  const shorter = a.canonical.length < b.canonical.length ? a.canonical : b.canonical;
+  const longer = a.canonical.length < b.canonical.length ? b.canonical : a.canonical;
+  if (shorter.length >= 22 && longer.includes(shorter)) return true;
+  if (a.canonical.slice(0, 28) === b.canonical.slice(0, 28)) return true;
+  const overlap = tokenOverlapRatio(a.tokenSet, b.tokenSet);
+  return overlap >= 0.62 || (overlap >= 0.48 && sharedLongToken(a.tokens, b.tokens));
+}
+
+function normalizeGroupTitle(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\[[^\]]+\]|\([^)]*\)|<[^>]+>/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\b(단독|종합|속보|영상|포토|인터뷰|기획|칼럼)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function articleTokens(value) {
+  const stop = new Set(["기자", "뉴스", "보도", "관련", "통해", "대한", "위해", "올해", "지난", "이번"]);
+  return normalizeGroupTitle(value)
+    .split(/\s+/)
+    .filter((token) => token.length > 1 && !stop.has(token) && !/^\d+$/.test(token));
+}
+
+function tokenOverlapRatio(aSet, bSet) {
+  if (!aSet?.size || !bSet?.size) return 0;
+  let common = 0;
+  aSet.forEach((token) => {
+    if (bSet.has(token)) common += 1;
+  });
+  return common / Math.min(aSet.size, bSet.size);
+}
+
+function sharedLongToken(aTokens, bTokens) {
+  const bSet = new Set(bTokens);
+  return aTokens.some((token) => token.length >= 5 && bSet.has(token));
+}
+
+function compareArticleImportance(a, b) {
+  const toneOrder = { 부정: 4, 주의: 3, 긍정: 2, 중립: 1, 제외: 0 };
+  const toneDiff = (toneOrder[b.tone] || 0) - (toneOrder[a.tone] || 0);
+  if (toneDiff) return toneDiff;
+  const scoreDiff = Number(b.score || 0) - Number(a.score || 0);
+  if (scoreDiff) return scoreDiff;
+  return articleTimeValue(b) - articleTimeValue(a);
+}
+
+function articleTimeValue(article) {
+  const value = article.pubDate || article.pub_date || `${article.date || ""}T${article.time || "00:00"}:00+09:00`;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
 }
 
 function groupArticles(articles, key) {
