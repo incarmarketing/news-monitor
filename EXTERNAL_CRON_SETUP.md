@@ -20,7 +20,7 @@ GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필
 로컬 PC에 키를 두고 실행하지 않으려면 GitHub 저장소의 Settings > Secrets and variables > Actions에 아래 두 값을 저장합니다.
 
 - `CRONJOB_API_KEY`: cron-job.org API key
-- `GITHUB_DISPATCH_TOKEN`: GitHub fine-grained token
+- `CRON_DISPATCH_TOKEN`: GitHub fine-grained token
 
 그 다음 GitHub Actions > `Sync External Cron` > Run workflow를 실행합니다. 이 워크플로는 GitHub 클라우드 러너에서 `setup_cronjob_org.py`를 실행하므로 어느 PC가 켜져 있는지와 무관하게 cron-job.org 작업을 생성/갱신합니다. 이후에는 매일 한 번 같은 설정을 다시 확인합니다.
 
@@ -28,7 +28,7 @@ GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필
 
 ```powershell
 $env:CRONJOB_API_KEY="cron-job.org API key"
-$env:GITHUB_DISPATCH_TOKEN="GitHub fine-grained token"
+$env:CRON_DISPATCH_TOKEN="GitHub fine-grained token"
 python setup_cronjob_org.py
 ```
 
@@ -77,7 +77,7 @@ Content-Type: application/json
 
 `setup_cronjob_org.py`를 실행하면 `news-monitor negative watch` 작업이 cron-job.org에서 매일 00:00~23:59 KST, 5분 단위로 생성/업데이트됩니다. 적용 후에는 `check_cronjob_org.py`로 minutes 값이 `[0, 5, 10, ..., 55]`, hours 값이 `[0, 1, ..., 23]`인지 확인합니다.
 
-대시보드의 `검사 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `감시 서비스 확인 필요`가 보이면 Supabase `negative_watch_runs`의 최신 기록이 12분 이상 늦어진 상태입니다. 이 경우 GitHub Actions의 `Negative Article Watch` 실행 목록을 먼저 확인하고, GitHub Secrets에 `CRONJOB_API_KEY`, `GITHUB_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 다시 실행합니다.
+대시보드의 `검사 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `감시 서비스 확인 필요`가 보이면 Supabase `negative_watch_runs`의 최신 기록이 12분 이상 늦어진 상태입니다. 이 경우 GitHub Actions의 `Negative Article Watch` 실행 목록을 먼저 확인하고, GitHub Secrets에 `CRONJOB_API_KEY`, `CRON_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 다시 실행합니다.
 
 ## 3. 일일 보고서 호출
 

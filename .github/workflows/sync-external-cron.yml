@@ -28,10 +28,10 @@ jobs:
         id: secrets
         env:
           CRONJOB_API_KEY: ${{ secrets.CRONJOB_API_KEY }}
-          GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
+          CRON_DISPATCH_TOKEN: ${{ secrets.CRON_DISPATCH_TOKEN }}
         run: |
-          if [ -z "$CRONJOB_API_KEY" ] || [ -z "$GITHUB_DISPATCH_TOKEN" ]; then
-            echo "::error::CRONJOB_API_KEY and GITHUB_DISPATCH_TOKEN are required to sync cron-job.org."
+          if [ -z "$CRONJOB_API_KEY" ] || [ -z "$CRON_DISPATCH_TOKEN" ]; then
+            echo "::error::CRONJOB_API_KEY and CRON_DISPATCH_TOKEN are required to sync cron-job.org."
             exit 1
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -46,4 +46,4 @@ jobs:
         run: python setup_cronjob_org.py
         env:
           CRONJOB_API_KEY: ${{ secrets.CRONJOB_API_KEY }}
-          GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
+          CRON_DISPATCH_TOKEN: ${{ secrets.CRON_DISPATCH_TOKEN }}

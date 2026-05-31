@@ -377,10 +377,10 @@ KAKAO_REFRESH_TOKEN
 
 ```text
 CRONJOB_API_KEY
-GITHUB_DISPATCH_TOKEN
+CRON_DISPATCH_TOKEN
 ```
 
-주의: `SUPABASE_SERVICE_ROLE_KEY`, `GITHUB_DISPATCH_TOKEN`, `KAKAO_REFRESH_TOKEN`, `GEMINI_API_KEY`는 코드, README, 채팅, 이슈에 붙여넣지 않습니다.
+주의: `SUPABASE_SERVICE_ROLE_KEY`, `CRON_DISPATCH_TOKEN`, `KAKAO_REFRESH_TOKEN`, `GEMINI_API_KEY`는 코드, README, 채팅, 이슈에 붙여넣지 않습니다.
 
 ## 로컬 실행 명령
 
@@ -525,7 +525,7 @@ git diff --check
 
 1. GitHub Actions `Negative Article Watch`의 최신 실행 로그에서 5분 간격 iteration이 이어지는지 봅니다.
 2. Supabase `negative_watch_runs`의 최신 `scanned_at`이 12분 이상 늦어졌는지 확인합니다.
-3. GitHub Secrets에 `CRONJOB_API_KEY`, `GITHUB_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 수동 실행합니다.
+3. GitHub Secrets에 `CRONJOB_API_KEY`, `CRON_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 수동 실행합니다.
 4. `python check_cronjob_org.py`로 `negative-watch cadence=5min/24h OK`가 나오는지 확인합니다.
 5. 다음 실행에서 catch-up window가 자동 확장됐는지 로그를 확인합니다.
 

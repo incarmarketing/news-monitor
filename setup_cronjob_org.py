@@ -2,7 +2,7 @@
 
 Required environment variables:
   CRONJOB_API_KEY          cron-job.org API key
-  GITHUB_DISPATCH_TOKEN    GitHub token with Actions read/write permission
+  CRON_DISPATCH_TOKEN      GitHub token with Actions read/write permission
 
 Optional:
   CRONJOB_ENABLED          true/false, default true
@@ -212,7 +212,7 @@ def upsert_job(api_key: str, spec: CronSpec, github_token: str, enabled: bool, e
 def main() -> None:
     load_dotenv()
     cron_api_key = require_env("CRONJOB_API_KEY")
-    github_token = require_env("GITHUB_DISPATCH_TOKEN")
+    github_token = require_env("CRON_DISPATCH_TOKEN")
     enabled = os.getenv("CRONJOB_ENABLED", "true").lower() in {"1", "true", "yes", "y"}
 
     existing = {job.get("title", ""): int(job["jobId"]) for job in list_jobs(cron_api_key)}
