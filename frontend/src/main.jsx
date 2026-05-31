@@ -1629,8 +1629,7 @@ function buildArticleSummaryLines(item = {}) {
   const lead = sentences[0] || cleanTitle || `${item.source || "언론"} 보도 기준 핵심 이슈입니다.`;
   const context = buildSummaryContextLine(item);
   const toneLine = buildSummaryToneLine(item);
-  const sourceLine = buildSummarySourceLine(item);
-  return unique([lead, context, toneLine, sourceLine].filter(Boolean)).slice(0, 4);
+  return unique([lead, context, toneLine].filter(Boolean)).slice(0, 3);
 }
 
 function compactArticleSummary(item = {}) {
@@ -1671,12 +1670,6 @@ function buildSummaryToneLine(item = {}) {
   if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다.";
   if (item.tone === "긍정") return "우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.";
   return "주의 알림 대상과 분리해 배경 동향으로 관리합니다.";
-}
-
-function buildSummarySourceLine(item = {}) {
-  const source = item.source || "언론";
-  const time = item.time || item.publishedAt || item.date || "";
-  return `${source}${time ? ` · ${time}` : ""} 기준 핵심만 요약했습니다.`;
 }
 
 function buildMonthlyObservations(data, issues = []) {
