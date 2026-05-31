@@ -16,6 +16,17 @@ const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
 const ref = Deno.env.get("GITHUB_REF") || "main";
 const githubApiVersion = "2022-11-28";
 const kstOffsetMs = 9 * 60 * 60 * 1000;
+const periodReports = {
+  weekly: {
+    messageType: "weekly_report",
+    title: "\uC8FC\uAC04 \uC5B8\uB860 \uBAA8\uB2C8\uD130\uB9C1 \uBCF4\uACE0\uC11C",
+  },
+  monthly: {
+    messageType: "monthly_report",
+    title: "\uC6D4\uAC04 \uC5B8\uB860 \uBAA8\uB2C8\uD130\uB9C1 \uBCF4\uACE0\uC11C",
+  },
+} as const;
+type PeriodReportKind = keyof typeof periodReports;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -36,12 +47,7 @@ Deno.serve(async (req) => {
       return jsonResponse(await runWatchdog(body.source || "supabase_watchdog"));
     }
     const workflow = sanitizeWorkflow(body.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml");
-    const inputs = sanitizeInputs(body.inputs || {
-      period_reports: "none",
-      send_kakao: "false",
-      report_slot: "auto",
-      backfill_only: "false",
-    });
+    const inputs = sanitizeWorkflowInputs(workflow, body.inputs);
     const result = await dispatchWorkflow(workflow, inputs);
     return jsonResponse({
       ok: true,
@@ -61,6 +67,15 @@ async function runWatchdog(source: string) {
   const dispatched: unknown[] = [];
   const skipped: unknown[] = [];
   const errors: unknown[] = [];
+
+  for (const period of duePeriodReports()) {
+    try {
+      const result = await ensurePeriodReport(period, source);
+      (result.dispatched ? dispatched : skipped).push(result);
+    } catch (error) {
+      errors.push({ job: "period_report", period, error: String(error?.message || error) });
+    }
+  }
 
   for (const slot of dueDailySlots()) {
     try {
@@ -121,6 +136,39 @@ async function ensureDailyReport(slot: string, source: string) {
   return { job: "daily_report", slot, date, dispatched: true, reason: "missing_daily_report_or_send" };
 }
 
+async function ensurePeriodReport(period: PeriodReportKind, source: string) {
+  const date = kstDate();
+  const runKey = `period_report:${date}:07`;
+  if (await periodReportSucceeded(period)) {
+    return { job: "period_report", period, date, dispatched: false, reason: "already_success" };
+  }
+  if (await hasFreshDispatch(runKey)) {
+    return { job: "period_report", period, date, dispatched: false, reason: "dispatch_in_flight" };
+  }
+
+  await recordJobRun({
+    run_key: runKey,
+    job_type: "period_report",
+    report_date: date,
+    report_slot: "07",
+    expected_at: expectedAtIso("07"),
+    status: "watchdog_dispatched",
+    started_at: new Date().toISOString(),
+    last_seen_at: new Date().toISOString(),
+    triggered_by: "supabase_watchdog",
+    provider: source,
+    workflow: "news-briefing.yml",
+    details: { reason: "missing_period_report_or_send", period, source },
+  });
+  await dispatchWorkflow("news-briefing.yml", {
+    period_reports: "both",
+    send_kakao: "true",
+    report_slot: "07",
+    backfill_only: "false",
+  });
+  return { job: "period_report", period, date, dispatched: true, reason: "missing_period_report_or_send" };
+}
+
 async function ensureNegativeWatch(source: string) {
   const latest = await selectRows(
     "negative_watch_runs",
@@ -162,6 +210,18 @@ function dueDailySlots() {
   });
 }
 
+function duePeriodReports(): PeriodReportKind[] {
+  const now = kstNowParts();
+  const grace = Number(Deno.env.get("WATCHDOG_REPORT_GRACE_MINUTES") || "7");
+  const due = new Date(Date.UTC(now.year, now.month - 1, now.day, 7 - 9, grace, 0));
+  if (Date.now() < due.getTime()) return [];
+
+  const result: PeriodReportKind[] = [];
+  if (now.weekday === 1) result.push("weekly");
+  if (now.day === 1) result.push("monthly");
+  return result;
+}
+
 async function dailyReportSucceeded(date: string, slot: string) {
   const reportRows = await selectRows(
     "report_runs",
@@ -173,6 +233,16 @@ async function dailyReportSucceeded(date: string, slot: string) {
     `select=id&message_type=eq.daily_report&title=eq.${encodeURIComponent(title)}&status=eq.success&limit=1`,
   );
   return reportRows.length > 0 && sendRows.length > 0;
+}
+
+async function periodReportSucceeded(period: PeriodReportKind) {
+  const config = periodReports[period];
+  const bounds = kstDayBoundsIso();
+  const rows = await selectRows(
+    "notification_sends",
+    `select=id&message_type=eq.${encodeURIComponent(config.messageType)}&title=eq.${encodeURIComponent(config.title)}&status=eq.success&sent_at=gte.${encodeURIComponent(bounds.start)}&sent_at=lt.${encodeURIComponent(bounds.end)}&limit=1`,
+  );
+  return rows.length > 0;
 }
 
 async function hasFreshDispatch(runKey: string) {
@@ -273,9 +343,6 @@ function jsonResponse(payload: unknown, status = 200) {
 
 function isAllowedRequest(req: Request, action: string) {
   const schedulerSecret = Deno.env.get("SCHEDULER_SECRET");
-  if (action === "watchdog") {
-    return Boolean(schedulerSecret && req.headers.get("x-scheduler-secret") === schedulerSecret);
-  }
   if (schedulerSecret && req.headers.get("x-scheduler-secret") === schedulerSecret) return true;
   if (isAllowedApiKey(req.headers.get("apikey"))) return true;
   const authorization = req.headers.get("authorization") || "";
@@ -309,13 +376,23 @@ function sanitizeWorkflow(value: string) {
   return ["news-briefing.yml", "negative-watch.yml"].includes(value) ? value : "news-briefing.yml";
 }
 
+function sanitizeWorkflowInputs(workflow: string, inputs?: Record<string, string | boolean>) {
+  if (workflow === "negative-watch.yml") return {};
+  return sanitizeInputs(inputs || {
+    period_reports: "none",
+    send_kakao: "false",
+    report_slot: "auto",
+    backfill_only: "false",
+  });
+}
+
 function sanitizeInputs(inputs: Record<string, string | boolean>) {
   const result: Record<string, string> = {};
   const period = String(inputs.period_reports || "none");
   result.period_reports = ["none", "weekly", "monthly", "both"].includes(period) ? period : "none";
   result.send_kakao = String(inputs.send_kakao || "false") === "true" ? "true" : "false";
   const slot = String(inputs.report_slot || "auto");
-  result.report_slot = ["auto", "08", "13", "18"].includes(slot) ? slot : "auto";
+  result.report_slot = ["auto", "07", "08", "13", "18"].includes(slot) ? slot : "auto";
   result.backfill_only = String(inputs.backfill_only || "false") === "true" ? "true" : "false";
   return result;
 }
@@ -335,6 +412,13 @@ function kstNowParts() {
 function kstDate() {
   const p = kstNowParts();
   return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+}
+
+function kstDayBoundsIso() {
+  const p = kstNowParts();
+  const start = new Date(Date.UTC(p.year, p.month - 1, p.day, -9, 0, 0));
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start: start.toISOString(), end: end.toISOString() };
 }
 
 function expectedAtIso(slot: string) {

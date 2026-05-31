@@ -25,6 +25,7 @@ on:
         type: choice
         options:
           - auto
+          - "07"
           - "08"
           - "13"
           - "18"

@@ -109,7 +109,8 @@ def begin_period_schedule(now: datetime) -> None:
 
 def begin_manual_or_push(event_name: str) -> None:
     manual_slot = os.getenv("MANUAL_REPORT_SLOT", "").strip()
-    is_slot_dispatch = manual_slot in DAILY_SLOTS
+    is_period_dispatch = manual_slot == PERIOD_SLOT
+    is_slot_dispatch = manual_slot in DAILY_SLOTS or is_period_dispatch
     if not is_slot_dispatch:
         manual_slot = "manual"
 
@@ -118,17 +119,21 @@ def begin_manual_or_push(event_name: str) -> None:
     should_run = "true"
 
     if event_name == "workflow_dispatch" and is_slot_dispatch:
-        today = datetime.now(KST).strftime("%Y-%m-%d")
+        now = datetime.now(KST)
+        today = now.strftime("%Y-%m-%d")
         marker = STATE_DIR / f"{today}-{manual_slot}.txt"
         marker_path = marker.as_posix()
         should_mark = "true"
-        if not os.getenv("FORCE_KAKAO_SEND") and slot_is_complete(today, manual_slot, marker):
+        if is_period_dispatch and not period_report_due(now):
+            should_run = "false"
+            print("Period report dispatch skipped: not Monday or first day of month.")
+        elif not os.getenv("FORCE_KAKAO_SEND") and slot_is_complete(today, manual_slot, marker):
             should_run = "false"
             print(f"Already completed manually dispatched slot: {marker}")
 
     github_output("should_run", should_run)
     github_output("should_mark", should_mark)
-    github_output("should_period", "false")
+    github_output("should_period", "true" if is_period_dispatch else "false")
     github_output("kst_hour", manual_slot)
     github_output("marker_path", marker_path)
 

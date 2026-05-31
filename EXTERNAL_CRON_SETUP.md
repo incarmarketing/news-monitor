@@ -1,6 +1,6 @@
 # 외부 Cron으로 GitHub Actions 호출하기
 
-GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다. 현재 `Negative Article Watch`는 GitHub 클라우드 러너 안에서 5분마다 검사하고, 1시간 단위로 다음 실행을 직접 예약합니다. 지연이 생기면 Supabase의 마지막 성공 시각 이후 구간을 자동으로 보정 검사합니다. cron-job.org는 이 실행을 한 번 더 깨우는 보조 장치입니다.
+GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필요한 실행은 외부 cron 서비스가 GitHub workflow를 직접 깨우는 방식으로 보완합니다. 현재 `Negative Article Watch`는 GitHub 클라우드 러너 안에서 5분마다 검사하고, 1시간 단위로 다음 실행을 직접 예약합니다. 지연이 생기면 Supabase의 마지막 성공 시각 이후 구간을 자동으로 보정 검사합니다. cron-job.org는 이 실행을 한 번 더 깨우는 보조 장치이고, Supabase Cron은 cron-job.org까지 늦어질 때 DB 내부에서 마지막으로 감시 상태를 확인하는 백업입니다.
 
 ## 1. GitHub 토큰 만들기
 
@@ -77,7 +77,39 @@ Content-Type: application/json
 
 `setup_cronjob_org.py`를 실행하면 `news-monitor negative watch` 작업이 cron-job.org에서 매일 00:00~23:59 KST, 5분 단위로 생성/업데이트됩니다. 적용 후에는 `check_cronjob_org.py`로 minutes 값이 `[0, 5, 10, ..., 55]`, hours 값이 `[0, 1, ..., 23]`인지 확인합니다.
 
-대시보드의 `검사 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `감시 서비스 확인 필요`가 보이면 Supabase `negative_watch_runs`의 최신 기록이 12분 이상 늦어진 상태입니다. 이 경우 GitHub Actions의 `Negative Article Watch` 실행 목록을 먼저 확인하고, GitHub Secrets에 `CRONJOB_API_KEY`, `CRON_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 다시 실행합니다.
+대시보드의 `검사 범위 5분`은 한 번 실행될 때 몇 분 전 기사까지 검사하는지 의미합니다. `감시 서비스 확인 필요`가 보이면 Supabase `negative_watch_runs`의 최신 기록이 12분 이상 늦어진 상태입니다. 이 경우 GitHub Actions의 `Negative Article Watch` 실행 목록을 먼저 확인하고, GitHub Secrets에 `CRONJOB_API_KEY`, `CRON_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 다시 실행합니다. 동시에 Supabase `cron.job`의 `news-monitor-supabase-watchdog` 작업이 active인지 확인합니다.
+
+## 2-1. Supabase Cron 보조 백업
+
+Supabase Cron은 `pg_cron`과 `pg_net`으로 Edge Function을 호출합니다. 이 저장소의 백업 작업 이름은 `news-monitor-supabase-watchdog`이며 5분마다 실행됩니다.
+
+- 호출 대상: `trigger-news-collection` Edge Function의 `watchdog` 액션
+- 실행 주기: `*/5 * * * *`
+- 인증값 저장: Supabase Vault의 `news_monitor_project_url`, `news_monitor_publishable_key`
+- 실제 동작: 일일 보고서, 주간/월간 보고서, 부정기사 감시가 늦어진 경우에만 GitHub Actions를 다시 dispatch
+
+처음 연결하는 프로젝트에서는 마이그레이션 적용 전에 Supabase Vault에 아래 값을 저장합니다. 값 자체는 저장소에 커밋하지 않습니다.
+
+```sql
+select vault.create_secret('<SUPABASE_PROJECT_URL>', 'news_monitor_project_url');
+select vault.create_secret('<SUPABASE_PUBLISHABLE_KEY>', 'news_monitor_publishable_key');
+```
+
+설치/갱신 SQL은 `supabase/migrations/20260531070408_supabase_watchdog_cron.sql`에 있습니다. 적용 후 확인 쿼리는 아래와 같습니다.
+
+```sql
+select jobid, jobname, schedule, active
+from cron.job
+where jobname = 'news-monitor-supabase-watchdog';
+
+select jobid, runid, status, start_time, end_time
+from cron.job_run_details
+where jobid = (
+  select jobid from cron.job where jobname = 'news-monitor-supabase-watchdog'
+)
+order by start_time desc
+limit 5;
+```
 
 ## 3. 일일 보고서 호출
 
