@@ -472,12 +472,13 @@ function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring, operations
     [analysisArticles, selectedKeywords],
   );
   const issueRows = buildIssues(analysisArticles, data.issues).slice(0, 6);
+  const observations = buildMonthlyObservations(data, issueRows);
   return (
     <main className="workspace">
       <PageTitle
         eyebrow="최근 1개월 분석"
         title="미디어 분석 리포트"
-        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 스크랩 근거를 함께 봅니다."
+        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 월간 핵심 이슈를 함께 봅니다."
         right={<button className="primary-button"><FileText />인쇄/PDF 저장</button>}
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
@@ -492,13 +493,10 @@ function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring, operations
           <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
         </Panel>
         <Panel title="월간 핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`}>
-          <IssueList issues={issueRows} compact />
+          <MonthlyIssueDigest issues={issueRows} />
         </Panel>
-        <Panel title="스크랩 근거" icon={Bookmark} meta={`${scraps.length}건`}>
-          <ScrapDigest scraps={scraps} />
-        </Panel>
-        <Panel title="자동 해석" icon={Gauge} meta="중복 문구 제거">
-          <InsightList data={data} />
+        <Panel title="월간 관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약">
+          <InsightList insights={observations} />
         </Panel>
       </section>
     </main>
@@ -1110,6 +1108,49 @@ function Panel({ title, icon: Icon, meta, children }) {
   );
 }
 
+function MonthlyIssueDigest({ issues }) {
+  const [lead, ...rest] = issues;
+  if (!lead) {
+    return <div className="monthly-issue-empty">최근 1개월 기준으로 표시할 핵심 이슈가 없습니다.</div>;
+  }
+  return (
+    <div className="monthly-issue-digest">
+      <article className="monthly-issue-lead">
+        <div className="issue-meta">
+          <Chip tone={lead.tone}>{lead.tone}</Chip>
+          <Chip>{lead.category}</Chip>
+          <span>{lead.source} · {lead.publishedAt}</span>
+        </div>
+        <span className="monthly-issue-kicker">Headline</span>
+        <h3>{lead.title}</h3>
+        <p>{lead.summary}</p>
+        {lead.link && lead.link !== "#" && (
+          <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
+            <ExternalLink />기사 열기
+          </a>
+        )}
+      </article>
+      <div className="monthly-issue-list">
+        {rest.slice(0, 3).map((issue) => (
+          <article key={`${issue.source}-${issue.title}`}>
+            <div>
+              <span>{issue.source} · {issue.publishedAt}</span>
+              <h4>{issue.title}</h4>
+              <p>{issue.summary}</p>
+            </div>
+            <Chip tone={issue.tone}>{issue.tone}</Chip>
+            {issue.link && issue.link !== "#" && (
+              <a href={issue.link} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" onClick={(event) => openArticleLink(event, issue.link)}>
+                <ExternalLink />
+              </a>
+            )}
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function IssueList({ issues, compact = false }) {
   return (
     <div className={compact ? "issue-list compact" : "issue-list"}>
@@ -1326,13 +1367,7 @@ function ToneTrend({ rows, compact = false }) {
   );
 }
 
-function InsightList({ data }) {
-  const insights = [
-    `총 ${data.summary.collected.toLocaleString("ko-KR")}건 중 분석 기사 ${data.summary.analyzed.toLocaleString("ko-KR")}건을 선별했습니다.`,
-    `당사 언급 ${data.summary.ownMentions}건은 보고서 핵심 관찰 영역에 우선 배치합니다.`,
-    `부정 ${data.summary.ownNegative}건과 주의 ${data.summary.caution}건을 분리해 알림 피로도를 낮춥니다.`,
-    "브랜드평판·메가·글로벌금융 키워드는 컬럼별 문맥 기준으로 노이즈를 제거합니다.",
-  ];
+function InsightList({ insights = [] }) {
   return <div className="insight-list">{insights.map((text) => <p key={text}>{text}</p>)}</div>;
 }
 
@@ -1548,6 +1583,30 @@ function buildIssues(articles, fallback) {
     if (uniqueIssues.length >= 5) break;
   }
   return uniqueIssues.length ? uniqueIssues : fallback;
+}
+
+function buildMonthlyObservations(data, issues = []) {
+  const summary = data.summary || {};
+  const lead = issues[0];
+  const topPress = data.pressInfluence?.[0];
+  const observations = [];
+  if (summary.ownNegative > 0) {
+    observations.push(`당사 부정 이슈 ${summary.ownNegative}건이 확인돼 월간 리스크 점검 대상으로 우선 배치했습니다.`);
+  } else if (summary.ownMentions > 0) {
+    observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 시장 평가와 업계 흐름을 함께 확인하는 관찰 이슈로 봅니다.`);
+  } else {
+    observations.push("최근 1개월 기준 당사 직접 부정 이슈는 확인되지 않았고, 업계성 이슈 중심으로 흐름을 추적합니다.");
+  }
+  if (summary.caution > 0) {
+    observations.push(`주의 이슈 ${summary.caution}건은 투자 의견, 수수료, 규제, GA 운영 이슈처럼 의사결정자가 확인할 만한 신호로 분리했습니다.`);
+  }
+  if (lead?.title) {
+    observations.push(`대표 헤드라인은 "${lead.title}"이며, 월간 핵심 이슈 영역에서 기사 원문까지 바로 확인할 수 있습니다.`);
+  }
+  if (topPress?.source) {
+    observations.push(`${topPress.source} 보도가 가장 많이 관찰돼 해당 매체의 반복 보도 흐름을 우선 확인하는 구성이 적절합니다.`);
+  }
+  return observations.slice(0, 4);
 }
 
 function buildToneTrend(articles) {
