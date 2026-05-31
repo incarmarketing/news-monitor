@@ -2145,6 +2145,72 @@ button.kpi-card {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.ad-chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, .9fr) minmax(220px, .7fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ad-chart-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 230px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #fff 0, #f8fbff 100%);
+}
+
+.ad-chart-card > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ad-chart-card b {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ad-chart-card span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ad-chart-box {
+  min-width: 0;
+  min-height: 0;
+  height: 176px;
+}
+
+.ad-chart-box.compact {
+  height: 176px;
+}
+
+.chart-empty {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ad-toolbar {
+  grid-template-columns: minmax(220px, 1fr) auto auto auto;
+}
+
 .stat-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -2431,7 +2497,8 @@ button.kpi-card {
   .section-strip,
   .analysis-drill-grid,
   .management-summary,
-  .ad-summary-row {
+  .ad-summary-row,
+  .ad-chart-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2563,10 +2630,23 @@ button.kpi-card {
   }
 
   .management-toolbar,
+  .ad-toolbar,
   .operation-form,
   .keyword-add-form,
   .filter-card {
     grid-template-columns: 1fr;
+  }
+
+  .page-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .page-actions .period-control,
+  .page-actions button {
+    flex: 1 1 100%;
+    width: 100%;
   }
 
   .operation-form-actions {

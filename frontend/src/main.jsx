@@ -478,7 +478,9 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
-            <button className="primary-button"><FileText />인쇄/PDF 저장</button>
+            <button className="primary-button" onClick={() => printCurrentView("미디어 분석 리포트")}>
+              <FileText />인쇄/PDF 저장
+            </button>
           </div>
         )}
       />
@@ -642,7 +644,14 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
         eyebrow={edition.kicker}
         title="일간/주간/월간 보고서"
         description="매일, 매주, 매월 받아보는 언론 동향지처럼 읽히도록 지면형 보고서로 구성합니다."
-        right={<PeriodControl period={period} setPeriod={setPeriod} compact />}
+        right={(
+          <div className="page-actions">
+            <PeriodControl period={period} setPeriod={setPeriod} compact />
+            <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${data.scope || ""}`)}>
+              <Download />인쇄/PDF 저장
+            </button>
+          </div>
+        )}
       />
       <section className={`report-sheet publication-sheet ${period}`}>
         <header className="publication-masthead">
@@ -854,6 +863,27 @@ function ReportLedger({ articles }) {
           <em>{row.preset}</em>
         </article>
       ))}
+    </div>
+  );
+}
+
+function AdSpendChart({ rows, color = "#2855d9", compact = false }) {
+  if (!rows.length) {
+    return <div className="chart-empty">광고비 집행 데이터가 없습니다.</div>;
+  }
+  return (
+    <div className={`ad-chart-box ${compact ? "compact" : ""}`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 18, left: 0, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+          <XAxis type="number" hide />
+          <YAxis dataKey="name" type="category" width={compact ? 76 : 92} tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 800 }} />
+          <Tooltip formatter={(value) => formatMoney(value)} />
+          <Bar dataKey="value" radius={[0, 7, 7, 0]}>
+            {rows.map((row, index) => <Cell key={row.name} fill={index === 0 ? color : chartColors[index % chartColors.length]} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -1074,7 +1104,14 @@ function ReporterManagement({ rows }) {
 
 function AdManagement({ rows }) {
   const [showAll, setShowAll] = useState(false);
-  const visibleRows = showAll ? rows : rows.slice(0, 15);
+  const [query, setQuery] = useState("");
+  const adData = useMemo(() => buildAdSpendData(rows), [rows]);
+  const filteredRows = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((row) => `${row.month} ${row.media} ${row.type} ${row.memo}`.toLowerCase().includes(term));
+  }, [rows, query]);
+  const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
   return (
     <Panel title="광고비 관리" icon={WalletCards} meta={`${rows.length.toLocaleString("ko-KR")}건`}>
       <div className="ad-summary-row">
@@ -1082,9 +1119,33 @@ function AdManagement({ rows }) {
         <StatCard icon={CalendarDays} label="집행 월" value={`${unique(rows.map((row) => row.month)).length}개월`} />
         <StatCard icon={Building2} label="매체 수" value={`${unique(rows.map((row) => row.media)).length}곳`} />
       </div>
-      <div className="management-toolbar">
-        <input placeholder="매체명, 메모 검색" />
+      <div className="ad-chart-grid">
+        <article className="ad-chart-card wide">
+          <div>
+            <b>월별 집행 추이</b>
+            <span>{adData.monthly.length.toLocaleString("ko-KR")}개월</span>
+          </div>
+          <AdSpendChart rows={adData.monthly} color="#2855d9" />
+        </article>
+        <article className="ad-chart-card">
+          <div>
+            <b>매체별 집행</b>
+            <span>상위 6개</span>
+          </div>
+          <AdSpendChart rows={adData.media} color="#14805f" compact />
+        </article>
+        <article className="ad-chart-card">
+          <div>
+            <b>유형별 집행</b>
+            <span>구분</span>
+          </div>
+          <AdSpendChart rows={adData.type} color="#b45309" compact />
+        </article>
+      </div>
+      <div className="management-toolbar ad-toolbar">
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="매체명, 메모 검색" />
         <button className="ghost-button">월별 보기</button>
+        <button className="ghost-button" onClick={() => printAdReport(rows)}><Download />인쇄/PDF 저장</button>
         <button className="primary-button">광고비 추가</button>
       </div>
       <div className="data-table-wrap">
@@ -1111,7 +1172,7 @@ function AdManagement({ rows }) {
           </tbody>
         </table>
       </div>
-      {rows.length > 15 && (
+      {filteredRows.length > 15 && (
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
           {showAll ? "접기" : "더보기"}
         </button>
@@ -2208,6 +2269,179 @@ function groupKeywordRows(rows = []) {
       const bOrder = order.includes(b.category) ? order.indexOf(b.category) : order.length;
       return aOrder - bOrder;
     });
+}
+
+function printCurrentView(title) {
+  if (typeof window === "undefined") return;
+  const previousTitle = document.title;
+  document.title = title || previousTitle;
+  window.setTimeout(() => window.print(), 50);
+  window.setTimeout(() => {
+    document.title = previousTitle;
+  }, 1200);
+}
+
+function printHtmlDocument(html) {
+  if (typeof document === "undefined") return;
+  const iframe = document.createElement("iframe");
+  iframe.title = "print-preview";
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  document.body.appendChild(iframe);
+  const printWindow = iframe.contentWindow;
+  const printDocument = iframe.contentDocument || printWindow?.document;
+  if (!printWindow || !printDocument) {
+    iframe.remove();
+    return;
+  }
+  const cleanup = () => iframe.remove();
+  printWindow.addEventListener("afterprint", cleanup, { once: true });
+  printDocument.open();
+  printDocument.write(html);
+  printDocument.close();
+  window.setTimeout(() => {
+    printWindow.focus();
+    printWindow.print();
+    window.setTimeout(cleanup, 2000);
+  }, 250);
+}
+
+function printAdReport(rows = []) {
+  printHtmlDocument(buildAdReportDocument(rows));
+}
+
+function buildAdSpendData(rows = []) {
+  const monthly = amountRows(rows, "month", 12);
+  const media = amountRows(rows, "media", 6);
+  const type = amountRows(rows, "type", 6);
+  return { monthly, media, type };
+}
+
+function amountRows(rows = [], key, limit = 8) {
+  const totals = new Map();
+  rows.forEach((row) => {
+    const name = row[key] || "미분류";
+    totals.set(name, (totals.get(name) || 0) + Number(row.amount || 0));
+  });
+  const sorted = Array.from(totals.entries()).map(([name, value]) => ({ name, value }));
+  if (key === "month") return sorted.sort((a, b) => String(a.name).localeCompare(String(b.name))).slice(-limit);
+  return sorted.sort((a, b) => b.value - a.value).slice(0, limit);
+}
+
+function buildAdReportDocument(rows = []) {
+  const data = buildAdSpendData(rows);
+  const total = rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  const generated = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+  const topMedia = data.media[0]?.name || "-";
+  const tableRows = rows.slice(0, 18).map((row) => `
+    <tr>
+      <td>${escapeHtml(row.month || "-")}</td>
+      <td>${escapeHtml(row.media || "-")}</td>
+      <td>${escapeHtml(row.type || "-")}</td>
+      <td class="amount">${escapeHtml(formatMoney(row.amount))}</td>
+      <td>${escapeHtml(row.memo || "-")}</td>
+    </tr>
+  `).join("");
+  return `<!doctype html>
+  <html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>광고비 집행 리포트</title>
+    <style>
+      @page { size: A4 landscape; margin: 10mm; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fff; color: #111827; font-family: "Malgun Gothic", Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .sheet { display: grid; gap: 10px; width: 100%; }
+      header { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 3px double #202a3a; }
+      .eyebrow { color: #2855d9; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+      h1 { margin: 4px 0 0; font-family: Georgia, "Times New Roman", "Malgun Gothic", serif; font-size: 34px; line-height: 1; }
+      .meta { display: grid; gap: 4px; min-width: 210px; color: #475569; font-size: 10px; font-weight: 900; text-align: right; }
+      .kpis { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #cbd5e1; }
+      .kpis div { padding: 8px 10px; border-right: 1px solid #cbd5e1; }
+      .kpis div:last-child { border-right: 0; }
+      .kpis span { display: block; color: #64748b; font-size: 9px; font-weight: 900; }
+      .kpis b { display: block; margin-top: 4px; font-size: 18px; line-height: 1.05; }
+      .grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; }
+      section { min-width: 0; padding: 9px; border: 1px solid #d8e0ec; border-radius: 7px; }
+      h2 { margin: 0 0 7px; color: #111827; font-size: 12px; }
+      .bars { display: grid; gap: 6px; }
+      .bar { display: grid; grid-template-columns: 82px minmax(0, 1fr) 78px; gap: 6px; align-items: center; font-size: 10px; font-weight: 900; }
+      .bar label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .track { height: 8px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+      .track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #2855d9, #6488ff); }
+      .bar em { color: #334155; font-style: normal; text-align: right; white-space: nowrap; }
+      table { width: 100%; border-collapse: collapse; font-size: 9px; }
+      th, td { padding: 5px 6px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+      th { color: #64748b; background: #f8fafc; font-weight: 900; }
+      .amount { text-align: right; white-space: nowrap; font-weight: 900; }
+      .table-card { grid-column: 1 / -1; }
+      @media print { body { background: #fff; } }
+    </style>
+  </head>
+  <body>
+    <main class="sheet">
+      <header>
+        <div>
+          <div class="eyebrow">Advertising Spend Report</div>
+          <h1>광고비 집행 리포트</h1>
+        </div>
+        <div class="meta">
+          <span>생성 ${escapeHtml(generated)}</span>
+          <span>기준 ${rows.length.toLocaleString("ko-KR")}건</span>
+        </div>
+      </header>
+      <div class="kpis">
+        <div><span>총 집행액</span><b>${escapeHtml(formatMoney(total))}</b></div>
+        <div><span>집행 월수</span><b>${unique(rows.map((row) => row.month)).length.toLocaleString("ko-KR")}개월</b></div>
+        <div><span>매체 수</span><b>${unique(rows.map((row) => row.media)).length.toLocaleString("ko-KR")}곳</b></div>
+        <div><span>최대 집행 매체</span><b>${escapeHtml(topMedia)}</b></div>
+      </div>
+      <div class="grid">
+        <section><h2>월별 집행 추이</h2><div class="bars">${adReportBars(data.monthly, total)}</div></section>
+        <section><h2>매체별 집행</h2><div class="bars">${adReportBars(data.media, total)}</div></section>
+        <section><h2>유형별 집행</h2><div class="bars">${adReportBars(data.type, total)}</div></section>
+        <section class="table-card">
+          <h2>집행 내역</h2>
+          <table>
+            <thead><tr><th>월</th><th>매체</th><th>유형</th><th>금액</th><th>메모</th></tr></thead>
+            <tbody>${tableRows || '<tr><td colspan="5">등록된 광고비 집행 내역이 없습니다.</td></tr>'}</tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+  </body>
+  </html>`;
+}
+
+function adReportBars(rows = [], total = 0) {
+  if (!rows.length) return '<p>데이터 없음</p>';
+  const max = Math.max(...rows.map((row) => row.value), 1);
+  return rows.map((row) => {
+    const width = Math.max(4, Math.round((row.value / max) * 100));
+    const share = total ? Math.round((row.value / total) * 100) : 0;
+    return `<div class="bar"><label>${escapeHtml(row.name)}</label><div class="track"><span style="width:${width}%"></span></div><em>${escapeHtml(formatMoney(row.value))} ${share}%</em></div>`;
+  }).join("");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function composeManagementData(operations, articles) {
