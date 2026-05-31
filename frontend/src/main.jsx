@@ -7,7 +7,6 @@ import {
   Bookmark,
   Building2,
   CalendarDays,
-  CheckCircle2,
   ChevronRight,
   Download,
   ExternalLink,
@@ -21,7 +20,6 @@ import {
   Megaphone,
   Newspaper,
   Radar,
-  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
@@ -137,9 +135,6 @@ function App() {
       <Header
         period={period}
         setPeriod={setPeriod}
-        operations={operations}
-        onRefresh={refreshOperations}
-        onLogin={() => setLoginOpen(true)}
       />
       <aside className="side-nav" aria-label="주요 메뉴">
         <div className="side-title">Menu</div>
@@ -183,11 +178,8 @@ function App() {
   );
 }
 
-function Header({ period, setPeriod, operations, onRefresh, onLogin }) {
-  const session = operations.session;
-  const userText = session
-    ? `${session.display_name || session.employee_no} ${session.employee_no || ""} ${roleLabel(session.role)}`
-    : "최진우 1611499 관리자";
+function Header({ period, setPeriod }) {
+  const userText = "최진우 1611499 관리자";
 
   return (
     <header className="app-header">
@@ -206,29 +198,10 @@ function Header({ period, setPeriod, operations, onRefresh, onLogin }) {
           </button>
         ))}
       </div>
-      <div className="header-actions">
-        <ConnectionBadge operations={operations} onLogin={onLogin} />
-        <button className="ghost-button" onClick={onRefresh}>
-          <RefreshCw />새로고침
-        </button>
-        <button className="primary-button">
-          <Download />CSV
-        </button>
-      </div>
       <div className="user-chip">
         <span>{userText}</span>
       </div>
     </header>
-  );
-}
-
-function ConnectionBadge({ operations, onLogin }) {
-  const live = operations.status === "live";
-  return (
-    <button className={`connection-badge ${operations.status || "sample"}`} onClick={live ? undefined : onLogin}>
-      {live ? <CheckCircle2 /> : <LogIn />}
-      <span>{operations.message || "샘플 데이터"}</span>
-    </button>
   );
 }
 
@@ -1970,10 +1943,6 @@ function formatMoney(value) {
   if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억원`;
   if (amount >= 10000) return `${Math.round(amount / 10000).toLocaleString("ko-KR")}만원`;
   return `${amount.toLocaleString("ko-KR")}원`;
-}
-
-function roleLabel(role) {
-  return { admin: "관리자", editor: "편집자", viewer: "조회자" }[role] || "관리자";
 }
 
 createRoot(document.getElementById("root")).render(<App />);

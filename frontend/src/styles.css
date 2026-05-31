@@ -57,7 +57,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: 260px minmax(180px, 260px) minmax(0, 1fr) auto;
+  grid-template-columns: 260px minmax(180px, 260px) minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   padding: 10px 16px;
@@ -137,13 +137,6 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   background: #fff;
   color: var(--blue);
   box-shadow: 0 1px 4px rgba(16, 24, 40, .1);
-}
-
-.header-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  min-width: 0;
 }
 
 .ghost-button, .primary-button {
@@ -1820,42 +1813,6 @@ button.kpi-card {
   overflow-wrap: anywhere;
 }
 
-.connection-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 38px;
-  max-width: 180px;
-  padding: 8px 10px;
-  border: 1px solid #c8d6ff;
-  border-radius: 7px;
-  background: var(--blue-soft);
-  color: var(--blue);
-  font-size: 12px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.connection-badge.live {
-  border-color: #bdebd6;
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.connection-badge.error,
-.connection-badge.sample {
-  border-color: #f4cf87;
-  background: var(--amber-soft);
-  color: var(--amber);
-}
-
-.connection-badge span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -2245,7 +2202,7 @@ button.kpi-card {
 
   .app-header {
     position: static;
-    grid-template-columns: minmax(0, 1fr) minmax(160px, 240px) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 240px);
   }
 
   .user-chip { display: none; }
@@ -2327,18 +2284,8 @@ button.kpi-card {
 
   .brand span { white-space: normal; }
 
-  .period-control, .header-actions {
+  .period-control {
     width: 100%;
-  }
-
-  .header-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .header-actions .connection-badge {
-    grid-column: 1 / -1;
-    max-width: none;
   }
 
   .workspace {
