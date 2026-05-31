@@ -2002,11 +2002,11 @@ button.kpi-card {
 }
 
 .feed-row {
-  grid-template-columns: 54px minmax(0, 1fr) 78px 28px;
+  grid-template-columns: 54px minmax(0, 1fr) 28px;
 }
 
 .feed-table.compact .feed-row {
-  grid-template-columns: 52px minmax(0, 1fr) 76px;
+  grid-template-columns: 52px minmax(0, 1fr);
 }
 
 .feed-main {
@@ -2418,7 +2418,6 @@ button.kpi-card {
   }
 
   .feed-row .chip,
-  .feed-row em,
   .feed-row > a {
     grid-column: 2;
     justify-self: start;

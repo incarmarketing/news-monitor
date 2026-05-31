@@ -1233,7 +1233,6 @@ function ArticleFeed({ rows, compact = false }) {
                 </details>
               )}
             </div>
-            <em>{row.status || "분석 완료"}</em>
             {!compact && row.link && row.link !== "#" && (
               <a
                 href={row.link}
