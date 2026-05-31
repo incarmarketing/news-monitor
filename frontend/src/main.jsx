@@ -1625,11 +1625,13 @@ function buildArticleSummaryLines(item = {}) {
   }
   const cleanTitle = cleanSummaryText(item.title || "");
   const text = cleanSummaryText(item.summary || item.description || "");
-  const sentences = splitSummarySentences(text).filter((sentence) => sentence !== cleanTitle);
+  const sentences = splitSummarySentences(text).filter((sentence) => sentence !== cleanTitle && !isGenericSummaryLine(sentence));
   const lead = sentences[0] || cleanTitle || `${item.source || "언론"} 보도 기준 핵심 이슈입니다.`;
   const context = buildSummaryContextLine(item);
   const toneLine = buildSummaryToneLine(item);
-  return unique([lead, context, toneLine].filter(Boolean)).slice(0, 3);
+  return unique([lead, context, toneLine].filter(Boolean))
+    .filter((line) => !isGenericSummaryLine(line))
+    .slice(0, 3);
 }
 
 function compactArticleSummary(item = {}) {
@@ -1657,19 +1659,29 @@ function splitSummarySentences(value) {
     .slice(0, 3);
 }
 
+function isGenericSummaryLine(value) {
+  const text = cleanSummaryText(value);
+  return (
+    /키워드 기준으로 수집된 기사입니다/.test(text) ||
+    /키워드로 수집됐습니다/.test(text) ||
+    /기준 핵심만 요약했습니다/.test(text)
+  );
+}
+
 function buildSummaryContextLine(item = {}) {
   const category = item.category || item.keyword || "키워드";
   if (isOwnArticle(item)) return "당사 직접 언급 기사로 보고서와 리스크 점검 근거에 우선 포함합니다.";
   if (["GA", "보험사"].includes(category)) return "보험사·GA 시장 흐름을 보여주는 업계 동향 기사로 분리합니다.";
   if (category === "정책/규제") return "정책·규제 변화가 영업 환경에 미칠 수 있는 영향을 확인합니다.";
-  return `${category} 키워드 기준으로 수집된 기사입니다.`;
+  if (category === "제외") return "분석 대상에서 제외한 노이즈성 기사입니다.";
+  return "";
 }
 
 function buildSummaryToneLine(item = {}) {
   if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인이 필요합니다.";
   if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다.";
   if (item.tone === "긍정") return "우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.";
-  return "주의 알림 대상과 분리해 배경 동향으로 관리합니다.";
+  return "";
 }
 
 function buildMonthlyObservations(data, issues = []) {

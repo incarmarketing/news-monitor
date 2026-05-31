@@ -93,22 +93,17 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 def article_summary(article: dict, category: str, tone: str) -> str:
     existing = clean_summary_text(article.get("description", "") or article.get("summary", ""))
-    source = article.get("source") or "언론"
-    keyword = article.get("keyword") or "관련 키워드"
-    category_label = CATEGORY_LABELS.get(category, "기타")
-    tone_label = TONE_LABELS.get(tone, "주의")
     lines = []
     if existing:
         lines.extend(split_summary_sentences(existing)[:2])
-    lines.append(f"{source} 보도는 {category_label} 맥락에서 '{keyword}' 키워드로 수집됐습니다.")
+    elif article.get("title"):
+        lines.append(clean_summary_text(article.get("title", "")))
     if tone == "negative":
         lines.append("소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인합니다.")
     elif tone == "caution":
         lines.append("직접 부정과 분리해 시장 평가, 투자 의견, 규제성 신호로 추적합니다.")
     elif tone == "positive":
         lines.append("우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.")
-    else:
-        lines.append(f"보도 논조는 {tone_label}으로 분류해 주의 알림과 분리합니다.")
     return " ".join(unique_lines(lines)[:4])
 
 
@@ -132,11 +127,23 @@ def unique_lines(lines: list[str]) -> list[str]:
     result = []
     for line in lines:
         clean = clean_summary_text(line)
-        if not clean or clean in seen:
+        if not clean or is_generic_summary_line(clean) or clean in seen:
             continue
         seen.add(clean)
         result.append(clean)
     return result
+
+
+def is_generic_summary_line(value: object) -> bool:
+    text = clean_summary_text(value)
+    return any(
+        phrase in text
+        for phrase in (
+            "키워드 기준으로 수집된 기사입니다",
+            "키워드로 수집됐습니다",
+            "기준 핵심만 요약했습니다",
+        )
+    )
 
 
 def load_supabase_articles() -> list[dict]:
