@@ -83,6 +83,17 @@ RISK_CONTEXT_WORDS = [
     "정착지원금", "이직", "보따리", "전격 점검", "영업 관행", "관리 부실",
 ]
 
+INVESTMENT_DOWNGRADE_CONTEXT_WORDS = [
+    "투자의견", "목표주가", "목표가", "증권가", "리포트", "애널리스트",
+    "매수", "보유", "홀드", "중립", "매도", "밸류에이션", "주가",
+]
+
+INVESTMENT_DOWNGRADE_WORDS = [
+    "하향", "하향 조정", "낮아졌다", "낮췄다", "낮추", "후퇴", "매수 접",
+    "매수 의견 후퇴", "상승 여력 제한", "추가 상승 여력은 제한", "밸류에이션 부담",
+    "성장 모멘텀 둔화", "보수적인 시각", "경계감", "고평가", "과열",
+]
+
 POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
 
 CATEGORIES = {
@@ -125,6 +136,8 @@ def score_article(article: dict) -> int:
         score += 3
     if is_own_article(article) and any(word in title for word in NEGATIVE_WORDS):
         score += 6
+    if is_investment_downgrade_article(article):
+        score += 8
     if any(word in title for word in REGULATION_WORDS):
         score += 4
     if any(word in text for word in REPUTATION_WORDS):
@@ -203,6 +216,8 @@ def analyze_tone(article: dict) -> str:
     negative_score += sum(1 for word in NEGATIVE_WORDS if word in text and word not in title)
     negative_score += sum(2 for word in RISK_CONTEXT_WORDS if word in title)
     negative_score += sum(1 for word in RISK_CONTEXT_WORDS if word in text and word not in title)
+    if is_investment_downgrade_article(article):
+        negative_score += 6
 
     positive_score += sum(2 for word in POSITIVE_RANKING_WORDS if word in title)
     positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
@@ -219,6 +234,15 @@ def analyze_tone(article: dict) -> str:
 def is_own_article(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     return any(name in text for name in OWN_NAMES)
+
+
+def is_investment_downgrade_article(article: dict) -> bool:
+    if not is_own_article(article):
+        return False
+    text = article.get("title", "") + " " + article.get("description", "")
+    has_market_context = any(word in text for word in INVESTMENT_DOWNGRADE_CONTEXT_WORDS)
+    has_downgrade_signal = any(word in text for word in INVESTMENT_DOWNGRADE_WORDS)
+    return has_market_context and has_downgrade_signal
 
 
 def cluster_articles(articles: list[dict], threshold: float = 0.62) -> list[dict]:
