@@ -113,6 +113,7 @@ export async function loadOperationalData() {
     articles: [],
     notifications: [],
     watchRuns: [],
+    reportRuns: [],
     scraps: [],
     mediaRelations: [],
     reporters: [],
@@ -131,7 +132,7 @@ export async function loadOperationalData() {
       return { ...base, message: "운영 로그인 필요" };
     }
 
-    const [articles, notifications, watchRuns, scraps, mediaRelations, reporters, ads, aliases] = await Promise.all([
+    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases] = await Promise.all([
       fetchTable(
         config,
         session,
@@ -156,6 +157,11 @@ export async function loadOperationalData() {
       rest(
         config,
         session,
+        "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
+      ),
+      rest(
+        config,
+        session,
         "article_scraps?select=article_hash,article_snapshot,created_at&order=created_at.desc&limit=100",
       ),
       rest(config, session, "media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
@@ -171,6 +177,7 @@ export async function loadOperationalData() {
       articles: Array.isArray(articles) ? articles.map(normalizeArticle).filter(Boolean) : [],
       notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
+      reportRuns: Array.isArray(reportRuns) ? reportRuns.map(normalizeReportRun) : [],
       scraps: Array.isArray(scraps) ? scraps.map(normalizeScrap).filter(Boolean) : [],
       mediaRelations: Array.isArray(mediaRelations) ? mediaRelations.filter((row) => !row.hidden).map(normalizeMedia) : [],
       reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
@@ -240,6 +247,18 @@ function normalizeWatchRun(row) {
     negative: Number(row.negative_count || 0),
     fresh: Number(row.new_negative_count || 0),
     message: row.message || "",
+  };
+}
+
+function normalizeReportRun(row) {
+  const metrics = row?.metrics && typeof row.metrics === "object" ? row.metrics : {};
+  return {
+    id: row?.run_key || `${row?.report_date || ""}-${row?.report_slot || ""}`,
+    date: String(row?.report_date || row?.timestamp || "").slice(0, 10),
+    slot: row?.report_slot || row?.window_label || "",
+    timestamp: row?.timestamp || "",
+    riskLevel: String(row?.risk_level || metrics.risk_level || "").toUpperCase(),
+    metrics,
   };
 }
 

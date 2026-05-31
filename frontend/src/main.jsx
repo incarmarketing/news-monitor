@@ -46,14 +46,11 @@ import {
   contextRules,
   journalistRows,
   keywordGroups,
-  monitoringFeed,
   navItems,
-  notificationHistory,
   periodData,
   periodTabs,
   pressInfluence,
   pressRegistry,
-  sampleScraps,
   watchJobs,
 } from "./data";
 import { loadOperationalData, verifyDashboardLogin } from "./liveData";
@@ -92,18 +89,23 @@ function App() {
     () => filterArticlesByPeriod(operations.articles || [], period),
     [operations.articles, period],
   );
-  const allArticles = operations.articles?.length ? operations.articles : monitoringFeed;
-  const scraps = operations.scraps?.length ? operations.scraps : sampleScraps;
+  const scopedReportRuns = useMemo(
+    () => filterRowsByPeriod(operations.reportRuns || [], period),
+    [operations.reportRuns, period],
+  );
+  const liveConnected = operations.status === "live";
+  const allArticles = liveConnected ? operations.articles || [] : [];
+  const scraps = liveConnected ? operations.scraps || [] : [];
   const data = useMemo(
-    () => composePeriodData(baseData, scopedArticles),
-    [baseData, scopedArticles],
+    () => composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected),
+    [baseData, scopedArticles, scopedReportRuns, liveConnected],
   );
   const management = useMemo(
     () => composeManagementData(operations, scopedArticles),
     [operations, scopedArticles],
   );
-  const notifications = operations.notifications?.length ? operations.notifications : notificationHistory;
-  const jobs = operations.watchRuns?.length
+  const notifications = liveConnected ? operations.notifications || [] : [];
+  const jobs = liveConnected && operations.watchRuns?.length
     ? [
         {
           label: "부정기사 감시",
@@ -113,7 +115,7 @@ function App() {
         },
         ...watchJobs.filter((job) => job.label !== "부정기사 감시"),
       ]
-    : watchJobs;
+    : [];
 
   const openMonitoring = (preset = {}) => {
     setMonitoringPreset({ ...preset, stamp: Date.now() });
@@ -158,7 +160,7 @@ function App() {
       <View
         data={data}
         period={period}
-        articles={scopedArticles.length ? scopedArticles : monitoringFeed}
+        articles={scopedArticles}
         allArticles={allArticles}
         scraps={scraps}
         jobs={jobs}
@@ -441,10 +443,10 @@ function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring }) {
   const monthlyArticles = useMemo(() => lastNDays(allArticles || [], 31), [allArticles]);
   const analysisArticles = monthlyArticles.length ? monthlyArticles : allArticles || [];
   const monthlyTrend = useMemo(
-    () => buildWeeklyToneTrend(analysisArticles.length ? analysisArticles : monitoringFeed, data.toneTrend),
+    () => buildWeeklyToneTrend(analysisArticles, data.toneTrend),
     [analysisArticles, data.toneTrend],
   );
-  const issueRows = buildIssues(analysisArticles.length ? analysisArticles : monitoringFeed, data.issues).slice(0, 6);
+  const issueRows = buildIssues(analysisArticles, data.issues).slice(0, 6);
   return (
     <main className="workspace">
       <PageTitle
@@ -604,7 +606,7 @@ function RiskCenter() {
 function Reports({ data, period, articles, scraps, onOpenMonitoring }) {
   const { summary } = data;
   const edition = publicationMeta(period, data);
-  const reportArticles = articles?.length ? articles : monitoringFeed;
+  const reportArticles = articles || [];
   const expandedIssues = expandReportIssues(data.issues, reportArticles, period);
   const lead = buildReportLead(period, data, reportArticles, expandedIssues);
   const secondary = expandedIssues.slice(1, period === "daily" ? 4 : 8);
@@ -1334,24 +1336,31 @@ function Chip({ children, tone }) {
   return <span className={`chip ${cls}`}>{children}</span>;
 }
 
-function composePeriodData(base, articles) {
-  if (!articles.length) {
-    return { ...base, pressInfluence };
+function composePeriodData(base, articles, reportRuns = [], liveConnected = false) {
+  if (!liveConnected) {
+    return buildDisconnectedPeriodData(base);
+  }
+  const runSummary = summarizeReportRuns(reportRuns);
+  if (!articles.length && !reportRuns.length) {
+    return buildDisconnectedPeriodData(base, "선택 기간 데이터가 없습니다.");
   }
   const ownMentions = articles.filter(isOwnArticle).length;
   const ownNegative = articles.filter((article) => isOwnArticle(article) && article.tone === "부정").length;
   const caution = articles.filter((article) => article.tone === "주의").length;
   const gaInsurance = articles.filter((article) => ["GA", "보험사"].includes(article.category)).length;
+  const headlineOwnMentions = runSummary.ownMentions ?? ownMentions;
+  const headlineOwnNegative = runSummary.ownNegative ?? ownNegative;
+  const headlineCaution = runSummary.caution ?? caution;
   const summary = {
     ...base.summary,
-    collected: articles.length,
-    analyzed: articles.filter((article) => article.tone !== "제외").length,
-    ownMentions,
-    ownNegative,
-    caution,
+    collected: runSummary.collected ?? articles.length,
+    analyzed: runSummary.analyzed ?? articles.filter((article) => article.tone !== "제외").length,
+    ownMentions: headlineOwnMentions,
+    ownNegative: headlineOwnNegative,
+    caution: headlineCaution,
     gaInsurance,
-    risk: ownNegative >= 3 ? "HIGH" : ownNegative > 0 || caution >= 5 ? "MEDIUM" : "LOW",
-    headline: buildHeadline(articles, ownMentions, ownNegative, caution),
+    risk: runSummary.risk || (headlineOwnNegative >= 3 ? "HIGH" : headlineOwnNegative > 0 || headlineCaution >= 5 ? "MEDIUM" : "LOW"),
+    headline: buildHeadline(articles, headlineOwnMentions, headlineOwnNegative, headlineCaution),
     watchTime: articles[0]?.time || base.summary.watchTime,
   };
   return {
@@ -1366,11 +1375,84 @@ function composePeriodData(base, articles) {
       hour12: false,
     }).format(new Date()),
     scope: articles[0]?.date ? `${articles[0].date} 기준` : base.scope,
-    issues: buildIssues(articles, base.issues),
+    issues: articles.length ? buildIssues(articles, base.issues) : [],
     categoryFlow: groupArticles(articles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
     toneTrend: buildToneTrend(articles),
     pressInfluence: buildPressInfluence(articles),
   };
+}
+
+function buildDisconnectedPeriodData(base, headline = "운영 DB 로그인 후 실제 수집/분석 수치가 표시됩니다.") {
+  return {
+    ...base,
+    scope: "데이터 연결 필요",
+    generatedAt: "-",
+    summary: {
+      ...base.summary,
+      risk: "LOW",
+      collected: 0,
+      analyzed: 0,
+      ownMentions: 0,
+      ownNegative: 0,
+      caution: 0,
+      gaInsurance: 0,
+      dispatchTime: "-",
+      watchTime: "-",
+      headline,
+    },
+    issues: [],
+    categoryFlow: [],
+    toneTrend: [],
+    pressInfluence: [],
+  };
+}
+
+function summarizeReportRuns(reportRuns) {
+  if (!reportRuns.length) return {};
+  const sums = reportRuns.reduce(
+    (acc, row) => {
+      const metrics = row.metrics || {};
+      if (Object.prototype.hasOwnProperty.call(metrics, "total_collected")) acc.hasCollected = true;
+      if (Object.prototype.hasOwnProperty.call(metrics, "total_after_cluster")) acc.hasAnalyzed = true;
+      if (Object.prototype.hasOwnProperty.call(metrics, "own_total")) acc.hasOwnMentions = true;
+      if (Object.prototype.hasOwnProperty.call(metrics, "own_negative")) acc.hasOwnNegative = true;
+      if (metrics.by_tone && Object.prototype.hasOwnProperty.call(metrics.by_tone, "caution")) acc.hasCaution = true;
+      acc.collected += numberOrZero(metrics.total_collected);
+      acc.analyzed += numberOrZero(metrics.total_after_cluster);
+      acc.ownMentions += numberOrZero(metrics.own_total);
+      acc.ownNegative += numberOrZero(metrics.own_negative);
+      acc.caution += numberOrZero(metrics.by_tone?.caution);
+      if (row.riskLevel === "HIGH" || metrics.risk_level === "HIGH") acc.risk = "HIGH";
+      else if (!acc.risk && (row.riskLevel === "MEDIUM" || metrics.risk_level === "MEDIUM")) acc.risk = "MEDIUM";
+      return acc;
+    },
+    {
+      collected: 0,
+      analyzed: 0,
+      ownMentions: 0,
+      ownNegative: 0,
+      caution: 0,
+      risk: "",
+      hasCollected: false,
+      hasAnalyzed: false,
+      hasOwnMentions: false,
+      hasOwnNegative: false,
+      hasCaution: false,
+    },
+  );
+  return {
+    collected: sums.hasCollected ? sums.collected : undefined,
+    analyzed: sums.hasAnalyzed ? sums.analyzed : undefined,
+    ownMentions: sums.hasOwnMentions ? sums.ownMentions : undefined,
+    ownNegative: sums.hasOwnNegative ? sums.ownNegative : undefined,
+    caution: sums.hasCaution ? sums.caution : undefined,
+    risk: sums.risk || "",
+  };
+}
+
+function numberOrZero(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
 }
 
 function buildHeadline(articles, ownMentions, ownNegative, caution) {
@@ -1449,6 +1531,7 @@ function buildWeeklyToneTrend(articles, fallback = []) {
 }
 
 function ensureTrendHasTone(rows = []) {
+  if (!rows.length) return [];
   const fallback = rows.length ? rows : [
     { date: "1주", positive: 5, caution: 1, negative: 0 },
     { date: "2주", positive: 7, caution: 2, negative: 1 },
@@ -1456,7 +1539,7 @@ function ensureTrendHasTone(rows = []) {
     { date: "4주", positive: 8, caution: 2, negative: 0 },
     { date: "5주", positive: 6, caution: 1, negative: 0 },
   ];
-  return fallback.map((row, index) => ({
+  return rows.map((row, index) => ({
     date: row.date || `${index + 1}주`,
     positive: Number(row.positive || 0),
     caution: Number(row.caution || 0),
@@ -1514,7 +1597,7 @@ function buildPressInfluence(articles) {
 }
 
 function composeManagementData(operations, articles) {
-  const pressStats = new Map(buildPressInfluence(articles.length ? articles : monitoringFeed).map((row) => [row.source, row]));
+  const pressStats = new Map(buildPressInfluence(articles).map((row) => [row.source, row]));
   const media = operations.mediaRelations?.length
     ? operations.mediaRelations.map((row) => ({ ...row, ...(pressStats.get(row.name) || {}) }))
     : pressRegistry.map((name, index) => ({
@@ -1532,6 +1615,10 @@ function composeManagementData(operations, articles) {
 }
 
 function filterArticlesByPeriod(articles, period) {
+  return filterRowsByPeriod(articles, period);
+}
+
+function filterRowsByPeriod(articles, period) {
   if (!articles.length) return [];
   const dated = articles.filter((article) => article.date);
   if (!dated.length) return articles;
