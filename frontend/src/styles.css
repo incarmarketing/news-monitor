@@ -2216,6 +2216,109 @@ button.kpi-card {
   margin-bottom: 12px;
 }
 
+.operation-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, .72fr) auto;
+  gap: 10px;
+  align-items: end;
+  min-width: 0;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.operation-form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.operation-form span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.operation-form input,
+.operation-form select {
+  min-width: 0;
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.operation-form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.status-note {
+  grid-column: 1 / -1;
+  margin: -2px 0 0;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.alias-chip-list,
+.keyword-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.keyword-add-form {
+  grid-template-columns: minmax(150px, .55fr) minmax(220px, 1fr) auto;
+}
+
+.keyword-manager-list {
+  display: grid;
+  gap: 9px;
+}
+
+.keyword-manager-group {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.keyword-manager-group > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.keyword-manager-group b {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.keyword-manager-group span,
+.keyword-manager-group p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
 .data-table-wrap {
   width: 100%;
   max-width: 100%;
@@ -2226,7 +2329,7 @@ button.kpi-card {
 
 .data-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 880px;
   border-collapse: collapse;
   background: #fff;
 }
@@ -2460,8 +2563,19 @@ button.kpi-card {
   }
 
   .management-toolbar,
+  .operation-form,
+  .keyword-add-form,
   .filter-card {
     grid-template-columns: 1fr;
+  }
+
+  .operation-form-actions {
+    justify-content: stretch;
+  }
+
+  .operation-form-actions button {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .related-toggle {

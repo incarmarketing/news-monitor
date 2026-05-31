@@ -80,7 +80,41 @@ async function dashboardApi(config, session, action, payload = {}) {
 }
 
 async function rest(config, session, path) {
-  return dashboardApi(config, session, "rest", { path, method: "GET" });
+  const result = await dashboardApi(config, session, "rest", { path, method: "GET" });
+  return result && Object.prototype.hasOwnProperty.call(result, "data") ? result.data : result;
+}
+
+async function writeRest(path, method, body, headers = {}) {
+  const config = await loadSupabaseConfig();
+  const session = getStoredSession();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  if (!session?.session_token) throw new Error("missing_dashboard_session");
+  const result = await dashboardApi(config, session, "rest", { path, method, body, headers });
+  return result && Object.prototype.hasOwnProperty.call(result, "data") ? result.data : result;
+}
+
+export async function savePressAlias(host, pressName) {
+  const cleanHost = String(host || "").trim().toLowerCase();
+  const cleanName = String(pressName || "").trim();
+  if (!cleanHost || !cleanName) throw new Error("host_and_press_required");
+  return writeRest(
+    "press_aliases?on_conflict=host",
+    "POST",
+    [{ host: cleanHost, press_name: cleanName }],
+    { Prefer: "resolution=merge-duplicates,return=representation" },
+  );
+}
+
+export async function saveMonitorKeyword(keyword, category = "other") {
+  const cleanKeyword = String(keyword || "").trim();
+  const cleanCategory = String(category || "other").trim() || "other";
+  if (!cleanKeyword) throw new Error("keyword_required");
+  return writeRest(
+    "monitor_keywords?on_conflict=keyword,category",
+    "POST",
+    [{ keyword: cleanKeyword, category: cleanCategory, enabled: true }],
+    { Prefer: "resolution=merge-duplicates,return=representation" },
+  );
 }
 
 async function fetchTable(config, session, table, query, pageSize = 1000, maxRows = 50000) {
@@ -184,6 +218,7 @@ async function loadOperationalDataFromSupabaseSession() {
     reporters: [],
     ads: [],
     aliases: [],
+    keywords: [],
     session: getStoredSession(),
   };
 
@@ -197,7 +232,7 @@ async function loadOperationalDataFromSupabaseSession() {
       return { ...base, message: "운영 로그인 필요" };
     }
 
-    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases] = await Promise.all([
+    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords] = await Promise.all([
       fetchTable(
         config,
         session,
@@ -233,6 +268,7 @@ async function loadOperationalDataFromSupabaseSession() {
       rest(config, session, "reporters?select=id,name,media,status,contact_date,memo,updated_at&order=updated_at.desc&limit=500"),
       rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
       rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
+      rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
     ]);
 
     return {
@@ -248,7 +284,7 @@ async function loadOperationalDataFromSupabaseSession() {
       reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
       aliases: Array.isArray(aliases) ? aliases : [],
-      keywords: [],
+      keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
       session,
     };
   } catch (error) {

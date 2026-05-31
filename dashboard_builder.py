@@ -292,12 +292,23 @@ def load_dashboard_keywords() -> list[dict]:
     return [{"keyword": keyword, "category": "other", "enabled": True} for keyword in config.KEYWORDS]
 
 
+def load_dashboard_aliases() -> list[dict]:
+    try:
+        rows = supabase_store.load_press_alias_rows()
+        if rows:
+            return rows
+    except Exception as exc:
+        print(f"Supabase press alias source skipped: {exc}")
+    return []
+
+
 def publish_dashboard() -> Path:
     archives = load_daily_archives()
     articles = build_articles(archives)
     summary = build_summary(archives, articles)
     report_runs = build_report_runs(archives)
     keywords = load_dashboard_keywords()
+    aliases = load_dashboard_aliases()
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
@@ -312,6 +323,7 @@ def publish_dashboard() -> Path:
                 "category_labels": CATEGORY_LABELS,
                 "tone_labels": TONE_LABELS,
                 "keywords": keywords,
+                "aliases": aliases,
                 "report_runs": report_runs,
                 "notifications": notifications,
                 "watch_runs": watch_runs,

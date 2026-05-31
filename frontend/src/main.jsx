@@ -51,7 +51,7 @@ import {
   pressRegistry,
   watchJobs,
 } from "./data";
-import { loadOperationalData, verifyDashboardLogin } from "./liveData";
+import { loadOperationalData, saveMonitorKeyword, savePressAlias, verifyDashboardLogin } from "./liveData";
 import "./styles.css";
 
 const navIcons = {
@@ -881,10 +881,10 @@ function Management({ management, operations }) {
           </button>
         ))}
       </div>
-      {tab === "media" && <MediaManagement rows={management.media} />}
+      {tab === "media" && <MediaManagement rows={management.media} aliases={operations.aliases || []} />}
       {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
       {tab === "ads" && <AdManagement rows={management.ads} />}
-      {tab === "keywords" && <KeywordManagement />}
+      {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} />}
     </main>
   );
 }
@@ -901,13 +901,83 @@ function ManagementSummary({ management }) {
   );
 }
 
-function MediaManagement({ rows }) {
+function MediaManagement({ rows, aliases = [] }) {
   const [showAll, setShowAll] = useState(false);
-  const visibleRows = showAll ? rows : rows.slice(0, 15);
+  const [query, setQuery] = useState("");
+  const [aliasUrl, setAliasUrl] = useState("");
+  const [pressName, setPressName] = useState("");
+  const [aliasStatus, setAliasStatus] = useState("");
+  const [localAliases, setLocalAliases] = useState(() => readLocalRows(PRESS_ALIAS_DRAFT_KEY));
+  const aliasRows = useMemo(() => mergeAliasRows(aliases, localAliases), [aliases, localAliases]);
+  const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows), [rows, aliasRows]);
+  const filteredRows = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return managedRows;
+    return managedRows.filter((row) => {
+      const domains = domainsForPressName(row.name, aliasRows).join(" ");
+      return `${row.name} ${row.grade} ${row.status} ${row.owner} ${row.memo} ${domains}`.toLowerCase().includes(term);
+    });
+  }, [managedRows, query, aliasRows]);
+  const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
+
+  const handleUrlChange = (value) => {
+    setAliasUrl(value);
+    const mapped = resolvePressNameFromUrl(value, aliasRows, rows);
+    if (mapped) {
+      setPressName(mapped);
+      setAliasStatus(`${canonicalHost(value)} -> ${mapped}`);
+    } else if (value.trim()) {
+      setAliasStatus("매핑 후보를 찾지 못했습니다. 언론사명을 직접 입력하세요.");
+    } else {
+      setAliasStatus("");
+    }
+  };
+
+  const handleSaveAlias = async () => {
+    const host = canonicalHost(aliasUrl);
+    const cleanName = pressName.trim();
+    if (!host || !cleanName) {
+      setAliasStatus("URL/도메인과 언론사명을 모두 입력해야 합니다.");
+      return;
+    }
+    const nextAliases = upsertAliasRow(localAliases, { host, press_name: cleanName });
+    setLocalAliases(nextAliases);
+    writeLocalRows(PRESS_ALIAS_DRAFT_KEY, nextAliases);
+    try {
+      await savePressAlias(host, cleanName);
+      setAliasStatus("Supabase 저장 완료");
+    } catch {
+      setAliasStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+    }
+  };
+
   return (
-    <Panel title="언론사 관리" icon={Building2} meta={`${rows.length.toLocaleString("ko-KR")}곳`}>
+    <Panel title="언론사 관리" icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}곳`}>
+      <div className="operation-form media-alias-form">
+        <label>
+          <span>언론사 URL/도메인</span>
+          <input
+            value={aliasUrl}
+            onChange={(event) => handleUrlChange(event.target.value)}
+            placeholder="https://www.mk.co.kr/news/..."
+          />
+        </label>
+        <label>
+          <span>매핑 언론사명</span>
+          <input
+            value={pressName}
+            onChange={(event) => setPressName(event.target.value)}
+            placeholder="매일경제"
+          />
+        </label>
+        <div className="operation-form-actions">
+          <button className="ghost-button" onClick={() => handleUrlChange(aliasUrl)}>주소 매핑</button>
+          <button className="primary-button" onClick={handleSaveAlias}>매핑 저장</button>
+        </div>
+        {aliasStatus && <p className="status-note">{aliasStatus}</p>}
+      </div>
       <div className="management-toolbar">
-        <input placeholder="언론사 검색" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="언론사명, 도메인, 메모 검색" />
         <button className="ghost-button">등급 정리</button>
         <button className="primary-button">언론사 추가</button>
       </div>
@@ -916,6 +986,7 @@ function MediaManagement({ rows }) {
           <thead>
             <tr>
               <th>언론사</th>
+              <th>주소 보정</th>
               <th>등급</th>
               <th>관계</th>
               <th>담당</th>
@@ -928,6 +999,12 @@ function MediaManagement({ rows }) {
             {visibleRows.map((row) => (
               <tr key={row.name}>
                 <td><b>{row.name}</b></td>
+                <td>
+                  <div className="alias-chip-list">
+                    {domainsForPressName(row.name, aliasRows).slice(0, 3).map((host) => <Chip key={host}>{host}</Chip>)}
+                    {!domainsForPressName(row.name, aliasRows).length && "-"}
+                  </div>
+                </td>
                 <td><Chip>{row.grade || "B"}</Chip></td>
                 <td><Chip tone={row.status}>{row.status || "중립"}</Chip></td>
                 <td>{row.owner || "-"}</td>
@@ -939,7 +1016,7 @@ function MediaManagement({ rows }) {
           </tbody>
         </table>
       </div>
-      {rows.length > 15 && (
+      {filteredRows.length > 15 && (
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
           {showAll ? "접기" : "더보기"}
         </button>
@@ -1043,16 +1120,75 @@ function AdManagement({ rows }) {
   );
 }
 
-function KeywordManagement() {
+function KeywordManagement({ keywords = [] }) {
+  const [keyword, setKeyword] = useState("");
+  const [category, setCategory] = useState("own");
+  const [status, setStatus] = useState("");
+  const [localKeywords, setLocalKeywords] = useState(() => readLocalRows(KEYWORD_DRAFT_KEY));
+  const rows = useMemo(
+    () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), localKeywords),
+    [keywords, localKeywords],
+  );
+  const grouped = useMemo(() => groupKeywordRows(rows), [rows]);
+
+  const handleAddKeyword = async () => {
+    const cleanKeyword = keyword.trim();
+    if (!cleanKeyword) {
+      setStatus("추가할 키워드를 입력하세요.");
+      return;
+    }
+    const nextKeyword = { keyword: cleanKeyword, category, enabled: true };
+    const nextLocal = upsertKeywordRow(localKeywords, nextKeyword);
+    setLocalKeywords(nextLocal);
+    writeLocalRows(KEYWORD_DRAFT_KEY, nextLocal);
+    setKeyword("");
+    try {
+      await saveMonitorKeyword(cleanKeyword, category);
+      setStatus("Supabase 저장 완료");
+    } catch {
+      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+    }
+  };
+
   return (
     <section className="content-grid two">
-      <Panel title="상위 구분별 키워드" icon={Settings} meta="문맥 기준">
-        <div className="keyword-groups">
-          {keywordGroups.map((group) => (
-            <article key={group.group}>
-              <b>{group.group}</b>
-              <p>{group.keywords.join(" · ")}</p>
-              <span>{group.rule}</span>
+      <Panel title="상위 구분별 키워드" icon={Settings} meta={`${rows.length.toLocaleString("ko-KR")}개`}>
+        <div className="operation-form keyword-add-form">
+          <label>
+            <span>상위 구분</span>
+            <select value={category} onChange={(event) => setCategory(event.target.value)}>
+              {keywordCategories.map((item) => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>키워드</span>
+            <input
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") handleAddKeyword();
+              }}
+              placeholder="예: 글로벌금융판매"
+            />
+          </label>
+          <div className="operation-form-actions">
+            <button className="primary-button" onClick={handleAddKeyword}>키워드 추가</button>
+          </div>
+          {status && <p className="status-note">{status}</p>}
+        </div>
+        <div className="keyword-manager-list">
+          {grouped.map((group) => (
+            <article key={group.category} className="keyword-manager-group">
+              <div>
+                <b>{keywordCategoryLabel(group.category)}</b>
+                <span>{group.items.length.toLocaleString("ko-KR")}개</span>
+              </div>
+              <p>{keywordCategoryRule(group.category)}</p>
+              <div className="keyword-chip-grid">
+                {group.items.map((item) => <Chip key={`${item.category}-${item.keyword}`} tone={keywordCategoryTone(item.category)}>{item.keyword}</Chip>)}
+              </div>
             </article>
           ))}
         </div>
@@ -1860,6 +1996,218 @@ function buildPressInfluence(articles) {
       type: scoped[0]?.category || "일반",
     };
   });
+}
+
+const PRESS_ALIAS_DRAFT_KEY = "news_monitor_press_alias_drafts_v1";
+const KEYWORD_DRAFT_KEY = "news_monitor_keyword_drafts_v1";
+
+const pressHostFallbacks = {
+  "asiatoday.co.kr": "아시아투데이",
+  "biz.chosun.com": "조선비즈",
+  "bohumnews.com": "보험신보",
+  "dailyan.co.kr": "데일리안",
+  "dt.co.kr": "디지털타임스",
+  "edaily.co.kr": "이데일리",
+  "fnnews.com": "파이낸셜뉴스",
+  "fins.co.kr": "보험매일",
+  "hankyung.com": "한국경제",
+  "insjournal.co.kr": "보험저널",
+  "joongangenews.com": "중앙이코노미뉴스",
+  "mk.co.kr": "매일경제",
+  "mt.co.kr": "머니투데이",
+  "news1.kr": "뉴스1",
+  "sedaily.com": "서울경제",
+  "thebell.co.kr": "더벨",
+  "weekly.chosun.com": "주간조선",
+  "yna.co.kr": "연합뉴스",
+};
+
+const keywordCategories = [
+  { id: "own", label: "당사", rule: "당사명, 브랜드, 임직원처럼 직접 언급만 당사로 분류합니다." },
+  { id: "competitor", label: "경쟁사/GA", rule: "보험, GA, 설계사, 정착지원금 문맥이 함께 있을 때만 경쟁사 이슈로 봅니다." },
+  { id: "industry", label: "업계동향", rule: "보험 시장, 판매채널, 소비자 동향처럼 업계 흐름을 추적합니다." },
+  { id: "regulation", label: "정책/규제", rule: "금융당국, 수수료, 제도, 법령 이슈를 주의 관찰로 분리합니다." },
+  { id: "other", label: "기타", rule: "일반 관심 키워드나 별도 문맥 분석 대상입니다." },
+  { id: "exclude", label: "제외 후보", rule: "브랜드평판, 스포츠, 상품명 오탐처럼 수집 제외 후보로 관리합니다." },
+];
+
+function readLocalRows(key) {
+  try {
+    const rows = JSON.parse(window.localStorage.getItem(key) || "[]");
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalRows(key, rows) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(rows));
+  } catch {
+    // Supabase is the source of truth; local storage only keeps the public page responsive.
+  }
+}
+
+function canonicalHost(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
+    return url.hostname.toLowerCase().replace(/^www\./, "").replace(/^m\./, "");
+  } catch {
+    return raw
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .replace(/^m\./, "")
+      .split(/[/?#]/)[0]
+      .trim();
+  }
+}
+
+function normalizeAliasRow(row) {
+  const host = canonicalHost(row?.host || row?.domain || row?.url);
+  const pressName = String(row?.press_name || row?.pressName || row?.name || "").trim();
+  if (!host || !pressName) return null;
+  return { host, press_name: pressName, pressName };
+}
+
+function mergeAliasRows(remoteRows = [], localRows = []) {
+  const map = new Map();
+  [...remoteRows, ...localRows].forEach((row) => {
+    const normalized = normalizeAliasRow(row);
+    if (normalized) map.set(normalized.host, normalized);
+  });
+  return Array.from(map.values()).sort((a, b) => a.pressName.localeCompare(b.pressName, "ko-KR"));
+}
+
+function upsertAliasRow(rows, row) {
+  const normalized = normalizeAliasRow(row);
+  if (!normalized) return rows;
+  const map = new Map(rows.map((item) => [canonicalHost(item.host), item]));
+  map.set(normalized.host, { host: normalized.host, press_name: normalized.pressName });
+  return Array.from(map.values());
+}
+
+function hostMatchesAlias(aliasHost, host) {
+  return host === aliasHost || host.endsWith(`.${aliasHost}`);
+}
+
+function resolvePressNameFromUrl(value, aliases = [], mediaRows = []) {
+  const host = canonicalHost(value);
+  if (!host) return "";
+  const alias = aliases.find((row) => hostMatchesAlias(row.host, host));
+  if (alias?.pressName) return alias.pressName;
+  const fallback = Object.entries(pressHostFallbacks).find(([knownHost]) => hostMatchesAlias(knownHost, host));
+  if (fallback) return fallback[1];
+  const existing = mediaRows.find((row) => normalizeKeywordText(row.name) && host.includes(normalizeKeywordText(row.name)));
+  return existing?.name || "";
+}
+
+function domainsForPressName(pressName, aliases = []) {
+  const clean = String(pressName || "").trim();
+  return unique(aliases.filter((row) => row.pressName === clean).map((row) => row.host));
+}
+
+function mergeMediaRows(rows = [], aliases = []) {
+  const map = new Map(rows.map((row) => [row.name, row]));
+  aliases.forEach((alias) => {
+    if (!map.has(alias.pressName)) {
+      map.set(alias.pressName, {
+        name: alias.pressName,
+        grade: "B",
+        status: "중립",
+        owner: "",
+        contactDate: "",
+        memo: `주소 보정: ${alias.host}`,
+        total: 0,
+        own: 0,
+        negative: 0,
+      });
+    }
+  });
+  return Array.from(map.values());
+}
+
+function keywordRowsFromGroups() {
+  const categoryMap = {
+    당사: "own",
+    GA: "competitor",
+    보험사: "industry",
+    "정책/규제": "regulation",
+    "제외 후보": "exclude",
+  };
+  return keywordGroups.flatMap((group) =>
+    group.keywords.map((keyword) => ({
+      keyword,
+      category: categoryMap[group.group] || "other",
+      enabled: true,
+    })),
+  );
+}
+
+function normalizeKeywordRow(row) {
+  const keyword = String(row?.keyword || "").trim();
+  if (!keyword) return null;
+  return {
+    keyword,
+    category: String(row?.category || "other").trim() || "other",
+    enabled: row?.enabled !== false,
+  };
+}
+
+function mergeKeywordRows(remoteRows = [], localRows = []) {
+  const map = new Map();
+  [...remoteRows, ...localRows].forEach((row) => {
+    const normalized = normalizeKeywordRow(row);
+    if (normalized?.enabled) map.set(`${normalized.category}:${normalizeKeywordText(normalized.keyword)}`, normalized);
+  });
+  return Array.from(map.values());
+}
+
+function upsertKeywordRow(rows, row) {
+  const normalized = normalizeKeywordRow(row);
+  if (!normalized) return rows;
+  const map = new Map(rows.map((item) => [`${item.category || "other"}:${normalizeKeywordText(item.keyword)}`, item]));
+  map.set(`${normalized.category}:${normalizeKeywordText(normalized.keyword)}`, normalized);
+  return Array.from(map.values());
+}
+
+function keywordCategoryLabel(category) {
+  return keywordCategories.find((item) => item.id === category)?.label || "기타";
+}
+
+function keywordCategoryRule(category) {
+  return keywordCategories.find((item) => item.id === category)?.rule || "운영자가 지정한 문맥으로 분류합니다.";
+}
+
+function keywordCategoryTone(category) {
+  return {
+    own: "긍정",
+    competitor: "중립",
+    industry: "중립",
+    regulation: "주의",
+    exclude: "제외",
+  }[category] || "중립";
+}
+
+function groupKeywordRows(rows = []) {
+  const order = keywordCategories.map((item) => item.id);
+  const groups = new Map();
+  rows.forEach((row) => {
+    if (!groups.has(row.category)) groups.set(row.category, []);
+    groups.get(row.category).push(row);
+  });
+  return Array.from(groups.entries())
+    .map(([category, items]) => ({
+      category,
+      items: items.sort((a, b) => a.keyword.localeCompare(b.keyword, "ko-KR")),
+    }))
+    .sort((a, b) => {
+      const aOrder = order.includes(a.category) ? order.indexOf(a.category) : order.length;
+      const bOrder = order.includes(b.category) ? order.indexOf(b.category) : order.length;
+      return aOrder - bOrder;
+    });
 }
 
 function composeManagementData(operations, articles) {

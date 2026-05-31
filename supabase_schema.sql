@@ -46,11 +46,12 @@ create table if not exists public.news_articles (
 );
 
 create table if not exists public.monitor_keywords (
-  keyword text primary key,
+  keyword text,
   category text not null default 'other',
   enabled boolean not null default true,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  primary key (keyword, category)
 );
 
 do $$
@@ -63,7 +64,7 @@ begin
   ) then
     alter table public.monitor_keywords
       add constraint monitor_keywords_category_check
-      check (category in ('own', 'regulation', 'competitor', 'industry', 'other'));
+      check (category in ('own', 'regulation', 'competitor', 'industry', 'other', 'exclude'));
   end if;
 end $$;
 
@@ -371,4 +372,4 @@ values
   ('보험대리점 브랜드평판', 'industry', true),
   ('GA 브랜드평판', 'industry', true),
   ('인카금융서비스 브랜드평판', 'own', true)
-on conflict (keyword) do nothing;
+on conflict (keyword, category) do nothing;

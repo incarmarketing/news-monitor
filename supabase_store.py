@@ -414,5 +414,30 @@ def load_monitor_keyword_rows() -> list[dict]:
     return rows
 
 
+def load_press_alias_rows(limit: int = 1000) -> list[dict]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        f"press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit={limit}",
+    )
+    rows = []
+    for row in response.json():
+        host = str(row.get("host") or "").strip().lower()
+        press_name = str(row.get("press_name") or "").strip()
+        if not host or not press_name:
+            continue
+        rows.append({"host": host, "press_name": press_name})
+    return rows
+
+
 def load_monitor_keywords() -> list[str]:
-    return [row["keyword"] for row in load_monitor_keyword_rows()]
+    keywords = []
+    seen = set()
+    for row in load_monitor_keyword_rows():
+        keyword = row["keyword"]
+        if keyword in seen:
+            continue
+        seen.add(keyword)
+        keywords.append(keyword)
+    return keywords
