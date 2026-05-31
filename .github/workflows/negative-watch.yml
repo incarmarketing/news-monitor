@@ -5,14 +5,17 @@ on:
     inputs:
       mode:
         description: "Watch mode"
-        required: true
+        required: false
         default: "single"
         type: choice
         options:
           - single
           - continuous
+  repository_dispatch:
+    types:
+      - negative-watch
   schedule:
-    - cron: "3 * * * *"
+    - cron: "*/5 * * * *"
 
 permissions:
   actions: write
@@ -28,7 +31,7 @@ concurrency:
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -60,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           iterations=1
-          if [ "${GITHUB_EVENT_NAME}" = "schedule" ] || [ "${WATCH_MODE}" = "continuous" ]; then
+          if [ "${WATCH_MODE}" = "continuous" ]; then
             iterations=13
           fi
           for i in $(seq 1 "$iterations"); do
