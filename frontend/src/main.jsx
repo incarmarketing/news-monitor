@@ -30,12 +30,12 @@ import {
   X,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart as RechartsLineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -459,12 +459,17 @@ function Monitoring({ data, articles, monitoringPreset }) {
   );
 }
 
-function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring }) {
+function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring, operations }) {
   const monthlyArticles = useMemo(() => lastNDays(allArticles || [], 31), [allArticles]);
   const analysisArticles = monthlyArticles.length ? monthlyArticles : allArticles || [];
-  const monthlyTrend = useMemo(
-    () => buildWeeklyToneTrend(analysisArticles, data.toneTrend),
+  const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
+  const dailyTrend = useMemo(
+    () => buildDailyToneTrend(analysisArticles, 31, data.toneTrend),
     [analysisArticles, data.toneTrend],
+  );
+  const keywordRows = useMemo(
+    () => buildKeywordFlow(analysisArticles, selectedKeywords),
+    [analysisArticles, selectedKeywords],
   );
   const issueRows = buildIssues(analysisArticles, data.issues).slice(0, 6);
   return (
@@ -472,19 +477,19 @@ function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring }) {
       <PageTitle
         eyebrow="최근 1개월 분석"
         title="미디어 분석 리포트"
-        description="주차별 긍정·부정·주의 추이, 언론사 영향도, 분류별 기사량, 스크랩 근거를 함께 봅니다."
+        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 스크랩 근거를 함께 봅니다."
         right={<button className="primary-button"><FileText />인쇄/PDF 저장</button>}
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
       <section className="content-grid two">
-        <Panel title="주차별 논조 추이" icon={Activity} meta="최근 1개월 · 긍정/부정/주의">
-          <ToneTrend rows={monthlyTrend} />
+        <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
+          <ToneTrend rows={dailyTrend} />
         </Panel>
         <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
           <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
         </Panel>
-        <Panel title="항목별 기사량" icon={LineChart} meta="막대 그래프 개선형">
-          <CategoryChart rows={data.categoryFlow} tall onOpenMonitoring={onOpenMonitoring} />
+        <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
+          <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
         </Panel>
         <Panel title="월간 핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`}>
           <IssueList issues={issueRows} compact />
@@ -630,7 +635,7 @@ function Reports({ data, period, articles, scraps, onOpenMonitoring }) {
   const expandedIssues = expandReportIssues(data.issues, reportArticles, period);
   const lead = buildReportLead(period, data, reportArticles, expandedIssues);
   const secondary = expandedIssues.slice(1, period === "daily" ? 4 : 8);
-  const weeklyTrend = buildWeeklyToneTrend(reportArticles, data.toneTrend);
+  const reportTrend = buildDailyToneTrend(reportArticles, period === "weekly" ? 7 : 31, data.toneTrend);
   return (
     <main className="workspace report-workspace">
       <PageTitle
@@ -698,9 +703,9 @@ function Reports({ data, period, articles, scraps, onOpenMonitoring }) {
               <section className="paper-section trend-page">
                 <div className="paper-section-head">
                   <span>Trend Page</span>
-                  <b>주차별 논조</b>
+                  <b>일별 논조</b>
                 </div>
-                <ToneTrend rows={weeklyTrend} compact />
+                <ToneTrend rows={reportTrend} compact />
               </section>
               <section className="paper-section ledger-page">
                 <div className="paper-section-head">
@@ -1266,17 +1271,25 @@ function PressInfluence({ rows, detailed = false, compact = false, onOpenMonitor
   );
 }
 
-function CategoryChart({ rows, tall = false, mini = false, onOpenMonitoring }) {
+function CategoryChart({ rows, tall = false, mini = false, onOpenMonitoring, drillBy = "category", labelWidth = 86 }) {
   const className = ["chart-box", tall ? "tall" : "", mini ? "mini" : "", onOpenMonitoring ? "with-drill" : ""]
     .filter(Boolean)
     .join(" ");
+  const openPreset = (row) => {
+    if (!onOpenMonitoring) return;
+    if (drillBy === "keyword") {
+      onOpenMonitoring({ query: row.keyword || row.name });
+      return;
+    }
+    onOpenMonitoring({ category: categoryPresetFor(row.name) });
+  };
   return (
     <div className={className}>
       <div className="chart-canvas">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} layout="vertical" margin={{ left: 0, right: 12, top: 4, bottom: 8 }}>
             <XAxis type="number" hide />
-            <YAxis dataKey="name" type="category" width={86} tickLine={false} axisLine={false} />
+            <YAxis dataKey="name" type="category" width={labelWidth} tickLine={false} axisLine={false} />
             <Tooltip />
             <Bar dataKey="value" radius={[0, 7, 7, 0]}>
               {rows.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
@@ -1287,7 +1300,7 @@ function CategoryChart({ rows, tall = false, mini = false, onOpenMonitoring }) {
       {onOpenMonitoring && (
         <div className="chart-drill-buttons">
           {rows.slice(0, 5).map((row) => (
-            <button key={row.name} onClick={() => onOpenMonitoring({ category: categoryPresetFor(row.name) })}>{row.name}</button>
+            <button key={row.name} onClick={() => openPreset(row)}>{row.name}</button>
           ))}
         </div>
       )}
@@ -1299,15 +1312,15 @@ function ToneTrend({ rows, compact = false }) {
   return (
     <div className={compact ? "chart-box report-trend" : "chart-box tall"}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={rows}>
+        <RechartsLineChart data={rows} margin={{ left: 8, right: 12, top: 12, bottom: 2 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={compact ? 8 : 14} tick={{ fontSize: compact ? 9 : 12, fontWeight: 800 }} />
           <YAxis hide />
           <Tooltip />
-          <Area type="monotone" dataKey="positive" stroke="#14805f" fill="#eaf8f2" name="긍정" />
-          <Area type="monotone" dataKey="caution" stroke="#b45309" fill="#fff6df" name="주의" />
-          <Area type="monotone" dataKey="negative" stroke="#c92337" fill="#fff0f2" name="부정" />
-        </AreaChart>
+          <Line type="monotone" dataKey="positive" stroke="#14805f" strokeWidth={2.5} dot={false} name="긍정" />
+          <Line type="monotone" dataKey="caution" stroke="#b45309" strokeWidth={2.5} dot={false} name="주의" />
+          <Line type="monotone" dataKey="negative" stroke="#c92337" strokeWidth={2.5} dot={false} name="부정" />
+        </RechartsLineChart>
       </ResponsiveContainer>
     </div>
   );
@@ -1551,6 +1564,45 @@ function buildToneTrend(articles) {
   return Array.from(byDate.values()).slice(-7);
 }
 
+function buildDailyToneTrend(articles, days = 31, fallback = []) {
+  const dated = articles.filter((article) => article.date);
+  if (!dated.length) return ensureTrendHasTone(fallback);
+  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
+  if (Number.isNaN(latestTime)) return buildToneTrend(dated);
+  const startTime = latestTime - (days - 1) * 24 * 60 * 60 * 1000;
+  const buckets = new Map();
+  for (let index = 0; index < days; index += 1) {
+    const date = new Date(startTime + index * 24 * 60 * 60 * 1000);
+    const key = formatKstDateKey(date);
+    buckets.set(key, { date: key.slice(5), positive: 0, negative: 0, caution: 0, neutral: 0 });
+  }
+  dated.forEach((article) => {
+    const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
+    if (Number.isNaN(time) || time < startTime || time > latestTime) return;
+    const bucket = buckets.get(article.date);
+    if (!bucket) return;
+    if (article.tone === "긍정") bucket.positive += 1;
+    else if (article.tone === "부정") bucket.negative += 1;
+    else if (article.tone === "주의") bucket.caution += 1;
+    else bucket.neutral += 1;
+  });
+  const rows = Array.from(buckets.values());
+  const hasSignal = rows.some((row) => row.positive || row.negative || row.caution || row.neutral);
+  return hasSignal ? rows : ensureTrendHasTone(fallback);
+}
+
+function formatKstDateKey(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const get = (type) => parts.find((part) => part.type === type)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
 function buildWeeklyToneTrend(articles, fallback = []) {
   const dated = articles.filter((article) => article.date);
   if (!dated.length) {
@@ -1790,6 +1842,42 @@ function articleTimeValue(article) {
   const value = article.pubDate || article.pub_date || `${article.date || ""}T${article.time || "00:00"}:00+09:00`;
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? 0 : time;
+}
+
+function selectDashboardKeywords(rows = []) {
+  const fromData = rows
+    .filter((row) => row?.enabled !== false && row?.keyword)
+    .map((row) => String(row.keyword).trim())
+    .filter(Boolean);
+  const fallback = keywordGroups.flatMap((group) => group.keywords);
+  return unique(fromData.length ? fromData : fallback).slice(0, 10);
+}
+
+function buildKeywordFlow(articles = [], keywords = []) {
+  return keywords.map((keyword) => ({
+    name: keyword,
+    keyword,
+    value: articles.filter((article) => articleMatchesKeyword(article, keyword)).length,
+  }));
+}
+
+function articleMatchesKeyword(article, keyword) {
+  const normalizedKeyword = normalizeKeywordText(keyword);
+  const articleKeyword = normalizeKeywordText(article.keyword || "");
+  if (!normalizedKeyword) return false;
+  if (articleKeyword === normalizedKeyword) return true;
+  const haystack = normalizeKeywordText(`${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`);
+  if (haystack.includes(normalizedKeyword)) return true;
+  const tokens = normalizedKeyword.split(" ").filter((token) => token.length > 1);
+  return tokens.length > 1 && tokens.every((token) => haystack.includes(token));
+}
+
+function normalizeKeywordText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function groupArticles(articles, key) {

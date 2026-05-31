@@ -125,6 +125,7 @@ export async function loadOperationalData() {
     reporters: [],
     ads: [],
     aliases: [],
+    keywords: [],
     session: null,
   };
 
@@ -159,6 +160,7 @@ async function loadStaticOperationalData() {
         reporters: Array.isArray(payload?.reporters) ? payload.reporters.map(normalizeReporter) : [],
         ads: Array.isArray(payload?.ads) ? payload.ads.map(normalizeAd) : [],
         aliases: Array.isArray(payload?.aliases) ? payload.aliases : [],
+        keywords: Array.isArray(payload?.keywords) ? payload.keywords.map(normalizeKeyword).filter(Boolean) : [],
         session: null,
       };
     } catch {
@@ -246,11 +248,22 @@ async function loadOperationalDataFromSupabaseSession() {
       reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
       aliases: Array.isArray(aliases) ? aliases : [],
+      keywords: [],
       session,
     };
   } catch (error) {
     return { ...base, status: "error", message: error?.message || "운영 데이터 연결 실패" };
   }
+}
+
+function normalizeKeyword(row) {
+  const keyword = typeof row === "string" ? row : row?.keyword;
+  if (!keyword) return null;
+  return {
+    keyword: String(keyword).trim(),
+    category: row?.category || "other",
+    enabled: row?.enabled !== false,
+  };
 }
 
 function normalizeScrap(row) {
