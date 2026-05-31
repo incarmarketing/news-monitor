@@ -83,7 +83,7 @@ async function rest(config, session, path) {
   return dashboardApi(config, session, "rest", { path, method: "GET" });
 }
 
-async function fetchTable(config, session, table, query, pageSize = 1000, maxRows = 5000) {
+async function fetchTable(config, session, table, query, pageSize = 1000, maxRows = 50000) {
   const rows = [];
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const connector = query ? "&" : "";
@@ -207,7 +207,7 @@ async function loadOperationalDataFromSupabaseSession() {
           "order=report_date.desc,score.desc",
         ].join("&"),
         1000,
-        3000,
+        50000,
       ),
       rest(
         config,

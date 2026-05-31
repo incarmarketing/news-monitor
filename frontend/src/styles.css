@@ -57,7 +57,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: 260px minmax(180px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 1fr) auto;
   gap: 12px;
   align-items: center;
   padding: 10px 16px;
@@ -111,6 +111,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--paper-soft);
+}
+
+.period-control.compact {
+  width: 220px;
 }
 
 .period-control button,
@@ -239,6 +243,15 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-weight: 800;
   line-height: 1.45;
   word-break: keep-all;
+}
+
+.page-title-right,
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
 }
 
 .risk-pill {
@@ -464,6 +477,41 @@ button.kpi-card {
   font-weight: 800;
   line-height: 1.5;
   word-break: keep-all;
+}
+
+.summary-lines {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 800;
+  word-break: keep-all;
+}
+
+.summary-lines li {
+  position: relative;
+  padding-left: 11px;
+}
+
+.summary-lines li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .68em;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--blue);
+}
+
+.summary-lines.dense {
+  gap: 3px;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .issue-card a {
@@ -1069,7 +1117,7 @@ button.kpi-card {
 
 .filter-card {
   display: grid;
-  grid-template-columns: repeat(4, minmax(140px, 1fr)) auto auto;
+  grid-template-columns: minmax(132px, .9fr) minmax(132px, .9fr) minmax(96px, .55fr) minmax(104px, .55fr) minmax(132px, .9fr) minmax(132px, .9fr) minmax(220px, 1.35fr) auto auto;
   gap: 10px;
   align-items: end;
   padding: 12px;
@@ -1094,6 +1142,15 @@ button.kpi-card {
   color: var(--ink);
   font-size: 12px;
   font-weight: 900;
+}
+
+.tone-filter,
+.sort-filter {
+  min-width: 0;
+}
+
+.filter-card .wide-filter {
+  grid-column: auto;
 }
 
 .rule-stack article, .keyword-groups article {
@@ -1446,14 +1503,14 @@ button.kpi-card {
 
 .publication-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) 280px;
+  grid-template-columns: minmax(0, 1.25fr) 260px;
   gap: 12px;
   padding: 12px;
 }
 
 .lead-story {
   min-width: 0;
-  min-height: 250px;
+  min-height: 230px;
   padding: 18px;
   border: 1px solid #202a3a;
   border-radius: 8px;
@@ -1489,6 +1546,12 @@ button.kpi-card {
   line-height: 1.65;
   font-weight: 800;
   word-break: keep-all;
+}
+
+.lead-story .summary-lines {
+  max-width: 780px;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .story-meta {
@@ -1658,7 +1721,7 @@ button.kpi-card {
 .story-grid {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -1722,7 +1785,7 @@ button.kpi-card {
 
 .ledger-page,
 .scrap-page {
-  min-height: 210px;
+  min-height: 160px;
 }
 
 .report-trend {
@@ -1739,7 +1802,7 @@ button.kpi-card {
   display: grid;
   gap: 4px;
   min-width: 0;
-  padding: 10px;
+  padding: 9px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
   background: var(--paper-soft);
@@ -1753,7 +1816,7 @@ button.kpi-card {
 
 .report-ledger b {
   color: var(--ink);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
 }
 
@@ -2451,7 +2514,7 @@ button.kpi-card {
   .publication-body { grid-template-columns: 1.15fr .85fr; gap: 6px; padding: 6px; }
   .lead-story { min-height: 145px; padding: 9px; }
   .lead-story h2 { font-size: 18px; margin: 5px 0; }
-  .lead-story p, .report-story p { font-size: 7px; line-height: 1.35; }
+  .lead-story p, .report-story p, .summary-lines { font-size: 7px; line-height: 1.35; }
   .report-metric-board { gap: 5px; }
   .report-risk-line { min-height: 44px; padding: 6px; }
   .report-risk-line b { font-size: 16px; }

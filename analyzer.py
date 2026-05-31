@@ -131,6 +131,23 @@ STOCK_DECLINE_WORDS = [
 
 POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
 
+PHOTO_SPORTS_NOISE_WORDS = [
+    "포토", "화보", "갤러리", "골프", "여자오픈", "오픈", "라운드", "최종라운드",
+    "1번홀", "홀에서", "리조트", "파72", "우승상금", "순위를 올린다",
+]
+
+MATERIAL_CAUTION_CONTEXT_WORDS = [
+    "투자의견", "목표주가", "목표가", "주가", "하향", "급락", "자본성증권",
+    "발행 뚝", "자본 확충", "경영개선", "매각", "불완전판매", "보험사기",
+    "금감원", "금융감독원", "금융위", "제재", "과태료", "소송", "민원",
+    "손해율", "수수료", "규제", "1200% 룰", "정착지원금", "공시",
+]
+
+MATERIAL_BUSINESS_CONTEXT_WORDS = DOMAIN_CONTEXT_WORDS + MATERIAL_CAUTION_CONTEXT_WORDS + [
+    "보험료", "보험금", "계약", "상품", "실손", "생명보험", "손해보험", "GA",
+    "설계사", "대리점", "금융서비스", "실적", "영업", "채권", "증권",
+]
+
 CATEGORIES = {
     "own": OWN_NAMES,
     "regulation": REGULATION_WORDS,
@@ -181,11 +198,15 @@ def score_article(article: dict) -> int:
         score += 5
     if len(title) < 15:
         score -= 2
+    if is_non_business_noise(article):
+        score -= 20
     return score
 
 
 def categorize(article: dict) -> str:
     text = article.get("title", "") + " " + article.get("description", "")
+    if is_non_business_noise(article):
+        return "other"
     if any(keyword in text for keyword in OWN_NAMES):
         return "own"
     preferred = normalize_keyword_category(article.get("keyword_category"))
@@ -237,9 +258,29 @@ def has_domain_context(text: str) -> bool:
     return False
 
 
+def has_material_business_context(text: str) -> bool:
+    return any(word in text for word in MATERIAL_BUSINESS_CONTEXT_WORDS)
+
+
+def is_non_business_noise(article: dict) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "")
+    title = article.get("title", "")
+    if not text.strip():
+        return True
+    has_photo_sports_signal = any(word in title or word in text for word in PHOTO_SPORTS_NOISE_WORDS)
+    has_material_signal = any(word in text for word in MATERIAL_CAUTION_CONTEXT_WORDS) or any(name in text for name in OWN_NAMES)
+    if has_photo_sports_signal and not has_material_signal:
+        return True
+    return False
+
+
 def analyze_tone(article: dict) -> str:
     title = article.get("title", "")
     text = title + " " + article.get("description", "")
+    category = article.get("_category") or categorize(article)
+
+    if is_non_business_noise(article):
+        return "neutral"
 
     severe_score = 0
     caution_score = 0
@@ -262,12 +303,39 @@ def analyze_tone(article: dict) -> str:
     positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
     positive_score += sum(1 for word in CSR_CONTEXT_WORDS if word in text)
 
+    if is_zero_misconduct_positive_article(article):
+        return "positive"
+
     # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
     if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
         return "negative"
-    if positive_score >= 2 and severe_score == 0 and caution_score == 0:
+    if positive_score >= 2 and severe_score == 0 and caution_score <= 1:
         return "positive"
-    return "caution"
+    if should_mark_caution(article, category, severe_score, caution_score):
+        return "caution"
+    return "neutral"
+
+
+def should_mark_caution(article: dict, category: str, severe_score: int, caution_score: int) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "")
+    if is_investment_downgrade_article(article) or is_stock_decline_article(article):
+        return True
+    if is_settlement_support_caution_article(article):
+        return True
+    if category == "own" and caution_score >= 2:
+        return True
+    if category == "regulation" and caution_score >= 2:
+        return True
+    if severe_score >= 4 and any(word in text for word in MATERIAL_CAUTION_CONTEXT_WORDS):
+        return True
+    if category in {"competitor", "industry"}:
+        return caution_score >= 5 and any(word in text for word in MATERIAL_CAUTION_CONTEXT_WORDS)
+    return False
+
+
+def is_zero_misconduct_positive_article(article: dict) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "")
+    return "불완전판매" in text and any(word in text for word in ("0건", "제로", "우수", "인증", "선정"))
 
 
 def is_own_article(article: dict) -> bool:
@@ -344,9 +412,9 @@ def normalize_title(title: str) -> str:
 
 def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
     category_count = Counter(a.get("_category", "other") for a in all_articles)
-    tone_count = Counter(a.get("_tone", "caution") for a in all_articles)
+    tone_count = Counter(a.get("_tone", "neutral") for a in all_articles)
     own_tone_count = Counter(
-        a.get("_tone", "caution")
+        a.get("_tone", "neutral")
         for a in all_articles
         if a.get("_category") == "own"
     )

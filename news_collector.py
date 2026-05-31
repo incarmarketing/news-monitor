@@ -695,6 +695,8 @@ def is_relevant_article(article: dict) -> bool:
     category = normalize_keyword_category(article.get("keyword_category"))
     if not text.strip():
         return False
+    if analyzer.is_non_business_noise(article):
+        return False
 
     if category == "other":
         return keyword_matches_text(text, keyword) or keyword_matches_text(text, query)

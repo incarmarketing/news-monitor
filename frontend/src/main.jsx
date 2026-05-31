@@ -79,7 +79,17 @@ function App() {
   };
 
   useEffect(() => {
-    refreshOperations();
+    let active = true;
+    const load = async () => {
+      const next = await loadOperationalData();
+      if (active) setOperations(next);
+    };
+    load();
+    const timer = window.setInterval(load, 5 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const baseData = periodData[period];
@@ -97,6 +107,14 @@ function App() {
   const data = useMemo(
     () => composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected),
     [baseData, scopedArticles, scopedReportRuns, liveConnected],
+  );
+  const realtimeArticles = useMemo(
+    () => selectRealtimeArticles(allArticles),
+    [allArticles],
+  );
+  const realtimeData = useMemo(
+    () => composeRealtimeData(periodData.daily, realtimeArticles, liveConnected),
+    [realtimeArticles, liveConnected],
   );
   const management = useMemo(
     () => composeManagementData(operations, scopedArticles),
@@ -132,10 +150,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header
-        period={period}
-        setPeriod={setPeriod}
-      />
+      <Header />
       <aside className="side-nav" aria-label="주요 메뉴">
         <div className="side-title">Menu</div>
         {navItems.map((item) => {
@@ -153,9 +168,10 @@ function App() {
         })}
       </aside>
       <View
-        data={data}
+        data={activeSection === "overview" ? realtimeData : data}
         period={period}
-        articles={scopedArticles}
+        setPeriod={setPeriod}
+        articles={activeSection === "monitoring" ? allArticles : activeSection === "overview" ? realtimeArticles : scopedArticles}
         allArticles={allArticles}
         scraps={scraps}
         jobs={jobs}
@@ -178,7 +194,7 @@ function App() {
   );
 }
 
-function Header({ period, setPeriod }) {
+function Header() {
   const userText = "최진우 1611499 관리자";
 
   return (
@@ -190,18 +206,23 @@ function Header({ period, setPeriod }) {
           <span>실시간 기사 · 보고서 · 운영 관리</span>
         </div>
       </div>
-      <div className="period-control" aria-label="기간 선택">
-        {periodTabs.map((item) => (
-          <button key={item.id} className={period === item.id ? "active" : ""} onClick={() => setPeriod(item.id)}>
-            <span className="desktop-only">{item.label}</span>
-            <span className="mobile-only">{item.shortLabel}</span>
-          </button>
-        ))}
-      </div>
       <div className="user-chip">
         <span>{userText}</span>
       </div>
     </header>
+  );
+}
+
+function PeriodControl({ period, setPeriod, compact = false }) {
+  return (
+    <div className={compact ? "period-control compact" : "period-control"} aria-label="기간 선택">
+      {periodTabs.map((item) => (
+        <button key={item.id} className={period === item.id ? "active" : ""} onClick={() => setPeriod(item.id)}>
+          <span className="desktop-only">{item.label}</span>
+          <span className="mobile-only">{item.shortLabel}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -258,13 +279,12 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
 
 function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring }) {
   const { summary } = data;
-  const groupedArticles = useMemo(() => buildRelatedArticleGroups(articles), [articles]);
   return (
     <main className="workspace">
       <PageTitle
         eyebrow={`${data.label} · ${data.scope}`}
-        title="통합 대시보드"
-        description="당사 리스크, 실시간 기사, 알림톡, 보고서 생성 상태를 한 화면에서 바로 확인합니다."
+        title="실시간 대시보드"
+        description="검색 키워드 기준 최신 이슈, 당사 리스크, 알림톡, 보고서 생성 상태를 5분 단위로 확인합니다."
       />
 
       <section className="briefing-card">
@@ -278,18 +298,8 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
       <section className="dashboard-grid">
         <div className="main-column">
-          <Panel title="최신 주요 관찰 이슈" icon={Newspaper} meta="당사 언급 우선 포함">
+          <Panel title="주요 이슈" icon={Newspaper} meta="키워드 기준 5분 갱신">
             <IssueList issues={data.issues} />
-          </Panel>
-          <Panel
-            title="실시간 모니터링 피드"
-            icon={Search}
-            meta={`${articles.length.toLocaleString("ko-KR")}건 · 묶음 ${groupedArticles.length.toLocaleString("ko-KR")}개`}
-          >
-            <ArticleFeed rows={groupedArticles.slice(0, 8)} compact />
-            <button className="ghost-button full" onClick={() => setActiveSection("monitoring")}>
-              전체 기사 보기
-            </button>
           </Panel>
         </div>
         <div className="middle-column">
@@ -317,6 +327,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
 function Monitoring({ data, articles, monitoringPreset }) {
   const [query, setQuery] = useState("");
+  const [queryInput, setQueryInput] = useState("");
   const [tone, setTone] = useState("all");
   const [category, setCategory] = useState("all");
   const [source, setSource] = useState("all");
@@ -328,6 +339,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
   useEffect(() => {
     if (!monitoringPreset) return;
     setQuery(monitoringPreset.query || "");
+    setQueryInput(monitoringPreset.query || "");
     setTone(monitoringPreset.tone || "all");
     setCategory(monitoringPreset.category || "all");
     setSource(monitoringPreset.source || "all");
@@ -368,15 +380,20 @@ function Monitoring({ data, articles, monitoringPreset }) {
           <span>종료 기준일</span>
           <input type="date" defaultValue="2026-05-31" />
         </label>
-        <label>
+        <label className="tone-filter">
           <span>논조</span>
           <select value={tone} onChange={(event) => setTone(event.target.value)}>
             <option value="all">전체</option>
             <option value="부정">부정</option>
             <option value="주의">주의</option>
             <option value="긍정">긍정</option>
-            <option value="중립">중립</option>
-            <option value="제외">제외</option>
+          </select>
+        </label>
+        <label className="sort-filter">
+          <span>정렬</span>
+          <select value={viewMode} onChange={(event) => { setViewMode(event.target.value); setVisible(30); }}>
+            <option value="related">관련순</option>
+            <option value="latest">최신순</option>
           </select>
         </label>
         <label>
@@ -395,10 +412,24 @@ function Monitoring({ data, articles, monitoringPreset }) {
         </label>
         <label className="wide-filter">
           <span>검색어</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="제목, 언론사, 키워드 검색" />
+          <input
+            value={queryInput}
+            onChange={(event) => setQueryInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                setQuery(queryInput);
+                setVisible(30);
+              }
+            }}
+            placeholder="제목, 언론사, 키워드 검색"
+          />
         </label>
+        <button className="primary-button" onClick={() => { setQuery(queryInput); setVisible(30); }}>
+          <Search />검색
+        </button>
         <button className="ghost-button" onClick={() => {
           setQuery("");
+          setQueryInput("");
           setTone("all");
           setCategory("all");
           setSource("all");
@@ -406,14 +437,6 @@ function Monitoring({ data, articles, monitoringPreset }) {
         }}>
           <Filter />초기화
         </button>
-        <div className="related-toggle" role="group" aria-label="기사 보기 방식">
-          <button type="button" className={viewMode === "related" ? "active" : ""} onClick={() => { setViewMode("related"); setVisible(30); }}>
-            관련순 묶기
-          </button>
-          <button type="button" className={viewMode === "latest" ? "active" : ""} onClick={() => { setViewMode("latest"); setVisible(30); }}>
-            최신순
-          </button>
-        </div>
       </section>
       <section className="monitoring-layout">
         <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
@@ -432,7 +455,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
   );
 }
 
-function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring, operations }) {
+function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMonitoring, operations }) {
   const monthlyArticles = useMemo(() => lastNDays(allArticles || [], 31), [allArticles]);
   const analysisArticles = monthlyArticles.length ? monthlyArticles : allArticles || [];
   const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
@@ -452,7 +475,12 @@ function MediaAnalysis({ data, allArticles, scraps, onOpenMonitoring, operations
         eyebrow="최근 1개월 분석"
         title="미디어 분석 리포트"
         description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 월간 핵심 이슈를 함께 봅니다."
-        right={<button className="primary-button"><FileText />인쇄/PDF 저장</button>}
+        right={(
+          <div className="page-actions">
+            <PeriodControl period={period} setPeriod={setPeriod} compact />
+            <button className="primary-button"><FileText />인쇄/PDF 저장</button>
+          </div>
+        )}
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
       <section className="content-grid two">
@@ -551,6 +579,7 @@ function ScrapDigest({ scraps }) {
           <div>
             <b>{item.title}</b>
             <span>{item.source} · {item.tone} · {item.scrapedAt || item.date || "-"}</span>
+            <ArticleSummaryBlock item={item} dense />
           </div>
         </article>
       ))}
@@ -599,7 +628,7 @@ function RiskCenter() {
   );
 }
 
-function Reports({ data, period, articles, scraps, onOpenMonitoring }) {
+function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }) {
   const { summary } = data;
   const edition = publicationMeta(period, data);
   const reportArticles = articles || [];
@@ -613,6 +642,7 @@ function Reports({ data, period, articles, scraps, onOpenMonitoring }) {
         eyebrow={edition.kicker}
         title="일간/주간/월간 보고서"
         description="매일, 매주, 매월 받아보는 언론 동향지처럼 읽히도록 지면형 보고서로 구성합니다."
+        right={<PeriodControl period={period} setPeriod={setPeriod} compact />}
       />
       <section className={`report-sheet publication-sheet ${period}`}>
         <header className="publication-masthead">
@@ -633,7 +663,7 @@ function Reports({ data, period, articles, scraps, onOpenMonitoring }) {
           <article className="lead-story">
             <span className="section-label">Front Page</span>
             <h2>{lead?.title || summary.headline}</h2>
-            <p>{lead?.summary || summary.headline}</p>
+            <ArticleSummaryBlock item={lead || { title: summary.headline, summary: summary.headline, category: data.label, tone: summary.risk === "LOW" ? "중립" : "주의" }} />
             <div className="story-meta">
               {lead?.tone && <Chip tone={lead.tone}>{lead.tone}</Chip>}
               {lead?.category && <Chip>{lead.category}</Chip>}
@@ -741,12 +771,19 @@ function buildReportLead(period, data, articles, issues) {
     ? `당사 부정 ${data.summary.ownNegative}건은 별도 확인 대상으로 분리하고`
     : "당사 직접 부정은 제한적이며";
   const cadence = period === "weekly" ? "이번 주" : "이번 달";
+  const leadIssue = issues[0];
   return {
     tone: data.summary.risk === "LOW" ? "중립" : "주의",
     category: period === "weekly" ? "주간 종합" : "월간 종합",
     source: "INCAR Media Desk",
-    title: `${cadence} 언론 흐름은 ${topCategories} 중심으로 형성`,
-    summary: `${riskText}, 주의 이슈 ${data.summary.caution}건은 투자·공시·정책성 맥락으로 묶어 봐야 합니다. GA/보험사 동향 ${data.summary.gaInsurance}건은 시장 흐름을 보여주는 배경 지표이며, 당사 언급 ${data.summary.ownMentions}건은 보고서 근거로 우선 추적합니다.`,
+    title: leadIssue?.title || `${cadence} 언론 흐름은 ${topCategories} 중심으로 형성`,
+    summary: `${riskText}, 직접 부정과 시장성 주의 이슈를 분리해 추적합니다. ${topCategories} 보도량이 기간 흐름을 만들었고, 당사 언급 ${data.summary.ownMentions}건은 보고서 근거로 우선 확인합니다.`,
+    summaryLines: [
+      `${cadence} 보도 흐름은 ${topCategories} 중심으로 형성됐습니다.`,
+      riskText,
+      `당사 언급 ${data.summary.ownMentions}건, 당사 부정 ${data.summary.ownNegative}건, 주의 ${data.summary.caution}건을 분리해 관리합니다.`,
+      leadIssue?.title ? `대표 헤드라인은 "${leadIssue.title}"입니다.` : "대표 이슈는 기간 내 기사량과 논조를 기준으로 선정했습니다.",
+    ],
     publishedAt: data.scope,
   };
 }
@@ -795,7 +832,7 @@ function ReportStory({ issue }) {
         <Chip>{issue.category}</Chip>
       </div>
       <h3>{issue.title}</h3>
-      <p>{issue.summary}</p>
+      <ArticleSummaryBlock item={issue} dense />
       <span>{issue.source} · {issue.publishedAt}</span>
     </article>
   );
@@ -1096,7 +1133,7 @@ function MonthlyIssueDigest({ issues }) {
         </div>
         <span className="monthly-issue-kicker">Headline</span>
         <h3>{lead.title}</h3>
-        <p>{lead.summary}</p>
+        <ArticleSummaryBlock item={lead} />
         {lead.link && lead.link !== "#" && (
           <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
             <ExternalLink />기사 열기
@@ -1109,7 +1146,7 @@ function MonthlyIssueDigest({ issues }) {
             <div>
               <span>{issue.source} · {issue.publishedAt}</span>
               <h4>{issue.title}</h4>
-              <p>{issue.summary}</p>
+              <ArticleSummaryBlock item={issue} dense />
             </div>
             <Chip tone={issue.tone}>{issue.tone}</Chip>
             {issue.link && issue.link !== "#" && (
@@ -1135,7 +1172,7 @@ function IssueList({ issues, compact = false }) {
             <span>{issue.source} · {issue.publishedAt}</span>
           </div>
           <h3>{issue.title}</h3>
-          <p>{issue.summary}</p>
+          <ArticleSummaryBlock item={issue} />
           {!compact && issue.link && issue.link !== "#" && (
             <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
               <ExternalLink />기사 열기
@@ -1144,6 +1181,16 @@ function IssueList({ issues, compact = false }) {
         </article>
       ))}
     </div>
+  );
+}
+
+function ArticleSummaryBlock({ item, dense = false }) {
+  const lines = buildArticleSummaryLines(item).slice(0, dense ? 3 : 4);
+  if (!lines.length) return null;
+  return (
+    <ul className={dense ? "summary-lines dense" : "summary-lines"}>
+      {lines.map((line) => <li key={line}>{line}</li>)}
+    </ul>
   );
 }
 
@@ -1164,7 +1211,7 @@ function ArticleFeed({ rows, compact = false }) {
               </div>
               <span>{row.source} · {row.keyword || row.category} · {row.date || row.slot || ""}</span>
               {hasRelated && <span className="related-sources">{row.relatedSources}</span>}
-              {!compact && row.summary && <p>{row.summary}</p>}
+              {!compact && <ArticleSummaryBlock item={row} dense />}
               {!compact && hasRelated && (
                 <details className="related-details">
                   <summary>묶인 기사 보기</summary>
@@ -1405,6 +1452,20 @@ function Chip({ children, tone }) {
   return <span className={`chip ${cls}`}>{children}</span>;
 }
 
+function composeRealtimeData(base, articles, liveConnected = false) {
+  if (!liveConnected) {
+    return buildDisconnectedPeriodData(base);
+  }
+  if (!articles.length) {
+    return buildDisconnectedPeriodData(base, "최근 24시간 기준 표시할 운영 기사가 없습니다.");
+  }
+  return {
+    ...composePeriodData(base, articles, [], true),
+    label: "실시간",
+    scope: "최근 24시간 · 5분 자동 갱신",
+  };
+}
+
 function composePeriodData(base, articles, reportRuns = [], liveConnected = false) {
   if (!liveConnected) {
     return buildDisconnectedPeriodData(base);
@@ -1417,9 +1478,9 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
   const ownNegative = articles.filter((article) => isOwnArticle(article) && article.tone === "부정").length;
   const caution = articles.filter((article) => article.tone === "주의").length;
   const gaInsurance = articles.filter((article) => ["GA", "보험사"].includes(article.category)).length;
-  const headlineOwnMentions = runSummary.ownMentions ?? ownMentions;
-  const headlineOwnNegative = runSummary.ownNegative ?? ownNegative;
-  const headlineCaution = runSummary.caution ?? caution;
+  const headlineOwnMentions = ownMentions;
+  const headlineOwnNegative = ownNegative;
+  const headlineCaution = caution;
   const summary = {
     ...base.summary,
     collected: runSummary.collected ?? articles.length,
@@ -1428,7 +1489,7 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
     ownNegative: headlineOwnNegative,
     caution: headlineCaution,
     gaInsurance,
-    risk: runSummary.risk || (headlineOwnNegative >= 3 ? "HIGH" : headlineOwnNegative > 0 || headlineCaution >= 5 ? "MEDIUM" : "LOW"),
+    risk: headlineOwnNegative >= 3 ? "HIGH" : headlineOwnNegative > 0 ? "MEDIUM" : "LOW",
     headline: buildHeadline(articles, headlineOwnMentions, headlineOwnNegative, headlineCaution),
     watchTime: articles[0]?.time || base.summary.watchTime,
   };
@@ -1549,13 +1610,74 @@ function buildIssues(articles, fallback) {
       category: article.category,
       source: article.source,
       title: article.title,
-      summary: article.summary || `${article.keyword || article.category} 기준으로 분류된 기사입니다.`,
+      summary: compactArticleSummary(article),
+      summaryLines: buildArticleSummaryLines(article),
       publishedAt: article.time || article.date || "-",
       link: article.link,
     });
     if (uniqueIssues.length >= 5) break;
   }
   return uniqueIssues.length ? uniqueIssues : fallback;
+}
+
+function buildArticleSummaryLines(item = {}) {
+  if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
+    return item.summaryLines.map(cleanSummaryText).filter(Boolean);
+  }
+  const cleanTitle = cleanSummaryText(item.title || "");
+  const text = cleanSummaryText(item.summary || item.description || "");
+  const sentences = splitSummarySentences(text).filter((sentence) => sentence !== cleanTitle);
+  const lead = sentences[0] || cleanTitle || `${item.source || "언론"} 보도 기준 핵심 이슈입니다.`;
+  const context = buildSummaryContextLine(item);
+  const toneLine = buildSummaryToneLine(item);
+  const sourceLine = buildSummarySourceLine(item);
+  return unique([lead, context, toneLine, sourceLine].filter(Boolean)).slice(0, 4);
+}
+
+function compactArticleSummary(item = {}) {
+  return buildArticleSummaryLines(item).join(" ");
+}
+
+function cleanSummaryText(value) {
+  return String(value || "")
+    .replace(/&nbsp;|&amp;nbsp;/gi, " ")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/(\.\.\.|…)+$/g, "")
+    .trim();
+}
+
+function splitSummarySentences(value) {
+  const clean = cleanSummaryText(value);
+  if (!clean) return [];
+  return clean
+    .split(/(?:[.!?。]\s+|(?:다|요|임|함)\.\s+)/)
+    .map((sentence) => sentence.replace(/(\.\.\.|…)+$/g, "").trim())
+    .filter((sentence) => sentence.length >= 8)
+    .slice(0, 3);
+}
+
+function buildSummaryContextLine(item = {}) {
+  const category = item.category || item.keyword || "키워드";
+  if (isOwnArticle(item)) return "당사 직접 언급 기사로 보고서와 리스크 점검 근거에 우선 포함합니다.";
+  if (["GA", "보험사"].includes(category)) return "보험사·GA 시장 흐름을 보여주는 업계 동향 기사로 분리합니다.";
+  if (category === "정책/규제") return "정책·규제 변화가 영업 환경에 미칠 수 있는 영향을 확인합니다.";
+  return `${category} 키워드 기준으로 수집된 기사입니다.`;
+}
+
+function buildSummaryToneLine(item = {}) {
+  if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인이 필요합니다.";
+  if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다.";
+  if (item.tone === "긍정") return "우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.";
+  return "주의 알림 대상과 분리해 배경 동향으로 관리합니다.";
+}
+
+function buildSummarySourceLine(item = {}) {
+  const source = item.source || "언론";
+  const time = item.time || item.publishedAt || item.date || "";
+  return `${source}${time ? ` · ${time}` : ""} 기준 핵심만 요약했습니다.`;
 }
 
 function buildMonthlyObservations(data, issues = []) {
@@ -1692,6 +1814,13 @@ function lastNDays(articles, days) {
   });
 }
 
+function selectRealtimeArticles(articles = []) {
+  const recent = lastNDays(articles, 1);
+  return [...(recent.length ? recent : articles)]
+    .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
+    .slice(0, 240);
+}
+
 function expandReportIssues(issues, articles, period) {
   const max = period === "daily" ? 5 : 9;
   const rows = [...issues];
@@ -1701,7 +1830,8 @@ function expandReportIssues(issues, articles, period) {
       category: article.category,
       source: article.source,
       title: article.title,
-      summary: article.summary || `${article.keyword || article.category} 기준으로 분류된 기사입니다.`,
+      summary: compactArticleSummary(article),
+      summaryLines: buildArticleSummaryLines(article),
       publishedAt: article.time || article.date || "-",
       link: article.link,
     });

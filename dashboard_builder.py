@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 from collections import Counter
 from datetime import datetime
@@ -33,7 +34,7 @@ CATEGORY_LABELS = {
 TONE_LABELS = {
     "positive": "긍정",
     "caution": "주의",
-    "neutral": "주의",
+    "neutral": "중립",
     "negative": "부정",
 }
 
@@ -91,14 +92,51 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 
 def article_summary(article: dict, category: str, tone: str) -> str:
-    existing = article.get("description", "") or article.get("summary", "")
-    if existing:
-        return existing
+    existing = clean_summary_text(article.get("description", "") or article.get("summary", ""))
     source = article.get("source") or "언론"
     keyword = article.get("keyword") or "관련 키워드"
     category_label = CATEGORY_LABELS.get(category, "기타")
     tone_label = TONE_LABELS.get(tone, "주의")
-    return f"{source}에서 보도된 {category_label} 기사입니다. '{keyword}' 키워드로 수집됐으며 보도 논조는 {tone_label}으로 분류됐습니다."
+    lines = []
+    if existing:
+        lines.extend(split_summary_sentences(existing)[:2])
+    lines.append(f"{source} 보도는 {category_label} 맥락에서 '{keyword}' 키워드로 수집됐습니다.")
+    if tone == "negative":
+        lines.append("소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인합니다.")
+    elif tone == "caution":
+        lines.append("직접 부정과 분리해 시장 평가, 투자 의견, 규제성 신호로 추적합니다.")
+    elif tone == "positive":
+        lines.append("우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.")
+    else:
+        lines.append(f"보도 논조는 {tone_label}으로 분류해 주의 알림과 분리합니다.")
+    return " ".join(unique_lines(lines)[:4])
+
+
+def clean_summary_text(value: object) -> str:
+    text = str(value or "")
+    text = text.replace("&nbsp;", " ").replace("&amp;nbsp;", " ").replace("&quot;", '"').replace("&#39;", "'")
+    text = " ".join(text.split())
+    return text.rstrip(".… ")
+
+
+def split_summary_sentences(value: object) -> list[str]:
+    text = clean_summary_text(value)
+    if not text:
+        return []
+    chunks = re.split(r"(?:[.!?。]\s+|(?:다|요|임|함)\.\s+)", text)
+    return [chunk.strip() for chunk in chunks if len(chunk.strip()) >= 8]
+
+
+def unique_lines(lines: list[str]) -> list[str]:
+    seen = set()
+    result = []
+    for line in lines:
+        clean = clean_summary_text(line)
+        if not clean or clean in seen:
+            continue
+        seen.add(clean)
+        result.append(clean)
+    return result
 
 
 def load_supabase_articles() -> list[dict]:
@@ -123,7 +161,7 @@ def load_supabase_articles() -> list[dict]:
                 "link": row.get("link", ""),
                 "source": row.get("source", ""),
                 "keyword": row.get("keyword", ""),
-                "summary": row.get("summary", "") or article_summary(row, category, tone),
+                "summary": article_summary(row, category, tone),
                 "pub_date": row.get("pub_date") or row.get("pub_date_raw", ""),
                 "score": row.get("score", 0),
                 "category": category,

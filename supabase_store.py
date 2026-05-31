@@ -315,19 +315,25 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
     return {key: row.get(key) for key in ARTICLE_COLUMNS}
 
 
-def load_dashboard_articles(limit: int = 10000) -> list[dict]:
+def load_dashboard_articles(limit: int = 50000, page_size: int = 1000) -> list[dict]:
     if not is_enabled():
         return []
-    response = request(
-        "GET",
-        (
-            "news_articles?"
-            "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
-            "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
-            f"&order=report_date.desc,score.desc&limit={limit}"
-        ),
+    rows: list[dict] = []
+    select = (
+        "news_articles?"
+        "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
+        "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
+        "&order=report_date.desc,score.desc"
     )
-    return response.json()
+    for offset in range(0, limit, page_size):
+        response = request("GET", f"{select}&limit={page_size}&offset={offset}")
+        page = response.json()
+        if not isinstance(page, list) or not page:
+            break
+        rows.extend(page)
+        if len(page) < page_size:
+            break
+    return rows
 
 
 def load_dashboard_report_runs(limit: int = 1000) -> list[dict]:
