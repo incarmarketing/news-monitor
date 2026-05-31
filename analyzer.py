@@ -83,6 +83,18 @@ RISK_CONTEXT_WORDS = [
     "정착지원금", "이직", "보따리", "전격 점검", "영업 관행", "관리 부실",
 ]
 
+SETTLEMENT_SUPPORT_CONTEXT_WORDS = [
+    "정착지원금", "1200% 룰", "1200%룰", "판매수수료 상한", "수수료 상한",
+    "보험GA협회", "정보공시", "GA들", "초대형 GA", "설계사 유치",
+    "스카우트 경쟁",
+]
+
+SETTLEMENT_SUPPORT_SEVERE_WORDS = [
+    "불법", "사기", "횡령", "제재", "처분", "과징금", "과태료", "기관주의",
+    "검사", "조사", "고발", "소송", "불완전판매", "내부통제", "관리 부실",
+    "약탈", "스캔들", "위반",
+]
+
 INVESTMENT_DOWNGRADE_CONTEXT_WORDS = [
     "투자의견", "목표주가", "목표가", "증권가", "리포트", "애널리스트",
     "매수", "보유", "홀드", "중립", "매도", "밸류에이션", "주가",
@@ -206,6 +218,9 @@ def analyze_tone(article: dict) -> str:
     if not is_own_article(article):
         return "neutral"
 
+    if is_settlement_support_caution_article(article):
+        return "neutral"
+
     title = article.get("title", "")
     text = title + " " + article.get("description", "")
 
@@ -243,6 +258,24 @@ def is_investment_downgrade_article(article: dict) -> bool:
     has_market_context = any(word in text for word in INVESTMENT_DOWNGRADE_CONTEXT_WORDS)
     has_downgrade_signal = any(word in text for word in INVESTMENT_DOWNGRADE_WORDS)
     return has_market_context and has_downgrade_signal
+
+
+def is_settlement_support_caution_article(article: dict) -> bool:
+    if not is_own_article(article):
+        return False
+    text = article.get("title", "") + " " + article.get("description", "")
+    has_context = any(word in text for word in SETTLEMENT_SUPPORT_CONTEXT_WORDS)
+    has_severe_signal = any(word in text for word in SETTLEMENT_SUPPORT_SEVERE_WORDS)
+    if not has_context or has_severe_signal:
+        return False
+
+    title = article.get("title", "")
+    own_in_title = any(name in title for name in OWN_NAMES)
+    own_list_mention = bool(re.search(r"[△,·]\s*인카금융서비스|\b인카금융서비스\(\d+억", text))
+    industry_title = any(word in title for word in ("GA들", "초대형 GA", "GA ", "1200% 룰", "정착지원금"))
+    return (not own_in_title and (own_list_mention or industry_title)) or (
+        own_in_title and any(word in text for word in ("공시", "지급 규모", "순이다", "전년 동기"))
+    )
 
 
 def cluster_articles(articles: list[dict], threshold: float = 0.62) -> list[dict]:

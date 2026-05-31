@@ -31,6 +31,33 @@ class AnalyzerToneTests(unittest.TestCase):
 
         self.assertEqual(analyzer.analyze_tone(article), "negative")
 
+    def test_settlement_support_ranking_is_caution_not_negative(self) -> None:
+        article = {
+            "title": "[공시돋보기] '1200% 룰' 7월 도입 앞두고 GA들 정착지원금 '펑펑'",
+            "description": (
+                "한화생명금융서비스가 178억원으로 지급 규모 1위를 기록했다. "
+                "이어 에이플러스에셋, 스카이블루에셋, 인카금융서비스(65억원), "
+                "밸류마크 순이다. 설계사 잦은 이직이 줄어들 전망이다."
+            ),
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_settlement_support_caution_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "neutral")
+
+    def test_settlement_support_with_direct_violation_stays_negative(self) -> None:
+        article = {
+            "title": "인카금융서비스 정착지원금 관련 불완전판매 조사 착수",
+            "description": "금융당국이 내부통제 위반 여부를 검사한다.",
+        }
+
+        self.assertFalse(analyzer.is_settlement_support_caution_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "negative")
+
 
 if __name__ == "__main__":
     unittest.main()
