@@ -117,6 +117,45 @@ export async function saveMonitorKeyword(keyword, category = "other") {
   );
 }
 
+export async function saveReporterProfile(reporter = {}) {
+  const name = String(reporter.name || "").trim();
+  const media = String(reporter.media || reporter.outlet || "").trim();
+  if (!name || !media) throw new Error("reporter_required");
+  const body = {
+    name,
+    media,
+    status: String(reporter.status || "중립").trim() || "중립",
+    contact_date: reporter.contactDate || reporter.contact_date || null,
+    memo: String(reporter.memo || "").trim(),
+  };
+  const id = reporter.id && /^\d+$/.test(String(reporter.id)) ? String(reporter.id) : "";
+  if (id) {
+    return writeRest(
+      `reporters?id=eq.${encodeURIComponent(id)}`,
+      "PATCH",
+      body,
+      { Prefer: "return=representation" },
+    );
+  }
+  return writeRest(
+    "reporters",
+    "POST",
+    [body],
+    { Prefer: "return=representation" },
+  );
+}
+
+export async function deleteReporterProfile(id) {
+  const cleanId = String(id || "").trim();
+  if (!cleanId || !/^\d+$/.test(cleanId)) throw new Error("remote_reporter_id_required");
+  return writeRest(
+    `reporters?id=eq.${encodeURIComponent(cleanId)}`,
+    "DELETE",
+    null,
+    { Prefer: "return=minimal" },
+  );
+}
+
 async function fetchTable(config, session, table, query, pageSize = 1000, maxRows = 50000) {
   const rows = [];
   for (let offset = 0; offset < maxRows; offset += pageSize) {
@@ -389,6 +428,7 @@ function normalizeReporter(row) {
   return {
     id: row.id || `${row.media}-${row.name}`,
     name: row.name || "미확인",
+    media: row.media || "미확인",
     outlet: row.media || "미확인",
     beat: row.memo || "-",
     recent: "-",

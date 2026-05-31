@@ -51,7 +51,14 @@ import {
   pressRegistry,
   watchJobs,
 } from "./data";
-import { loadOperationalData, saveMonitorKeyword, savePressAlias, verifyDashboardLogin } from "./liveData";
+import {
+  deleteReporterProfile,
+  loadOperationalData,
+  saveMonitorKeyword,
+  savePressAlias,
+  saveReporterProfile,
+  verifyDashboardLogin,
+} from "./liveData";
 import "./styles.css";
 
 const navIcons = {
@@ -1057,13 +1064,110 @@ function MediaManagement({ rows, aliases = [] }) {
 
 function ReporterManagement({ rows }) {
   const [showAll, setShowAll] = useState(false);
-  const visibleRows = showAll ? rows : rows.slice(0, 15);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("");
+  const [form, setForm] = useState(emptyReporterForm);
+  const [localState, setLocalState] = useState(() => readLocalReporterState());
+  const managedRows = useMemo(() => mergeReporterRows(rows, localState), [rows, localState]);
+  const filteredRows = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return managedRows;
+    return managedRows.filter((row) =>
+      `${row.name} ${row.outlet || row.media} ${row.beat} ${row.status} ${row.contactDate} ${row.memo}`.toLowerCase().includes(term),
+    );
+  }, [managedRows, query]);
+  const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
+
+  const updateForm = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+  const persistLocalState = (nextState) => {
+    setLocalState(nextState);
+    writeLocalReporterState(nextState);
+  };
+
+  const handleEditReporter = (row) => {
+    setForm({
+      id: row.id || "",
+      name: row.name || "",
+      media: row.outlet || row.media || "",
+      status: row.status || "중립",
+      contactDate: row.contactDate || row.date || "",
+      memo: row.memo || "",
+    });
+    setStatus("선택한 기자 정보를 편집 중입니다.");
+  };
+
+  const handleSaveReporter = async () => {
+    const item = normalizeReporterDraft(form);
+    if (!item.name || !item.media) {
+      setStatus("기자명과 언론사를 입력해야 합니다.");
+      return;
+    }
+    const optimistic = { ...item, id: item.id || `local-${Date.now()}` };
+    const localFirst = upsertReporterLocal(localState, optimistic);
+    persistLocalState(localFirst);
+    setForm(emptyReporterForm);
+    try {
+      const saved = await saveReporterProfile(item);
+      const savedRow = Array.isArray(saved) && saved[0] ? reporterDraftFromRemote(saved[0]) : optimistic;
+      persistLocalState(upsertReporterLocal(localFirst, savedRow, optimistic.id));
+      setStatus("Supabase 저장 완료");
+    } catch {
+      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+    }
+  };
+
+  const handleDeleteReporter = async (row) => {
+    const key = reporterKey(row);
+    const nextState = hideReporterLocal(localState, row);
+    persistLocalState(nextState);
+    try {
+      if (/^\d+$/.test(String(row.id || ""))) {
+        await deleteReporterProfile(row.id);
+        setStatus("Supabase 삭제 완료");
+      } else {
+        setStatus("현재 화면에서 제외했습니다.");
+      }
+    } catch {
+      persistLocalState({ ...nextState, hidden: unique([...nextState.hidden, key]) });
+      setStatus("현재 화면에서 제외했습니다. 운영 세션 연결 시 DB 삭제 가능");
+    }
+  };
+
   return (
-    <Panel title="기자 관리" icon={Users} meta={`${rows.length.toLocaleString("ko-KR")}명`}>
-      <div className="management-toolbar">
-        <input placeholder="기자명, 언론사, 담당 분야 검색" />
-        <button className="ghost-button">최근 기사 확인</button>
-        <button className="primary-button">기자 추가</button>
+    <Panel title="기자 관리" icon={Users} meta={`${managedRows.length.toLocaleString("ko-KR")}명`}>
+      <div className="operation-form reporter-form">
+        <label>
+          <span>기자명</span>
+          <input value={form.name} onChange={(event) => updateForm("name", event.target.value)} placeholder="예: 홍길동" />
+        </label>
+        <label>
+          <span>언론사</span>
+          <input value={form.media} onChange={(event) => updateForm("media", event.target.value)} placeholder="예: 보험저널" />
+        </label>
+        <label>
+          <span>관계 상태</span>
+          <select value={form.status} onChange={(event) => updateForm("status", event.target.value)}>
+            {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>최근 접촉일</span>
+          <input type="date" value={form.contactDate} onChange={(event) => updateForm("contactDate", event.target.value)} />
+        </label>
+        <label className="reporter-memo-field">
+          <span>메모</span>
+          <textarea value={form.memo} onChange={(event) => updateForm("memo", event.target.value)} placeholder="관심 주제, 요청사항, 접촉 이력" />
+        </label>
+        <div className="operation-form-actions reporter-actions">
+          <button className="ghost-button" onClick={() => { setForm(emptyReporterForm); setStatus(""); }}>초기화</button>
+          <button className="primary-button" onClick={handleSaveReporter}>{form.id ? "수정 저장" : "기자 추가"}</button>
+        </div>
+        {status && <p className="status-note">{status}</p>}
+      </div>
+      <div className="management-toolbar reporter-toolbar">
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="기자명, 언론사, 관계, 메모 검색" />
+        <button className="ghost-button" onClick={() => setQuery(form.media || form.name)}>선택 기자 검색</button>
+        <button className="primary-button" onClick={handleSaveReporter}>관리 기록 저장</button>
       </div>
       <div className="data-table-wrap">
         <table className="data-table">
@@ -1076,6 +1180,7 @@ function ReporterManagement({ rows }) {
               <th>최근 접촉</th>
               <th>최근 기사</th>
               <th>메모</th>
+              <th>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -1088,12 +1193,18 @@ function ReporterManagement({ rows }) {
                 <td>{row.contactDate || row.date || "-"}</td>
                 <td>{row.recent}</td>
                 <td>{row.memo || "-"}</td>
+                <td>
+                  <div className="row-actions">
+                    <button className="ghost-button" onClick={() => handleEditReporter(row)}>수정</button>
+                    <button className="ghost-button danger" onClick={() => handleDeleteReporter(row)}>삭제</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {rows.length > 15 && (
+      {filteredRows.length > 15 && (
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
           {showAll ? "접기" : "더보기"}
         </button>
@@ -2061,6 +2172,16 @@ function buildPressInfluence(articles) {
 
 const PRESS_ALIAS_DRAFT_KEY = "news_monitor_press_alias_drafts_v1";
 const KEYWORD_DRAFT_KEY = "news_monitor_keyword_drafts_v1";
+const REPORTER_DRAFT_KEY = "news_monitor_reporter_drafts_v1";
+
+const emptyReporterForm = {
+  id: "",
+  name: "",
+  media: "",
+  status: "중립",
+  contactDate: "",
+  memo: "",
+};
 
 const pressHostFallbacks = {
   "asiatoday.co.kr": "아시아투데이",
@@ -2106,6 +2227,30 @@ function writeLocalRows(key, rows) {
     window.localStorage.setItem(key, JSON.stringify(rows));
   } catch {
     // Supabase is the source of truth; local storage only keeps the public page responsive.
+  }
+}
+
+function readLocalReporterState() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(REPORTER_DRAFT_KEY) || "{}");
+    if (Array.isArray(stored)) return { rows: stored, hidden: [] };
+    return {
+      rows: Array.isArray(stored.rows) ? stored.rows : [],
+      hidden: Array.isArray(stored.hidden) ? stored.hidden : [],
+    };
+  } catch {
+    return { rows: [], hidden: [] };
+  }
+}
+
+function writeLocalReporterState(state) {
+  try {
+    window.localStorage.setItem(REPORTER_DRAFT_KEY, JSON.stringify({
+      rows: Array.isArray(state.rows) ? state.rows : [],
+      hidden: Array.isArray(state.hidden) ? state.hidden : [],
+    }));
+  } catch {
+    // Local persistence is best-effort; DB persistence is attempted separately.
   }
 }
 
@@ -2188,6 +2333,71 @@ function mergeMediaRows(rows = [], aliases = []) {
     }
   });
   return Array.from(map.values());
+}
+
+function reporterKey(row = {}) {
+  return String(row.id || `${row.name || ""}-${row.outlet || row.media || ""}`).trim();
+}
+
+function normalizeReporterDraft(row = {}) {
+  return {
+    id: row.id || "",
+    name: String(row.name || "").trim(),
+    media: String(row.media || row.outlet || "").trim(),
+    outlet: String(row.outlet || row.media || "").trim(),
+    beat: row.beat || row.memo || "-",
+    recent: row.recent || "-",
+    status: String(row.status || "중립").trim() || "중립",
+    contactDate: row.contactDate || row.contact_date || row.date || "",
+    memo: String(row.memo || "").trim(),
+  };
+}
+
+function reporterDraftFromRemote(row = {}) {
+  return normalizeReporterDraft({
+    id: row.id,
+    name: row.name,
+    media: row.media,
+    status: row.status,
+    contactDate: row.contact_date,
+    memo: row.memo,
+  });
+}
+
+function mergeReporterRows(rows = [], localState = {}) {
+  const hidden = new Set(localState.hidden || []);
+  const map = new Map();
+  rows.forEach((row) => {
+    const normalized = normalizeReporterDraft(row);
+    const key = reporterKey(normalized);
+    if (key && !hidden.has(key)) map.set(key, normalized);
+  });
+  (localState.rows || []).forEach((row) => {
+    const normalized = normalizeReporterDraft(row);
+    const key = reporterKey(normalized);
+    if (key && !hidden.has(key)) map.set(key, normalized);
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const contactDiff = String(b.contactDate || "").localeCompare(String(a.contactDate || ""));
+    return contactDiff || a.name.localeCompare(b.name, "ko-KR");
+  });
+}
+
+function upsertReporterLocal(state = {}, row = {}, replaceId = "") {
+  const normalized = normalizeReporterDraft(row);
+  const key = reporterKey(normalized);
+  const replaceKey = replaceId ? String(replaceId) : "";
+  const map = new Map((state.rows || []).map((item) => [reporterKey(item), item]));
+  if (replaceKey && map.has(replaceKey)) map.delete(replaceKey);
+  map.set(key, normalized);
+  const hidden = (state.hidden || []).filter((value) => value !== key && value !== replaceKey);
+  return { rows: Array.from(map.values()), hidden };
+}
+
+function hideReporterLocal(state = {}, row = {}) {
+  const key = reporterKey(row);
+  const rows = (state.rows || []).filter((item) => reporterKey(item) !== key);
+  return { rows, hidden: unique([...(state.hidden || []), key]) };
 }
 
 function keywordRowsFromGroups() {

@@ -151,6 +151,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   color: var(--ink-2);
 }
 
+.ghost-button.danger {
+  border-color: #ffc1ca;
+  color: var(--red);
+  background: var(--red-soft);
+}
+
 .primary-button {
   border-color: var(--blue);
   background: var(--blue);
@@ -2211,6 +2217,50 @@ button.kpi-card {
   grid-template-columns: minmax(220px, 1fr) auto auto auto;
 }
 
+.reporter-form {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.reporter-memo-field {
+  grid-column: span 3;
+}
+
+.reporter-memo-field textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.reporter-actions {
+  align-self: stretch;
+  align-items: end;
+}
+
+.reporter-toolbar {
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.row-actions .ghost-button {
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
 .stat-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -2498,8 +2548,13 @@ button.kpi-card {
   .analysis-drill-grid,
   .management-summary,
   .ad-summary-row,
-  .ad-chart-grid {
+  .ad-chart-grid,
+  .reporter-form {
     grid-template-columns: 1fr;
+  }
+
+  .reporter-memo-field {
+    grid-column: span 1;
   }
 
   .filter-card {
@@ -2631,6 +2686,7 @@ button.kpi-card {
 
   .management-toolbar,
   .ad-toolbar,
+  .reporter-toolbar,
   .operation-form,
   .keyword-add-form,
   .filter-card {
