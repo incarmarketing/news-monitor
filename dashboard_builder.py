@@ -30,7 +30,8 @@ CATEGORY_LABELS = {
 
 TONE_LABELS = {
     "positive": "긍정",
-    "neutral": "중립",
+    "caution": "주의",
+    "neutral": "주의",
     "negative": "부정",
 }
 
@@ -60,7 +61,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
             seen.add(dedupe_key)
 
             category = article.get("_category", "other")
-            tone = article.get("_tone", "neutral")
+            tone = article.get("_tone", "caution")
             rows.append(
                 {
                     "id": f"{date}-{index}",
@@ -78,7 +79,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
                     "category": category,
                     "category_label": CATEGORY_LABELS.get(category, "기타"),
                     "tone": tone,
-                    "tone_label": TONE_LABELS.get(tone, "중립"),
+                    "tone_label": TONE_LABELS.get(tone, "주의"),
                     "cluster_size": article.get("_cluster_size", 1),
                 }
             )
@@ -94,7 +95,7 @@ def article_summary(article: dict, category: str, tone: str) -> str:
     source = article.get("source") or "언론"
     keyword = article.get("keyword") or "관련 키워드"
     category_label = CATEGORY_LABELS.get(category, "기타")
-    tone_label = TONE_LABELS.get(tone, "중립")
+    tone_label = TONE_LABELS.get(tone, "주의")
     return f"{source}에서 보도된 {category_label} 기사입니다. '{keyword}' 키워드로 수집됐으며 보도 논조는 {tone_label}으로 분류됐습니다."
 
 
@@ -108,7 +109,7 @@ def load_supabase_articles() -> list[dict]:
     articles = []
     for row in rows:
         category = row.get("category", "other")
-        tone = row.get("tone", "neutral")
+        tone = row.get("tone", "caution")
         articles.append(
             {
                 "id": row.get("article_hash", ""),
@@ -126,7 +127,7 @@ def load_supabase_articles() -> list[dict]:
                 "category": category,
                 "category_label": CATEGORY_LABELS.get(category, "기타"),
                 "tone": tone,
-                "tone_label": TONE_LABELS.get(tone, "중립"),
+                "tone_label": TONE_LABELS.get(tone, "주의"),
                 "cluster_size": row.get("cluster_size", 1),
                 "status": row.get("status", "new"),
             }

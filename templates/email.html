@@ -399,7 +399,8 @@
   .cat-other { background:#f1f5f9; color:#475569; }
   .tone-negative { background:var(--red-soft); color:#a1122b; }
   .tone-positive { background:var(--green-soft); color:#166534; }
-  .tone-neutral { background:#f1f5f9; color:#475569; }
+  .tone-caution,
+  .tone-neutral { background:#fff7ed; color:#b45309; }
   .article-title {
     color:var(--ink);
     font-size:12.5px;
@@ -638,7 +639,7 @@
 
     <section class="kpi-strip">
       <div class="kpi"><b>{{ metrics.total_after_cluster }}</b><span>분석기사</span><small>중복 정리 후</small></div>
-      <div class="kpi"><b>{{ metrics.by_category.own }}</b><span>당사언급</span><small>부정 {{ metrics.own_negative }} · 긍정 {{ metrics.own_by_tone.positive }} · 중립 {{ metrics.own_by_tone.neutral }}</small></div>
+      <div class="kpi"><b>{{ metrics.by_category.own }}</b><span>당사언급</span><small>부정 {{ metrics.own_negative }} · 주의 {{ metrics.own_by_tone.caution }} · 긍정 {{ metrics.own_by_tone.positive }}</small></div>
       <div class="kpi"><b>{{ metrics.by_category.regulation }}</b><span>정책/감독</span><small>감독, 법안, 수수료, 설계사</small></div>
       <div class="kpi"><b>{{ market_count }}</b><span>GA/보험사</span><small>경쟁사와 업계 동향</small></div>
     </section>

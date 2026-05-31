@@ -67,6 +67,21 @@ NEGATIVE_WORDS = [
     "보따리", "과열", "영업 관행", "정착지원금", "이직", "턴다",
 ]
 
+SEVERE_NEGATIVE_WORDS = [
+    "불법", "갑질", "사기", "사칭", "횡령", "배임", "고발", "압수수색",
+    "제재", "처분", "과징금", "과태료", "기관주의", "위반", "징계",
+    "소송", "논란", "스캔들", "피해", "민원", "고객 DB", "고객DB",
+    "고객정보", "개인정보", "불완전판매", "관리부실", "관리 부실",
+    "무단", "먹통", "오류",
+]
+
+CAUTION_WORDS = [
+    "하락", "급락", "약세", "추락", "낙폭", "신저가", "최하위", "악화",
+    "감소", "부진", "리스크", "경고", "조사", "검사", "점검", "전격",
+    "보따리", "과열", "영업 관행", "정착지원금", "정착률", "이직", "수수료",
+    "환수", "부담", "둔화", "후퇴", "우려", "경계감",
+]
+
 POSITIVE_WORDS = [
     "성장", "증가", "수상", "최고", "1위", "흑자", "강세", "신기록",
     "상승", "혁신", "급증", "호조", "개선", "안정", "개척", "돌파",
@@ -104,6 +119,14 @@ INVESTMENT_DOWNGRADE_WORDS = [
     "하향", "하향 조정", "낮아졌다", "낮췄다", "낮추", "후퇴", "매수 접",
     "매수 의견 후퇴", "상승 여력 제한", "추가 상승 여력은 제한", "밸류에이션 부담",
     "성장 모멘텀 둔화", "보수적인 시각", "경계감", "고평가", "과열",
+]
+
+STOCK_DECLINE_CONTEXT_WORDS = [
+    "주가", "증시", "코스피", "코스닥", "상장", "시총", "시가총액", "거래",
+]
+
+STOCK_DECLINE_WORDS = [
+    "하락", "급락", "약세", "낙폭", "신저가", "부진", "조정", "매도",
 ]
 
 POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
@@ -215,35 +238,36 @@ def has_domain_context(text: str) -> bool:
 
 
 def analyze_tone(article: dict) -> str:
-    if not is_own_article(article):
-        return "neutral"
-
-    if is_settlement_support_caution_article(article):
-        return "neutral"
-
     title = article.get("title", "")
     text = title + " " + article.get("description", "")
 
-    negative_score = 0
+    severe_score = 0
+    caution_score = 0
     positive_score = 0
 
-    negative_score += sum(3 for word in NEGATIVE_WORDS if word in title)
-    negative_score += sum(1 for word in NEGATIVE_WORDS if word in text and word not in title)
-    negative_score += sum(2 for word in RISK_CONTEXT_WORDS if word in title)
-    negative_score += sum(1 for word in RISK_CONTEXT_WORDS if word in text and word not in title)
+    severe_score += sum(4 for word in SEVERE_NEGATIVE_WORDS if word in title)
+    severe_score += sum(2 for word in SEVERE_NEGATIVE_WORDS if word in text and word not in title)
+    caution_score += sum(2 for word in CAUTION_WORDS if word in title)
+    caution_score += sum(1 for word in CAUTION_WORDS if word in text and word not in title)
+    caution_score += sum(1 for word in RISK_CONTEXT_WORDS if word in title)
+    caution_score += sum(1 for word in RISK_CONTEXT_WORDS if word in text and word not in title)
     if is_investment_downgrade_article(article):
-        negative_score += 6
+        caution_score += 7
+    if is_stock_decline_article(article):
+        caution_score += 5
+    if is_settlement_support_caution_article(article):
+        caution_score += 6
 
     positive_score += sum(2 for word in POSITIVE_RANKING_WORDS if word in title)
     positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
     positive_score += sum(1 for word in CSR_CONTEXT_WORDS if word in text)
 
-    # 당사 언급 기사에서 감독/점검/제재 맥락은 단순 수치 증가보다 리스크 신호가 우선이다.
-    if negative_score >= 2 and negative_score >= positive_score:
+    # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
+    if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
         return "negative"
-    if positive_score >= 2 and negative_score == 0:
+    if positive_score >= 2 and severe_score == 0 and caution_score == 0:
         return "positive"
-    return "neutral"
+    return "caution"
 
 
 def is_own_article(article: dict) -> bool:
@@ -258,6 +282,15 @@ def is_investment_downgrade_article(article: dict) -> bool:
     has_market_context = any(word in text for word in INVESTMENT_DOWNGRADE_CONTEXT_WORDS)
     has_downgrade_signal = any(word in text for word in INVESTMENT_DOWNGRADE_WORDS)
     return has_market_context and has_downgrade_signal
+
+
+def is_stock_decline_article(article: dict) -> bool:
+    if not is_own_article(article):
+        return False
+    text = article.get("title", "") + " " + article.get("description", "")
+    has_market_context = any(word in text for word in STOCK_DECLINE_CONTEXT_WORDS)
+    has_decline_signal = any(word in text for word in STOCK_DECLINE_WORDS)
+    return has_market_context and has_decline_signal
 
 
 def is_settlement_support_caution_article(article: dict) -> bool:
@@ -311,9 +344,9 @@ def normalize_title(title: str) -> str:
 
 def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
     category_count = Counter(a.get("_category", "other") for a in all_articles)
-    tone_count = Counter(a.get("_tone", "neutral") for a in all_articles)
+    tone_count = Counter(a.get("_tone", "caution") for a in all_articles)
     own_tone_count = Counter(
-        a.get("_tone", "neutral")
+        a.get("_tone", "caution")
         for a in all_articles
         if a.get("_category") == "own"
     )
@@ -334,6 +367,7 @@ def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
         },
         "by_tone": {
             "negative": tone_count.get("negative", 0),
+            "caution": tone_count.get("caution", 0),
             "positive": tone_count.get("positive", 0),
             "neutral": tone_count.get("neutral", 0),
         },
@@ -341,6 +375,7 @@ def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
         "own_total": category_count.get("own", 0),
         "own_by_tone": {
             "positive": own_tone_count.get("positive", 0),
+            "caution": own_tone_count.get("caution", 0),
             "neutral": own_tone_count.get("neutral", 0),
             "negative": own_tone_count.get("negative", 0),
         },

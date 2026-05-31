@@ -488,6 +488,7 @@
     }
     .chip.time { background:#f8fafc; color:#334155; border-color:#cbd5e1; }
     .chip.own,.chip.positive { background:#eef8f1; color:var(--green); border-color:#cbead5; }
+    .chip.caution,.chip.neutral { background:#fff7ed; color:#b45309; border-color:#fed7aa; }
     .chip.negative { background:#fff1f2; color:var(--red); border-color:#fecdd3; }
     .chip.regulation { background:#fff7ed; color:var(--amber); border-color:#fed7aa; }
     .chip.competitor,.chip.industry { background:#e9eefc; color:var(--incar); border-color:#c8d5fb; }
@@ -3216,7 +3217,7 @@
               </div>
               <div class="release-quick">
                 <div class="focus-box"><b id="releaseOwnCount">0</b><span>최근 당사 보도</span></div>
-                <div class="focus-box"><b id="releasePositiveCount">0</b><span>긍정/중립 소재</span></div>
+                <div class="focus-box"><b id="releasePositiveCount">0</b><span>긍정/주의 소재</span></div>
                 <div class="focus-box"><b id="releaseRiskCount">0</b><span>검토 필요 소재</span></div>
               </div>
             </div>
@@ -3539,9 +3540,9 @@
       settings:"환경 설정"
     };
     const categoryOrder = ["own","industry","competitor","regulation","other"];
-    const toneOrder = ["negative","neutral","positive"];
+    const toneOrder = ["negative","caution","positive"];
     const categoryFallback = { own:"당사", industry:"GA", competitor:"보험사", regulation:"정책", other:"기타" };
-    const toneFallback = { negative:"부정", neutral:"중립", positive:"긍정" };
+    const toneFallback = { negative:"부정", caution:"주의", neutral:"주의", positive:"긍정" };
     const keywordCategoryOrder = ["own","industry","competitor","regulation","other"];
     const companyMentionTerms = ["인카금융서비스", "인카금융"];
     const legacyLocalKeys = ["pr_scraps","pr_keywords","pr_media_relations","pr_hidden_media","pr_reporters","pr_ads","marketing_pr_session_v1"];
@@ -3627,6 +3628,7 @@
     const countBy = (items,key) => items.reduce((acc,item) => { const value = item[key] || "미분류"; acc[value] = (acc[value] || 0) + 1; return acc; }, {});
     const topBy = (items,key,limit=8) => Object.entries(countBy(items,key)).sort((a,b) => b[1] - a[1]).slice(0,limit);
     const categoryLabel = key => categoryFallback[key] || state.categoryLabels[key] || key;
+    const normalizeToneKey = key => key === "neutral" ? "caution" : (key || "caution");
     const toneLabel = key => state.toneLabels[key] || toneFallback[key] || key;
     const canonicalPressKey = press => {
       const raw = String(press || "").trim().toLowerCase();
@@ -4037,9 +4039,10 @@
       const publishedAt = parsePublishedAt(article.pub_date || article.pub_date_raw || "");
       const press = pressName(article);
       const category = article.category || "other";
-      const tone = article.tone || "neutral";
+      const tone = normalizeToneKey(article.tone);
       const categoryLabelValue = categoryLabel(category);
-      const toneLabelValue = article.tone_label || toneLabel(tone);
+      const rawToneLabel = article.tone_label || toneLabel(tone);
+      const toneLabelValue = tone === "caution" && rawToneLabel === "중립" ? "주의" : rawToneLabel;
       const publishedLabel = formatPublishedAt(publishedAt, article.date);
       const fallback = `${press}에서 보도된 ${categoryLabelValue} 기사입니다. '${article.keyword || "관련"}' 키워드로 수집됐으며 보도 논조는 ${toneLabelValue}으로 분류됐습니다.`;
       return {
@@ -4047,6 +4050,7 @@
         press,
         category_detail: categoryDetail(article),
         category_label: categoryLabelValue,
+        tone,
         tone_label: toneLabelValue,
         summary: article.summary || article.description || fallback,
         score: Number(article.score || 0),
@@ -7546,7 +7550,7 @@
       const article = state.articles
         .filter(item => item.category === "own")
         .sort((a,b) => {
-          const toneScore = tone => tone === "positive" ? 0 : tone === "neutral" ? 1 : 2;
+          const toneScore = tone => normalizeToneKey(tone) === "positive" ? 0 : normalizeToneKey(tone) === "caution" ? 1 : 2;
           return toneScore(a.tone) - toneScore(b.tone) || latestArticleSort(a,b);
         })[0];
       if (!article) return alert("반영할 최근 당사 보도가 없습니다.");
@@ -7791,7 +7795,7 @@
             risk_level: row.risk_level || "LOW",
             risk: directArticleRiskLevel({
               category: row.category || "other",
-              tone: row.tone || "neutral",
+              tone: normalizeToneKey(row.tone),
               risk_level: row.risk_level || "LOW",
             }),
             title: row.title || "",
@@ -7802,7 +7806,7 @@
             pub_date: row.pub_date || row.pub_date_raw || "",
             score: row.score || 0,
             category: row.category || "other",
-            tone: row.tone || "neutral",
+            tone: normalizeToneKey(row.tone),
             cluster_size: row.cluster_size || 1,
             status: row.status || "new",
           })),
