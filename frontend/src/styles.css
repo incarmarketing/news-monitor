@@ -622,7 +622,7 @@ button.kpi-card {
 
 .feed-row {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) auto 76px;
+  grid-template-columns: 52px minmax(0, 1fr) 76px;
   gap: 8px;
   align-items: center;
   min-width: 0;
@@ -1939,11 +1939,11 @@ button.kpi-card {
 }
 
 .feed-row {
-  grid-template-columns: 54px minmax(0, 1fr) auto 78px 28px;
+  grid-template-columns: 54px minmax(0, 1fr) 78px 28px;
 }
 
 .feed-table.compact .feed-row {
-  grid-template-columns: 52px minmax(0, 1fr) auto 76px;
+  grid-template-columns: 52px minmax(0, 1fr) 76px;
 }
 
 .feed-main {
@@ -1958,7 +1958,13 @@ button.kpi-card {
 }
 
 .feed-title-line b {
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.feed-title-line .chip {
+  flex: 0 0 auto;
+  margin-top: 0;
 }
 
 .related-badge {

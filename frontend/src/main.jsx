@@ -1158,6 +1158,7 @@ function ArticleFeed({ rows, compact = false }) {
             <time>{row.time || "-"}</time>
             <div className="feed-main">
               <div className="feed-title-line">
+                <Chip tone={row.tone}>{row.tone}</Chip>
                 <b>{row.title}</b>
                 {hasRelated && <span className="related-badge">관련 {related.length}건</span>}
               </div>
@@ -1185,7 +1186,6 @@ function ArticleFeed({ rows, compact = false }) {
                 </details>
               )}
             </div>
-            <Chip tone={row.tone}>{row.tone}</Chip>
             <em>{row.status || "분석 완료"}</em>
             {!compact && row.link && row.link !== "#" && (
               <a
