@@ -96,5 +96,42 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertEqual(analyzer.categorize(article), "regulation")
 
 
+    def test_consumer_complaint_ranking_summary_explains_negative_meaning(self) -> None:
+        article = {
+            "title": "[소비자민원평가-손해보험] 빅5 민원 점유율 73% 집중...KB손해보험 2년 연속 1위",
+            "description": "KB손해보험 2년 연속 1위 소비자가 만드는 신문.",
+            "keyword": "손해보험",
+            "keyword_category": "competitor",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("민원 점유율", summary)
+        self.assertIn("우호 성과가 아니라", summary)
+        self.assertIn("소비자보호 리스크", summary)
+
+    def test_competitor_sports_marketing_article_is_filtered_without_own_mention(self) -> None:
+        article = {
+            "title": "DB손해보험, 프로농구 구단 후원 스포츠마케팅 확대",
+            "description": "DB손해보험이 농구단 홈경기 스폰서십을 강화하고 팬 이벤트를 진행한다.",
+            "keyword": "손해보험",
+            "keyword_category": "competitor",
+        }
+
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertFalse(news_collector.is_relevant_article(article))
+
+    def test_own_sports_marketing_article_is_kept(self) -> None:
+        article = {
+            "title": "인카금융서비스, 스포츠마케팅 캠페인 진행",
+            "description": "인카금융서비스가 스포츠 후원 캠페인을 통해 브랜드 접점을 확대한다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        self.assertFalse(analyzer.is_non_business_noise(article))
+        self.assertTrue(news_collector.is_relevant_article(article))
+
+
 if __name__ == "__main__":
     unittest.main()

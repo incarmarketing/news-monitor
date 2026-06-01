@@ -142,6 +142,19 @@ PHOTO_SPORTS_NOISE_WORDS = [
     "1번홀", "홀에서", "리조트", "파72", "우승상금", "순위를 올린다",
 ]
 
+SPORTS_MARKETING_NOISE_WORDS = [
+    "스포츠마케팅", "스포츠 마케팅", "프로야구", "프로농구", "프로배구",
+    "농구단", "배구단", "야구단", "축구단", "골프단", "구단", "선수단",
+    "배구", "농구", "야구", "축구", "골프", "KBO", "KBL", "V리그",
+    "시구", "시타", "홈경기", "원정경기", "플레이오프", "챔피언결정전",
+    "유니폼", "스폰서", "후원", "스폰서십", "타이틀스폰서",
+]
+
+SPORTS_BUSINESS_KEEP_WORDS = [
+    "보험금", "보험료", "상품", "계약", "민원", "제재", "소송", "실적",
+    "매출", "영업이익", "M/S", "점유율", "금감원", "금융감독원", "금융위",
+]
+
 MATERIAL_CAUTION_CONTEXT_WORDS = [
     "투자의견", "목표주가", "목표가", "주가", "하향", "급락", "자본성증권",
     "발행 뚝", "자본 확충", "경영개선", "매각", "불완전판매", "보험사기",
@@ -180,6 +193,9 @@ def build_quality_summary(article: dict) -> str:
     """Return an operational article summary, not a photo caption or portal fragment."""
     title = clean_summary_text(article.get("title", ""))
     description = strip_caption_prefix(clean_summary_text(article.get("description", "") or article.get("summary", "")))
+    complaint_summary = consumer_complaint_summary(article, title, description)
+    if complaint_summary:
+        return complaint_summary
     if description and not is_caption_like_summary(description):
         sentences = split_summary_sentences(description)
         usable = [
@@ -290,6 +306,9 @@ def title_based_summary(article: dict, title: str) -> str:
     tone = article.get("_tone") or article.get("tone") or "neutral"
     actor = extract_primary_entity(text)
 
+    complaint_summary = consumer_complaint_summary(article, title, description)
+    if complaint_summary:
+        return complaint_summary
     if re.search(r"공공\s*마이데이터|장기보상|보험금\s*청구", text):
         subject = actor or "보험사"
         return (
@@ -329,6 +348,35 @@ def title_based_summary(article: dict, title: str) -> str:
     if tone == "caution":
         return "직접 부정은 아니지만 시장성·규제성 신호가 있는 기사입니다. 반복 노출 여부와 당사 관련성을 분리해 봅니다."
     return limit_summary(f"{title} 관련 보도입니다. 보험·GA 업계 맥락과 당사 관련성을 확인합니다.")
+
+
+def consumer_complaint_summary(article: dict, title: str, description: str = "") -> str:
+    text = f"{title} {description} {article.get('keyword', '')}"
+    if not re.search(r"소비자\s*민원|민원평가|민원\s*점유율|민원\s*건수|불만\s*건수|분쟁", text):
+        return ""
+    actor = extract_primary_entity(text) or "손해보험사"
+    ranking = ""
+    if re.search(r"2년\s*연속\s*1위", text):
+        ranking = "2년 연속 1위로 언급됐습니다"
+    elif re.search(r"1위", text):
+        ranking = "1위로 언급됐습니다"
+    elif re.search(r"상위|빅5|집중|점유율", text):
+        ranking = "민원 비중 상위권으로 언급됐습니다"
+    else:
+        ranking = "소비자 민원 지표에 언급됐습니다"
+    return limit_summary(
+        f"{actor}{topic_particle(actor)} 손해보험 소비자 민원 평가에서 민원 점유율이 높은 회사로 {ranking}. "
+        "여기서 순위는 우호 성과가 아니라 민원·불만 집중도 의미이므로 소비자보호 리스크 흐름으로 봐야 합니다."
+    )
+
+
+def topic_particle(value: str) -> str:
+    if not value:
+        return "은"
+    last = value[-1]
+    if "가" <= last <= "힣":
+        return "은" if (ord(last) - ord("가")) % 28 else "는"
+    return "은"
 
 
 def extract_primary_entity(text: str) -> str:
@@ -464,11 +512,26 @@ def is_non_business_noise(article: dict) -> bool:
     title = article.get("title", "")
     if not text.strip():
         return True
+    if is_sports_marketing_noise(article):
+        return True
     has_photo_sports_signal = any(word in title or word in text for word in PHOTO_SPORTS_NOISE_WORDS)
     has_material_signal = any(word in text for word in MATERIAL_CAUTION_CONTEXT_WORDS) or any(name in text for name in OWN_NAMES)
     if has_photo_sports_signal and not has_material_signal:
         return True
     return False
+
+
+def is_sports_marketing_noise(article: dict) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "") + " " + article.get("keyword", "")
+    if any(name in text for name in OWN_NAMES):
+        return False
+    if not any(word in text for word in SPORTS_MARKETING_NOISE_WORDS):
+        return False
+    if any(word in text for word in SPORTS_BUSINESS_KEEP_WORDS):
+        return False
+    sports_context = bool(re.search(r"스포츠|배구|농구|야구|축구|골프|구단|선수|리그|시구|후원|스폰서", text, re.I))
+    insurance_context = bool(re.search(r"보험|손보|생보|화재|생명", text))
+    return sports_context and insurance_context
 
 
 def analyze_tone(article: dict) -> str:
