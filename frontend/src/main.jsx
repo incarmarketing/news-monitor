@@ -64,6 +64,7 @@ import "./styles.css";
 const navIcons = {
   overview: LayoutDashboard,
   monitoring: Search,
+  regulators: ShieldCheck,
   media: LineChart,
   scraps: Bookmark,
   risk: ShieldCheck,
@@ -148,6 +149,7 @@ function App() {
   const View = {
     overview: Overview,
     monitoring: Monitoring,
+    regulators: RegulatorReleases,
     media: MediaAnalysis,
     scraps: Scraps,
     risk: RiskCenter,
@@ -178,7 +180,7 @@ function App() {
         data={activeSection === "overview" ? realtimeData : data}
         period={period}
         setPeriod={setPeriod}
-        articles={activeSection === "monitoring" ? allArticles : activeSection === "overview" ? realtimeArticles : scopedArticles}
+        articles={activeSection === "monitoring" || activeSection === "regulators" ? allArticles : activeSection === "overview" ? realtimeArticles : scopedArticles}
         allArticles={allArticles}
         scraps={scraps}
         jobs={jobs}
@@ -457,6 +459,89 @@ function Monitoring({ data, articles, monitoringPreset }) {
         </Panel>
         <Panel title="문맥 기준" icon={ShieldCheck} meta="분류 규칙">
           <RuleStack />
+        </Panel>
+      </section>
+    </main>
+  );
+}
+
+function RegulatorReleases({ articles = [], onOpenMonitoring }) {
+  const [source, setSource] = useState("all");
+  const [query, setQuery] = useState("");
+  const regulatorRows = useMemo(
+    () => articles
+      .filter(isRegulatorArticle)
+      .filter((article) => source === "all" || article.source === source)
+      .filter((article) => {
+        const needle = query.trim().toLowerCase();
+        if (!needle) return true;
+        return `${article.title} ${article.summary} ${article.keyword}`.toLowerCase().includes(needle);
+      })
+      .sort((a, b) => articleTimeValue(b) - articleTimeValue(a)),
+    [articles, query, source],
+  );
+  const regulatorSources = unique(articles.filter(isRegulatorArticle).map((article) => article.source));
+  const recentOfficial = regulatorRows.slice(0, 80);
+  const ownRelated = regulatorRows.filter((article) => isOwnArticle(article));
+  const policySignals = regulatorRows.filter((article) => ["주의", "부정"].includes(article.tone) || /검사|제재|승인|감독|규제|수수료|불완전판매|내부통제/.test(`${article.title} ${article.summary}`));
+
+  return (
+    <main className="workspace">
+      <PageTitle
+        eyebrow="Official Regulator Releases"
+        title="금융당국 보도자료"
+        description="금융감독원과 금융위원회 공식 보도자료 중 보험, GA, 설계사, 판매수수료, 감독 이슈와 연결되는 항목만 별도 수집합니다."
+        right={<button className="primary-button" onClick={() => onOpenMonitoring?.({ category: "정책/규제", query: "금융당국 보도자료" })}><Search />관련 뉴스 보기</button>}
+      />
+      <section className="regulator-summary-grid">
+        <article>
+          <span>공식자료</span>
+          <b>{regulatorRows.length.toLocaleString("ko-KR")}건</b>
+          <em>최근 수집 기준</em>
+        </article>
+        <article>
+          <span>감독/규제 신호</span>
+          <b>{policySignals.length.toLocaleString("ko-KR")}건</b>
+          <em>검사·제재·승인·수수료 문맥</em>
+        </article>
+        <article>
+          <span>당사 연결</span>
+          <b>{ownRelated.length.toLocaleString("ko-KR")}건</b>
+          <em>인카 직접 언급 기준</em>
+        </article>
+      </section>
+      <section className="filter-card regulator-filter">
+        <label>
+          <span>기관</span>
+          <select value={source} onChange={(event) => setSource(event.target.value)}>
+            <option value="all">전체</option>
+            {regulatorSources.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </label>
+        <label className="wide-filter">
+          <span>검색</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="보험, GA, 설계사, 수수료 등" />
+        </label>
+      </section>
+      <section className="regulator-layout">
+        <Panel title="공식 보도자료 목록" icon={ShieldCheck} meta={`${recentOfficial.length.toLocaleString("ko-KR")}건 표시`}>
+          {recentOfficial.length ? <ArticleFeed rows={recentOfficial} /> : <div className="empty-state compact">아직 수집된 금융당국 공식자료가 없습니다. 다음 수집 실행 후 이 탭에 표시됩니다.</div>}
+        </Panel>
+        <Panel title="수집 기준" icon={FileText} meta="포털 기사와 분리">
+          <div className="regulator-rule-list">
+            <article>
+              <b>금융감독원</b>
+              <p>공식 보도자료 목록에서 보험검사, 보험사, GA, 설계사, 판매수수료 등 직접 문맥이 있는 자료만 통과합니다.</p>
+            </article>
+            <article>
+              <b>금융위원회</b>
+              <p>정책 발표 중 보험업권, 보험대리점, 금융소비자보호, 내부통제 관련 자료만 별도 정책 이슈로 보관합니다.</p>
+            </article>
+            <article>
+              <b>일반 뉴스와 분리</b>
+              <p>공식자료는 출처를 금융감독원/금융위원회로 고정해 언론사 보도량 집계와 섞이지 않게 관리합니다.</p>
+            </article>
+          </div>
         </Panel>
       </section>
     </main>
@@ -2358,8 +2443,9 @@ function expandReportIssues(issues, articles, period) {
 }
 
 function buildPressInfluence(articles) {
-  return groupArticles(articles, "source").slice(0, 10).map(([source, total]) => {
-    const scoped = articles.filter((article) => article.source === source);
+  const pressArticles = articles.filter((article) => !isRegulatorArticle(article));
+  return groupArticles(pressArticles, "source").slice(0, 10).map(([source, total]) => {
+    const scoped = pressArticles.filter((article) => article.source === source);
     return {
       source,
       total,
@@ -3060,6 +3146,10 @@ function groupArticles(articles, key) {
 
 function isOwnArticle(article) {
   return article.category === "당사" || /인카금융|인카금융서비스/i.test(`${article.title} ${article.keyword} ${article.summary}`);
+}
+
+function isRegulatorArticle(article) {
+  return /금융감독원|금융위원회/.test(article.source || "") || /금융당국 보도자료/.test(`${article.keyword || ""} ${article.summary || ""}`);
 }
 
 function categoryPresetFor(value) {

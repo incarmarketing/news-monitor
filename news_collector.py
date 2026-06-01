@@ -20,6 +20,7 @@ from rich.table import Table
 import config
 import analyzer
 import report_window
+import regulator_collector
 import supabase_store
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -234,6 +235,11 @@ def collect_news() -> list[dict]:
             all_articles.extend(naver + google)
             stats.append((f"{label} · {category_label(category)}", len(naver), len(google)))
             progress.advance(task)
+
+    regulator_articles = regulator_collector.fetch_regulator_releases()
+    if regulator_articles:
+        all_articles.extend(regulator_articles)
+        stats.append(("금융당국 보도자료 · 정책", len(regulator_articles), 0))
 
     before = len(all_articles)
     articles = deduplicate(all_articles)
@@ -707,7 +713,8 @@ def is_relevant_article(article: dict) -> bool:
     if category == "other":
         return keyword_matches_text(text, keyword) or keyword_matches_text(text, query)
 
-    if not article_matches_collection_keyword(article, text):
+    is_regulator_release = article.get("portal") == "regulator" or article.get("source") in {"금융감독원", "금융위원회"}
+    if not is_regulator_release and not article_matches_collection_keyword(article, text):
         return False
 
     if category == "own":

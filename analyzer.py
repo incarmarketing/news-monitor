@@ -132,7 +132,7 @@ STOCK_DECLINE_CONTEXT_WORDS = [
 ]
 
 STOCK_DECLINE_WORDS = [
-    "하락", "급락", "약세", "낙폭", "신저가", "부진", "조정", "매도",
+    "하락", "급락", "약세", "낙폭", "신저가", "최저가", "부진", "조정", "매도", "▼", "↓",
 ]
 
 POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
@@ -322,6 +322,8 @@ def analyze_tone(article: dict) -> str:
         return "positive"
 
     # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
+    if is_investment_downgrade_article(article) or is_stock_decline_article(article):
+        return "caution"
     if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
         return "negative"
     if category == "own" and positive_score >= 2 and severe_score == 0 and caution_score <= 1:

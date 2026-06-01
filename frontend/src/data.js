@@ -7,6 +7,7 @@ export const periodTabs = [
 export const navItems = [
   { id: "overview", label: "실시간 대시보드" },
   { id: "monitoring", label: "실시간 모니터링" },
+  { id: "regulators", label: "금융당국 보도자료" },
   { id: "media", label: "미디어 분석 리포트" },
   { id: "scraps", label: "주요 기사 스크랩" },
   { id: "risk", label: "리스크 대응센터" },

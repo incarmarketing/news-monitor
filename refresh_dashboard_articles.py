@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 
 import analyzer
 import news_collector
+import regulator_collector
 import supabase_store
 
 KST = timezone(timedelta(hours=9))
@@ -34,6 +35,7 @@ def collect_recent_articles(minutes: int) -> list[dict]:
         rows = rows[:max_keywords]
 
     articles: list[dict] = []
+    regulator_articles = regulator_collector.fetch_regulator_releases(days_back=2, max_pages=1)
     for row in rows:
         query = row["query"]
         label = row["keyword"]
@@ -47,7 +49,7 @@ def collect_recent_articles(minutes: int) -> list[dict]:
     articles = news_collector.apply_exclude_filter(articles)
     hours = max(1, (minutes + 59) // 60)
     articles = news_collector.apply_recency_filter(articles, hours)
-    return [article for article in articles if within_minutes(article, minutes)]
+    return [article for article in articles if within_minutes(article, minutes)] + regulator_articles
 
 
 def main() -> None:

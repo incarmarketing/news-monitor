@@ -2161,6 +2161,78 @@ button.kpi-card {
   align-items: start;
 }
 
+.regulator-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.regulator-summary-grid article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.regulator-summary-grid span,
+.regulator-summary-grid em {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.regulator-summary-grid b {
+  display: block;
+  margin: 5px 0 4px;
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.filter-card.regulator-filter {
+  grid-template-columns: minmax(160px, 220px) minmax(280px, 1fr);
+}
+
+.regulator-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.regulator-rule-list {
+  display: grid;
+  gap: 9px;
+}
+
+.regulator-rule-list article {
+  padding: 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.regulator-rule-list b {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.regulator-rule-list p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 800;
+  word-break: keep-all;
+}
+
 .wide-filter {
   grid-column: span 2;
 }
@@ -2706,7 +2778,8 @@ button.kpi-card {
   .risk-layout,
   .publication-body,
   .scrap-workspace-v2,
-  .monitoring-layout {
+  .monitoring-layout,
+  .regulator-layout {
     grid-template-columns: 1fr;
   }
 
@@ -2733,6 +2806,7 @@ button.kpi-card {
   .content-grid.two,
   .section-strip,
   .analysis-drill-grid,
+  .regulator-summary-grid,
   .management-summary,
   .ad-summary-row,
   .ad-chart-grid,
@@ -2745,6 +2819,10 @@ button.kpi-card {
   }
 
   .filter-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-card.regulator-filter {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2819,8 +2897,13 @@ button.kpi-card {
 
   .kpi-grid,
   .kpi-grid.compact,
+  .regulator-summary-grid,
   .filter-card,
   .fact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-card.regulator-filter {
     grid-template-columns: 1fr;
   }
 

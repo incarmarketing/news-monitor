@@ -7,7 +7,7 @@ import news_collector
 
 
 class AnalyzerToneTests(unittest.TestCase):
-    def test_own_investment_opinion_downgrade_is_negative(self) -> None:
+    def test_own_investment_opinion_downgrade_is_caution(self) -> None:
         article = {
             "title": "코스피 사상 최고 와중에 너무 올랐다...증권가가 매수 접은 종목들",
             "description": (
@@ -22,7 +22,7 @@ class AnalyzerToneTests(unittest.TestCase):
 
         self.assertEqual(article["_category"], "own")
         self.assertTrue(analyzer.is_investment_downgrade_article(article))
-        self.assertEqual(analyzer.analyze_tone(article), "negative")
+        self.assertEqual(analyzer.analyze_tone(article), "caution")
 
     def test_market_high_word_does_not_override_own_downgrade(self) -> None:
         article = {
@@ -30,7 +30,21 @@ class AnalyzerToneTests(unittest.TestCase):
             "description": "증권가가 밸류에이션 부담으로 보수적인 시각을 제시했다.",
         }
 
-        self.assertEqual(analyzer.analyze_tone(article), "negative")
+        self.assertEqual(analyzer.analyze_tone(article), "caution")
+
+    def test_own_stock_drop_symbol_does_not_become_positive(self) -> None:
+        article = {
+            "title": "[52주]최고가 25개, 최저가 556개.. 코스피 8600 돌파",
+            "description": "4% 3,175 ★★★★★ 194 인카금융서비스 9,330 ▼2.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_stock_decline_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "caution")
 
     def test_settlement_support_ranking_is_caution_not_negative(self) -> None:
         article = {
