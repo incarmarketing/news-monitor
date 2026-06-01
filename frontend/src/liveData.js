@@ -14,6 +14,49 @@ const STATIC_DATA_PATHS = [
   `${import.meta.env.BASE_URL || "/"}data/articles.json`,
 ];
 
+const PORTAL_SOURCE_VALUES = new Set([
+  "google",
+  "google news",
+  "news.google.com",
+  "news.google.co.kr",
+  "naver",
+  "news.naver.com",
+  "n.news.naver.com",
+  "m.news.naver.com",
+  "daum",
+  "news.daum.net",
+  "v.daum.net",
+  "press_unresolved",
+]);
+
+const PRESS_HOST_FALLBACKS = {
+  "biz.chosun.com": "조선비즈",
+  "biztribune.co.kr": "비즈트리뷴",
+  "businessplus.kr": "비즈니스플러스",
+  "ceoscoredaily.com": "CEO스코어데일리",
+  "dailian.co.kr": "데일리안",
+  "dt.co.kr": "디지털타임스",
+  "edaily.co.kr": "이데일리",
+  "energy-news.co.kr": "에너지경제",
+  "enetnews.co.kr": "이넷뉴스",
+  "fins.co.kr": "보험저널",
+  "fnnews.com": "파이낸셜뉴스",
+  "ftoday.co.kr": "파이낸셜투데이",
+  "hankyung.com": "한국경제",
+  "heraldcorp.com": "헤럴드경제",
+  "insnews.co.kr": "보험매일",
+  "joongangenews.com": "중앙이코노미뉴스",
+  "mk.co.kr": "매일경제",
+  "mt.co.kr": "머니투데이",
+  "news1.kr": "뉴스1",
+  "newsis.com": "뉴시스",
+  "pinpointnews.co.kr": "핀포인트뉴스",
+  "sedaily.com": "서울경제",
+  "thebell.co.kr": "더벨",
+  "view.asiae.co.kr": "아시아경제",
+  "yna.co.kr": "연합뉴스",
+};
+
 function isExpired(session) {
   return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
 }
@@ -242,6 +285,7 @@ export async function analyzeRegulatorReleases(prompt, articles = []) {
   const prepared = articles.slice(0, 20).map((article, index) => {
     const summary = String(article.summary || article.description || "").trim();
     const department = extractDepartment(summary);
+
     return {
       no: index + 1,
       title: article.title || "",
@@ -528,11 +572,16 @@ async function loadOperationalDataFromSupabaseSession() {
       rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
     ]);
 
+    const aliasRows = Array.isArray(aliases) ? aliases : [];
+    const normalizedArticles = Array.isArray(articles)
+      ? articles.map(normalizeArticle).filter(Boolean).map((article) => applyPressAliases(article, aliasRows))
+      : [];
+
     return {
       source: "supabase",
       status: "live",
       message: "운영 DB 연결",
-      articles: Array.isArray(articles) ? articles.map(normalizeArticle).filter(Boolean) : [],
+      articles: normalizedArticles,
       notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(reportRuns) ? reportRuns.map(normalizeReportRun) : [],
@@ -540,7 +589,7 @@ async function loadOperationalDataFromSupabaseSession() {
       mediaRelations: Array.isArray(mediaRelations) ? mediaRelations.filter((row) => !row.hidden).map(normalizeMedia) : [],
       reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
-      aliases: Array.isArray(aliases) ? aliases : [],
+      aliases: aliasRows,
       keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
       session,
     };
@@ -572,6 +621,104 @@ function normalizeScrap(row) {
   };
 }
 
+function canonicalHost(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
+    return url.hostname.toLowerCase().replace(/^www\./, "").replace(/^m\./, "");
+  } catch {
+    return raw
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .replace(/^m\./, "")
+      .split(/[/?#]/)[0]
+      .trim();
+  }
+}
+
+function hostMatchesAlias(aliasHost, host) {
+  return host === aliasHost || host.endsWith(`.${aliasHost}`);
+}
+
+function normalizeAliasRow(row) {
+  const host = canonicalHost(row?.host || row?.domain || row?.url);
+  const pressName = String(row?.press_name || row?.pressName || row?.name || "").trim();
+  return host && pressName ? { host, pressName } : null;
+}
+
+function applyPressAliases(article, aliases = []) {
+  const hostCandidates = [
+    canonicalHost(article.link),
+    canonicalHost(article.source),
+  ].filter(Boolean);
+  const alias = aliases
+    .map(normalizeAliasRow)
+    .filter(Boolean)
+    .find((row) => hostCandidates.some((host) => hostMatchesAlias(row.host, host)));
+  return alias ? { ...article, source: alias.pressName } : article;
+}
+
+function isPortalSourceName(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  const host = canonicalHost(raw);
+  return !raw || raw.includes("google") || PORTAL_SOURCE_VALUES.has(raw) || PORTAL_SOURCE_VALUES.has(host);
+}
+
+function sourceFromHost(value) {
+  const host = canonicalHost(value);
+  if (!host || isPortalSourceName(host)) return "";
+  const fallback = Object.entries(PRESS_HOST_FALLBACKS).find(([knownHost]) => hostMatchesAlias(knownHost, host));
+  return fallback?.[1] || "";
+}
+
+function sourceFromTitle(title) {
+  const normalized = String(title || "").replace(/\u2013|\u2014/g, "-");
+  const parts = normalized.split(" - ");
+  if (parts.length < 2) return "";
+  const candidate = parts.at(-1).replace(/\s+/g, " ").trim();
+  if (!candidate || isPortalSourceName(candidate)) return "";
+  if (/[0-9]|기자|특징주|속보|포토|인터뷰|종합/.test(candidate)) return "";
+  return candidate;
+}
+
+function normalizeArticleSource(row, raw) {
+  const candidates = [
+    row.source,
+    raw.source,
+    raw.press,
+    raw.publisher,
+    raw.media,
+  ].filter(Boolean);
+  const direct = candidates.find((value) => !isPortalSourceName(value) && !canonicalHost(value).includes("."));
+  if (direct) return String(direct).trim();
+
+  const titleSource = sourceFromTitle(row.title || raw.title);
+  if (titleSource) return titleSource;
+
+  const urlCandidates = [
+    row.link,
+    raw._original_url,
+    raw.original_url,
+    raw.originallink,
+    raw.link,
+    raw.url,
+  ].filter(Boolean);
+  for (const value of urlCandidates) {
+    const press = sourceFromHost(value);
+    if (press) return press;
+  }
+
+  for (const value of candidates) {
+    const press = sourceFromHost(value);
+    if (press) return press;
+  }
+
+  const hostCandidate = candidates.map(canonicalHost).find((host) => host && !isPortalSourceName(host));
+  return hostCandidate || "언론사 확인";
+}
+
 function normalizeArticle(row) {
   if (!row?.title) return null;
   if (isOutOfDomainArticle(row)) return null;
@@ -600,7 +747,7 @@ function normalizeArticle(row) {
     time: formatTime(published || row.report_date || row.date),
     pubDate: published,
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
-    source: row.source || "미확인",
+    source: normalizeArticleSource(row, raw),
     title: row.title,
     link: row.link || "#",
     keyword: row.keyword || "",

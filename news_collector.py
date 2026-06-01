@@ -389,24 +389,55 @@ def fetch_google_news(
 
     try:
         feed = feedparser.parse(url)
-        return [
-            {
-                "title": entry.get("title", ""),
-                "link": entry.get("link", ""),
-                "description": clean_html(entry.get("summary", "")),
-                "pub_date": entry.get("published", ""),
-                "source": infer_press_name(entry.get("title", ""), entry.get("link", ""), "google"),
-                "keyword": keyword,
-                "keyword_query": query,
-                "keyword_category": normalize_keyword_category(keyword_category),
-                "keyword_strict_query": strict_query,
-                "portal": "google",
-            }
-            for entry in feed.entries[:config.ARTICLES_PER_KEYWORD]
-        ]
+        articles = []
+        for entry in feed.entries[:config.ARTICLES_PER_KEYWORD]:
+            source_hint = google_entry_source_hint(entry)
+            source = infer_press_name(entry.get("title", ""), entry.get("link", ""), source_hint or "google")
+            if is_portal_press_value(source):
+                source = source_hint if source_hint and not is_portal_press_value(source_hint) else ""
+            articles.append(
+                {
+                    "title": entry.get("title", ""),
+                    "link": entry.get("link", ""),
+                    "description": clean_html(entry.get("summary", "")),
+                    "pub_date": entry.get("published", ""),
+                    "source": normalize_press_name(source) or "press_unresolved",
+                    "keyword": keyword,
+                    "keyword_query": query,
+                    "keyword_category": normalize_keyword_category(keyword_category),
+                    "keyword_strict_query": strict_query,
+                    "portal": "google",
+                }
+            )
+        return articles
     except Exception as exc:
         console.print(f"[red]Google '{query}' 오류:[/] {exc}")
         return []
+
+
+def google_entry_source_hint(entry) -> str:
+    """Return Google RSS publisher metadata before falling back to the article URL."""
+    source = entry.get("source")
+    if isinstance(source, dict):
+        title = source.get("title") or source.get("name")
+        if title and not is_portal_press_value(title):
+            return normalize_press_name(title)
+        href = source.get("href") or source.get("url")
+        if href:
+            press = extract_press_from_url(href)
+            if press and not is_portal_press_value(press):
+                return normalize_press_name(press)
+    source_detail = entry.get("source_detail")
+    if isinstance(source_detail, dict):
+        title = source_detail.get("title") or source_detail.get("name")
+        if title and not is_portal_press_value(title):
+            return normalize_press_name(title)
+        href = source_detail.get("href") or source_detail.get("url")
+        if href:
+            press = extract_press_from_url(href)
+            if press and not is_portal_press_value(press):
+                return normalize_press_name(press)
+    return ""
 
 
 def fetch_article_html(link: str, timeout: int = 6) -> tuple[str, str]:
@@ -473,6 +504,9 @@ def original_date_allows_article(article: dict, parsed: datetime, window: dict) 
     original_url = extract_original_article_url(html, final_url)
     if original_url:
         article["_original_url"] = original_url
+        original_press = extract_press_from_url(original_url)
+        if original_press and not is_portal_press_value(original_press):
+            article["source"] = normalize_press_name(original_press)
         original_html, _ = fetch_article_html(original_url)
         original_date = parse_article_date_from_html(original_html)
         if original_date:
@@ -514,6 +548,19 @@ def normalize_press_name(value: str) -> str:
     aliased = PRESS_ALIAS_MAP.get(press, press)
     host = canonical_host(aliased)
     return DOMAIN_PRESS_MAP.get(host, aliased)
+
+
+def is_portal_press_value(value: str) -> bool:
+    raw = str(value or "").strip().lower()
+    if not raw:
+        return True
+    host = canonical_host(raw)
+    return (
+        raw in {"google", "google news", "naver", "daum", "press_unresolved"}
+        or "google" in raw
+        or raw in {"news.google.com", "news.google.co.kr", "news.naver.com", "n.news.naver.com", "m.news.naver.com"}
+        or host in PORTAL_HOSTS
+    )
 
 
 def extract_press_from_title(title: str) -> str:
@@ -594,11 +641,10 @@ def resolve_portal_press_from_page(link: str) -> str:
             if candidate and candidate not in {"네이버뉴스", "네이버 스포츠", "구글뉴스"}:
                 return candidate
     host = (urlparse(link).hostname or "").removeprefix("www.")
-    original_url = "" if host.startswith("news.google.") else extract_original_article_url(html, response.url)
+    original_url = extract_original_article_url(html, response.url)
     if original_url:
         host = (urlparse(original_url).hostname or "").removeprefix("www.")
-        if host in DOMAIN_PRESS_MAP:
-            return DOMAIN_PRESS_MAP[host]
+        return DOMAIN_PRESS_MAP.get(host, host)
     office_id = extract_naver_office_id(html)
     if office_id in NAVER_OFFICE_ID_MAP:
         return NAVER_OFFICE_ID_MAP[office_id]
