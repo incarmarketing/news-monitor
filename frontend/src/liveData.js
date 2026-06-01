@@ -222,6 +222,95 @@ export async function deleteArticleScrap(articleHash) {
   }
 }
 
+export async function analyzeRegulatorReleases(prompt, articles = []) {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const prepared = articles.slice(0, 20).map((article, index) => {
+    const summary = String(article.summary || article.description || "").trim();
+    const department = extractDepartment(summary);
+    return {
+      no: index + 1,
+      title: article.title || "",
+      summary,
+      press: article.source || "금융당국",
+      date: article.publishedDate || article.date || article.periodDate || "",
+      published_label: article.publishedDate || article.date || "",
+      link: article.link || "",
+      keyword: article.keyword || "금융당국 보도자료",
+      category_label: article.category || "정책/규제",
+      tone_label: article.tone || "중립",
+      risk: article.riskLevel || "",
+      department,
+      relevance: regulatorRelevanceText(article),
+    };
+  });
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/analyze-scraps`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      apikey: config.anon_key,
+      Authorization: `Bearer ${config.anon_key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt: buildRegulatorPrompt(prompt, prepared),
+      articles: prepared,
+    }),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) throw new Error(data?.error || `analyze_regulator_${response.status}`);
+  return data;
+}
+
+function buildRegulatorPrompt(prompt, articles) {
+  return [
+    "금융감독원/금융위원회 공식 보도자료만 대상으로 분석합니다.",
+    `사용자 요청: ${String(prompt || "").trim() || "임원 보고용으로 당사 영향과 영업현장 영향을 분석해줘."}`,
+    "",
+    "중요: 일반 뉴스 분석이 아니라 공식 보도자료 해석입니다. 아래 고정 양식을 반드시 채우세요.",
+    "1. 핵심 판단: 선택 자료를 관통하는 결론 2~3개",
+    "2. 당사 영향: 인카금융서비스/GA/보험대리점 관점의 직접·간접 영향",
+    "3. 영업현장 영향: 설계사, 모집, 수수료, 내부통제, 소비자보호 관점",
+    "4. 리스크 수준: LOW/MEDIUM/HIGH 중 하나와 이유",
+    "5. 후속 확인사항: 실제 업무에서 확인할 항목 3~5개",
+    "6. 보고용 5줄 요약: 임원에게 그대로 보여줄 수 있는 다섯 문장",
+    "7. 근거 보도자료 번호: 모든 판단에는 [1], [2]처럼 번호를 붙임",
+    "",
+    "AI 입력 전 정리된 자료:",
+    ...articles.map((article) => [
+      `[${article.no}] ${article.press} / ${article.date}`,
+      `제목: ${article.title}`,
+      `담당부서: ${article.department || "확인 필요"}`,
+      `핵심 문장: ${article.summary || "요약 없음"}`,
+      `관련성: ${article.relevance}`,
+      `링크: ${article.link || "-"}`,
+    ].join("\n")),
+    "",
+    "금지:",
+    "- 링크 URL을 본문 판단 문장에 길게 쓰지 말 것",
+    "- '모니터링 필요' 같은 빈말만 쓰지 말 것",
+    "- 자료에 없는 제재나 확정 사실을 만들지 말 것",
+    "- 근거 번호 없는 판단을 쓰지 말 것",
+  ].join("\n\n");
+}
+
+function extractDepartment(summary = "") {
+  const match = String(summary).match(/담당부서\s*:\s*([^。.]+?)(?:\.|。|보험\/GA|$)/);
+  return match ? match[1].trim() : "";
+}
+
+function regulatorRelevanceText(article = {}) {
+  const text = `${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`;
+  const tags = [];
+  if (/보험대리점|법인보험대리점|GA|모집|설계사/.test(text)) tags.push("GA/설계사");
+  if (/수수료|정착지원금|1200/.test(text)) tags.push("수수료/모집질서");
+  if (/내부통제|금융소비자보호|불완전판매|민원/.test(text)) tags.push("내부통제/소비자보호");
+  if (/검사|제재|감독|승인|경영개선/.test(text)) tags.push("감독/제재");
+  if (/보험사|손해보험|생명보험|손보|생보/.test(text)) tags.push("보험업권");
+  return tags.length ? tags.join(", ") : "보험/GA 관련성 확인 필요";
+}
+
 function canFallbackToLocal(error) {
   const message = String(error?.message || error || "");
   return /missing_dashboard_session|invalid_session|missing_supabase_config|dashboard_api_401|unauthorized/.test(message);

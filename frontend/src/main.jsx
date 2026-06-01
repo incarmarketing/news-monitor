@@ -54,6 +54,7 @@ import {
   watchJobs,
 } from "./data";
 import {
+  analyzeRegulatorReleases,
   deleteArticleScrap,
   deleteReporterProfile,
   loadOperationalData,
@@ -537,6 +538,11 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
 function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onToggleScrap }) {
   const [source, setSource] = useState("all");
   const [query, setQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [analysisPrompt, setAnalysisPrompt] = useState("임원 보고용으로 핵심 판단, 당사 영향, 영업현장 영향, 후속 확인사항을 간결하게 정리해줘.");
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
   const regulatorRows = useMemo(
     () => articles
       .filter(isRegulatorArticle)
@@ -553,6 +559,39 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onTog
   const recentOfficial = regulatorRows.slice(0, 80);
   const ownRelated = regulatorRows.filter((article) => isOwnArticle(article));
   const policySignals = regulatorRows.filter((article) => ["주의", "부정"].includes(article.tone) || /검사|제재|승인|감독|규제|수수료|불완전판매|내부통제/.test(`${article.title} ${article.summary}`));
+  const selectedArticles = useMemo(
+    () => regulatorRows.filter((article) => selectedIds.has(scrapIdentity(article))),
+    [regulatorRows, selectedIds],
+  );
+
+  const toggleSelectRelease = (article) => {
+    const id = scrapIdentity(article);
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const analyzeSelected = async () => {
+    if (!selectedArticles.length) {
+      setAnalysisError("분석할 보도자료를 먼저 선택해 주세요.");
+      return;
+    }
+    setAnalysisLoading(true);
+    setAnalysisError("");
+    setAnalysisResult(null);
+    try {
+      const result = await analyzeRegulatorReleases(analysisPrompt, selectedArticles);
+      setAnalysisResult(normalizeRegulatorAnalysis(result, selectedArticles, analysisPrompt));
+    } catch (error) {
+      setAnalysisResult(buildRegulatorFallbackAnalysis(selectedArticles, analysisPrompt));
+      setAnalysisError(`Gemini 분석 호출이 실패해 규칙 기반 초안을 표시했습니다. (${error?.message || "연결 확인 필요"})`);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
 
   return (
     <main className="workspace">
@@ -592,9 +631,44 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onTog
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="보험, GA, 설계사, 수수료 등" />
         </label>
       </section>
+      <section className="regulator-analysis-box">
+        <div className="regulator-analysis-head">
+          <div>
+            <b>선택 자료 분석</b>
+            <span>{selectedArticles.length}건 선택 · 근거 번호 기반 보고서 생성</span>
+          </div>
+          <div className="regulator-analysis-actions">
+            <button className="ghost-button" onClick={() => setSelectedIds(new Set(recentOfficial.slice(0, 5).map(scrapIdentity)))}>
+              상위 5건 선택
+            </button>
+            <button className="ghost-button" onClick={() => setSelectedIds(new Set())}>
+              선택 해제
+            </button>
+            <button className="primary-button" onClick={analyzeSelected} disabled={analysisLoading || !selectedArticles.length}>
+              <FileText />{analysisLoading ? "분석 중" : "선택 자료 분석"}
+            </button>
+          </div>
+        </div>
+        <textarea
+          value={analysisPrompt}
+          onChange={(event) => setAnalysisPrompt(event.target.value)}
+          placeholder="분석 방향을 입력하세요. 예: 당사 영향 중심, 영업현장 영향, 임원 보고용"
+        />
+        {analysisError && <div className="analysis-warning">{analysisError}</div>}
+        {analysisResult && <RegulatorAnalysisResult result={analysisResult} />}
+      </section>
       <section className="regulator-layout">
         <Panel title="공식 보도자료 목록" icon={ShieldCheck} meta={`${recentOfficial.length.toLocaleString("ko-KR")}건 표시`}>
-          {recentOfficial.length ? <ArticleFeed rows={recentOfficial} scraps={scraps} onToggleScrap={onToggleScrap} /> : <div className="empty-state compact">아직 수집된 금융당국 공식자료가 없습니다. 다음 수집 실행 후 이 탭에 표시됩니다.</div>}
+          {recentOfficial.length ? (
+            <ArticleFeed
+              rows={recentOfficial}
+              scraps={scraps}
+              onToggleScrap={onToggleScrap}
+              selectable
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelectRelease}
+            />
+          ) : <div className="empty-state compact">아직 수집된 금융당국 공식자료가 없습니다. 다음 수집 실행 후 이 탭에 표시됩니다.</div>}
         </Panel>
         <Panel title="수집 기준" icon={FileText} meta="포털 기사와 분리">
           <div className="regulator-rule-list">
@@ -615,6 +689,265 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onTog
       </section>
     </main>
   );
+}
+
+function RegulatorAnalysisResult({ result }) {
+  const rows = [
+    ["핵심 판단", result.keyJudgement],
+    ["당사 영향", result.companyImpact],
+    ["영업현장 영향", result.fieldImpact],
+    ["리스크 수준", `${result.riskLevel} · ${result.riskReason}`],
+    ["후속 확인사항", result.followUps],
+  ];
+  return (
+    <div className="regulator-analysis-result">
+      <div className={`analysis-risk-pill ${String(result.riskLevel || "LOW").toLowerCase()}`}>
+        <span>Risk</span>
+        <b>{result.riskLevel}</b>
+      </div>
+      <div className="regulator-analysis-summary">
+        <b>보고용 5줄 요약</b>
+        <ol>
+          {result.executiveLines.map((line) => <li key={line}>{line}</li>)}
+        </ol>
+      </div>
+      <div className="regulator-analysis-grid">
+        {rows.map(([label, value]) => (
+          <article key={label}>
+            <span>{label}</span>
+            {Array.isArray(value)
+              ? <ul>{value.map((item) => <li key={item}>{item}</li>)}</ul>
+              : <p>{value}</p>}
+          </article>
+        ))}
+      </div>
+      <div className="regulator-evidence-list">
+        <b>근거 보도자료</b>
+        {result.evidenceArticles.map((article) => (
+          <a key={`${article.no}-${article.title}`} href={article.link || "#"} target="_blank" rel="noopener noreferrer" onClick={(event) => article.link ? openArticleLink(event, article.link) : undefined}>
+            <span>[{article.no}] {article.press || "금융당국"}</span>
+            <strong>{article.title}</strong>
+            <em>{article.summary}</em>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function normalizeRegulatorAnalysis(result = {}, articles = [], prompt = "") {
+  const report = result?.report && typeof result.report === "object" ? result.report : result;
+  const prepared = prepareRegulatorEvidence(articles);
+  const riskLevel = normalizeRiskLevel(report?.riskLevel || inferRegulatorRisk(articles));
+  const keyItems = reportItemsToLines(report?.keyFindings, 3);
+  const riskItems = reportItemsToLines(report?.risks, 3);
+  const opportunityItems = reportItemsToLines(report?.opportunities, 3);
+  const followUps = normalizeRegulatorFollowUps(report?.followUps, articles);
+  const summaryLines = splitRegulatorLines(report?.executiveSummary || result?.analysis, 5);
+  const evidenceArticles = normalizeRegulatorEvidence(report?.evidenceArticles, prepared);
+  const keyJudgement = pickRegulatorLine(
+    keyItems,
+    /핵심|판단|규제|감독|정책|보험|GA|설계사|수수료/,
+    fallbackRegulatorJudgement(articles),
+  );
+  const companyImpact = pickRegulatorLine(
+    [...keyItems, ...riskItems, ...opportunityItems],
+    /당사|인카|GA|보험대리점|법인보험대리점|모집|수수료/,
+    fallbackCompanyImpact(articles),
+  );
+  const fieldImpact = pickRegulatorLine(
+    [...opportunityItems, ...riskItems, ...keyItems],
+    /영업|현장|설계사|모집|내부통제|소비자|민원|수수료/,
+    fallbackFieldImpact(articles),
+  );
+  const riskReason = pickRegulatorLine(
+    riskItems,
+    /리스크|주의|검사|제재|감독|민원|불완전|내부통제|수수료/,
+    fallbackRiskReason(articles, riskLevel),
+  );
+  return {
+    keyJudgement,
+    companyImpact,
+    fieldImpact,
+    riskLevel,
+    riskReason,
+    followUps,
+    executiveLines: normalizeExecutiveLines(summaryLines, {
+      keyJudgement,
+      companyImpact,
+      fieldImpact,
+      riskReason,
+      followUps,
+      prompt,
+    }),
+    evidenceArticles,
+  };
+}
+
+function buildRegulatorFallbackAnalysis(articles = [], prompt = "") {
+  const riskLevel = inferRegulatorRisk(articles);
+  const keyJudgement = fallbackRegulatorJudgement(articles);
+  const companyImpact = fallbackCompanyImpact(articles);
+  const fieldImpact = fallbackFieldImpact(articles);
+  const riskReason = fallbackRiskReason(articles, riskLevel);
+  const followUps = normalizeRegulatorFollowUps([], articles);
+  return {
+    keyJudgement,
+    companyImpact,
+    fieldImpact,
+    riskLevel,
+    riskReason,
+    followUps,
+    executiveLines: normalizeExecutiveLines([], {
+      keyJudgement,
+      companyImpact,
+      fieldImpact,
+      riskReason,
+      followUps,
+      prompt,
+    }),
+    evidenceArticles: prepareRegulatorEvidence(articles).slice(0, 5),
+  };
+}
+
+function prepareRegulatorEvidence(articles = []) {
+  return articles.slice(0, 8).map((article, index) => ({
+    no: index + 1,
+    press: article.source || "금융당국",
+    title: cleanSummaryText(article.title || "제목 없음"),
+    summary: firstUsefulSummary(article),
+    link: article.link || "#",
+  }));
+}
+
+function normalizeRegulatorEvidence(rows, fallback = []) {
+  const source = Array.isArray(rows) && rows.length ? rows : fallback;
+  return source.slice(0, 6).map((article, index) => ({
+    no: Number(article?.no) || index + 1,
+    press: cleanSummaryText(article?.press || "금융당국"),
+    title: cleanSummaryText(article?.title || fallback[index]?.title || "제목 없음"),
+    summary: cleanSummaryText(article?.summary || fallback[index]?.summary || "요약 확인 필요"),
+    link: article?.link || fallback[index]?.link || "#",
+  }));
+}
+
+function firstUsefulSummary(article = {}) {
+  const lines = buildArticleSummaryLines(article);
+  const line = lines.find((item) => item && !/요약 없음|확인 필요/.test(item));
+  return cleanSummaryText(line || article.summary || article.description || "핵심 문장 확인 필요");
+}
+
+function reportItemsToLines(items, limit = 3) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .slice(0, limit)
+    .map((item) => {
+      const title = cleanSummaryText(item?.title || "");
+      const body = cleanSummaryText(item?.body || "");
+      const evidence = Array.isArray(item?.evidence) && item.evidence.length ? ` [${item.evidence.join(", ")}]` : "";
+      return cleanSummaryText(`${title}${title && body ? ": " : ""}${body}${evidence}`);
+    })
+    .filter(Boolean);
+}
+
+function splitRegulatorLines(value, limit = 5) {
+  const text = cleanSummaryText(value || "");
+  if (!text) return [];
+  return unique(
+    text
+      .replace(/\r/g, "\n")
+      .split(/\n+|(?:^|\s)[-*]\s+/)
+      .flatMap((line) => splitSummarySentences(line).length ? splitSummarySentences(line) : [line])
+      .map((line) => cleanSummaryText(line.replace(/^\d+[.)]\s*/, "")))
+      .filter((line) => line.length >= 8 && !/^리스크 레벨/i.test(line)),
+  ).slice(0, limit);
+}
+
+function pickRegulatorLine(lines = [], pattern, fallback) {
+  return lines.find((line) => pattern.test(line)) || lines[0] || fallback;
+}
+
+function normalizeExecutiveLines(lines = [], fallback = {}) {
+  const candidates = [
+    ...lines,
+    fallback.keyJudgement,
+    fallback.companyImpact,
+    fallback.fieldImpact,
+    fallback.riskReason,
+    ...(fallback.followUps || []).slice(0, 2),
+  ];
+  return unique(candidates.map(cleanSummaryText).filter(Boolean))
+    .map((line) => line.length > 140 ? `${line.slice(0, 139)}…` : line)
+    .slice(0, 5);
+}
+
+function normalizeRegulatorFollowUps(items, articles = []) {
+  const fromAi = Array.isArray(items) ? items.map(cleanSummaryText).filter(Boolean) : [];
+  const fallback = [
+    "당사 또는 GA 채널에 적용되는 조항, 시행시점, 감독 방향을 원문에서 확인",
+    "설계사 모집, 수수료, 내부통제, 소비자보호 업무에 전달할 메시지 필요 여부 점검",
+    "관련 뉴스 후속 보도와 금융당국 추가 설명자료를 다음 수집 때 재확인",
+  ];
+  if (articles.some((article) => /검사|제재|경영개선|불완전판매|민원/.test(`${article.title} ${article.summary}`))) {
+    fallback.unshift("검사·제재성 표현이 실제 당사 영향인지, 업계 공통 이슈인지 분리");
+  }
+  return unique([...fromAi, ...fallback]).slice(0, 5);
+}
+
+function inferRegulatorRisk(articles = []) {
+  const text = articles.map((article) => `${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`).join(" ");
+  const highSignals = (text.match(/검사|제재|불완전판매|위반|사고|민원|경영개선|중징계/g) || []).length;
+  const ownSignals = (text.match(/인카금융|인카금융서비스|당사/g) || []).length;
+  if (ownSignals && highSignals >= 2) return "HIGH";
+  if (highSignals >= 2 || /수수료|정착지원금|내부통제|소비자보호|설계사/.test(text)) return "MEDIUM";
+  return "LOW";
+}
+
+function normalizeRiskLevel(value) {
+  const risk = String(value || "").toUpperCase();
+  if (risk === "HIGH" || risk === "MEDIUM" || risk === "LOW") return risk;
+  return "LOW";
+}
+
+function fallbackRegulatorJudgement(articles = []) {
+  const count = articles.length;
+  const tags = regulatorTags(articles);
+  return `선택한 공식자료 ${count}건은 ${tags.join(", ")} 문맥을 중심으로 당사 영향 여부를 확인해야 합니다.`;
+}
+
+function fallbackCompanyImpact(articles = []) {
+  const own = articles.some(isOwnArticle);
+  const ga = articles.some((article) => /GA|보험대리점|설계사|모집|수수료/.test(`${article.title} ${article.summary} ${article.keyword}`));
+  if (own) return "당사명이 직접 언급된 자료가 있어 평판 영향과 사실관계 확인을 우선해야 합니다.";
+  if (ga) return "당사 직접 언급은 없어도 GA·설계사·모집질서 관련 정책은 영업 환경에 간접 영향을 줄 수 있습니다.";
+  return "현재 선택 자료만으로 당사 직접 영향은 제한적이나 보험업권 정책 변화 가능성은 추적 대상입니다.";
+}
+
+function fallbackFieldImpact(articles = []) {
+  const text = articles.map((article) => `${article.title} ${article.summary}`).join(" ");
+  if (/수수료|정착지원금|1200/.test(text)) return "수수료·정착지원금 문맥은 설계사 리크루팅과 영업현장 안내 기준에 영향을 줄 수 있습니다.";
+  if (/내부통제|소비자보호|불완전판매|민원/.test(text)) return "내부통제·소비자보호 문맥은 현장 설명자료와 모집 프로세스 점검으로 연결될 수 있습니다.";
+  if (/설계사|모집|GA|보험대리점/.test(text)) return "설계사·GA 관련 문맥은 채널 운영, 모집, 교육 메시지 관점에서 확인이 필요합니다.";
+  return "영업현장 영향은 아직 명확하지 않으나 시행 세부내용과 후속 보도 확인이 필요합니다.";
+}
+
+function fallbackRiskReason(articles = [], riskLevel = "LOW") {
+  const text = articles.map((article) => `${article.title} ${article.summary}`).join(" ");
+  if (riskLevel === "HIGH") return "당사 직접 언급과 검사·제재성 표현이 함께 포함되어 즉시 사실관계 확인이 필요합니다.";
+  if (/검사|제재|경영개선|불완전판매|민원/.test(text)) return "감독·제재성 표현이 포함되어 업계 공통 이슈인지 당사 영향 이슈인지 분리해야 합니다.";
+  if (/수수료|정착지원금|내부통제|소비자보호|설계사/.test(text)) return "영업현장과 연결될 수 있는 제도·감독 문맥이 있어 중간 수준의 관찰이 필요합니다.";
+  return "현재 선택 자료에서는 직접 부정 또는 제재성 신호가 제한적입니다.";
+}
+
+function regulatorTags(articles = []) {
+  const text = articles.map((article) => `${article.title} ${article.summary} ${article.keyword}`).join(" ");
+  const tags = [];
+  if (/보험대리점|GA|설계사|모집/.test(text)) tags.push("GA/설계사");
+  if (/수수료|정착지원금|1200/.test(text)) tags.push("수수료");
+  if (/내부통제|소비자보호|불완전판매|민원/.test(text)) tags.push("내부통제");
+  if (/검사|제재|감독|경영개선|승인/.test(text)) tags.push("감독");
+  if (/보험사|손해보험|생명보험|손보|생보/.test(text)) tags.push("보험업권");
+  return tags.length ? tags.slice(0, 3) : ["보험업권"];
 }
 
 function MediaAnalysis({ data, period, setPeriod, articles = [], scraps, onOpenMonitoring, operations }) {
@@ -1691,7 +2024,7 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function ArticleFeed({ rows, compact = false, scraps = [], onToggleScrap }) {
+function ArticleFeed({ rows, compact = false, scraps = [], onToggleScrap, selectable = false, selectedIds = new Set(), onToggleSelect }) {
   const scrapIds = useMemo(() => new Set((scraps || []).map(scrapIdentity).filter(Boolean)), [scraps]);
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
@@ -1699,9 +2032,17 @@ function ArticleFeed({ rows, compact = false, scraps = [], onToggleScrap }) {
         const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
         const hasRelated = related.length > 1;
         const relatedText = hasRelated ? `외 ${related.length - 1}곳` : "";
-        const scraped = scrapIds.has(scrapIdentity(row));
+        const identity = scrapIdentity(row);
+        const scraped = scrapIds.has(identity);
+        const selected = selectedIds?.has?.(identity);
         return (
-          <article key={`${row.id || row.link || row.title}-${row.time}`} className={`${hasRelated ? "feed-row related" : "feed-row"} ${scraped ? "scraped" : ""}`.trim()}>
+          <article key={`${row.id || row.link || row.title}-${row.time}`} className={`${hasRelated ? "feed-row related" : "feed-row"} ${selectable ? "selectable" : ""} ${scraped ? "scraped" : ""} ${selected ? "selected" : ""}`.trim()}>
+            {selectable && (
+              <label className="feed-select" title={selected ? "분석 선택 해제" : "분석 선택"}>
+                <input type="checkbox" checked={Boolean(selected)} onChange={() => onToggleSelect?.(row)} />
+                <span />
+              </label>
+            )}
             <div className="feed-main">
               <div className="feed-title-line">
                 <Chip tone={row.tone}>{row.tone}</Chip>
