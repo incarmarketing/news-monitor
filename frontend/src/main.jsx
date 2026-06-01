@@ -1509,9 +1509,8 @@ function ManagementSummary({ management }) {
 function MediaManagement({ rows, aliases = [] }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
-  const [aliasUrl, setAliasUrl] = useState("");
-  const [pressName, setPressName] = useState("");
-  const [aliasStatus, setAliasStatus] = useState("");
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [aliasDraft, setAliasDraft] = useState({ url: "", pressName: "", status: "" });
   const [localAliases, setLocalAliases] = useState(() => readLocalRows(PRESS_ALIAS_DRAFT_KEY));
   const aliasRows = useMemo(() => mergeAliasRows(aliases, localAliases), [aliases, localAliases]);
   const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows), [rows, aliasRows]);
@@ -1525,24 +1524,43 @@ function MediaManagement({ rows, aliases = [] }) {
   }, [managedRows, query, aliasRows]);
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
 
+  const openMediaManager = (row) => {
+    const existingHost = domainsForPressName(row.name, aliasRows)[0] || "";
+    setSelectedMedia(row);
+    setAliasDraft({
+      url: existingHost,
+      pressName: row.name,
+      status: existingHost ? `${existingHost} 주소가 ${row.name}으로 보정되어 있습니다.` : "",
+    });
+  };
+
   const handleUrlChange = (value) => {
-    setAliasUrl(value);
     const mapped = resolvePressNameFromUrl(value, aliasRows, rows);
+    const fallbackName = selectedMedia?.name || "";
     if (mapped) {
-      setPressName(mapped);
-      setAliasStatus(`${canonicalHost(value)} -> ${mapped}`);
+      setAliasDraft((current) => ({
+        ...current,
+        url: value,
+        pressName: current.pressName || mapped || fallbackName,
+        status: `${canonicalHost(value)} 주소는 현재 ${mapped}으로 매핑되어 있습니다.`,
+      }));
     } else if (value.trim()) {
-      setAliasStatus("매핑 후보를 찾지 못했습니다. 언론사명을 직접 입력하세요.");
+      setAliasDraft((current) => ({
+        ...current,
+        url: value,
+        pressName: current.pressName || fallbackName,
+        status: "기존 매핑 후보가 없습니다. 저장하면 선택 언론사 기준으로 새 보정 규칙이 만들어집니다.",
+      }));
     } else {
-      setAliasStatus("");
+      setAliasDraft((current) => ({ ...current, url: value, status: "" }));
     }
   };
 
   const handleSaveAlias = async () => {
-    const host = canonicalHost(aliasUrl);
-    const cleanName = pressName.trim();
+    const host = canonicalHost(aliasDraft.url);
+    const cleanName = (aliasDraft.pressName || selectedMedia?.name || "").trim();
     if (!host || !cleanName) {
-      setAliasStatus("URL/도메인과 언론사명을 모두 입력해야 합니다.");
+      setAliasDraft((current) => ({ ...current, status: "URL/도메인과 언론사명을 모두 입력해야 합니다." }));
       return;
     }
     const nextAliases = upsertAliasRow(localAliases, { host, press_name: cleanName });
@@ -1550,37 +1568,14 @@ function MediaManagement({ rows, aliases = [] }) {
     writeLocalRows(PRESS_ALIAS_DRAFT_KEY, nextAliases);
     try {
       await savePressAlias(host, cleanName);
-      setAliasStatus("Supabase 저장 완료");
+      setAliasDraft((current) => ({ ...current, status: `${host} -> ${cleanName} 저장 완료` }));
     } catch {
-      setAliasStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      setAliasDraft((current) => ({ ...current, status: `${host} -> ${cleanName} 화면 반영 완료 · 운영 세션 연결 시 DB 저장` }));
     }
   };
 
   return (
     <Panel title="언론사 관리" icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}곳`}>
-      <div className="operation-form media-alias-form">
-        <label>
-          <span>언론사 URL/도메인</span>
-          <input
-            value={aliasUrl}
-            onChange={(event) => handleUrlChange(event.target.value)}
-            placeholder="https://www.mk.co.kr/news/..."
-          />
-        </label>
-        <label>
-          <span>매핑 언론사명</span>
-          <input
-            value={pressName}
-            onChange={(event) => setPressName(event.target.value)}
-            placeholder="매일경제"
-          />
-        </label>
-        <div className="operation-form-actions">
-          <button className="ghost-button" onClick={() => handleUrlChange(aliasUrl)}>주소 매핑</button>
-          <button className="primary-button" onClick={handleSaveAlias}>매핑 저장</button>
-        </div>
-        {aliasStatus && <p className="status-note">{aliasStatus}</p>}
-      </div>
       <div className="management-toolbar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="언론사명, 도메인, 메모 검색" />
         <button className="ghost-button">등급 정리</button>
@@ -1598,6 +1593,7 @@ function MediaManagement({ rows, aliases = [] }) {
               <th>최근 접촉</th>
               <th>기사량</th>
               <th>메모</th>
+              <th>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -1616,6 +1612,11 @@ function MediaManagement({ rows, aliases = [] }) {
                 <td>{row.contactDate || "-"}</td>
                 <td>{Number(row.total || 0).toLocaleString("ko-KR")}건</td>
                 <td>{row.memo || "-"}</td>
+                <td>
+                  <div className="row-actions">
+                    <button className="ghost-button" onClick={() => openMediaManager(row)}>관리</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1625,6 +1626,51 @@ function MediaManagement({ rows, aliases = [] }) {
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
           {showAll ? "접기" : "더보기"}
         </button>
+      )}
+      {selectedMedia && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="login-panel media-alias-dialog">
+            <button className="icon-button close" onClick={() => setSelectedMedia(null)} aria-label="닫기">
+              <X />
+            </button>
+            <h2>언론사 주소 보정</h2>
+            <p>
+              선택한 언론사의 실제 도메인을 저장하면, 이후 해당 주소로 수집되는 기사는 이 언론사명으로 표시됩니다.
+            </p>
+            <div className="media-alias-target">
+              <span>선택 언론사</span>
+              <b>{selectedMedia.name}</b>
+            </div>
+            <label>
+              <span>언론사 URL/도메인</span>
+              <input
+                value={aliasDraft.url}
+                onChange={(event) => handleUrlChange(event.target.value)}
+                placeholder="예: insnews.co.kr 또는 https://www.insnews.co.kr/..."
+              />
+            </label>
+            <label>
+              <span>표시 언론사명</span>
+              <input
+                value={aliasDraft.pressName}
+                onChange={(event) => setAliasDraft((current) => ({ ...current, pressName: event.target.value }))}
+                placeholder={selectedMedia.name}
+              />
+            </label>
+            <div className="media-alias-existing">
+              <span>현재 보정 주소</span>
+              <div className="alias-chip-list">
+                {domainsForPressName(selectedMedia.name, aliasRows).map((host) => <Chip key={host}>{host}</Chip>)}
+                {!domainsForPressName(selectedMedia.name, aliasRows).length && <em>등록된 주소 없음</em>}
+              </div>
+            </div>
+            {aliasDraft.status && <p className="status-note">{aliasDraft.status}</p>}
+            <div className="operation-form-actions">
+              <button className="ghost-button" onClick={() => setSelectedMedia(null)}>닫기</button>
+              <button className="primary-button" onClick={handleSaveAlias}>주소 정보 저장</button>
+            </div>
+          </div>
+        </div>
       )}
     </Panel>
   );

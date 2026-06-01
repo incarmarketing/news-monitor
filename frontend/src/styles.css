@@ -2168,6 +2168,41 @@ button.kpi-card {
   font-weight: 800;
 }
 
+.media-alias-dialog {
+  width: min(520px, 100%);
+}
+
+.media-alias-target,
+.media-alias-existing {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.media-alias-target span,
+.media-alias-existing > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.media-alias-target b {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.media-alias-existing em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
 .login-panel label {
   display: grid;
   gap: 5px;
@@ -3087,7 +3122,7 @@ button.kpi-card {
 
 .data-table {
   width: 100%;
-  min-width: 880px;
+  min-width: 980px;
   border-collapse: collapse;
   background: #fff;
 }
