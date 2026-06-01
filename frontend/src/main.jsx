@@ -132,13 +132,17 @@ function App() {
     () => composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected),
     [baseData, scopedArticles, scopedReportRuns, liveConnected],
   );
+  const realtimeScope = useMemo(
+    () => realtimeScopeLabel(operations.watchRuns || []),
+    [operations.watchRuns],
+  );
   const realtimeArticles = useMemo(
-    () => selectRealtimeArticles(allArticles),
-    [allArticles],
+    () => selectRealtimeArticles(allArticles, operations.watchRuns || []),
+    [allArticles, operations.watchRuns],
   );
   const realtimeData = useMemo(
-    () => composeRealtimeData(periodData.daily, realtimeArticles, liveConnected),
-    [realtimeArticles, liveConnected],
+    () => composeRealtimeData(periodData.daily, realtimeArticles, liveConnected, realtimeScope),
+    [realtimeArticles, liveConnected, realtimeScope],
   );
   const management = useMemo(
     () => composeManagementData(operations, scopedArticles),
@@ -149,7 +153,7 @@ function App() {
     ? [
         {
           label: "부정기사 감시",
-          cadence: "24시간 · 5분",
+          cadence: operations.watchRuns[0].cadence || "5분 주기",
           latest: operations.watchRuns[0].latest,
           state: operations.watchRuns[0].state,
         },
@@ -386,10 +390,10 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           </Panel>
         </div>
         <div className="middle-column">
-          <Panel title="분류별 기사량" icon={LineChart} meta="최근 24시간">
+          <Panel title="분류별 기사량" icon={LineChart} meta={data.scope}>
             <CategoryChart rows={data.categoryFlow} />
           </Panel>
-          <Panel title="언론사 영향도" icon={Building2} meta="최근 24시간">
+          <Panel title="언론사 영향도" icon={Building2} meta={data.scope}>
             <PressInfluence rows={data.pressInfluence} />
           </Panel>
         </div>
@@ -2449,9 +2453,9 @@ function WatchPanel({ jobs, risk = "LOW" }) {
         </div>
         <div className="watch-copy">
           <h2>정상 감시</h2>
-          <p>최근 6분 검사 완료</p>
-          <strong>{watchJob.latest || "-"} · 24시간 감시 중</strong>
-          <span>24시간 5분 주기</span>
+          <p>최근 감시 구간 검사 완료</p>
+          <strong>{watchJob.latest || "-"} · 최신 감시 완료</strong>
+          <span>{watchJob.cadence || "5분 주기"}</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>
@@ -2770,17 +2774,21 @@ function Chip({ children, tone }) {
   return <span className={`chip ${cls}`}>{children}</span>;
 }
 
-function composeRealtimeData(base, articles, liveConnected = false) {
+function composeRealtimeData(base, articles, liveConnected = false, scope = "최근 감시 구간 · 5분 자동 갱신") {
   if (!liveConnected) {
     return buildDisconnectedPeriodData(base);
   }
   if (!articles.length) {
-    return buildDisconnectedPeriodData(base, "최근 24시간 실제 보도시각 기준으로 표시할 주요 기사가 없습니다.");
+    return {
+      ...buildDisconnectedPeriodData(base, `${scope} 기준으로 표시할 주요 기사가 없습니다.`),
+      label: "실시간",
+      scope,
+    };
   }
   return {
     ...composePeriodData(base, articles, [], true),
     label: "실시간",
-    scope: "최근 24시간 · 5분 자동 갱신",
+    scope,
   };
 }
 
@@ -3334,17 +3342,52 @@ function lastNDays(articles, days) {
   });
 }
 
-function selectRealtimeArticles(articles = []) {
-  const now = Date.now();
-  const cutoff = now - 24 * 60 * 60 * 1000;
-  const upperBound = now + 60 * 60 * 1000;
-  const recent = articles.filter((article) => {
-    const time = articlePublishedTimeValue(article);
-    return time > 0 && time >= cutoff && time <= upperBound;
-  });
-  return [...recent]
+function selectRealtimeArticles(articles = [], watchRuns = []) {
+  const window = getRealtimeWindow(watchRuns);
+  const watchRows = articles.filter((article) => isRealtimeWatchArticle(article, window));
+  const candidates = watchRows.length
+    ? watchRows
+    : articles.filter((article) => {
+        const time = articlePublishedTimeValue(article);
+        return time > 0 && time >= window.start && time <= window.end + 10 * 60 * 1000;
+      });
+  return [...candidates]
     .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
-    .slice(0, 240);
+    .slice(0, 80);
+}
+
+function getRealtimeWindow(watchRuns = []) {
+  const latestRun = Array.isArray(watchRuns) ? watchRuns[0] : null;
+  const scannedAt = latestRun?.scannedAt ? new Date(latestRun.scannedAt).getTime() : 0;
+  const end = Number.isNaN(scannedAt) || scannedAt <= 0 ? Date.now() : scannedAt;
+  const rawMinutes = Number(latestRun?.minutesBack || 5);
+  const minutes = Math.min(Math.max(rawMinutes || 5, 5), 30);
+  return {
+    start: end - minutes * 60 * 1000,
+    end,
+    minutes,
+  };
+}
+
+function realtimeScopeLabel(watchRuns = []) {
+  const window = getRealtimeWindow(watchRuns);
+  return `최근 ${formatRealtimeDuration(window.minutes)} · 5분 자동 갱신`;
+}
+
+function formatRealtimeDuration(minutes) {
+  if (minutes >= 60) return `${Math.round(minutes / 60)}시간`;
+  return `${minutes}분`;
+}
+
+function isRealtimeWatchArticle(article = {}, window) {
+  const slot = String(article.slot || "").toLowerCase();
+  const windowLabel = String(article.windowLabel || article.window_label || "").toLowerCase();
+  const isWatchRow = slot === "watch" || windowLabel.includes("recent");
+  if (!isWatchRow) return false;
+  const time = articlePublishedTimeValue(article);
+  if (!time) return true;
+  const grace = 10 * 60 * 1000;
+  return time >= window.start - grace && time <= window.end + grace;
 }
 
 function expandReportIssues(issues, articles, period) {

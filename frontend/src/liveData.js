@@ -563,7 +563,7 @@ async function loadOperationalDataFromSupabaseSession() {
         session,
         "news_articles",
         [
-          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size,raw",
+          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size,raw,created_at",
           "order=report_date.desc,score.desc",
         ].join("&"),
         1000,
@@ -771,6 +771,8 @@ function normalizeArticle(row) {
     time: formatTime(published || row.report_date || row.date),
     pubDate: published,
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
+    windowLabel: row.window_label || row.window || "",
+    createdAt: row.created_at || row.createdAt || "",
     source: normalizeArticleSource(row, raw),
     title: row.title,
     link: row.link || "#",
@@ -855,8 +857,10 @@ function notificationTypeLabel(value) {
 function normalizeWatchRun(row) {
   return {
     id: row.run_key || row.scanned_at,
+    scannedAt: row.scanned_at || "",
+    minutesBack: Number(row.minutes_back || 0),
     label: "부정기사 감시",
-    cadence: "24시간 · 5분",
+    cadence: "5분 주기",
     latest: formatTime(row.scanned_at),
     state: row.status === "ok" || row.status === "success" ? "정상" : row.status || "확인",
     scanned: Number(row.scanned_count || 0),
