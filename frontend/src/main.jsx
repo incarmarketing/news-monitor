@@ -548,26 +548,30 @@ function RegulatorReleases({ articles = [], onOpenMonitoring }) {
   );
 }
 
-function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMonitoring, operations }) {
-  const monthlyArticles = useMemo(() => lastNDays(allArticles || [], 31), [allArticles]);
-  const analysisArticles = monthlyArticles.length ? monthlyArticles : allArticles || [];
+function MediaAnalysis({ data, period, setPeriod, articles = [], scraps, onOpenMonitoring, operations }) {
+  const analysisArticles = useMemo(
+    () => [...(articles || [])].sort((a, b) => articleTimeValue(b) - articleTimeValue(a)),
+    [articles],
+  );
+  const trendDays = period === "daily" ? 1 : period === "weekly" ? 7 : 31;
+  const periodLabel = period === "daily" ? "일일" : period === "weekly" ? "주간" : "월간";
   const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
   const dailyTrend = useMemo(
-    () => buildDailyToneTrend(analysisArticles, 31, data.toneTrend),
-    [analysisArticles, data.toneTrend],
+    () => buildDailyToneTrend(analysisArticles, trendDays, data.toneTrend),
+    [analysisArticles, data.toneTrend, trendDays],
   );
   const keywordRows = useMemo(
     () => buildKeywordFlow(analysisArticles, selectedKeywords),
     [analysisArticles, selectedKeywords],
   );
-  const issueRows = buildIssues(analysisArticles, data.issues).slice(0, 6);
-  const observations = buildMonthlyObservations(data, issueRows);
+  const issueRows = buildIssues(analysisArticles, data.issues).slice(0, period === "daily" ? 5 : 8);
+  const observations = buildPeriodObservations(data, issueRows, period);
   return (
     <main className="workspace">
       <PageTitle
-        eyebrow="최근 1개월 분석"
+        eyebrow={`${periodLabel} 분석`}
         title="미디어 분석 리포트"
-        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 월간 핵심 이슈를 함께 봅니다."
+        description="선택한 기간의 원문 보도일을 기준으로 논조 추이, 언론사 활동, 키워드별 기사량, 핵심 이슈를 분리해 봅니다."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
@@ -579,10 +583,10 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
       <section className="content-grid two media-analysis-grid">
-        <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
+        <Panel title="일별 논조 추이" icon={Activity} meta={`${periodLabel} 기준 · 긍정/주의/부정`}>
           <ToneTrend rows={dailyTrend} compact />
         </Panel>
-        <Panel title="월간 관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약" className="monthly-comment-panel">
+        <Panel title={`${periodLabel} 관찰 코멘트`} icon={Gauge} meta="핵심 흐름 요약" className="monthly-comment-panel">
           <InsightList insights={observations} />
         </Panel>
         <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
@@ -591,7 +595,7 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
         <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
           <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
         </Panel>
-        <Panel title="월간 핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`} className="wide-panel">
+        <Panel title={`${periodLabel} 핵심 이슈`} icon={Newspaper} meta={`${issueRows.length}건`} className="wide-panel">
           <MonthlyIssueDigest issues={issueRows} />
         </Panel>
       </section>
@@ -2025,7 +2029,7 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
       minute: "2-digit",
       hour12: false,
     }).format(new Date()),
-    scope: articles[0]?.date ? `${articles[0].date} 기준` : base.scope,
+    scope: articlePeriodDateKey(articles[0]) ? `${articlePeriodDateKey(articles[0])} 기준` : base.scope,
     issues: articles.length ? buildIssues(articles, []) : [],
     categoryFlow: groupArticles(articles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
     toneTrend: buildToneTrend(articles),
@@ -2136,7 +2140,7 @@ function buildIssues(articles, fallback) {
       title: article.title,
       summary: compactArticleSummary(article),
       summaryLines: buildArticleSummaryLines(article),
-      publishedAt: article.time || article.date || "-",
+      publishedAt: article.time || articlePeriodDateKey(article) || "-",
       link: article.link,
   }));
   return uniqueIssues.length ? uniqueIssues : fallback;
@@ -2270,18 +2274,19 @@ function buildSummaryToneLine(item = {}) {
   return "";
 }
 
-function buildMonthlyObservations(data, issues = []) {
+function buildPeriodObservations(data, issues = [], period = "monthly") {
   const summary = data.summary || {};
   const lead = issues[0];
   const riskIssueCount = issues.filter((issue) => ["부정", "주의"].includes(issue.tone)).length;
   const regulationIssueCount = issues.filter((issue) => /정책|규제|감독|금감원|금융당국|정착지원금/i.test(`${issue.category} ${issue.title} ${issue.summary}`)).length;
+  const periodLabel = period === "daily" ? "일일" : period === "weekly" ? "주간" : "월간";
   const observations = [];
   if (summary.ownNegative > 0) {
     observations.push(`당사 직접 부정 ${summary.ownNegative}건이 확인되어 기사 제목, 반복 보도 여부, 사실관계 확인을 우선순위로 둡니다.`);
   } else if (summary.ownMentions > 0) {
     observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 평판·시장성 이슈에 가깝습니다. 단순 노출이 아니라 당사명과 함께 전달된 맥락을 확인합니다.`);
   } else {
-    observations.push("최근 1개월 기준 당사 직접 부정 이슈는 확인되지 않았습니다. 다만 GA·보험사·정책 흐름은 향후 당사 보도로 전이될 수 있어 추적합니다.");
+    observations.push(`${periodLabel} 기준 당사 직접 부정 이슈는 확인되지 않았습니다. 다만 GA·보험사·정책 흐름은 향후 당사 보도로 전이될 수 있어 추적합니다.`);
   }
   if (riskIssueCount > 0) {
     observations.push(`핵심 이슈 ${issues.length}건 중 부정·주의성 기사는 ${riskIssueCount}건입니다. 대응 필요성은 기사 강도보다 당사 관련성과 반복 노출 여부로 판단합니다.`);
@@ -2290,7 +2295,7 @@ function buildMonthlyObservations(data, issues = []) {
     observations.push(`금감원·정착지원금·규제성 문맥이 ${regulationIssueCount}건 포함되어 있어 영업 현장 설명자료나 내부 Q&A가 필요한지 점검합니다.`);
   }
   if (lead?.title) {
-    observations.push(`대표 확인 기사는 "${lead.title}"입니다. 월간 핵심 이슈는 보도량이 아니라 당사 영향도와 리스크 신호를 기준으로 정렬했습니다.`);
+    observations.push(`대표 확인 기사는 "${lead.title}"입니다. ${periodLabel} 핵심 이슈는 보도량이 아니라 당사 영향도와 리스크 신호를 기준으로 정렬했습니다.`);
   }
   return observations.slice(0, 4);
 }
@@ -2298,7 +2303,7 @@ function buildMonthlyObservations(data, issues = []) {
 function buildToneTrend(articles) {
   const byDate = new Map();
   articles.forEach((article) => {
-    const date = article.date || "미확인";
+    const date = articlePeriodDateKey(article) || "미확인";
     if (!byDate.has(date)) byDate.set(date, { date: date.slice(5) || date, positive: 0, negative: 0, caution: 0, neutral: 0 });
     const bucket = byDate.get(date);
     if (article.tone === "긍정") bucket.positive += 1;
@@ -2310,9 +2315,9 @@ function buildToneTrend(articles) {
 }
 
 function buildDailyToneTrend(articles, days = 31, fallback = []) {
-  const dated = articles.filter((article) => article.date);
+  const dated = articles.filter((article) => articlePeriodDateKey(article));
   if (!dated.length) return ensureTrendHasTone(fallback);
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = dated.map((article) => articlePeriodDateKey(article)).sort().at(-1);
   const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
   if (Number.isNaN(latestTime)) return buildToneTrend(dated);
   const startTime = latestTime - (days - 1) * 24 * 60 * 60 * 1000;
@@ -2323,9 +2328,10 @@ function buildDailyToneTrend(articles, days = 31, fallback = []) {
     buckets.set(key, { date: key.slice(5), positive: 0, negative: 0, caution: 0, neutral: 0 });
   }
   dated.forEach((article) => {
-    const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
+    const dateKey = articlePeriodDateKey(article);
+    const time = new Date(`${dateKey}T00:00:00+09:00`).getTime();
     if (Number.isNaN(time) || time < startTime || time > latestTime) return;
-    const bucket = buckets.get(article.date);
+    const bucket = buckets.get(dateKey);
     if (!bucket) return;
     if (article.tone === "긍정") bucket.positive += 1;
     else if (article.tone === "부정") bucket.negative += 1;
@@ -2349,11 +2355,11 @@ function formatKstDateKey(date) {
 }
 
 function buildWeeklyToneTrend(articles, fallback = []) {
-  const dated = articles.filter((article) => article.date);
+  const dated = articles.filter((article) => articlePeriodDateKey(article));
   if (!dated.length) {
     return ensureTrendHasTone(fallback);
   }
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = dated.map((article) => articlePeriodDateKey(article)).sort().at(-1);
   const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
   const startTime = latestTime - 30 * 24 * 60 * 60 * 1000;
   const buckets = new Map();
@@ -2361,7 +2367,7 @@ function buildWeeklyToneTrend(articles, fallback = []) {
     buckets.set(index, { date: `${index + 1}주`, positive: 0, negative: 0, caution: 0, neutral: 0 });
   }
   dated.forEach((article) => {
-    const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
+    const time = new Date(`${articlePeriodDateKey(article)}T00:00:00+09:00`).getTime();
     if (Number.isNaN(time) || time < startTime || time > latestTime) return;
     const index = Math.min(4, Math.max(0, Math.floor((time - startTime) / (7 * 24 * 60 * 60 * 1000))));
     const bucket = buckets.get(index);
@@ -2394,13 +2400,13 @@ function ensureTrendHasTone(rows = []) {
 }
 
 function lastNDays(articles, days) {
-  const dated = articles.filter((article) => article.date);
+  const dated = articles.filter((article) => articlePeriodDateKey(article));
   if (!dated.length) return articles;
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = dated.map((article) => articlePeriodDateKey(article)).sort().at(-1);
   const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
   const minTime = latestTime - (days - 1) * 24 * 60 * 60 * 1000;
   return dated.filter((article) => {
-    const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
+    const time = new Date(`${articlePeriodDateKey(article)}T00:00:00+09:00`).getTime();
     return time >= minTime && time <= latestTime;
   });
 }
@@ -2429,7 +2435,7 @@ function expandReportIssues(issues, articles, period) {
       title: article.title,
       summary: compactArticleSummary(article),
       summaryLines: buildArticleSummaryLines(article),
-      publishedAt: article.time || article.date || "-",
+      publishedAt: article.time || articlePeriodDateKey(article) || "-",
       link: article.link,
     });
   });
@@ -2962,18 +2968,22 @@ function filterArticlesByPeriod(articles, period) {
   return filterRowsByPeriod(articles, period);
 }
 
+function articlePeriodDateKey(article = {}) {
+  return String(article.periodDate || article.publishedDate || article.date || article.reportDate || "").slice(0, 10);
+}
+
 function filterRowsByPeriod(articles, period) {
   if (!articles.length) return [];
-  const dated = articles.filter((article) => article.date);
+  const dated = articles.filter((article) => articlePeriodDateKey(article));
   if (!dated.length) return articles;
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = dated.map((article) => articlePeriodDateKey(article)).sort().at(-1);
   if (!latest) return articles;
-  if (period === "daily") return dated.filter((article) => article.date === latest);
-  if (period === "monthly") return dated.filter((article) => article.date.startsWith(latest.slice(0, 7)));
+  if (period === "daily") return dated.filter((article) => articlePeriodDateKey(article) === latest);
+  if (period === "monthly") return dated.filter((article) => articlePeriodDateKey(article).startsWith(latest.slice(0, 7)));
   const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
   const minTime = latestTime - 6 * 24 * 60 * 60 * 1000;
   return dated.filter((article) => {
-    const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
+    const time = new Date(`${articlePeriodDateKey(article)}T00:00:00+09:00`).getTime();
     return time >= minTime && time <= latestTime;
   });
 }
@@ -3081,7 +3091,8 @@ function compareArticleImportance(a, b) {
 }
 
 function articleTimeValue(article) {
-  const value = article.pubDate || article.pub_date || `${article.date || ""}T${article.time || "00:00"}:00+09:00`;
+  const dateKey = articlePeriodDateKey(article);
+  const value = article.pubDate || article.pub_date || article.publishedAt || article.published_at || `${dateKey || ""}T${article.time || "00:00"}:00+09:00`;
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? 0 : time;
 }
@@ -3094,6 +3105,11 @@ function articlePublishedTimeValue(article = {}) {
   }
   if (article.publishedDate) {
     const time = new Date(`${article.publishedDate}T${article.time || "00:00"}:00+09:00`).getTime();
+    if (!Number.isNaN(time)) return time;
+  }
+  const dateKey = articlePeriodDateKey(article);
+  if (dateKey) {
+    const time = new Date(`${dateKey}T${article.time || "00:00"}:00+09:00`).getTime();
     if (!Number.isNaN(time)) return time;
   }
   return 0;

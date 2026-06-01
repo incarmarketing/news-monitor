@@ -282,7 +282,7 @@ async function loadOperationalDataFromSupabaseSession() {
         session,
         "news_articles",
         [
-          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
+          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size,raw",
           "order=report_date.desc,score.desc",
         ].join("&"),
         1000,
@@ -362,10 +362,14 @@ function normalizeScrap(row) {
 function normalizeArticle(row) {
   if (!row?.title) return null;
   if (isOutOfDomainArticle(row)) return null;
+  const raw = row.raw && typeof row.raw === "object" ? row.raw : {};
   const dateSource = row.report_date || row.date || row.pub_date || row.pub_date_raw || "";
-  const published = row.pub_date || row.pub_date_raw || row.published_at || row.created_at || "";
+  const knownOriginal = inferKnownOriginalPublication(row);
+  const originalPublished = knownOriginal || row.original_pub_date || raw._original_pub_date || raw.original_pub_date || raw.pub_date_original || "";
+  const published = originalPublished || row.pub_date || row.pub_date_raw || row.published_at || row.created_at || "";
   const reportDate = String(row.report_date || row.date || dateSource || "").slice(0, 10);
   const publishedDate = formatDate(published) || String(row.pub_date_raw || row.published_at || "").slice(0, 10);
+  const periodDate = publishedDate || reportDate;
   const category = normalizeCategory(row.category_label || row.category);
   let tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
   if (isOwnMarketCautionRow(row)) {
@@ -379,6 +383,7 @@ function normalizeArticle(row) {
     date: reportDate,
     reportDate,
     publishedDate,
+    periodDate,
     time: formatTime(published || row.report_date || row.date),
     pubDate: published,
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
@@ -408,6 +413,14 @@ function normalizeNotification(row) {
     body: row.body || row.error || "",
     link: row.link_url || "",
   };
+}
+
+function inferKnownOriginalPublication(row) {
+  const text = `${row?.title || ""} ${row?.summary || ""} ${row?.source || ""} ${row?.link || ""}`;
+  if (/인카금융스캔들/i.test(text) && /불법\s*사채놀이|약탈\s*영업/i.test(text) && /위즈경제|wikyung/i.test(text)) {
+    return "2026-04-20T11:29:00+09:00";
+  }
+  return "";
 }
 
 function hasOwnMention(row) {

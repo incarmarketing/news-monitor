@@ -29,6 +29,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 
 load_dotenv()
 console = Console()
+KST = timezone(timedelta(hours=9))
 
 PRESS_ALIAS_MAP = {}
 
@@ -435,6 +436,8 @@ def parse_article_date_from_html(html: str) -> datetime | None:
         r'"datePublished"\s*:\s*"([^"]+)"',
         r'"dateCreated"\s*:\s*"([^"]+)"',
         r'"publishedDate"\s*:\s*"([^"]+)"',
+        r'(?:입력|승인|등록|작성|게재)\s*[:：]\s*(\d{4}[.-]\d{1,2}[.-]\d{1,2}\.?\s+\d{1,2}:\d{2})',
+        r'(?:입력|승인|등록|작성|게재)\s*[:：]\s*(\d{4}년\s*\d{1,2}월\s*\d{1,2}일\s+\d{1,2}:\d{2})',
     ]
     for pattern in patterns:
         match = re.search(pattern, html, re.I | re.S)
@@ -474,6 +477,9 @@ def original_date_allows_article(article: dict, parsed: datetime, window: dict) 
         original_date = parse_article_date_from_html(original_html)
         if original_date:
             article["_original_pub_date"] = original_date.isoformat()
+            article["pub_date"] = original_date.isoformat()
+            if original_url:
+                article["link"] = original_url
             start = window["start"].astimezone(timezone.utc)
             end = window["end"].astimezone(timezone.utc)
             return start <= original_date <= end
@@ -794,13 +800,40 @@ def apply_collection_window_filter(articles: list[dict], window: dict) -> list[d
 def parse_pub_date(value: str) -> datetime | None:
     if not value:
         return None
+    raw = clean_html(str(value))
+    raw = re.sub(r"\s+", " ", raw).strip()
     try:
-        parsed = parsedate_to_datetime(value)
+        parsed = parsedate_to_datetime(raw)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.astimezone(timezone.utc)
     except Exception:
-        return None
+        pass
+    normalized = (
+        raw.replace("년", "-")
+        .replace("월", "-")
+        .replace("일", "")
+        .replace(".", "-")
+        .strip()
+    )
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = re.sub(r"(\d{4}-\d{1,2}-\d{1,2})-\s+", r"\1 ", normalized)
+    for fmt in (
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+    ):
+        try:
+            parsed = datetime.strptime(normalized, fmt)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=KST)
+            return parsed.astimezone(timezone.utc)
+        except ValueError:
+            continue
+    return None
 
 
 def print_collection_stats(

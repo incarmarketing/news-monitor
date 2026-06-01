@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
@@ -14,6 +15,7 @@ import requests
 from dotenv import load_dotenv
 
 load_dotenv()
+KST = timezone(timedelta(hours=9))
 
 ARTICLE_COLUMNS = (
     "article_hash",
@@ -118,13 +120,39 @@ def article_hash(article: dict) -> str:
 def parse_pub_date(value: str) -> str | None:
     if not value:
         return None
+    raw = str(value).strip()
     try:
-        parsed = parsedate_to_datetime(value)
+        parsed = parsedate_to_datetime(raw)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.astimezone(timezone.utc).isoformat()
     except Exception:
-        return None
+        pass
+    normalized = (
+        raw.replace("년", "-")
+        .replace("월", "-")
+        .replace("일", "")
+        .replace(".", "-")
+        .strip()
+    )
+    normalized = " ".join(normalized.split())
+    normalized = re.sub(r"(\d{4}-\d{1,2}-\d{1,2})-\s+", r"\1 ", normalized)
+    for fmt in (
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+    ):
+        try:
+            parsed = datetime.strptime(normalized, fmt)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=KST)
+            return parsed.astimezone(timezone.utc).isoformat()
+        except ValueError:
+            continue
+    return None
 
 
 def save_report_run(archive_payload: dict) -> None:
