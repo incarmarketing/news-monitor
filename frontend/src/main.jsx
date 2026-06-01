@@ -54,8 +54,10 @@ import {
   watchJobs,
 } from "./data";
 import {
+  deleteArticleScrap,
   deleteReporterProfile,
   loadOperationalData,
+  saveArticleScrap,
   saveMonitorKeyword,
   savePressAlias,
   saveReporterProfile,
@@ -156,6 +158,33 @@ function App() {
     setActiveSection("monitoring");
   };
 
+  const toggleArticleScrap = async (article = {}) => {
+    const articleId = article.id || article.article_hash || article.link || article.title;
+    if (!articleId) return;
+    const exists = (operations.scraps || []).some((item) => item.id === articleId || item.article_hash === articleId || item.link === article.link);
+    try {
+      if (exists) {
+        await deleteArticleScrap(articleId);
+        setOperations((current) => ({
+          ...current,
+          scraps: (current.scraps || []).filter((item) => item.id !== articleId && item.article_hash !== articleId && item.link !== article.link),
+        }));
+      } else {
+        await saveArticleScrap(article);
+        setOperations((current) => ({
+          ...current,
+          scraps: [
+            { ...article, id: articleId, scrapedAt: formatKstDateKey(new Date()) },
+            ...(current.scraps || []).filter((item) => item.id !== articleId && item.article_hash !== articleId && item.link !== article.link),
+          ],
+        }));
+      }
+      window.setTimeout(refreshOperations, 500);
+    } catch (error) {
+      window.alert(`스크랩 저장을 처리하지 못했습니다. ${error?.message || "운영 DB 연결을 확인해 주세요."}`);
+    }
+  };
+
   const View = {
     overview: Overview,
     monitoring: Monitoring,
@@ -193,6 +222,7 @@ function App() {
         articles={activeSection === "monitoring" || activeSection === "regulators" ? allArticles : activeSection === "overview" ? realtimeArticles : scopedArticles}
         allArticles={allArticles}
         scraps={scraps}
+        onToggleScrap={toggleArticleScrap}
         jobs={jobs}
         notifications={notifications}
         management={management}
@@ -374,7 +404,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   );
 }
 
-function Monitoring({ data, articles, monitoringPreset }) {
+function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScrap }) {
   const [query, setQuery] = useState("");
   const [queryInput, setQueryInput] = useState("");
   const [tone, setTone] = useState("all");
@@ -489,7 +519,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
       </section>
       <section className="monitoring-layout">
         <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
-          <ArticleFeed rows={visibleRows.slice(0, visible)} />
+          <ArticleFeed rows={visibleRows.slice(0, visible)} scraps={scraps} onToggleScrap={onToggleScrap} />
           {visibleRows.length > visible && (
             <button className="ghost-button full" onClick={() => setVisible((count) => count + 30)}>
               더보기
@@ -504,7 +534,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
   );
 }
 
-function RegulatorReleases({ articles = [], onOpenMonitoring }) {
+function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onToggleScrap }) {
   const [source, setSource] = useState("all");
   const [query, setQuery] = useState("");
   const regulatorRows = useMemo(
@@ -564,7 +594,7 @@ function RegulatorReleases({ articles = [], onOpenMonitoring }) {
       </section>
       <section className="regulator-layout">
         <Panel title="공식 보도자료 목록" icon={ShieldCheck} meta={`${recentOfficial.length.toLocaleString("ko-KR")}건 표시`}>
-          {recentOfficial.length ? <ArticleFeed rows={recentOfficial} /> : <div className="empty-state compact">아직 수집된 금융당국 공식자료가 없습니다. 다음 수집 실행 후 이 탭에 표시됩니다.</div>}
+          {recentOfficial.length ? <ArticleFeed rows={recentOfficial} scraps={scraps} onToggleScrap={onToggleScrap} /> : <div className="empty-state compact">아직 수집된 금융당국 공식자료가 없습니다. 다음 수집 실행 후 이 탭에 표시됩니다.</div>}
         </Panel>
         <Panel title="수집 기준" icon={FileText} meta="포털 기사와 분리">
           <div className="regulator-rule-list">
@@ -663,7 +693,7 @@ function AnalysisDrillCards({ data, onOpenMonitoring }) {
   );
 }
 
-function Scraps({ scraps, onOpenMonitoring }) {
+function Scraps({ scraps, onOpenMonitoring, onToggleScrap }) {
   const [prompt, setPrompt] = useState("홍보 대응 관점에서 부정 이슈와 우호적으로 활용할 수 있는 기사 흐름을 나눠 분석해줘.");
   const grouped = groupArticles(scraps, "category").slice(0, 5).map(([name, value]) => ({ name, value }));
   return (
@@ -699,7 +729,7 @@ function Scraps({ scraps, onOpenMonitoring }) {
             <CategoryChart rows={grouped.length ? grouped : [{ name: "스크랩", value: scraps.length }]} mini onOpenMonitoring={onOpenMonitoring} />
           </Panel>
           <Panel title="스크랩 기사 목록" icon={Newspaper} meta={`${scraps.length}건`}>
-            <ArticleFeed rows={scraps} />
+            <ArticleFeed rows={scraps} scraps={scraps} onToggleScrap={onToggleScrap} />
           </Panel>
         </div>
       </section>
@@ -726,7 +756,7 @@ function ScrapDigest({ scraps }) {
   );
 }
 
-function RiskCenter({ articles = [], onOpenMonitoring }) {
+function RiskCenter({ articles = [], scraps = [], onOpenMonitoring, onToggleScrap }) {
   const [draftType, setDraftType] = useState("press");
   const riskRows = useMemo(
     () => [...articles]
@@ -746,7 +776,7 @@ function RiskCenter({ articles = [], onOpenMonitoring }) {
         <Panel title="부정/주의 기사" icon={AlertTriangle} meta={`${riskRows.length}건`}>
           {riskRows.length ? (
             <>
-              <ArticleFeed rows={riskRows.slice(0, 8)} compact />
+              <ArticleFeed rows={riskRows.slice(0, 8)} compact scraps={scraps} onToggleScrap={onToggleScrap} />
               <button className="ghost-button full" onClick={() => onOpenMonitoring?.({ tone: "부정" })}>
                 전체 부정 기사 보기
               </button>
@@ -1661,15 +1691,17 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function ArticleFeed({ rows, compact = false }) {
+function ArticleFeed({ rows, compact = false, scraps = [], onToggleScrap }) {
+  const scrapIds = useMemo(() => new Set((scraps || []).map(scrapIdentity).filter(Boolean)), [scraps]);
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
       {rows.map((row) => {
         const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
         const hasRelated = related.length > 1;
         const relatedText = hasRelated ? `외 ${related.length - 1}곳` : "";
+        const scraped = scrapIds.has(scrapIdentity(row));
         return (
-          <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
+          <article key={`${row.id || row.link || row.title}-${row.time}`} className={`${hasRelated ? "feed-row related" : "feed-row"} ${scraped ? "scraped" : ""}`.trim()}>
             <div className="feed-main">
               <div className="feed-title-line">
                 <Chip tone={row.tone}>{row.tone}</Chip>
@@ -1699,22 +1731,44 @@ function ArticleFeed({ rows, compact = false }) {
                 </details>
               )}
             </div>
-            {!compact && row.link && row.link !== "#" && (
-              <a
-                href={row.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="기사 열기"
-                onClick={(event) => openArticleLink(event, row.link)}
-              >
-                <ExternalLink />
-              </a>
-            )}
+            <div className="feed-actions">
+              {onToggleScrap && (
+                <button
+                  type="button"
+                  className={scraped ? "scrap-toggle active" : "scrap-toggle"}
+                  aria-label={scraped ? "스크랩 해제" : "스크랩"}
+                  title={scraped ? "스크랩 해제" : "스크랩"}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onToggleScrap(row);
+                  }}
+                >
+                  <Bookmark />
+                </button>
+              )}
+              {!compact && row.link && row.link !== "#" && (
+                <a
+                  href={row.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="기사 열기"
+                  title="기사 열기"
+                  onClick={(event) => openArticleLink(event, row.link)}
+                >
+                  <ExternalLink />
+                </a>
+              )}
+            </div>
           </article>
         );
       })}
     </div>
   );
+}
+
+function scrapIdentity(article = {}) {
+  return String(article.id || article.article_hash || article.link || article.title || "").trim();
 }
 
 function openArticleLink(event, url) {

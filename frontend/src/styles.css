@@ -2319,11 +2319,11 @@ button.kpi-card {
 }
 
 .feed-row {
-  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .feed-table.compact .feed-row {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .feed-main {
@@ -2368,6 +2368,11 @@ button.kpi-card {
   background: #fbfcff;
 }
 
+.feed-row.scraped {
+  border-color: #a9c0ff;
+  background: linear-gradient(180deg, #fbfdff 0, #f5f8ff 100%);
+}
+
 .related-sources {
   color: var(--blue) !important;
 }
@@ -2382,10 +2387,44 @@ button.kpi-card {
   overflow-wrap: anywhere;
 }
 
-.feed-row > a {
+.feed-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.feed-actions a,
+.scrap-toggle {
   display: grid;
   place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #cbd8ff;
+  border-radius: 8px;
+  background: #fff;
   color: var(--blue);
+}
+
+.scrap-toggle {
+  cursor: pointer;
+}
+
+.scrap-toggle svg,
+.feed-actions a svg {
+  width: 16px;
+  height: 16px;
+}
+
+.scrap-toggle.active {
+  border-color: #2855d9;
+  background: #2855d9;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(40, 85, 217, .18);
+}
+
+.scrap-toggle.active svg {
+  fill: currentColor;
 }
 
 .related-details {

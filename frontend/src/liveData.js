@@ -1,4 +1,5 @@
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
+const LOCAL_SCRAPS_KEY = "marketing_pr_local_scraps_v1";
 
 const SUPABASE_CONFIG_PATHS = [
   "/data/supabase.json",
@@ -35,6 +36,33 @@ export function saveDashboardSession(session) {
   if (session?.session_token) {
     sessionStorage.setItem(DASHBOARD_SESSION_KEY, JSON.stringify(session));
   }
+}
+
+function getLocalScraps() {
+  try {
+    const rows = JSON.parse(localStorage.getItem(LOCAL_SCRAPS_KEY) || "[]");
+    return Array.isArray(rows) ? rows.map(normalizeArticle).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalScrap(article = {}) {
+  const articleHash = String(article.id || article.article_hash || article.link || article.title || "").trim();
+  if (!articleHash) throw new Error("article_hash_required");
+  const next = [
+    { ...article, id: articleHash, article_hash: articleHash, scrapedAt: formatDate(new Date().toISOString()) },
+    ...getLocalScraps().filter((item) => item.id !== articleHash && item.link !== article.link),
+  ].slice(0, 200);
+  localStorage.setItem(LOCAL_SCRAPS_KEY, JSON.stringify(next));
+  return next;
+}
+
+function deleteLocalScrap(articleHash) {
+  const cleanHash = String(articleHash || "").trim();
+  const next = getLocalScraps().filter((item) => item.id !== cleanHash && item.article_hash !== cleanHash && item.link !== cleanHash);
+  localStorage.setItem(LOCAL_SCRAPS_KEY, JSON.stringify(next));
+  return next;
 }
 
 async function fetchJson(path, options) {
@@ -152,6 +180,53 @@ export async function saveMonitorKeyword(keyword, category = "other") {
   );
 }
 
+export async function saveArticleScrap(article = {}) {
+  const articleHash = String(article.id || article.article_hash || article.link || article.title || "").trim();
+  if (!articleHash) throw new Error("article_hash_required");
+  const session = getStoredSession();
+  try {
+    return await writeRest(
+      "article_scraps?on_conflict=article_hash",
+      "POST",
+      [{
+        article_hash: articleHash,
+        article_snapshot: {
+          ...article,
+          article_hash: articleHash,
+        },
+        created_by: session?.employee_no || session?.display_name || "dashboard",
+      }],
+      { Prefer: "resolution=merge-duplicates,return=representation" },
+    );
+  } catch (error) {
+    if (!canFallbackToLocal(error)) throw error;
+    return saveLocalScrap(article);
+  }
+}
+
+export async function deleteArticleScrap(articleHash) {
+  const cleanHash = String(articleHash || "").trim();
+  if (!cleanHash) throw new Error("article_hash_required");
+  try {
+    const result = await writeRest(
+      `article_scraps?article_hash=eq.${encodeURIComponent(cleanHash)}`,
+      "DELETE",
+      null,
+      { Prefer: "return=minimal" },
+    );
+    deleteLocalScrap(cleanHash);
+    return result;
+  } catch (error) {
+    if (!canFallbackToLocal(error)) throw error;
+    return deleteLocalScrap(cleanHash);
+  }
+}
+
+function canFallbackToLocal(error) {
+  const message = String(error?.message || error || "");
+  return /missing_dashboard_session|invalid_session|missing_supabase_config|dashboard_api_401|unauthorized/.test(message);
+}
+
 export async function saveReporterProfile(reporter = {}) {
   const name = String(reporter.name || "").trim();
   const media = String(reporter.media || reporter.outlet || "").trim();
@@ -266,7 +341,7 @@ async function loadStaticOperationalData() {
         notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification) : [],
         watchRuns: Array.isArray(payload?.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
         reportRuns,
-        scraps: Array.isArray(payload?.scraps) ? payload.scraps.map(normalizeScrap).filter(Boolean) : [],
+        scraps: mergeScraps(Array.isArray(payload?.scraps) ? payload.scraps.map(normalizeScrap).filter(Boolean) : []),
         mediaRelations: Array.isArray(payload?.media_relations)
           ? payload.media_relations.filter((row) => !row.hidden).map(normalizeMedia)
           : [],
@@ -358,7 +433,7 @@ async function loadOperationalDataFromSupabaseSession() {
       notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(reportRuns) ? reportRuns.map(normalizeReportRun) : [],
-      scraps: Array.isArray(scraps) ? scraps.map(normalizeScrap).filter(Boolean) : [],
+      scraps: mergeScraps(Array.isArray(scraps) ? scraps.map(normalizeScrap).filter(Boolean) : []),
       mediaRelations: Array.isArray(mediaRelations) ? mediaRelations.filter((row) => !row.hidden).map(normalizeMedia) : [],
       reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
@@ -433,6 +508,7 @@ function normalizeArticle(row) {
     score: Number(row.score || 0),
     status: row.status || "분석 완료",
     clusterSize: Number(row.cluster_size || row.clusterSize || 1),
+    scrapedAt: row.scrapedAt || row.scraped_at || "",
   };
 }
 
@@ -448,6 +524,15 @@ function normalizeNotification(row) {
     body: row.body || row.error || "",
     link: row.link_url || "",
   };
+}
+
+function mergeScraps(remoteScraps = []) {
+  const map = new Map();
+  [...getLocalScraps(), ...remoteScraps].forEach((item) => {
+    const key = item?.id || item?.article_hash || item?.link || item?.title;
+    if (key) map.set(key, item);
+  });
+  return Array.from(map.values()).sort((a, b) => new Date(b.scrapedAt || b.date || 0) - new Date(a.scrapedAt || a.date || 0));
 }
 
 function inferKnownOriginalPublication(row) {
