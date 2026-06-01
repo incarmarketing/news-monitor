@@ -2462,11 +2462,11 @@ function WatchPanel({ jobs, risk = "LOW" }) {
 function NotificationHistory({ rows = [] }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
-  const visibleRows = rows.slice(0, 2);
+  const visibleRows = rows.slice(0, 3);
   return (
     <>
       <NotificationList rows={visibleRows} onSelect={setSelected} />
-      {rows.length > 2 && (
+      {rows.length > 3 && (
         <button className="ghost-button full compact-more" onClick={() => setOpen(true)}>
           발송 이력 더보기
         </button>
@@ -2728,12 +2728,6 @@ function DataSourcePill({ operations }) {
 }
 
 function orderNotificationHistory(rows = []) {
-  const typeOrder = {
-    weekly_report: 1,
-    monthly_report: 2,
-    daily_report: 3,
-    negative_alert: 4,
-  };
   const seen = new Set();
   return rows
     .filter((row) => {
@@ -2743,10 +2737,22 @@ function orderNotificationHistory(rows = []) {
       return true;
     })
     .sort((a, b) => {
-      const orderDiff = (typeOrder[a.messageType] || 9) - (typeOrder[b.messageType] || 9);
-      if (orderDiff) return orderDiff;
+      const timeDiff = notificationTimeValue(b) - notificationTimeValue(a);
+      if (timeDiff) return timeDiff;
       return String(b.sentAt || b.time || "").localeCompare(String(a.sentAt || a.time || ""));
     });
+}
+
+function notificationTimeValue(row = {}) {
+  const raw = row.sentAt || row.sent_at || row.createdAt || row.created_at || "";
+  if (raw) {
+    const timestamp = new Date(raw).getTime();
+    if (!Number.isNaN(timestamp)) return timestamp;
+  }
+  const timeText = String(row.time || "");
+  const match = timeText.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) return Number(match[1]) * 60 + Number(match[2]);
+  return 0;
 }
 
 function Chip({ children, tone }) {
