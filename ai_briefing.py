@@ -270,8 +270,8 @@ def clean_markdown(text: str) -> str:
 def fallback_report(clustered: list[dict], metrics: dict) -> str:
     window = report_window.current_window()
     issue_lines = "\n".join(
-        f"- {article.get('title', '')[:55]}: 확인 필요"
-        for article in clustered[:2]
+        f"- [{article.get('_report_id', idx)}] {article.get('title', '')[:55]}: 확인 필요"
+        for idx, article in enumerate(clustered[:2], 1)
     )
     response_section = ""
     if should_show_action(metrics):
@@ -373,7 +373,13 @@ def select_evidence_articles(clustered: list[dict], sections: dict, limit: int =
         selected.append(article)
         seen_links.add(key)
 
+    def add_best_text_match(text: str) -> None:
+        match = best_article_match(text, clustered)
+        add_article(match)
+
+    add_best_text_match(sections.get("conclusion", ""))
     for issue in sections.get("issues", []):
+        add_best_text_match(f"{issue.get('title', '')} {issue.get('detail', '')}")
         for ref_id in issue.get("refs", []):
             add_article(by_id.get(ref_id))
 
@@ -405,6 +411,44 @@ def select_evidence_articles(clustered: list[dict], sections: dict, limit: int =
             break
         add_article(article)
     return selected[:limit]
+
+
+def best_article_match(text: str, articles: list[dict]) -> dict | None:
+    tokens = meaningful_tokens(text)
+    if not tokens:
+        return None
+    best_article = None
+    best_score = 0
+    for article in articles:
+        article_text = " ".join(
+            str(article.get(key, ""))
+            for key in ("title", "description", "summary", "keyword", "source")
+        )
+        haystack = normalize_match_text(article_text)
+        score = sum(1 for token in tokens if token in haystack)
+        if score > best_score:
+            best_score = score
+            best_article = article
+    return best_article if best_score >= 2 else None
+
+
+def meaningful_tokens(text: str) -> list[str]:
+    normalized = normalize_match_text(strip_ref_marks(text))
+    stopwords = {
+        "기사", "핵심", "이슈", "판단", "확인", "필요", "관련", "보도", "동향",
+        "당사", "업계", "경쟁", "중심", "리스크", "관찰",
+        "직접", "언급", "없습니다", "있습니다", "기준", "수준", "유지",
+    }
+    tokens = []
+    for token in re.findall(r"[가-힣A-Za-z0-9]+", normalized):
+        if len(token) < 2 or token in stopwords or token.isdigit():
+            continue
+        tokens.append(token)
+    return list(dict.fromkeys(tokens))[:8]
+
+
+def normalize_match_text(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "").lower()).strip()
 
 
 def build_article_tabs(clustered: list[dict], sections: dict) -> list[dict]:

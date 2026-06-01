@@ -2,6 +2,12 @@ name: Sync External Cron
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "setup_cronjob_org.py"
+      - ".github/workflows/sync-external-cron.yml"
   schedule:
     - cron: "10 18 * * *"
 

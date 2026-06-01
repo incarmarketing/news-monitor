@@ -90,6 +90,7 @@ def specs() -> list[CronSpec]:
     all_months = [-1]
     every_day = [-1]
     every_five_minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+    primary_minute = [0]
     return [
         CronSpec(
             title="news-monitor negative watch",
@@ -108,8 +109,8 @@ def specs() -> list[CronSpec]:
                 "ref": "main",
                 "inputs": {"period_reports": "none", "send_kakao": "true", "report_slot": "08"},
             },
-            minutes=every_five_minutes,
-            hours=[8, 9, 10, 11, 12],
+            minutes=primary_minute,
+            hours=[8],
             wdays=every_day,
             mdays=every_day,
             months=all_months,
@@ -121,8 +122,8 @@ def specs() -> list[CronSpec]:
                 "ref": "main",
                 "inputs": {"period_reports": "none", "send_kakao": "true", "report_slot": "13"},
             },
-            minutes=every_five_minutes,
-            hours=[13, 14, 15, 16, 17],
+            minutes=primary_minute,
+            hours=[13],
             wdays=every_day,
             mdays=every_day,
             months=all_months,
@@ -134,8 +135,8 @@ def specs() -> list[CronSpec]:
                 "ref": "main",
                 "inputs": {"period_reports": "none", "send_kakao": "true", "report_slot": "18"},
             },
-            minutes=every_five_minutes,
-            hours=[18, 19, 20, 21, 22, 23],
+            minutes=primary_minute,
+            hours=[18],
             wdays=every_day,
             mdays=every_day,
             months=all_months,
