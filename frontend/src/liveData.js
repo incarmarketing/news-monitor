@@ -368,7 +368,7 @@ function normalizeArticle(row) {
   const publishedDate = formatDate(published) || String(row.pub_date_raw || row.published_at || "").slice(0, 10);
   const category = normalizeCategory(row.category_label || row.category);
   let tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
-  if (tone === "긍정" && isOwnStockDeclineRow(row)) {
+  if (isOwnMarketCautionRow(row)) {
     tone = "주의";
   }
   if (tone === "긍정" && category !== "당사" && !hasOwnMention(row)) {
@@ -415,11 +415,11 @@ function hasOwnMention(row) {
   return /인카금융서비스|인카금융|에인|Incar|INCAR/i.test(text);
 }
 
-function isOwnStockDeclineRow(row) {
+function isOwnMarketCautionRow(row) {
   const text = `${row?.title || ""} ${row?.summary || ""} ${row?.description || ""} ${row?.keyword || ""}`;
   return hasOwnMention(row)
-    && /주가|증시|코스피|코스닥|상장|시총|거래|52주|최고가|최저가/i.test(text)
-    && /하락|급락|약세|낙폭|신저가|최저가|부진|조정|매도|▼|↓|목표가 하향|투자의견.*하향/i.test(text);
+    && /주가|증시|코스피|코스닥|상장|시총|거래|52주|최고가|최저가|투자의견|목표가|목표주가|증권가|리포트|애널리스트/i.test(text)
+    && /하락|급락|약세|낙폭|신저가|최저가|부진|조정|매도|▼|↓|목표가\s*하향|목표주가\s*하향|투자의견.*(하향|낮|중립|매도)|매수.*(접|철회)|너무\s*올랐다/i.test(text);
 }
 
 function isOutOfDomainArticle(row) {
