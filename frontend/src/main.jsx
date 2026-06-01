@@ -628,7 +628,7 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, onRefreshOperation
         title="금융당국 보도자료"
         description="금융감독원·금융위원회 공식 보도자료 중 보험, GA, 설계사, 판매수수료, 감독 이슈와 연결되는 항목을 운영 DB에 누적 보관합니다."
         right={(
-          <div className="page-actions">
+          <div className="page-actions regulator-page-actions">
             <button className="panel-action-button" onClick={refreshOfficialReleases} disabled={refreshingOfficial}>
               <RefreshCw className={refreshingOfficial ? "spin" : ""} />최신 보도자료 갱신
             </button>

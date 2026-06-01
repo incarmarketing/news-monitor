@@ -260,6 +260,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-width: 0;
 }
 
+.regulator-page-actions .panel-action-button,
+.regulator-page-actions .primary-button {
+  width: 176px;
+  min-height: 40px;
+  justify-content: center;
+}
+
 .risk-pill {
   display: inline-flex;
   align-items: center;
