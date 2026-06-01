@@ -35,6 +35,7 @@ import {
   Cell,
   Line,
   LineChart as RechartsLineChart,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -75,6 +76,13 @@ const navIcons = {
 };
 
 const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
+const toneSeries = [
+  { key: "positive", label: "긍정", color: "#14805f" },
+  { key: "neutral", label: "중립", color: "#475569" },
+  { key: "caution", label: "주의", color: "#b45309" },
+  { key: "negative", label: "부정", color: "#c92337" },
+  { key: "excluded", label: "제외", color: "#94a3b8", strokeDasharray: "4 4" },
+];
 
 function App() {
   const [activeSection, setActiveSection] = useState("overview");
@@ -614,7 +622,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], scraps, onOpenM
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
       <section className="content-grid two media-analysis-grid">
-        <Panel title="일별 논조 추이" icon={Activity} meta={`${periodLabel} 기준 · 긍정/주의/부정`}>
+        <Panel title="일별 논조 추이" icon={Activity} meta={`${periodLabel} 기준 · 전체 논조`}>
           <ToneTrend rows={dailyTrend} compact />
         </Panel>
         <Panel title={`${periodLabel} 관찰 코멘트`} icon={Gauge} meta="핵심 흐름 요약" className="monthly-comment-panel">
@@ -1909,14 +1917,29 @@ function ToneTrend({ rows, compact = false }) {
   return (
     <div className={compact ? "chart-box report-trend" : "chart-box tall"}>
       <ResponsiveContainer width="100%" height="100%">
-        <RechartsLineChart data={rows} margin={{ left: 8, right: 12, top: 12, bottom: 2 }}>
+        <RechartsLineChart data={rows} margin={{ left: 8, right: 12, top: 12, bottom: compact ? 10 : 2 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={compact ? 8 : 14} tick={{ fontSize: compact ? 9 : 12, fontWeight: 800 }} />
           <YAxis hide />
           <Tooltip />
-          <Line type="monotone" dataKey="positive" stroke="#14805f" strokeWidth={2.5} dot={false} name="긍정" />
-          <Line type="monotone" dataKey="caution" stroke="#b45309" strokeWidth={2.5} dot={false} name="주의" />
-          <Line type="monotone" dataKey="negative" stroke="#c92337" strokeWidth={2.5} dot={false} name="부정" />
+          <Legend
+            verticalAlign="bottom"
+            height={compact ? 20 : 28}
+            iconType="circle"
+            wrapperStyle={{ fontSize: compact ? 10 : 12, fontWeight: 800 }}
+          />
+          {toneSeries.map((series) => (
+            <Line
+              key={series.key}
+              type="monotone"
+              dataKey={series.key}
+              stroke={series.color}
+              strokeWidth={series.key === "neutral" ? 2.2 : 2.5}
+              strokeDasharray={series.strokeDasharray}
+              dot={false}
+              name={series.label}
+            />
+          ))}
         </RechartsLineChart>
       </ResponsiveContainer>
     </div>
@@ -2400,12 +2423,8 @@ function buildToneTrend(articles) {
   const byDate = new Map();
   articles.forEach((article) => {
     const date = articlePeriodDateKey(article) || "미확인";
-    if (!byDate.has(date)) byDate.set(date, { date: date.slice(5) || date, positive: 0, negative: 0, caution: 0, neutral: 0 });
-    const bucket = byDate.get(date);
-    if (article.tone === "긍정") bucket.positive += 1;
-    else if (article.tone === "부정") bucket.negative += 1;
-    else if (article.tone === "주의") bucket.caution += 1;
-    else bucket.neutral += 1;
+    if (!byDate.has(date)) byDate.set(date, emptyToneBucket(date.slice(5) || date));
+    countToneIntoBucket(byDate.get(date), article.tone);
   });
   return Array.from(byDate.values()).slice(-7);
 }
@@ -2421,7 +2440,7 @@ function buildDailyToneTrend(articles, days = 31, fallback = []) {
   for (let index = 0; index < days; index += 1) {
     const date = new Date(startTime + index * 24 * 60 * 60 * 1000);
     const key = formatKstDateKey(date);
-    buckets.set(key, { date: key.slice(5), positive: 0, negative: 0, caution: 0, neutral: 0 });
+    buckets.set(key, emptyToneBucket(key.slice(5)));
   }
   dated.forEach((article) => {
     const dateKey = articlePeriodDateKey(article);
@@ -2429,13 +2448,10 @@ function buildDailyToneTrend(articles, days = 31, fallback = []) {
     if (Number.isNaN(time) || time < startTime || time > latestTime) return;
     const bucket = buckets.get(dateKey);
     if (!bucket) return;
-    if (article.tone === "긍정") bucket.positive += 1;
-    else if (article.tone === "부정") bucket.negative += 1;
-    else if (article.tone === "주의") bucket.caution += 1;
-    else bucket.neutral += 1;
+    countToneIntoBucket(bucket, article.tone);
   });
   const rows = Array.from(buckets.values());
-  const hasSignal = rows.some((row) => row.positive || row.negative || row.caution || row.neutral);
+  const hasSignal = rows.some(hasToneSignal);
   return hasSignal ? rows : ensureTrendHasTone(fallback);
 }
 
@@ -2460,20 +2476,17 @@ function buildWeeklyToneTrend(articles, fallback = []) {
   const startTime = latestTime - 30 * 24 * 60 * 60 * 1000;
   const buckets = new Map();
   for (let index = 0; index < 5; index += 1) {
-    buckets.set(index, { date: `${index + 1}주`, positive: 0, negative: 0, caution: 0, neutral: 0 });
+    buckets.set(index, emptyToneBucket(`${index + 1}주`));
   }
   dated.forEach((article) => {
     const time = new Date(`${articlePeriodDateKey(article)}T00:00:00+09:00`).getTime();
     if (Number.isNaN(time) || time < startTime || time > latestTime) return;
     const index = Math.min(4, Math.max(0, Math.floor((time - startTime) / (7 * 24 * 60 * 60 * 1000))));
     const bucket = buckets.get(index);
-    if (article.tone === "긍정") bucket.positive += 1;
-    else if (article.tone === "부정") bucket.negative += 1;
-    else if (article.tone === "주의") bucket.caution += 1;
-    else bucket.neutral += 1;
+    countToneIntoBucket(bucket, article.tone);
   });
   const rows = Array.from(buckets.values());
-  const hasSignal = rows.some((row) => row.positive || row.negative || row.caution);
+  const hasSignal = rows.some(hasToneSignal);
   return hasSignal ? rows : ensureTrendHasTone(fallback);
 }
 
@@ -2489,10 +2502,28 @@ function ensureTrendHasTone(rows = []) {
   return rows.map((row, index) => ({
     date: row.date || `${index + 1}주`,
     positive: Number(row.positive || 0),
+    neutral: Number(row.neutral || 0),
     caution: Number(row.caution || 0),
     negative: Number(row.negative || 0),
-    neutral: Number(row.neutral || 0),
+    excluded: Number(row.excluded || row.exclude || 0),
   }));
+}
+
+function emptyToneBucket(date) {
+  return { date, positive: 0, neutral: 0, caution: 0, negative: 0, excluded: 0 };
+}
+
+function countToneIntoBucket(bucket, tone) {
+  if (!bucket) return;
+  if (tone === "긍정") bucket.positive += 1;
+  else if (tone === "부정") bucket.negative += 1;
+  else if (tone === "주의") bucket.caution += 1;
+  else if (tone === "제외") bucket.excluded += 1;
+  else bucket.neutral += 1;
+}
+
+function hasToneSignal(row = {}) {
+  return toneSeries.some((series) => Number(row[series.key] || 0) > 0);
 }
 
 function lastNDays(articles, days) {
