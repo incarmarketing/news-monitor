@@ -20,6 +20,7 @@ import {
   Megaphone,
   Newspaper,
   Radar,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
@@ -57,6 +58,7 @@ import {
   saveMonitorKeyword,
   savePressAlias,
   saveReporterProfile,
+  triggerDashboardRefresh,
   verifyDashboardLogin,
 } from "./liveData";
 import "./styles.css";
@@ -190,6 +192,7 @@ function App() {
         setActiveSection={setActiveSection}
         monitoringPreset={monitoringPreset}
         onOpenMonitoring={openMonitoring}
+        onRefreshOperations={refreshOperations}
       />
       <LoginDialog
         open={loginOpen}
@@ -286,9 +289,27 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring }) {
+function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, onRefreshOperations }) {
   const { summary } = data;
   const orderedNotifications = useMemo(() => orderNotificationHistory(notifications), [notifications]);
+  const [refreshingIssues, setRefreshingIssues] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState("");
+  const refreshIssueFeed = async () => {
+    if (refreshingIssues) return;
+    setRefreshingIssues(true);
+    setRefreshNotice("키워드 수집과 분석을 요청했습니다. 저장 완료 후 자동으로 다시 불러옵니다.");
+    try {
+      await triggerDashboardRefresh();
+      await onRefreshOperations?.();
+      window.setTimeout(() => onRefreshOperations?.(), 25000);
+      window.setTimeout(() => onRefreshOperations?.(), 75000);
+      setRefreshNotice("수집 작업이 시작됐습니다. GitHub Actions 처리 후 주요 이슈가 갱신됩니다.");
+    } catch (error) {
+      setRefreshNotice(`갱신 요청 실패: ${error?.message || "연결 확인 필요"}`);
+    } finally {
+      window.setTimeout(() => setRefreshingIssues(false), 1500);
+    }
+  };
   return (
     <main className="workspace">
       <PageTitle
@@ -308,8 +329,18 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
       <section className="dashboard-grid">
         <div className="main-column">
-          <Panel title="주요 이슈" icon={Newspaper} meta="키워드 기준 5분 갱신">
+          <Panel
+            title="주요 이슈"
+            icon={Newspaper}
+            meta="키워드 기준 5분 갱신"
+            actions={(
+              <button className="panel-action-button" onClick={refreshIssueFeed} disabled={refreshingIssues}>
+                <RefreshCw className={refreshingIssues ? "spin" : ""} />갱신
+              </button>
+            )}
+          >
             <IssueList issues={data.issues} />
+            {refreshNotice && <div className="panel-notice">{refreshNotice}</div>}
           </Panel>
         </div>
         <div className="middle-column">
@@ -1531,12 +1562,15 @@ function Kpi({ label, value, icon: Icon, tone = "default", onClick }) {
   );
 }
 
-function Panel({ title, icon: Icon, meta, children, className = "" }) {
+function Panel({ title, icon: Icon, meta, actions, children, className = "" }) {
   return (
     <section className={`panel ${className}`.trim()}>
       <div className="panel-head">
         <h2><Icon />{title}</h2>
-        <span>{meta}</span>
+        <div className="panel-tools">
+          {meta && <span>{meta}</span>}
+          {actions}
+        </div>
       </div>
       {children}
     </section>
@@ -2172,10 +2206,15 @@ function buildArticleSummaryLines(item = {}) {
     return item.summaryLines.map(cleanSummaryText).filter(Boolean);
   }
   const cleanTitle = cleanSummaryText(item.title || "");
-  const text = cleanSummaryText(item.summary || item.description || "");
+  const text = stripCaptionPrefix(cleanSummaryText(item.summary || item.description || ""));
   const sentences = splitSummarySentences(text)
-    .filter((sentence) => sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummarySentence(sentence));
-  const lead = buildSummaryLeadLine(item, cleanTitle, sentences);
+    .filter((sentence) => (
+      sentence !== cleanTitle
+      && !isGenericSummaryLine(sentence)
+      && !isBrokenSummarySentence(sentence)
+      && !isCaptionLikeSummary(sentence)
+    ));
+  const lead = buildSummaryLeadLine(item, cleanTitle, sentences, text);
   const context = buildSummaryContextLine(item);
   const toneLine = buildSummaryToneLine(item);
   return unique([lead, context, toneLine].filter(Boolean))
@@ -2201,6 +2240,21 @@ function cleanSummaryText(value) {
     .trim();
 }
 
+function stripCaptionPrefix(value) {
+  let text = cleanSummaryText(value);
+  if (!/전경|사진\s*=|제공\s*=|이미지|기념\s*촬영|로고/.test(text)) return text;
+  if (text.includes("◇")) {
+    const [head, ...tailParts] = text.split("◇");
+    if (/전경|사진\s*=|제공\s*=|이미지/.test(head)) {
+      return cleanSummaryText(tailParts.join("◇"));
+    }
+  }
+  text = text.replace(/^[^.!?。]{0,130}(?:사옥\s*전경|본사\s*전경|건물\s*외관)\s*(?:[.,。/ ]|\([^)]*\))*\s*/, "");
+  text = text.replace(/^[\[/ ]*(?:사진|제공)\s*=\s*[^◇.。\]]{0,90}[\]◇.。]?\s*/, "");
+  text = text.replace(/^[/ ]*사진\s*\/\s*[^ ]{1,20}\s*/, "");
+  return cleanSummaryText(text);
+}
+
 function splitSummarySentences(value) {
   const clean = cleanSummaryText(value);
   if (!clean) return [];
@@ -2213,9 +2267,11 @@ function splitSummarySentences(value) {
     .slice(0, 3);
 }
 
-function buildSummaryLeadLine(item = {}, title = "", sentences = []) {
+function buildSummaryLeadLine(item = {}, title = "", sentences = [], summaryText = "") {
   const first = sentences.find((sentence) => sentence.length <= 120);
   if (first) return first;
+  const titleSummary = buildTitleBasedSummary(item, title, summaryText);
+  if (titleSummary) return titleSummary;
   const cleanTitle = title.replace(/\s+-\s+[^-]{2,16}$/g, "").trim();
   if (cleanTitle) return `${cleanTitle} 보도입니다`;
   return `${item.source || "언론"} 보도 기준 핵심 이슈입니다`;
@@ -2233,9 +2289,49 @@ function isBrokenSummarySentence(value) {
     text.endsWith("고") ||
     text.endsWith("며") ||
     text.endsWith("또한") ||
+    (!/[.!?。]$|다$|요$|임$|함$|필요$/.test(text) && /(에|을|를|의|과|와|로|으로)$/.test(text)) ||
     /전망했 또한|밝혔 또한|한다고 \d{1,2}일?$/.test(text) ||
     text.length > 160
   );
+}
+
+function isCaptionLikeSummary(value) {
+  const text = cleanSummaryText(value);
+  if (!text) return true;
+  const caption = /사옥\s*전경|본사\s*전경|건물\s*외관|사진\s*=|제공\s*=|자료\s*사진|이미지|기념\s*촬영|로고/i.test(text);
+  if (/^[\[/ ]*(사진|제공)\s*=/.test(text)) return true;
+  if (caption && text.length <= 80) return true;
+  return text.length < 10 && !/(인수|실적|검사|점검|제재|승인|협약|출시|선정|상승|하락)/.test(text);
+}
+
+function buildTitleBasedSummary(item = {}, title = "", summaryText = "") {
+  const text = `${title} ${summaryText || ""} ${item.keyword || ""}`;
+  const actor = extractPrimaryEntity(text) || (item.category === "당사" ? "당사" : "");
+  if (/공공\s*마이데이터|장기보상|보험금\s*청구/.test(text)) {
+    return `${actor || "보험사"}이 공공 마이데이터를 보험금 청구·장기보상 업무에 연계한 서비스 사례입니다`;
+  }
+  if (/해외|인수|M&A|포테그라|글로벌/i.test(text) && /보험|손보|생보/.test(text)) {
+    return `${actor || "보험업계"}의 해외 사업 확대와 보험사 인수 흐름을 다룬 기사입니다`;
+  }
+  if (/금감원|금융감독원|금융위|금융위원회|제재|검사|점검|승인|경영개선/.test(text)) {
+    return `${actor || "금융당국"} 관련 감독·정책 이슈를 다룬 기사입니다`;
+  }
+  if (/실적|마감|매출|순이익|영업익|역성장|감소|증가|성장/.test(text)) {
+    return `${actor || "보험·GA 업계"}의 실적과 영업 흐름을 다룬 기사입니다`;
+  }
+  if (/브랜드평판|평판|1위|순위|선정|수상/.test(text)) {
+    return `${actor || "보험·GA 업계"}의 평판·순위성 보도입니다`;
+  }
+  return "";
+}
+
+function extractPrimaryEntity(text = "") {
+  const candidates = [
+    "인카금융서비스", "인카금융", "DB손해보험", "DB손보", "삼성화재", "현대해상",
+    "KB손해보험", "KB손보", "메리츠화재", "한화생명", "한화손해보험",
+    "롯데손해보험", "롯데손보", "NH농협손해보험", "보험저널", "금융감독원", "금융위원회",
+  ];
+  return candidates.find((name) => text.includes(name)) || "";
 }
 
 function contextRuleRank(label) {

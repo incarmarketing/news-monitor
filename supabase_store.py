@@ -345,7 +345,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "link": article.get("link", ""),
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
-        "summary": article.get("description", "") or article.get("summary", ""),
+        "summary": article.get("_summary", "") or article.get("summary", "") or article.get("description", ""),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),

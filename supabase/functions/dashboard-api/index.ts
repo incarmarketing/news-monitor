@@ -124,14 +124,14 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     return jsonResponse({ error: "write_not_allowed" }, 403);
   }
 
-  const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
+  const token = Deno.env.get("GITHUB_DISPATCH_TOKEN") || Deno.env.get("CRON_DISPATCH_TOKEN");
   const owner = Deno.env.get("GITHUB_OWNER") || "incarmarketing";
   const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
-  const workflow = Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml";
+  const workflow = sanitizeWorkflow(String(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml"));
   const ref = Deno.env.get("GITHUB_REF") || "main";
   const periodReports = sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
   const sendKakao = payload.send_kakao === true || String(payload.send_kakao || "").toLowerCase() === "true";
-  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto");
+  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "07", "08", "13", "18"], "auto");
 
   if (!token) {
     return jsonResponse({ error: "missing_github_dispatch_token" }, 500);
@@ -147,14 +147,11 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
         "X-GitHub-Api-Version": "2022-11-28",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        ref,
-        inputs: {
-          period_reports: periodReports,
-          send_kakao: String(sendKakao),
-          report_slot: reportSlot,
-        },
-      }),
+      body: JSON.stringify(buildWorkflowDispatchBody(workflow, ref, {
+        period_reports: periodReports,
+        send_kakao: String(sendKakao),
+        report_slot: reportSlot,
+      })),
     },
   );
 
@@ -175,6 +172,17 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     requested_by: session.employee_no,
     requested_at: new Date().toISOString(),
   });
+}
+
+function sanitizeWorkflow(value: string) {
+  return ["news-briefing.yml", "negative-watch.yml"].includes(value) ? value : "news-briefing.yml";
+}
+
+function buildWorkflowDispatchBody(workflow: string, ref: string, inputs: Record<string, string>) {
+  if (workflow === "negative-watch.yml") {
+    return { ref };
+  }
+  return { ref, inputs };
 }
 
 function sanitizeChoice(value: unknown, allowed: string[], fallback: string) {

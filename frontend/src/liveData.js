@@ -93,6 +93,41 @@ async function writeRest(path, method, body, headers = {}) {
   return result && Object.prototype.hasOwnProperty.call(result, "data") ? result.data : result;
 }
 
+export async function triggerDashboardRefresh() {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const session = getStoredSession();
+  const payload = { workflow: "negative-watch.yml", source: "dashboard_manual_refresh" };
+
+  try {
+    return await triggerCollectionFunction(config, payload);
+  } catch (functionError) {
+    if (!session?.session_token) throw functionError;
+    return dashboardApi(config, session, "trigger_collection", payload);
+  }
+}
+
+async function triggerCollectionFunction(config, payload) {
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/trigger-news-collection`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      apikey: config.anon_key,
+      Authorization: `Bearer ${config.anon_key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action: "dispatch",
+      workflow: payload.workflow,
+      source: payload.source,
+    }),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) throw new Error(data?.error || `trigger_collection_${response.status}`);
+  return data;
+}
+
 export async function savePressAlias(host, pressName) {
   const cleanHost = String(host || "").trim().toLowerCase();
   const cleanName = String(pressName || "").trim();

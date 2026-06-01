@@ -168,11 +168,178 @@ def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
         article["_category"] = categorize(article)
         article["_tone"] = analyze_tone(article)
         article["_score"] = score_article(article)
+        article["_summary"] = build_quality_summary(article)
 
     articles.sort(key=lambda x: x.get("_score", 0), reverse=True)
     clustered = cluster_articles(articles[:top_n])
     clustered.sort(key=lambda x: x.get("_score", 0), reverse=True)
     return clustered, build_metrics(articles, clustered)
+
+
+def build_quality_summary(article: dict) -> str:
+    """Return an operational article summary, not a photo caption or portal fragment."""
+    title = clean_summary_text(article.get("title", ""))
+    description = strip_caption_prefix(clean_summary_text(article.get("description", "") or article.get("summary", "")))
+    if description and not is_caption_like_summary(description):
+        sentences = split_summary_sentences(description)
+        usable = [
+            sentence for sentence in sentences
+            if sentence != title and not is_caption_like_summary(sentence)
+        ]
+        if usable:
+            return limit_summary(" ".join(usable[:2]))
+        if len(description) >= 38 and not is_broken_summary_fragment(description):
+            return limit_summary(description)
+    return title_based_summary(article, title)
+
+
+def clean_summary_text(value: object) -> str:
+    text = re.sub(r"<[^>]+>", " ", str(value or ""))
+    text = (
+        text.replace("&nbsp;", " ")
+        .replace("&amp;nbsp;", " ")
+        .replace("&quot;", '"')
+        .replace("&#39;", "'")
+    )
+    text = re.sub(r"^\[[^\]]+\s+[^\]]*기자\]\s*", "", text)
+    text = re.sub(r"^[^\s]+ 기자\s*=\s*", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip(" \t\r\n.·")
+
+
+def strip_caption_prefix(value: str) -> str:
+    text = clean_summary_text(value)
+    if not re.search(r"전경|사진\s*=|제공\s*=|이미지|기념\s*촬영|로고", text):
+        return text
+    if "◇" in text:
+        head, tail = text.split("◇", 1)
+        if re.search(r"전경|사진\s*=|제공\s*=|이미지", head):
+            return clean_summary_text(tail)
+
+    text = re.sub(
+        r"^[^.!?。]{0,130}(?:사옥\s*전경|본사\s*전경|건물\s*외관)\s*(?:[.,。/ ]|\([^)]*\))*\s*",
+        "",
+        text,
+    )
+    text = re.sub(r"^[\[/ ]*(?:사진|제공)\s*=\s*[^◇.。\]]{0,90}[\]◇.。]?\s*", "", text)
+    text = re.sub(r"^[/ ]*사진\s*/\s*[^ ]{1,20}\s*", "", text)
+    return clean_summary_text(text)
+
+
+def split_summary_sentences(value: str) -> list[str]:
+    text = clean_summary_text(value)
+    if not text:
+        return []
+    text = re.sub(r"([.!?。])\s*", r"\1|", text)
+    text = re.sub(
+        r"(다|했다|밝혔다|전망했다|설명했다|진단했다|분석했다|마무리했다|참여한다고)\s+",
+        r"\1.|",
+        text,
+    )
+    return [
+        sentence.strip(" .")
+        for sentence in text.split("|")
+        if len(sentence.strip()) >= 18 and not is_broken_summary_fragment(sentence)
+    ][:3]
+
+
+def is_caption_like_summary(value: str) -> bool:
+    text = clean_summary_text(value)
+    if not text:
+        return True
+    caption_patterns = [
+        r"사옥\s*전경",
+        r"본사\s*전경",
+        r"건물\s*외관",
+        r"사진\s*=",
+        r"제공\s*=",
+        r"자료\s*사진",
+        r"이미지",
+        r"기념\s*촬영",
+        r"로고",
+    ]
+    if re.match(r"^[\[/ ]*(?:사진|제공)\s*=", text):
+        return True
+    if any(re.search(pattern, text, re.I) for pattern in caption_patterns) and len(text) <= 80:
+        return True
+    if len(text) < 18 and not re.search(r"(인수|실적|검사|점검|제재|승인|협약|출시|선정|상승|하락)", text):
+        return True
+    return False
+
+
+def is_broken_summary_fragment(value: str) -> bool:
+    text = clean_summary_text(value)
+    return bool(
+        text.endswith(("고", "며", "또한", "통해", "위해"))
+        or (not re.search(r"[.!?。]$|다$|요$|임$|함$|필요$", text) and text.endswith(("에", "을", "를", "의", "과", "와", "로", "으로")))
+        or re.search(r"전망했\s*또한|밝혔\s*또한|한다고\s*\d{1,2}일?$", text)
+        or len(text) > 230
+    )
+
+
+def title_based_summary(article: dict, title: str) -> str:
+    description = strip_caption_prefix(clean_summary_text(article.get("description", "") or article.get("summary", "")))
+    text = f"{title} {description} {article.get('keyword', '')}"
+    category = article.get("_category") or article.get("category") or "other"
+    tone = article.get("_tone") or article.get("tone") or "neutral"
+    actor = extract_primary_entity(text)
+
+    if re.search(r"공공\s*마이데이터|장기보상|보험금\s*청구", text):
+        subject = actor or "보험사"
+        return (
+            f"{subject}이 공공 마이데이터를 보험금 청구·장기보상 업무에 연계한 서비스 사례입니다. "
+            "고객 서류 제출 부담을 낮추고 보상 처리 효율을 높이는 보험사 디지털 전환 흐름으로 볼 수 있습니다."
+        )
+    if re.search(r"해외|인수|M&A|포테그라|글로벌", text, re.I) and re.search(r"보험|손보|생보", text):
+        subject = actor or "보험업계"
+        return (
+            f"{subject}의 해외 사업 확대와 보험사 인수 흐름을 다룬 기사입니다. "
+            "국내 보험시장 성장 정체와 IFRS17 이후 수익성 중심 경쟁 속에서 수익원 다변화 필요성이 함께 제기됩니다."
+        )
+    if re.search(r"금감원|금융감독원|금융위|금융위원회|제재|검사|점검|승인|경영개선", text):
+        return (
+            f"{actor or '금융당국'} 관련 감독·정책 이슈를 다룬 기사입니다. "
+            "당사 직접 이슈인지 업계 공통 관리 신호인지 분리해 확인할 필요가 있습니다."
+        )
+    if re.search(r"실적|마감|매출|순이익|영업익|역성장|감소|증가|성장", text):
+        return (
+            f"{actor or '보험·GA 업계'}의 실적과 영업 흐름을 다룬 기사입니다. "
+            "시장 점유, 생산성, 성장 둔화 여부를 당사 영향과 비교해 볼 필요가 있습니다."
+        )
+    if re.search(r"브랜드평판|평판|1위|순위|선정|수상", text):
+        return (
+            f"{actor or '보험·GA 업계'}의 평판·순위성 보도입니다. "
+            "홍보 활용 가능성과 경쟁사 동시 노출 여부를 함께 확인합니다."
+        )
+    if category == "own":
+        return (
+            f"{actor or '당사'} 직접 언급 기사입니다. "
+            "평판 영향, 사실관계, 후속 보도 가능성을 우선 확인합니다."
+        )
+    if category == "regulation":
+        return "보험·GA 관련 정책 또는 감독 이슈입니다. 영업 환경과 소비자 보호 기준 변화 가능성을 확인합니다."
+    if category in {"competitor", "industry"}:
+        return "보험사·GA 업계 동향 기사입니다. 제휴, 채널, 실적, 리스크 관리 흐름을 시장 맥락으로 확인합니다."
+    if tone == "caution":
+        return "직접 부정은 아니지만 시장성·규제성 신호가 있는 기사입니다. 반복 노출 여부와 당사 관련성을 분리해 봅니다."
+    return limit_summary(f"{title} 관련 보도입니다. 보험·GA 업계 맥락과 당사 관련성을 확인합니다.")
+
+
+def extract_primary_entity(text: str) -> str:
+    candidates = OWN_NAMES + COMPETITOR_WORDS
+    for name in candidates:
+        if name in text:
+            return name
+    match = re.search(r"([가-힣A-Za-z0-9]+(?:손해보험|손보|생명|화재|금융서비스|보험))", text)
+    return match.group(1) if match else ""
+
+
+def limit_summary(value: str, limit: int = 210) -> str:
+    text = clean_summary_text(value)
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)[0]
+    return cut.rstrip(" ,·") + "."
 
 
 def score_article(article: dict) -> int:
