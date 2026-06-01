@@ -106,6 +106,8 @@ def fetch_fss_releases(cutoff, max_pages: int = 3) -> list[dict]:
         html = fetch_html(url)
         if not html:
             continue
+        page_has_recent = False
+        page_had_dated_rows = False
         for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S | re.I):
             link_match = re.search(r'<td[^>]*class=["\']title["\'][^>]*>\s*<a\s+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', row, re.S | re.I)
             if not link_match:
@@ -115,8 +117,13 @@ def fetch_fss_releases(cutoff, max_pages: int = 3) -> list[dict]:
             date_text = first_match(row, r"(\d{4}-\d{2}-\d{2})")
             dept = cells[2] if len(cells) >= 4 else ""
             file_names = " ".join(re.findall(r'<span[^>]*class=["\']name["\'][^>]*>(.*?)</span>', row, re.S | re.I))
-            if not title or not date_text or not is_recent_date(date_text, cutoff):
+            if date_text:
+                page_had_dated_rows = True
+            if not title or not date_text:
                 continue
+            if not is_recent_date(date_text, cutoff):
+                continue
+            page_has_recent = True
             if not is_relevant_release(title, dept, clean_text(file_names)):
                 continue
             releases.append(build_release_article(
@@ -126,6 +133,8 @@ def fetch_fss_releases(cutoff, max_pages: int = 3) -> list[dict]:
                 dept=dept,
                 date_text=date_text,
             ))
+        if page_had_dated_rows and not page_has_recent:
+            break
     return releases
 
 
@@ -142,6 +151,8 @@ def fetch_fsc_releases(cutoff, max_pages: int = 3) -> list[dict]:
         html = fetch_html(url)
         if not html:
             continue
+        page_has_recent = False
+        page_had_dated_rows = False
         for row in re.findall(r"<li[^>]*>\s*<div[^>]*class=[\"']inner[\"'][^>]*>(.*?)</li>", html, re.S | re.I):
             if "subject" not in row or "day" not in row:
                 continue
@@ -154,8 +165,13 @@ def fetch_fsc_releases(cutoff, max_pages: int = 3) -> list[dict]:
             dept = first_match(row, r"담당부서\s*:\s*([^<]+)")
             date_text = first_match(row, r'<div[^>]*class=["\']day["\'][^>]*>\s*(\d{4}-\d{2}-\d{2})\s*</div>')
             file_names = " ".join(re.findall(r'<span[^>]*class=["\']name["\'][^>]*>(.*?)</span>', row, re.S | re.I))
-            if not title or not date_text or not is_recent_date(date_text, cutoff):
+            if date_text:
+                page_had_dated_rows = True
+            if not title or not date_text:
                 continue
+            if not is_recent_date(date_text, cutoff):
+                continue
+            page_has_recent = True
             if not is_relevant_release(title, dept, clean_text(file_names)):
                 continue
             releases.append(build_release_article(
@@ -165,6 +181,8 @@ def fetch_fsc_releases(cutoff, max_pages: int = 3) -> list[dict]:
                 dept=clean_text(dept),
                 date_text=date_text,
             ))
+        if page_had_dated_rows and not page_has_recent:
+            break
     return releases
 
 
