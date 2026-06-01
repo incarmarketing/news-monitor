@@ -2898,14 +2898,30 @@ function numberOrZero(value) {
 }
 
 function buildHeadline(articles, ownMentions, ownNegative, caution) {
-  const ownLead = articles.find(isOwnArticle);
+  const ownArticles = articles.filter(isOwnArticle);
+  const ownLead = ownArticles.find((article) => !isStockMarketArticle(article)) || ownArticles[0];
+  const stockOnlyOwnMentions = ownArticles.length > 0 && ownArticles.every(isStockMarketArticle);
   if (ownNegative > 0) {
     return `당사 부정 ${ownNegative}건이 확인됐습니다. 최신 당사 언급 기사 "${ownLead?.title || "확인 필요"}"를 우선 점검합니다.`;
   }
   if (ownMentions > 0) {
-    return `당사 언급 ${ownMentions}건은 직접 부정보다 주의/시장성 이슈에 가깝습니다. 핵심 기사 "${ownLead?.title}"를 보고서에 포함합니다.`;
+    if (stockOnlyOwnMentions) {
+      return `당사 언급 ${ownMentions}건은 주가·시황성 노출입니다. 직접 부정 보도나 영업 리스크와 분리해 시장 참고 신호로 관리합니다.`;
+    }
+    if (isStockMarketArticle(ownLead)) {
+      return `당사 언급 ${ownMentions}건 중 주가·시황성 이슈가 포함되어 있습니다. 직접 부정과 시장 참고 신호를 구분해 확인합니다.`;
+    }
+    return `당사 언급 ${ownMentions}건은 직접 부정은 아니지만 평판 영향 확인이 필요합니다. 핵심 기사 "${ownLead?.title}"의 맥락을 우선 점검합니다.`;
   }
   return `당사 직접 언급은 없습니다. 주의 ${caution}건과 GA/보험사 동향 ${articles.filter((item) => ["GA", "보험사"].includes(item.category)).length}건을 추적합니다.`;
+}
+
+function isStockMarketArticle(article = {}) {
+  const text = `${article.title || ""} ${article.summary || ""} ${article.keyword || ""} ${article.category || ""}`;
+  return (
+    /주가|증시|코스피|코스닥|상장|시총|시가총액|거래|52주|최고가|최저가|신저가|종목|투자자|투자의견|목표가|목표주가|증권가|리포트|애널리스트/i.test(text)
+    && /하락|급락|약세|낙폭|최저가|신저가|부진|조정|매도|▼|↓|하향|중립|보유|9,\d{3}|8,\d{3}/i.test(text)
+  );
 }
 
 function buildIssues(articles, fallback) {
@@ -2951,6 +2967,9 @@ function issuePriorityScore(article = {}) {
   score += Math.min(35, Number(article.relatedCount || article.clusterSize || 1) * 3);
   score += Math.min(20, Number(article.score || 0));
   if (article.tone === "긍정" && !isOwnArticle(article)) score -= 35;
+  if (isStockMarketArticle(article)) {
+    score -= isOwnArticle(article) ? 125 : 80;
+  }
   return score;
 }
 
@@ -3108,6 +3127,7 @@ function isGenericSummaryLine(value) {
 
 function buildSummaryContextLine(item = {}) {
   const category = item.category || item.keyword || "키워드";
+  if (isOwnArticle(item) && isStockMarketArticle(item)) return "당사 주가가 시황 기사에 언급된 시장성 노출로, 영업·준법 리스크와 구분해 확인합니다";
   if (isOwnArticle(item)) return "당사 직접 언급 기사라 평판 영향과 사실관계 확인이 우선입니다";
   if (["GA", "보험사"].includes(category)) return "보험사·GA 시장의 제휴, 채널, 실적 흐름을 보여주는 업계 동향입니다";
   if (category === "정책/규제") return "정책·감독 이슈로 영업 환경과 소비자 보호 기준 변화 가능성을 확인합니다";
@@ -3117,6 +3137,7 @@ function buildSummaryContextLine(item = {}) {
 
 function buildSummaryToneLine(item = {}) {
   if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁처럼 대응 우선순위를 올릴 신호인지 확인해야 합니다";
+  if (item.tone === "주의" && isStockMarketArticle(item)) return "주가·시황성 주의 신호로 관리하되 직접 부정 보도와 분리합니다";
   if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 별도 추적합니다";
   if (item.tone === "긍정" && isOwnArticle(item)) return "당사 성과나 우호 보도로 활용 가능한지 원문과 노출 매체를 확인합니다";
   if (item.tone === "긍정") return "당사 성과가 아닌 업계 우호 보도는 긍정 홍보가 아니라 시장 참고 이슈로 봅니다";
@@ -3133,7 +3154,12 @@ function buildPeriodObservations(data, issues = [], period = "monthly") {
   if (summary.ownNegative > 0) {
     observations.push(`당사 직접 부정 ${summary.ownNegative}건이 확인되어 기사 제목, 반복 보도 여부, 사실관계 확인을 우선순위로 둡니다.`);
   } else if (summary.ownMentions > 0) {
-    observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 평판·시장성 이슈에 가깝습니다. 단순 노출이 아니라 당사명과 함께 전달된 맥락을 확인합니다.`);
+    const ownIssues = issues.filter(isOwnArticle);
+    if (ownIssues.length && ownIssues.every(isStockMarketArticle)) {
+      observations.push(`당사 언급 ${summary.ownMentions}건은 주가·시황성 노출입니다. 직접 부정 보도가 아니므로 평판 리스크와 분리해 참고 지표로 관리합니다.`);
+    } else {
+      observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 평판·시장성 이슈에 가깝습니다. 단순 노출이 아니라 당사명과 함께 전달된 맥락을 확인합니다.`);
+    }
   } else {
     observations.push(`${periodLabel} 기준 당사 직접 부정 이슈는 확인되지 않았습니다. 다만 GA·보험사·정책 흐름은 향후 당사 보도로 전이될 수 있어 추적합니다.`);
   }
