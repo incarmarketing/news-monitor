@@ -373,11 +373,11 @@ function isAllowedApiKey(apiKey: string | null) {
 }
 
 function sanitizeWorkflow(value: string) {
-  return ["news-briefing.yml", "negative-watch.yml"].includes(value) ? value : "news-briefing.yml";
+  return ["news-briefing.yml", "negative-watch.yml", "regulator-releases.yml"].includes(value) ? value : "news-briefing.yml";
 }
 
 function sanitizeWorkflowInputs(workflow: string, inputs?: Record<string, string | boolean>) {
-  if (workflow === "negative-watch.yml") return {};
+  if (workflow === "negative-watch.yml" || workflow === "regulator-releases.yml") return {};
   return sanitizeInputs(inputs || {
     period_reports: "none",
     send_kakao: "false",

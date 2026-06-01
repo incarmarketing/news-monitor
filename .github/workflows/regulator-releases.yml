@@ -25,7 +25,7 @@ concurrency:
 jobs:
   backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -42,7 +42,7 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Backfill official regulator releases
-        run: python refresh_regulator_releases.py --days 183 --pages 120
+        run: python refresh_regulator_releases.py --days 3650 --pages 500
         env:
           FSS_API_AUTH_KEY: ${{ secrets.FSS_API_AUTH_KEY }}
           FSS_OPENAPI_AUTH_KEY: ${{ secrets.FSS_OPENAPI_AUTH_KEY }}

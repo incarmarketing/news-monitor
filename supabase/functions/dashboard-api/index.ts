@@ -175,11 +175,11 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
 }
 
 function sanitizeWorkflow(value: string) {
-  return ["news-briefing.yml", "negative-watch.yml"].includes(value) ? value : "news-briefing.yml";
+  return ["news-briefing.yml", "negative-watch.yml", "regulator-releases.yml"].includes(value) ? value : "news-briefing.yml";
 }
 
 function buildWorkflowDispatchBody(workflow: string, ref: string, inputs: Record<string, string>) {
-  if (workflow === "negative-watch.yml") {
+  if (workflow === "negative-watch.yml" || workflow === "regulator-releases.yml") {
     return { ref };
   }
   return { ref, inputs };

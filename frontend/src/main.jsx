@@ -64,6 +64,7 @@ import {
   savePressAlias,
   saveReporterProfile,
   triggerDashboardRefresh,
+  triggerRegulatorRefresh,
   verifyDashboardLogin,
 } from "./liveData";
 import "./styles.css";
@@ -413,6 +414,7 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
   const [category, setCategory] = useState("all");
   const [source, setSource] = useState("all");
   const [viewMode, setViewMode] = useState("latest");
+  const [regulatorRelated, setRegulatorRelated] = useState(false);
   const [visible, setVisible] = useState(30);
 
   const sources = useMemo(() => unique(articles.map((article) => article.source)).slice(0, 80), [articles]);
@@ -424,6 +426,7 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
     setTone(monitoringPreset.tone || "all");
     setCategory(monitoringPreset.category || "all");
     setSource(monitoringPreset.source || "all");
+    setRegulatorRelated(Boolean(monitoringPreset.regulatorRelated));
     setVisible(30);
   }, [monitoringPreset]);
   const filtered = useMemo(() => {
@@ -432,12 +435,13 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
       return (
         (!needle || text.includes(needle)) &&
+        (!regulatorRelated || isRegulatorRelatedNewsArticle(article)) &&
         (tone === "all" || article.tone === tone) &&
         (category === "all" || article.category === category) &&
         (source === "all" || article.source === source)
       );
     }).sort((a, b) => articleTimeValue(b) - articleTimeValue(a));
-  }, [articles, category, query, source, tone]);
+  }, [articles, category, query, regulatorRelated, source, tone]);
   const grouped = useMemo(() => buildRelatedArticleGroups(filtered), [filtered]);
   const visibleRows = viewMode === "related" ? grouped : filtered;
   const feedMeta = viewMode === "related"
@@ -448,8 +452,10 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
     <main className="workspace">
       <PageTitle
         eyebrow="Live Monitoring"
-        title="실시간 모니터링"
-        description="기사 목록을 샘플 5개로 줄이지 않고, 연결 가능한 운영 기사 전체를 필터와 함께 펼쳐 봅니다."
+        title={regulatorRelated ? "금융당국 관련 기사" : "실시간 모니터링"}
+        description={regulatorRelated
+          ? "금감원·금융위 공식자료와 연결되는 보험·GA·설계사·수수료·감독 관련 기사만 모아봅니다."
+          : "기사 목록을 샘플 5개로 줄이지 않고, 연결 가능한 운영 기사 전체를 필터와 함께 펼쳐 봅니다."}
         right={<button className="primary-button"><Download />CSV 출력</button>}
       />
       <section className="filter-card">
@@ -515,6 +521,7 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
           setCategory("all");
           setSource("all");
           setViewMode("latest");
+          setRegulatorRelated(false);
         }}>
           <Filter />초기화
         </button>
@@ -536,7 +543,7 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
   );
 }
 
-function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onToggleScrap }) {
+function RegulatorReleases({ articles = [], onOpenMonitoring, onRefreshOperations, scraps = [], onToggleScrap }) {
   const [source, setSource] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -544,6 +551,8 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onTog
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const [refreshingOfficial, setRefreshingOfficial] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState("");
   const regulatorRows = useMemo(
     () => articles
       .filter(isRegulatorArticle)
@@ -594,19 +603,45 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onTog
     }
   };
 
+  const refreshOfficialReleases = async () => {
+    if (refreshingOfficial) return;
+    setRefreshingOfficial(true);
+    setRefreshNotice("금융당국 공식자료 수집을 요청했습니다. 저장 완료 후 자동으로 다시 불러옵니다.");
+    try {
+      await triggerRegulatorRefresh();
+      await onRefreshOperations?.();
+      window.setTimeout(() => onRefreshOperations?.(), 25000);
+      window.setTimeout(() => onRefreshOperations?.(), 75000);
+      setRefreshNotice("수집 작업이 시작됐습니다. GitHub Actions 처리 후 공식자료 목록이 갱신됩니다.");
+    } catch (error) {
+      setRefreshNotice(`갱신 요청 실패: ${error?.message || "연결 확인 필요"}`);
+    } finally {
+      window.setTimeout(() => setRefreshingOfficial(false), 1500);
+    }
+  };
+
   return (
     <main className="workspace">
       <PageTitle
         eyebrow="Official Regulator Releases"
         title="금융당국 보도자료"
-        description="최근 6개월 금융감독원·금융위원회 공식 보도자료 중 보험, GA, 설계사, 판매수수료, 감독 이슈와 연결되는 항목만 별도 수집합니다."
-        right={<button className="primary-button" onClick={() => onOpenMonitoring?.({ category: "정책/규제", query: "금융당국 보도자료" })}><Search />관련 뉴스 보기</button>}
+        description="금융감독원·금융위원회 공식 보도자료 중 보험, GA, 설계사, 판매수수료, 감독 이슈와 연결되는 항목을 운영 DB에 누적 보관합니다."
+        right={(
+          <div className="page-actions">
+            <button className="panel-action-button" onClick={refreshOfficialReleases} disabled={refreshingOfficial}>
+              <RefreshCw className={refreshingOfficial ? "spin" : ""} />최신 보도자료 갱신
+            </button>
+            <button className="primary-button" onClick={() => onOpenMonitoring?.({ regulatorRelated: true })}>
+              <Search />관련 기사 보기
+            </button>
+          </div>
+        )}
       />
       <section className="regulator-summary-grid">
         <article>
           <span>공식자료</span>
           <b>{regulatorRows.length.toLocaleString("ko-KR")}건</b>
-          <em>최근 6개월 수집 기준</em>
+          <em>운영 DB 누적 기준</em>
         </article>
         <article>
           <span>감독/규제 신호</span>
@@ -632,6 +667,7 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, scraps = [], onTog
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="보험, GA, 설계사, 수수료 등" />
         </label>
       </section>
+      {refreshNotice && <div className="panel-notice regulator-refresh-notice">{refreshNotice}</div>}
       <section className="regulator-analysis-box">
         <div className="regulator-analysis-head">
           <div>
@@ -3736,6 +3772,14 @@ function isOwnArticle(article) {
 
 function isRegulatorArticle(article) {
   return /금융감독원|금융위원회/.test(article.source || "") || /금융당국 보도자료/.test(`${article.keyword || ""} ${article.summary || ""}`);
+}
+
+function isRegulatorRelatedNewsArticle(article = {}) {
+  if (isRegulatorArticle(article)) return false;
+  const text = `${article.title || ""} ${article.source || ""} ${article.keyword || ""} ${article.summary || ""} ${article.category || ""}`;
+  const authoritySignal = /금융감독원|금감원|금융위원회|금융위|금융당국|감독원|당국|검사|제재|감독|규제|경영개선|수수료|정착지원금|내부통제|불완전판매|소비자보호/.test(text);
+  const insuranceSignal = /보험|손보|생보|보험사|보험대리점|GA|설계사|모집|인카금융|인카금융서비스/.test(text);
+  return authoritySignal && insuranceSignal;
 }
 
 function categoryPresetFor(value) {

@@ -22,15 +22,15 @@ def main() -> None:
     load_dotenv()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--days", type=int, default=183, help="Official release lookback window.")
-    parser.add_argument("--pages", type=int, default=120, help="Maximum list pages per regulator.")
+    parser.add_argument("--days", type=int, default=3650, help="Official release archive lookback window.")
+    parser.add_argument("--pages", type=int, default=500, help="Maximum list pages per regulator.")
     args = parser.parse_args()
 
     current = datetime.now(KST)
     start = current - timedelta(days=args.days)
     releases = regulator_collector.fetch_regulator_releases(days_back=args.days, max_pages=args.pages)
     if not releases:
-        print(f"Regulator refresh: no relevant official releases in last {args.days} days.")
+        print(f"Regulator refresh: no relevant official releases in archive window ({args.days} days).")
         return
 
     analyzed, metrics = analyzer.analyze(releases, top_n=max(len(releases), 1))
@@ -39,7 +39,7 @@ def main() -> None:
         report_date=current.date().isoformat(),
         window={
             "slot": "regulator",
-            "label": f"official regulator releases last {args.days} days",
+            "label": f"official regulator releases archive ({args.days} days)",
             "short_label": "regulator",
             "start": start.isoformat(),
             "end": current.isoformat(),
