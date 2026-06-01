@@ -58,6 +58,7 @@ import {
   analyzeRegulatorReleases,
   deleteArticleScrap,
   deleteReporterProfile,
+  generateRiskResponse,
   loadOperationalData,
   saveArticleScrap,
   saveMonitorKeyword,
@@ -1140,61 +1141,243 @@ function ScrapDigest({ scraps }) {
 
 function RiskCenter({ articles = [], scraps = [], onOpenMonitoring, onToggleScrap }) {
   const [draftType, setDraftType] = useState("press");
+  const [showAllRisk, setShowAllRisk] = useState(false);
+  const [selectedArticleId, setSelectedArticleId] = useState("");
+  const [urlInput, setUrlInput] = useState("");
+  const [issueInput, setIssueInput] = useState("");
+  const [draft, setDraft] = useState("");
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftError, setDraftError] = useState("");
   const riskRows = useMemo(
     () => [...articles]
       .filter((article) => article.tone === "부정" || (isOwnArticle(article) && article.tone === "주의"))
       .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
-      .slice(0, 40),
+      .slice(0, 80),
     [articles],
   );
+  const selectedArticle = useMemo(
+    () => riskRows.find((article) => article.id === selectedArticleId || article.link === selectedArticleId) || null,
+    [riskRows, selectedArticleId],
+  );
+  const visibleRiskRows = showAllRisk ? riskRows : riskRows.slice(0, 8);
+  const activeUrl = urlInput || selectedArticle?.link || "";
+  const activeIssue = issueInput || buildRiskIssueInput(selectedArticle, activeUrl);
+  const draftPreview = draft || buildRiskDraftFallback(draftType, selectedArticle, activeUrl);
+  const handleSelectArticle = (article) => {
+    setSelectedArticleId(article.id || article.link || article.title);
+    setUrlInput(article.link || "");
+    setIssueInput(buildRiskIssueInput(article, article.link));
+    setDraft("");
+    setDraftError("");
+  };
+  const handleDropUrl = (event) => {
+    event.preventDefault();
+    const dropped = event.dataTransfer.getData("text/uri-list") || event.dataTransfer.getData("text/plain");
+    const url = extractFirstUrl(dropped);
+    if (url) {
+      setUrlInput(url);
+      setSelectedArticleId("");
+      setIssueInput((current) => current || `기사 URL 기준으로 사실관계와 당사 관련성을 확인해줘.\n${url}`);
+      setDraft("");
+      setDraftError("");
+    }
+  };
+  const handleUrlPaste = (event) => {
+    const text = event.clipboardData.getData("text");
+    const url = extractFirstUrl(text);
+    if (url) {
+      setUrlInput(url);
+      setSelectedArticleId("");
+      setDraft("");
+      setDraftError("");
+    }
+  };
+  const handleGenerateDraft = async () => {
+    const issue = activeIssue.trim();
+    if (!issue && !activeUrl) {
+      setDraftError("기사 URL이나 검토할 이슈 내용을 먼저 넣어주세요.");
+      return;
+    }
+    setDraftLoading(true);
+    setDraftError("");
+    try {
+      const result = await generateRiskResponse({
+        type: draftType,
+        issue: issue || `기사 URL 기준 리스크 검토: ${activeUrl}`,
+        url: activeUrl,
+        context: selectedArticle ? {
+          title: selectedArticle.title,
+          source: selectedArticle.source,
+          summary: selectedArticle.summary,
+          tone: selectedArticle.tone,
+          category: selectedArticle.category,
+          keyword: selectedArticle.keyword,
+          date: selectedArticle.publishedDate || selectedArticle.date,
+        } : {},
+      });
+      setDraft(result.draft || "");
+    } catch (error) {
+      setDraft(buildRiskDraftFallback(draftType, selectedArticle, activeUrl));
+      setDraftError(`Gemini 초안 생성에 실패해 기본 초안을 표시했습니다. (${error?.message || "연결 확인 필요"})`);
+    } finally {
+      setDraftLoading(false);
+    }
+  };
   return (
     <main className="workspace">
       <PageTitle
         eyebrow="Risk Response"
         title="리스크 대응센터"
-        description="기사 URL을 넣으면 핵심 주장, 당사 관련성, 논조를 확인하고 필요한 초안만 생성합니다."
+        description="부정·주의 기사를 같은 화면에서 확인하고, 기사 URL 또는 선택 기사 기반으로 대응 초안을 작성합니다."
       />
-      <section className="risk-layout">
+      <section className="risk-command-grid">
         <Panel title="부정/주의 기사" icon={AlertTriangle} meta={`${riskRows.length}건`}>
           {riskRows.length ? (
             <>
-              <ArticleFeed rows={riskRows.slice(0, 8)} compact scraps={scraps} onToggleScrap={onToggleScrap} />
-              <button className="ghost-button full" onClick={() => onOpenMonitoring?.({ tone: "부정" })}>
-                전체 부정 기사 보기
+              <div className="risk-list">
+                {visibleRiskRows.map((article) => {
+                  const active = selectedArticle && (selectedArticle.id === article.id || selectedArticle.link === article.link);
+                  return (
+                    <article key={article.id || article.link || article.title} className={`risk-row ${active ? "active" : ""}`}>
+                      <button type="button" onClick={() => handleSelectArticle(article)}>
+                        <span className="risk-row-meta">{article.source} · {article.publishedDate || article.date || "-"} · {article.tone}</span>
+                        <b>{article.title}</b>
+                        <small>{article.summary || "요약 확인 필요"}</small>
+                      </button>
+                      <div className="risk-row-actions">
+                        <button className="ghost-button" onClick={() => handleSelectArticle(article)}>선택</button>
+                        <button className="ghost-button" onClick={() => onToggleScrap?.(article)}>
+                          {isScrapped(article, scraps) ? "스크랩됨" : "스크랩"}
+                        </button>
+                        {article.link && article.link !== "#" && (
+                          <a className="ghost-button" href={article.link} target="_blank" rel="noreferrer">원문</a>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+              <button className="ghost-button full" onClick={() => setShowAllRisk((value) => !value)}>
+                {showAllRisk ? "주요 기사만 보기" : `전체 부정/주의 기사 ${riskRows.length}건 보기`}
               </button>
             </>
           ) : (
-            <div className="empty-state compact">현재 선택 기간에는 부정 기사로 분류된 항목이 없습니다.</div>
+            <div className="empty-state compact">현재 선택 기간에는 부정·주의 기사로 분류된 항목이 없습니다.</div>
           )}
         </Panel>
-        <Panel title="기사 URL / 팩트 체크" icon={ShieldCheck} meta="생성 전 확인">
-          <div className="url-box">
-            <input placeholder="기사 URL을 붙여넣으세요" defaultValue="https://www.mk.co.kr/news/stock/12034143" />
-            <button className="primary-button">분석</button>
+        <Panel title="기사 URL / 사실관계 체크" icon={ShieldCheck} meta={selectedArticle ? "선택 기사 기준" : "직접 입력"}>
+          <div
+            className="risk-dropzone"
+            onDrop={handleDropUrl}
+            onDragOver={(event) => event.preventDefault()}
+          >
+            <span>기사 주소를 이 영역에 드래그하거나 붙여넣으세요</span>
+            <div className="url-box">
+              <input
+                value={urlInput}
+                onChange={(event) => setUrlInput(event.target.value)}
+                onPaste={handleUrlPaste}
+                placeholder="https://news.example.com/article..."
+              />
+              <button className="primary-button" onClick={() => setIssueInput(buildRiskIssueInput(selectedArticle, urlInput))}>반영</button>
+            </div>
           </div>
           <div className="fact-grid">
-            <Fact label="핵심 주장" value="투자의견 및 목표가 조정" />
-            <Fact label="당사 관련성" value="직접 언급 있음" />
-            <Fact label="논조" value="주의" />
-            <Fact label="대응 강도" value="모니터링 후 필요 시 확인" />
+            <Fact label="검토 기사" value={selectedArticle?.title || (activeUrl ? "외부 URL 직접 입력" : "미선택")} />
+            <Fact label="당사 관련성" value={selectedArticle ? (isOwnArticle(selectedArticle) ? "당사 직접 관련" : "업계/경쟁사 동향") : "원문 확인 필요"} />
+            <Fact label="논조" value={selectedArticle?.tone || "확인 필요"} />
+            <Fact label="대응 강도" value={riskResponsePriority(selectedArticle, activeUrl)} />
           </div>
+          <textarea
+            className="risk-issue-input"
+            value={issueInput}
+            onChange={(event) => setIssueInput(event.target.value)}
+            placeholder="검토할 주장, 확인해야 할 사실관계, 요청 방향을 입력하세요."
+          />
         </Panel>
-        <Panel title="대응 초안" icon={FilePenLine} meta="길이 조정">
+        <Panel title="대응 초안" icon={FilePenLine} meta={draftLoading ? "생성 중" : "Gemini Pro"}>
           <div className="segmented">
             <button className={draftType === "press" ? "active" : ""} onClick={() => setDraftType("press")}>언론 해명용</button>
             <button className={draftType === "internal" ? "active" : ""} onClick={() => setDraftType("internal")}>사내 해명용</button>
           </div>
           <div className="draft-preview">
             <b>{draftType === "press" ? "언론 해명용 초안" : "사내 공유용 초안"}</b>
-            <p>
-              해당 보도는 시장 의견과 투자 판단에 따른 기사로, 현재 확인된 범위에서는 당사 영업 및 준법 이슈와 직접 연결되는 내용은 확인되지 않았습니다.
-            </p>
+            <p>{draftPreview}</p>
           </div>
-          <button className="primary-button confirm-button">초안을 생성할까요?</button>
+          {draftError && <p className="status-note risk-error">{draftError}</p>}
+          <button className="primary-button confirm-button" onClick={handleGenerateDraft} disabled={draftLoading}>
+            {draftLoading ? "초안 생성 중" : "선택 기사로 초안 생성"}
+          </button>
         </Panel>
       </section>
     </main>
   );
+}
+
+function isScrapped(article = {}, scraps = []) {
+  return scraps.some((item) =>
+    item.id === article.id ||
+    item.article_hash === article.article_hash ||
+    item.link === article.link ||
+    item.title === article.title
+  );
+}
+
+function extractFirstUrl(value = "") {
+  const match = String(value || "").match(/https?:\/\/[^\s"'<>]+/i);
+  return match ? match[0].replace(/[),.]+$/, "") : "";
+}
+
+function buildRiskIssueInput(article, url = "") {
+  if (!article && !url) return "";
+  if (!article) {
+    return [
+      "기사 URL 기준으로 핵심 주장, 당사 관련성, 사실관계 확인 포인트를 정리해줘.",
+      url,
+    ].filter(Boolean).join("\n");
+  }
+  return [
+    `제목: ${article.title || "제목 확인 필요"}`,
+    `언론사: ${article.source || "언론사 확인"}`,
+    `분류/논조: ${article.category || "분류 확인"} · ${article.tone || "논조 확인"}`,
+    `요약: ${article.summary || "요약 확인 필요"}`,
+    `기사 URL: ${url || article.link || "URL 없음"}`,
+    "",
+    "요청: 당사 영향, 사실관계 확인 포인트, 대응 수위, 내부 공유 문구를 실무 보고용으로 정리해줘.",
+  ].join("\n");
+}
+
+function riskResponsePriority(article, url = "") {
+  if (!article && url) return "원문 확인 후 분류";
+  if (!article) return "대기";
+  if (isOwnArticle(article) && article.tone === "부정") return "즉시 확인";
+  if (isOwnArticle(article) && article.tone === "주의") return "우선 검토";
+  if (article.tone === "부정") return "업계 파급 확인";
+  return "모니터링";
+}
+
+function buildRiskDraftFallback(type, article, url = "") {
+  const title = article?.title || "선택 기사";
+  const source = article?.source || "언론사 확인";
+  const summary = article?.summary || "원문 확인 후 핵심 주장과 사실관계를 정리해야 합니다.";
+  if (type === "press") {
+    return [
+      `제목: ${title} 관련 확인 입장 초안`,
+      "",
+      `${source} 보도와 관련해 현재 기사 내용의 사실관계와 당사 관련 범위를 확인 중입니다.`,
+      `기사의 핵심 내용은 "${summary}"로 파악되며, 확인되지 않은 내용에 대해서는 단정적 입장을 내지 않습니다.`,
+      "당사는 확인된 사실을 기준으로 필요한 경우 정정 요청, 추가 설명, 이해관계자 안내를 순차적으로 진행하겠습니다.",
+      url ? `확인 URL: ${url}` : "",
+    ].filter(Boolean).join("\n");
+  }
+  return [
+    `이슈: ${title}`,
+    `출처: ${source}`,
+    `현재 판단: ${riskResponsePriority(article, url)}`,
+    `핵심 내용: ${summary}`,
+    "확인 필요: 원문 표현, 당사 직접 언급 여부, 반복 보도 여부, 고객/설계사 문의 가능성",
+    "대응 방향: 사실관계 확인 전 확정 표현을 피하고, 확인된 내용만 내부 공유합니다.",
+  ].join("\n");
 }
 
 function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }) {

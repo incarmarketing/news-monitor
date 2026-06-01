@@ -1531,10 +1531,128 @@ button.kpi-card {
   gap: 14px;
 }
 
+.risk-command-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, .9fr) minmax(0, 1fr) minmax(360px, .85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.risk-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(68vh, 760px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.risk-row {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.risk-row.active {
+  border-color: #8ca7ff;
+  box-shadow: inset 3px 0 0 var(--blue);
+}
+
+.risk-row > button {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.risk-row-meta {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.risk-row b {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+.risk-row small {
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 800;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.risk-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.risk-dropzone {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px dashed #a8b8e8;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f7f9ff, #fff);
+}
+
+.risk-dropzone > span {
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.risk-issue-input {
+  width: 100%;
+  min-height: 158px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.risk-error {
+  margin: -3px 0 10px;
+  color: var(--red);
+}
+
 .url-box {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+}
+
+.url-box input {
+  min-width: 0;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .fact-grid {
@@ -3206,6 +3324,7 @@ button.kpi-card {
 
   .dashboard-grid,
   .risk-layout,
+  .risk-command-grid,
   .publication-body,
   .scrap-workspace-v2,
   .monitoring-layout,

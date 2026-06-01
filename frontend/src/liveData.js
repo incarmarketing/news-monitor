@@ -321,6 +321,30 @@ export async function analyzeRegulatorReleases(prompt, articles = []) {
   return data;
 }
 
+export async function generateRiskResponse({ type = "press", issue = "", url = "", context = {} } = {}) {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/generate-risk-response`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      apikey: config.anon_key,
+      Authorization: `Bearer ${config.anon_key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      type,
+      issue: String(issue || "").trim(),
+      url: String(url || "").trim(),
+      context,
+    }),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) throw new Error(data?.error || `generate_risk_response_${response.status}`);
+  return data;
+}
+
 function buildRegulatorPrompt(prompt, articles) {
   return [
     "금융감독원/금융위원회 공식 보도자료만 대상으로 분석합니다.",
