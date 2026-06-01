@@ -301,6 +301,7 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
     template = env.get_template("email.html")
     y_metrics = yesterday.get("metrics") if yesterday else None
     sections = parse_report_sections(report_md, metrics)
+    sections = validate_report_sections(sections, clustered, metrics)
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
     window = report_window.current_window()
 
@@ -349,6 +350,110 @@ def parse_report_sections(markdown: str, metrics: dict | None = None) -> dict:
         "action_html": markdown_to_html("## 대응 필요 사항\n" + action_text) if action_text else "",
         "keywords": parse_keywords(raw),
     }
+
+
+def validate_report_sections(sections: dict, clustered: list[dict], metrics: dict) -> dict:
+    """Remove AI issue lines that cannot be tied back to a collected article."""
+    ensure_report_ids(clustered)
+    by_id = {article.get("_report_id"): article for article in clustered}
+    selected_issues: list[dict] = []
+    seen_keys: set[str] = set()
+
+    for issue in sections.get("issues", []):
+        article = issue_evidence_article(issue, clustered, by_id)
+        if not article:
+            continue
+        key = article_key(article)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        fixed_issue = issue if issue_text_matches_article(issue, article) else issue_from_article(article)
+        fixed_issue["refs"] = [article.get("_report_id")]
+        selected_issues.append(fixed_issue)
+        if len(selected_issues) >= 2:
+            break
+
+    for article in fallback_issue_articles(clustered):
+        if len(selected_issues) >= 2:
+            break
+        key = article_key(article)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        selected_issues.append(issue_from_article(article))
+
+    sections["issues"] = selected_issues[:2]
+    if should_rewrite_conclusion(sections.get("conclusion", ""), clustered):
+        sections["conclusion"] = safe_conclusion_from_articles(sections, metrics)
+    return sections
+
+
+def issue_evidence_article(issue: dict, clustered: list[dict], by_id: dict[int, dict]) -> dict | None:
+    text = f"{issue.get('title', '')} {issue.get('detail', '')}"
+    match = best_article_match(text, clustered)
+    if match:
+        return match
+    for ref_id in issue.get("refs", []):
+        article = by_id.get(ref_id)
+        if article:
+            return article
+    return None
+
+
+def issue_text_matches_article(issue: dict, article: dict) -> bool:
+    text = f"{issue.get('title', '')} {issue.get('detail', '')}"
+    return best_article_match(text, [article]) is not None
+
+
+def issue_from_article(article: dict) -> dict:
+    title = strip_ref_marks(article.get("title", "")) or "확인 필요 기사"
+    summary = article.get("_summary") or article.get("summary") or article.get("description", "")
+    return {
+        "title": compact_text(title, 28),
+        "detail": compact_text(summary or "원문 기준으로 확인이 필요한 기사입니다.", 56),
+        "refs": [article.get("_report_id")],
+    }
+
+
+def fallback_issue_articles(clustered: list[dict]) -> list[dict]:
+    def priority(article: dict) -> tuple[int, int]:
+        category = article.get("_category")
+        tone = article.get("_tone")
+        if category == "own" and tone == "negative":
+            group = 0
+        elif category == "own":
+            group = 1
+        elif tone in {"negative", "caution"}:
+            group = 2
+        elif category == "regulation":
+            group = 3
+        else:
+            group = 4
+        return (group, -int(article.get("_score", 0) or 0))
+
+    return sorted(clustered, key=priority)
+
+
+def should_rewrite_conclusion(conclusion: str, clustered: list[dict]) -> bool:
+    if not (conclusion or "").strip():
+        return True
+    if best_article_match(conclusion, clustered):
+        return False
+    return bool(meaningful_tokens(conclusion))
+
+
+def safe_conclusion_from_articles(sections: dict, metrics: dict) -> str:
+    issues = sections.get("issues", [])
+    own_negative = metrics.get("own_negative", 0)
+    risk_level = metrics.get("risk_level", "LOW")
+    if issues:
+        lead = issues[0].get("title", "주요 기사")
+        return f"{lead} 등 실제 수집 기사 기준으로 관찰됐으며, 당사 부정 이슈는 {own_negative}건입니다."
+    return f"실제 수집 기사 기준 리스크는 {risk_level}이며, 당사 부정 이슈는 {own_negative}건입니다."
+
+
+def article_key(article: dict) -> str:
+    return article.get("link") or article.get("title", "")
 
 
 def parse_keywords(raw: dict) -> list[str]:
