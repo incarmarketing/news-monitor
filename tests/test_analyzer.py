@@ -132,6 +132,23 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertFalse(analyzer.is_non_business_noise(article))
         self.assertTrue(news_collector.is_relevant_article(article))
 
+    def test_incomplete_acquisition_summary_falls_back_to_complete_sentence(self) -> None:
+        article = {
+            "title": "해외로 눈 돌린 손보업계…DB손해보험, 美 보험사 인수 마무리",
+            "description": (
+                "ㅣDB손해보험 국내 손해보험업계가 성장 정체와 신 회계제도(IFRS17) 안착 이후 "
+                "수익성 중심 경쟁에 돌입한 가운데, DB손해보험이 미국 보험사 포테그라 인수를."
+            ),
+            "keyword": "손해보험",
+            "keyword_category": "competitor",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertNotIn("인수를.", summary)
+        self.assertIn("해외 사업 확대", summary)
+        self.assertTrue(summary.endswith("."))
+
 
 if __name__ == "__main__":
     unittest.main()

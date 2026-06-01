@@ -3021,6 +3021,7 @@ function cleanSummaryText(value) {
     .replace(/^[［【].{1,60}기자[］】]\s*/g, "")
     .replace(/^[가-힣A-Za-z0-9_.·\s-]{1,30}\s*[=＝]\s*[가-힣]{2,5}\s*기자\s*/g, "")
     .replace(/^[^\s]+ 기자\s*=\s*/g, "")
+    .replace(/^[ㅣ|│｜]\s*/g, "")
     .replace(/\s+/g, " ")
     .replace(/(\.\.\.|…)+$/g, "")
     .trim();
@@ -3031,7 +3032,7 @@ function normalizeSummaryLine(value) {
     .replace(/\s*[\u2022•]\s*/g, " ")
     .replace(/\s+([,.!?。])$/g, "$1")
     .trim();
-  if (!text || isFragmentSummaryLine(text)) return "";
+  if (!text || isFragmentSummaryLine(text) || isBrokenSummarySentence(text)) return "";
   return ensureSentence(text);
 }
 
@@ -3080,11 +3081,13 @@ function ensureSentence(value) {
 
 function isBrokenSummarySentence(value) {
   const text = cleanSummaryText(value);
+  const stem = text.replace(/[.!?。]+$/g, "").trim();
   return (
     isFragmentSummaryLine(text) ||
     text.endsWith("고") ||
     text.endsWith("며") ||
     text.endsWith("또한") ||
+    /(을|를|에|의|과|와|로|으로|에게|에서|부터|까지|보다|처럼)$/.test(stem) ||
     (!/[.!?。]$|다$|요$|임$|함$|필요$/.test(text) && /(에|을|를|의|과|와|로|으로)$/.test(text)) ||
     /전망했 또한|밝혔 또한|한다고 \d{1,2}일?$/.test(text) ||
     text.length > 160

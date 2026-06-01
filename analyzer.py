@@ -203,9 +203,13 @@ def build_quality_summary(article: dict) -> str:
             if sentence != title and not is_caption_like_summary(sentence)
         ]
         if usable:
-            return limit_summary(" ".join(usable[:2]))
+            summary = limit_summary(" ".join(usable[:2]))
+            if summary:
+                return summary
         if len(description) >= 38 and not is_broken_summary_fragment(description):
-            return limit_summary(description)
+            summary = limit_summary(description)
+            if summary:
+                return summary
     return title_based_summary(article, title)
 
 
@@ -288,11 +292,13 @@ def is_caption_like_summary(value: str) -> bool:
 
 def is_broken_summary_fragment(value: str) -> bool:
     text = clean_summary_text(value)
+    stem = re.sub(r"[.!?。]+$", "", text).strip()
     return bool(
         re.fullmatch(r"(강력히|적극적으로|지속적으로|본격적으로|확대|강화|추진|확인|필요)", text)
         or re.search(r"(강력히|적극적으로|지속적으로|본격적으로)$", text)
         or (len(text) < 8 and not re.search(r"\d", text))
         or text.endswith(("고", "며", "또한", "통해", "위해"))
+        or re.search(r"(을|를|에|의|과|와|로|으로|에게|에서|부터|까지|보다|처럼)$", stem)
         or (not re.search(r"[.!?。]$|다$|요$|임$|함$|필요$", text) and text.endswith(("에", "을", "를", "의", "과", "와", "로", "으로")))
         or re.search(r"전망했\s*또한|밝혔\s*또한|한다고\s*\d{1,2}일?$", text)
         or len(text) > 230
@@ -395,7 +401,10 @@ def limit_summary(value: str, limit: int = 210) -> str:
     if len(text) <= limit:
         return ensure_summary_sentence(text)
     cut = text[:limit].rsplit(" ", 1)[0]
-    return ensure_summary_sentence(cut.rstrip(" ,·"))
+    cut = cut.rstrip(" ,·")
+    if is_broken_summary_fragment(cut):
+        return ""
+    return ensure_summary_sentence(cut)
 
 
 def ensure_summary_sentence(value: str) -> str:

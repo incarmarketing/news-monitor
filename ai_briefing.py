@@ -55,6 +55,7 @@ CATEGORY_LABELS = {
 
 TONE_LABELS = {
     "negative": "부정",
+    "caution": "주의",
     "positive": "긍정",
     "neutral": "중립",
 }
