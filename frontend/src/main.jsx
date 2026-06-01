@@ -36,6 +36,7 @@ import {
   Line,
   LineChart as RechartsLineChart,
   Legend,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -985,8 +986,14 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], scraps, onOpenM
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
       <section className="content-grid two media-analysis-grid">
-        <Panel title="일별 논조 추이" icon={Activity} meta={`${periodLabel} 기준 · 전체 논조`}>
-          <ToneTrend rows={dailyTrend} compact />
+        <Panel
+          title={period === "daily" ? "키워드별 기사량" : "일별 논조 추이"}
+          icon={Activity}
+          meta={period === "daily" ? "일일 기준 · 상위 키워드" : `${periodLabel} 기준 · 전체 논조`}
+        >
+          {period === "daily"
+            ? <DailyKeywordVolumeChart rows={keywordRows} />
+            : <ToneTrend rows={dailyTrend} compact />}
         </Panel>
         <Panel title={`${periodLabel} 관찰 코멘트`} icon={Gauge} meta="핵심 흐름 요약" className="monthly-comment-panel">
           <InsightList insights={observations} />
@@ -994,8 +1001,14 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], scraps, onOpenM
         <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
           <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
         </Panel>
-        <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
-          <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
+        <Panel
+          title={period === "daily" ? "분류별 기사량" : "키워드별 기사량"}
+          icon={LineChart}
+          meta={period === "daily" ? "당사·GA·보험사·정책" : "선정 키워드 10개"}
+        >
+          {period === "daily"
+            ? <CategoryChart rows={data.categoryFlow} tall onOpenMonitoring={onOpenMonitoring} />
+            : <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />}
         </Panel>
         <Panel title={`${periodLabel} 핵심 이슈`} icon={Newspaper} meta={`${issueRows.length}건`} className="wide-panel">
           <MonthlyIssueDigest issues={issueRows} />
@@ -2306,6 +2319,41 @@ function CategoryChart({ rows, tall = false, mini = false, onOpenMonitoring, dri
       )}
     </div>
   );
+}
+
+function DailyKeywordVolumeChart({ rows = [] }) {
+  const visibleRows = rows
+    .filter((row) => Number(row.value) > 0)
+    .slice(0, 8);
+  const dataRows = visibleRows.length ? visibleRows : [{ name: "수집 없음", value: 0 }];
+  return (
+    <div className="chart-box daily-keyword-bar">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={dataRows} margin={{ left: 4, right: 12, top: 22, bottom: 28 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis
+            dataKey="name"
+            tickLine={false}
+            axisLine={false}
+            interval={0}
+            tick={{ fontSize: 11, fontWeight: 900 }}
+            tickFormatter={(value) => truncateChartLabel(value, 8)}
+          />
+          <YAxis hide />
+          <Tooltip formatter={(value) => [`${Number(value).toLocaleString("ko-KR")}건`, "기사량"]} />
+          <Bar dataKey="value" radius={[7, 7, 0, 0]} barSize={34}>
+            <LabelList dataKey="value" position="top" formatter={(value) => `${Number(value).toLocaleString("ko-KR")}`} />
+            {dataRows.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function truncateChartLabel(value, max = 8) {
+  const text = String(value || "");
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
 function ToneTrend({ rows, compact = false }) {

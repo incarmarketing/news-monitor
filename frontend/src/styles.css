@@ -419,6 +419,10 @@ button.kpi-card {
   height: 210px;
 }
 
+.media-analysis-grid .daily-keyword-bar {
+  height: 210px;
+}
+
 .panel, .watch-panel, .filter-card, .report-sheet {
   min-width: 0;
   border: 1px solid var(--line);
@@ -1198,6 +1202,12 @@ button.kpi-card {
 }
 .chart-box.with-drill.tall { height: 335px; }
 .chart-box.with-drill.mini { height: 230px; }
+
+.daily-keyword-bar .recharts-label-list text,
+.daily-keyword-bar .recharts-text {
+  fill: var(--ink);
+  font-weight: 900;
+}
 
 .chart-canvas {
   min-width: 0;
@@ -3475,4 +3485,5 @@ button.kpi-card {
   .paper-section-head { padding-bottom: 4px; margin-bottom: 5px; }
   .paper-section-head b { font-size: 8px; }
   .chart-box.mini { height: 90px; }
+  .media-analysis-grid .daily-keyword-bar { height: 185px; }
 }
