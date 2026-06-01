@@ -1681,6 +1681,7 @@ function ReporterManagement({ rows }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [form, setForm] = useState(emptyReporterForm);
+  const [selectedReporter, setSelectedReporter] = useState(null);
   const [localState, setLocalState] = useState(() => readLocalReporterState());
   const managedRows = useMemo(() => mergeReporterRows(rows, localState), [rows, localState]);
   const filteredRows = useMemo(() => {
@@ -1698,6 +1699,12 @@ function ReporterManagement({ rows }) {
     writeLocalReporterState(nextState);
   };
 
+  const handleAddReporter = () => {
+    setForm(emptyReporterForm);
+    setSelectedReporter({ mode: "add" });
+    setStatus("");
+  };
+
   const handleEditReporter = (row) => {
     setForm({
       id: row.id || "",
@@ -1707,6 +1714,7 @@ function ReporterManagement({ rows }) {
       contactDate: row.contactDate || row.date || "",
       memo: row.memo || "",
     });
+    setSelectedReporter(row);
     setStatus("선택한 기자 정보를 편집 중입니다.");
   };
 
@@ -1720,6 +1728,7 @@ function ReporterManagement({ rows }) {
     const localFirst = upsertReporterLocal(localState, optimistic);
     persistLocalState(localFirst);
     setForm(emptyReporterForm);
+    setSelectedReporter(null);
     try {
       const saved = await saveReporterProfile(item);
       const savedRow = Array.isArray(saved) && saved[0] ? reporterDraftFromRemote(saved[0]) : optimistic;
@@ -1734,6 +1743,7 @@ function ReporterManagement({ rows }) {
     const key = reporterKey(row);
     const nextState = hideReporterLocal(localState, row);
     persistLocalState(nextState);
+    setSelectedReporter(null);
     try {
       if (/^\d+$/.test(String(row.id || ""))) {
         await deleteReporterProfile(row.id);
@@ -1749,40 +1759,11 @@ function ReporterManagement({ rows }) {
 
   return (
     <Panel title="기자 관리" icon={Users} meta={`${managedRows.length.toLocaleString("ko-KR")}명`}>
-      <div className="operation-form reporter-form">
-        <label>
-          <span>기자명</span>
-          <input value={form.name} onChange={(event) => updateForm("name", event.target.value)} placeholder="예: 홍길동" />
-        </label>
-        <label>
-          <span>언론사</span>
-          <input value={form.media} onChange={(event) => updateForm("media", event.target.value)} placeholder="예: 보험저널" />
-        </label>
-        <label>
-          <span>관계 상태</span>
-          <select value={form.status} onChange={(event) => updateForm("status", event.target.value)}>
-            {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>최근 접촉일</span>
-          <input type="date" value={form.contactDate} onChange={(event) => updateForm("contactDate", event.target.value)} />
-        </label>
-        <label className="reporter-memo-field">
-          <span>메모</span>
-          <textarea value={form.memo} onChange={(event) => updateForm("memo", event.target.value)} placeholder="관심 주제, 요청사항, 접촉 이력" />
-        </label>
-        <div className="operation-form-actions reporter-actions">
-          <button className="ghost-button" onClick={() => { setForm(emptyReporterForm); setStatus(""); }}>초기화</button>
-          <button className="primary-button" onClick={handleSaveReporter}>{form.id ? "수정 저장" : "기자 추가"}</button>
-        </div>
-        {status && <p className="status-note">{status}</p>}
-      </div>
       <div className="management-toolbar reporter-toolbar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="기자명, 언론사, 관계, 메모 검색" />
-        <button className="ghost-button" onClick={() => setQuery(form.media || form.name)}>선택 기자 검색</button>
-        <button className="primary-button" onClick={handleSaveReporter}>관리 기록 저장</button>
+        <button className="primary-button" onClick={handleAddReporter}>기자 추가</button>
       </div>
+      {status && <p className="status-note management-status">{status}</p>}
       <div className="data-table-wrap">
         <table className="data-table">
           <thead>
@@ -1809,8 +1790,7 @@ function ReporterManagement({ rows }) {
                 <td>{row.memo || "-"}</td>
                 <td>
                   <div className="row-actions">
-                    <button className="ghost-button" onClick={() => handleEditReporter(row)}>수정</button>
-                    <button className="ghost-button danger" onClick={() => handleDeleteReporter(row)}>삭제</button>
+                    <button className="ghost-button" onClick={() => handleEditReporter(row)}>관리</button>
                   </div>
                 </td>
               </tr>
@@ -1822,6 +1802,48 @@ function ReporterManagement({ rows }) {
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
           {showAll ? "접기" : "더보기"}
         </button>
+      )}
+      {selectedReporter && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="login-panel reporter-dialog">
+            <button className="icon-button close" onClick={() => setSelectedReporter(null)} aria-label="닫기">
+              <X />
+            </button>
+            <h2>{form.id ? "기자 정보 관리" : "기자 추가"}</h2>
+            <p>기자명, 소속 언론사, 관계 상태와 접촉 메모를 한 화면에서 관리합니다.</p>
+            <div className="operation-form reporter-form modal-form">
+              <label>
+                <span>기자명</span>
+                <input value={form.name} onChange={(event) => updateForm("name", event.target.value)} placeholder="예: 홍길동" />
+              </label>
+              <label>
+                <span>언론사</span>
+                <input value={form.media} onChange={(event) => updateForm("media", event.target.value)} placeholder="예: 보험저널" />
+              </label>
+              <label>
+                <span>관계 상태</span>
+                <select value={form.status} onChange={(event) => updateForm("status", event.target.value)}>
+                  {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
+                </select>
+              </label>
+              <label>
+                <span>최근 접촉일</span>
+                <input type="date" value={form.contactDate} onChange={(event) => updateForm("contactDate", event.target.value)} />
+              </label>
+              <label className="reporter-memo-field">
+                <span>메모</span>
+                <textarea value={form.memo} onChange={(event) => updateForm("memo", event.target.value)} placeholder="관심 주제, 요청사항, 접촉 이력" />
+              </label>
+              <div className="operation-form-actions reporter-actions">
+                {form.id && (
+                  <button className="ghost-button danger" onClick={() => handleDeleteReporter(form)}>삭제</button>
+                )}
+                <button className="ghost-button" onClick={() => setSelectedReporter(null)}>닫기</button>
+                <button className="primary-button" onClick={handleSaveReporter}>{form.id ? "수정 저장" : "기자 추가"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </Panel>
   );
