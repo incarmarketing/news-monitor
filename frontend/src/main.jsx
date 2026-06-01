@@ -490,14 +490,14 @@ function RegulatorReleases({ articles = [], onOpenMonitoring }) {
       <PageTitle
         eyebrow="Official Regulator Releases"
         title="금융당국 보도자료"
-        description="금융감독원과 금융위원회 공식 보도자료 중 보험, GA, 설계사, 판매수수료, 감독 이슈와 연결되는 항목만 별도 수집합니다."
+        description="최근 6개월 금융감독원·금융위원회 공식 보도자료 중 보험, GA, 설계사, 판매수수료, 감독 이슈와 연결되는 항목만 별도 수집합니다."
         right={<button className="primary-button" onClick={() => onOpenMonitoring?.({ category: "정책/규제", query: "금융당국 보도자료" })}><Search />관련 뉴스 보기</button>}
       />
       <section className="regulator-summary-grid">
         <article>
           <span>공식자료</span>
           <b>{regulatorRows.length.toLocaleString("ko-KR")}건</b>
-          <em>최근 수집 기준</em>
+          <em>최근 6개월 수집 기준</em>
         </article>
         <article>
           <span>감독/규제 신호</span>
