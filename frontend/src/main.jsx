@@ -493,9 +493,12 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
         )}
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
-      <section className="content-grid two">
+      <section className="content-grid two media-analysis-grid">
         <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
-          <ToneTrend rows={dailyTrend} />
+          <ToneTrend rows={dailyTrend} compact />
+        </Panel>
+        <Panel title="월간 관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약" className="monthly-comment-panel">
+          <InsightList insights={observations} />
         </Panel>
         <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
           <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
@@ -503,11 +506,8 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
         <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
           <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
         </Panel>
-        <Panel title="월간 핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`}>
+        <Panel title="월간 핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`} className="wide-panel">
           <MonthlyIssueDigest issues={issueRows} />
-        </Panel>
-        <Panel title="월간 관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약">
-          <InsightList insights={observations} />
         </Panel>
       </section>
     </main>
@@ -1442,9 +1442,9 @@ function Kpi({ label, value, icon: Icon, tone = "default", onClick }) {
   );
 }
 
-function Panel({ title, icon: Icon, meta, children }) {
+function Panel({ title, icon: Icon, meta, children, className = "" }) {
   return (
-    <section className="panel">
+    <section className={`panel ${className}`.trim()}>
       <div className="panel-head">
         <h2><Icon />{title}</h2>
         <span>{meta}</span>
@@ -1477,7 +1477,7 @@ function MonthlyIssueDigest({ issues }) {
         )}
       </article>
       <div className="monthly-issue-list">
-        {rest.slice(0, 3).map((issue) => (
+        {rest.slice(0, 5).map((issue) => (
           <article key={`${issue.source}-${issue.title}`}>
             <div>
               <span>{issue.source} · {issue.publishedAt}</span>
@@ -1539,7 +1539,6 @@ function ArticleFeed({ rows, compact = false }) {
         const relatedText = hasRelated ? `외 ${related.length - 1}곳` : "";
         return (
           <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
-            <time>{row.time || "-"}</time>
             <div className="feed-main">
               <div className="feed-title-line">
                 <Chip tone={row.tone}>{row.tone}</Chip>
@@ -1806,9 +1805,10 @@ function InsightList({ insights = [] }) {
 }
 
 function RuleStack() {
+  const sortedRules = [...contextRules].sort((a, b) => contextRuleRank(a.label) - contextRuleRank(b.label));
   return (
     <div className="rule-stack">
-      {contextRules.map((rule) => (
+      {sortedRules.map((rule) => (
         <article key={rule.label}>
           <Chip tone={rule.label}>{rule.label}</Chip>
           <b>{rule.action}</b>
@@ -2033,15 +2033,18 @@ function buildHeadline(articles, ownMentions, ownNegative, caution) {
 }
 
 function buildIssues(articles, fallback) {
-  const important = [
-    ...articles.filter((article) => isOwnArticle(article)),
-    ...articles.filter((article) => ["부정", "주의"].includes(article.tone)),
-    ...articles,
-  ];
-  const uniqueIssues = [];
-  for (const article of important) {
-    if (uniqueIssues.some((item) => item.title === article.title)) continue;
-    uniqueIssues.push({
+  const seen = new Set();
+  const uniqueArticles = [];
+  [...articles, ...(fallback || [])].forEach((article) => {
+    const title = article?.title;
+    if (!title || seen.has(title)) return;
+    seen.add(title);
+    uniqueArticles.push(article);
+  });
+  const ranked = uniqueArticles
+    .map((article) => ({ article, score: issuePriorityScore(article) }))
+    .sort((a, b) => b.score - a.score || articleTimeValue(b.article) - articleTimeValue(a.article));
+  const uniqueIssues = ranked.slice(0, 6).map(({ article }) => ({
       tone: article.tone,
       category: article.category,
       source: article.source,
@@ -2050,10 +2053,29 @@ function buildIssues(articles, fallback) {
       summaryLines: buildArticleSummaryLines(article),
       publishedAt: article.time || article.date || "-",
       link: article.link,
-    });
-    if (uniqueIssues.length >= 5) break;
-  }
+  }));
   return uniqueIssues.length ? uniqueIssues : fallback;
+}
+
+function issuePriorityScore(article = {}) {
+  const text = `${article.title || ""} ${article.summary || ""} ${article.keyword || ""} ${article.category || ""}`;
+  let score = 0;
+  if (isOwnArticle(article)) score += 120;
+  if (article.tone === "부정") score += 90;
+  if (article.tone === "주의") score += 70;
+  if (article.tone === "긍정" && isOwnArticle(article)) score += 45;
+  if (/금감원|금융당국|감독|점검|검사|제재|불완전|사고|소송|분쟁|정착지원금|역성장|감소폭|생산성/i.test(text)) score += 75;
+  if (/인카금융서비스|인카금융|인카/i.test(text)) score += 70;
+  if (/브랜드평판|1위|상향|성과|실적|매출|점유율/i.test(text) && isOwnArticle(article)) score += 35;
+  if (/GA|보험대리점|설계사|전속설계사|N잡|손보|생보/i.test(text)) score += 18;
+  if (/정책|규제|1200|수수료|내부통제|소비자보호/i.test(text)) score += 28;
+  if (article.category === "정책/규제") score += 25;
+  if (article.category === "GA") score += 12;
+  if (article.category === "보험사") score += 8;
+  score += Math.min(35, Number(article.relatedCount || article.clusterSize || 1) * 3);
+  score += Math.min(20, Number(article.score || 0));
+  if (article.tone === "긍정" && !isOwnArticle(article)) score -= 35;
+  return score;
 }
 
 function buildArticleSummaryLines(item = {}) {
@@ -2127,6 +2149,16 @@ function isBrokenSummarySentence(value) {
   );
 }
 
+function contextRuleRank(label) {
+  const text = String(label || "");
+  if (/긍정/.test(text)) return 1;
+  if (/중립/.test(text)) return 2;
+  if (/주의/.test(text)) return 3;
+  if (/부정/.test(text)) return 4;
+  if (/제외|노이즈/.test(text)) return 5;
+  return 99;
+}
+
 function isGenericSummaryLine(value) {
   const text = cleanSummaryText(value);
   return (
@@ -2156,23 +2188,24 @@ function buildSummaryToneLine(item = {}) {
 function buildMonthlyObservations(data, issues = []) {
   const summary = data.summary || {};
   const lead = issues[0];
-  const topPress = data.pressInfluence?.[0];
+  const riskIssueCount = issues.filter((issue) => ["부정", "주의"].includes(issue.tone)).length;
+  const regulationIssueCount = issues.filter((issue) => /정책|규제|감독|금감원|금융당국|정착지원금/i.test(`${issue.category} ${issue.title} ${issue.summary}`)).length;
   const observations = [];
   if (summary.ownNegative > 0) {
-    observations.push(`당사 부정 이슈 ${summary.ownNegative}건이 확인돼 월간 리스크 점검 대상으로 우선 배치했습니다.`);
+    observations.push(`당사 직접 부정 ${summary.ownNegative}건이 확인되어 기사 제목, 반복 보도 여부, 사실관계 확인을 우선순위로 둡니다.`);
   } else if (summary.ownMentions > 0) {
-    observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 시장 평가와 업계 흐름을 함께 확인하는 관찰 이슈로 봅니다.`);
+    observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 평판·시장성 이슈에 가깝습니다. 단순 노출이 아니라 당사명과 함께 전달된 맥락을 확인합니다.`);
   } else {
-    observations.push("최근 1개월 기준 당사 직접 부정 이슈는 확인되지 않았고, 업계성 이슈 중심으로 흐름을 추적합니다.");
+    observations.push("최근 1개월 기준 당사 직접 부정 이슈는 확인되지 않았습니다. 다만 GA·보험사·정책 흐름은 향후 당사 보도로 전이될 수 있어 추적합니다.");
   }
-  if (summary.caution > 0) {
-    observations.push(`주의 이슈 ${summary.caution}건은 투자 의견, 수수료, 규제, GA 운영 이슈처럼 의사결정자가 확인할 만한 신호로 분리했습니다.`);
+  if (riskIssueCount > 0) {
+    observations.push(`핵심 이슈 ${issues.length}건 중 부정·주의성 기사는 ${riskIssueCount}건입니다. 대응 필요성은 기사 강도보다 당사 관련성과 반복 노출 여부로 판단합니다.`);
+  }
+  if (regulationIssueCount > 0) {
+    observations.push(`금감원·정착지원금·규제성 문맥이 ${regulationIssueCount}건 포함되어 있어 영업 현장 설명자료나 내부 Q&A가 필요한지 점검합니다.`);
   }
   if (lead?.title) {
-    observations.push(`대표 헤드라인은 "${lead.title}"이며, 월간 핵심 이슈 영역에서 기사 원문까지 바로 확인할 수 있습니다.`);
-  }
-  if (topPress?.source) {
-    observations.push(`${topPress.source} 보도가 가장 많이 관찰돼 해당 매체의 반복 보도 흐름을 우선 확인하는 구성이 적절합니다.`);
+    observations.push(`대표 확인 기사는 "${lead.title}"입니다. 월간 핵심 이슈는 보도량이 아니라 당사 영향도와 리스크 신호를 기준으로 정렬했습니다.`);
   }
   return observations.slice(0, 4);
 }

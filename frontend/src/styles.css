@@ -403,6 +403,22 @@ button.kpi-card {
   align-items: start;
 }
 
+.media-analysis-grid {
+  align-items: start;
+}
+
+.media-analysis-grid > .panel {
+  align-self: start;
+}
+
+.media-analysis-grid .wide-panel {
+  grid-column: 1 / -1;
+}
+
+.media-analysis-grid .report-trend {
+  height: 210px;
+}
+
 .panel, .watch-panel, .filter-card, .report-sheet {
   min-width: 0;
   border: 1px solid var(--line);
@@ -532,6 +548,7 @@ button.kpi-card {
 
 .monthly-issue-digest {
   display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -545,14 +562,14 @@ button.kpi-card {
 }
 
 .monthly-issue-lead {
-  padding: 14px;
+  padding: 12px;
   border-color: #c8d6ff;
   background: linear-gradient(180deg, #fbfdff 0%, #fff 100%);
 }
 
 .monthly-issue-kicker {
   display: block;
-  margin-top: 12px;
+  margin-top: 8px;
   color: var(--blue);
   font-size: 11px;
   font-weight: 900;
@@ -607,7 +624,7 @@ button.kpi-card {
 
 .monthly-issue-list {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .monthly-issue-list article {
@@ -615,7 +632,7 @@ button.kpi-card {
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: start;
-  padding: 11px;
+  padding: 9px;
 }
 
 .monthly-issue-list span {
@@ -676,7 +693,7 @@ button.kpi-card {
 
 .feed-row {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) 76px;
+  grid-template-columns: minmax(0, 1fr) 76px;
   gap: 8px;
   align-items: center;
   min-width: 0;
@@ -1255,7 +1272,7 @@ button.kpi-card {
 
 .rule-stack article {
   display: grid;
-  grid-template-columns: auto minmax(72px, .45fr) minmax(0, 1fr);
+  grid-template-columns: auto minmax(62px, .35fr) minmax(0, 1fr);
   gap: 8px;
   align-items: center;
 }
@@ -2178,11 +2195,11 @@ button.kpi-card {
 }
 
 .feed-row {
-  grid-template-columns: 54px minmax(0, 1fr) 28px;
+  grid-template-columns: minmax(0, 1fr) 28px;
 }
 
 .feed-table.compact .feed-row {
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .feed-main {
@@ -2807,12 +2824,19 @@ button.kpi-card {
     grid-template-columns: 1fr;
   }
 
-  .feed-row,
-  .feed-table.compact .feed-row {
-    grid-template-columns: 42px minmax(0, 1fr);
+  .monthly-issue-digest {
+    grid-template-columns: 1fr;
   }
 
-  .feed-row .chip,
+  .feed-row,
+  .feed-table.compact .feed-row {
+    grid-template-columns: minmax(0, 1fr) 28px;
+  }
+
+  .feed-table.compact .feed-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .feed-row > a {
     grid-column: 2;
     justify-self: start;
