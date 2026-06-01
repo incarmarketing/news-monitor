@@ -364,6 +364,8 @@ function normalizeArticle(row) {
   if (isOutOfDomainArticle(row)) return null;
   const dateSource = row.report_date || row.date || row.pub_date || row.pub_date_raw || "";
   const published = row.pub_date || row.pub_date_raw || row.published_at || row.created_at || "";
+  const reportDate = String(row.report_date || row.date || dateSource || "").slice(0, 10);
+  const publishedDate = formatDate(published) || String(row.pub_date_raw || row.published_at || "").slice(0, 10);
   const category = normalizeCategory(row.category_label || row.category);
   let tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
   if (tone === "긍정" && category !== "당사" && !hasOwnMention(row)) {
@@ -371,7 +373,9 @@ function normalizeArticle(row) {
   }
   return {
     id: row.article_hash || row.id || row.link || row.title,
-    date: String(row.report_date || row.date || dateSource || "").slice(0, 10),
+    date: reportDate,
+    reportDate,
+    publishedDate,
     time: formatTime(published || row.report_date || row.date),
     pubDate: published,
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
@@ -551,5 +555,21 @@ function formatTime(value) {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+  }).format(date);
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    const raw = String(value);
+    const match = raw.match(/(\d{4})[.-](\d{1,2})[.-](\d{1,2})/);
+    return match ? `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}` : "";
+  }
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).format(date);
 }

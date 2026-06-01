@@ -311,10 +311,10 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           </Panel>
         </div>
         <div className="middle-column">
-          <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
+          <Panel title="분류별 기사량" icon={LineChart} meta="최근 24시간">
             <CategoryChart rows={data.categoryFlow} />
           </Panel>
-          <Panel title="언론사 영향도" icon={Building2} meta="노출량 · 당사 · 부정">
+          <Panel title="언론사 영향도" icon={Building2} meta="최근 24시간">
             <PressInfluence rows={data.pressInfluence} />
           </Panel>
         </div>
@@ -1598,7 +1598,7 @@ function buildFeedMeta(row = {}) {
 }
 
 function formatArticleDateTime(row = {}) {
-  const date = row.date ? String(row.date).slice(5) : "";
+  const date = (row.publishedDate || row.date) ? String(row.publishedDate || row.date).slice(5) : "";
   const time = row.time && row.time !== "-" ? row.time : "";
   if (date && time) return `${date} ${time}`;
   return date || time || "-";
@@ -1893,7 +1893,7 @@ function composeRealtimeData(base, articles, liveConnected = false) {
     return buildDisconnectedPeriodData(base);
   }
   if (!articles.length) {
-    return buildDisconnectedPeriodData(base, "최근 24시간 기준 표시할 운영 기사가 없습니다.");
+    return buildDisconnectedPeriodData(base, "최근 24시간 실제 보도시각 기준으로 표시할 주요 기사가 없습니다.");
   }
   return {
     ...composePeriodData(base, articles, [], true),
@@ -1941,7 +1941,7 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
       hour12: false,
     }).format(new Date()),
     scope: articles[0]?.date ? `${articles[0].date} 기준` : base.scope,
-    issues: articles.length ? buildIssues(articles, base.issues) : [],
+    issues: articles.length ? buildIssues(articles, []) : [],
     categoryFlow: groupArticles(articles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
     toneTrend: buildToneTrend(articles),
     pressInfluence: buildPressInfluence(articles),
@@ -2321,8 +2321,14 @@ function lastNDays(articles, days) {
 }
 
 function selectRealtimeArticles(articles = []) {
-  const recent = lastNDays(articles, 1);
-  return [...(recent.length ? recent : articles)]
+  const now = Date.now();
+  const cutoff = now - 24 * 60 * 60 * 1000;
+  const upperBound = now + 60 * 60 * 1000;
+  const recent = articles.filter((article) => {
+    const time = articlePublishedTimeValue(article);
+    return time > 0 && time >= cutoff && time <= upperBound;
+  });
+  return [...recent]
     .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
     .slice(0, 240);
 }
@@ -2992,6 +2998,19 @@ function articleTimeValue(article) {
   const value = article.pubDate || article.pub_date || `${article.date || ""}T${article.time || "00:00"}:00+09:00`;
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? 0 : time;
+}
+
+function articlePublishedTimeValue(article = {}) {
+  const value = article.pubDate || article.pub_date || article.publishedAt || article.published_at;
+  if (value) {
+    const time = new Date(value).getTime();
+    if (!Number.isNaN(time)) return time;
+  }
+  if (article.publishedDate) {
+    const time = new Date(`${article.publishedDate}T${article.time || "00:00"}:00+09:00`).getTime();
+    if (!Number.isNaN(time)) return time;
+  }
+  return 0;
 }
 
 function selectDashboardKeywords(rows = []) {
