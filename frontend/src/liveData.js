@@ -203,6 +203,11 @@ export async function loadOperationalData() {
   };
 
   try {
+    const session = getStoredSession();
+    if (session?.session_token) {
+      const liveData = await loadOperationalDataFromSupabaseSession();
+      if (liveData?.status === "live") return liveData;
+    }
     const staticData = await loadStaticOperationalData();
     if (staticData) return staticData;
     return { ...base, status: "empty", message: "누적 데이터 없음" };
@@ -357,18 +362,25 @@ function normalizeScrap(row) {
 function normalizeArticle(row) {
   if (!row?.title) return null;
   const dateSource = row.report_date || row.date || row.pub_date || row.pub_date_raw || "";
+  const published = row.pub_date || row.pub_date_raw || row.published_at || row.created_at || "";
+  const category = normalizeCategory(row.category_label || row.category);
+  let tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
+  if (tone === "긍정" && category !== "당사" && !hasOwnMention(row)) {
+    tone = "중립";
+  }
   return {
     id: row.article_hash || row.id || row.link || row.title,
     date: String(row.report_date || row.date || dateSource || "").slice(0, 10),
-    time: formatTime(row.pub_date || row.pub_date_raw || row.report_date || row.date),
+    time: formatTime(published || row.report_date || row.date),
+    pubDate: published,
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
     source: row.source || "미확인",
     title: row.title,
     link: row.link || "#",
     keyword: row.keyword || "",
     summary: row.summary || "",
-    category: normalizeCategory(row.category_label || row.category),
-    tone: normalizeTone(row.tone || row.risk_level || row.risk || row.status),
+    category,
+    tone,
     riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),
     score: Number(row.score || 0),
     status: row.status || "분석 완료",
@@ -377,14 +389,31 @@ function normalizeArticle(row) {
 }
 
 function normalizeNotification(row) {
+  const messageType = row.message_type || row.messageType || "";
   return {
     id: row.id || `${row.sent_at}-${row.message_type}`,
+    sentAt: row.sent_at || row.created_at || "",
+    messageType,
     time: formatTime(row.sent_at || row.created_at),
-    type: row.title || row.message_type || row.channel || "알림톡",
+    type: row.title || notificationTypeLabel(messageType) || row.channel || "알림톡",
     status: row.status === "success" || row.status === "sent" || row.status === "성공" ? "성공" : row.status || "확인",
     body: row.body || row.error || "",
     link: row.link_url || "",
   };
+}
+
+function hasOwnMention(row) {
+  const text = `${row?.title || ""} ${row?.summary || ""} ${row?.keyword || ""}`;
+  return /인카금융서비스|인카금융|에인|Incar|INCAR/i.test(text);
+}
+
+function notificationTypeLabel(value) {
+  return {
+    weekly_report: "주간 언론 모니터링 보고서",
+    monthly_report: "월간 언론 모니터링 보고서",
+    daily_report: "일일 언론 동향",
+    negative_alert: "부정기사 알림",
+  }[value] || "";
 }
 
 function normalizeWatchRun(row) {

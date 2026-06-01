@@ -216,17 +216,21 @@ jobs:
         if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && github.event.inputs.send_kakao == 'true'))
         run: |
           PERIOD="${{ github.event.inputs.period_reports }}"
+          SENT_WEEKLY="false"
+          SENT_MONTHLY="false"
 
           if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
             python kakao_period_send.py weekly
+            SENT_WEEKLY="true"
           fi
           if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%d)" = "01" ]; then
             python kakao_period_send.py monthly
+            SENT_MONTHLY="true"
           fi
-          if [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
+          if { [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; } && [ "$SENT_WEEKLY" != "true" ]; then
             python kakao_period_send.py weekly
           fi
-          if [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
+          if { [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; } && [ "$SENT_MONTHLY" != "true" ]; then
             python kakao_period_send.py monthly
           fi
         env:

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 from kakao_report_send import DEFAULT_REPORT_URL, refresh_access_token, send_text_to_me, with_cache_buster
-from supabase_store import save_notification_send
+from supabase_store import notification_already_sent, save_notification_send
 
 KST = timezone(timedelta(hours=9))
 
@@ -58,11 +58,15 @@ def main() -> None:
 
     text, link = build_message(period)
     title = f"{PERIODS[period]['label']} 언론 모니터링 보고서"
+    message_type = f"{period}_report"
+    if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent(message_type, title):
+        print(f"Kakao period report already sent: {title}")
+        return
     try:
         token = refresh_access_token()
         result = send_text_to_me(token, text, link)
         save_notification_send(
-            message_type=f"{period}_report",
+            message_type=message_type,
             title=title,
             body=text,
             link_url=link,
@@ -73,7 +77,7 @@ def main() -> None:
         print("Period report link:", link)
     except Exception as error:
         save_notification_send(
-            message_type=f"{period}_report",
+            message_type=message_type,
             title=title,
             body=text,
             link_url=link,

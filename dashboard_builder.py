@@ -24,20 +24,19 @@ FRONTEND_DIST_DIR = BASE_DIR / "frontend" / "dist"
 DEFAULT_SUPABASE_PROJECT_REF = "moszekksbhprhevxdynb"
 
 CATEGORY_LABELS = {
-    "own": "당사 보도",
-    "regulation": "규제/정책",
-    "competitor": "경쟁사",
-    "industry": "업계 동향",
-    "other": "기타",
+    "own": "\ub2f9\uc0ac \ubcf4\ub3c4",
+    "regulation": "\uaddc\uc81c/\uc815\ucc45",
+    "competitor": "\uacbd\uc7c1\uc0ac",
+    "industry": "\uc5c5\uacc4 \ub3d9\ud5a5",
+    "other": "\uae30\ud0c0",
 }
 
 TONE_LABELS = {
-    "positive": "긍정",
-    "caution": "주의",
-    "neutral": "중립",
-    "negative": "부정",
+    "positive": "\uae0d\uc815",
+    "caution": "\uc8fc\uc758",
+    "neutral": "\uc911\ub9bd",
+    "negative": "\ubd80\uc815",
 }
-
 
 def load_daily_archives() -> list[dict]:
     return archiver.load_all_archives()
@@ -93,33 +92,65 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 def article_summary(article: dict, category: str, tone: str) -> str:
     existing = clean_summary_text(article.get("description", "") or article.get("summary", ""))
+    title = clean_summary_text(article.get("title", ""))
     lines = []
-    if existing:
-        lines.extend(split_summary_sentences(existing)[:2])
-    elif article.get("title"):
-        lines.append(clean_summary_text(article.get("title", "")))
+    sentences = [line for line in split_summary_sentences(existing) if not is_broken_summary_sentence(line)]
+    if sentences:
+        lines.append(sentences[0])
+    elif title:
+        lines.append(f"{title} \ubcf4\ub3c4\uc785\ub2c8\ub2e4.")
+    if category == "own":
+        lines.append("\ub2f9\uc0ac \uc9c1\uc811 \uc5b8\uae09 \uae30\uc0ac\uc785\ub2c8\ub2e4. \ud3c9\ud310 \uc601\ud5a5\uacfc \uc0ac\uc2e4\uad00\uacc4 \ud655\uc778\uc774 \uc6b0\uc120\uc785\ub2c8\ub2e4.")
+    elif category in {"competitor", "industry"}:
+        lines.append("\ubcf4\ud5d8\uc0ac\u00b7GA \uc2dc\uc7a5\uc758 \uc81c\ud734, \ucc44\ub110, \uc2e4\uc801 \ud750\ub984\uc744 \ubcf4\uc5ec\uc8fc\ub294 \uc5c5\uacc4 \ub3d9\ud5a5\uc785\ub2c8\ub2e4.")
+    elif category == "regulation":
+        lines.append("\uc815\ucc45\u00b7\uac10\ub3c5 \uc774\uc288\ub85c \uc601\uc5c5 \ud658\uacbd\uacfc \uc18c\ube44\uc790 \ubcf4\ud638 \uae30\uc900 \ubcc0\ud654 \uac00\ub2a5\uc131\uc744 \ud655\uc778\ud569\ub2c8\ub2e4.")
     if tone == "negative":
-        lines.append("소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인합니다.")
+        lines.append("\uc18c\ube44\uc790 \ud53c\ud574, \uc81c\uc7ac, \uc0ac\uace0, \ubc95\uc801 \ubd84\uc7c1\ucc98\ub7fc \ub300\uc751 \uc6b0\uc120\uc21c\uc704\ub97c \uc62c\ub9b4 \uc2e0\ud638\uc778\uc9c0 \ud655\uc778\ud574\uc57c \ud569\ub2c8\ub2e4.")
     elif tone == "caution":
-        lines.append("직접 부정과 분리해 시장 평가, 투자 의견, 규제성 신호로 추적합니다.")
+        lines.append("\uc9c1\uc811 \ubd80\uc815\uc740 \uc544\ub2c8\uc9c0\ub9cc \uc2dc\uc7a5 \ud3c9\uac00, \uc0ac\uc790 \uc758\uacac, \uaddc\uc81c \uc2e0\ud638\ub85c \ubcc4\ub3c4 \ucd94\uc801\ud569\ub2c8\ub2e4.")
+    elif tone == "positive" and category == "own":
+        lines.append("\ub2f9\uc0ac \uc131\uacfc\uc640 \uc6b0\ud638 \ubcf4\ub3c4\ub85c \ud65c\uc6a9 \uac00\ub2a5\ud55c\uc9c0 \uc804\ubb38\uacfc \ub178\ucd9c \ub9e4\uccb4\ub97c \ud655\uc778\ud569\ub2c8\ub2e4.")
     elif tone == "positive":
-        lines.append("우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.")
-    return " ".join(unique_lines(lines)[:4])
+        lines.append("\ub2f9\uc0ac \uc131\uacfc\uac00 \uc544\ub2cc \uc5c5\uacc4 \uc6b0\ud638 \ubcf4\ub3c4\ub294 \uae0d\uc815 \ud64d\ubcf4\uac00 \uc544\ub2c8\ub77c \uc2dc\uc7a5 \ucc38\uace0 \uc774\uc288\ub85c \ubd05\ub2c8\ub2e4.")
+    return " ".join(ensure_sentence(line) for line in unique_lines(lines)[:4])
 
 
 def clean_summary_text(value: object) -> str:
     text = str(value or "")
     text = text.replace("&nbsp;", " ").replace("&amp;nbsp;", " ").replace("&quot;", '"').replace("&#39;", "'")
+    text = re.sub("^\\[[^\\]]+\\s+[^\\]]*(?:\uae30\uc790|reporter)\\]\\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub("^[^\\s]+ (?:\uae30\uc790|reporter)\\s*=\\s*", "", text, flags=re.IGNORECASE)
     text = " ".join(text.split())
-    return text.rstrip(".… ")
+    return text.rstrip(".!? ")
 
 
 def split_summary_sentences(value: object) -> list[str]:
     text = clean_summary_text(value)
     if not text:
         return []
-    chunks = re.split(r"(?:[.!?。]\s+|(?:다|요|임|함)\.\s+)", text)
+    text = re.sub(r"([.!?])\s+", r"\1|", text)
+    text = re.sub("(\ub2e4|\uc694|\ub2c8\ub2e4)\\s+", r"\1.|", text)
+    chunks = text.split("|")
     return [chunk.strip() for chunk in chunks if len(chunk.strip()) >= 8]
+
+
+def ensure_sentence(value: str) -> str:
+    text = clean_summary_text(value)
+    if not text:
+        return ""
+    if re.search("([.!?]|\ub2e4|\uc694|\ud568|\ub428)$", text):
+        return text
+    return f"{text}."
+
+
+def is_broken_summary_sentence(value: object) -> bool:
+    text = clean_summary_text(value)
+    return (
+        text.endswith(("\uace0", "\uba70", "\ub610\ud55c", "\uc774\ub77c\uace0", "\ud558\uace0"))
+        or bool(re.search("(\ubc1d\ud600|\uc124\uba85|\uc804\ud588|\uac15\uc870)\\s*$", text))
+        or len(text) > 160
+    )
 
 
 def unique_lines(lines: list[str]) -> list[str]:
@@ -139,13 +170,11 @@ def is_generic_summary_line(value: object) -> bool:
     return any(
         phrase in text
         for phrase in (
-            "키워드 기준으로 수집된 기사입니다",
-            "키워드로 수집됐습니다",
-            "기준 핵심만 요약했습니다",
+            "\ud0a4\uc6cc\ub4dc \uae30\uc900\uc73c\ub85c \uc218\uc9d1\ub41c \uae30\uc0ac\uc785\ub2c8\ub2e4",
+            "\ud0a4\uc6cc\ub4dc\ub85c \uc218\uc9d1\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
+            "\uae30\uc0ac \uc6d0\ubb38\ub9cc \uc694\uc57d\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
         )
     )
-
-
 def load_supabase_articles() -> list[dict]:
     try:
         rows = supabase_store.load_dashboard_articles()

@@ -303,13 +303,13 @@ def analyze_tone(article: dict) -> str:
     positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
     positive_score += sum(1 for word in CSR_CONTEXT_WORDS if word in text)
 
-    if is_zero_misconduct_positive_article(article):
+    if is_own_article(article) and is_zero_misconduct_positive_article(article):
         return "positive"
 
     # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
     if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
         return "negative"
-    if positive_score >= 2 and severe_score == 0 and caution_score <= 1:
+    if category == "own" and positive_score >= 2 and severe_score == 0 and caution_score <= 1:
         return "positive"
     if should_mark_caution(article, category, severe_score, caution_score):
         return "caution"

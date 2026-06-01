@@ -159,6 +159,20 @@ def save_report_run(archive_payload: dict) -> None:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
 
 
+def save_dashboard_articles(articles: list[dict], *, report_date: str, window: dict, metrics: dict | None = None) -> None:
+    """Persist analyzed articles without creating a report run."""
+    if not is_enabled() or not articles:
+        return
+    archive_payload = {
+        "date": report_date,
+        "window": window,
+        "metrics": metrics or {},
+    }
+    rows = [normalize_article(article, archive_payload) for article in articles]
+    if rows:
+        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
+
+
 def save_notification_send(
     *,
     message_type: str,

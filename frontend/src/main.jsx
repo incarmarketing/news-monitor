@@ -286,6 +286,7 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
 
 function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring }) {
   const { summary } = data;
+  const orderedNotifications = useMemo(() => orderNotificationHistory(notifications), [notifications]);
   return (
     <main className="workspace">
       <PageTitle
@@ -319,8 +320,8 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         </div>
         <div className="side-column">
           <WatchPanel jobs={jobs} risk={summary.risk} />
-          <Panel title="알림톡 발송 이력" icon={Bell} meta="더보기">
-            <NotificationList rows={notifications.slice(0, 5)} />
+          <Panel title="알림톡 발송 이력" icon={Bell} meta={`${orderedNotifications.length}건`}>
+            <NotificationHistory rows={orderedNotifications} />
           </Panel>
           <Panel title="보고서 자동화" icon={CalendarDays} meta="스케줄">
             <JobRows rows={jobs} />
@@ -338,7 +339,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
   const [tone, setTone] = useState("all");
   const [category, setCategory] = useState("all");
   const [source, setSource] = useState("all");
-  const [viewMode, setViewMode] = useState("related");
+  const [viewMode, setViewMode] = useState("latest");
   const [visible, setVisible] = useState(30);
 
   const sources = useMemo(() => unique(articles.map((article) => article.source)).slice(0, 80), [articles]);
@@ -362,7 +363,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
         (category === "all" || article.category === category) &&
         (source === "all" || article.source === source)
       );
-    });
+    }).sort((a, b) => articleTimeValue(b) - articleTimeValue(a));
   }, [articles, category, query, source, tone]);
   const grouped = useMemo(() => buildRelatedArticleGroups(filtered), [filtered]);
   const visibleRows = viewMode === "related" ? grouped : filtered;
@@ -399,8 +400,8 @@ function Monitoring({ data, articles, monitoringPreset }) {
         <label className="sort-filter">
           <span>정렬</span>
           <select value={viewMode} onChange={(event) => { setViewMode(event.target.value); setVisible(30); }}>
-            <option value="related">관련순</option>
             <option value="latest">최신순</option>
+            <option value="related">묶음순</option>
           </select>
         </label>
         <label>
@@ -440,7 +441,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
           setTone("all");
           setCategory("all");
           setSource("all");
-          setViewMode("related");
+          setViewMode("latest");
         }}>
           <Filter />초기화
         </button>
@@ -454,7 +455,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
             </button>
           )}
         </Panel>
-        <Panel title="문맥 필터 기준" icon={ShieldCheck} meta="키워드 컬럼별 해석">
+        <Panel title="문맥 기준" icon={ShieldCheck} meta="분류 규칙">
           <RuleStack />
         </Panel>
       </section>
@@ -597,8 +598,15 @@ function ScrapDigest({ scraps }) {
   );
 }
 
-function RiskCenter() {
+function RiskCenter({ articles = [], onOpenMonitoring }) {
   const [draftType, setDraftType] = useState("press");
+  const riskRows = useMemo(
+    () => [...articles]
+      .filter((article) => article.tone === "부정" || (isOwnArticle(article) && article.tone === "주의"))
+      .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
+      .slice(0, 40),
+    [articles],
+  );
   return (
     <main className="workspace">
       <PageTitle
@@ -607,6 +615,18 @@ function RiskCenter() {
         description="기사 URL을 넣으면 핵심 주장, 당사 관련성, 논조를 확인하고 필요한 초안만 생성합니다."
       />
       <section className="risk-layout">
+        <Panel title="부정/주의 기사" icon={AlertTriangle} meta={`${riskRows.length}건`}>
+          {riskRows.length ? (
+            <>
+              <ArticleFeed rows={riskRows.slice(0, 8)} compact />
+              <button className="ghost-button full" onClick={() => onOpenMonitoring?.({ tone: "부정" })}>
+                전체 부정 기사 보기
+              </button>
+            </>
+          ) : (
+            <div className="empty-state compact">현재 선택 기간에는 부정 기사로 분류된 항목이 없습니다.</div>
+          )}
+        </Panel>
         <Panel title="기사 URL / 팩트 체크" icon={ShieldCheck} meta="생성 전 확인">
           <div className="url-box">
             <input placeholder="기사 URL을 붙여넣으세요" defaultValue="https://www.mk.co.kr/news/stock/12034143" />
@@ -1400,7 +1420,7 @@ function KpiGrid({ summary, compact = false, onOpenMonitoring }) {
     { label: "당사언급", value: summary.ownMentions, icon: Building2, preset: { category: "당사" } },
     { label: "당사부정", value: summary.ownNegative, icon: AlertTriangle, tone: "negative", preset: { category: "당사", tone: "부정" } },
     { label: "주의", value: summary.caution, icon: Bell, tone: "caution", preset: { tone: "주의" } },
-    { label: "GA/보험사", value: summary.gaInsurance, icon: Activity, tone: "positive", preset: { category: "GA" } },
+    { label: "GA/보험사", value: summary.gaInsurance, icon: Activity, preset: { category: "GA" } },
   ];
   return (
     <section className={compact ? "kpi-grid compact" : "kpi-grid"}>
@@ -1516,6 +1536,7 @@ function ArticleFeed({ rows, compact = false }) {
       {rows.map((row) => {
         const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
         const hasRelated = related.length > 1;
+        const relatedText = hasRelated ? `외 ${related.length - 1}곳` : "";
         return (
           <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
             <time>{row.time || "-"}</time>
@@ -1525,8 +1546,7 @@ function ArticleFeed({ rows, compact = false }) {
                 <b>{row.title}</b>
                 {hasRelated && <span className="related-badge">관련 {related.length}건</span>}
               </div>
-              <span>{row.source} · {row.keyword || row.category} · {row.date || row.slot || ""}</span>
-              {hasRelated && <span className="related-sources">{row.relatedSources}</span>}
+              <span className="feed-meta-line">{buildFeedMeta(row)}{relatedText ? ` · ${relatedText}` : ""}</span>
               {!compact && <ArticleSummaryBlock item={row} dense />}
               {!compact && hasRelated && (
                 <details className="related-details">
@@ -1542,7 +1562,7 @@ function ArticleFeed({ rows, compact = false }) {
                       >
                         <span>{item.source}</span>
                         <b>{item.title}</b>
-                        <em>{item.time || item.date || "-"}</em>
+                        <em>{formatArticleDateTime(item)}</em>
                       </a>
                     ))}
                   </div>
@@ -1571,6 +1591,18 @@ function openArticleLink(event, url) {
   event.preventDefault();
   event.stopPropagation();
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function buildFeedMeta(row = {}) {
+  const parts = [row.source || "언론사 확인", row.category || row.keyword || "분류 확인", formatArticleDateTime(row)];
+  return parts.filter(Boolean).join(" · ");
+}
+
+function formatArticleDateTime(row = {}) {
+  const date = row.date ? String(row.date).slice(5) : "";
+  const time = row.time && row.time !== "-" ? row.time : "";
+  if (date && time) return `${date} ${time}`;
+  return date || time || "-";
 }
 
 function WatchPanel({ jobs, risk = "LOW" }) {
@@ -1602,16 +1634,83 @@ function WatchPanel({ jobs, risk = "LOW" }) {
   );
 }
 
-function NotificationList({ rows }) {
+function NotificationHistory({ rows = [] }) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const visibleRows = rows.slice(0, 2);
+  return (
+    <>
+      <NotificationList rows={visibleRows} onSelect={setSelected} />
+      {rows.length > 2 && (
+        <button className="ghost-button full compact-more" onClick={() => setOpen(true)}>
+          발송 이력 더보기
+        </button>
+      )}
+      {selected && <NotificationDetail item={selected} onClose={() => setSelected(null)} />}
+      {open && (
+        <NotificationArchive
+          rows={rows}
+          onClose={() => setOpen(false)}
+          onSelect={(item) => {
+            setOpen(false);
+            setSelected(item);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function NotificationArchive({ rows, onClose, onSelect }) {
+  return (
+    <div className="modal-backdrop compact-modal" role="dialog" aria-modal="true">
+      <section className="history-modal">
+        <div className="history-modal-head">
+          <div>
+            <span>Notification History</span>
+            <h2>알림톡 발송 이력</h2>
+          </div>
+          <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기"><X /></button>
+        </div>
+        <NotificationList rows={rows} onSelect={(item) => { onSelect(item); }} />
+      </section>
+    </div>
+  );
+}
+
+function NotificationDetail({ item, onClose }) {
+  return (
+    <div className="modal-backdrop compact-modal" role="dialog" aria-modal="true">
+      <section className="history-modal detail">
+        <div className="history-modal-head">
+          <div>
+            <span>{item.time}</span>
+            <h2>{item.type}</h2>
+          </div>
+          <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기"><X /></button>
+        </div>
+        <pre className="notification-body">{item.body || "저장된 알림톡 본문이 없습니다."}</pre>
+        {item.link && (
+          <a className="article-link-button" href={item.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, item.link)}>
+            <ExternalLink />보고서 열기
+          </a>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function NotificationList({ rows, onSelect }) {
   return (
     <div className="notification-list">
       {rows.map((item) => (
-        <button key={item.id || `${item.time}-${item.type}`}>
+        <button key={item.id || `${item.time}-${item.type}`} onClick={() => onSelect?.(item)}>
           <b>{item.time}</b>
           <span>{item.type}</span>
           <Chip tone={item.status}>{item.status}</Chip>
         </button>
       ))}
+      {!rows.length && <div className="empty-state compact">표시할 발송 이력이 없습니다.</div>}
     </div>
   );
 }
@@ -1750,6 +1849,28 @@ function RiskPill({ level }) {
 
 function DataSourcePill({ operations }) {
   return <div className={`data-source-pill ${operations.status}`}>{operations.message || "샘플 데이터"}</div>;
+}
+
+function orderNotificationHistory(rows = []) {
+  const typeOrder = {
+    weekly_report: 1,
+    monthly_report: 2,
+    daily_report: 3,
+    negative_alert: 4,
+  };
+  const seen = new Set();
+  return rows
+    .filter((row) => {
+      const key = `${row.messageType || row.type}-${row.type}-${row.body || row.time}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => {
+      const orderDiff = (typeOrder[a.messageType] || 9) - (typeOrder[b.messageType] || 9);
+      if (orderDiff) return orderDiff;
+      return String(b.sentAt || b.time || "").localeCompare(String(a.sentAt || a.time || ""));
+    });
 }
 
 function Chip({ children, tone }) {
@@ -1941,13 +2062,15 @@ function buildArticleSummaryLines(item = {}) {
   }
   const cleanTitle = cleanSummaryText(item.title || "");
   const text = cleanSummaryText(item.summary || item.description || "");
-  const sentences = splitSummarySentences(text).filter((sentence) => sentence !== cleanTitle && !isGenericSummaryLine(sentence));
-  const lead = sentences[0] || cleanTitle || `${item.source || "언론"} 보도 기준 핵심 이슈입니다.`;
+  const sentences = splitSummarySentences(text)
+    .filter((sentence) => sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummarySentence(sentence));
+  const lead = buildSummaryLeadLine(item, cleanTitle, sentences);
   const context = buildSummaryContextLine(item);
   const toneLine = buildSummaryToneLine(item);
   return unique([lead, context, toneLine].filter(Boolean))
     .filter((line) => !isGenericSummaryLine(line))
-    .slice(0, 3);
+    .map(ensureSentence)
+    .slice(0, 4);
 }
 
 function compactArticleSummary(item = {}) {
@@ -1960,6 +2083,8 @@ function cleanSummaryText(value) {
     .replace(/&quot;/gi, "\"")
     .replace(/&#39;/g, "'")
     .replace(/<[^>]+>/g, " ")
+    .replace(/^\[[^\]]+\s+[^\]]*기자\]\s*/g, "")
+    .replace(/^[^\s]+ 기자\s*=\s*/g, "")
     .replace(/\s+/g, " ")
     .replace(/(\.\.\.|…)+$/g, "")
     .trim();
@@ -1969,10 +2094,37 @@ function splitSummarySentences(value) {
   const clean = cleanSummaryText(value);
   if (!clean) return [];
   return clean
-    .split(/(?:[.!?。]\s+|(?:다|요|임|함)\.\s+)/)
+    .replace(/([.!?。])\s*/g, "$1|")
+    .replace(/(다|했다|밝혔다|전망했다|설명했다|참여한다고|상향했다|유지할 것)\s+/g, "$1.|")
+    .split("|")
     .map((sentence) => sentence.replace(/(\.\.\.|…)+$/g, "").trim())
-    .filter((sentence) => sentence.length >= 8)
+    .filter((sentence) => sentence.length >= 10)
     .slice(0, 3);
+}
+
+function buildSummaryLeadLine(item = {}, title = "", sentences = []) {
+  const first = sentences.find((sentence) => sentence.length <= 120);
+  if (first) return first;
+  const cleanTitle = title.replace(/\s+-\s+[^-]{2,16}$/g, "").trim();
+  if (cleanTitle) return `${cleanTitle} 보도입니다`;
+  return `${item.source || "언론"} 보도 기준 핵심 이슈입니다`;
+}
+
+function ensureSentence(value) {
+  const text = cleanSummaryText(value);
+  if (!text) return "";
+  return /[.!?。]$|다$|요$|임$|함$|필요$/.test(text) ? text : `${text}.`;
+}
+
+function isBrokenSummarySentence(value) {
+  const text = cleanSummaryText(value);
+  return (
+    text.endsWith("고") ||
+    text.endsWith("며") ||
+    text.endsWith("또한") ||
+    /전망했 또한|밝혔 또한|한다고 \d{1,2}일?$/.test(text) ||
+    text.length > 160
+  );
 }
 
 function isGenericSummaryLine(value) {
@@ -1986,17 +2138,18 @@ function isGenericSummaryLine(value) {
 
 function buildSummaryContextLine(item = {}) {
   const category = item.category || item.keyword || "키워드";
-  if (isOwnArticle(item)) return "당사 직접 언급 기사로 보고서와 리스크 점검 근거에 우선 포함합니다.";
-  if (["GA", "보험사"].includes(category)) return "보험사·GA 시장 흐름을 보여주는 업계 동향 기사로 분리합니다.";
-  if (category === "정책/규제") return "정책·규제 변화가 영업 환경에 미칠 수 있는 영향을 확인합니다.";
+  if (isOwnArticle(item)) return "당사 직접 언급 기사라 평판 영향과 사실관계 확인이 우선입니다";
+  if (["GA", "보험사"].includes(category)) return "보험사·GA 시장의 제휴, 채널, 실적 흐름을 보여주는 업계 동향입니다";
+  if (category === "정책/규제") return "정책·감독 이슈로 영업 환경과 소비자 보호 기준 변화 가능성을 확인합니다";
   if (category === "제외") return "분석 대상에서 제외한 노이즈성 기사입니다.";
   return "";
 }
 
 function buildSummaryToneLine(item = {}) {
-  if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인이 필요합니다.";
-  if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다.";
-  if (item.tone === "긍정") return "우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.";
+  if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁처럼 대응 우선순위를 올릴 신호인지 확인해야 합니다";
+  if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 별도 추적합니다";
+  if (item.tone === "긍정" && isOwnArticle(item)) return "당사 성과나 우호 보도로 활용 가능한지 원문과 노출 매체를 확인합니다";
+  if (item.tone === "긍정") return "당사 성과가 아닌 업계 우호 보도는 긍정 홍보가 아니라 시장 참고 이슈로 봅니다";
   return "";
 }
 
@@ -2722,9 +2875,7 @@ function buildRelatedArticleGroups(articles = []) {
         ...representative,
         relatedArticles: members,
         relatedCount: members.length,
-        relatedSources: sources.length
-          ? `${sources.slice(0, 5).join(" · ")}${sources.length > 5 ? ` 외 ${sources.length - 5}곳` : ""}`
-          : "",
+        relatedSources: sources.length > 1 ? `외 ${sources.length - 1}곳` : "",
         clusterSize: Math.max(Number(representative.clusterSize || 1), members.length),
       };
     })

@@ -711,6 +711,12 @@ button.kpi-card {
   font-weight: 800;
 }
 
+.feed-meta-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .watch-panel {
   position: relative;
   min-height: 238px;
@@ -952,7 +958,9 @@ button.kpi-card {
   color: var(--ink-2);
   font-size: 12px;
   font-weight: 900;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .watch-lines b, .job-rows b, .notification-list b {
@@ -967,6 +975,84 @@ button.kpi-card {
   font-size: 11px;
   font-style: normal;
   font-weight: 900;
+}
+
+.compact-more {
+  margin-top: 8px;
+}
+
+.compact-modal {
+  place-items: center;
+}
+
+.history-modal {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  width: min(520px, 100%);
+  max-height: min(78vh, 680px);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+
+.history-modal.detail {
+  width: min(560px, 100%);
+}
+
+.history-modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+}
+
+.history-modal-head span {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.history-modal-head h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.notification-body {
+  max-height: 360px;
+  margin: 0;
+  padding: 13px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 800;
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
+.empty-state {
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.empty-state.compact {
+  padding: 11px;
+  font-size: 11px;
 }
 
 .press-row {
@@ -1161,26 +1247,35 @@ button.kpi-card {
 
 .rule-stack article, .keyword-groups article {
   min-width: 0;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
   background: var(--paper-soft);
 }
 
+.rule-stack article {
+  display: grid;
+  grid-template-columns: auto minmax(72px, .45fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
 .rule-stack b, .keyword-groups b {
   display: block;
-  margin-top: 8px;
+  margin-top: 0;
   color: var(--ink);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .rule-stack p, .keyword-groups p {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.45;
   font-weight: 800;
+  word-break: keep-all;
 }
 
 .keyword-groups span {
@@ -1353,7 +1448,7 @@ button.kpi-card {
 
 .risk-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, .8fr);
+  grid-template-columns: minmax(320px, .85fr) minmax(0, 1fr) minmax(360px, .8fr);
   gap: 14px;
 }
 
@@ -2737,6 +2832,14 @@ button.kpi-card {
   .notification-list button,
   .press-row {
     grid-template-columns: 1fr;
+  }
+
+  .rule-stack article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rule-stack p {
+    grid-column: 1 / -1;
   }
 
   .press-row em {
