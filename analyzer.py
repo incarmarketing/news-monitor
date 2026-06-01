@@ -349,11 +349,16 @@ def title_based_summary(article: dict, title: str) -> str:
         )
     if category == "regulation":
         return "보험·GA 관련 정책 또는 감독 이슈입니다. 영업 환경과 소비자 보호 기준 변화 가능성을 확인합니다."
-    if category in {"competitor", "industry"}:
-        return "보험사·GA 업계 동향 기사입니다. 제휴, 채널, 실적, 리스크 관리 흐름을 시장 맥락으로 확인합니다."
     if tone == "caution":
         return "직접 부정은 아니지만 시장성·규제성 신호가 있는 기사입니다. 반복 노출 여부와 당사 관련성을 분리해 봅니다."
-    return limit_summary(f"{title} 관련 보도입니다. 보험·GA 업계 맥락과 당사 관련성을 확인합니다.")
+    return headline_based_summary(title)
+
+
+def headline_based_summary(title: str) -> str:
+    cleaned = clean_summary_text(re.sub(r"\s+-\s+[^-]{2,24}$", "", title or ""))
+    if not cleaned:
+        return ""
+    return limit_summary(f"{cleaned} 기사입니다.")
 
 
 def consumer_complaint_summary(article: dict, title: str, description: str = "") -> str:

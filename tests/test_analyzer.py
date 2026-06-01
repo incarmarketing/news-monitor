@@ -149,6 +149,22 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertIn("해외 사업 확대", summary)
         self.assertTrue(summary.endswith("."))
 
+    def test_competitor_fallback_summary_does_not_use_generic_industry_commentary(self) -> None:
+        article = {
+            "title": "롯데손해보험, 금융위 조건부 승인 후 경영개선 속도",
+            "description": "",
+            "keyword": "손해보험",
+            "keyword_category": "competitor",
+            "_category": "competitor",
+            "_tone": "neutral",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("롯데손해보험", summary)
+        self.assertNotIn("업계 동향 기사", summary)
+        self.assertNotIn("제휴, 채널, 실적", summary)
+
 
 if __name__ == "__main__":
     unittest.main()

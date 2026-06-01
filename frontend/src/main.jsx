@@ -3156,7 +3156,9 @@ function isGenericSummaryLine(value) {
   return (
     /키워드 기준으로 수집된 기사입니다/.test(text) ||
     /키워드로 수집됐습니다/.test(text) ||
-    /기준 핵심만 요약했습니다/.test(text)
+    /기준 핵심만 요약했습니다/.test(text) ||
+    /보험사·GA\s*(시장|업계).*?(제휴|채널|실적|흐름|동향)/.test(text) ||
+    /업계 동향 기사입니다/.test(text)
   );
 }
 
@@ -3176,7 +3178,6 @@ function buildSummaryInsightLine(item = {}) {
   if (isOwnArticle(item) && isStockMarketArticle(item)) return "당사 주가가 시황 기사에 언급된 시장성 노출로, 영업·준법 리스크와 구분해 확인합니다";
   if (isOwnArticle(item)) return "당사 직접 언급 기사라 평판 영향과 사실관계 확인이 우선입니다";
   if (category === "정책/규제") return "";
-  if (["GA", "보험사"].includes(category) && item.tone === "주의") return "보험사·GA 시장의 제휴, 채널, 실적 흐름을 당사 영향과 분리해 확인합니다";
   if (category === "제외") return "분석 대상에서 제외한 노이즈성 기사입니다.";
   if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁처럼 대응 우선순위를 올릴 신호인지 확인해야 합니다";
   if (item.tone === "주의" && isStockMarketArticle(item)) return "주가·시황성 주의 신호로 관리하되 직접 부정 보도와 분리합니다";
