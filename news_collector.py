@@ -180,6 +180,12 @@ COLLECTION_CONTEXT_WORDS = [
     "손보", "생보",
 ]
 
+GENERIC_COLLECTION_CONTEXT_WORDS = {"수수료", "규제", "법안", "감독", "공시", "제도"}
+COLLECTION_DOMAIN_CONTEXT_WORDS = [
+    word for word in COLLECTION_CONTEXT_WORDS
+    if word not in GENERIC_COLLECTION_CONTEXT_WORDS and word != "금융서비스"
+]
+
 NAVER_OFFICE_ID_MAP = {
     "001": "연합뉴스",
     "005": "국민일보",
@@ -714,9 +720,9 @@ def is_relevant_article(article: dict) -> bool:
 
 
 def has_collection_context(text: str) -> bool:
-    if analyzer.contains_competitor_word(text):
+    if analyzer.contains_unambiguous_competitor_word(text):
         return True
-    return any(word in text for word in COLLECTION_CONTEXT_WORDS)
+    return any(word in text for word in COLLECTION_DOMAIN_CONTEXT_WORDS)
 
 
 def article_matches_collection_keyword(article: dict, text: str) -> bool:

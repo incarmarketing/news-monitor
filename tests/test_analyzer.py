@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 import analyzer
+import news_collector
 
 
 class AnalyzerToneTests(unittest.TestCase):
@@ -57,6 +58,28 @@ class AnalyzerToneTests(unittest.TestCase):
 
         self.assertFalse(analyzer.is_settlement_support_caution_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "negative")
+
+    def test_generic_fee_platform_article_is_not_regulation_news(self) -> None:
+        article = {
+            "title": "박용선 포항시장 후보 시민 대통합과 100년 경제 준비할 것",
+            "description": "소상공인 지원을 위해 지역제한 입찰제도 개선과 수수료 제로 플랫폼 구축을 공약했다.",
+            "keyword": "수수료",
+            "keyword_category": "regulation",
+        }
+
+        self.assertFalse(news_collector.is_relevant_article(article))
+        self.assertEqual(analyzer.categorize(article), "other")
+
+    def test_insurance_fee_regulation_article_is_kept(self) -> None:
+        article = {
+            "title": "보험 GA 판매수수료 규제 강화 논의",
+            "description": "금융당국이 보험대리점과 설계사 판매수수료 제도 개편을 검토한다.",
+            "keyword": "수수료",
+            "keyword_category": "regulation",
+        }
+
+        self.assertTrue(news_collector.is_relevant_article(article))
+        self.assertEqual(analyzer.categorize(article), "regulation")
 
 
 if __name__ == "__main__":

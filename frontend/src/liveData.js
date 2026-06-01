@@ -361,6 +361,7 @@ function normalizeScrap(row) {
 
 function normalizeArticle(row) {
   if (!row?.title) return null;
+  if (isOutOfDomainArticle(row)) return null;
   const dateSource = row.report_date || row.date || row.pub_date || row.pub_date_raw || "";
   const published = row.pub_date || row.pub_date_raw || row.published_at || row.created_at || "";
   const category = normalizeCategory(row.category_label || row.category);
@@ -405,6 +406,20 @@ function normalizeNotification(row) {
 function hasOwnMention(row) {
   const text = `${row?.title || ""} ${row?.summary || ""} ${row?.keyword || ""}`;
   return /인카금융서비스|인카금융|에인|Incar|INCAR/i.test(text);
+}
+
+function isOutOfDomainArticle(row) {
+  const text = `${row?.title || ""} ${row?.summary || ""} ${row?.description || ""} ${row?.keyword || ""} ${row?.source || ""}`;
+  if (!text.trim()) return true;
+  if (hasOwnMention(row)) return false;
+  if (hasInsuranceDomainContext(text)) return false;
+  if (/수수료|정책|규제|당국|제도|법안|공시|감독/i.test(text)) return true;
+  if (/소상공인|포항시장|시장 후보|지역업체|하도급|입찰제도|수수료 제로 플랫폼/i.test(text)) return true;
+  return false;
+}
+
+function hasInsuranceDomainContext(text) {
+  return /보험|손보|생보|생명보험|손해보험|보험사|보험대리점|법인보험대리점|GA|설계사|전속설계사|보험모집인|모집인|보험업법|1200%|정착지원금|불완전판매|내부통제|인카금융|글로벌금융판매|메가금융서비스|한화생명금융서비스|에이플러스에셋|리치앤코|굿리치|지에이코리아|프라임에셋|피플라이프|보험저널|보험매일|보험신보/i.test(text);
 }
 
 function notificationTypeLabel(value) {

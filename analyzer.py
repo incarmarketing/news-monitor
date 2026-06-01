@@ -46,6 +46,12 @@ DOMAIN_CONTEXT_WORDS = [
     "수수료", "정착지원금", "불완전판매", "내부통제",
 ]
 
+GENERIC_POLICY_WORDS = {"수수료", "규제", "법안", "감독", "공시", "제도"}
+INSURANCE_DOMAIN_CONTEXT_WORDS = [
+    word for word in DOMAIN_CONTEXT_WORDS
+    if word not in GENERIC_POLICY_WORDS and word != "금융서비스"
+]
+
 INDUSTRY_WORDS = [
     "보험", "보험사", "GA", "보험설계사", "설계사", "전속설계사",
     "전속 설계사", "GA설계사", "GA 설계사", "보험모집인", "보험 모집인",
@@ -216,7 +222,7 @@ def categorize(article: dict) -> str:
         return "other"
     if contains_competitor_word(text):
         return "competitor"
-    if any(keyword in text for keyword in REGULATION_WORDS):
+    if any(keyword in text for keyword in REGULATION_WORDS) and has_domain_context(text):
         return "regulation"
     if any(keyword in text for keyword in INDUSTRY_WORDS):
         return "industry"
@@ -249,12 +255,21 @@ def is_ambiguous_competitor_match(text: str, keyword: str) -> bool:
 def has_domain_context(text: str) -> bool:
     if any(word in text for word in OWN_NAMES):
         return True
-    if any(word in text for word in REGULATION_WORDS):
-        return True
     if any(word in text for word in INDUSTRY_WORDS):
         return True
-    if any(word in text for word in DOMAIN_CONTEXT_WORDS):
+    if contains_unambiguous_competitor_word(text):
         return True
+    if any(word in text for word in INSURANCE_DOMAIN_CONTEXT_WORDS):
+        return True
+    return False
+
+
+def contains_unambiguous_competitor_word(text: str) -> bool:
+    for keyword in COMPETITOR_WORDS:
+        if keyword in AMBIGUOUS_COMPETITOR_WORDS:
+            continue
+        if keyword in text:
+            return True
     return False
 
 
