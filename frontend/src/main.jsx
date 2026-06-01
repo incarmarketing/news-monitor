@@ -2315,7 +2315,7 @@ function IssueList({ issues, compact = false }) {
 }
 
 function ArticleSummaryBlock({ item, dense = false }) {
-  const lines = buildArticleSummaryLines(item).slice(0, dense ? 3 : 4);
+  const lines = buildArticleSummaryLines(item).slice(0, dense ? 2 : 3);
   if (!lines.length) return null;
   return (
     <ul className={dense ? "summary-lines dense" : "summary-lines"}>
@@ -2975,7 +2975,10 @@ function issuePriorityScore(article = {}) {
 
 function buildArticleSummaryLines(item = {}) {
   if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
-    return item.summaryLines.map(cleanSummaryText).filter(Boolean);
+    return unique(item.summaryLines
+      .map(normalizeSummaryLine)
+      .filter((line) => line && !isGenericSummaryLine(line) && !isBrokenSummarySentence(line))
+    );
   }
   const cleanTitle = cleanSummaryText(item.title || "");
   const text = stripCaptionPrefix(cleanSummaryText(item.summary || item.description || ""));
@@ -2987,11 +2990,13 @@ function buildArticleSummaryLines(item = {}) {
       && !isCaptionLikeSummary(sentence)
     ));
   const lead = buildSummaryLeadLine(item, cleanTitle, sentences, text);
-  const context = buildSummaryContextLine(item);
-  const toneLine = buildSummaryToneLine(item);
-  return unique([lead, context, toneLine].filter(Boolean))
+  const detail = buildSummaryDetailLine(item, sentences, text);
+  const insight = buildSummaryInsightLine(item);
+  return unique([lead, detail, insight].filter(Boolean))
     .filter((line) => !isGenericSummaryLine(line))
-    .map(ensureSentence)
+    .filter((line) => !isBrokenSummarySentence(line))
+    .map(normalizeSummaryLine)
+    .filter(Boolean)
     .slice(0, 4);
 }
 
@@ -3010,6 +3015,15 @@ function cleanSummaryText(value) {
     .replace(/\s+/g, " ")
     .replace(/(\.\.\.|…)+$/g, "")
     .trim();
+}
+
+function normalizeSummaryLine(value) {
+  const text = cleanSummaryText(value)
+    .replace(/\s*[\u2022•]\s*/g, " ")
+    .replace(/\s+([,.!?。])$/g, "$1")
+    .trim();
+  if (!text || isFragmentSummaryLine(text)) return "";
+  return ensureSentence(text);
 }
 
 function stripCaptionPrefix(value) {
@@ -3052,12 +3066,13 @@ function buildSummaryLeadLine(item = {}, title = "", sentences = [], summaryText
 function ensureSentence(value) {
   const text = cleanSummaryText(value);
   if (!text) return "";
-  return /[.!?。]$|다$|요$|임$|함$|필요$/.test(text) ? text : `${text}.`;
+  return /[.!?。]$/.test(text) ? text : `${text}.`;
 }
 
 function isBrokenSummarySentence(value) {
   const text = cleanSummaryText(value);
   return (
+    isFragmentSummaryLine(text) ||
     text.endsWith("고") ||
     text.endsWith("며") ||
     text.endsWith("또한") ||
@@ -3065,6 +3080,14 @@ function isBrokenSummarySentence(value) {
     /전망했 또한|밝혔 또한|한다고 \d{1,2}일?$/.test(text) ||
     text.length > 160
   );
+}
+
+function isFragmentSummaryLine(value) {
+  const text = cleanSummaryText(value).replace(/[.!?。]+$/, "");
+  if (!text) return true;
+  if (/^(강력히|적극적으로|지속적으로|본격적으로|확대|강화|추진|확인|필요)$/.test(text)) return true;
+  if (text.length < 8 && !/\d/.test(text)) return true;
+  return /(강력히|적극적으로|지속적으로|본격적으로)$/.test(text);
 }
 
 function isCaptionLikeSummary(value) {
@@ -3125,22 +3148,26 @@ function isGenericSummaryLine(value) {
   );
 }
 
-function buildSummaryContextLine(item = {}) {
-  const category = item.category || item.keyword || "키워드";
-  if (isOwnArticle(item) && isStockMarketArticle(item)) return "당사 주가가 시황 기사에 언급된 시장성 노출로, 영업·준법 리스크와 구분해 확인합니다";
-  if (isOwnArticle(item)) return "당사 직접 언급 기사라 평판 영향과 사실관계 확인이 우선입니다";
-  if (["GA", "보험사"].includes(category)) return "보험사·GA 시장의 제휴, 채널, 실적 흐름을 보여주는 업계 동향입니다";
-  if (category === "정책/규제") return "정책·감독 이슈로 영업 환경과 소비자 보호 기준 변화 가능성을 확인합니다";
-  if (category === "제외") return "분석 대상에서 제외한 노이즈성 기사입니다.";
+function buildSummaryDetailLine(item = {}, sentences = [], summaryText = "") {
+  const second = sentences.find((sentence, index) => index > 0 && sentence.length <= 130);
+  if (second) return second;
+  const text = `${item.title || ""} ${summaryText || item.summary || ""} ${item.keyword || ""}`;
+  if (/책무구조도/.test(text)) return "책무구조도 운영 이후 내부통제 책임과 제재 기준을 둘러싼 보완 과제가 남아 있습니다";
+  if (/품질관리|감리|회계법인|회계/.test(text)) return "금융감독 당국이 감사 품질관리 체계의 설계와 운영 적정성을 점검한 사안입니다";
+  if (/AI|인공지능|보안|자문단/.test(text)) return "AI 보안과 제도 자문 체계가 금융권 기술 활용 기준에 영향을 줄 수 있습니다";
+  if (/사고|보험사기|무더기|적발|피해/.test(text)) return "보험 관련 사고·사기 이슈로 소비자 신뢰와 내부통제 관점의 확인이 필요합니다";
   return "";
 }
 
-function buildSummaryToneLine(item = {}) {
+function buildSummaryInsightLine(item = {}) {
+  const category = item.category || item.keyword || "키워드";
+  if (isOwnArticle(item) && isStockMarketArticle(item)) return "당사 주가가 시황 기사에 언급된 시장성 노출로, 영업·준법 리스크와 구분해 확인합니다";
+  if (isOwnArticle(item)) return "당사 직접 언급 기사라 평판 영향과 사실관계 확인이 우선입니다";
+  if (category === "정책/규제") return "";
+  if (["GA", "보험사"].includes(category) && item.tone === "주의") return "보험사·GA 시장의 제휴, 채널, 실적 흐름을 당사 영향과 분리해 확인합니다";
+  if (category === "제외") return "분석 대상에서 제외한 노이즈성 기사입니다.";
   if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁처럼 대응 우선순위를 올릴 신호인지 확인해야 합니다";
   if (item.tone === "주의" && isStockMarketArticle(item)) return "주가·시황성 주의 신호로 관리하되 직접 부정 보도와 분리합니다";
-  if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 별도 추적합니다";
-  if (item.tone === "긍정" && isOwnArticle(item)) return "당사 성과나 우호 보도로 활용 가능한지 원문과 노출 매체를 확인합니다";
-  if (item.tone === "긍정") return "당사 성과가 아닌 업계 우호 보도는 긍정 홍보가 아니라 시장 참고 이슈로 봅니다";
   return "";
 }
 

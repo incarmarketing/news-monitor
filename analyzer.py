@@ -270,7 +270,10 @@ def is_caption_like_summary(value: str) -> bool:
 def is_broken_summary_fragment(value: str) -> bool:
     text = clean_summary_text(value)
     return bool(
-        text.endswith(("고", "며", "또한", "통해", "위해"))
+        re.fullmatch(r"(강력히|적극적으로|지속적으로|본격적으로|확대|강화|추진|확인|필요)", text)
+        or re.search(r"(강력히|적극적으로|지속적으로|본격적으로)$", text)
+        or (len(text) < 8 and not re.search(r"\d", text))
+        or text.endswith(("고", "며", "또한", "통해", "위해"))
         or (not re.search(r"[.!?。]$|다$|요$|임$|함$|필요$", text) and text.endswith(("에", "을", "를", "의", "과", "와", "로", "으로")))
         or re.search(r"전망했\s*또한|밝혔\s*또한|한다고\s*\d{1,2}일?$", text)
         or len(text) > 230
@@ -336,10 +339,19 @@ def extract_primary_entity(text: str) -> str:
 
 def limit_summary(value: str, limit: int = 210) -> str:
     text = clean_summary_text(value)
+    if is_broken_summary_fragment(text):
+        return ""
     if len(text) <= limit:
-        return text
+        return ensure_summary_sentence(text)
     cut = text[:limit].rsplit(" ", 1)[0]
-    return cut.rstrip(" ,·") + "."
+    return ensure_summary_sentence(cut.rstrip(" ,·"))
+
+
+def ensure_summary_sentence(value: str) -> str:
+    text = clean_summary_text(value)
+    if not text:
+        return ""
+    return text if re.search(r"[.!?。]$", text) else f"{text}."
 
 
 def score_article(article: dict) -> int:
