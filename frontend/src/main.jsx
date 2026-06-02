@@ -132,13 +132,11 @@ function App() {
     () => composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected),
     [baseData, scopedArticles, scopedReportRuns, liveConnected],
   );
-  const realtimeScope = useMemo(
-    () => realtimeScopeLabel(operations.watchRuns || []),
-    [operations.watchRuns],
-  );
+  const realtimeDateKey = todayKstDateKey();
+  const realtimeScope = realtimeScopeLabel(realtimeDateKey);
   const realtimeArticles = useMemo(
-    () => selectRealtimeArticles(allArticles, operations.watchRuns || []),
-    [allArticles, operations.watchRuns],
+    () => selectRealtimeArticles(allArticles, realtimeDateKey),
+    [allArticles, realtimeDateKey],
   );
   const realtimeData = useMemo(
     () => composeRealtimeData(periodData.daily, realtimeArticles, liveConnected, realtimeScope),
@@ -2453,7 +2451,7 @@ function WatchPanel({ jobs, risk = "LOW" }) {
         </div>
         <div className="watch-copy">
           <h2>정상 감시</h2>
-          <p>최근 감시 구간 검사 완료</p>
+          <p>5분 주기 검사 완료</p>
           <strong>{watchJob.latest || "-"} · 최신 감시 완료</strong>
           <span>{watchJob.cadence || "5분 주기"}</span>
         </div>
@@ -2774,7 +2772,7 @@ function Chip({ children, tone }) {
   return <span className={`chip ${cls}`}>{children}</span>;
 }
 
-function composeRealtimeData(base, articles, liveConnected = false, scope = "최근 감시 구간 · 5분 자동 갱신") {
+function composeRealtimeData(base, articles, liveConnected = false, scope = "당일 기사 · 5분 자동 갱신") {
   if (!liveConnected) {
     return buildDisconnectedPeriodData(base);
   }
@@ -3342,52 +3340,30 @@ function lastNDays(articles, days) {
   });
 }
 
-function selectRealtimeArticles(articles = [], watchRuns = []) {
-  const window = getRealtimeWindow(watchRuns);
-  const watchRows = articles.filter((article) => isRealtimeWatchArticle(article, window));
-  const candidates = watchRows.length
-    ? watchRows
-    : articles.filter((article) => {
-        const time = articlePublishedTimeValue(article);
-        return time > 0 && time >= window.start && time <= window.end + 10 * 60 * 1000;
-      });
+function selectRealtimeArticles(articles = [], dateKey = todayKstDateKey()) {
+  const candidates = articles.filter((article) => realtimeArticleDateKey(article) === dateKey);
   return [...candidates]
     .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
-    .slice(0, 80);
+    .slice(0, 500);
 }
 
-function getRealtimeWindow(watchRuns = []) {
-  const latestRun = Array.isArray(watchRuns) ? watchRuns[0] : null;
-  const scannedAt = latestRun?.scannedAt ? new Date(latestRun.scannedAt).getTime() : 0;
-  const end = Number.isNaN(scannedAt) || scannedAt <= 0 ? Date.now() : scannedAt;
-  const rawMinutes = Number(latestRun?.minutesBack || 5);
-  const minutes = Math.min(Math.max(rawMinutes || 5, 5), 30);
-  return {
-    start: end - minutes * 60 * 1000,
-    end,
-    minutes,
-  };
+function realtimeScopeLabel(dateKey = todayKstDateKey()) {
+  return `${dateKey} 당일 기사 · 5분 자동 갱신`;
 }
 
-function realtimeScopeLabel(watchRuns = []) {
-  const window = getRealtimeWindow(watchRuns);
-  return `최근 ${formatRealtimeDuration(window.minutes)} · 5분 자동 갱신`;
+function todayKstDateKey(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const value = (type) => parts.find((part) => part.type === type)?.value || "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
-function formatRealtimeDuration(minutes) {
-  if (minutes >= 60) return `${Math.round(minutes / 60)}시간`;
-  return `${minutes}분`;
-}
-
-function isRealtimeWatchArticle(article = {}, window) {
-  const slot = String(article.slot || "").toLowerCase();
-  const windowLabel = String(article.windowLabel || article.window_label || "").toLowerCase();
-  const isWatchRow = slot === "watch" || windowLabel.includes("recent");
-  if (!isWatchRow) return false;
-  const time = articlePublishedTimeValue(article);
-  if (!time) return true;
-  const grace = 10 * 60 * 1000;
-  return time >= window.start - grace && time <= window.end + grace;
+function realtimeArticleDateKey(article = {}) {
+  return String(article.reportDate || article.date || articlePeriodDateKey(article)).slice(0, 10);
 }
 
 function expandReportIssues(issues, articles, period) {
