@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -96,23 +96,88 @@ function App() {
   const [operations, setOperations] = useState({ status: "loading", message: "연결 확인 중", articles: [] });
   const [loginOpen, setLoginOpen] = useState(false);
   const [monitoringPreset, setMonitoringPreset] = useState(null);
+  const refreshTimers = useRef([]);
+  const [refreshState, setRefreshState] = useState({
+    status: "idle",
+    scope: "system",
+    label: "자동 갱신 대기",
+    message: "5분 자동 갱신과 수동 요청을 추적합니다.",
+    updatedAt: null,
+    history: [],
+  });
 
   const refreshOperations = async () => {
     setOperations((current) => ({ ...current, status: "loading", message: "연결 확인 중" }));
     setOperations(await loadOperationalData());
   };
 
+  const markRefreshState = ({ status, scope = "system", label = "운영 데이터", message }) => {
+    const at = new Date().toISOString();
+    setRefreshState((current) => {
+      const nextEntry = {
+        id: `${at}-${scope}-${status}`,
+        at,
+        scope,
+        label,
+        status,
+        message: message || current.message,
+      };
+      return {
+        status,
+        scope,
+        label,
+        message: message || current.message,
+        updatedAt: at,
+        history: [nextEntry, ...(current.history || [])].slice(0, 6),
+      };
+    });
+  };
+
+  const runManualRefresh = async ({ scope, label, trigger }) => {
+    if (refreshState.status === "running") return;
+    refreshTimers.current.forEach((timer) => window.clearTimeout(timer));
+    refreshTimers.current = [];
+    markRefreshState({ status: "running", scope, label, message: `${label} 요청을 전송하고 있습니다.` });
+    try {
+      await trigger();
+      markRefreshState({ status: "running", scope, label, message: `${label} 작업이 시작됐습니다. 저장 반영을 확인합니다.` });
+      await refreshOperations();
+      const firstTimer = window.setTimeout(async () => {
+        markRefreshState({ status: "running", scope, label, message: `${label} 처리 결과를 다시 확인하고 있습니다.` });
+        await refreshOperations();
+      }, 25000);
+      const finalTimer = window.setTimeout(async () => {
+        await refreshOperations();
+        markRefreshState({ status: "complete", scope, label, message: `${label} 재조회가 완료됐습니다.` });
+      }, 75000);
+      refreshTimers.current = [firstTimer, finalTimer];
+    } catch (error) {
+      markRefreshState({ status: "failed", scope, label, message: `갱신 실패: ${error?.message || "연결 확인 필요"}` });
+      throw error;
+    }
+  };
+
   useEffect(() => {
     let active = true;
     const load = async () => {
       const next = await loadOperationalData();
-      if (active) setOperations(next);
+      if (active) {
+        setOperations(next);
+        setRefreshState((current) => current.status === "running"
+          ? current
+          : {
+              ...current,
+              updatedAt: current.updatedAt || new Date().toISOString(),
+              message: current.status === "idle" ? "운영 데이터 연결 완료" : current.message,
+            });
+      }
     };
     load();
     const timer = window.setInterval(load, 5 * 60 * 1000);
     return () => {
       active = false;
       window.clearInterval(timer);
+      refreshTimers.current.forEach((item) => window.clearTimeout(item));
     };
   }, []);
 
@@ -204,7 +269,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header refreshState={refreshState} />
       <aside className="side-nav" aria-label="주요 메뉴">
         <div className="side-title">Menu</div>
         {navItems.map((item) => {
@@ -237,6 +302,8 @@ function App() {
         monitoringPreset={monitoringPreset}
         onOpenMonitoring={openMonitoring}
         onRefreshOperations={refreshOperations}
+        onManualRefresh={runManualRefresh}
+        refreshState={refreshState}
       />
       <LoginDialog
         open={loginOpen}
@@ -250,8 +317,19 @@ function App() {
   );
 }
 
-function Header() {
+function Header({ refreshState }) {
+  const [open, setOpen] = useState(false);
   const userText = "최진우 1611499 관리자";
+  const status = refreshState?.status || "idle";
+  const isRunning = status === "running";
+  const statusText = {
+    running: "수집·분석 중",
+    complete: "최근 갱신",
+    failed: "갱신 실패",
+    idle: "자동 대기",
+  }[status] || "자동 대기";
+  const statusMeta = refreshState?.updatedAt ? formatRefreshClock(refreshState.updatedAt) : "5분 자동";
+  const history = refreshState?.history || [];
 
   return (
     <header className="app-header">
@@ -262,11 +340,69 @@ function Header() {
           <span>실시간 기사 · 보고서 · 운영 관리</span>
         </div>
       </div>
-      <div className="user-chip">
-        <span>{userText}</span>
+      <div className="header-actions">
+        <div className="refresh-status-wrap">
+          <button
+            className={`global-refresh-pill ${status}`}
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            aria-expanded={open}
+          >
+            <RefreshCw className={isRunning ? "spin" : ""} />
+            <span>
+              <b>{statusText}</b>
+              <em>{statusMeta}</em>
+            </span>
+          </button>
+          {open && (
+            <div className="refresh-popover">
+              <div className="refresh-popover-head">
+                <b>운영 작업 상태</b>
+                <button type="button" onClick={() => setOpen(false)} aria-label="닫기"><X /></button>
+              </div>
+              <p>{refreshState?.message || "자동 갱신 상태를 확인합니다."}</p>
+              <div className="refresh-history">
+                {history.length ? history.map((item) => (
+                  <div key={item.id}>
+                    <span className={`refresh-dot ${item.status}`} />
+                    <span>
+                      <b>{item.label}</b>
+                      <em>{item.message}</em>
+                    </span>
+                    <time>{formatRefreshClock(item.at)}</time>
+                  </div>
+                )) : (
+                  <div>
+                    <span className="refresh-dot idle" />
+                    <span>
+                      <b>자동 갱신 대기</b>
+                      <em>수동 갱신을 누르면 이력에 기록됩니다.</em>
+                    </span>
+                    <time>-</time>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="user-chip">
+          <span>{userText}</span>
+        </div>
       </div>
     </header>
   );
+}
+
+function formatRefreshClock(value) {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleTimeString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function PeriodControl({ period, setPeriod, compact = false }) {
@@ -333,25 +469,19 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, onRefreshOperations }) {
+function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, onManualRefresh, refreshState }) {
   const { summary } = data;
   const orderedNotifications = useMemo(() => orderNotificationHistory(notifications), [notifications]);
-  const [refreshingIssues, setRefreshingIssues] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState("");
+  const refreshingIssues = refreshState?.status === "running";
   const refreshIssueFeed = async () => {
     if (refreshingIssues) return;
-    setRefreshingIssues(true);
     setRefreshNotice("키워드 수집과 분석을 요청했습니다. 저장 완료 후 자동으로 다시 불러옵니다.");
     try {
-      await triggerDashboardRefresh();
-      await onRefreshOperations?.();
-      window.setTimeout(() => onRefreshOperations?.(), 25000);
-      window.setTimeout(() => onRefreshOperations?.(), 75000);
+      await onManualRefresh?.({ scope: "news", label: "뉴스 수집", trigger: triggerDashboardRefresh });
       setRefreshNotice("수집 작업이 시작됐습니다. GitHub Actions 처리 후 주요 이슈가 갱신됩니다.");
     } catch (error) {
       setRefreshNotice(`갱신 요청 실패: ${error?.message || "연결 확인 필요"}`);
-    } finally {
-      window.setTimeout(() => setRefreshingIssues(false), 1500);
     }
   };
   return (
@@ -546,7 +676,7 @@ function Monitoring({ data, articles, monitoringPreset, scraps = [], onToggleScr
   );
 }
 
-function RegulatorReleases({ articles = [], onOpenMonitoring, onRefreshOperations, scraps = [], onToggleScrap }) {
+function RegulatorReleases({ articles = [], onOpenMonitoring, onManualRefresh, refreshState, scraps = [], onToggleScrap }) {
   const [source, setSource] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -554,8 +684,8 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, onRefreshOperation
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
-  const [refreshingOfficial, setRefreshingOfficial] = useState(false);
   const [refreshNotice, setRefreshNotice] = useState("");
+  const refreshingOfficial = refreshState?.status === "running";
   const regulatorRows = useMemo(
     () => articles
       .filter(isRegulatorArticle)
@@ -608,18 +738,12 @@ function RegulatorReleases({ articles = [], onOpenMonitoring, onRefreshOperation
 
   const refreshOfficialReleases = async () => {
     if (refreshingOfficial) return;
-    setRefreshingOfficial(true);
     setRefreshNotice("금융당국 공식자료 수집을 요청했습니다. 저장 완료 후 자동으로 다시 불러옵니다.");
     try {
-      await triggerRegulatorRefresh();
-      await onRefreshOperations?.();
-      window.setTimeout(() => onRefreshOperations?.(), 25000);
-      window.setTimeout(() => onRefreshOperations?.(), 75000);
+      await onManualRefresh?.({ scope: "regulator", label: "금융당국 보도자료", trigger: triggerRegulatorRefresh });
       setRefreshNotice("수집 작업이 시작됐습니다. GitHub Actions 처리 후 공식자료 목록이 갱신됩니다.");
     } catch (error) {
       setRefreshNotice(`갱신 요청 실패: ${error?.message || "연결 확인 필요"}`);
-    } finally {
-      window.setTimeout(() => setRefreshingOfficial(false), 1500);
     }
   };
 
