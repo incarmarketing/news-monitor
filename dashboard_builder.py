@@ -15,6 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import supabase_store
 import config
 import archiver
+import analyzer
 
 BASE_DIR = Path(__file__).parent
 PUBLIC_DIR = BASE_DIR / "public"
@@ -91,29 +92,21 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 
 def article_summary(article: dict, category: str, tone: str) -> str:
-    existing = clean_summary_text(article.get("description", "") or article.get("summary", ""))
+    article_for_summary = {**article, "_category": category, "_tone": tone}
+    generated = analyzer.build_quality_summary(article_for_summary)
+    existing = clean_summary_text(generated or article.get("description", "") or article.get("summary", ""))
     title = clean_summary_text(article.get("title", ""))
     lines = []
     sentences = [line for line in split_summary_sentences(existing) if not is_broken_summary_sentence(line)]
     if sentences:
-        lines.append(sentences[0])
+        lines.extend(sentences[:2])
     elif title:
         lines.append(f"{title} \ubcf4\ub3c4\uc785\ub2c8\ub2e4.")
-    if category == "own":
-        lines.append("\ub2f9\uc0ac \uc9c1\uc811 \uc5b8\uae09 \uae30\uc0ac\uc785\ub2c8\ub2e4. \ud3c9\ud310 \uc601\ud5a5\uacfc \uc0ac\uc2e4\uad00\uacc4 \ud655\uc778\uc774 \uc6b0\uc120\uc785\ub2c8\ub2e4.")
-    elif category in {"competitor", "industry"}:
-        lines.append("\ubcf4\ud5d8\uc0ac\u00b7GA \uc2dc\uc7a5\uc758 \uc81c\ud734, \ucc44\ub110, \uc2e4\uc801 \ud750\ub984\uc744 \ubcf4\uc5ec\uc8fc\ub294 \uc5c5\uacc4 \ub3d9\ud5a5\uc785\ub2c8\ub2e4.")
-    elif category == "regulation":
-        lines.append("\uc815\ucc45\u00b7\uac10\ub3c5 \uc774\uc288\ub85c \uc601\uc5c5 \ud658\uacbd\uacfc \uc18c\ube44\uc790 \ubcf4\ud638 \uae30\uc900 \ubcc0\ud654 \uac00\ub2a5\uc131\uc744 \ud655\uc778\ud569\ub2c8\ub2e4.")
-    if tone == "negative":
-        lines.append("\uc18c\ube44\uc790 \ud53c\ud574, \uc81c\uc7ac, \uc0ac\uace0, \ubc95\uc801 \ubd84\uc7c1\ucc98\ub7fc \ub300\uc751 \uc6b0\uc120\uc21c\uc704\ub97c \uc62c\ub9b4 \uc2e0\ud638\uc778\uc9c0 \ud655\uc778\ud574\uc57c \ud569\ub2c8\ub2e4.")
-    elif tone == "caution":
-        lines.append("\uc9c1\uc811 \ubd80\uc815\uc740 \uc544\ub2c8\uc9c0\ub9cc \uc2dc\uc7a5 \ud3c9\uac00, \uc0ac\uc790 \uc758\uacac, \uaddc\uc81c \uc2e0\ud638\ub85c \ubcc4\ub3c4 \ucd94\uc801\ud569\ub2c8\ub2e4.")
-    elif tone == "positive" and category == "own":
-        lines.append("\ub2f9\uc0ac \uc131\uacfc\uc640 \uc6b0\ud638 \ubcf4\ub3c4\ub85c \ud65c\uc6a9 \uac00\ub2a5\ud55c\uc9c0 \uc804\ubb38\uacfc \ub178\ucd9c \ub9e4\uccb4\ub97c \ud655\uc778\ud569\ub2c8\ub2e4.")
-    elif tone == "positive":
-        lines.append("\ub2f9\uc0ac \uc131\uacfc\uac00 \uc544\ub2cc \uc5c5\uacc4 \uc6b0\ud638 \ubcf4\ub3c4\ub294 \uae0d\uc815 \ud64d\ubcf4\uac00 \uc544\ub2c8\ub77c \uc2dc\uc7a5 \ucc38\uace0 \uc774\uc288\ub85c \ubd05\ub2c8\ub2e4.")
-    return " ".join(ensure_sentence(line) for line in unique_lines(lines)[:4])
+    filtered = unique_lines(lines)
+    if not filtered and title:
+        fallback = analyzer.headline_based_summary(title) or f"{title} \ubcf4\ub3c4\uc785\ub2c8\ub2e4."
+        filtered = [fallback]
+    return " ".join(ensure_sentence(line) for line in filtered[:2])
 
 
 def clean_summary_text(value: object) -> str:
@@ -173,6 +166,10 @@ def is_generic_summary_line(value: object) -> bool:
             "\ud0a4\uc6cc\ub4dc \uae30\uc900\uc73c\ub85c \uc218\uc9d1\ub41c \uae30\uc0ac\uc785\ub2c8\ub2e4",
             "\ud0a4\uc6cc\ub4dc\ub85c \uc218\uc9d1\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
             "\uae30\uc0ac \uc6d0\ubb38\ub9cc \uc694\uc57d\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
+            "\ub2f9\uc0ac \uc9c1\uc811 \uc5b8\uae09 \uae30\uc0ac\uc785\ub2c8\ub2e4",
+            "\ud3c9\ud310 \uc601\ud5a5\uacfc \uc0ac\uc2e4\uad00\uacc4 \ud655\uc778",
+            "\uc5c5\uacc4 \ub3d9\ud5a5\uc785\ub2c8\ub2e4",
+            "\ubcc4\ub3c4 \ucd94\uc801\ud569\ub2c8\ub2e4",
         )
     )
 def load_supabase_articles() -> list[dict]:

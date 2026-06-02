@@ -3080,6 +3080,10 @@ function splitSummarySentences(value) {
 }
 
 function buildSummaryLeadLine(item = {}, title = "", sentences = [], summaryText = "") {
+  if (/우수\s*인증\s*설계사|우수인증설계사|인증설계사/.test(`${title} ${summaryText}`)) {
+    const titleSummary = buildTitleBasedSummary(item, title, summaryText);
+    if (titleSummary) return titleSummary;
+  }
   const first = sentences.find((sentence) => sentence.length <= 120);
   if (first) return first;
   const titleSummary = buildTitleBasedSummary(item, title, summaryText);
@@ -3139,6 +3143,12 @@ function buildTitleBasedSummary(item = {}, title = "", summaryText = "") {
   if (/금감원|금융감독원|금융위|금융위원회|제재|검사|점검|승인|경영개선/.test(text)) {
     return `${actor || "금융당국"} 관련 감독·정책 이슈를 다룬 기사입니다`;
   }
+  if (/우수\s*인증\s*설계사|우수인증설계사|인증설계사/.test(text)) {
+    const count = text.match(/(\d{1,3}(?:,\d{3})*|\d{3,5})\s*명/);
+    const countText = count ? ` ${count[1]}명` : "";
+    const topText = /최다|1위|가장/.test(text) ? " GA업계 최다 규모로" : "";
+    return `${actor || "보험·GA 업계"}가 우수인증설계사${countText}을 배출하며${topText} 영업조직의 전문성과 완전판매 역량을 부각한 보도입니다`;
+  }
   if (/실적|마감|매출|순이익|영업익|역성장|감소|증가|성장/.test(text)) {
     return `${actor || "보험·GA 업계"}의 실적과 영업 흐름을 다룬 기사입니다`;
   }
@@ -3173,6 +3183,11 @@ function isGenericSummaryLine(value) {
     /키워드 기준으로 수집된 기사입니다/.test(text) ||
     /키워드로 수집됐습니다/.test(text) ||
     /기준 핵심만 요약했습니다/.test(text) ||
+    /당사 직접 언급 기사입니다/.test(text) ||
+    /당사 직접 언급 기사라/.test(text) ||
+    /평판 영향과 사실관계 확인/.test(text) ||
+    /후속 보도 가능성을 우선 확인/.test(text) ||
+    /직접 부정은 아니지만.*별도 추적/.test(text) ||
     /보험사·GA\s*(시장|업계).*?(제휴|채널|실적|흐름|동향)/.test(text) ||
     /업계 동향 기사입니다/.test(text)
   );
@@ -3192,7 +3207,7 @@ function buildSummaryDetailLine(item = {}, sentences = [], summaryText = "") {
 function buildSummaryInsightLine(item = {}) {
   const category = item.category || item.keyword || "키워드";
   if (isOwnArticle(item) && isStockMarketArticle(item)) return "당사 주가가 시황 기사에 언급된 시장성 노출로, 영업·준법 리스크와 구분해 확인합니다";
-  if (isOwnArticle(item)) return "당사 직접 언급 기사라 평판 영향과 사실관계 확인이 우선입니다";
+  if (isOwnArticle(item)) return "";
   if (category === "정책/규제") return "";
   if (category === "제외") return "분석 대상에서 제외한 노이즈성 기사입니다.";
   if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁처럼 대응 우선순위를 올릴 신호인지 확인해야 합니다";

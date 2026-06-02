@@ -165,6 +165,23 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotIn("업계 동향 기사", summary)
         self.assertNotIn("제휴, 채널, 실적", summary)
 
+    def test_own_certified_planner_summary_uses_article_substance(self) -> None:
+        article = {
+            "title": "인카금융서비스, 우수인증설계사 2262명 배출…GA업계 최다 기록",
+            "description": "인카금융서비스가 우수인증설계사 배출 규모를 크게 늘리며 영업 조직의 질적 성장을 이어가고 있다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "neutral",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("우수인증설계사", summary)
+        self.assertIn("2262명", summary)
+        self.assertNotIn("당사 직접 언급 기사", summary)
+        self.assertNotIn("평판 영향", summary)
+
 
 if __name__ == "__main__":
     unittest.main()

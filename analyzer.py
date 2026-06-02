@@ -196,6 +196,10 @@ def build_quality_summary(article: dict) -> str:
     complaint_summary = consumer_complaint_summary(article, title, description)
     if complaint_summary:
         return complaint_summary
+    if re.search(r"우수\s*인증\s*설계사|우수인증설계사|인증설계사", f"{title} {description}"):
+        certified_summary = title_based_summary(article, title)
+        if certified_summary:
+            return certified_summary
     if description and not is_caption_like_summary(description):
         sentences = split_summary_sentences(description)
         usable = [
@@ -332,6 +336,15 @@ def title_based_summary(article: dict, title: str) -> str:
             f"{actor or '금융당국'} 관련 감독·정책 이슈를 다룬 기사입니다. "
             "당사 직접 이슈인지 업계 공통 관리 신호인지 분리해 확인할 필요가 있습니다."
         )
+    if re.search(r"우수\s*인증\s*설계사|우수인증설계사|인증설계사", text):
+        subject = actor or "보험·GA 업계"
+        count_match = re.search(r"(\d{1,3}(?:,\d{3})*|\d{3,5})\s*명", text)
+        count_text = f" {count_match.group(1)}명" if count_match else ""
+        top_text = " GA업계 최다 규모로" if re.search(r"최다|1위|가장", text) else ""
+        return (
+            f"{subject}{topic_particle(subject)} 우수인증설계사{count_text}을 배출하며{top_text} 영업조직의 전문성과 계약관리 역량을 부각한 보도입니다. "
+            "설계사 신뢰도와 완전판매 성과를 홍보 자산으로 활용할 수 있는 내용입니다."
+        )
     if re.search(r"실적|마감|매출|순이익|영업익|역성장|감소|증가|성장", text):
         return (
             f"{actor or '보험·GA 업계'}의 실적과 영업 흐름을 다룬 기사입니다. "
@@ -343,10 +356,7 @@ def title_based_summary(article: dict, title: str) -> str:
             "홍보 활용 가능성과 경쟁사 동시 노출 여부를 함께 확인합니다."
         )
     if category == "own":
-        return (
-            f"{actor or '당사'} 직접 언급 기사입니다. "
-            "평판 영향, 사실관계, 후속 보도 가능성을 우선 확인합니다."
-        )
+        return headline_based_summary(title)
     if category == "regulation":
         return "보험·GA 관련 정책 또는 감독 이슈입니다. 영업 환경과 소비자 보호 기준 변화 가능성을 확인합니다."
     if tone == "caution":
