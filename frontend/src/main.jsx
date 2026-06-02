@@ -2985,6 +2985,7 @@ function buildIssues(articles, fallback) {
   const seen = new Set();
   const uniqueArticles = [];
   [...articles, ...(fallback || [])].forEach((article) => {
+    if (isRegulatorArticle(article)) return;
     const title = article?.title;
     if (!title || seen.has(title)) return;
     seen.add(title);
@@ -3386,7 +3387,10 @@ function lastNDays(articles, days) {
 }
 
 function selectRealtimeArticles(articles = [], dateKey = todayKstDateKey()) {
-  const candidates = articles.filter((article) => realtimeArticleDateKey(article) === dateKey);
+  const candidates = articles.filter((article) => (
+    realtimeArticleDateKey(article) === dateKey
+    && !isRegulatorArticle(article)
+  ));
   return [...candidates]
     .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
     .slice(0, 500);
