@@ -44,7 +44,10 @@ import {
 } from "recharts";
 import {
   adRows,
+  automationChecklist,
   contextRules,
+  customizationProfile,
+  issueScoringRules,
   journalistRows,
   keywordGroups,
   navItems,
@@ -52,6 +55,7 @@ import {
   periodTabs,
   pressInfluence,
   pressRegistry,
+  reportTemplatePresets,
   watchJobs,
 } from "./data";
 import {
@@ -525,6 +529,9 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         </div>
         <div className="side-column">
           <WatchPanel jobs={jobs} risk={summary.risk} />
+          <Panel title="이슈 선정 기준" icon={Gauge} meta="점수">
+            <IssueScoringBoard compact />
+          </Panel>
           <Panel title="알림톡 발송 이력" icon={Bell} meta={`${orderedNotifications.length}건`}>
             <NotificationHistory rows={orderedNotifications} />
           </Panel>
@@ -1202,7 +1209,31 @@ function AnalysisDrillCards({ data, onOpenMonitoring }) {
 
 function Scraps({ scraps, onOpenMonitoring, onToggleScrap }) {
   const [prompt, setPrompt] = useState("홍보 대응 관점에서 부정 이슈와 우호적으로 활용할 수 있는 기사 흐름을 나눠 분석해줘.");
+  const [analysis, setAnalysis] = useState(null);
+  const [status, setStatus] = useState("");
   const grouped = groupArticles(scraps, "category").slice(0, 5).map(([name, value]) => ({ name, value }));
+  const runScrapAnalysis = () => {
+    const next = buildScrapAnalysisReport(scraps, prompt);
+    setAnalysis(next);
+    setStatus("스크랩 기사 기준 분석 초안을 생성했습니다.");
+  };
+  const copyAnalysis = async (mode = "text") => {
+    const current = analysis || buildScrapAnalysisReport(scraps, prompt);
+    const text = mode === "json" ? JSON.stringify(current, null, 2) : scrapAnalysisToText(current);
+    await navigator.clipboard?.writeText(text);
+    setStatus(mode === "json" ? "JSON을 복사했습니다." : "분석 결과를 복사했습니다.");
+  };
+  const openAnalysisReport = () => {
+    const current = analysis || buildScrapAnalysisReport(scraps, prompt);
+    const html = buildScrapAnalysisHtml(current);
+    const popup = window.open("", "_blank", "noopener,noreferrer");
+    if (!popup) {
+      setStatus("팝업 차단으로 보고서를 열지 못했습니다. 결과 복사를 이용해 주세요.");
+      return;
+    }
+    popup.document.write(html);
+    popup.document.close();
+  };
   return (
     <main className="workspace">
       <PageTitle
@@ -1223,12 +1254,24 @@ function Scraps({ scraps, onOpenMonitoring, onToggleScrap }) {
           <textarea className="scrap-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} />
           <div className="scrap-analysis-preview">
             <b>요약 초안</b>
-            <p>스크랩 {scraps.length}건 중 당사 언급, 주의 이슈, 정책/GA 동향을 분리해 보고서 근거로 사용할 수 있습니다.</p>
+            <p>{analysis?.executive || `스크랩 ${scraps.length}건 중 당사 언급, 주의 이슈, 정책/GA 동향을 분리해 보고서 근거로 사용할 수 있습니다.`}</p>
+            {analysis && (
+              <div className="scrap-analysis-lines">
+                {analysis.sections.map((section) => (
+                  <article key={section.title}>
+                    <b>{section.title}</b>
+                    <span>{section.lines.join(" ")}</span>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
+          {status && <p className="status-note">{status}</p>}
           <div className="scrap-actions-v2">
-            <button className="primary-button">스크랩 분석</button>
-            <button className="ghost-button">JSON 복사</button>
-            <button className="ghost-button">결과 복사</button>
+            <button className="primary-button" onClick={runScrapAnalysis}>스크랩 분석</button>
+            <button className="ghost-button" onClick={openAnalysisReport}>HTML 보고서</button>
+            <button className="ghost-button" onClick={() => copyAnalysis("json")}>JSON 복사</button>
+            <button className="ghost-button" onClick={() => copyAnalysis("text")}>결과 복사</button>
           </div>
         </Panel>
         <div className="scrap-side-stack">
@@ -1261,6 +1304,119 @@ function ScrapDigest({ scraps }) {
       {!rows.length && <p>스크랩된 기사가 없습니다.</p>}
     </div>
   );
+}
+
+function buildScrapAnalysisReport(scraps = [], prompt = "") {
+  const own = scraps.filter(isOwnArticle);
+  const negative = scraps.filter((item) => item.tone === "부정");
+  const caution = scraps.filter((item) => item.tone === "주의");
+  const positive = scraps.filter((item) => item.tone === "긍정");
+  const regulation = scraps.filter((item) => item.category === "정책/규제");
+  const media = groupArticles(scraps, "source").slice(0, 5).map(([name, value]) => `${name} ${value}건`).join(", ") || "없음";
+  const lead = own[0] || negative[0] || caution[0] || scraps[0];
+  const executive = scraps.length
+    ? `스크랩 ${scraps.length}건 중 당사 ${own.length}건, 부정 ${negative.length}건, 주의 ${caution.length}건입니다. 핵심 판단은 "${lead?.title || "대표 기사 확인 필요"}"를 중심으로 정리합니다.`
+    : "스크랩된 기사가 없어 분석할 자료가 없습니다.";
+  const sections = [
+    {
+      title: "핵심 판단",
+      lines: [
+        own.length ? `당사 직접 언급 ${own.length}건은 브랜드 노출과 평판 리스크를 분리해 봅니다.` : "당사 직접 언급은 없습니다.",
+        positive.length ? `우호 활용 후보 ${positive.length}건은 홍보 소재로 별도 검토 가능합니다.` : "우호 활용 후보는 제한적입니다.",
+      ],
+    },
+    {
+      title: "리스크",
+      lines: [
+        negative.length ? `부정 기사 ${negative.length}건은 원문 표현과 반복 보도 여부를 우선 확인합니다.` : "직접 부정으로 분류된 스크랩은 없습니다.",
+        caution.length ? `주의 기사 ${caution.length}건은 시장성·규제성 신호로 별도 추적합니다.` : "주의 신호는 낮은 편입니다.",
+      ],
+    },
+    {
+      title: "후속 확인",
+      lines: [
+        regulation.length ? `정책/규제 기사 ${regulation.length}건은 영업현장 영향 여부를 확인합니다.` : "정책/규제 직접 이슈는 제한적입니다.",
+        `주요 언론사는 ${media}입니다.`,
+      ],
+    },
+  ];
+  return {
+    title: "스크랩 기사 분석 보고서",
+    prompt,
+    generatedAt: new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false }),
+    executive,
+    stats: { total: scraps.length, own: own.length, negative: negative.length, caution: caution.length, positive: positive.length },
+    sections,
+    evidence: scraps.slice(0, 8).map((item, index) => ({
+      no: index + 1,
+      title: item.title,
+      source: item.source,
+      tone: item.tone,
+      category: item.category,
+      summary: buildArticleSummaryLines(item).slice(0, 2).join(" "),
+      link: item.link,
+    })),
+  };
+}
+
+function scrapAnalysisToText(report) {
+  return [
+    report.title,
+    `생성: ${report.generatedAt}`,
+    "",
+    report.executive,
+    "",
+    ...report.sections.flatMap((section) => [
+      section.title,
+      ...section.lines.map((line) => `- ${line}`),
+      "",
+    ]),
+    "근거 기사",
+    ...report.evidence.map((item) => `[${item.no}] ${item.source} · ${item.tone} · ${item.title}`),
+  ].join("\n");
+}
+
+function buildScrapAnalysisHtml(report) {
+  const escape = (value) => String(value || "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+  return `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>${escape(report.title)}</title>
+<style>
+body{margin:0;background:#eef2f7;color:#101828;font-family:"Malgun Gothic",Arial,sans-serif}
+.sheet{width:min(860px,calc(100% - 24px));margin:18px auto;padding:24px;border:1px solid #cfd7e6;background:#fff;box-shadow:0 18px 54px rgba(15,23,42,.13)}
+.kicker{color:#2855d9;font-size:12px;font-weight:900;letter-spacing:.06em}
+h1{margin:8px 0 6px;font-size:30px;line-height:1.1}
+.meta{color:#667085;font-size:12px;font-weight:800}
+.lead{margin:18px 0;padding:14px;border-left:5px solid #2855d9;background:#f8fbff;font-size:15px;font-weight:900;line-height:1.55}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
+.stats div,.section,.evidence a{border:1px solid #d7dee8;border-radius:8px;background:#fff;padding:10px}
+.stats b{display:block;font-size:22px;color:#13224a}.stats span{color:#667085;font-size:11px;font-weight:900}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.section h2{margin:0 0 8px;font-size:15px}.section li{margin:5px 0;font-weight:800;line-height:1.45}
+.evidence{display:grid;gap:8px;margin-top:16px}.evidence a{text-decoration:none;color:#101828}.evidence b{display:block;font-size:13px}.evidence span{display:block;margin-top:4px;color:#667085;font-size:11px;font-weight:900}
+@media print{body{background:#fff}.sheet{box-shadow:none;margin:0;width:auto;border:0}.stats{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head>
+<body>
+<main class="sheet">
+<div class="kicker">SCRAP MEDIA REPORT</div>
+<h1>${escape(report.title)}</h1>
+<div class="meta">${escape(report.generatedAt)} · 요청: ${escape(report.prompt)}</div>
+<div class="lead">${escape(report.executive)}</div>
+<section class="stats">
+${Object.entries(report.stats).map(([key,value]) => `<div><b>${value}</b><span>${escape(key)}</span></div>`).join("")}
+</section>
+<section class="grid">
+${report.sections.map((section) => `<article class="section"><h2>${escape(section.title)}</h2><ul>${section.lines.map((line) => `<li>${escape(line)}</li>`).join("")}</ul></article>`).join("")}
+</section>
+<section class="evidence">
+${report.evidence.map((item) => `<a href="${escape(item.link || "#")}" target="_blank"><b>[${item.no}] ${escape(item.title)}</b><span>${escape(item.source)} · ${escape(item.tone)} · ${escape(item.category)}</span><span>${escape(item.summary)}</span></a>`).join("")}
+</section>
+</main>
+</body>
+</html>`;
 }
 
 function RiskCenter({ articles = [], scraps = [], onOpenMonitoring, onToggleScrap }) {
@@ -1771,7 +1927,7 @@ function AdSpendChart({ rows, color = "#2855d9", compact = false }) {
 }
 
 function Management({ management, operations }) {
-  const [tab, setTab] = useState("media");
+  const [tab, setTab] = useState("customize");
   return (
     <main className="workspace">
       <PageTitle
@@ -1783,6 +1939,7 @@ function Management({ management, operations }) {
       <ManagementSummary management={management} />
       <div className="management-tabs">
         {[
+          ["customize", "커스터마이즈", Settings],
           ["media", "언론사 관리", Building2],
           ["reporters", "기자 관리", Users],
           ["ads", "광고비 관리", WalletCards],
@@ -1793,6 +1950,7 @@ function Management({ management, operations }) {
           </button>
         ))}
       </div>
+      {tab === "customize" && <CustomizationCenter keywords={operations.keywords || []} aliases={operations.aliases || []} />}
       {tab === "media" && <MediaManagement rows={management.media} aliases={operations.aliases || []} />}
       {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
       {tab === "ads" && <AdManagement rows={management.ads} />}
@@ -1809,6 +1967,122 @@ function ManagementSummary({ management }) {
       <StatCard icon={Users} label="기자 프로필" value={`${management.reporters.length.toLocaleString("ko-KR")}명`} />
       <StatCard icon={WalletCards} label="광고비 누적" value={formatMoney(totalAd)} />
       <StatCard icon={Megaphone} label="문맥 규칙" value={`${keywordGroups.length}개 그룹`} />
+    </section>
+  );
+}
+
+function CustomizationCenter({ keywords = [], aliases = [] }) {
+  const [profile, setProfile] = useState(() => readCustomizationProfile());
+  const [status, setStatus] = useState("");
+  const keywordCount = keywords.length || keywordGroups.flatMap((group) => group.keywords).length;
+  const aliasCount = aliases.length;
+
+  const updateProfile = (field, value) => {
+    setProfile((current) => ({ ...current, [field]: value }));
+  };
+
+  const saveProfile = () => {
+    writeCustomizationProfile(profile);
+    setStatus("커스터마이즈 설정을 이 브라우저에 저장했습니다. Supabase 저장 항목은 키워드/언론사 관리에서 별도 반영됩니다.");
+  };
+
+  const resetProfile = () => {
+    setProfile(customizationProfile);
+    writeCustomizationProfile(customizationProfile);
+    setStatus("기본 운영 기준으로 복원했습니다.");
+  };
+
+  const copyProfile = async () => {
+    const snapshot = buildCustomizationSnapshot(profile, { keywordCount, aliasCount });
+    await navigator.clipboard?.writeText(JSON.stringify(snapshot, null, 2));
+    setStatus("커스터마이즈 JSON을 복사했습니다.");
+  };
+
+  return (
+    <section className="customize-workspace">
+      <Panel title="커스터마이즈 센터" icon={Settings} meta="회사·목적·보고서 기준">
+        <div className="customize-hero">
+          <div>
+            <span>CONFIGURATION DESK</span>
+            <h2>{profile.serviceName}</h2>
+            <p>{profile.purpose}</p>
+          </div>
+          <div className="customize-summary">
+            <Fact label="현재 키워드" value={`${keywordCount.toLocaleString("ko-KR")}개`} />
+            <Fact label="언론사 보정" value={`${aliasCount.toLocaleString("ko-KR")}개`} />
+          </div>
+        </div>
+        <div className="customize-form-grid">
+          <label>
+            <span>회사명</span>
+            <input value={profile.companyName} onChange={(event) => updateProfile("companyName", event.target.value)} />
+          </label>
+          <label>
+            <span>부서명</span>
+            <input value={profile.teamName} onChange={(event) => updateProfile("teamName", event.target.value)} />
+          </label>
+          <label className="wide-field">
+            <span>서비스/프로젝트명</span>
+            <input value={profile.serviceName} onChange={(event) => updateProfile("serviceName", event.target.value)} />
+          </label>
+          <label className="wide-field">
+            <span>모니터링 목적</span>
+            <textarea value={profile.purpose} onChange={(event) => updateProfile("purpose", event.target.value)} />
+          </label>
+          <label>
+            <span>당사 키워드</span>
+            <textarea value={listToText(profile.ownKeywords)} onChange={(event) => updateProfile("ownKeywords", textToList(event.target.value))} />
+          </label>
+          <label>
+            <span>업종 문맥</span>
+            <textarea value={listToText(profile.industryContext)} onChange={(event) => updateProfile("industryContext", textToList(event.target.value))} />
+          </label>
+          <label>
+            <span>제외 문맥</span>
+            <textarea value={listToText(profile.excludeContext)} onChange={(event) => updateProfile("excludeContext", textToList(event.target.value))} />
+          </label>
+          <label>
+            <span>보고서 문체</span>
+            <textarea value={profile.reportTone} onChange={(event) => updateProfile("reportTone", event.target.value)} />
+          </label>
+        </div>
+        <div className="customize-actions">
+          <button className="ghost-button" onClick={resetProfile}>기본값 복원</button>
+          <button className="ghost-button" onClick={copyProfile}>JSON 복사</button>
+          <button className="primary-button" onClick={saveProfile}>설정 저장</button>
+        </div>
+        {status && <p className="status-note">{status}</p>}
+      </Panel>
+
+      <Panel title="이슈 선정 기준" icon={Gauge} meta="점수 기준 공개">
+        <IssueScoringBoard />
+      </Panel>
+
+      <Panel title="보고서 템플릿" icon={FileText} meta={`${reportTemplatePresets.length}종`}>
+        <div className="template-preset-grid">
+          {reportTemplatePresets.map((item) => (
+            <article key={item.name}>
+              <b>{item.name}</b>
+              <span>{item.use}</span>
+              <em>{item.format}</em>
+            </article>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel title="자동화 운영 체크리스트" icon={CalendarDays} meta="수집·분석·발송">
+        <div className="automation-check-grid">
+          {automationChecklist.map((item) => (
+            <article key={item.label}>
+              <ShieldCheck />
+              <div>
+                <b>{item.label}</b>
+                <span>{item.body}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </Panel>
     </section>
   );
 }
@@ -2828,6 +3102,25 @@ function RuleStack() {
   );
 }
 
+function IssueScoringBoard({ compact = false }) {
+  const rows = compact ? issueScoringRules.slice(0, 4) : issueScoringRules;
+  return (
+    <div className={compact ? "issue-score-board compact" : "issue-score-board"}>
+      {rows.map((rule) => (
+        <article key={rule.label}>
+          <Chip tone={rule.tone === "negative" ? "부정" : rule.tone === "positive" ? "긍정" : rule.tone === "caution" ? "주의" : rule.tone === "muted" ? "제외" : "중립"}>
+            {rule.score > 0 ? `+${rule.score}` : rule.score}
+          </Chip>
+          <div>
+            <b>{rule.label}</b>
+            <span>{rule.reason}</span>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function Fact({ label, value }) {
   return <div className="fact"><span>{label}</span><b>{value}</b></div>;
 }
@@ -3599,6 +3892,7 @@ function buildPressInfluence(articles) {
 const PRESS_ALIAS_DRAFT_KEY = "news_monitor_press_alias_drafts_v1";
 const KEYWORD_DRAFT_KEY = "news_monitor_keyword_drafts_v1";
 const REPORTER_DRAFT_KEY = "news_monitor_reporter_drafts_v1";
+const CUSTOMIZATION_PROFILE_KEY = "news_monitor_customization_profile_v1";
 
 const emptyReporterForm = {
   id: "",
@@ -3654,6 +3948,45 @@ function writeLocalRows(key, rows) {
   } catch {
     // Supabase is the source of truth; local storage only keeps the public page responsive.
   }
+}
+
+function readCustomizationProfile() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(CUSTOMIZATION_PROFILE_KEY) || "null");
+    return {
+      ...customizationProfile,
+      ...(stored && typeof stored === "object" ? stored : {}),
+    };
+  } catch {
+    return customizationProfile;
+  }
+}
+
+function writeCustomizationProfile(profile) {
+  try {
+    window.localStorage.setItem(CUSTOMIZATION_PROFILE_KEY, JSON.stringify(profile));
+  } catch {
+    // Local customization is optional; the dashboard remains usable with defaults.
+  }
+}
+
+function listToText(value) {
+  return Array.isArray(value) ? value.join(", ") : String(value || "");
+}
+
+function textToList(value) {
+  return unique(String(value || "").split(/[,;\n]/).map((item) => item.trim()).filter(Boolean));
+}
+
+function buildCustomizationSnapshot(profile, stats = {}) {
+  return {
+    profile,
+    scoringRules: issueScoringRules,
+    reportTemplates: reportTemplatePresets,
+    automationChecklist,
+    currentStats: stats,
+    exportedAt: new Date().toISOString(),
+  };
 }
 
 function readLocalReporterState() {

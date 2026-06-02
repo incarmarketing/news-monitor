@@ -440,3 +440,37 @@ export const contextRules = [
     action: "수집 제외",
   },
 ];
+
+export const customizationProfile = {
+  companyName: "인카금융서비스",
+  teamName: "마케팅부",
+  serviceName: "관심키워드 및 모니터링 자동화",
+  purpose: "정해진 키워드와 문맥 기준으로 기사, 보도자료, 스크랩 자료를 수집·분류·보고서화합니다.",
+  ownKeywords: ["인카금융서비스", "인카금융", "에인카"],
+  industryContext: ["보험", "GA", "보험대리점", "설계사", "수수료", "금융당국", "금융감독원", "금융위원회"],
+  excludeContext: ["스포츠 경기", "선수 이적", "농구", "배구", "야구", "지역 행사", "무관 브랜드명"],
+  reportTone: "임원에게 바로 전달 가능한 짧은 판단 문장과 근거 기사 중심",
+};
+
+export const issueScoringRules = [
+  { label: "당사 직접 부정", score: 10, tone: "negative", reason: "당사명과 사고·제재·피해·사칭·불법 문맥이 함께 등장하면 최우선 확인" },
+  { label: "당사 긍정 성과", score: 7, tone: "positive", reason: "당사 성과, 수상, 우수인증설계사, 브랜드평판 1위 등 홍보 활용 가능 기사" },
+  { label: "금융당국/규제", score: 6, tone: "caution", reason: "수수료, 내부통제, 모집질서, 소비자보호처럼 영업 환경 변화 가능성이 있는 기사" },
+  { label: "반복 보도", score: 4, tone: "neutral", reason: "같은 이슈가 여러 매체에 묶여 노출되면 확산 여부 확인" },
+  { label: "경쟁 GA/보험사", score: 3, tone: "neutral", reason: "경쟁사 실적, 제휴, M&A, 채널 전략 흐름을 업계 동향으로 기록" },
+  { label: "업종 무관", score: -10, tone: "muted", reason: "키워드는 맞지만 보험·GA·금융 문맥이 없으면 핵심 이슈에서 제외" },
+];
+
+export const reportTemplatePresets = [
+  { name: "임원용 1페이지", use: "핵심 판단, 리스크, 근거 기사만 압축", format: "한 장 보고서" },
+  { name: "실무 상세형", use: "기사 목록, 분류, 키워드, 일자 로그까지 확인", format: "대시보드형 리포트" },
+  { name: "신문형 주간/월간", use: "기간 흐름과 반복 이슈를 읽히는 지면으로 정리", format: "뉴스레터형 PDF" },
+  { name: "카톡 요약형", use: "모바일에서 바로 읽는 핵심 브리핑", format: "짧은 알림톡" },
+];
+
+export const automationChecklist = [
+  { label: "5분 감시", body: "부정·주의 신호를 짧은 주기로 확인하고 자동 보고서와 분리해 운영" },
+  { label: "일일 보고", body: "08시, 13시, 18시 구간별 기사만 요약하고 보고서 근거 기사와 맞춤" },
+  { label: "주간/월간 보고", body: "기간 흐름, 반복 키워드, 당사/정책/GA·보험사 동향을 지면형으로 정리" },
+  { label: "수동 갱신", body: "갱신 버튼을 누르면 수집·분석·저장·재조회 상태를 전역 상태로 표시" },
+];

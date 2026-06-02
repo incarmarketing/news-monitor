@@ -1719,6 +1719,180 @@ button.kpi-card {
   gap: 10px;
 }
 
+.customize-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(340px, .75fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.customize-workspace > .panel:first-child {
+  grid-row: span 3;
+}
+
+.customize-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 12px;
+  align-items: stretch;
+  padding: 14px;
+  border: 1px solid #c9d7fb;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(40, 85, 217, .08), transparent 55%),
+    #fbfdff;
+}
+
+.customize-hero span {
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+
+.customize-hero h2 {
+  margin: 5px 0 6px;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 900;
+}
+
+.customize-hero p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.customize-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.customize-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.customize-form-grid label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.customize-form-grid label > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.customize-form-grid input,
+.customize-form-grid textarea {
+  width: 100%;
+  min-height: 38px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.customize-form-grid textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.customize-form-grid .wide-field {
+  grid-column: 1 / -1;
+}
+
+.customize-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.template-preset-grid,
+.automation-check-grid,
+.issue-score-board {
+  display: grid;
+  gap: 8px;
+}
+
+.template-preset-grid article,
+.automation-check-grid article,
+.issue-score-board article {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.template-preset-grid b,
+.automation-check-grid b,
+.issue-score-board b {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.template-preset-grid span,
+.automation-check-grid span,
+.issue-score-board span {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.template-preset-grid em {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 3px 7px;
+  border: 1px solid #c9d7fb;
+  border-radius: 999px;
+  color: var(--blue);
+  background: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.automation-check-grid article,
+.issue-score-board article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+}
+
+.automation-check-grid svg {
+  width: 18px;
+  height: 18px;
+  color: var(--blue);
+}
+
+.issue-score-board.compact {
+  gap: 6px;
+}
+
+.issue-score-board.compact article {
+  padding: 8px;
+}
+
 .scrap-preset-row-v2,
 .scrap-actions-v2 {
   display: flex;
@@ -1762,6 +1936,34 @@ button.kpi-card {
   font-size: 12px;
   line-height: 1.5;
   font-weight: 800;
+}
+
+.scrap-analysis-lines {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.scrap-analysis-lines article {
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.scrap-analysis-lines article b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.scrap-analysis-lines article span {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.4;
 }
 
 .scrap-digest article {
@@ -3605,6 +3807,7 @@ button.kpi-card {
   .risk-command-grid,
   .publication-body,
   .scrap-workspace-v2,
+  .customize-workspace,
   .monitoring-layout,
   .regulator-layout,
   .regulator-analysis-result {
@@ -3756,8 +3959,14 @@ button.kpi-card {
   .kpi-grid.compact,
   .regulator-summary-grid,
   .filter-card,
-  .fact-grid {
+  .fact-grid,
+  .customize-hero,
+  .customize-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .customize-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .filter-card.regulator-filter {
