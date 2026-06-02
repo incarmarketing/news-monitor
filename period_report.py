@@ -151,6 +151,7 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
     top_source_count = aggregate.get("top_sources", [{}])[0].get("count", 0) if aggregate.get("top_sources") else 0
     daily_volume = aggregate.get("daily_volume", [])
     peak_day = max(daily_volume, key=lambda row: row.get("total", 0), default={})
+    own_peak_day = max(daily_volume, key=lambda row: row.get("own", 0), default={})
     latest_day = daily_volume[-1] if daily_volume else {}
     risk_dates = [
         row.get("date", "")[5:]
@@ -339,6 +340,38 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     top_source = top_sources[0].get("source", "-") if top_sources else "-"
     top_source_count = top_sources[0].get("count", 0) if top_sources else 0
     negative_count = tones.get("negative", 0)
+    latest_total = latest_day.get("total", 0)
+    peak_total = peak_day.get("total", 0)
+    if latest_total > peak_total * 0.8 and peak_total:
+        trend_direction = "최근 기준일까지 높은 노출 밀도가 유지됩니다."
+    elif latest_total and peak_total and latest_total < peak_total * 0.45:
+        trend_direction = "최대 노출일 이후 기사량은 안정 구간으로 내려왔습니다."
+    elif latest_total:
+        trend_direction = "최근 기준일은 기간 평균권의 노출 흐름입니다."
+    else:
+        trend_direction = "최근 기준일의 별도 노출 신호는 제한적입니다."
+    trend_summary = (
+        f"기간 내 최대 노출은 {peak_day.get('date', '-')} {peak_total:,}건입니다. "
+        f"당사 직접 언급 피크는 {own_peak_day.get('date', '-')} {own_peak_day.get('own', 0):,}건이며, "
+        f"주의 관찰일은 {risk_date_text}입니다. {trend_direction}"
+    )
+    trend_highlights = [
+        {
+            "label": "최대 노출일",
+            "value": f"{peak_day.get('date', '-')} · {peak_total:,}건",
+            "body": f"{top_keyword} 및 GA/보험 동향이 같은 날 반복 노출됐는지 확인하는 기준일입니다.",
+        },
+        {
+            "label": "당사 노출 피크",
+            "value": f"{own_peak_day.get('date', '-')} · {own_peak_day.get('own', 0):,}건",
+            "body": "성과성 보도와 리스크성 보도를 분리해 브랜드 노출의 성격을 봅니다.",
+        },
+        {
+            "label": "주의 관찰일",
+            "value": risk_date_text,
+            "body": f"HIGH/MEDIUM 판정일입니다. 당사 부정 {own_negative:,}건과 일반 부정 논조 {negative_count:,}건을 분리해 읽습니다.",
+        },
+    ]
     interpretation_notes = [
         {
             "title": "노출 구조",
@@ -407,10 +440,35 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         "density_rows": density_rows,
         "keyword_rows": keyword_rows,
         "source_rows": source_rows,
+        "trend_summary": trend_summary,
+        "trend_highlights": trend_highlights,
         "interpretation_notes": interpretation_notes,
         "evidence_groups": evidence_groups,
         "daily_rows": daily_rows,
     }
+
+
+def decorate_trend_days(rows: list[dict]) -> list[dict]:
+    if not rows:
+        return []
+    max_total = max((row.get("total", 0) for row in rows), default=0)
+    max_own = max((row.get("own", 0) for row in rows), default=0)
+    max_negative = max((row.get("negative", 0) for row in rows), default=0)
+    decorated: list[dict] = []
+    for row in rows:
+        total = row.get("total", 0)
+        own = row.get("own", 0)
+        negative = row.get("negative", 0)
+        decorated.append({
+            **row,
+            "total_height": max(6, round(total / max(max_total, 1) * 100)) if total else 4,
+            "own_height": max(6, round(own / max(max_own, 1) * 100)) if own else 4,
+            "negative_height": max(6, round(negative / max(max_negative, 1) * 100)) if negative else 0,
+            "is_peak": bool(total and total == max_total),
+            "is_own_peak": bool(own and own == max_own),
+            "has_negative": bool(negative),
+        })
+    return decorated
 
 
 def markdown_to_html(md: str) -> str:
@@ -482,7 +540,7 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
 
     aggregate = archiver.aggregate_metrics(daily_data)
     top_articles = archiver.collect_top_articles(daily_data, limit=800)
-    trend_days = aggregate.get("daily_volume", [])[-12:]
+    trend_days = decorate_trend_days(aggregate.get("daily_volume", [])[-12:])
     risk_trend_days = aggregate.get("daily_own_negative", [])[-12:]
     max_trend_total = max((d["total"] for d in trend_days), default=0)
     max_own_trend_total = max((d.get("own", 0) for d in trend_days), default=0)
