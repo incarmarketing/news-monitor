@@ -193,9 +193,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .global-refresh-pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 6px 11px;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: #fff;
@@ -204,31 +204,22 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .global-refresh-pill svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 }
 
 .global-refresh-pill span {
-  display: grid;
-  gap: 1px;
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
   text-align: left;
 }
 
 .global-refresh-pill b {
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.global-refresh-pill em {
-  color: var(--muted);
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 900;
-  line-height: 1.1;
+  line-height: 1;
   white-space: nowrap;
 }
 

@@ -328,7 +328,6 @@ function Header({ refreshState }) {
     failed: "갱신 실패",
     idle: "자동 대기",
   }[status] || "자동 대기";
-  const statusMeta = refreshState?.updatedAt ? formatRefreshClock(refreshState.updatedAt) : "5분 자동";
   const history = refreshState?.history || [];
 
   return (
@@ -351,7 +350,6 @@ function Header({ refreshState }) {
             <RefreshCw className={isRunning ? "spin" : ""} />
             <span>
               <b>{statusText}</b>
-              <em>{statusMeta}</em>
             </span>
           </button>
           {open && (
