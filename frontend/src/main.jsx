@@ -540,7 +540,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
             <CategoryChart rows={data.categoryFlow} />
           </Panel>
           <Panel title="언론사 영향도" icon={Building2} meta={data.scope}>
-            <PressInfluence rows={data.pressInfluence} />
+            <PressInfluence rows={data.pressInfluence} onOpenMonitoring={onOpenMonitoring} />
           </Panel>
         </div>
         <div className="side-column">
