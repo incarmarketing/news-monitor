@@ -54,6 +54,14 @@ create table if not exists public.monitor_keywords (
   primary key (keyword, category)
 );
 
+create table if not exists public.monitor_profiles (
+  profile_key text primary key,
+  profile jsonb not null default '{}'::jsonb,
+  updated_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 do $$
 begin
   if not exists (
@@ -179,6 +187,7 @@ create index if not exists idx_news_articles_status on public.news_articles (sta
 create index if not exists idx_news_articles_keyword on public.news_articles (keyword);
 create index if not exists idx_report_runs_report_date on public.report_runs (report_date desc);
 create index if not exists idx_monitor_keywords_category on public.monitor_keywords (category, created_at);
+create index if not exists idx_monitor_profiles_updated_at on public.monitor_profiles (updated_at desc);
 create index if not exists idx_media_relations_hidden on public.media_relations (hidden);
 create index if not exists idx_reporters_media on public.reporters (media);
 create index if not exists idx_ad_spends_month on public.ad_spends (spend_month);
@@ -214,6 +223,11 @@ create trigger set_monitor_keywords_updated_at
 before update on public.monitor_keywords
 for each row execute function public.set_updated_at();
 
+drop trigger if exists set_monitor_profiles_updated_at on public.monitor_profiles;
+create trigger set_monitor_profiles_updated_at
+before update on public.monitor_profiles
+for each row execute function public.set_updated_at();
+
 drop trigger if exists set_media_relations_updated_at on public.media_relations;
 create trigger set_media_relations_updated_at
 before update on public.media_relations
@@ -247,6 +261,7 @@ for each row execute function public.set_updated_at();
 alter table public.report_runs enable row level security;
 alter table public.news_articles enable row level security;
 alter table public.monitor_keywords enable row level security;
+alter table public.monitor_profiles enable row level security;
 alter table public.media_relations enable row level security;
 alter table public.reporters enable row level security;
 alter table public.ad_spends enable row level security;
@@ -308,6 +323,7 @@ using (true)
 with check (true);
 
 grant select, insert, update, delete on public.monitor_keywords to anon;
+revoke all on public.monitor_profiles from anon, authenticated;
 
 drop policy if exists "public dashboard manage monitor keywords" on public.monitor_keywords;
 create policy "public dashboard manage monitor keywords"

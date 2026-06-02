@@ -473,6 +473,25 @@ def load_press_alias_rows(limit: int = 1000) -> list[dict]:
     return rows
 
 
+def load_monitor_profile() -> dict:
+    if not is_enabled():
+        return {}
+    response = request(
+        "GET",
+        "monitor_profiles?select=profile_key,profile,updated_at,updated_by&profile_key=eq.default&limit=1",
+    )
+    rows = response.json()
+    if not rows:
+        return {}
+    row = rows[0]
+    profile = row.get("profile") if isinstance(row.get("profile"), dict) else {}
+    return {
+        **profile,
+        "updatedAt": row.get("updated_at") or profile.get("updatedAt"),
+        "updatedBy": row.get("updated_by") or profile.get("updatedBy"),
+    }
+
+
 def load_monitor_keywords() -> list[str]:
     keywords = []
     seen = set()

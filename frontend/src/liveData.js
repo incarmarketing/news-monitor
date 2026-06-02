@@ -1,5 +1,4 @@
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
-const LOCAL_SCRAPS_KEY = "marketing_pr_local_scraps_v1";
 
 const SUPABASE_CONFIG_PATHS = [
   "/data/supabase.json",
@@ -79,33 +78,6 @@ export function saveDashboardSession(session) {
   if (session?.session_token) {
     sessionStorage.setItem(DASHBOARD_SESSION_KEY, JSON.stringify(session));
   }
-}
-
-function getLocalScraps() {
-  try {
-    const rows = JSON.parse(localStorage.getItem(LOCAL_SCRAPS_KEY) || "[]");
-    return Array.isArray(rows) ? rows.map(normalizeArticle).filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalScrap(article = {}) {
-  const articleHash = String(article.id || article.article_hash || article.link || article.title || "").trim();
-  if (!articleHash) throw new Error("article_hash_required");
-  const next = [
-    { ...article, id: articleHash, article_hash: articleHash, scrapedAt: formatDate(new Date().toISOString()) },
-    ...getLocalScraps().filter((item) => item.id !== articleHash && item.link !== article.link),
-  ].slice(0, 200);
-  localStorage.setItem(LOCAL_SCRAPS_KEY, JSON.stringify(next));
-  return next;
-}
-
-function deleteLocalScrap(articleHash) {
-  const cleanHash = String(articleHash || "").trim();
-  const next = getLocalScraps().filter((item) => item.id !== cleanHash && item.article_hash !== cleanHash && item.link !== cleanHash);
-  localStorage.setItem(LOCAL_SCRAPS_KEY, JSON.stringify(next));
-  return next;
 }
 
 async function fetchJson(path, options) {
@@ -237,46 +209,59 @@ export async function saveMonitorKeyword(keyword, category = "other") {
   );
 }
 
+export async function saveCustomizationProfile(profile = {}) {
+  const session = getStoredSession();
+  if (!profile || typeof profile !== "object") throw new Error("profile_required");
+  const cleanProfile = {
+    companyName: String(profile.companyName || "").trim(),
+    teamName: String(profile.teamName || "").trim(),
+    serviceName: String(profile.serviceName || "").trim(),
+    purpose: String(profile.purpose || "").trim(),
+    ownKeywords: arrayOfText(profile.ownKeywords),
+    industryContext: arrayOfText(profile.industryContext),
+    excludeContext: arrayOfText(profile.excludeContext),
+    reportTone: String(profile.reportTone || "").trim(),
+  };
+  return writeRest(
+    "monitor_profiles?on_conflict=profile_key",
+    "POST",
+    [{
+      profile_key: "default",
+      profile: cleanProfile,
+      updated_by: session?.employee_no || session?.display_name || "dashboard",
+    }],
+    { Prefer: "resolution=merge-duplicates,return=representation" },
+  );
+}
+
 export async function saveArticleScrap(article = {}) {
   const articleHash = String(article.id || article.article_hash || article.link || article.title || "").trim();
   if (!articleHash) throw new Error("article_hash_required");
   const session = getStoredSession();
-  try {
-    return await writeRest(
-      "article_scraps?on_conflict=article_hash",
-      "POST",
-      [{
+  return writeRest(
+    "article_scraps?on_conflict=article_hash",
+    "POST",
+    [{
+      article_hash: articleHash,
+      article_snapshot: {
+        ...article,
         article_hash: articleHash,
-        article_snapshot: {
-          ...article,
-          article_hash: articleHash,
-        },
-        created_by: session?.employee_no || session?.display_name || "dashboard",
-      }],
-      { Prefer: "resolution=merge-duplicates,return=representation" },
-    );
-  } catch (error) {
-    if (!canFallbackToLocal(error)) throw error;
-    return saveLocalScrap(article);
-  }
+      },
+      created_by: session?.employee_no || session?.display_name || "dashboard",
+    }],
+    { Prefer: "resolution=merge-duplicates,return=representation" },
+  );
 }
 
 export async function deleteArticleScrap(articleHash) {
   const cleanHash = String(articleHash || "").trim();
   if (!cleanHash) throw new Error("article_hash_required");
-  try {
-    const result = await writeRest(
-      `article_scraps?article_hash=eq.${encodeURIComponent(cleanHash)}`,
-      "DELETE",
-      null,
-      { Prefer: "return=minimal" },
-    );
-    deleteLocalScrap(cleanHash);
-    return result;
-  } catch (error) {
-    if (!canFallbackToLocal(error)) throw error;
-    return deleteLocalScrap(cleanHash);
-  }
+  return writeRest(
+    `article_scraps?article_hash=eq.${encodeURIComponent(cleanHash)}`,
+    "DELETE",
+    null,
+    { Prefer: "return=minimal" },
+  );
 }
 
 export async function analyzeRegulatorReleases(prompt, articles = []) {
@@ -393,9 +378,14 @@ function regulatorRelevanceText(article = {}) {
   return tags.length ? tags.join(", ") : "보험/GA 관련성 확인 필요";
 }
 
-function canFallbackToLocal(error) {
-  const message = String(error?.message || error || "");
-  return /missing_dashboard_session|invalid_session|missing_supabase_config|dashboard_api_401|unauthorized/.test(message);
+function arrayOfText(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  return String(value || "")
+    .split(/[,;\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 export async function saveReporterProfile(reporter = {}) {
@@ -480,6 +470,7 @@ export async function loadOperationalData() {
     ads: [],
     aliases: [],
     keywords: [],
+    customization: null,
     session: null,
   };
 
@@ -520,6 +511,7 @@ async function loadStaticOperationalData() {
         ads: Array.isArray(payload?.ads) ? payload.ads.map(normalizeAd) : [],
         aliases: Array.isArray(payload?.aliases) ? payload.aliases : [],
         keywords: Array.isArray(payload?.keywords) ? payload.keywords.map(normalizeKeyword).filter(Boolean) : [],
+        customization: normalizeCustomizationProfile(payload?.customization || payload?.monitor_profile || payload?.monitor_profiles),
         session: null,
       };
     } catch {
@@ -544,6 +536,7 @@ async function loadOperationalDataFromSupabaseSession() {
     ads: [],
     aliases: [],
     keywords: [],
+    customization: null,
     session: getStoredSession(),
   };
 
@@ -557,7 +550,7 @@ async function loadOperationalDataFromSupabaseSession() {
       return { ...base, message: "운영 로그인 필요" };
     }
 
-    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords] = await Promise.all([
+    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords, customizationRows] = await Promise.all([
       fetchTable(
         config,
         session,
@@ -594,6 +587,7 @@ async function loadOperationalDataFromSupabaseSession() {
       rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
       rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
       rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
+      rest(config, session, "monitor_profiles?select=profile_key,profile,updated_at,updated_by&profile_key=eq.default&limit=1"),
     ]);
 
     const aliasRows = Array.isArray(aliases) ? aliases : [];
@@ -615,6 +609,7 @@ async function loadOperationalDataFromSupabaseSession() {
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
       aliases: aliasRows,
       keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
+      customization: normalizeCustomizationProfile(customizationRows),
       session,
     };
   } catch (error) {
@@ -629,6 +624,17 @@ function normalizeKeyword(row) {
     keyword: String(keyword).trim(),
     category: row?.category || "other",
     enabled: row?.enabled !== false,
+  };
+}
+
+function normalizeCustomizationProfile(rows) {
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  const profile = row?.profile || row;
+  if (!profile || typeof profile !== "object") return null;
+  return {
+    ...profile,
+    updatedAt: row?.updated_at || profile.updatedAt || "",
+    updatedBy: row?.updated_by || profile.updatedBy || "",
   };
 }
 
@@ -814,7 +820,7 @@ function isOwnCertifiedPlannerAchievementRow(row = {}) {
 
 function mergeScraps(remoteScraps = []) {
   const map = new Map();
-  [...getLocalScraps(), ...remoteScraps].forEach((item) => {
+  remoteScraps.forEach((item) => {
     const key = item?.id || item?.article_hash || item?.link || item?.title;
     if (key) map.set(key, item);
   });

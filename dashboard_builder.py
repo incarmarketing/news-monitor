@@ -328,6 +328,14 @@ def load_dashboard_aliases() -> list[dict]:
     return []
 
 
+def load_dashboard_customization() -> dict:
+    try:
+        return supabase_store.load_monitor_profile()
+    except Exception as exc:
+        print(f"Supabase monitor profile source skipped: {exc}")
+    return {}
+
+
 def publish_dashboard() -> Path:
     archives = load_daily_archives()
     articles = build_articles(archives)
@@ -338,6 +346,7 @@ def publish_dashboard() -> Path:
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
+    customization = load_dashboard_customization()
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -354,6 +363,7 @@ def publish_dashboard() -> Path:
                 "notifications": notifications,
                 "watch_runs": watch_runs,
                 "scraps": scraps,
+                "customization": customization,
             },
             ensure_ascii=False,
             indent=2,

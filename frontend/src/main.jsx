@@ -65,6 +65,7 @@ import {
   generateRiskResponse,
   loadOperationalData,
   saveArticleScrap,
+  saveCustomizationProfile,
   saveMonitorKeyword,
   savePressAlias,
   saveReporterProfile,
@@ -1926,7 +1927,7 @@ function AdSpendChart({ rows, color = "#2855d9", compact = false }) {
   );
 }
 
-function Management({ management, operations }) {
+function Management({ management, operations, onRefreshOperations }) {
   const [tab, setTab] = useState("customize");
   return (
     <main className="workspace">
@@ -1950,11 +1951,18 @@ function Management({ management, operations }) {
           </button>
         ))}
       </div>
-      {tab === "customize" && <CustomizationCenter keywords={operations.keywords || []} aliases={operations.aliases || []} />}
-      {tab === "media" && <MediaManagement rows={management.media} aliases={operations.aliases || []} />}
-      {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
+      {tab === "customize" && (
+        <CustomizationCenter
+          keywords={operations.keywords || []}
+          aliases={operations.aliases || []}
+          profile={operations.customization}
+          onRefreshOperations={onRefreshOperations}
+        />
+      )}
+      {tab === "media" && <MediaManagement rows={management.media} aliases={operations.aliases || []} onRefreshOperations={onRefreshOperations} />}
+      {tab === "reporters" && <ReporterManagement rows={management.reporters} onRefreshOperations={onRefreshOperations} />}
       {tab === "ads" && <AdManagement rows={management.ads} />}
-      {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} />}
+      {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} onRefreshOperations={onRefreshOperations} />}
     </main>
   );
 }
@@ -1971,85 +1979,103 @@ function ManagementSummary({ management }) {
   );
 }
 
-function CustomizationCenter({ keywords = [], aliases = [] }) {
-  const [profile, setProfile] = useState(() => readCustomizationProfile());
+function CustomizationCenter({ keywords = [], aliases = [], profile = null, onRefreshOperations }) {
+  const activeProfile = useMemo(
+    () => ({ ...customizationProfile, ...(profile && typeof profile === "object" ? profile : {}) }),
+    [profile],
+  );
+  const [draftProfile, setDraftProfile] = useState(activeProfile);
   const [status, setStatus] = useState("");
+  const [saving, setSaving] = useState(false);
   const keywordCount = keywords.length || keywordGroups.flatMap((group) => group.keywords).length;
   const aliasCount = aliases.length;
+  const profileUpdated = activeProfile.updatedAt ? formatKstDateTime(activeProfile.updatedAt) : "Supabase default";
+
+  useEffect(() => {
+    setDraftProfile(activeProfile);
+  }, [activeProfile]);
 
   const updateProfile = (field, value) => {
-    setProfile((current) => ({ ...current, [field]: value }));
+    setDraftProfile((current) => ({ ...current, [field]: value }));
   };
 
-  const saveProfile = () => {
-    writeCustomizationProfile(profile);
-    setStatus("커스터마이즈 설정을 이 브라우저에 저장했습니다. Supabase 저장 항목은 키워드/언론사 관리에서 별도 반영됩니다.");
+  const saveProfile = async () => {
+    setSaving(true);
+    setStatus("Supabase에 커스터마이즈 설정을 저장하는 중입니다.");
+    try {
+      await saveCustomizationProfile(draftProfile);
+      setStatus("Supabase monitor_profiles에 저장했습니다. 다른 PC에서도 같은 설정을 읽습니다.");
+      await onRefreshOperations?.();
+    } catch (error) {
+      setStatus("저장 실패: " + (error?.message || "Supabase 세션 또는 테이블 권한을 확인해야 합니다."));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const resetProfile = () => {
-    setProfile(customizationProfile);
-    writeCustomizationProfile(customizationProfile);
-    setStatus("기본 운영 기준으로 복원했습니다.");
+    setDraftProfile(customizationProfile);
+    setStatus("기본값으로 되돌렸습니다. 온라인에 반영하려면 저장을 눌러야 합니다.");
   };
 
   const copyProfile = async () => {
-    const snapshot = buildCustomizationSnapshot(profile, { keywordCount, aliasCount });
+    const snapshot = buildCustomizationSnapshot(draftProfile, { keywordCount, aliasCount });
     await navigator.clipboard?.writeText(JSON.stringify(snapshot, null, 2));
-    setStatus("커스터마이즈 JSON을 복사했습니다.");
+    setStatus("커스터마이즈 JSON을 복사했습니다. 저장은 Supabase 버튼으로만 반영됩니다.");
   };
 
   return (
     <section className="customize-workspace">
-      <Panel title="커스터마이즈 센터" icon={Settings} meta="회사·목적·보고서 기준">
+      <Panel title="커스터마이즈 센터" icon={Settings} meta={"온라인 설정 · " + profileUpdated}>
         <div className="customize-hero">
           <div>
             <span>CONFIGURATION DESK</span>
-            <h2>{profile.serviceName}</h2>
-            <p>{profile.purpose}</p>
+            <h2>{draftProfile.serviceName}</h2>
+            <p>{draftProfile.purpose}</p>
           </div>
           <div className="customize-summary">
-            <Fact label="현재 키워드" value={`${keywordCount.toLocaleString("ko-KR")}개`} />
-            <Fact label="언론사 보정" value={`${aliasCount.toLocaleString("ko-KR")}개`} />
+            <Fact label="모니터링 키워드" value={keywordCount.toLocaleString("ko-KR") + "개"} />
+            <Fact label="언론사 보정" value={aliasCount.toLocaleString("ko-KR") + "개"} />
           </div>
         </div>
         <div className="customize-form-grid">
           <label>
-            <span>회사명</span>
-            <input value={profile.companyName} onChange={(event) => updateProfile("companyName", event.target.value)} />
+            <span>{"회사명"}</span>
+            <input value={draftProfile.companyName} onChange={(event) => updateProfile("companyName", event.target.value)} />
           </label>
           <label>
-            <span>부서명</span>
-            <input value={profile.teamName} onChange={(event) => updateProfile("teamName", event.target.value)} />
+            <span>{"부서명"}</span>
+            <input value={draftProfile.teamName} onChange={(event) => updateProfile("teamName", event.target.value)} />
           </label>
           <label className="wide-field">
-            <span>서비스/프로젝트명</span>
-            <input value={profile.serviceName} onChange={(event) => updateProfile("serviceName", event.target.value)} />
+            <span>{"서비스 / 프로젝트명"}</span>
+            <input value={draftProfile.serviceName} onChange={(event) => updateProfile("serviceName", event.target.value)} />
           </label>
           <label className="wide-field">
-            <span>모니터링 목적</span>
-            <textarea value={profile.purpose} onChange={(event) => updateProfile("purpose", event.target.value)} />
+            <span>{"모니터링 목적"}</span>
+            <textarea value={draftProfile.purpose} onChange={(event) => updateProfile("purpose", event.target.value)} />
           </label>
           <label>
-            <span>당사 키워드</span>
-            <textarea value={listToText(profile.ownKeywords)} onChange={(event) => updateProfile("ownKeywords", textToList(event.target.value))} />
+            <span>{"당사 키워드"}</span>
+            <textarea value={listToText(draftProfile.ownKeywords)} onChange={(event) => updateProfile("ownKeywords", textToList(event.target.value))} />
           </label>
           <label>
-            <span>업종 문맥</span>
-            <textarea value={listToText(profile.industryContext)} onChange={(event) => updateProfile("industryContext", textToList(event.target.value))} />
+            <span>{"업종 문맥"}</span>
+            <textarea value={listToText(draftProfile.industryContext)} onChange={(event) => updateProfile("industryContext", textToList(event.target.value))} />
           </label>
           <label>
-            <span>제외 문맥</span>
-            <textarea value={listToText(profile.excludeContext)} onChange={(event) => updateProfile("excludeContext", textToList(event.target.value))} />
+            <span>{"제외 문맥"}</span>
+            <textarea value={listToText(draftProfile.excludeContext)} onChange={(event) => updateProfile("excludeContext", textToList(event.target.value))} />
           </label>
           <label>
-            <span>보고서 문체</span>
-            <textarea value={profile.reportTone} onChange={(event) => updateProfile("reportTone", event.target.value)} />
+            <span>{"보고서 문체"}</span>
+            <textarea value={draftProfile.reportTone} onChange={(event) => updateProfile("reportTone", event.target.value)} />
           </label>
         </div>
         <div className="customize-actions">
-          <button className="ghost-button" onClick={resetProfile}>기본값 복원</button>
-          <button className="ghost-button" onClick={copyProfile}>JSON 복사</button>
-          <button className="primary-button" onClick={saveProfile}>설정 저장</button>
+          <button className="ghost-button" onClick={resetProfile}>{"기본값 복원"}</button>
+          <button className="ghost-button" onClick={copyProfile}>JSON {"복사"}</button>
+          <button className="primary-button" onClick={saveProfile} disabled={saving}>{saving ? "저장 중" : "Supabase 저장"}</button>
         </div>
         {status && <p className="status-note">{status}</p>}
       </Panel>
@@ -2058,7 +2084,7 @@ function CustomizationCenter({ keywords = [], aliases = [] }) {
         <IssueScoringBoard />
       </Panel>
 
-      <Panel title="보고서 템플릿" icon={FileText} meta={`${reportTemplatePresets.length}종`}>
+      <Panel title="보고서 템플릿" icon={FileText} meta={reportTemplatePresets.length + "종"}>
         <div className="template-preset-grid">
           {reportTemplatePresets.map((item) => (
             <article key={item.name}>
@@ -2070,7 +2096,7 @@ function CustomizationCenter({ keywords = [], aliases = [] }) {
         </div>
       </Panel>
 
-      <Panel title="자동화 운영 체크리스트" icon={CalendarDays} meta="수집·분석·발송">
+      <Panel title="자동화 운영 체크리스트" icon={CalendarDays} meta="수집 · 분석 · 발송">
         <div className="automation-check-grid">
           {automationChecklist.map((item) => (
             <article key={item.label}>
@@ -2086,14 +2112,12 @@ function CustomizationCenter({ keywords = [], aliases = [] }) {
     </section>
   );
 }
-
-function MediaManagement({ rows, aliases = [] }) {
+function MediaManagement({ rows, aliases = [], onRefreshOperations }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [aliasDraft, setAliasDraft] = useState({ url: "", pressName: "", status: "" });
-  const [localAliases, setLocalAliases] = useState(() => readLocalRows(PRESS_ALIAS_DRAFT_KEY));
-  const aliasRows = useMemo(() => mergeAliasRows(aliases, localAliases), [aliases, localAliases]);
+  const aliasRows = useMemo(() => aliases, [aliases]);
   const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows), [rows, aliasRows]);
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -2144,14 +2168,12 @@ function MediaManagement({ rows, aliases = [] }) {
       setAliasDraft((current) => ({ ...current, status: "URL/도메인과 언론사명을 모두 입력해야 합니다." }));
       return;
     }
-    const nextAliases = upsertAliasRow(localAliases, { host, press_name: cleanName });
-    setLocalAliases(nextAliases);
-    writeLocalRows(PRESS_ALIAS_DRAFT_KEY, nextAliases);
     try {
       await savePressAlias(host, cleanName);
-      setAliasDraft((current) => ({ ...current, status: `${host} -> ${cleanName} 저장 완료` }));
-    } catch {
-      setAliasDraft((current) => ({ ...current, status: `${host} -> ${cleanName} 화면 반영 완료 · 운영 세션 연결 시 DB 저장` }));
+      setAliasDraft((current) => ({ ...current, status: `${host} -> ${cleanName} Supabase ?? ??` }));
+      await onRefreshOperations?.();
+    } catch (error) {
+      setAliasDraft((current) => ({ ...current, status: `${host} -> ${cleanName} Supabase ?? ??: ${error?.message || "??/?? ?? ??"}` }));
     }
   };
 
@@ -2257,14 +2279,13 @@ function MediaManagement({ rows, aliases = [] }) {
   );
 }
 
-function ReporterManagement({ rows }) {
+function ReporterManagement({ rows, onRefreshOperations }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [form, setForm] = useState(emptyReporterForm);
   const [selectedReporter, setSelectedReporter] = useState(null);
-  const [localState, setLocalState] = useState(() => readLocalReporterState());
-  const managedRows = useMemo(() => mergeReporterRows(rows, localState), [rows, localState]);
+  const managedRows = rows;
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return managedRows;
@@ -2275,11 +2296,6 @@ function ReporterManagement({ rows }) {
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
 
   const updateForm = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-  const persistLocalState = (nextState) => {
-    setLocalState(nextState);
-    writeLocalReporterState(nextState);
-  };
-
   const handleAddReporter = () => {
     setForm(emptyReporterForm);
     setSelectedReporter({ mode: "add" });
@@ -2305,36 +2321,29 @@ function ReporterManagement({ rows }) {
       setStatus("기자명과 언론사를 입력해야 합니다.");
       return;
     }
-    const optimistic = { ...item, id: item.id || `local-${Date.now()}` };
-    const localFirst = upsertReporterLocal(localState, optimistic);
-    persistLocalState(localFirst);
-    setForm(emptyReporterForm);
-    setSelectedReporter(null);
     try {
-      const saved = await saveReporterProfile(item);
-      const savedRow = Array.isArray(saved) && saved[0] ? reporterDraftFromRemote(saved[0]) : optimistic;
-      persistLocalState(upsertReporterLocal(localFirst, savedRow, optimistic.id));
+      await saveReporterProfile(item);
+      setForm(emptyReporterForm);
+      setSelectedReporter(null);
       setStatus("Supabase 저장 완료");
-    } catch {
-      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      await onRefreshOperations?.();
+    } catch (error) {
+      setStatus(`Supabase 저장 실패: ${error?.message || "세션/권한 확인 필요"}`);
     }
   };
 
   const handleDeleteReporter = async (row) => {
-    const key = reporterKey(row);
-    const nextState = hideReporterLocal(localState, row);
-    persistLocalState(nextState);
     setSelectedReporter(null);
     try {
       if (/^\d+$/.test(String(row.id || ""))) {
         await deleteReporterProfile(row.id);
         setStatus("Supabase 삭제 완료");
+        await onRefreshOperations?.();
       } else {
-        setStatus("현재 화면에서 제외했습니다.");
+        setStatus("Supabase 원격 ID가 없어 삭제할 수 없습니다. 목록을 새로고침해 주세요.");
       }
-    } catch {
-      persistLocalState({ ...nextState, hidden: unique([...nextState.hidden, key]) });
-      setStatus("현재 화면에서 제외했습니다. 운영 세션 연결 시 DB 삭제 가능");
+    } catch (error) {
+      setStatus(`Supabase 삭제 실패: ${error?.message || "세션/권한 확인 필요"}`);
     }
   };
 
@@ -2509,14 +2518,13 @@ function AdManagement({ rows }) {
   );
 }
 
-function KeywordManagement({ keywords = [] }) {
+function KeywordManagement({ keywords = [], onRefreshOperations }) {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("own");
   const [status, setStatus] = useState("");
-  const [localKeywords, setLocalKeywords] = useState(() => readLocalRows(KEYWORD_DRAFT_KEY));
   const rows = useMemo(
-    () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), localKeywords),
-    [keywords, localKeywords],
+    () => keywords.length ? keywords : keywordRowsFromGroups(),
+    [keywords],
   );
   const grouped = useMemo(() => groupKeywordRows(rows), [rows]);
 
@@ -2526,16 +2534,13 @@ function KeywordManagement({ keywords = [] }) {
       setStatus("추가할 키워드를 입력하세요.");
       return;
     }
-    const nextKeyword = { keyword: cleanKeyword, category, enabled: true };
-    const nextLocal = upsertKeywordRow(localKeywords, nextKeyword);
-    setLocalKeywords(nextLocal);
-    writeLocalRows(KEYWORD_DRAFT_KEY, nextLocal);
-    setKeyword("");
     try {
       await saveMonitorKeyword(cleanKeyword, category);
+      setKeyword("");
       setStatus("Supabase 저장 완료");
-    } catch {
-      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      await onRefreshOperations?.();
+    } catch (error) {
+      setStatus(`Supabase 저장 실패: ${error?.message || "세션/권한 확인 필요"}`);
     }
   };
 
@@ -3889,11 +3894,6 @@ function buildPressInfluence(articles) {
   });
 }
 
-const PRESS_ALIAS_DRAFT_KEY = "news_monitor_press_alias_drafts_v1";
-const KEYWORD_DRAFT_KEY = "news_monitor_keyword_drafts_v1";
-const REPORTER_DRAFT_KEY = "news_monitor_reporter_drafts_v1";
-const CUSTOMIZATION_PROFILE_KEY = "news_monitor_customization_profile_v1";
-
 const emptyReporterForm = {
   id: "",
   name: "",
@@ -3933,43 +3933,6 @@ const keywordCategories = [
   { id: "exclude", label: "제외 후보", rule: "브랜드평판, 스포츠, 상품명 오탐처럼 수집 제외 후보로 관리합니다." },
 ];
 
-function readLocalRows(key) {
-  try {
-    const rows = JSON.parse(window.localStorage.getItem(key) || "[]");
-    return Array.isArray(rows) ? rows : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocalRows(key, rows) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(rows));
-  } catch {
-    // Supabase is the source of truth; local storage only keeps the public page responsive.
-  }
-}
-
-function readCustomizationProfile() {
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(CUSTOMIZATION_PROFILE_KEY) || "null");
-    return {
-      ...customizationProfile,
-      ...(stored && typeof stored === "object" ? stored : {}),
-    };
-  } catch {
-    return customizationProfile;
-  }
-}
-
-function writeCustomizationProfile(profile) {
-  try {
-    window.localStorage.setItem(CUSTOMIZATION_PROFILE_KEY, JSON.stringify(profile));
-  } catch {
-    // Local customization is optional; the dashboard remains usable with defaults.
-  }
-}
-
 function listToText(value) {
   return Array.isArray(value) ? value.join(", ") : String(value || "");
 }
@@ -3987,30 +3950,6 @@ function buildCustomizationSnapshot(profile, stats = {}) {
     currentStats: stats,
     exportedAt: new Date().toISOString(),
   };
-}
-
-function readLocalReporterState() {
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(REPORTER_DRAFT_KEY) || "{}");
-    if (Array.isArray(stored)) return { rows: stored, hidden: [] };
-    return {
-      rows: Array.isArray(stored.rows) ? stored.rows : [],
-      hidden: Array.isArray(stored.hidden) ? stored.hidden : [],
-    };
-  } catch {
-    return { rows: [], hidden: [] };
-  }
-}
-
-function writeLocalReporterState(state) {
-  try {
-    window.localStorage.setItem(REPORTER_DRAFT_KEY, JSON.stringify({
-      rows: Array.isArray(state.rows) ? state.rows : [],
-      hidden: Array.isArray(state.hidden) ? state.hidden : [],
-    }));
-  } catch {
-    // Local persistence is best-effort; DB persistence is attempted separately.
-  }
 }
 
 function canonicalHost(value) {
@@ -4044,14 +3983,6 @@ function mergeAliasRows(remoteRows = [], localRows = []) {
     if (normalized) map.set(normalized.host, normalized);
   });
   return Array.from(map.values()).sort((a, b) => a.pressName.localeCompare(b.pressName, "ko-KR"));
-}
-
-function upsertAliasRow(rows, row) {
-  const normalized = normalizeAliasRow(row);
-  if (!normalized) return rows;
-  const map = new Map(rows.map((item) => [canonicalHost(item.host), item]));
-  map.set(normalized.host, { host: normalized.host, press_name: normalized.pressName });
-  return Array.from(map.values());
 }
 
 function hostMatchesAlias(aliasHost, host) {
@@ -4123,42 +4054,6 @@ function reporterDraftFromRemote(row = {}) {
   });
 }
 
-function mergeReporterRows(rows = [], localState = {}) {
-  const hidden = new Set(localState.hidden || []);
-  const map = new Map();
-  rows.forEach((row) => {
-    const normalized = normalizeReporterDraft(row);
-    const key = reporterKey(normalized);
-    if (key && !hidden.has(key)) map.set(key, normalized);
-  });
-  (localState.rows || []).forEach((row) => {
-    const normalized = normalizeReporterDraft(row);
-    const key = reporterKey(normalized);
-    if (key && !hidden.has(key)) map.set(key, normalized);
-  });
-  return Array.from(map.values()).sort((a, b) => {
-    const contactDiff = String(b.contactDate || "").localeCompare(String(a.contactDate || ""));
-    return contactDiff || a.name.localeCompare(b.name, "ko-KR");
-  });
-}
-
-function upsertReporterLocal(state = {}, row = {}, replaceId = "") {
-  const normalized = normalizeReporterDraft(row);
-  const key = reporterKey(normalized);
-  const replaceKey = replaceId ? String(replaceId) : "";
-  const map = new Map((state.rows || []).map((item) => [reporterKey(item), item]));
-  if (replaceKey && map.has(replaceKey)) map.delete(replaceKey);
-  map.set(key, normalized);
-  const hidden = (state.hidden || []).filter((value) => value !== key && value !== replaceKey);
-  return { rows: Array.from(map.values()), hidden };
-}
-
-function hideReporterLocal(state = {}, row = {}) {
-  const key = reporterKey(row);
-  const rows = (state.rows || []).filter((item) => reporterKey(item) !== key);
-  return { rows, hidden: unique([...(state.hidden || []), key]) };
-}
-
 function keywordRowsFromGroups() {
   const categoryMap = {
     당사: "own",
@@ -4192,14 +4087,6 @@ function mergeKeywordRows(remoteRows = [], localRows = []) {
     const normalized = normalizeKeywordRow(row);
     if (normalized?.enabled) map.set(`${normalized.category}:${normalizeKeywordText(normalized.keyword)}`, normalized);
   });
-  return Array.from(map.values());
-}
-
-function upsertKeywordRow(rows, row) {
-  const normalized = normalizeKeywordRow(row);
-  if (!normalized) return rows;
-  const map = new Map(rows.map((item) => [`${item.category || "other"}:${normalizeKeywordText(item.keyword)}`, item]));
-  map.set(`${normalized.category}:${normalizeKeywordText(normalized.keyword)}`, normalized);
   return Array.from(map.values());
 }
 
