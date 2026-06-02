@@ -612,6 +612,7 @@ button.kpi-card {
 .monthly-issue-digest {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: start;
   gap: 10px;
 }
 
@@ -625,9 +626,92 @@ button.kpi-card {
 }
 
 .monthly-issue-lead {
+  align-self: start;
   padding: 12px;
   border-color: #c8d6ff;
   background: linear-gradient(180deg, #fbfdff 0%, #fff 100%);
+}
+
+.daily-issue-digest {
+  display: grid;
+  gap: 10px;
+}
+
+.daily-issue-feature,
+.daily-issue-grid article {
+  min-width: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.daily-issue-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  border-color: #c8d6ff;
+  background: linear-gradient(180deg, #fbfdff 0%, #fff 100%);
+}
+
+.daily-issue-kicker {
+  display: block;
+  margin-top: 7px;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.daily-issue-feature h3 {
+  margin: 5px 0 7px;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.32;
+  font-weight: 900;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.daily-issue-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.daily-issue-grid article {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px;
+}
+
+.daily-issue-grid h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.daily-issue-grid a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: 100%;
+  margin-top: 2px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.daily-issue-grid a svg {
+  width: 14px;
+  height: 14px;
 }
 
 .monthly-issue-kicker {
@@ -3475,6 +3559,14 @@ button.kpi-card {
   }
 
   .monthly-issue-digest {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-issue-feature {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-issue-grid {
     grid-template-columns: 1fr;
   }
 

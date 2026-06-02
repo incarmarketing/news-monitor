@@ -1050,7 +1050,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], scraps, onOpenM
             : <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />}
         </Panel>
         <Panel title={`${periodLabel} 핵심 이슈`} icon={Newspaper} meta={`${issueRows.length}건`} className="wide-panel">
-          <MonthlyIssueDigest issues={issueRows} />
+          <MonthlyIssueDigest issues={issueRows} period={period} />
         </Panel>
       </section>
     </main>
@@ -2250,10 +2250,13 @@ function Panel({ title, icon: Icon, meta, actions, children, className = "" }) {
   );
 }
 
-function MonthlyIssueDigest({ issues }) {
+function MonthlyIssueDigest({ issues, period = "monthly" }) {
   const [lead, ...rest] = issues;
   if (!lead) {
     return <div className="monthly-issue-empty">최근 1개월 기준으로 표시할 핵심 이슈가 없습니다.</div>;
+  }
+  if (period === "daily") {
+    return <DailyIssueDigest lead={lead} rest={rest} />;
   }
   return (
     <div className="monthly-issue-digest">
@@ -2284,6 +2287,48 @@ function MonthlyIssueDigest({ issues }) {
             {issue.link && issue.link !== "#" && (
               <a href={issue.link} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" onClick={(event) => openArticleLink(event, issue.link)}>
                 <ExternalLink />
+              </a>
+            )}
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DailyIssueDigest({ lead, rest = [] }) {
+  return (
+    <div className="daily-issue-digest">
+      <article className="daily-issue-feature">
+        <div>
+          <div className="issue-meta">
+            <Chip tone={lead.tone}>{lead.tone}</Chip>
+            <Chip>{lead.category}</Chip>
+            <span>{lead.source} · {lead.publishedAt}</span>
+          </div>
+          <span className="daily-issue-kicker">우선 확인</span>
+          <h3>{lead.title}</h3>
+          <ArticleSummaryBlock item={lead} />
+        </div>
+        {lead.link && lead.link !== "#" && (
+          <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
+            <ExternalLink />기사 열기
+          </a>
+        )}
+      </article>
+      <div className="daily-issue-grid">
+        {rest.slice(0, 4).map((issue) => (
+          <article key={`${issue.source}-${issue.title}`}>
+            <div className="issue-meta">
+              <Chip tone={issue.tone}>{issue.tone}</Chip>
+              <Chip>{issue.category}</Chip>
+              <span>{issue.source} · {issue.publishedAt}</span>
+            </div>
+            <h4>{issue.title}</h4>
+            <ArticleSummaryBlock item={issue} dense />
+            {issue.link && issue.link !== "#" && (
+              <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
+                <ExternalLink />기사 열기
               </a>
             )}
           </article>
