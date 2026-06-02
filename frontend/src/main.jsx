@@ -408,6 +408,21 @@ function formatRefreshClock(value) {
   });
 }
 
+function formatKstDateTime(value) {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 function PeriodControl({ period, setPeriod, compact = false }) {
   return (
     <div className={compact ? "period-control compact" : "period-control"} aria-label="기간 선택">
