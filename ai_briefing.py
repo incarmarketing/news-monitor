@@ -147,6 +147,8 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 - 굵게 표시용 ** 문법 금지.
 - 기사 나열 금지. 중복 기사는 하나의 이슈로 설명.
 - 기사 목록에 없는 이슈, 키워드, 법안, 사건은 절대 추가하지 마세요.
+- 핵심 이슈 1개는 반드시 근거 기사 ID 1개와 직접 대응되어야 합니다. 해당 기사 제목/요약에 없는 회사명, 기관명, 사건명은 절대 넣지 마세요.
+- 서로 다른 기사에 나온 회사나 사건을 한 줄에 합쳐 쓰지 마세요. 예: 롯데손보 기사에 KDB생명을 함께 쓰면 안 됩니다.
 - 핵심 이슈에는 내부 매칭용 근거 기사 ID를 [N] 형식으로 붙이되, 이슈명과 판단은 짧게 작성하세요. 예: - [3] KDB생명 GA 실적: 당사 선두권 보도.
 - 보고서 문장에는 [1, 2, 3] 같은 번호 표현을 설명처럼 반복하지 마세요.
 - 매출/M/S/실적 1위 이슈는 대상 보험사나 회사명을 반드시 포함하세요. 예: KDB생명 GA 실적, 신한라이프 GA 실적.
@@ -384,26 +386,46 @@ def validate_report_sections(sections: dict, clustered: list[dict], metrics: dic
         selected_issues.append(issue_from_article(article))
 
     sections["issues"] = selected_issues[:2]
-    if should_rewrite_conclusion(sections.get("conclusion", ""), clustered):
+    validation_articles = issue_ref_articles(sections["issues"], by_id) or clustered
+    if should_rewrite_conclusion(sections.get("conclusion", ""), validation_articles):
         sections["conclusion"] = safe_conclusion_from_articles(sections, metrics)
+    if should_rewrite_interpretation(sections.get("interpretation_html", ""), validation_articles):
+        sections["interpretation_html"] = markdown_to_html("## 지표 해석\n" + safe_interpretation_from_articles(sections, metrics))
+    sections["keywords"] = supported_keywords(sections.get("keywords", []), validation_articles, selected_issues)
     return sections
 
 
 def issue_evidence_article(issue: dict, clustered: list[dict], by_id: dict[int, dict]) -> dict | None:
     text = f"{issue.get('title', '')} {issue.get('detail', '')}"
-    match = best_article_match(text, clustered)
-    if match:
-        return match
     for ref_id in issue.get("refs", []):
         article = by_id.get(ref_id)
         if article:
             return article
+    match = best_article_match(text, clustered)
+    if match:
+        return match
     return None
 
 
 def issue_text_matches_article(issue: dict, article: dict) -> bool:
     text = f"{issue.get('title', '')} {issue.get('detail', '')}"
+    if unsupported_entities(text, [article]):
+        return False
     return best_article_match(text, [article]) is not None
+
+
+def issue_ref_articles(issues: list[dict], by_id: dict[int, dict]) -> list[dict]:
+    articles: list[dict] = []
+    seen: set[int] = set()
+    for issue in issues:
+        for ref_id in issue.get("refs", []):
+            if ref_id in seen:
+                continue
+            article = by_id.get(ref_id)
+            if article:
+                articles.append(article)
+                seen.add(ref_id)
+    return articles
 
 
 def issue_from_article(article: dict) -> dict:
@@ -438,9 +460,16 @@ def fallback_issue_articles(clustered: list[dict]) -> list[dict]:
 def should_rewrite_conclusion(conclusion: str, clustered: list[dict]) -> bool:
     if not (conclusion or "").strip():
         return True
+    if unsupported_entities(conclusion, clustered):
+        return True
     if best_article_match(conclusion, clustered):
         return False
     return bool(meaningful_tokens(conclusion))
+
+
+def should_rewrite_interpretation(interpretation_html: str, clustered: list[dict]) -> bool:
+    text = re.sub(r"<[^>]+>", " ", interpretation_html or "")
+    return bool(unsupported_entities(html.unescape(text), clustered))
 
 
 def safe_conclusion_from_articles(sections: dict, metrics: dict) -> str:
@@ -453,6 +482,17 @@ def safe_conclusion_from_articles(sections: dict, metrics: dict) -> str:
     return f"실제 수집 기사 기준 리스크는 {risk_level}이며, 당사 부정 이슈는 {own_negative}건입니다."
 
 
+def safe_interpretation_from_articles(sections: dict, metrics: dict) -> str:
+    issues = sections.get("issues", [])
+    own = metrics.get("by_category", {}).get("own", 0)
+    own_negative = metrics.get("own_negative", 0)
+    market = metrics.get("by_category", {}).get("competitor", 0) + metrics.get("by_category", {}).get("industry", 0)
+    if issues:
+        issue_text = ", ".join(issue.get("title", "") for issue in issues[:2] if issue.get("title"))
+        return f"당사 언급 {own}건, 당사 부정 {own_negative}건입니다. 주요 흐름은 {issue_text}이며, 근거 기사에 확인되는 내용만 반영했습니다."
+    return f"당사 언급 {own}건, 당사 부정 {own_negative}건이며, 경쟁/업계 동향 {market}건을 근거 기사 기준으로 정리했습니다."
+
+
 def article_key(article: dict) -> str:
     return article.get("link") or article.get("title", "")
 
@@ -460,6 +500,29 @@ def article_key(article: dict) -> str:
 def parse_keywords(raw: dict) -> list[str]:
     text = raw.get("분석 키워드", "") or raw.get("추적 키워드", "")
     return [item.strip() for item in text.replace("\n", ",").split(",") if item.strip()]
+
+
+def supported_keywords(keywords: list[str], clustered: list[dict], issues: list[dict]) -> list[str]:
+    article_text = normalize_match_text(" ".join(article_search_text(article) for article in clustered))
+    supported: list[str] = []
+    for keyword in keywords:
+        cleaned = compact_text(strip_ref_marks(keyword), 20)
+        if not cleaned or cleaned in supported:
+            continue
+        normalized = normalize_match_text(cleaned)
+        if entity_like(cleaned) and not entity_supported(cleaned, article_text):
+            continue
+        if normalized and (normalized in article_text or not entity_like(cleaned)):
+            supported.append(cleaned)
+
+    for issue in issues:
+        if len(supported) >= 5:
+            break
+        for token in meaningful_tokens(issue.get("title", "")):
+            if token not in supported and token in article_text:
+                supported.append(token)
+                break
+    return supported[:5]
 
 
 def select_evidence_articles(clustered: list[dict], sections: dict, limit: int = 12) -> list[dict]:
@@ -536,6 +599,59 @@ def best_article_match(text: str, articles: list[dict]) -> dict | None:
             best_score = score
             best_article = article
     return best_article if best_score >= 2 else None
+
+
+ENTITY_ALIASES = [
+    {"인카금융", "인카금융서비스"},
+    {"롯데손보", "롯데손해보험"},
+    {"DB손보", "DB손해보험"},
+    {"KB손보", "KB손해보험"},
+    {"한화손보", "한화손해보험"},
+    {"농협손보", "NH농협손해보험", "농협손해보험"},
+    {"KB라이프", "KB라이프생명"},
+    {"금감원", "금융감독원"},
+    {"금융위", "금융위원회"},
+]
+
+
+def known_entities() -> list[str]:
+    entities = set(analyzer.OWN_NAMES)
+    entities.update(analyzer.COMPETITOR_WORDS)
+    entities.update({"금감원", "금융감독원", "금융위", "금융위원회"})
+    for group in ENTITY_ALIASES:
+        entities.update(group)
+    return sorted(entities, key=len, reverse=True)
+
+
+def article_search_text(article: dict) -> str:
+    return " ".join(
+        str(article.get(key, ""))
+        for key in ("title", "description", "summary", "_summary", "keyword", "source")
+    )
+
+
+def entities_in_text(text: str) -> list[str]:
+    normalized = normalize_match_text(text)
+    return [entity for entity in known_entities() if normalize_match_text(entity) in normalized]
+
+
+def unsupported_entities(text: str, articles: list[dict]) -> list[str]:
+    article_text = normalize_match_text(" ".join(article_search_text(article) for article in articles))
+    return [entity for entity in entities_in_text(text) if not entity_supported(entity, article_text)]
+
+
+def entity_supported(entity: str, article_text: str) -> bool:
+    normalized = normalize_match_text(entity)
+    if normalized in article_text:
+        return True
+    for group in ENTITY_ALIASES:
+        if entity in group:
+            return any(normalize_match_text(alias) in article_text for alias in group)
+    return False
+
+
+def entity_like(keyword: str) -> bool:
+    return bool(entities_in_text(keyword))
 
 
 def meaningful_tokens(text: str) -> list[str]:

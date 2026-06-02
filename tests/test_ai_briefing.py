@@ -67,6 +67,53 @@ class BriefingEvidenceTests(unittest.TestCase):
 
         self.assertEqual(evidence[0]["title"], "인카금융서비스, 브랜드평판 1위")
 
+    def test_issue_with_unsupported_company_name_is_rewritten_from_ref_article(self) -> None:
+        clustered = [
+            {
+                "_report_id": 5,
+                "_category": "competitor",
+                "_tone": "caution",
+                "_score": 14,
+                "_summary": "롯데손보 매각 가능성과 금융지주 관심을 다룬 기사입니다.",
+                "title": "롯데손보 매각 속도 불붙나…손보 부재 금융지주에 주목",
+                "description": "롯데손보 매각 절차와 금융지주사의 관심 가능성을 다뤘다.",
+                "source": "아시아투데이",
+                "keyword": "손해보험",
+                "link": "https://example.com/lotte",
+            },
+            {
+                "_report_id": 9,
+                "_category": "competitor",
+                "_tone": "neutral",
+                "_score": 9,
+                "_summary": "KDB생명 매각 예비입찰 관련 기사입니다.",
+                "title": "매각 7수 KDB생명…한투 vs 태광 맞대결 성사되나",
+                "description": "KDB생명 매각 절차와 인수 후보를 다뤘다.",
+                "source": "이데일리",
+                "keyword": "생명보험",
+                "link": "https://example.com/kdb",
+            }
+        ]
+        sections = {
+            "conclusion": "보험사 매각 동향이 관찰됩니다.",
+            "issues": [
+                {
+                    "title": "롯데손보, KDB생명 매각",
+                    "detail": "금융지주 중심 보험업계 M&A 가속화",
+                    "refs": [5],
+                }
+            ],
+            "interpretation_html": "<p>롯데손보와 KDB생명 매각 동향이 주요하게 다뤄졌습니다.</p>",
+            "keywords": ["롯데손보", "KDB생명", "M&A"],
+        }
+
+        result = ai_briefing.validate_report_sections(sections, clustered, {"own_negative": 0, "risk_level": "LOW", "by_category": {"own": 0, "competitor": 1, "industry": 0}})
+
+        rendered = f"{result['issues'][0]['title']} {result['issues'][0]['detail']} {result['interpretation_html']} {' '.join(result['keywords'])}"
+        self.assertIn("롯데손보", rendered)
+        self.assertNotIn("KDB생명", rendered)
+        self.assertEqual(result["issues"][0]["refs"], [5])
+
 
 if __name__ == "__main__":
     unittest.main()
