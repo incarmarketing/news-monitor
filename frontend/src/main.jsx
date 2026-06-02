@@ -2253,52 +2253,16 @@ function Panel({ title, icon: Icon, meta, actions, children, className = "" }) {
 function MonthlyIssueDigest({ issues, period = "monthly" }) {
   const [lead, ...rest] = issues;
   if (!lead) {
-    return <div className="monthly-issue-empty">최근 1개월 기준으로 표시할 핵심 이슈가 없습니다.</div>;
+    const emptyLabel = period === "weekly" ? "최근 1주 기준" : period === "daily" ? "일간 기준" : "최근 1개월 기준";
+    return <div className="monthly-issue-empty">{emptyLabel}으로 표시할 핵심 이슈가 없습니다.</div>;
   }
-  if (period === "daily") {
-    return <DailyIssueDigest lead={lead} rest={rest} />;
-  }
-  return (
-    <div className="monthly-issue-digest">
-      <article className="monthly-issue-lead">
-        <div className="issue-meta">
-          <Chip tone={lead.tone}>{lead.tone}</Chip>
-          <Chip>{lead.category}</Chip>
-          <span>{lead.source} · {lead.publishedAt}</span>
-        </div>
-        <span className="monthly-issue-kicker">Headline</span>
-        <h3>{lead.title}</h3>
-        <ArticleSummaryBlock item={lead} />
-        {lead.link && lead.link !== "#" && (
-          <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
-            <ExternalLink />기사 열기
-          </a>
-        )}
-      </article>
-      <div className="monthly-issue-list">
-        {rest.slice(0, 5).map((issue) => (
-          <article key={`${issue.source}-${issue.title}`}>
-            <div>
-              <span>{issue.source} · {issue.publishedAt}</span>
-              <h4>{issue.title}</h4>
-              <ArticleSummaryBlock item={issue} dense />
-            </div>
-            <Chip tone={issue.tone}>{issue.tone}</Chip>
-            {issue.link && issue.link !== "#" && (
-              <a href={issue.link} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" onClick={(event) => openArticleLink(event, issue.link)}>
-                <ExternalLink />
-              </a>
-            )}
-          </article>
-        ))}
-      </div>
-    </div>
-  );
+  const kicker = period === "weekly" ? "주간 우선 확인" : period === "monthly" ? "월간 우선 확인" : "우선 확인";
+  return <DailyIssueDigest lead={lead} rest={rest} kicker={kicker} limit={period === "daily" ? 4 : 6} period={period} />;
 }
 
-function DailyIssueDigest({ lead, rest = [] }) {
+function DailyIssueDigest({ lead, rest = [], kicker = "우선 확인", limit = 4, period = "daily" }) {
   return (
-    <div className="daily-issue-digest">
+    <div className={`daily-issue-digest ${period}`}>
       <article className="daily-issue-feature">
         <div>
           <div className="issue-meta">
@@ -2306,7 +2270,7 @@ function DailyIssueDigest({ lead, rest = [] }) {
             <Chip>{lead.category}</Chip>
             <span>{lead.source} · {lead.publishedAt}</span>
           </div>
-          <span className="daily-issue-kicker">우선 확인</span>
+          <span className="daily-issue-kicker">{kicker}</span>
           <h3>{lead.title}</h3>
           <ArticleSummaryBlock item={lead} />
         </div>
@@ -2317,7 +2281,7 @@ function DailyIssueDigest({ lead, rest = [] }) {
         )}
       </article>
       <div className="daily-issue-grid">
-        {rest.slice(0, 4).map((issue) => (
+        {rest.slice(0, limit).map((issue) => (
           <article key={`${issue.source}-${issue.title}`}>
             <div className="issue-meta">
               <Chip tone={issue.tone}>{issue.tone}</Chip>
