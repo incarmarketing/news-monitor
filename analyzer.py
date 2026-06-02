@@ -587,6 +587,8 @@ def analyze_tone(article: dict) -> str:
     positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
     positive_score += sum(1 for word in CSR_CONTEXT_WORDS if word in text)
 
+    if is_own_article(article) and is_certified_planner_achievement_article(article):
+        return "positive"
     if is_own_article(article) and is_zero_misconduct_positive_article(article):
         return "positive"
 
@@ -622,6 +624,16 @@ def should_mark_caution(article: dict, category: str, severe_score: int, caution
 def is_zero_misconduct_positive_article(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     return "불완전판매" in text and any(word in text for word in ("0건", "제로", "우수", "인증", "선정"))
+
+
+def is_certified_planner_achievement_article(article: dict) -> bool:
+    if not is_own_article(article):
+        return False
+    text = article.get("title", "") + " " + article.get("description", "")
+    has_certified_planner = bool(re.search(r"우수\s*인증\s*설계사|우수인증설계사|인증설계사", text))
+    has_achievement = bool(re.search(r"최다|1위|배출|선정|성과|증가|성장|완전판매|신뢰도", text))
+    has_negative_signal = any(word in text for word in SEVERE_NEGATIVE_WORDS)
+    return has_certified_planner and has_achievement and not has_negative_signal
 
 
 def is_own_article(article: dict) -> bool:

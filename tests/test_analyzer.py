@@ -182,6 +182,19 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotIn("당사 직접 언급 기사", summary)
         self.assertNotIn("평판 영향", summary)
 
+    def test_own_certified_planner_achievement_is_positive(self) -> None:
+        article = {
+            "title": "인카금융서비스, 우수인증설계사 2262명 배출…GA업계 최다 기록",
+            "description": "인카금융서비스가 우수인증설계사 배출 규모를 크게 늘리며 완전판매 성과를 보였다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(analyzer.analyze_tone(article), "positive")
+
 
 if __name__ == "__main__":
     unittest.main()

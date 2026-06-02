@@ -758,6 +758,8 @@ function normalizeArticle(row) {
   let tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
   if (isOwnMarketCautionRow(row)) {
     tone = "주의";
+  } else if (isOwnCertifiedPlannerAchievementRow(row)) {
+    tone = "긍정";
   }
   if (tone === "긍정" && category !== "당사" && !hasOwnMention(row)) {
     tone = "중립";
@@ -800,6 +802,14 @@ function normalizeNotification(row) {
     body: row.body || row.error || "",
     link: row.link_url || "",
   };
+}
+
+function isOwnCertifiedPlannerAchievementRow(row = {}) {
+  if (!hasOwnMention(row)) return false;
+  const text = `${row.title || ""} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""}`;
+  return /우수\s*인증\s*설계사|우수인증설계사|인증설계사/.test(text)
+    && /최다|1위|배출|선정|성과|증가|성장|완전판매|신뢰도/.test(text)
+    && !/불법|사기|제재|검사|점검|고발|논란|피해|민원|불완전판매/.test(text);
 }
 
 function mergeScraps(remoteScraps = []) {

@@ -2922,10 +2922,18 @@ function buildHeadline(articles, ownMentions, ownNegative, caution) {
   const ownArticles = articles.filter(isOwnArticle);
   const ownLead = ownArticles.find((article) => !isStockMarketArticle(article)) || ownArticles[0];
   const stockOnlyOwnMentions = ownArticles.length > 0 && ownArticles.every(isStockMarketArticle);
+  const ownPositive = ownArticles.filter((article) => article.tone === "긍정" || isOwnAchievementArticle(article));
+  const ownPositiveLead = ownPositive[0];
   if (ownNegative > 0) {
     return `당사 부정 ${ownNegative}건이 확인됐습니다. 최신 당사 언급 기사 "${ownLead?.title || "확인 필요"}"를 우선 점검합니다.`;
   }
   if (ownMentions > 0) {
+    if (ownPositive.length > 0 && ownPositive.length === ownArticles.length) {
+      return `당사 우호 보도 ${ownPositive.length}건이 확인됐습니다. 핵심 기사 "${ownPositiveLead?.title}"는 설계사 경쟁력과 완전판매 성과를 보여주는 홍보 활용 후보입니다.`;
+    }
+    if (ownPositive.length > 0) {
+      return `당사 우호 보도 ${ownPositive.length}건과 기타 당사 언급 ${ownMentions - ownPositive.length}건이 함께 관찰됐습니다. 핵심 기사 "${ownPositiveLead?.title}"를 홍보 활용 후보로 분리합니다.`;
+    }
     if (stockOnlyOwnMentions) {
       return `당사 언급 ${ownMentions}건은 주가·시황성 노출입니다. 직접 부정 보도나 영업 리스크와 분리해 시장 참고 신호로 관리합니다.`;
     }
@@ -2935,6 +2943,14 @@ function buildHeadline(articles, ownMentions, ownNegative, caution) {
     return `당사 언급 ${ownMentions}건은 직접 부정은 아니지만 평판 영향 확인이 필요합니다. 핵심 기사 "${ownLead?.title}"의 맥락을 우선 점검합니다.`;
   }
   return `당사 직접 언급은 없습니다. 주의 ${caution}건과 GA/보험사 동향 ${articles.filter((item) => ["GA", "보험사"].includes(item.category)).length}건을 추적합니다.`;
+}
+
+function isOwnAchievementArticle(article = {}) {
+  const text = `${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`;
+  return isOwnArticle(article)
+    && /우수\s*인증\s*설계사|우수인증설계사|인증설계사|브랜드평판|1위|최다|수상|선정/.test(text)
+    && /최다|1위|배출|선정|성과|증가|성장|완전판매|신뢰도|우호|긍정/.test(text)
+    && !/불법|사기|제재|검사|점검|고발|논란|피해|민원|불완전판매/.test(text);
 }
 
 function isStockMarketArticle(article = {}) {
@@ -3014,12 +3030,12 @@ function buildArticleSummaryLines(item = {}) {
   const lead = buildSummaryLeadLine(item, cleanTitle, sentences, text);
   const detail = buildSummaryDetailLine(item, sentences, text);
   const insight = buildSummaryInsightLine(item);
-  return unique([lead, detail, insight].filter(Boolean))
+  const lines = unique([lead, detail, insight].filter(Boolean))
     .filter((line) => !isGenericSummaryLine(line))
     .filter((line) => !isBrokenSummarySentence(line))
     .map(normalizeSummaryLine)
-    .filter(Boolean)
-    .slice(0, 4);
+    .filter(Boolean);
+  return dedupeSummaryLines(lines).slice(0, 4);
 }
 
 function compactArticleSummary(item = {}) {
@@ -3050,6 +3066,31 @@ function normalizeSummaryLine(value) {
     .trim();
   if (!text || isFragmentSummaryLine(text) || isBrokenSummarySentence(text)) return "";
   return ensureSentence(text);
+}
+
+function dedupeSummaryLines(lines = []) {
+  const result = [];
+  lines.forEach((line) => {
+    if (!line || result.some((existing) => isNearDuplicateSummaryLine(line, existing))) return;
+    result.push(line);
+  });
+  return result;
+}
+
+function isNearDuplicateSummaryLine(a = "", b = "") {
+  const aTokens = summaryTokens(a);
+  const bTokens = summaryTokens(b);
+  if (!aTokens.length || !bTokens.length) return false;
+  const overlap = aTokens.filter((token) => bTokens.includes(token)).length;
+  const smaller = Math.min(aTokens.length, bTokens.length);
+  return overlap >= Math.max(4, Math.ceil(smaller * 0.68));
+}
+
+function summaryTokens(value = "") {
+  return cleanSummaryText(value)
+    .replace(/[^\w가-힣\s]/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length >= 2 && !/^(기사|보도|내용|확인|필요|관련)$/.test(token));
 }
 
 function stripCaptionPrefix(value) {
@@ -3118,6 +3159,7 @@ function isFragmentSummaryLine(value) {
   const text = cleanSummaryText(value).replace(/[.!?。]+$/, "");
   if (!text) return true;
   if (/^(강력히|적극적으로|지속적으로|본격적으로|확대|강화|추진|확인|필요)$/.test(text)) return true;
+  if (/^(규모로|영업조직의|계약관리 역량|전문성과|완전판매 성과)/.test(text)) return true;
   if (text.length < 8 && !/\d/.test(text)) return true;
   return /(강력히|적극적으로|지속적으로|본격적으로)$/.test(text);
 }
