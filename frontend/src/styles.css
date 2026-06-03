@@ -578,7 +578,7 @@ button.kpi-card {
 
 .regulator-analysis-body {
   display: grid;
-  grid-template-columns: minmax(0, .9fr) minmax(0, 1.5fr);
+  grid-template-columns: minmax(260px, .9fr) minmax(0, 1.6fr);
   gap: 12px;
   align-items: stretch;
 }
@@ -601,7 +601,8 @@ button.kpi-card {
 }
 
 .regulator-analysis-lead p,
-.regulator-theme-grid p {
+.regulator-theme-grid p,
+.regulator-impact-grid p {
   margin: 0;
   color: var(--ink-2);
   font-size: 12px;
@@ -610,14 +611,21 @@ button.kpi-card {
   word-break: keep-all;
 }
 
-.regulator-theme-grid {
+.regulator-analysis-right {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   min-width: 0;
 }
 
-.regulator-theme-grid article {
+.regulator-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.regulator-theme-grid article,
+.regulator-impact-grid article {
   display: grid;
   gap: 5px;
   min-width: 0;
@@ -633,10 +641,75 @@ button.kpi-card {
   font-weight: 900;
 }
 
-.regulator-theme-grid b {
+.regulator-theme-grid b,
+.regulator-impact-grid b {
   color: var(--blue);
   font-size: 20px;
   font-weight: 900;
+}
+
+.regulator-theme-grid small {
+  display: -webkit-box;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.regulator-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.regulator-impact-grid article {
+  background: #fff;
+}
+
+.regulator-impact-grid span,
+.regulator-watch-list span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.regulator-watch-list {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.regulator-watch-list ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.regulator-watch-list li {
+  position: relative;
+  padding-left: 10px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.regulator-watch-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .62em;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--blue);
 }
 
 .regulator-list-actions {
@@ -3080,6 +3153,8 @@ button.kpi-card {
   .content-grid.two,
   .media-analysis-layout,
   .regulator-analysis-body,
+  .regulator-analysis-right,
+  .regulator-impact-grid,
   .section-strip,
   .analysis-drill-grid,
   .management-summary,
@@ -3176,6 +3251,7 @@ button.kpi-card {
   .filter-card,
   .filter-card.regulator-filter,
   .regulator-theme-grid,
+  .regulator-impact-grid,
   .fact-grid {
     grid-template-columns: 1fr;
   }

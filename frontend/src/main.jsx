@@ -821,15 +821,33 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
         <div className="regulator-analysis-lead">
           <b>{analysis.headline}</b>
           <p>{analysis.summary}</p>
+          <div className="regulator-watch-list">
+            <span>후속 확인 포인트</span>
+            <ul>
+              {analysis.watchItems.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
         </div>
-        <div className="regulator-theme-grid">
-          {analysis.themes.map((theme) => (
-            <article key={theme.label}>
-              <span>{theme.label}</span>
-              <b>{theme.count.toLocaleString("ko-KR")}건</b>
-              <p>{theme.note}</p>
-            </article>
-          ))}
+        <div className="regulator-analysis-right">
+          <div className="regulator-theme-grid">
+            {analysis.themes.map((theme) => (
+              <article key={theme.label}>
+                <span>{theme.label}</span>
+                <b>{theme.count.toLocaleString("ko-KR")}건</b>
+                <p>{theme.note}</p>
+                {theme.examples.length > 0 && <small>{theme.examples[0]}</small>}
+              </article>
+            ))}
+          </div>
+          <div className="regulator-impact-grid">
+            {analysis.impactCards.map((card) => (
+              <article key={card.label}>
+                <span>{card.label}</span>
+                <b>{card.value}</b>
+                <p>{card.detail}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1039,7 +1057,8 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
   }, [articleUrl, selectedArticle, riskArticles]);
 
   const matchedArticle = findArticleByUrl(sourceArticles, articleUrl);
-  const activeArticle = matchedArticle || selectedArticle || makeManualRiskArticle(articleUrl);
+  const selectedUrlMatches = selectedArticle && normalizeRiskUrl(selectedArticle.link) === normalizeRiskUrl(articleUrl);
+  const activeArticle = selectedUrlMatches ? selectedArticle : matchedArticle || selectedArticle || makeManualRiskArticle(articleUrl);
   const facts = buildRiskCenterFacts(activeArticle, articleUrl);
   const activeKey = articleSelectionKey(activeArticle);
 
@@ -1146,7 +1165,10 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
               >
                 <span>
                   <Chip tone={article.tone}>{article.tone}</Chip>
-                  <em>{article.source} · {[article.date, article.time].filter(Boolean).join(" ") || "-"}</em>
+                  <em>
+                    {article.source} · {[article.date, article.time].filter(Boolean).join(" ") || "-"}
+                    {Number(article.relatedCount || 1) > 1 ? ` · 관련 ${article.relatedCount}건` : ""}
+                  </em>
                 </span>
                 <b>{article.title}</b>
                 <ArticleSummaryBlock item={article} dense />
@@ -1233,9 +1255,81 @@ function selectRiskCenterArticles(articles = []) {
   const negative = usable.filter((article) => article.tone === "부정" || String(article.riskLevel || "").toUpperCase() === "HIGH");
   const caution = usable.filter((article) => article.tone === "주의" || String(article.riskLevel || "").toUpperCase() === "MEDIUM");
   const selected = negative.length ? negative : caution;
-  return selected
-    .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
+  return buildRelatedArticleGroups(dedupeRiskArticles(selected))
+    .map((article) => {
+      const relatedArticles = Array.isArray(article.relatedArticles) && article.relatedArticles.length
+        ? article.relatedArticles
+        : [article];
+      const relatedSources = unique(relatedArticles.map((item) => item.source).filter(Boolean));
+      return {
+        ...article,
+        relatedArticles,
+        relatedCount: relatedArticles.length,
+        relatedSourceCount: relatedSources.length,
+        summaryLines: buildRiskGroupSummaryLines(relatedArticles),
+      };
+    })
+    .sort((a, b) => articleTimeValue(b) - articleTimeValue(a) || compareArticleImportance(a, b))
     .slice(0, 20);
+}
+
+function dedupeRiskArticles(rows = []) {
+  const map = new Map();
+  rows.forEach((article) => {
+    const key = riskArticleDedupeKey(article);
+    const previous = map.get(key);
+    if (!previous || articleTimeValue(article) > articleTimeValue(previous) || compareArticleImportance(article, previous) < 0) {
+      map.set(key, article);
+    }
+  });
+  return Array.from(map.values());
+}
+
+function riskArticleDedupeKey(article = {}) {
+  const url = normalizeRiskUrl(article.link);
+  if (url) return `url:${url}`;
+  const title = normalizeGroupTitle(article.title || "");
+  return `title:${article.date || ""}:${title.slice(0, 80)}`;
+}
+
+function buildRiskGroupSummaryLines(articles = []) {
+  const ranked = [...articles].sort((a, b) => compareArticleImportance(a, b));
+  const lines = [];
+  const titleKeys = new Set(ranked.map((article) => normalizeRiskSummaryKey(article.title)).filter(Boolean));
+  ranked.forEach((article) => {
+    buildArticleSummaryLines(article).forEach((line) => lines.push(line));
+  });
+  if (!lines.length && ranked[0]) {
+    const fallback = normalizeSummaryLine(headlineBasedSummary(ranked[0]));
+    if (fallback) lines.push(fallback);
+  }
+  const seen = new Set();
+  return lines.filter((line) => {
+    const key = normalizeRiskSummaryKey(line);
+    if (!key || titleKeys.has(key)) return false;
+    if (isDuplicateRiskSummaryKey(key, seen)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 3);
+}
+
+function normalizeRiskSummaryKey(value = "") {
+  return cleanSummaryText(value)
+    .toLowerCase()
+    .replace(/출처\s*[:：].*$/g, "")
+    .replace(/기준으로\s*(?:분류|확인|관찰).*$/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .slice(0, 110);
+}
+
+function isDuplicateRiskSummaryKey(key, seen) {
+  for (const previous of seen) {
+    if (key === previous) return true;
+    if (key.length >= 28 && previous.length >= 28 && (key.includes(previous) || previous.includes(key))) return true;
+    const overlap = tokenOverlapRatio(new Set(articleTokens(key)), new Set(articleTokens(previous)));
+    if (overlap >= 0.78) return true;
+  }
+  return false;
 }
 
 function findArticleByUrl(articles = [], value = "") {
@@ -1717,9 +1811,6 @@ function ManagementSummary({ management }) {
 function MediaManagement({ rows, aliases = [] }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
-  const [aliasUrl, setAliasUrl] = useState("");
-  const [pressName, setPressName] = useState("");
-  const [aliasStatus, setAliasStatus] = useState("");
   const [mediaStatus, setMediaStatus] = useState("");
   const [mediaForm, setMediaForm] = useState(emptyMediaForm);
   const [managingMedia, setManagingMedia] = useState(false);
@@ -1742,19 +1833,6 @@ function MediaManagement({ rows, aliases = [] }) {
     writeLocalRows("news_monitor_media_relation_drafts_v1", nextRows);
   };
 
-  const handleUrlChange = (value) => {
-    setAliasUrl(value);
-    const mapped = resolvePressNameFromUrl(value, aliasRows, rows);
-    if (mapped) {
-      setPressName(mapped);
-      setAliasStatus(`${canonicalHost(value)} -> ${mapped}`);
-    } else if (value.trim()) {
-      setAliasStatus("매핑 후보를 찾지 못했습니다. 언론사명을 직접 입력하세요.");
-    } else {
-      setAliasStatus("");
-    }
-  };
-
   const handleManageMedia = (row = {}) => {
     const domains = domainsForPressName(row.name, aliasRows);
     setMediaForm({
@@ -1772,24 +1850,6 @@ function MediaManagement({ rows, aliases = [] }) {
     });
     setManagingMedia(true);
     setMediaStatus(row.name ? `${row.name} 관리 정보를 편집 중입니다.` : "새 언론사 정보를 입력하세요.");
-  };
-
-  const handleSaveAlias = async () => {
-    const host = canonicalHost(aliasUrl);
-    const cleanName = pressName.trim();
-    if (!host || !cleanName) {
-      setAliasStatus("URL/도메인과 언론사명을 모두 입력해야 합니다.");
-      return;
-    }
-    const nextAliases = upsertAliasRow(localAliases, { host, press_name: cleanName });
-    setLocalAliases(nextAliases);
-    writeLocalRows(PRESS_ALIAS_DRAFT_KEY, nextAliases);
-    try {
-      await savePressAlias(host, cleanName);
-      setAliasStatus("Supabase 저장 완료");
-    } catch {
-      setAliasStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
-    }
   };
 
   const handleSaveMedia = async () => {
@@ -1817,29 +1877,6 @@ function MediaManagement({ rows, aliases = [] }) {
 
   return (
     <Panel title="언론사 관리" icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}곳`}>
-      <div className="operation-form media-alias-form">
-        <label>
-          <span>언론사 URL/도메인</span>
-          <input
-            value={aliasUrl}
-            onChange={(event) => handleUrlChange(event.target.value)}
-            placeholder="https://www.mk.co.kr/news/..."
-          />
-        </label>
-        <label>
-          <span>매핑 언론사명</span>
-          <input
-            value={pressName}
-            onChange={(event) => setPressName(event.target.value)}
-            placeholder="매일경제"
-          />
-        </label>
-        <div className="operation-form-actions">
-          <button className="ghost-button" onClick={() => handleUrlChange(aliasUrl)}>주소 매핑</button>
-          <button className="primary-button" onClick={handleSaveAlias}>매핑 저장</button>
-        </div>
-        {aliasStatus && <p className="status-note">{aliasStatus}</p>}
-      </div>
       <div className="management-toolbar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="언론사명, 도메인, 메모 검색" />
         <button className="ghost-button">등급 정리</button>
@@ -3268,27 +3305,6 @@ const emptyMediaForm = {
   memo: "",
 };
 
-const pressHostFallbacks = {
-  "asiatoday.co.kr": "아시아투데이",
-  "biz.chosun.com": "조선비즈",
-  "bohumnews.com": "보험신보",
-  "dailyan.co.kr": "데일리안",
-  "dt.co.kr": "디지털타임스",
-  "edaily.co.kr": "이데일리",
-  "fnnews.com": "파이낸셜뉴스",
-  "fins.co.kr": "보험매일",
-  "hankyung.com": "한국경제",
-  "insjournal.co.kr": "보험저널",
-  "joongangenews.com": "중앙이코노미뉴스",
-  "mk.co.kr": "매일경제",
-  "mt.co.kr": "머니투데이",
-  "news1.kr": "뉴스1",
-  "sedaily.com": "서울경제",
-  "thebell.co.kr": "더벨",
-  "weekly.chosun.com": "주간조선",
-  "yna.co.kr": "연합뉴스",
-};
-
 const keywordCategories = [
   { id: "own", label: "당사", rule: "당사명, 브랜드, 임직원처럼 직접 언급만 당사로 분류합니다." },
   { id: "competitor", label: "경쟁사/GA", rule: "보험, GA, 설계사, 정착지원금 문맥이 함께 있을 때만 경쟁사 이슈로 봅니다." },
@@ -3421,21 +3437,6 @@ function upsertAliasRow(rows, row) {
   const map = new Map(rows.map((item) => [canonicalHost(item.host), item]));
   map.set(normalized.host, { host: normalized.host, press_name: normalized.pressName });
   return Array.from(map.values());
-}
-
-function hostMatchesAlias(aliasHost, host) {
-  return host === aliasHost || host.endsWith(`.${aliasHost}`);
-}
-
-function resolvePressNameFromUrl(value, aliases = [], mediaRows = []) {
-  const host = canonicalHost(value);
-  if (!host) return "";
-  const alias = aliases.find((row) => hostMatchesAlias(row.host, host));
-  if (alias?.pressName) return alias.pressName;
-  const fallback = Object.entries(pressHostFallbacks).find(([knownHost]) => hostMatchesAlias(knownHost, host));
-  if (fallback) return fallback[1];
-  const existing = mediaRows.find((row) => normalizeKeywordText(row.name) && host.includes(normalizeKeywordText(row.name)));
-  return existing?.name || "";
 }
 
 function domainsForPressName(pressName, aliases = []) {
@@ -3926,44 +3927,102 @@ function articleSelectionKey(article = {}) {
 }
 
 function buildRegulatorDirectionAnalysis(rows = []) {
-  const themes = [
+  const sourceRows = rows.filter((row) => row?.title);
+  const themeDefinitions = [
     {
       label: "소비자보호",
       note: "민원, 분쟁, 실손 청구, 보험금 지급처럼 소비자 접점 관리가 중심입니다.",
-      pattern: /소비자|민원|분쟁|실손|보험금|청구|유의|보호|피해|장애인/,
+      action: "민원, 분쟁, 실손, 보험금 지급 기준이 고객 안내와 민원 대응 프로세스에 미치는 영향을 확인합니다.",
+      pattern: /소비자|민원|분쟁|실손|보험금|청구|유의|보호|피해|장애인|불완전판매|광고/i,
     },
     {
-      label: "판매채널",
+      label: "판매채널/GA",
       note: "GA, 설계사, 수수료, 정착지원금, 부당승환 등 판매 과정의 책임성 강화 신호입니다.",
-      pattern: /GA|설계사|판매|수수료|정착지원금|부당승환|채널|모집|영업/,
+      action: "GA, 설계사, 수수료, 정착지원금, 광고심의 문맥이 영업 현장 운영 기준과 연결되는지 점검합니다.",
+      pattern: /GA|법인보험대리점|대리점|설계사|판매|수수료|정착지원금|부당승환|채널|모집|영업|시책/i,
     },
     {
-      label: "건전성",
+      label: "건전성/자본",
       note: "지급여력, 자본, 대출채권, 경영개선처럼 재무·자본 관리 흐름입니다.",
-      pattern: /지급여력|자본|대출채권|경영개선|건전성|손해율|실적|리스크/,
+      action: "손해율, 지급여력, 자본, 대출채권, 경영개선 이슈가 업권 평판과 거래처 리스크로 번지는지 봅니다.",
+      pattern: /지급여력|자본|대출채권|경영개선|건전성|손해율|실적|리스크|적자|충당금/i,
     },
     {
       label: "감독·검사",
       note: "검사, 제재, 내부통제, 감독방향 등 당국의 점검 강도가 드러나는 영역입니다.",
-      pattern: /검사|제재|내부통제|감독|업무설명회|운영계획|관리 강화/,
+      action: "검사, 제재, 내부통제, 공시, 승인 조건처럼 후속 조치가 필요한 항목을 별도로 추적합니다.",
+      pattern: /검사|제재|내부통제|감독|업무설명회|운영계획|관리 강화|공시|승인|조건부|보고|제도/i,
+    },
+    {
+      label: "디지털/보안",
+      note: "마이데이터, 해킹, 보안, AI, 플랫폼처럼 기술·데이터 운영 리스크가 포함됩니다.",
+      action: "금융보안, 개인정보, AI, 플랫폼 관련 보도는 보안 점검과 데이터 처리 기준 변화 여부를 확인합니다.",
+      pattern: /디지털|보안|해킹|AI|마이데이터|플랫폼|전산|개인정보|침해|금융보안/i,
     },
   ].map((theme) => ({
     ...theme,
-    count: rows.filter((row) => theme.pattern.test(`${row.title || ""} ${row.summary || ""}`)).length,
+    matches: sourceRows.filter((row) => theme.pattern.test(regulatorText(row))),
+  })).map((theme) => ({
+    ...theme,
+    count: theme.matches.length,
+    examples: unique(theme.matches.map((row) => normalizeRegulatorDisplayTitle(row.title)).filter(Boolean)).slice(0, 2),
   }));
   const ranked = themes.sort((a, b) => b.count - a.count);
   const top = ranked.find((theme) => theme.count > 0) || ranked[0];
+  const second = ranked.find((theme) => theme.count > 0 && theme.label !== top.label);
+  const latest = [...sourceRows].sort((a, b) => articleTimeValue(b) - articleTimeValue(a))[0];
   const headline = rows.length
-    ? `${top.label} 중심의 정책 신호가 가장 크게 잡힙니다`
+    ? `${top.label} 중심의 당국 신호가 가장 강하게 잡힙니다`
     : "선택된 보도자료가 없습니다";
   const summary = rows.length
-    ? `${rows.length.toLocaleString("ko-KR")}건 기준으로 보면 ${top.note} 직접 제재성 이슈와 제도 변화 이슈를 분리해서 후속 모니터링하는 구조가 적절합니다.`
+    ? `${rows.length.toLocaleString("ko-KR")}건 기준으로 ${top.label}${second ? `와 ${second.label}` : ""} 흐름이 우선 관찰됩니다. 최신 보도 "${normalizeRegulatorDisplayTitle(latest?.title)}"는 시행 대상, 후속 가이드, 현장 적용 기준을 분리해 확인하는 것이 좋습니다.`
     : "보도자료를 선택하면 선택 묶음 기준으로 당국 방향성을 분석합니다.";
   return {
     headline,
     summary,
-    themes: ranked,
+    themes: ranked.slice(0, 5),
+    impactCards: buildRegulatorImpactCards(ranked),
+    watchItems: buildRegulatorWatchItems(sourceRows, ranked),
   };
+}
+
+function regulatorText(row = {}) {
+  return `${row.title || ""} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""} ${row.category || ""}`;
+}
+
+function buildRegulatorImpactCards(themes = []) {
+  const activeThemes = themes.filter((theme) => theme.count > 0);
+  const cards = (activeThemes.length ? activeThemes : themes).slice(0, 3).map((theme) => ({
+    label: theme.label,
+    value: theme.count > 0 ? "우선 점검" : "관찰 유지",
+    detail: theme.action || theme.note,
+  }));
+  while (cards.length < 3) {
+    cards.push({
+      label: "후속 보도",
+      value: "대기",
+      detail: "선택한 보도자료가 늘어나면 시행일, 대상 업권, 후속 브리핑 기준으로 세부 분석을 보강합니다.",
+    });
+  }
+  return cards;
+}
+
+function buildRegulatorWatchItems(rows = [], themes = []) {
+  if (!rows.length) return ["보도자료를 선택하면 시행 대상, 후속 일정, 영업 영향 기준으로 분석합니다."];
+  const top = themes.find((theme) => theme.count > 0);
+  const latest = [...rows].sort((a, b) => articleTimeValue(b) - articleTimeValue(a))[0];
+  const items = [];
+  if (top) items.push(top.action);
+  if (themes.find((theme) => theme.label === "판매채널/GA" && theme.count > 0)) {
+    items.push("GA·설계사 관련 항목은 모집 절차, 광고심의, 수수료·정착지원금 관리 기준과 연결해 봅니다.");
+  }
+  if (themes.find((theme) => theme.label === "소비자보호" && theme.count > 0)) {
+    items.push("소비자보호 항목은 민원, 불완전판매, 보험금 지급 안내 문구에 반영할 필요가 있는지 확인합니다.");
+  }
+  if (latest?.title) {
+    items.push(`최신 보도 "${normalizeRegulatorDisplayTitle(latest.title)}"의 시행일과 적용 대상 업권을 확인합니다.`);
+  }
+  return unique(items).slice(0, 4);
 }
 
 function selectRegulatorRows(articles = []) {
