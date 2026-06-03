@@ -894,7 +894,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
     () => buildKeywordFlow(analysisArticles, selectedKeywords),
     [analysisArticles, selectedKeywords],
   );
-  const issueRows = buildIssues(analysisArticles, data.issues).slice(0, 6);
+  const issueRows = buildIssues(analysisArticles, []).slice(0, 6);
   const observations = buildPeriodObservations(data, issueRows, period);
   return (
     <main className="workspace">
@@ -921,7 +921,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
             <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
             <KeywordBrief rows={keywordRows} />
           </Panel>
-          <Panel title={`${scopeLabel} 관찰 코멘트`} icon={Gauge} meta="핵심 흐름 요약">
+          <Panel title="관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약">
             <InsightList insights={observations} />
           </Panel>
         </div>
@@ -929,7 +929,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
           <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
             <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
           </Panel>
-          <Panel title={`${scopeLabel} 핵심 이슈`} icon={Newspaper} meta={`${issueRows.length}건`}>
+          <Panel title="핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`}>
             <MonthlyIssueDigest issues={issueRows} />
           </Panel>
         </div>
@@ -3195,9 +3195,7 @@ function selectRealtimeArticles(articles = []) {
 
 function expandReportIssues(issues, articles, period) {
   const max = period === "daily" ? 5 : 9;
-  const rows = [...issues];
-  articles.forEach((article) => {
-    rows.push({
+  const rows = articles.map((article) => ({
       tone: article.tone,
       category: article.category,
       source: article.source,
@@ -3206,10 +3204,10 @@ function expandReportIssues(issues, articles, period) {
       summaryLines: buildArticleSummaryLines(article),
       publishedAt: article.time || article.date || "-",
       link: article.link,
-    });
-  });
+    }));
+  const fallbackRows = rows.length ? [] : issues;
   const seen = new Set();
-  return rows.filter((item) => {
+  return [...rows, ...fallbackRows].filter((item) => {
     const key = item.title;
     if (!key || seen.has(key)) return false;
     seen.add(key);
