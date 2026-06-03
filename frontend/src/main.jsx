@@ -1317,18 +1317,15 @@ function buildRiskGroupSummaryLines(articles = []) {
 }
 
 function normalizeRiskSummaryKey(value = "") {
-  return cleanSummaryText(value)
-    .toLowerCase()
-    .replace(/출처\s*[:：].*$/g, "")
-    .replace(/기준으로\s*(?:분류|확인|관찰).*$/g, "")
-    .replace(/[^\p{L}\p{N}]+/gu, "")
-    .slice(0, 110);
+  return normalizeSummaryCompareKey(value);
 }
 
 function isDuplicateRiskSummaryKey(key, seen) {
   for (const previous of seen) {
     if (key === previous) return true;
     if (key.length >= 28 && previous.length >= 28 && (key.includes(previous) || previous.includes(key))) return true;
+    const minLength = Math.min(key.length, previous.length);
+    if (minLength >= 18 && commonPrefixLength(key, previous) >= Math.min(42, Math.floor(minLength * 0.82))) return true;
     const overlap = tokenOverlapRatio(new Set(articleTokens(key)), new Set(articleTokens(previous)));
     if (overlap >= 0.78) return true;
   }
@@ -3073,24 +3070,74 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
 }
 
 function buildArticleSummaryLines(item = {}) {
+  const titleKeys = summaryTitleKeys(item);
   if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
-    return unique(item.summaryLines.map(normalizeSummaryLine).filter(Boolean))
-      .filter((line) => !isGenericSummaryLine(line))
+    return dedupeSummaryLines(item.summaryLines.map(normalizeSummaryLine).filter(Boolean), titleKeys)
       .slice(0, 4);
   }
   const cleanTitle = cleanSummaryText(item.title || "");
   const text = cleanSummaryText(item.summary || item.description || "");
   const sentences = splitSummarySentences(text)
     .map(normalizeSummaryLine)
-    .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence));
+    .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence) && !isSummaryDuplicateOfTitle(sentence, titleKeys));
   const contextLines = buildContextualSummaryLines(item);
   const titleLine = normalizeSummaryLine(headlineBasedSummary(item));
   const candidates = contextLines.length >= 2
     ? [...contextLines, ...sentences]
     : [...contextLines, ...sentences, titleLine];
-  return unique(candidates.filter(Boolean))
-    .filter((line) => !isGenericSummaryLine(line))
+  return dedupeSummaryLines(candidates.filter(Boolean), titleKeys)
     .slice(0, 3);
+}
+
+function summaryTitleKeys(item = {}) {
+  const titles = [
+    item.title,
+    ...(Array.isArray(item.relatedArticles) ? item.relatedArticles.map((article) => article.title) : []),
+  ];
+  return new Set(titles.map(normalizeSummaryCompareKey).filter(Boolean));
+}
+
+function dedupeSummaryLines(lines = [], titleKeys = new Set()) {
+  const seen = new Set();
+  return lines
+    .map(normalizeSummaryLine)
+    .filter(Boolean)
+    .filter((line) => !isGenericSummaryLine(line) && !isBrokenSummaryLine(line) && !isSummaryDuplicateOfTitle(line, titleKeys))
+    .filter((line) => {
+      const key = normalizeSummaryCompareKey(line);
+      if (!key || isDuplicateRiskSummaryKey(key, seen)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function isSummaryDuplicateOfTitle(line = "", titleKeys = new Set()) {
+  const key = normalizeSummaryCompareKey(line);
+  if (!key) return true;
+  for (const titleKey of titleKeys) {
+    if (!titleKey) continue;
+    if (key === titleKey) return true;
+    if (key.length >= 16 && titleKey.length >= 16 && (key.includes(titleKey) || titleKey.includes(key))) return true;
+    const minLength = Math.min(key.length, titleKey.length);
+    if (minLength >= 18 && commonPrefixLength(key, titleKey) >= Math.min(42, Math.floor(minLength * 0.82))) return true;
+  }
+  return false;
+}
+
+function normalizeSummaryCompareKey(value = "") {
+  return cleanSummaryText(value)
+    .toLowerCase()
+    .replace(/\s*[-–—]\s*[\p{L}\p{N}._·\s]{2,30}$/u, "")
+    .replace(/(?:\.com|\.co\.kr|\.kr)$/i, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .slice(0, 130);
+}
+
+function commonPrefixLength(a = "", b = "") {
+  const limit = Math.min(a.length, b.length);
+  let index = 0;
+  while (index < limit && a[index] === b[index]) index += 1;
+  return index;
 }
 
 function compactArticleSummary(item = {}) {
