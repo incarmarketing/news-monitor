@@ -2615,6 +2615,34 @@ button.kpi-card {
   grid-template-columns: minmax(220px, 1fr) auto auto auto;
 }
 
+.media-detail-form {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.media-memo-field {
+  grid-column: span 4;
+}
+
+.media-memo-field textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.media-detail-actions {
+  align-self: stretch;
+  align-items: end;
+}
+
 .reporter-form {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }

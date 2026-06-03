@@ -54,6 +54,7 @@ import {
 import {
   deleteReporterProfile,
   loadOperationalData,
+  saveMediaRelation,
   saveMonitorKeyword,
   savePressAlias,
   saveReporterProfile,
@@ -270,8 +271,8 @@ function App() {
     [realtimeArticles, liveConnected],
   );
   const management = useMemo(
-    () => composeManagementData(operations, scopedArticles),
-    [operations, scopedArticles],
+    () => composeManagementData(operations, liveConnected ? operations.articles || [] : scopedArticles),
+    [operations, scopedArticles, liveConnected],
   );
   const notifications = liveConnected ? operations.notifications || [] : [];
   const jobs = liveConnected && operations.watchRuns?.length
@@ -1436,18 +1437,27 @@ function MediaManagement({ rows, aliases = [] }) {
   const [aliasUrl, setAliasUrl] = useState("");
   const [pressName, setPressName] = useState("");
   const [aliasStatus, setAliasStatus] = useState("");
+  const [mediaStatus, setMediaStatus] = useState("");
+  const [mediaForm, setMediaForm] = useState(emptyMediaForm);
+  const [managingMedia, setManagingMedia] = useState(false);
   const [localAliases, setLocalAliases] = useState(() => readLocalRows(PRESS_ALIAS_DRAFT_KEY));
+  const [localMediaRows, setLocalMediaRows] = useState(() => readLocalRows("news_monitor_media_relation_drafts_v1"));
   const aliasRows = useMemo(() => mergeAliasRows(aliases, localAliases), [aliases, localAliases]);
-  const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows), [rows, aliasRows]);
+  const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows, localMediaRows), [rows, aliasRows, localMediaRows]);
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return managedRows;
     return managedRows.filter((row) => {
       const domains = domainsForPressName(row.name, aliasRows).join(" ");
-      return `${row.name} ${row.grade} ${row.status} ${row.owner} ${row.memo} ${domains}`.toLowerCase().includes(term);
+      return `${row.name} ${row.grade} ${row.status} ${row.owner} ${row.memo} ${row.beat} ${row.leadReporter} ${row.email} ${row.phone} ${domains}`.toLowerCase().includes(term);
     });
   }, [managedRows, query, aliasRows]);
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
+  const updateMediaForm = (field, value) => setMediaForm((current) => ({ ...current, [field]: value }));
+  const persistLocalMediaRows = (nextRows) => {
+    setLocalMediaRows(nextRows);
+    writeLocalRows("news_monitor_media_relation_drafts_v1", nextRows);
+  };
 
   const handleUrlChange = (value) => {
     setAliasUrl(value);
@@ -1460,6 +1470,25 @@ function MediaManagement({ rows, aliases = [] }) {
     } else {
       setAliasStatus("");
     }
+  };
+
+  const handleManageMedia = (row = {}) => {
+    const domains = domainsForPressName(row.name, aliasRows);
+    setMediaForm({
+      name: row.name || "",
+      url: row.url || domains[0] || "",
+      grade: row.grade || "B",
+      status: row.status || "중립",
+      owner: row.owner || "",
+      contactDate: row.contactDate || "",
+      beat: row.beat || "",
+      leadReporter: row.leadReporter || "",
+      email: row.email || "",
+      phone: row.phone || "",
+      memo: row.memo || "",
+    });
+    setManagingMedia(true);
+    setMediaStatus(row.name ? `${row.name} 관리 정보를 편집 중입니다.` : "새 언론사 정보를 입력하세요.");
   };
 
   const handleSaveAlias = async () => {
@@ -1477,6 +1506,29 @@ function MediaManagement({ rows, aliases = [] }) {
       setAliasStatus("Supabase 저장 완료");
     } catch {
       setAliasStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+    }
+  };
+
+  const handleSaveMedia = async () => {
+    const item = normalizeMediaDraft(mediaForm);
+    if (!item.name) {
+      setMediaStatus("언론사명을 입력해야 합니다.");
+      return;
+    }
+    const host = canonicalHost(item.url);
+    const nextMediaRows = upsertMediaLocal(localMediaRows, item);
+    persistLocalMediaRows(nextMediaRows);
+    if (host) {
+      const nextAliases = upsertAliasRow(localAliases, { host, press_name: item.name });
+      setLocalAliases(nextAliases);
+      writeLocalRows(PRESS_ALIAS_DRAFT_KEY, nextAliases);
+    }
+    try {
+      await saveMediaRelation({ ...item, memo: buildMediaMemo(item) });
+      if (host) await savePressAlias(host, item.name);
+      setMediaStatus("Supabase 저장 완료");
+    } catch {
+      setMediaStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
     }
   };
 
@@ -1508,8 +1560,65 @@ function MediaManagement({ rows, aliases = [] }) {
       <div className="management-toolbar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="언론사명, 도메인, 메모 검색" />
         <button className="ghost-button">등급 정리</button>
-        <button className="primary-button">언론사 추가</button>
+        <button className="primary-button" onClick={() => handleManageMedia()}>언론사 추가</button>
       </div>
+      {managingMedia && (
+        <div className="operation-form media-detail-form">
+          <label>
+            <span>언론사명</span>
+            <input value={mediaForm.name} onChange={(event) => updateMediaForm("name", event.target.value)} placeholder="예: 보험매일" />
+          </label>
+          <label>
+            <span>대표 URL/도메인</span>
+            <input value={mediaForm.url} onChange={(event) => updateMediaForm("url", event.target.value)} placeholder="https://example.co.kr" />
+          </label>
+          <label>
+            <span>등급</span>
+            <select value={mediaForm.grade} onChange={(event) => updateMediaForm("grade", event.target.value)}>
+              {["A", "B", "C", "보류"].map((value) => <option key={value}>{value}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>관계 상태</span>
+            <select value={mediaForm.status} onChange={(event) => updateMediaForm("status", event.target.value)}>
+              {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>담당자</span>
+            <input value={mediaForm.owner} onChange={(event) => updateMediaForm("owner", event.target.value)} placeholder="홍보팀 / 담당자" />
+          </label>
+          <label>
+            <span>최근 접촉일</span>
+            <input type="date" value={mediaForm.contactDate} onChange={(event) => updateMediaForm("contactDate", event.target.value)} />
+          </label>
+          <label>
+            <span>주요 분야</span>
+            <input value={mediaForm.beat} onChange={(event) => updateMediaForm("beat", event.target.value)} placeholder="보험/GA, 경제, 금융정책" />
+          </label>
+          <label>
+            <span>대표 기자</span>
+            <input value={mediaForm.leadReporter} onChange={(event) => updateMediaForm("leadReporter", event.target.value)} placeholder="주요 담당 기자" />
+          </label>
+          <label>
+            <span>이메일</span>
+            <input value={mediaForm.email} onChange={(event) => updateMediaForm("email", event.target.value)} placeholder="desk@example.co.kr" />
+          </label>
+          <label>
+            <span>전화</span>
+            <input value={mediaForm.phone} onChange={(event) => updateMediaForm("phone", event.target.value)} placeholder="02-0000-0000" />
+          </label>
+          <label className="media-memo-field">
+            <span>관리 메모</span>
+            <textarea value={mediaForm.memo} onChange={(event) => updateMediaForm("memo", event.target.value)} placeholder="보도자료 발송 이력, 선호 주제, 주의사항, 후속 접촉 기록" />
+          </label>
+          <div className="operation-form-actions media-detail-actions">
+            <button className="ghost-button" onClick={() => { setManagingMedia(false); setMediaForm(emptyMediaForm); setMediaStatus(""); }}>닫기</button>
+            <button className="primary-button" onClick={handleSaveMedia}>관리 정보 저장</button>
+          </div>
+          {mediaStatus && <p className="status-note">{mediaStatus}</p>}
+        </div>
+      )}
       <div className="data-table-wrap">
         <table className="data-table">
           <thead>
@@ -1522,6 +1631,7 @@ function MediaManagement({ rows, aliases = [] }) {
               <th>최근 접촉</th>
               <th>기사량</th>
               <th>메모</th>
+              <th>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -1540,6 +1650,9 @@ function MediaManagement({ rows, aliases = [] }) {
                 <td>{row.contactDate || "-"}</td>
                 <td>{Number(row.total || 0).toLocaleString("ko-KR")}건</td>
                 <td>{row.memo || "-"}</td>
+                <td>
+                  <button className="ghost-button compact-button" onClick={() => handleManageMedia(row)}>관리</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1581,8 +1694,12 @@ function ReporterManagement({ rows }) {
       id: row.id || "",
       name: row.name || "",
       media: row.outlet || row.media || "",
+      beat: row.beat === "-" ? "" : row.beat || "",
       status: row.status || "중립",
       contactDate: row.contactDate || row.date || "",
+      email: row.email || "",
+      phone: row.phone || "",
+      request: row.request || "",
       memo: row.memo || "",
     });
     setStatus("선택한 기자 정보를 편집 중입니다.");
@@ -1599,7 +1716,7 @@ function ReporterManagement({ rows }) {
     persistLocalState(localFirst);
     setForm(emptyReporterForm);
     try {
-      const saved = await saveReporterProfile(item);
+      const saved = await saveReporterProfile({ ...item, memo: buildReporterMemo(item) });
       const savedRow = Array.isArray(saved) && saved[0] ? reporterDraftFromRemote(saved[0]) : optimistic;
       persistLocalState(upsertReporterLocal(localFirst, savedRow, optimistic.id));
       setStatus("Supabase 저장 완료");
@@ -1637,6 +1754,10 @@ function ReporterManagement({ rows }) {
           <input value={form.media} onChange={(event) => updateForm("media", event.target.value)} placeholder="예: 보험저널" />
         </label>
         <label>
+          <span>담당 분야</span>
+          <input value={form.beat} onChange={(event) => updateForm("beat", event.target.value)} placeholder="보험/GA, 금융정책" />
+        </label>
+        <label>
           <span>관계 상태</span>
           <select value={form.status} onChange={(event) => updateForm("status", event.target.value)}>
             {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
@@ -1645,6 +1766,18 @@ function ReporterManagement({ rows }) {
         <label>
           <span>최근 접촉일</span>
           <input type="date" value={form.contactDate} onChange={(event) => updateForm("contactDate", event.target.value)} />
+        </label>
+        <label>
+          <span>이메일</span>
+          <input value={form.email} onChange={(event) => updateForm("email", event.target.value)} placeholder="reporter@example.co.kr" />
+        </label>
+        <label>
+          <span>전화</span>
+          <input value={form.phone} onChange={(event) => updateForm("phone", event.target.value)} placeholder="010-0000-0000" />
+        </label>
+        <label>
+          <span>요청/선호</span>
+          <input value={form.request} onChange={(event) => updateForm("request", event.target.value)} placeholder="선호 자료, 마감, 관심 이슈" />
         </label>
         <label className="reporter-memo-field">
           <span>메모</span>
@@ -1687,7 +1820,7 @@ function ReporterManagement({ rows }) {
                 <td>{row.memo || "-"}</td>
                 <td>
                   <div className="row-actions">
-                    <button className="ghost-button" onClick={() => handleEditReporter(row)}>수정</button>
+                    <button className="ghost-button" onClick={() => handleEditReporter(row)}>관리</button>
                     <button className="ghost-button danger" onClick={() => handleDeleteReporter(row)}>삭제</button>
                   </div>
                 </td>
@@ -2831,8 +2964,26 @@ const emptyReporterForm = {
   id: "",
   name: "",
   media: "",
+  beat: "",
   status: "중립",
   contactDate: "",
+  email: "",
+  phone: "",
+  request: "",
+  memo: "",
+};
+
+const emptyMediaForm = {
+  name: "",
+  url: "",
+  grade: "B",
+  status: "중립",
+  owner: "",
+  contactDate: "",
+  beat: "",
+  leadReporter: "",
+  email: "",
+  phone: "",
   memo: "",
 };
 
@@ -2940,6 +3091,49 @@ function mergeAliasRows(remoteRows = [], localRows = []) {
   return Array.from(map.values()).sort((a, b) => a.pressName.localeCompare(b.pressName, "ko-KR"));
 }
 
+function normalizeMediaDraft(row = {}) {
+  return {
+    name: String(row.name || "").trim(),
+    url: String(row.url || "").trim(),
+    grade: String(row.grade || "B").trim() || "B",
+    status: String(row.status || "중립").trim() || "중립",
+    owner: String(row.owner || "").trim(),
+    contactDate: row.contactDate || row.contact_date || "",
+    beat: String(row.beat || "").trim(),
+    leadReporter: String(row.leadReporter || row.lead_reporter || "").trim(),
+    email: String(row.email || "").trim(),
+    phone: String(row.phone || "").trim(),
+    memo: String(row.memo || "").trim(),
+    total: Number(row.total || 0),
+    own: Number(row.own || 0),
+    negative: Number(row.negative || 0),
+  };
+}
+
+function mediaKey(row = {}) {
+  return String(row.name || "").trim();
+}
+
+function upsertMediaLocal(rows = [], row = {}) {
+  const normalized = normalizeMediaDraft(row);
+  if (!normalized.name) return rows;
+  const map = new Map(rows.map((item) => [mediaKey(item), item]));
+  map.set(normalized.name, normalized);
+  return Array.from(map.values());
+}
+
+function buildMediaMemo(row = {}) {
+  const lines = [
+    row.beat ? `주요 분야: ${row.beat}` : "",
+    row.leadReporter ? `대표 기자: ${row.leadReporter}` : "",
+    row.email ? `이메일: ${row.email}` : "",
+    row.phone ? `전화: ${row.phone}` : "",
+    row.url ? `대표 URL: ${row.url}` : "",
+    row.memo ? `메모: ${row.memo}` : "",
+  ].filter(Boolean);
+  return lines.join("\n");
+}
+
 function upsertAliasRow(rows, row) {
   const normalized = normalizeAliasRow(row);
   if (!normalized) return rows;
@@ -2968,8 +3162,16 @@ function domainsForPressName(pressName, aliases = []) {
   return unique(aliases.filter((row) => row.pressName === clean).map((row) => row.host));
 }
 
-function mergeMediaRows(rows = [], aliases = []) {
-  const map = new Map(rows.map((row) => [row.name, row]));
+function mergeMediaRows(rows = [], aliases = [], localRows = []) {
+  const map = new Map();
+  rows.forEach((row) => {
+    const normalized = normalizeMediaDraft(row);
+    if (normalized.name) map.set(normalized.name, { ...row, ...normalized });
+  });
+  localRows.forEach((row) => {
+    const normalized = normalizeMediaDraft(row);
+    if (normalized.name) map.set(normalized.name, { ...(map.get(normalized.name) || {}), ...normalized });
+  });
   aliases.forEach((alias) => {
     if (!map.has(alias.pressName)) {
       map.set(alias.pressName, {
@@ -2985,7 +3187,10 @@ function mergeMediaRows(rows = [], aliases = []) {
       });
     }
   });
-  return Array.from(map.values());
+  return Array.from(map.values()).sort((a, b) => {
+    const ownDiff = Number(b.own || 0) - Number(a.own || 0);
+    return ownDiff || a.name.localeCompare(b.name, "ko-KR");
+  });
 }
 
 function reporterKey(row = {}) {
@@ -3002,8 +3207,22 @@ function normalizeReporterDraft(row = {}) {
     recent: row.recent || "-",
     status: String(row.status || "중립").trim() || "중립",
     contactDate: row.contactDate || row.contact_date || row.date || "",
+    email: String(row.email || "").trim(),
+    phone: String(row.phone || "").trim(),
+    request: String(row.request || "").trim(),
     memo: String(row.memo || "").trim(),
   };
+}
+
+function buildReporterMemo(row = {}) {
+  const lines = [
+    row.beat ? `담당 분야: ${row.beat}` : "",
+    row.email ? `이메일: ${row.email}` : "",
+    row.phone ? `전화: ${row.phone}` : "",
+    row.request ? `요청/선호: ${row.request}` : "",
+    row.memo ? `메모: ${row.memo}` : "",
+  ].filter(Boolean);
+  return lines.join("\n");
 }
 
 function reporterDraftFromRemote(row = {}) {
@@ -3308,8 +3527,9 @@ function escapeHtml(value) {
 }
 
 function composeManagementData(operations, articles) {
-  const pressStats = new Map(buildPressInfluence(articles).map((row) => [row.source, row]));
-  const media = operations.mediaRelations?.length
+  const pressStats = new Map(buildPressStatsForManagement(articles).map((row) => [row.source, row]));
+  const ownPressRows = buildOwnPressRelationRows(articles, pressStats);
+  const baseMedia = operations.mediaRelations?.length
     ? operations.mediaRelations.map((row) => ({ ...row, ...(pressStats.get(row.name) || {}) }))
     : pressRegistry.map((name, index) => ({
         name,
@@ -3320,9 +3540,52 @@ function composeManagementData(operations, articles) {
         memo: index < 15 ? "보도자료 발송 이력 확인" : "",
         ...(pressStats.get(name) || { total: 0, own: 0, negative: 0 }),
       }));
+  const media = mergeRequiredOwnPressRows(baseMedia, ownPressRows);
   const reporters = operations.reporters?.length ? operations.reporters : journalistRows;
   const ads = operations.ads?.length ? operations.ads : adRows;
   return { media, reporters, ads };
+}
+
+function buildPressStatsForManagement(articles = []) {
+  const pressArticles = articles.filter((article) => !isOfficialRegulatorSource(article.source) && !isPortalSource(article.source));
+  return groupArticles(pressArticles, "source").map(([source, total]) => {
+    const scoped = pressArticles.filter((article) => article.source === source);
+    return {
+      source,
+      total,
+      own: scoped.filter(isOwnArticle).length,
+      negative: scoped.filter((article) => article.tone === "부정").length,
+      type: scoped[0]?.category || "일반",
+    };
+  });
+}
+
+function buildOwnPressRelationRows(articles = [], pressStats = new Map()) {
+  return unique(
+    articles
+      .filter((article) => isOwnArticle(article) && !isOfficialRegulatorSource(article.source) && !isPortalSource(article.source))
+      .map((article) => article.source)
+      .filter(Boolean),
+  ).map((name) => ({
+    name,
+    grade: "B",
+    status: "중립",
+    owner: "",
+    contactDate: "",
+    memo: "당사 기사 게재 이력으로 자동 등록된 관리 대상",
+    ...(pressStats.get(name) || { total: 0, own: 1, negative: 0 }),
+  }));
+}
+
+function mergeRequiredOwnPressRows(mediaRows = [], ownRows = []) {
+  const map = new Map(mediaRows.map((row) => [row.name, row]));
+  ownRows.forEach((row) => {
+    map.set(row.name, { ...row, ...(map.get(row.name) || {}) });
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const ownDiff = Number(b.own || 0) - Number(a.own || 0);
+    return ownDiff || a.name.localeCompare(b.name, "ko-KR");
+  });
 }
 
 function filterArticlesByPeriod(articles, period) {

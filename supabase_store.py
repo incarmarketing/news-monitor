@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
@@ -14,10 +13,7 @@ from urllib.parse import quote
 import requests
 from dotenv import load_dotenv
 
-import analyzer
-
 load_dotenv()
-KST = timezone(timedelta(hours=9))
 
 ARTICLE_COLUMNS = (
     "article_hash",
@@ -63,6 +59,17 @@ NEGATIVE_WATCH_COLUMNS = (
     "status",
     "message",
 )
+
+MEDIA_RELATION_EXCLUDED_SOURCES = {
+    "google",
+    "naver",
+    "daum",
+    "bing",
+    "금융감독원",
+    "금융위원회",
+    "금융보안원",
+    "금융소비자보호처",
+}
 
 
 class SupabaseConfigError(RuntimeError):
@@ -122,39 +129,13 @@ def article_hash(article: dict) -> str:
 def parse_pub_date(value: str) -> str | None:
     if not value:
         return None
-    raw = str(value).strip()
     try:
-        parsed = parsedate_to_datetime(raw)
+        parsed = parsedate_to_datetime(value)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.astimezone(timezone.utc).isoformat()
     except Exception:
-        pass
-    normalized = (
-        raw.replace("년", "-")
-        .replace("월", "-")
-        .replace("일", "")
-        .replace(".", "-")
-        .strip()
-    )
-    normalized = " ".join(normalized.split())
-    normalized = re.sub(r"(\d{4}-\d{1,2}-\d{1,2})-\s+", r"\1 ", normalized)
-    for fmt in (
-        "%Y-%m-%dT%H:%M:%S%z",
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-        "%Y-%m-%d %H:%M:%S%z",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d",
-    ):
-        try:
-            parsed = datetime.strptime(normalized, fmt)
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=KST)
-            return parsed.astimezone(timezone.utc).isoformat()
-        except ValueError:
-            continue
-    return None
+        return None
 
 
 def save_report_run(archive_payload: dict) -> None:
@@ -187,20 +168,7 @@ def save_report_run(archive_payload: dict) -> None:
     ]
     if rows:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
-
-
-def save_dashboard_articles(articles: list[dict], *, report_date: str, window: dict, metrics: dict | None = None) -> None:
-    """Persist analyzed articles without creating a report run."""
-    if not is_enabled() or not articles:
-        return
-    archive_payload = {
-        "date": report_date,
-        "window": window,
-        "metrics": metrics or {},
-    }
-    rows = [normalize_article(article, archive_payload) for article in articles]
-    if rows:
-        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
+        save_own_media_relations(rows)
 
 
 def save_notification_send(
@@ -347,7 +315,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "link": article.get("link", ""),
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
-        "summary": article.get("_summary", "") or analyzer.build_quality_summary(article),
+        "summary": article.get("description", "") or article.get("summary", ""),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),
@@ -357,6 +325,54 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "raw": article,
     }
     return {key: row.get(key) for key in ARTICLE_COLUMNS}
+
+
+def save_own_media_relations(article_rows: list[dict]) -> None:
+    """Ensure every outlet that has carried a company article has a media row."""
+    own_sources = sorted(
+        {
+            str(row.get("source") or "").strip()
+            for row in article_rows
+            if row.get("category") == "own" and is_manageable_media_source(row.get("source"))
+        }
+    )
+    for source in own_sources:
+        try:
+            if media_relation_exists(source):
+                continue
+            row = {
+                "name": source,
+                "status": "중립",
+                "grade": "B",
+                "owner": "",
+                "contact_date": None,
+                "memo": "당사 기사 게재 이력으로 자동 등록된 관리 대상",
+                "hidden": False,
+            }
+            request("POST", "media_relations", data=json.dumps([row], ensure_ascii=False))
+        except Exception as error:
+            print(f"Supabase media relation seed skipped for {source}: {error}")
+
+
+def is_manageable_media_source(source: object) -> bool:
+    name = str(source or "").strip()
+    if not name:
+        return False
+    lower = name.lower()
+    if name in MEDIA_RELATION_EXCLUDED_SOURCES or lower in MEDIA_RELATION_EXCLUDED_SOURCES:
+        return False
+    return not any(token in lower for token in ("google", "naver", "daum"))
+
+
+def media_relation_exists(name: str) -> bool:
+    if not name:
+        return False
+    response = request(
+        "GET",
+        f"media_relations?select=name&name=eq.{quote(name, safe='')}&limit=1",
+    )
+    rows = response.json()
+    return bool(rows)
 
 
 def load_dashboard_articles(limit: int = 50000, page_size: int = 1000) -> list[dict]:
@@ -377,6 +393,8 @@ def load_dashboard_articles(limit: int = 50000, page_size: int = 1000) -> list[d
         rows.extend(page)
         if len(page) < page_size:
             break
+    if rows:
+        save_own_media_relations(rows)
     return rows
 
 
@@ -473,25 +491,6 @@ def load_press_alias_rows(limit: int = 1000) -> list[dict]:
             continue
         rows.append({"host": host, "press_name": press_name})
     return rows
-
-
-def load_monitor_profile() -> dict:
-    if not is_enabled():
-        return {}
-    response = request(
-        "GET",
-        "monitor_profiles?select=profile_key,profile,updated_at,updated_by&profile_key=eq.default&limit=1",
-    )
-    rows = response.json()
-    if not rows:
-        return {}
-    row = rows[0]
-    profile = row.get("profile") if isinstance(row.get("profile"), dict) else {}
-    return {
-        **profile,
-        "updatedAt": row.get("updated_at") or profile.get("updatedAt"),
-        "updatedBy": row.get("updated_by") or profile.get("updatedBy"),
-    }
 
 
 def load_monitor_keywords() -> list[str]:

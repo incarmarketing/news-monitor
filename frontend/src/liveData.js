@@ -120,6 +120,26 @@ export async function savePressAlias(host, pressName) {
   );
 }
 
+export async function saveMediaRelation(media = {}) {
+  const name = String(media.name || "").trim();
+  if (!name) throw new Error("media_name_required");
+  const body = {
+    name,
+    status: String(media.status || "중립").trim() || "중립",
+    grade: String(media.grade || "B").trim() || "B",
+    owner: String(media.owner || "").trim(),
+    contact_date: media.contactDate || media.contact_date || null,
+    memo: String(media.memo || "").trim(),
+    hidden: media.hidden === true,
+  };
+  return writeRest(
+    "media_relations?on_conflict=name",
+    "POST",
+    [body],
+    { Prefer: "resolution=merge-duplicates,return=representation" },
+  );
+}
+
 export async function saveMonitorKeyword(keyword, category = "other") {
   const cleanKeyword = String(keyword || "").trim();
   const cleanCategory = String(category || "other").trim() || "other";
