@@ -64,7 +64,7 @@ async function dashboardApi(config, session, action, payload = {}, options = {})
     Authorization: `Bearer ${config.anon_key}`,
     "Content-Type": "application/json",
   };
-  if (session?.session_token) {
+  if (session?.session_token && !options.allowAnonymous) {
     headers["X-Dashboard-Session"] = session.session_token;
   }
   const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/dashboard-api`, {

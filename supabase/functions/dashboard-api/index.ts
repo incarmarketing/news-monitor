@@ -22,7 +22,6 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   news_articles: { read: true, writeRoles: ["admin", "editor"] },
   report_runs: { read: true, writeRoles: ["admin", "editor"] },
   monitor_keywords: { read: true, writeRoles: ["admin", "editor"] },
-  monitor_profiles: { read: true, writeRoles: ["admin", "editor"] },
   article_scraps: { read: true, writeRoles: ["admin", "editor", "reporter"] },
   media_relations: { read: true, writeRoles: ["admin", "editor"] },
   reporters: { read: true, writeRoles: ["admin", "editor"] },
@@ -43,15 +42,15 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "unauthorized" }, 401);
   }
 
-  const sessionToken = req.headers.get("x-dashboard-session") || "";
-  const session = await verifySession(sessionToken);
-  if (!session.ok) {
-    return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
-  }
-
   const body = await safeJson<DashboardRequest>(req);
   const action = String(body.action || "");
   const payload = body.payload || {};
+  const sessionToken = req.headers.get("x-dashboard-session") || "";
+  const session = sessionToken ? await verifySession(sessionToken) : { ok: false, message: "anonymous" };
+  const publicRefresh = action === "trigger_collection";
+  if (!session.ok && !publicRefresh) {
+    return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
+  }
 
   try {
     if (action === "rest") {
@@ -121,18 +120,25 @@ async function revokeSession(token: string) {
 }
 
 async function triggerCollection(session: SessionInfo, payload: Record<string, unknown>) {
-  if (!["admin", "editor"].includes(session.role || "")) {
+  const authenticated = session.ok === true;
+  if (authenticated && !["admin", "editor"].includes(session.role || "")) {
     return jsonResponse({ error: "write_not_allowed" }, 403);
   }
 
-  const token = Deno.env.get("GITHUB_DISPATCH_TOKEN") || Deno.env.get("CRON_DISPATCH_TOKEN");
+  const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
   const owner = Deno.env.get("GITHUB_OWNER") || "incarmarketing";
   const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
-  const workflow = sanitizeWorkflow(String(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml"));
+  const workflow = sanitizeWorkflow(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml");
   const ref = Deno.env.get("GITHUB_REF") || "main";
-  const periodReports = sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
-  const sendKakao = payload.send_kakao === true || String(payload.send_kakao || "").toLowerCase() === "true";
-  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "07", "08", "13", "18"], "auto");
+  const periodReports = authenticated
+    ? sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none")
+    : "none";
+  const sendKakao = authenticated
+    ? payload.send_kakao === true || String(payload.send_kakao || "").toLowerCase() === "true"
+    : false;
+  const reportSlot = authenticated
+    ? sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto")
+    : "auto";
 
   if (!token) {
     return jsonResponse({ error: "missing_github_dispatch_token" }, 500);
@@ -146,13 +152,12 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
         "X-GitHub-Api-Version": "2022-11-28",
-        "Content-Type": "application/json",
+      "Content-Type": "application/json",
       },
-      body: JSON.stringify(buildWorkflowDispatchBody(workflow, ref, {
-        period_reports: periodReports,
-        send_kakao: String(sendKakao),
-        report_slot: reportSlot,
-      })),
+      body: JSON.stringify({
+        ref,
+        inputs: workflowInputs(workflow, periodReports, sendKakao, reportSlot),
+      }),
     },
   );
 
@@ -165,25 +170,25 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     ok: true,
     workflow,
     ref,
-    inputs: {
-      period_reports: periodReports,
-      send_kakao: sendKakao,
-      report_slot: reportSlot,
-    },
-    requested_by: session.employee_no,
+    inputs: workflowInputs(workflow, periodReports, sendKakao, reportSlot),
+    requested_by: session.employee_no || "dashboard_public_refresh",
     requested_at: new Date().toISOString(),
   });
 }
 
-function sanitizeWorkflow(value: string) {
-  return ["news-briefing.yml", "negative-watch.yml", "regulator-releases.yml"].includes(value) ? value : "news-briefing.yml";
+function sanitizeWorkflow(value: unknown) {
+  const workflow = String(value || "").trim();
+  if (workflow === "regulator-releases.yml") return "pages-dashboard.yml";
+  return ["news-briefing.yml", "pages-dashboard.yml"].includes(workflow) ? workflow : "news-briefing.yml";
 }
 
-function buildWorkflowDispatchBody(workflow: string, ref: string, inputs: Record<string, string>) {
-  if (workflow === "negative-watch.yml" || workflow === "regulator-releases.yml") {
-    return { ref };
-  }
-  return { ref, inputs };
+function workflowInputs(workflow: string, periodReports: string, sendKakao: boolean, reportSlot: string) {
+  if (workflow === "pages-dashboard.yml") return {};
+  return {
+    period_reports: periodReports,
+    send_kakao: String(sendKakao),
+    report_slot: reportSlot,
+  };
 }
 
 function sanitizeChoice(value: unknown, allowed: string[], fallback: string) {
