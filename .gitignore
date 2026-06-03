@@ -9,4 +9,7 @@ public/
 supabase/.temp/
 frontend/node_modules/
 frontend/dist/
+frontend/out/
+.run-state/
+.watch-state/
 tmp-*

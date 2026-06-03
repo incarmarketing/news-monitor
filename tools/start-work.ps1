@@ -100,7 +100,11 @@ if ($status) {
     Write-Host ""
     & $git status --short
     Write-Host ""
-    Write-Host "Run SAVE_WORK.cmd first, then START_WORK.cmd again."
+    if ($branch -eq "main") {
+        Write-Host "Run SAVE_WORK.cmd to push these changes to main, then run START_WORK.cmd again."
+    } else {
+        Write-Host "Run SAVE_WORK.cmd to store this old-branch work in a safety branch, then run START_WORK.cmd again."
+    }
     throw "Workspace has uncommitted changes."
 }
 

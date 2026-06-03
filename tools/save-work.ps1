@@ -50,16 +50,6 @@ if (-not $git) {
 & $git config core.hooksPath .githooks | Out-Null
 
 $branch = (& $git rev-parse --abbrev-ref HEAD).Trim()
-if ($branch -ne "main") {
-    throw "SAVE_WORK only pushes main. Current branch is '$branch'. Run START_WORK.cmd first."
-}
-
-& $git fetch origin --prune
-$behind = (& $git rev-list --count "HEAD..origin/main").Trim()
-if ([int]$behind -gt 0) {
-    throw "Local main is behind origin/main. Run START_WORK.cmd before saving."
-}
-
 $status = (& $git status --porcelain)
 if (-not $status) {
     Write-Host "No local changes to save."
@@ -69,6 +59,30 @@ if (-not $status) {
 $stamp = Get-Date -Format "yyyy-MM-dd HH:mm"
 if (-not $Message) {
     $Message = "Workspace sync $stamp"
+}
+
+& $git fetch origin --prune
+
+if ($branch -ne "main") {
+    $machine = ($env:COMPUTERNAME -replace "[^A-Za-z0-9-]", "-").ToLowerInvariant()
+    if (-not $machine) { $machine = "pc" }
+    $safeBranch = "codex/wip-$machine"
+    $Message = "Safety sync from $branch $stamp"
+
+    Write-Host "Current branch is '$branch', not main."
+    Write-Host "Saving this work to safety branch '$safeBranch' so it is not lost or mixed into production."
+    & $git add -A
+    & $git commit -m $Message
+    if (-not $NoPush) {
+        & $git push origin "HEAD:refs/heads/$safeBranch"
+    }
+    Write-Host "Saved to $safeBranch. Run START_WORK.cmd again to move this folder back to main."
+    exit 0
+}
+
+$behind = (& $git rev-list --count "HEAD..origin/main").Trim()
+if ([int]$behind -gt 0) {
+    throw "Local main is behind origin/main. Run START_WORK.cmd before saving."
 }
 
 Write-Host "Staging tracked workspace changes..."
