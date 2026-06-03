@@ -75,6 +75,21 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertFalse(analyzer.is_settlement_support_caution_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "negative")
 
+    def test_quality_summary_uses_complete_non_generic_sentence(self) -> None:
+        article = {
+            "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
+            "description": (
+                "앞서 초대형 GA 14개사가 금융보안원에 가입했다. "
+                "대형 GA까지 가입 대상이 확대되며 보안 취약점 점검이 강화된다."
+            ),
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("금융보안원에 가입했다", summary)
+        self.assertNotIn("키워드 기준", summary)
+        self.assertFalse(summary.endswith("..."))
+
 
 if __name__ == "__main__":
     unittest.main()

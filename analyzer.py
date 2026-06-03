@@ -484,3 +484,78 @@ def calculate_risk_level(own_negative: int) -> str:
     if own_negative >= 1:
         return "MEDIUM"
     return "LOW"
+
+
+GENERIC_SUMMARY_PHRASES = [
+    "키워드 기준으로 수집된 기사입니다",
+    "키워드로 수집되었습니다",
+    "기사 원문만 요약되었습니다",
+    "기준 핵심만 요약했습니다",
+    "당사 직접 언급 기사입니다",
+    "경쟁사 키워드 기준",
+]
+
+
+def build_quality_summary(article: dict) -> str:
+    """Build a concise, non-generic summary for dashboard/report cards."""
+    title = clean_summary_fragment(article.get("title", ""))
+    body = clean_summary_fragment(article.get("description", "") or article.get("summary", ""))
+    sentences = [
+        sentence
+        for sentence in split_quality_sentences(body)
+        if sentence != title and not is_generic_quality_sentence(sentence)
+    ]
+    if sentences:
+        return " ".join(ensure_summary_sentence(sentence) for sentence in sentences[:2])
+    return headline_based_summary(title)
+
+
+def headline_based_summary(title: str) -> str:
+    clean = clean_summary_fragment(title)
+    if not clean:
+        return ""
+    return ensure_summary_sentence(clean)
+
+
+def clean_summary_fragment(value: object) -> str:
+    text = str(value or "")
+    text = (
+        text.replace("&nbsp;", " ")
+        .replace("&amp;nbsp;", " ")
+        .replace("&quot;", '"')
+        .replace("&#39;", "'")
+    )
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\[[^\]]+\s+[^\]]*(?:기자|reporter)\]\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"^[^\s]+ (?:기자|reporter)\s*=\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text.rstrip(".!? …")
+
+
+def split_quality_sentences(value: object) -> list[str]:
+    text = clean_summary_fragment(value)
+    if not text:
+        return []
+    normalized = re.sub(r"([.!?])\s+", r"\1|", text)
+    normalized = re.sub(r"(다|요|니다)\s+", r"\1.|", normalized)
+    return [
+        clean_summary_fragment(chunk)
+        for chunk in normalized.split("|")
+        if len(clean_summary_fragment(chunk)) >= 8
+    ]
+
+
+def ensure_summary_sentence(value: str) -> str:
+    text = clean_summary_fragment(value)
+    if not text:
+        return ""
+    if re.search(r"([.!?]|다|요|함|됨)$", text):
+        return text
+    return f"{text}."
+
+
+def is_generic_quality_sentence(value: object) -> bool:
+    text = clean_summary_fragment(value)
+    if not text or len(text) < 8:
+        return True
+    return any(phrase in text for phrase in GENERIC_SUMMARY_PHRASES)
