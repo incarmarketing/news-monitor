@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -149,18 +149,36 @@ function App() {
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
+  const workTimers = useRef([]);
+
+  const clearWorkTimers = () => {
+    workTimers.current.forEach((timer) => window.clearTimeout(timer));
+    workTimers.current = [];
+  };
+
+  const finishWorkStatus = (label) => {
+    setWorking(true);
+    setWorkLabel(`${label} 완료`);
+    clearWorkTimers();
+    workTimers.current.push(window.setTimeout(() => {
+      setWorking(false);
+      setWorkLabel("");
+    }, 7000));
+  };
 
   const refreshOperations = async (options = {}) => {
     const trigger = options.trigger === true;
     const label = options.label || (options.workflow === "regulator-releases.yml" ? "금융당국 보도자료 갱신" : "뉴스 수집·분석 갱신");
+    clearWorkTimers();
     setWorking(true);
-    setWorkLabel(label);
+    setWorkLabel(`${label} 작업 중`);
     setOperations((current) => ({
       ...current,
       status: trigger ? current.status : "loading",
       message: trigger ? `${label} 요청 중` : "연결 확인 중",
     }));
     let triggerMessage = "";
+    let triggerFailed = false;
     if (trigger) {
       try {
         await triggerNewsCollection({
@@ -173,25 +191,35 @@ function App() {
         triggerMessage = `${label} 요청 완료`;
       } catch (error) {
         triggerMessage = `${label} 요청 실패: ${error?.message || "확인 필요"}`;
+        triggerFailed = true;
       }
     }
     const next = await loadOperationalData();
     setOperations(triggerMessage ? { ...next, message: `${triggerMessage} · ${next.message}` } : next);
-    if (trigger) {
-      window.setTimeout(async () => {
-        const delayed = await loadOperationalData();
-        setOperations({ ...delayed, message: `${label} 반영 확인 중 · ${delayed.message}` });
-      }, 20000);
-      window.setTimeout(async () => {
-        const delayed = await loadOperationalData();
-        setOperations(delayed);
+    if (trigger && triggerFailed) {
+      setWorkLabel(triggerMessage);
+      workTimers.current.push(window.setTimeout(() => {
         setWorking(false);
         setWorkLabel("");
-      }, 60000);
+      }, 10000));
       return;
     }
-    setWorking(false);
-    setWorkLabel("");
+    if (trigger) {
+      setWorkLabel(`${label} 반영 대기 중`);
+      workTimers.current.push(window.setTimeout(async () => {
+        setWorkLabel(`${label} 반영 확인 중`);
+        const delayed = await loadOperationalData();
+        setOperations({ ...delayed, message: `${label} 반영 확인 중 · ${delayed.message}` });
+      }, 20000));
+      workTimers.current.push(window.setTimeout(async () => {
+        setWorkLabel(`${label} 최종 확인 중`);
+        const delayed = await loadOperationalData();
+        setOperations(delayed);
+        finishWorkStatus(label);
+      }, 60000));
+      return;
+    }
+    finishWorkStatus(label);
   };
 
   useEffect(() => {
@@ -207,6 +235,15 @@ function App() {
       window.clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => () => clearWorkTimers(), []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("section", activeSection);
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [activeSection]);
 
   const baseData = periodData[period];
   const scopedArticles = useMemo(
@@ -267,20 +304,17 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header working={working || operations.status === "loading"} workLabel={workLabel} />
+      <Header working={working} workLabel={workLabel} />
       <aside className="side-nav" aria-label="주요 메뉴">
         <div className="side-title">Menu</div>
         {navItems.map((item) => {
           const Icon = navIcons[item.id] || FileText;
           return (
             <button
+              type="button"
               key={item.id}
               className={activeSection === item.id ? "active" : ""}
-              onClick={() => {
-                setWorking(true);
-                setActiveSection(item.id);
-                window.setTimeout(() => setWorking(false), 450);
-              }}
+              onClick={() => setActiveSection(item.id)}
             >
               <Icon />
               <span>{item.label}</span>
@@ -305,6 +339,7 @@ function App() {
         notifications={notifications}
         management={management}
         operations={operations}
+        isWorking={working}
         onRefreshOperations={refreshOperations}
         setActiveSection={setActiveSection}
         monitoringPreset={monitoringPreset}
@@ -408,9 +443,9 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, onRefreshOperations }) {
+function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, isWorking, onRefreshOperations }) {
   const { summary } = data;
-  const isLoading = operations?.status === "loading";
+  const isLoading = operations?.status === "loading" || isWorking;
   return (
     <main className="workspace">
       <PageTitle
@@ -419,6 +454,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         description="검색 키워드 기준 최신 이슈, 당사 리스크, 알림톡, 보고서 생성 상태를 5분 단위로 확인합니다."
         right={(
           <button
+            type="button"
             className="ghost-button"
             onClick={() => onRefreshOperations?.({ trigger: true, source: "overview_issues" })}
             disabled={isLoading}
@@ -466,7 +502,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   );
 }
 
-function Monitoring({ data, articles, monitoringPreset, operations, onRefreshOperations }) {
+function Monitoring({ data, articles, monitoringPreset, operations, isWorking, onRefreshOperations }) {
   const regularArticles = useMemo(
     () => articles.filter((article) => !isOfficialRegulatorSource(article.source)),
     [articles],
@@ -541,7 +577,7 @@ function Monitoring({ data, articles, monitoringPreset, operations, onRefreshOpe
   const feedMeta = viewMode === "related"
     ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
     : `${filtered.length.toLocaleString("ko-KR")}건`;
-  const isLoading = operations?.status === "loading";
+  const isLoading = operations?.status === "loading" || isWorking;
 
   return (
     <main className="workspace">
@@ -552,6 +588,7 @@ function Monitoring({ data, articles, monitoringPreset, operations, onRefreshOpe
         right={(
           <div className="page-actions">
             <button
+              type="button"
               className="ghost-button"
               onClick={() => onRefreshOperations?.({ trigger: true, source: "monitoring_feed" })}
               disabled={isLoading}
@@ -652,7 +689,7 @@ function Monitoring({ data, articles, monitoringPreset, operations, onRefreshOpe
   );
 }
 
-function Regulators({ articles = [], operations, onRefreshOperations }) {
+function Regulators({ articles = [], operations, isWorking, onRefreshOperations }) {
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("all");
@@ -714,10 +751,11 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
         right={(
           <div className="page-actions">
             <button
-            className="ghost-button"
+              type="button"
+              className="ghost-button"
               onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases", label: "금융당국 보도자료 갱신" })}
-            disabled={operations?.status === "loading"}
-          >
+              disabled={operations?.status === "loading" || isWorking}
+            >
               <RefreshCw />갱신
             </button>
           </div>
