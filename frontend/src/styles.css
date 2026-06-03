@@ -442,8 +442,17 @@ button.kpi-card {
   align-items: start;
 }
 
-.content-grid.media-analysis-grid {
+.media-analysis-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
+}
+
+.media-analysis-column {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
 }
 
 .panel, .watch-panel, .filter-card, .report-sheet {
@@ -2932,6 +2941,7 @@ button.kpi-card {
   }
 
   .content-grid.two,
+  .media-analysis-layout,
   .regulator-analysis-body,
   .section-strip,
   .analysis-drill-grid,
