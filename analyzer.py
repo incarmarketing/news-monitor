@@ -177,6 +177,7 @@ def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
         article["_category"] = categorize(article)
         article["_tone"] = analyze_tone(article)
         article["_score"] = score_article(article)
+        article["_summary"] = build_quality_summary(article)
 
     articles.sort(key=lambda x: x.get("_score", 0), reverse=True)
     clustered = cluster_articles(articles[:top_n])
@@ -493,10 +494,20 @@ def calculate_risk_level(own_negative: int) -> str:
 GENERIC_SUMMARY_PHRASES = [
     "키워드 기준으로 수집된 기사입니다",
     "키워드로 수집되었습니다",
+    "키워드로 수집됐습니다",
     "기사 원문만 요약되었습니다",
     "기준 핵심만 요약했습니다",
     "당사 직접 언급 기사입니다",
+    "당사 직접 언급 기사로 보고서와 리스크 점검 근거",
     "경쟁사 키워드 기준",
+    "정책·규제 변화가 영업 환경",
+    "직접 부정은 아니지만 시장 평가",
+    "시장 평가, 투자 의견, 규제성 신호",
+    "보험사·GA 시장 흐름",
+    "업계 동향 기사로 분리",
+    "분석 대상에서 제외한 노이즈성 기사",
+    "홍보 활용 가능성을 검토",
+    "소비자 피해, 제재, 사칭, 법적 분쟁",
 ]
 
 
@@ -504,14 +515,15 @@ def build_quality_summary(article: dict) -> str:
     """Build a concise, non-generic summary for dashboard/report cards."""
     title = clean_summary_fragment(article.get("title", ""))
     body = clean_summary_fragment(article.get("description", "") or article.get("summary", ""))
+    contextual = build_contextual_summary_sentences(article)
     sentences = [
         sentence
         for sentence in split_quality_sentences(body)
-        if sentence != title and not is_generic_quality_sentence(sentence)
+        if sentence != title and not is_generic_quality_sentence(sentence) and not is_broken_quality_sentence(sentence)
     ]
-    if sentences:
-        return " ".join(ensure_summary_sentence(sentence) for sentence in sentences[:2])
-    return headline_based_summary(title)
+    fallback = headline_based_summary(title)
+    lines = unique_quality_sentences([*contextual, *sentences, fallback])
+    return " ".join(ensure_summary_sentence(sentence) for sentence in lines[:3])
 
 
 def headline_based_summary(title: str) -> str:
@@ -541,7 +553,7 @@ def split_quality_sentences(value: object) -> list[str]:
     if not text:
         return []
     normalized = re.sub(r"([.!?])\s+", r"\1|", text)
-    normalized = re.sub(r"(다|요|니다)\s+", r"\1.|", normalized)
+    normalized = re.sub(r"(습니다|했습니다|합니다|됩니다|됐습니다|있습니다|없습니다|다|요|니다|함|됨)\s+", r"\1.|", normalized)
     return [
         clean_summary_fragment(chunk)
         for chunk in normalized.split("|")
@@ -563,3 +575,44 @@ def is_generic_quality_sentence(value: object) -> bool:
     if not text or len(text) < 8:
         return True
     return any(phrase in text for phrase in GENERIC_SUMMARY_PHRASES)
+
+
+def unique_quality_sentences(lines: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for line in lines:
+        clean = clean_summary_fragment(line)
+        if not clean or is_generic_quality_sentence(clean) or is_broken_quality_sentence(clean):
+            continue
+        if clean in seen:
+            continue
+        seen.add(clean)
+        result.append(clean)
+    return result
+
+
+def is_broken_quality_sentence(value: object) -> bool:
+    text = clean_summary_fragment(value)
+    if not text or len(text) > 150:
+        return True
+    return bool(re.search(r"(대폭|위해|통해|으로|로|및|또한|이어|했고|하며|밝혀|설명|전했|강조)$", text))
+
+
+def build_contextual_summary_sentences(article: dict) -> list[str]:
+    lines: list[str] = []
+    if is_preventive_security_article(article):
+        if is_own_article(article):
+            lines.append("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다")
+        lines.append("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다")
+    elif is_investment_downgrade_article(article):
+        lines.append("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다")
+    elif is_settlement_support_caution_article(article):
+        lines.append("GA별 정착지원금 지급 규모와 순위를 비교한 공시성 기사입니다")
+    elif is_insurance_loss_context_article(article):
+        lines.append("실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다")
+    return lines
+
+
+def is_insurance_loss_context_article(article: dict) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "")
+    return bool(re.search(r"실손|손해율|적자폭|보험 민원|민원", text)) and bool(re.search(r"보험|손보|생보|계약", text))

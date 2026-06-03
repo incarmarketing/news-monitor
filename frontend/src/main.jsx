@@ -2128,17 +2128,20 @@ function buildIssues(articles, fallback) {
 
 function buildArticleSummaryLines(item = {}) {
   if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
-    return item.summaryLines.map(cleanSummaryText).filter(Boolean);
+    return unique(item.summaryLines.map(normalizeSummaryLine).filter(Boolean))
+      .filter((line) => !isGenericSummaryLine(line))
+      .slice(0, 4);
   }
   const cleanTitle = cleanSummaryText(item.title || "");
   const text = cleanSummaryText(item.summary || item.description || "");
-  const sentences = splitSummarySentences(text).filter((sentence) => sentence !== cleanTitle && !isGenericSummaryLine(sentence));
-  const lead = sentences[0] || cleanTitle || `${item.source || "언론"} 보도 기준 핵심 이슈입니다.`;
-  const context = buildSummaryContextLine(item);
-  const toneLine = buildSummaryToneLine(item);
-  return unique([lead, context, toneLine].filter(Boolean))
+  const sentences = splitSummarySentences(text)
+    .map(normalizeSummaryLine)
+    .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence));
+  const contextLines = buildContextualSummaryLines(item);
+  const titleLine = normalizeSummaryLine(headlineBasedSummary(item));
+  return unique([...contextLines, ...sentences, titleLine].filter(Boolean))
     .filter((line) => !isGenericSummaryLine(line))
-    .slice(0, 3);
+    .slice(0, 4);
 }
 
 function compactArticleSummary(item = {}) {
@@ -2151,6 +2154,8 @@ function cleanSummaryText(value) {
     .replace(/&quot;/gi, "\"")
     .replace(/&#39;/g, "'")
     .replace(/<[^>]+>/g, " ")
+    .replace(/^\[[^\]]+\s+[^\]]*(?:기자|reporter)\]\s*/i, "")
+    .replace(/^[^\s]+ (?:기자|reporter)\s*=\s*/i, "")
     .replace(/\s+/g, " ")
     .replace(/(\.\.\.|…)+$/g, "")
     .trim();
@@ -2159,11 +2164,14 @@ function cleanSummaryText(value) {
 function splitSummarySentences(value) {
   const clean = cleanSummaryText(value);
   if (!clean) return [];
-  return clean
-    .split(/(?:[.!?。]\s+|(?:다|요|임|함)\.\s+)/)
+  const normalized = clean
+    .replace(/([.!?。])\s+/g, "$1|")
+    .replace(/(습니다|했습니다|합니다|됩니다|됐습니다|있습니다|없습니다|다|요|임|함|됨)\s+/g, "$1.|");
+  return normalized
+    .split("|")
     .map((sentence) => sentence.replace(/(\.\.\.|…)+$/g, "").trim())
     .filter((sentence) => sentence.length >= 8)
-    .slice(0, 3);
+    .slice(0, 6);
 }
 
 function isGenericSummaryLine(value) {
@@ -2171,24 +2179,91 @@ function isGenericSummaryLine(value) {
   return (
     /키워드 기준으로 수집된 기사입니다/.test(text) ||
     /키워드로 수집됐습니다/.test(text) ||
-    /기준 핵심만 요약했습니다/.test(text)
+    /기준 핵심만 요약했습니다/.test(text) ||
+    /당사 직접 언급 기사/.test(text) ||
+    /보고서와 리스크 점검 근거/.test(text) ||
+    /정책·규제 변화가 영업 환경/.test(text) ||
+    /직접 부정은 아니지만 시장 평가/.test(text) ||
+    /시장 평가, 투자 의견, 규제성 신호/.test(text) ||
+    /보험사·GA 시장 흐름/.test(text) ||
+    /업계 동향 기사로 분리/.test(text) ||
+    /분석 대상에서 제외한 노이즈성 기사/.test(text) ||
+    /홍보 활용 가능성을 검토/.test(text) ||
+    /소비자 피해, 제재, 사칭, 법적 분쟁/.test(text)
   );
 }
 
-function buildSummaryContextLine(item = {}) {
-  const category = item.category || item.keyword || "키워드";
-  if (isOwnArticle(item)) return "당사 직접 언급 기사로 보고서와 리스크 점검 근거에 우선 포함합니다.";
-  if (["GA", "보험사"].includes(category)) return "보험사·GA 시장 흐름을 보여주는 업계 동향 기사로 분리합니다.";
-  if (category === "정책/규제") return "정책·규제 변화가 영업 환경에 미칠 수 있는 영향을 확인합니다.";
-  if (category === "제외") return "분석 대상에서 제외한 노이즈성 기사입니다.";
-  return "";
+function normalizeSummaryLine(value) {
+  const text = cleanSummaryText(value).replace(/[.。!?]+$/g, "").trim();
+  if (!text || isGenericSummaryLine(text) || isBrokenSummaryLine(text)) return "";
+  if (/[다요함됨]$/.test(text)) return text;
+  return `${text}.`;
 }
 
-function buildSummaryToneLine(item = {}) {
-  if (item.tone === "부정") return "소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인이 필요합니다.";
-  if (item.tone === "주의") return "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다.";
-  if (item.tone === "긍정") return "우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.";
-  return "";
+function isBrokenSummaryLine(value) {
+  const text = cleanSummaryText(value).replace(/[.。!?]+$/g, "").trim();
+  if (!text) return true;
+  if (text.length > 150) return true;
+  return /(대폭|위해|통해|으로|로|및|또한|이어|했고|하며|밝혀|설명|전했|강조)$/.test(text);
+}
+
+function headlineBasedSummary(item = {}) {
+  const title = cleanSummaryText(item.title || "");
+  if (!title || isGenericSummaryLine(title)) return "";
+  if (isPreventiveSecuritySummary(item)) {
+    return "보도 초점은 해킹 사고 발생이 아니라 금융보안원 가입 확대와 보안 예방 체계 강화입니다.";
+  }
+  if (isInvestmentSummary(item)) {
+    return "투자의견, 목표가, 주가 흐름처럼 시장 평가 변화가 핵심입니다.";
+  }
+  if (isSettlementSupportSummary(item)) {
+    return "GA 정착지원금 공시에서 지급 규모와 순위가 비교된 내용입니다.";
+  }
+  if (isInsuranceLossSummary(item)) {
+    return "실손보험 손해율과 적자 흐름을 다룬 보험업계 지표 기사입니다.";
+  }
+  return title;
+}
+
+function buildContextualSummaryLines(item = {}) {
+  const lines = [];
+  if (isPreventiveSecuritySummary(item)) {
+    if (isOwnArticle(item)) {
+      lines.push("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
+    }
+    lines.push("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다.");
+  } else if (isInvestmentSummary(item)) {
+    lines.push("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.");
+  } else if (isSettlementSupportSummary(item)) {
+    lines.push("GA별 정착지원금 지급 규모와 순위를 비교한 공시성 기사입니다.");
+  } else if (isInsuranceLossSummary(item)) {
+    lines.push("실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다.");
+  }
+  return unique(lines.map(normalizeSummaryLine).filter(Boolean));
+}
+
+function summaryHaystack(item = {}) {
+  return cleanSummaryText(`${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`);
+}
+
+function isPreventiveSecuritySummary(item = {}) {
+  const text = summaryHaystack(item);
+  return /금융보안원/.test(text) && /가입|확대|예방|보안/.test(text) && /해킹|보안|침해|취약점/.test(text);
+}
+
+function isInvestmentSummary(item = {}) {
+  const text = summaryHaystack(item);
+  return /투자의견|목표주가|목표가|증권가|리포트|주가/.test(text) && /하향|낮아|조정|중립|매도|약세|급락|하락/.test(text);
+}
+
+function isSettlementSupportSummary(item = {}) {
+  const text = summaryHaystack(item);
+  return /정착지원금|1200%|수수료/.test(text) && /GA|보험대리점|설계사|공시/.test(text);
+}
+
+function isInsuranceLossSummary(item = {}) {
+  const text = summaryHaystack(item);
+  return /실손|손해율|적자폭|보험 민원|민원/.test(text) && /보험|손보|생보|계약/.test(text);
 }
 
 function buildMonthlyObservations(data, issues = []) {

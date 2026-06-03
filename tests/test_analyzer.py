@@ -90,6 +90,46 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotIn("키워드 기준", summary)
         self.assertFalse(summary.endswith("..."))
 
+    def test_quality_summary_removes_dashboard_reason_boilerplate(self) -> None:
+        article = {
+            "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
+            "description": (
+                "앞서 지난해 11월 초대형GA 14개사에 인카금융서비스가 포함됐다. "
+                "당사 직접 언급 기사로 보고서와 리스크 점검 근거에 우선 포함합니다. "
+                "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("금융보안원", summary)
+        self.assertIn("예방", summary)
+        self.assertNotIn("당사 직접 언급", summary)
+        self.assertNotIn("리스크 점검 근거", summary)
+        self.assertNotIn("시장 평가, 투자 의견", summary)
+
+    def test_analyze_stores_quality_summary_for_persistence(self) -> None:
+        articles = [
+            {
+                "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
+                "description": (
+                    "앞서 초대형GA 14개사에 인카금융서비스가 포함됐다. "
+                    "대형 GA까지 금융보안원 가입 대상이 확대된다."
+                ),
+                "keyword": "인카금융서비스",
+                "keyword_category": "own",
+            }
+        ]
+
+        analyzed, _ = analyzer.analyze(articles, top_n=1)
+
+        self.assertEqual(analyzed[0]["_tone"], "neutral")
+        self.assertIn("_summary", analyzed[0])
+        self.assertNotIn("당사 직접 언급", analyzed[0]["_summary"])
+        self.assertFalse(analyzed[0]["_summary"].endswith("..."))
+
     def test_unambiguous_competitor_words_ignore_plain_mega_noise(self) -> None:
         self.assertFalse(analyzer.contains_unambiguous_competitor_word("메가 히트 상품 출시"))
         self.assertTrue(analyzer.contains_unambiguous_competitor_word("글로벌금융판매 GA 동향"))

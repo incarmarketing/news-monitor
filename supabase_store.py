@@ -14,6 +14,8 @@ from urllib.parse import quote
 import requests
 from dotenv import load_dotenv
 
+import analyzer
+
 load_dotenv()
 KST = timezone(timedelta(hours=9))
 
@@ -345,7 +347,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "link": article.get("link", ""),
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
-        "summary": article.get("_summary", "") or article.get("summary", "") or article.get("description", ""),
+        "summary": article.get("_summary", "") or analyzer.build_quality_summary(article),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),
