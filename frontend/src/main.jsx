@@ -2862,8 +2862,9 @@ function selectRegulatorRows(articles = []) {
   const seen = new Set();
   return articles
     .filter((article) => {
-      const text = `${article.source || ""} ${article.category || ""} ${article.keyword || ""} ${article.title || ""}`;
-      return /금융감독원|금융위원회|금융당국|정책\/규제/.test(text);
+      const source = String(article.source || "");
+      const link = String(article.link || article.url || "");
+      return /금융감독원|금융위원회/.test(source) || /fss\.or\.kr|fsc\.go\.kr/.test(link);
     })
     .filter((article) => {
       const title = normalizeRegulatorDisplayTitle(article.title);
