@@ -522,7 +522,8 @@ def build_quality_summary(article: dict) -> str:
         if sentence != title and not is_generic_quality_sentence(sentence) and not is_broken_quality_sentence(sentence)
     ]
     fallback = headline_based_summary(title)
-    lines = unique_quality_sentences([*contextual, *sentences, fallback])
+    candidates = [*contextual, *sentences] if len(contextual) >= 2 else [*contextual, *sentences, fallback]
+    lines = unique_quality_sentences(candidates)
     return " ".join(ensure_summary_sentence(sentence) for sentence in lines[:3])
 
 

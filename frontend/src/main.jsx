@@ -2203,9 +2203,12 @@ function buildArticleSummaryLines(item = {}) {
     .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence));
   const contextLines = buildContextualSummaryLines(item);
   const titleLine = normalizeSummaryLine(headlineBasedSummary(item));
-  return unique([...contextLines, ...sentences, titleLine].filter(Boolean))
+  const candidates = contextLines.length >= 2
+    ? [...contextLines, ...sentences]
+    : [...contextLines, ...sentences, titleLine];
+  return unique(candidates.filter(Boolean))
     .filter((line) => !isGenericSummaryLine(line))
-    .slice(0, 4);
+    .slice(0, 3);
 }
 
 function compactArticleSummary(item = {}) {
