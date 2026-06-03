@@ -276,7 +276,13 @@ function App() {
         data={activeSection === "overview" ? realtimeData : data}
         period={period}
         setPeriod={setPeriod}
-        articles={activeSection === "monitoring" ? allArticles : activeSection === "overview" ? realtimeArticles : scopedArticles}
+        articles={
+          activeSection === "monitoring" || activeSection === "regulators"
+            ? allArticles
+            : activeSection === "overview"
+              ? realtimeArticles
+              : scopedArticles
+        }
         allArticles={allArticles}
         scraps={scraps}
         jobs={jobs}
