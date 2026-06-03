@@ -74,6 +74,8 @@ const navIcons = {
 };
 
 const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
+const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
+const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
 
 function readInitialRoute() {
   const fallback = { section: "overview", monitoringPreset: null };
@@ -113,10 +115,13 @@ function normalizeDeepLinkTone(value) {
     warning: "주의",
     positive: "긍정",
     neutral: "중립",
+    exclude: "제외",
+    noise: "제외",
     "부정": "부정",
     "주의": "주의",
     "긍정": "긍정",
     "중립": "중립",
+    "제외": "제외",
   }[tone] || "";
 }
 
@@ -573,9 +578,7 @@ function Monitoring({ data, articles, monitoringPreset, operations, onRefreshOpe
           <span>논조</span>
           <select value={tone} onChange={(event) => setTone(event.target.value)}>
             <option value="all">전체</option>
-            <option value="부정">부정</option>
-            <option value="주의">주의</option>
-            <option value="긍정">긍정</option>
+            {TONE_FILTER_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>
         <label className="sort-filter">
@@ -657,7 +660,7 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
   const [selected, setSelected] = useState(() => new Set());
   const regulatorRows = useMemo(() => selectRegulatorRows(articles), [articles]);
   const sources = useMemo(() => unique(regulatorRows.map((article) => article.source)).slice(0, 40), [regulatorRows]);
-  const tones = useMemo(() => unique(regulatorRows.map((article) => article.tone)).slice(0, 8), [regulatorRows]);
+  const tones = useMemo(() => sortToneLabels(regulatorRows.map((article) => article.tone)).slice(0, 8), [regulatorRows]);
   const filteredRows = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return regulatorRows.filter((article) => {
@@ -1749,7 +1752,7 @@ function KeywordManagement({ keywords = [] }) {
           ))}
         </div>
       </Panel>
-      <Panel title="분류 규칙" icon={ShieldCheck} meta="긍정·부정·주의·중립·제외">
+      <Panel title="분류 규칙" icon={ShieldCheck} meta="긍정·중립·주의·부정·제외">
         <RuleStack />
       </Panel>
     </section>
@@ -3442,6 +3445,13 @@ function compareArticleImportance(a, b) {
   const scoreDiff = Number(b.score || 0) - Number(a.score || 0);
   if (scoreDiff) return scoreDiff;
   return articleTimeValue(b) - articleTimeValue(a);
+}
+
+function sortToneLabels(values) {
+  return unique(values).sort((a, b) => {
+    const orderDiff = (TONE_SORT_WEIGHT.get(a) ?? 99) - (TONE_SORT_WEIGHT.get(b) ?? 99);
+    return orderDiff || String(a).localeCompare(String(b), "ko-KR");
+  });
 }
 
 function articleTimeValue(article) {
