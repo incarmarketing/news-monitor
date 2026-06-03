@@ -57,6 +57,7 @@ import {
   saveMonitorKeyword,
   savePressAlias,
   saveReporterProfile,
+  triggerNewsCollection,
   verifyDashboardLogin,
 } from "./liveData";
 import "./styles.css";
@@ -141,10 +142,40 @@ function App() {
   const [operations, setOperations] = useState({ status: "loading", message: "연결 확인 중", articles: [] });
   const [loginOpen, setLoginOpen] = useState(false);
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
+  const [working, setWorking] = useState(false);
 
-  const refreshOperations = async () => {
-    setOperations((current) => ({ ...current, status: "loading", message: "연결 확인 중" }));
-    setOperations(await loadOperationalData());
+  const refreshOperations = async (options = {}) => {
+    const trigger = options.trigger === true;
+    setWorking(true);
+    setOperations((current) => ({
+      ...current,
+      status: "loading",
+      message: trigger ? "수집·분석 실행 요청 중" : "연결 확인 중",
+    }));
+    let triggerMessage = "";
+    if (trigger) {
+      try {
+        await triggerNewsCollection({
+          workflow: options.workflow || "news-briefing.yml",
+          period_reports: "none",
+          send_kakao: false,
+          report_slot: "auto",
+          source: options.source || "dashboard_manual_refresh",
+        });
+        triggerMessage = "수집·분석 실행 요청 완료";
+      } catch (error) {
+        triggerMessage = `수집 실행 요청 실패: ${error?.message || "확인 필요"}`;
+      }
+    }
+    const next = await loadOperationalData();
+    setOperations(triggerMessage ? { ...next, message: `${triggerMessage} · ${next.message}` } : next);
+    if (trigger) {
+      window.setTimeout(async () => {
+        const delayed = await loadOperationalData();
+        setOperations(delayed);
+      }, 20000);
+    }
+    setWorking(false);
   };
 
   useEffect(() => {
@@ -220,7 +251,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header working={working || operations.status === "loading"} />
       <aside className="side-nav" aria-label="주요 메뉴">
         <div className="side-title">Menu</div>
         {navItems.map((item) => {
@@ -229,7 +260,11 @@ function App() {
             <button
               key={item.id}
               className={activeSection === item.id ? "active" : ""}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                setWorking(true);
+                setActiveSection(item.id);
+                window.setTimeout(() => setWorking(false), 450);
+              }}
             >
               <Icon />
               <span>{item.label}</span>
@@ -265,7 +300,7 @@ function App() {
   );
 }
 
-function Header() {
+function Header({ working = false }) {
   const userText = "최진우 1611499 관리자";
 
   return (
@@ -277,8 +312,11 @@ function Header() {
           <span>실시간 기사 · 보고서 · 운영 관리</span>
         </div>
       </div>
-      <div className="user-chip">
-        <span>{userText}</span>
+      <div className="header-user-area">
+        {working && <span className="work-status">작업 중</span>}
+        <div className="user-chip">
+          <span>{userText}</span>
+        </div>
       </div>
     </header>
   );
@@ -348,14 +386,24 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring }) {
+function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, onRefreshOperations }) {
   const { summary } = data;
+  const isLoading = operations?.status === "loading";
   return (
     <main className="workspace">
       <PageTitle
         eyebrow={`${data.label} · ${data.scope}`}
         title="실시간 대시보드"
         description="검색 키워드 기준 최신 이슈, 당사 리스크, 알림톡, 보고서 생성 상태를 5분 단위로 확인합니다."
+        right={(
+          <button
+            className="ghost-button"
+            onClick={() => onRefreshOperations?.({ trigger: true, source: "overview_issues" })}
+            disabled={isLoading}
+          >
+            <RefreshCw />갱신
+          </button>
+        )}
       />
 
       <section className="briefing-card">
@@ -396,7 +444,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   );
 }
 
-function Monitoring({ data, articles, monitoringPreset }) {
+function Monitoring({ data, articles, monitoringPreset, operations, onRefreshOperations }) {
   const regularArticles = useMemo(
     () => articles.filter((article) => !isOfficialRegulatorSource(article.source)),
     [articles],
@@ -464,6 +512,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
   const feedMeta = viewMode === "related"
     ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
     : `${filtered.length.toLocaleString("ko-KR")}건`;
+  const isLoading = operations?.status === "loading";
 
   return (
     <main className="workspace">
@@ -471,7 +520,18 @@ function Monitoring({ data, articles, monitoringPreset }) {
         eyebrow="Live Monitoring"
         title="실시간 모니터링"
         description="기사 목록을 샘플 5개로 줄이지 않고, 연결 가능한 운영 기사 전체를 필터와 함께 펼쳐 봅니다."
-        right={<button className="primary-button"><Download />CSV 출력</button>}
+        right={(
+          <div className="page-actions">
+            <button
+              className="ghost-button"
+              onClick={() => onRefreshOperations?.({ trigger: true, source: "monitoring_feed" })}
+              disabled={isLoading}
+            >
+              <RefreshCw />갱신
+            </button>
+            <button className="primary-button"><Download />CSV 출력</button>
+          </div>
+        )}
       />
       <section className="filter-card">
         <label>
@@ -599,7 +659,11 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
         description="금융감독원·금융위원회 보도자료를 중복 제거 기준으로 모아 정책/규제 이슈만 빠르게 확인합니다."
         right={(
           <div className="page-actions">
-            <button className="ghost-button" onClick={onRefreshOperations} disabled={operations?.status === "loading"}>
+            <button
+            className="ghost-button"
+              onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases" })}
+            disabled={operations?.status === "loading"}
+          >
               <RefreshCw />갱신
             </button>
           </div>

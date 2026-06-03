@@ -84,6 +84,18 @@ async function rest(config, session, path) {
   return result && Object.prototype.hasOwnProperty.call(result, "data") ? result.data : result;
 }
 
+export async function triggerNewsCollection(payload = {}) {
+  const config = await loadSupabaseConfig();
+  const session = getStoredSession();
+  return dashboardApi(config, session, "trigger_collection", {
+    workflow: payload.workflow || "news-briefing.yml",
+    period_reports: payload.period_reports || "none",
+    send_kakao: payload.send_kakao === true,
+    report_slot: payload.report_slot || "auto",
+    source: payload.source || "dashboard_manual_refresh",
+  });
+}
+
 async function writeRest(path, method, body, headers = {}) {
   const config = await loadSupabaseConfig();
   const session = getStoredSession();

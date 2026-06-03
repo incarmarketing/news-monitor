@@ -66,7 +66,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   backdrop-filter: blur(10px);
 }
 
-.brand, .user-chip {
+.brand, .user-chip, .header-user-area {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -181,6 +181,24 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   background: #fff;
 }
 
+.header-user-area {
+  justify-self: end;
+}
+
+.work-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .side-nav {
   position: sticky;
   top: 64px;
@@ -261,6 +279,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
 }
@@ -2742,6 +2761,11 @@ button.kpi-card {
   }
 
   .brand span { white-space: normal; }
+
+  .header-user-area {
+    justify-self: start;
+    flex-wrap: wrap;
+  }
 
   .period-control {
     width: 100%;
