@@ -874,14 +874,21 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
   );
 }
 
-function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMonitoring, operations }) {
-  const monthlyArticles = useMemo(() => lastNDays(allArticles || [], 31), [allArticles]);
-  const analysisArticles = monthlyArticles.length ? monthlyArticles : allArticles || [];
+function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, scraps, onOpenMonitoring, operations }) {
+  const periodArticles = useMemo(
+    () => articles.length ? articles : filterArticlesByPeriod(allArticles || [], period),
+    [articles, allArticles, period],
+  );
+  const trendArticles = useMemo(
+    () => lastNDays(allArticles?.length ? allArticles : periodArticles, 31),
+    [allArticles, periodArticles],
+  );
+  const analysisArticles = periodArticles.length ? periodArticles : trendArticles;
   const scopeLabel = periodScopeLabel(period);
   const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
   const dailyTrend = useMemo(
-    () => buildDailyToneTrend(analysisArticles, 31, data.toneTrend),
-    [analysisArticles, data.toneTrend],
+    () => buildDailyToneTrend(trendArticles, 31, data.toneTrend),
+    [trendArticles, data.toneTrend],
   );
   const keywordRows = useMemo(
     () => buildKeywordFlow(analysisArticles, selectedKeywords),
