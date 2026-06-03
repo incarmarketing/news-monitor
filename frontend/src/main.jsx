@@ -1022,7 +1022,9 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
   const reportArticles = articles || [];
   const expandedIssues = expandReportIssues(data.issues, reportArticles, period);
   const lead = buildReportLead(period, data, reportArticles, expandedIssues);
-  const secondary = expandedIssues.slice(1, period === "daily" ? 4 : 8);
+  const secondary = expandedIssues
+    .filter((issue) => !sameIssue(issue, lead))
+    .slice(0, period === "daily" ? 3 : 7);
   const reportTrend = buildDailyToneTrend(reportArticles, period === "weekly" ? 7 : 31, data.toneTrend);
   return (
     <main className="workspace report-workspace">
@@ -1159,11 +1161,33 @@ function buildReportLead(period, data, articles, issues) {
       publishedAt: data.scope,
     };
   }
+  const frontArticle = selectReportFrontArticle(articles, issues);
   const topCategories = groupArticles(articles, "category").slice(0, 2).map(([name]) => name).join("·") || "주요 보도";
   const riskText = data.summary.ownNegative > 0
     ? `당사 부정 ${data.summary.ownNegative}건은 별도 확인 대상으로 분리하고`
     : "당사 직접 부정은 제한적이며";
   const cadence = period === "weekly" ? "이번 주" : "이번 달";
+  if (frontArticle) {
+    const ownPositive = isOwnArticle(frontArticle) && frontArticle.tone === "긍정";
+    const ownNeutral = isOwnArticle(frontArticle) && frontArticle.tone === "중립";
+    const leadLines = buildArticleSummaryLines(frontArticle);
+    return {
+      ...frontArticle,
+      category: frontArticle.category || "당사",
+      source: frontArticle.source || "INCAR Media Desk",
+      summary: compactArticleSummary(frontArticle),
+      summaryLines: unique([
+        ownPositive
+          ? `${cadence} 당사 보도에서는 성과성 이슈가 대표 흐름으로 확인됩니다.`
+          : ownNeutral
+            ? `${cadence} 당사 직접 언급 보도가 대표 관찰 이슈로 확인됩니다.`
+            : `${cadence} 핵심 이슈로 확인된 보도입니다.`,
+        ...leadLines,
+        `당사 언급 ${data.summary.ownMentions}건, 당사 부정 ${data.summary.ownNegative}건, 주의 ${data.summary.caution}건을 분리해 봅니다.`,
+      ]).slice(0, 4),
+      publishedAt: frontArticle.publishedAt || frontArticle.time || frontArticle.date || data.scope,
+    };
+  }
   const leadIssue = issues[0];
   return {
     tone: data.summary.risk === "LOW" ? "중립" : "주의",
@@ -1179,6 +1203,49 @@ function buildReportLead(period, data, articles, issues) {
     ],
     publishedAt: data.scope,
   };
+}
+
+function selectReportFrontArticle(articles = [], issues = []) {
+  const candidates = [...articles, ...issues]
+    .filter((item) => item && item.title && item.tone !== "제외");
+  if (!candidates.length) return null;
+  return candidates
+    .map((item, index) => ({ item, index, score: reportFrontScore(item) }))
+    .sort((a, b) => b.score - a.score || articleTimeValue(b.item) - articleTimeValue(a.item) || a.index - b.index)[0]?.item || null;
+}
+
+function reportFrontScore(item = {}) {
+  const own = isOwnArticle(item);
+  const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`;
+  let score = 0;
+  if (own) score += 1000;
+  if (own && item.tone === "부정") score += 900;
+  if (own && item.tone === "긍정") score += 520;
+  if (own && item.tone === "중립") score += 360;
+  if (own && item.tone === "주의") score += 240;
+  if (/우수인증|최다|성과|수상|배출|선정|1위|성장|매출|인증설계사/.test(text)) score += own ? 180 : 40;
+  if (/사기|불법|제재|피해|사칭|개인정보|금융사고/.test(text)) score += own ? 220 : 80;
+  if (item.category === "정책/규제") score += 45;
+  if (item.tone === "주의") score += 35;
+  if (item.tone === "부정") score += 80;
+  if (item.tone === "긍정") score += 70;
+  if (/브랜드평판|스포츠|골프|행사|문화센터|마이데이터 평판/.test(text) && !own) score -= 300;
+  return score + Math.min(Number(item.score || 0), 100);
+}
+
+function sameIssue(a = {}, b = {}) {
+  if (!a || !b) return false;
+  const aKey = normalizeIssueTitle(a.title);
+  const bKey = normalizeIssueTitle(b.title);
+  return Boolean(aKey && bKey && aKey === bKey);
+}
+
+function normalizeIssueTitle(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function ReportMetricBoard({ summary, articles = [], period = "daily", onOpenMonitoring }) {
