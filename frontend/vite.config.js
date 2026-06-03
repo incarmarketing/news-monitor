@@ -39,5 +39,9 @@ function serveProjectData() {
 
 export default defineConfig({
   base: "./",
+  build: {
+    target: "es2018",
+    cssTarget: "chrome61",
+  },
   plugins: [react(), serveProjectData()],
 });
