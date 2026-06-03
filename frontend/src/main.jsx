@@ -143,14 +143,17 @@ function App() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [working, setWorking] = useState(false);
+  const [workLabel, setWorkLabel] = useState("");
 
   const refreshOperations = async (options = {}) => {
     const trigger = options.trigger === true;
+    const label = options.label || (options.workflow === "regulator-releases.yml" ? "금융당국 보도자료 갱신" : "뉴스 수집·분석 갱신");
     setWorking(true);
+    setWorkLabel(label);
     setOperations((current) => ({
       ...current,
-      status: "loading",
-      message: trigger ? "수집·분석 실행 요청 중" : "연결 확인 중",
+      status: trigger ? current.status : "loading",
+      message: trigger ? `${label} 요청 중` : "연결 확인 중",
     }));
     let triggerMessage = "";
     if (trigger) {
@@ -162,9 +165,9 @@ function App() {
           report_slot: "auto",
           source: options.source || "dashboard_manual_refresh",
         });
-        triggerMessage = "수집·분석 실행 요청 완료";
+        triggerMessage = `${label} 요청 완료`;
       } catch (error) {
-        triggerMessage = `수집 실행 요청 실패: ${error?.message || "확인 필요"}`;
+        triggerMessage = `${label} 요청 실패: ${error?.message || "확인 필요"}`;
       }
     }
     const next = await loadOperationalData();
@@ -172,10 +175,18 @@ function App() {
     if (trigger) {
       window.setTimeout(async () => {
         const delayed = await loadOperationalData();
-        setOperations(delayed);
+        setOperations({ ...delayed, message: `${label} 반영 확인 중 · ${delayed.message}` });
       }, 20000);
+      window.setTimeout(async () => {
+        const delayed = await loadOperationalData();
+        setOperations(delayed);
+        setWorking(false);
+        setWorkLabel("");
+      }, 60000);
+      return;
     }
     setWorking(false);
+    setWorkLabel("");
   };
 
   useEffect(() => {
@@ -234,7 +245,7 @@ function App() {
     : [];
 
   const openMonitoring = (preset = {}) => {
-    setMonitoringPreset({ ...preset, stamp: Date.now() });
+    setMonitoringPreset({ period, ...preset, stamp: Date.now() });
     setActiveSection("monitoring");
   };
 
@@ -251,7 +262,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header working={working || operations.status === "loading"} />
+      <Header working={working || operations.status === "loading"} workLabel={workLabel} />
       <aside className="side-nav" aria-label="주요 메뉴">
         <div className="side-title">Menu</div>
         {navItems.map((item) => {
@@ -306,7 +317,7 @@ function App() {
   );
 }
 
-function Header({ working = false }) {
+function Header({ working = false, workLabel = "" }) {
   const userText = "최진우 1611499 관리자";
 
   return (
@@ -319,7 +330,7 @@ function Header({ working = false }) {
         </div>
       </div>
       <div className="header-user-area">
-        {working && <span className="work-status">작업 중</span>}
+        {working && <span className="work-status">작업 중{workLabel ? ` · ${workLabel}` : ""}</span>}
         <div className="user-chip">
           <span>{userText}</span>
         </div>
@@ -437,8 +448,8 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         </div>
         <div className="side-column">
           <WatchPanel jobs={jobs} risk={summary.risk} />
-          <Panel title="알림톡 발송 이력" icon={Bell} meta="더보기">
-            <NotificationList rows={notifications.slice(0, 5)} />
+          <Panel title="알림톡 발송 이력" icon={Bell} meta={`${notifications.length.toLocaleString("ko-KR")}건`}>
+            <NotificationList rows={notifications} />
           </Panel>
           <Panel title="보고서 자동화" icon={CalendarDays} meta="스케줄">
             <JobRows rows={jobs} />
@@ -484,8 +495,15 @@ function Monitoring({ data, articles, monitoringPreset, operations, onRefreshOpe
     setTone(monitoringPreset.tone || "all");
     setCategory(monitoringPreset.category || "all");
     setSource(monitoringPreset.source || "all");
+    const range = resolveMonitoringDateRange(regularArticles, monitoringPreset);
+    if (range.start || range.end) {
+      setStartDateInput(range.start);
+      setEndDateInput(range.end);
+      setStartDate(range.start);
+      setEndDate(range.end);
+    }
     setVisible(30);
-  }, [monitoringPreset]);
+  }, [monitoringPreset, regularArticles]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return regularArticles.filter((article) => {
@@ -636,6 +654,7 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("all");
   const [tone, setTone] = useState("all");
+  const [selected, setSelected] = useState(() => new Set());
   const regulatorRows = useMemo(() => selectRegulatorRows(articles), [articles]);
   const sources = useMemo(() => unique(regulatorRows.map((article) => article.source)).slice(0, 40), [regulatorRows]);
   const tones = useMemo(() => unique(regulatorRows.map((article) => article.tone)).slice(0, 8), [regulatorRows]);
@@ -650,11 +669,37 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
       );
     });
   }, [query, regulatorRows, source, tone]);
+  const selectedRows = useMemo(
+    () => filteredRows.filter((article) => selected.has(articleSelectionKey(article))),
+    [filteredRows, selected],
+  );
+  const analysisRows = selectedRows.length ? selectedRows : filteredRows.slice(0, 5);
+  const allVisibleSelected = filteredRows.length > 0 && filteredRows.every((article) => selected.has(articleSelectionKey(article)));
   const resetFilters = () => {
     setQuery("");
     setQueryInput("");
     setSource("all");
     setTone("all");
+  };
+  const toggleSelected = (article) => {
+    const key = articleSelectionKey(article);
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const toggleVisibleSelection = () => {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) {
+        filteredRows.forEach((article) => next.delete(articleSelectionKey(article)));
+      } else {
+        filteredRows.forEach((article) => next.add(articleSelectionKey(article)));
+      }
+      return next;
+    });
   };
 
   return (
@@ -667,7 +712,7 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
           <div className="page-actions">
             <button
             className="ghost-button"
-              onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases" })}
+              onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases", label: "금융당국 보도자료 갱신" })}
             disabled={operations?.status === "loading"}
           >
               <RefreshCw />갱신
@@ -708,16 +753,89 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
           초기화
         </button>
       </section>
+      <RegulatorDirectionPanel rows={analysisRows} selectedCount={selectedRows.length} totalCount={filteredRows.length} />
       <Panel title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>
-        <ArticleFeed rows={filteredRows} showTime={false} />
+        <div className="regulator-list-actions">
+          <button className="ghost-button compact-button" onClick={toggleVisibleSelection}>
+            {allVisibleSelected ? "선택 해제" : "현재 목록 선택"}
+          </button>
+          <span>{selectedRows.length ? `${selectedRows.length.toLocaleString("ko-KR")}건 선택 분석 중` : "선택하면 위 분석이 선택 보도자료 기준으로 바뀝니다"}</span>
+        </div>
+        <RegulatorReleaseFeed rows={filteredRows} selected={selected} onToggle={toggleSelected} />
       </Panel>
     </main>
+  );
+}
+
+function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 }) {
+  const analysis = buildRegulatorDirectionAnalysis(rows);
+  return (
+    <section className="panel regulator-analysis-panel">
+      <div className="panel-head">
+        <h2><ShieldCheck />당국 방향성 분석</h2>
+        <span>{selectedCount ? `${selectedCount.toLocaleString("ko-KR")}건 선택` : `최근 ${Math.min(totalCount, rows.length).toLocaleString("ko-KR")}건 기준`}</span>
+      </div>
+      <div className="regulator-analysis-body">
+        <div className="regulator-analysis-lead">
+          <b>{analysis.headline}</b>
+          <p>{analysis.summary}</p>
+        </div>
+        <div className="regulator-theme-grid">
+          {analysis.themes.map((theme) => (
+            <article key={theme.label}>
+              <span>{theme.label}</span>
+              <b>{theme.count.toLocaleString("ko-KR")}건</b>
+              <p>{theme.note}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
+  return (
+    <div className="regulator-release-list">
+      {rows.map((row) => {
+        const key = articleSelectionKey(row);
+        const checked = selected.has(key);
+        return (
+          <article key={key} className={checked ? "regulator-release-row selected" : "regulator-release-row"}>
+            <label>
+              <input type="checkbox" checked={checked} onChange={() => onToggle(row)} />
+              <span className="sr-only">보도자료 선택</span>
+            </label>
+            <div>
+              <div className="feed-title-line">
+                <Chip tone={row.tone}>{row.tone}</Chip>
+                <b>{row.title}</b>
+              </div>
+              <span className="feed-meta">{formatFeedMeta(row, false)}</span>
+              <ArticleSummaryBlock item={row} dense />
+            </div>
+            {row.link && row.link !== "#" && (
+              <a
+                href={row.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="보도자료 열기"
+                onClick={(event) => openArticleLink(event, row.link)}
+              >
+                <ExternalLink />
+              </a>
+            )}
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
 function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMonitoring, operations }) {
   const monthlyArticles = useMemo(() => lastNDays(allArticles || [], 31), [allArticles]);
   const analysisArticles = monthlyArticles.length ? monthlyArticles : allArticles || [];
+  const scopeLabel = periodScopeLabel(period);
   const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
   const dailyTrend = useMemo(
     () => buildDailyToneTrend(analysisArticles, 31, data.toneTrend),
@@ -728,13 +846,13 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
     [analysisArticles, selectedKeywords],
   );
   const issueRows = buildIssues(analysisArticles, data.issues).slice(0, 6);
-  const observations = buildMonthlyObservations(data, issueRows);
+  const observations = buildPeriodObservations(data, issueRows, period);
   return (
     <main className="workspace">
       <PageTitle
-        eyebrow="최근 1개월 분석"
+        eyebrow={`${scopeLabel} 분석`}
         title="미디어 분석 리포트"
-        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 월간 핵심 이슈를 함께 봅니다."
+        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 핵심 이슈를 함께 봅니다."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
@@ -745,7 +863,7 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
         )}
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
-      <section className="content-grid two">
+      <section className="content-grid two media-analysis-grid">
         <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
           <ToneTrend rows={dailyTrend} />
         </Panel>
@@ -754,11 +872,12 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
         </Panel>
         <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
           <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
+          <KeywordBrief rows={keywordRows} />
         </Panel>
-        <Panel title="월간 핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`}>
+        <Panel title={`${scopeLabel} 핵심 이슈`} icon={Newspaper} meta={`${issueRows.length}건`}>
           <MonthlyIssueDigest issues={issueRows} />
         </Panel>
-        <Panel title="월간 관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약">
+        <Panel title={`${scopeLabel} 관찰 코멘트`} icon={Gauge} meta="핵심 흐름 요약">
           <InsightList insights={observations} />
         </Panel>
       </section>
@@ -1869,22 +1988,56 @@ function WatchPanel({ jobs, risk = "LOW" }) {
 }
 
 function NotificationList({ rows }) {
+  const [showAll, setShowAll] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const visibleRows = showAll ? rows : rows.slice(0, 5);
   return (
-    <div className="notification-list">
-      {rows.map((item) => (
-        <button
-          key={item.id || `${item.time}-${item.type}`}
-          type="button"
-          className={item.link ? "clickable" : ""}
-          title={item.body || item.type}
-          disabled={!item.link}
-          onClick={(event) => item.link && openExternal(event, item.link)}
-        >
-          <b>{item.time}</b>
-          <span>{item.type}</span>
-          <Chip tone={item.status}>{item.status}</Chip>
+    <>
+      <div className="notification-list">
+        {visibleRows.map((item) => (
+          <button
+            key={item.id || `${item.time}-${item.type}`}
+            type="button"
+            className="clickable"
+            title={item.body || item.type}
+            onClick={() => setSelected(item)}
+          >
+            <b>{item.time}</b>
+            <span>{item.type}</span>
+            <Chip tone={item.status}>{item.status}</Chip>
+          </button>
+        ))}
+      </div>
+      {rows.length > 5 && (
+        <button className="ghost-button notification-more" onClick={() => setShowAll((value) => !value)}>
+          {showAll ? "접기" : "더보기"}
         </button>
-      ))}
+      )}
+      {selected && <NotificationDetail item={selected} onClose={() => setSelected(null)} />}
+    </>
+  );
+}
+
+function NotificationDetail({ item, onClose }) {
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true">
+      <section className="detail-panel">
+        <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
+          <X />
+        </button>
+        <span className="detail-kicker">알림톡 발송 내역</span>
+        <h2>{item.type || "알림톡"}</h2>
+        <div className="detail-meta">
+          <Chip tone={item.status}>{item.status}</Chip>
+          <span>{item.time}</span>
+        </div>
+        <pre>{item.body || "저장된 발송 본문이 없습니다."}</pre>
+        {item.link && (
+          <a className="article-link-button" href={item.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, item.link)}>
+            <ExternalLink />연결 링크 열기
+          </a>
+        )}
+      </section>
     </div>
   );
 }
@@ -1978,6 +2131,21 @@ function ToneTrend({ rows, compact = false }) {
 
 function InsightList({ insights = [] }) {
   return <div className="insight-list">{insights.map((text) => <p key={text}>{text}</p>)}</div>;
+}
+
+function KeywordBrief({ rows = [] }) {
+  const leaders = rows.filter((row) => Number(row.value || 0) > 0).slice(0, 4);
+  if (!leaders.length) return <div className="keyword-brief empty">선정 키워드 기준으로 관찰된 기사가 아직 없습니다.</div>;
+  return (
+    <div className="keyword-brief">
+      {leaders.map((row, index) => (
+        <span key={row.keyword || row.name}>
+          <b>{index + 1}</b>
+          {row.name} {Number(row.value || 0).toLocaleString("ko-KR")}건
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function RuleStack() {
@@ -2282,7 +2450,6 @@ function isGenericSummaryLine(value) {
 function normalizeSummaryLine(value) {
   const text = cleanSummaryText(value).replace(/[.。!?]+$/g, "").trim();
   if (!text || isGenericSummaryLine(text) || isBrokenSummaryLine(text)) return "";
-  if (/[다요함됨]$/.test(text)) return text;
   return `${text}.`;
 }
 
@@ -2352,23 +2519,28 @@ function isInsuranceLossSummary(item = {}) {
   return /실손|손해율|적자폭|보험 민원|민원/.test(text) && /보험|손보|생보|계약/.test(text);
 }
 
-function buildMonthlyObservations(data, issues = []) {
+function periodScopeLabel(period) {
+  return { daily: "일간", weekly: "주간", monthly: "월간" }[period] || "기간";
+}
+
+function buildPeriodObservations(data, issues = [], period = "monthly") {
   const summary = data.summary || {};
   const lead = issues[0];
   const topPress = data.pressInfluence?.[0];
+  const scope = periodScopeLabel(period);
   const observations = [];
   if (summary.ownNegative > 0) {
-    observations.push(`당사 부정 이슈 ${summary.ownNegative}건이 확인돼 월간 리스크 점검 대상으로 우선 배치했습니다.`);
+    observations.push(`당사 부정 이슈 ${summary.ownNegative}건이 확인돼 ${scope} 리스크 점검 대상으로 우선 배치했습니다.`);
   } else if (summary.ownMentions > 0) {
     observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 시장 평가와 업계 흐름을 함께 확인하는 관찰 이슈로 봅니다.`);
   } else {
-    observations.push("최근 1개월 기준 당사 직접 부정 이슈는 확인되지 않았고, 업계성 이슈 중심으로 흐름을 추적합니다.");
+    observations.push(`${scope} 기준 당사 직접 부정 이슈는 확인되지 않았고, 업계성 이슈 중심으로 흐름을 추적합니다.`);
   }
   if (summary.caution > 0) {
     observations.push(`주의 이슈 ${summary.caution}건은 투자 의견, 수수료, 규제, GA 운영 이슈처럼 의사결정자가 확인할 만한 신호로 분리했습니다.`);
   }
   if (lead?.title) {
-    observations.push(`대표 헤드라인은 "${lead.title}"이며, 월간 핵심 이슈 영역에서 기사 원문까지 바로 확인할 수 있습니다.`);
+    observations.push(`대표 헤드라인은 "${lead.title}"이며, ${scope} 핵심 이슈 영역에서 기사 원문까지 바로 확인할 수 있습니다.`);
   }
   if (topPress?.source) {
     observations.push(`${topPress.source} 보도가 가장 많이 관찰돼 해당 매체의 반복 보도 흐름을 우선 확인하는 구성이 적절합니다.`);
@@ -2518,7 +2690,7 @@ function expandReportIssues(issues, articles, period) {
 }
 
 function buildPressInfluence(articles) {
-  const pressArticles = articles.filter((article) => !isOfficialRegulatorSource(article.source));
+  const pressArticles = articles.filter((article) => !isOfficialRegulatorSource(article.source) && !isPortalSource(article.source));
   return groupArticles(pressArticles, "source").slice(0, 10).map(([source, total]) => {
     const scoped = pressArticles.filter((article) => article.source === source);
     return {
@@ -2533,6 +2705,10 @@ function buildPressInfluence(articles) {
 
 function isOfficialRegulatorSource(source) {
   return /금융감독원|금융위원회/.test(String(source || ""));
+}
+
+function isPortalSource(source) {
+  return /^(google|naver|daum|bing)$/i.test(String(source || "").trim()) || /google\./i.test(String(source || ""));
 }
 
 const PRESS_ALIAS_DRAFT_KEY = "news_monitor_press_alias_drafts_v1";
@@ -3066,6 +3242,72 @@ function filterRowsByPeriod(articles, period) {
     const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
     return time >= minTime && time <= latestTime;
   });
+}
+
+function resolveMonitoringDateRange(articles = [], preset = {}) {
+  if (preset.startDate || preset.endDate) {
+    return {
+      start: preset.startDate || preset.endDate || "",
+      end: preset.endDate || preset.startDate || "",
+    };
+  }
+  const dated = articles.filter((article) => article.date).map((article) => article.date).sort();
+  const latest = dated[dated.length - 1] || "";
+  if (!latest) return { start: "", end: "" };
+  if (preset.period === "monthly") {
+    return { start: `${latest.slice(0, 7)}-01`, end: latest };
+  }
+  if (preset.period === "weekly") {
+    const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
+    const start = new Date(latestTime - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return { start, end: latest };
+  }
+  return { start: latest, end: latest };
+}
+
+function articleSelectionKey(article = {}) {
+  return String(article.id || article.link || `${article.source}-${article.date}-${article.title}`);
+}
+
+function buildRegulatorDirectionAnalysis(rows = []) {
+  const themes = [
+    {
+      label: "소비자보호",
+      note: "민원, 분쟁, 실손 청구, 보험금 지급처럼 소비자 접점 관리가 중심입니다.",
+      pattern: /소비자|민원|분쟁|실손|보험금|청구|유의|보호|피해|장애인/,
+    },
+    {
+      label: "판매채널",
+      note: "GA, 설계사, 수수료, 정착지원금, 부당승환 등 판매 과정의 책임성 강화 신호입니다.",
+      pattern: /GA|설계사|판매|수수료|정착지원금|부당승환|채널|모집|영업/,
+    },
+    {
+      label: "건전성",
+      note: "지급여력, 자본, 대출채권, 경영개선처럼 재무·자본 관리 흐름입니다.",
+      pattern: /지급여력|자본|대출채권|경영개선|건전성|손해율|실적|리스크/,
+    },
+    {
+      label: "감독·검사",
+      note: "검사, 제재, 내부통제, 감독방향 등 당국의 점검 강도가 드러나는 영역입니다.",
+      pattern: /검사|제재|내부통제|감독|업무설명회|운영계획|관리 강화/,
+    },
+  ].map((theme) => ({
+    ...theme,
+    count: rows.filter((row) => theme.pattern.test(`${row.title || ""} ${row.summary || ""}`)).length,
+  }));
+  const ranked = themes.sort((a, b) => b.count - a.count);
+  const top = ranked.find((theme) => theme.count > 0) || ranked[0];
+  const headline = rows.length
+    ? `${top.label} 중심의 정책 신호가 가장 크게 잡힙니다`
+    : "선택된 보도자료가 없습니다";
+  const summary = rows.length
+    ? `${rows.length.toLocaleString("ko-KR")}건 기준으로 보면 ${top.note} 직접 제재성 이슈와 제도 변화 이슈를 분리해서 후속 모니터링하는 구조가 적절합니다.`
+    : "보도자료를 선택하면 선택 묶음 기준으로 당국 방향성을 분석합니다.";
+  return {
+    headline,
+    summary,
+    themes: ranked,
+  };
 }
 
 function selectRegulatorRows(articles = []) {
