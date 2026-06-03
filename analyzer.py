@@ -254,6 +254,10 @@ def contains_competitor_word(text: str) -> bool:
     return False
 
 
+def contains_unambiguous_competitor_word(text: str) -> bool:
+    return any(keyword in text for keyword in COMPETITOR_WORDS if keyword not in AMBIGUOUS_COMPETITOR_WORDS)
+
+
 def is_ambiguous_competitor_match(text: str, keyword: str) -> bool:
     if re.search(rf"{re.escape(keyword)}(금융|보험|GA|에셋|대리점|서비스)", text):
         return True

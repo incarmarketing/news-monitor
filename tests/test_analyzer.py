@@ -90,6 +90,11 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotIn("키워드 기준", summary)
         self.assertFalse(summary.endswith("..."))
 
+    def test_unambiguous_competitor_words_ignore_plain_mega_noise(self) -> None:
+        self.assertFalse(analyzer.contains_unambiguous_competitor_word("메가 히트 상품 출시"))
+        self.assertTrue(analyzer.contains_unambiguous_competitor_word("글로벌금융판매 GA 동향"))
+        self.assertTrue(analyzer.contains_unambiguous_competitor_word("메가금융서비스 설계사 동향"))
+
 
 if __name__ == "__main__":
     unittest.main()
