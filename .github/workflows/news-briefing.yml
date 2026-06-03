@@ -106,7 +106,7 @@ jobs:
 
       - name: Refresh official regulator releases
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
-        run: python refresh_regulator_releases.py --days 183 --pages 120
+        run: timeout 120s python refresh_regulator_releases.py --days 14 --pages 10 || echo "Regulator refresh skipped for briefing workflow."
         env:
           FSS_API_AUTH_KEY: ${{ secrets.FSS_API_AUTH_KEY }}
           FSS_OPENAPI_AUTH_KEY: ${{ secrets.FSS_OPENAPI_AUTH_KEY }}
