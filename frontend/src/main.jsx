@@ -12,7 +12,6 @@ import {
   ExternalLink,
   FilePenLine,
   FileText,
-  Filter,
   Gauge,
   LayoutDashboard,
   LineChart,
@@ -484,7 +483,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
           <input type="date" value={endDateInput} onChange={(event) => setEndDateInput(event.target.value)} />
         </label>
         <button className="primary-button filter-action" onClick={applyDateFilter}>
-          <Search />조회
+          조회
         </button>
         <label className="tone-filter">
           <span>논조</span>
@@ -531,7 +530,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
           />
         </label>
         <button className="primary-button" onClick={() => { setQuery(queryInput); setVisible(30); }}>
-          <Search />검색
+          검색
         </button>
         <button className="ghost-button compact-button" onClick={() => {
           setQuery("");
@@ -546,7 +545,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
           setEndDate(latestDate);
           setVisible(30);
         }}>
-          <Filter />초기화
+          초기화
         </button>
       </section>
       <section className="monitoring-layout">
@@ -633,10 +632,10 @@ function Regulators({ articles = [], operations, onRefreshOperations }) {
           </select>
         </label>
         <button className="primary-button filter-action" onClick={() => setQuery(queryInput)}>
-          <Search />조회
+          조회
         </button>
         <button className="ghost-button compact-button" onClick={resetFilters}>
-          <Filter />초기화
+          초기화
         </button>
       </section>
       <Panel title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>

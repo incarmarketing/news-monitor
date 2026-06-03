@@ -126,7 +126,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
   min-height: 36px;
   border: 1px solid transparent;
   border-radius: 7px;
@@ -144,8 +144,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ghost-button, .primary-button {
-  min-height: 38px;
-  padding: 8px 12px;
+  min-height: 34px;
+  padding: 6px 10px;
   border-color: var(--line);
   background: #fff;
   color: var(--ink-2);
@@ -170,7 +170,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ghost-button.compact-button {
   min-width: 0;
-  padding: 8px 9px;
+  padding: 6px 9px;
 }
 
 .user-chip {
@@ -335,11 +335,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .kpi-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
+  gap: 9px;
   align-items: center;
-  min-height: 74px;
+  min-height: 58px;
   min-width: 0;
-  padding: 12px;
+  padding: 10px 11px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -361,9 +361,9 @@ button.kpi-card {
 }
 
 .kpi-card svg {
-  width: 36px;
-  height: 36px;
-  padding: 8px;
+  width: 32px;
+  height: 32px;
+  padding: 7px;
   border: 1px solid #c8d6ff;
   border-radius: 8px;
   background: var(--blue-soft);
@@ -374,21 +374,36 @@ button.kpi-card {
 .kpi-card.caution svg { border-color: #f4cf87; background: var(--amber-soft); color: var(--amber); }
 .kpi-card.positive svg { border-color: #bdebd6; background: var(--green-soft); color: var(--green); }
 
+.kpi-card div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
 .kpi-card b {
-  display: block;
+  display: inline-flex;
+  flex: 0 0 auto;
+  order: 2;
   color: var(--ink);
-  font-size: 23px;
+  font-size: 21px;
   line-height: 1;
   font-weight: 900;
   overflow-wrap: anywhere;
 }
 
 .kpi-card span {
-  display: block;
-  margin-top: 6px;
+  display: inline-flex;
+  flex: 1 1 auto;
+  order: 1;
+  min-width: 0;
+  margin-top: 0;
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
+  white-space: nowrap;
+  justify-content: flex-start;
 }
 
 .dashboard-grid {
@@ -1151,6 +1166,11 @@ button.kpi-card {
   font-weight: 900;
 }
 
+.filter-card > button {
+  align-self: end;
+  justify-self: start;
+}
+
 .filter-card input, .filter-card select, .url-box input {
   width: 100%;
   min-height: 38px;
@@ -1173,7 +1193,14 @@ button.kpi-card {
 }
 
 .filter-card .filter-action {
-  min-width: 78px;
+  min-width: 56px;
+  padding-inline: 10px;
+}
+
+.filter-card .primary-button,
+.filter-card .ghost-button {
+  min-width: 56px;
+  min-height: 34px;
 }
 
 .filter-card.regulator-filter {
