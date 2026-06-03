@@ -4058,7 +4058,7 @@ function articleSelectionKey(article = {}) {
 
 function buildRegulatorDirectionAnalysis(rows = []) {
   const sourceRows = rows.filter((row) => row?.title);
-  const themeDefinitions = [
+  const themes = [
     {
       label: "소비자보호",
       note: "민원, 분쟁, 실손 청구, 보험금 지급처럼 소비자 접점 관리가 중심입니다.",
