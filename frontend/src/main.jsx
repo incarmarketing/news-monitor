@@ -1258,7 +1258,7 @@ function selectRiskCenterArticles(articles = []) {
   const negative = usable.filter((article) => article.tone === "부정" || String(article.riskLevel || "").toUpperCase() === "HIGH");
   const caution = usable.filter((article) => article.tone === "주의" || String(article.riskLevel || "").toUpperCase() === "MEDIUM");
   const selected = negative.length ? negative : caution;
-  return buildRelatedArticleGroups(dedupeRiskArticles(selected))
+  return buildRiskArticleGroups(dedupeRiskArticles(selected))
     .map((article) => {
       const relatedArticles = Array.isArray(article.relatedArticles) && article.relatedArticles.length
         ? article.relatedArticles
@@ -1295,6 +1295,69 @@ function riskArticleDedupeKey(article = {}) {
   return `title:${article.date || ""}:${title.slice(0, 80)}`;
 }
 
+function buildRiskArticleGroups(articles = []) {
+  const groups = [];
+  articles.forEach((article, index) => {
+    const seed = articleGroupSeed(article);
+    const signature = riskIssueSignature(article);
+    const target = groups.find((group) => (
+      (signature && group.signature === signature)
+      || areRelatedArticleSeeds(seed, group.seed)
+      || areRiskRelatedArticleSeeds(seed, group.seed)
+    ));
+    if (target) {
+      target.members.push(article);
+      target.seed = mergeGroupSeed(target.seed, seed);
+      target.signature = target.signature || signature;
+    } else {
+      groups.push({ seed, signature, members: [article], index });
+    }
+  });
+
+  return groups
+    .map((group) => {
+      const members = [...group.members].sort(compareArticleImportance);
+      const representative = members[0] || {};
+      const sources = unique(members.map((item) => item.source).filter(Boolean));
+      return {
+        ...representative,
+        relatedArticles: members,
+        relatedCount: members.length,
+        relatedSourceCount: sources.length,
+        relatedSources: sources,
+        clusterSize: Math.max(Number(representative.clusterSize || 1), members.length),
+      };
+    })
+    .sort((a, b) => {
+      if ((b.relatedCount || 1) !== (a.relatedCount || 1)) return (b.relatedCount || 1) - (a.relatedCount || 1);
+      return compareArticleImportance(a, b);
+    });
+}
+
+function riskIssueSignature(article = {}) {
+  const text = normalizeKeywordText(`${article.title || ""} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`);
+  if (/전세사기/.test(text) && /청년/.test(text) && /지원|상환|학자금/.test(text)) return "risk:jeonse-youth-support";
+  if (/보험설계사/.test(text) && /개인정보|처리자|판매 주체|판매주체/.test(text)) return "risk:planner-privacy-controller";
+  if (/인카금융스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) return "risk:incar-scandal-illegal-sales";
+  if (/인카금융/.test(text) && /관리 부실|관리부실|대리점|가로챈/.test(text)) return "risk:incar-agency-control";
+  if (/사칭|고객 db|고객db|db 수집|디비 수집/.test(text) && /금융|저축은행|보험/.test(text)) return "risk:impersonation-customer-db";
+  if (/개인정보|고객정보|정보유출|해킹/.test(text) && /보험|ga|설계사|대리점/.test(text)) return "risk:insurance-privacy-security";
+  return "";
+}
+
+function areRiskRelatedArticleSeeds(a, b) {
+  const overlap = tokenOverlapRatio(a.tokenSet, b.tokenSet);
+  if (overlap >= 0.56) return true;
+  const importantA = new Set((a.tokens || []).filter(isRiskGroupingToken));
+  const importantB = new Set((b.tokens || []).filter(isRiskGroupingToken));
+  const importantOverlap = tokenOverlapRatio(importantA, importantB);
+  return importantOverlap >= 0.5 && sharedLongToken(a.tokens, b.tokens);
+}
+
+function isRiskGroupingToken(token = "") {
+  return /전세사기|피해|청년|지원|학자금|상환|개인정보|처리자|보험설계사|판매주체|인카금융|스캔들|보험꺾기|사채|사칭|고객db|대리점|관리부실|해킹|정보유출/.test(token);
+}
+
 function buildRiskGroupSummaryLines(articles = []) {
   const ranked = [...articles].sort((a, b) => compareArticleImportance(a, b));
   const lines = [];
@@ -1307,13 +1370,50 @@ function buildRiskGroupSummaryLines(articles = []) {
     if (fallback) lines.push(fallback);
   }
   const seen = new Set();
-  return lines.filter((line) => {
+  const cleaned = lines.filter((line) => {
     const key = normalizeRiskSummaryKey(line);
     if (!key || titleKeys.has(key)) return false;
     if (isDuplicateRiskSummaryKey(key, seen)) return false;
     seen.add(key);
     return true;
   }).slice(0, 3);
+  return cleaned.length ? cleaned : buildRiskFallbackSummaryLines(ranked);
+}
+
+function buildRiskFallbackSummaryLines(articles = []) {
+  const representative = articles[0] || {};
+  const text = summaryHaystack(representative);
+  const count = articles.length;
+  const lines = [];
+  if (/전세사기/.test(text) && /청년/.test(text)) {
+    lines.push("전세사기 피해 청년 지원과 관련된 보험업계 사회공헌 보도입니다.");
+    lines.push("직접 부정 이슈보다는 피해·지원 키워드로 포착된 기사라 리스크 분류 재확인이 필요합니다.");
+  } else if (/보험설계사/.test(text) && /개인정보|처리자|판매 주체|판매주체/.test(text)) {
+    lines.push("보험설계사의 개인정보 처리 책임과 판매 주체별 법적 지위가 핵심 쟁점입니다.");
+    lines.push("GA와 판매채널 운영 기준에 영향을 줄 수 있어 내부 기준 확인이 필요합니다.");
+  } else if (/인카금융스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) {
+    lines.push("GA 영업 관행과 불법 사채 의혹을 다룬 고위험 평판 이슈입니다.");
+    lines.push("당사명 노출 여부와 사실관계, 추가 보도 확산 가능성을 우선 확인해야 합니다.");
+  } else if (/사칭|고객 DB|고객DB|DB 수집|디비 수집/i.test(text)) {
+    lines.push("금융사 사칭과 고객 DB 수집 의혹이 핵심인 소비자보호 리스크 기사입니다.");
+    lines.push("당사 관련성, 피해 범위, 후속 보도 가능성을 분리해 확인해야 합니다.");
+  } else if (/관리 부실|관리부실|대리점|가로챈/.test(text) && /인카금융/.test(text)) {
+    lines.push("보험대리점 관리와 당사 언급이 함께 나온 평판 리스크 기사입니다.");
+    lines.push("관리 책임, 피해 주장, 보도 근거를 나눠 사실관계를 확인해야 합니다.");
+  } else {
+    const topic = summarizeRiskTitleTopic(representative.title);
+    lines.push(`${topic} 관련 리스크 기사로, 사실관계와 당사 관련성을 확인해야 합니다.`);
+  }
+  if (count > 1) lines.push(`같은 이슈로 묶인 관련 기사 ${count.toLocaleString("ko-KR")}건을 함께 확인합니다.`);
+  return dedupeSummaryLines(lines, summaryTitleKeys({ ...representative, relatedArticles: articles })).slice(0, 3);
+}
+
+function summarizeRiskTitleTopic(title = "") {
+  const clean = cleanSummaryText(title)
+    .replace(/\s*[-–—]\s*[^-–—]{2,30}$/u, "")
+    .replace(/^[\[【][^\]】]+[\]】]\s*/u, "");
+  const tokens = articleTokens(clean).filter((token) => !/신문|뉴스|경제|일보|투데이|연합뉴스/.test(token));
+  return tokens.slice(0, 5).join(" ") || "선택 기사";
 }
 
 function normalizeRiskSummaryKey(value = "") {
