@@ -13,49 +13,6 @@ const STATIC_DATA_PATHS = [
   `${import.meta.env.BASE_URL || "/"}data/articles.json`,
 ];
 
-const PORTAL_SOURCE_VALUES = new Set([
-  "google",
-  "google news",
-  "news.google.com",
-  "news.google.co.kr",
-  "naver",
-  "news.naver.com",
-  "n.news.naver.com",
-  "m.news.naver.com",
-  "daum",
-  "news.daum.net",
-  "v.daum.net",
-  "press_unresolved",
-]);
-
-const PRESS_HOST_FALLBACKS = {
-  "biz.chosun.com": "조선비즈",
-  "biztribune.co.kr": "비즈트리뷴",
-  "businessplus.kr": "비즈니스플러스",
-  "ceoscoredaily.com": "CEO스코어데일리",
-  "dailian.co.kr": "데일리안",
-  "dt.co.kr": "디지털타임스",
-  "edaily.co.kr": "이데일리",
-  "energy-news.co.kr": "에너지경제",
-  "enetnews.co.kr": "이넷뉴스",
-  "fins.co.kr": "보험저널",
-  "fnnews.com": "파이낸셜뉴스",
-  "ftoday.co.kr": "파이낸셜투데이",
-  "hankyung.com": "한국경제",
-  "heraldcorp.com": "헤럴드경제",
-  "insnews.co.kr": "보험매일",
-  "joongangenews.com": "중앙이코노미뉴스",
-  "mk.co.kr": "매일경제",
-  "mt.co.kr": "머니투데이",
-  "news1.kr": "뉴스1",
-  "newsis.com": "뉴시스",
-  "pinpointnews.co.kr": "핀포인트뉴스",
-  "sedaily.com": "서울경제",
-  "thebell.co.kr": "더벨",
-  "view.asiae.co.kr": "아시아경제",
-  "yna.co.kr": "연합뉴스",
-};
-
 function isExpired(session) {
   return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
 }
@@ -136,55 +93,6 @@ async function writeRest(path, method, body, headers = {}) {
   return result && Object.prototype.hasOwnProperty.call(result, "data") ? result.data : result;
 }
 
-export async function triggerDashboardRefresh() {
-  const config = await loadSupabaseConfig();
-  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
-  const session = getStoredSession();
-  const payload = { workflow: "negative-watch.yml", source: "dashboard_manual_refresh" };
-
-  try {
-    return await triggerCollectionFunction(config, payload);
-  } catch (functionError) {
-    if (!session?.session_token) throw functionError;
-    return dashboardApi(config, session, "trigger_collection", payload);
-  }
-}
-
-export async function triggerRegulatorRefresh() {
-  const config = await loadSupabaseConfig();
-  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
-  const session = getStoredSession();
-  const payload = { workflow: "regulator-releases.yml", source: "regulator_manual_refresh" };
-
-  try {
-    return await triggerCollectionFunction(config, payload);
-  } catch (functionError) {
-    if (!session?.session_token) throw functionError;
-    return dashboardApi(config, session, "trigger_collection", payload);
-  }
-}
-
-async function triggerCollectionFunction(config, payload) {
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/trigger-news-collection`, {
-    method: "POST",
-    cache: "no-store",
-    headers: {
-      apikey: config.anon_key,
-      Authorization: `Bearer ${config.anon_key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      action: "dispatch",
-      workflow: payload.workflow,
-      source: payload.source,
-    }),
-  });
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
-  if (!response.ok) throw new Error(data?.error || `trigger_collection_${response.status}`);
-  return data;
-}
-
 export async function savePressAlias(host, pressName) {
   const cleanHost = String(host || "").trim().toLowerCase();
   const cleanName = String(pressName || "").trim();
@@ -207,185 +115,6 @@ export async function saveMonitorKeyword(keyword, category = "other") {
     [{ keyword: cleanKeyword, category: cleanCategory, enabled: true }],
     { Prefer: "resolution=merge-duplicates,return=representation" },
   );
-}
-
-export async function saveCustomizationProfile(profile = {}) {
-  const session = getStoredSession();
-  if (!profile || typeof profile !== "object") throw new Error("profile_required");
-  const cleanProfile = {
-    companyName: String(profile.companyName || "").trim(),
-    teamName: String(profile.teamName || "").trim(),
-    serviceName: String(profile.serviceName || "").trim(),
-    purpose: String(profile.purpose || "").trim(),
-    ownKeywords: arrayOfText(profile.ownKeywords),
-    industryContext: arrayOfText(profile.industryContext),
-    excludeContext: arrayOfText(profile.excludeContext),
-    reportTone: String(profile.reportTone || "").trim(),
-  };
-  return writeRest(
-    "monitor_profiles?on_conflict=profile_key",
-    "POST",
-    [{
-      profile_key: "default",
-      profile: cleanProfile,
-      updated_by: session?.employee_no || session?.display_name || "dashboard",
-    }],
-    { Prefer: "resolution=merge-duplicates,return=representation" },
-  );
-}
-
-export async function saveArticleScrap(article = {}) {
-  const articleHash = String(article.id || article.article_hash || article.link || article.title || "").trim();
-  if (!articleHash) throw new Error("article_hash_required");
-  const session = getStoredSession();
-  return writeRest(
-    "article_scraps?on_conflict=article_hash",
-    "POST",
-    [{
-      article_hash: articleHash,
-      article_snapshot: {
-        ...article,
-        article_hash: articleHash,
-      },
-      created_by: session?.employee_no || session?.display_name || "dashboard",
-    }],
-    { Prefer: "resolution=merge-duplicates,return=representation" },
-  );
-}
-
-export async function deleteArticleScrap(articleHash) {
-  const cleanHash = String(articleHash || "").trim();
-  if (!cleanHash) throw new Error("article_hash_required");
-  return writeRest(
-    `article_scraps?article_hash=eq.${encodeURIComponent(cleanHash)}`,
-    "DELETE",
-    null,
-    { Prefer: "return=minimal" },
-  );
-}
-
-export async function analyzeRegulatorReleases(prompt, articles = []) {
-  const config = await loadSupabaseConfig();
-  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
-  const prepared = articles.slice(0, 20).map((article, index) => {
-    const summary = String(article.summary || article.description || "").trim();
-    const department = extractDepartment(summary);
-
-    return {
-      no: index + 1,
-      title: article.title || "",
-      summary,
-      press: article.source || "금융당국",
-      date: article.publishedDate || article.date || article.periodDate || "",
-      published_label: article.publishedDate || article.date || "",
-      link: article.link || "",
-      keyword: article.keyword || "금융당국 보도자료",
-      category_label: article.category || "정책/규제",
-      tone_label: article.tone || "중립",
-      risk: article.riskLevel || "",
-      department,
-      relevance: regulatorRelevanceText(article),
-    };
-  });
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/analyze-scraps`, {
-    method: "POST",
-    cache: "no-store",
-    headers: {
-      apikey: config.anon_key,
-      Authorization: `Bearer ${config.anon_key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      prompt: buildRegulatorPrompt(prompt, prepared),
-      articles: prepared,
-    }),
-  });
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
-  if (!response.ok) throw new Error(data?.error || `analyze_regulator_${response.status}`);
-  return data;
-}
-
-export async function generateRiskResponse({ type = "press", issue = "", url = "", context = {} } = {}) {
-  const config = await loadSupabaseConfig();
-  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/generate-risk-response`, {
-    method: "POST",
-    cache: "no-store",
-    headers: {
-      apikey: config.anon_key,
-      Authorization: `Bearer ${config.anon_key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      type,
-      issue: String(issue || "").trim(),
-      url: String(url || "").trim(),
-      context,
-    }),
-  });
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
-  if (!response.ok) throw new Error(data?.error || `generate_risk_response_${response.status}`);
-  return data;
-}
-
-function buildRegulatorPrompt(prompt, articles) {
-  return [
-    "금융감독원/금융위원회 공식 보도자료만 대상으로 분석합니다.",
-    `사용자 요청: ${String(prompt || "").trim() || "임원 보고용으로 당사 영향과 영업현장 영향을 분석해줘."}`,
-    "",
-    "중요: 일반 뉴스 분석이 아니라 공식 보도자료 해석입니다. 아래 고정 양식을 반드시 채우세요.",
-    "1. 핵심 판단: 선택 자료를 관통하는 결론 2~3개",
-    "2. 당사 영향: 인카금융서비스/GA/보험대리점 관점의 직접·간접 영향",
-    "3. 영업현장 영향: 설계사, 모집, 수수료, 내부통제, 소비자보호 관점",
-    "4. 리스크 수준: LOW/MEDIUM/HIGH 중 하나와 이유",
-    "5. 후속 확인사항: 실제 업무에서 확인할 항목 3~5개",
-    "6. 보고용 5줄 요약: 임원에게 그대로 보여줄 수 있는 다섯 문장",
-    "7. 근거 보도자료 번호: 모든 판단에는 [1], [2]처럼 번호를 붙임",
-    "",
-    "AI 입력 전 정리된 자료:",
-    ...articles.map((article) => [
-      `[${article.no}] ${article.press} / ${article.date}`,
-      `제목: ${article.title}`,
-      `담당부서: ${article.department || "확인 필요"}`,
-      `핵심 문장: ${article.summary || "요약 없음"}`,
-      `관련성: ${article.relevance}`,
-      `링크: ${article.link || "-"}`,
-    ].join("\n")),
-    "",
-    "금지:",
-    "- 링크 URL을 본문 판단 문장에 길게 쓰지 말 것",
-    "- '모니터링 필요' 같은 빈말만 쓰지 말 것",
-    "- 자료에 없는 제재나 확정 사실을 만들지 말 것",
-    "- 근거 번호 없는 판단을 쓰지 말 것",
-  ].join("\n\n");
-}
-
-function extractDepartment(summary = "") {
-  const match = String(summary).match(/담당부서\s*:\s*([^。.]+?)(?:\.|。|보험\/GA|$)/);
-  return match ? match[1].trim() : "";
-}
-
-function regulatorRelevanceText(article = {}) {
-  const text = `${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`;
-  const tags = [];
-  if (/보험대리점|법인보험대리점|GA|모집|설계사/.test(text)) tags.push("GA/설계사");
-  if (/수수료|정착지원금|1200/.test(text)) tags.push("수수료/모집질서");
-  if (/내부통제|금융소비자보호|불완전판매|민원/.test(text)) tags.push("내부통제/소비자보호");
-  if (/검사|제재|감독|승인|경영개선/.test(text)) tags.push("감독/제재");
-  if (/보험사|손해보험|생명보험|손보|생보/.test(text)) tags.push("보험업권");
-  return tags.length ? tags.join(", ") : "보험/GA 관련성 확인 필요";
-}
-
-function arrayOfText(value) {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item || "").trim()).filter(Boolean);
-  }
-  return String(value || "")
-    .split(/[,;\n]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 export async function saveReporterProfile(reporter = {}) {
@@ -470,16 +199,10 @@ export async function loadOperationalData() {
     ads: [],
     aliases: [],
     keywords: [],
-    customization: null,
     session: null,
   };
 
   try {
-    const session = getStoredSession();
-    if (session?.session_token) {
-      const liveData = await loadOperationalDataFromSupabaseSession();
-      if (liveData?.status === "live") return liveData;
-    }
     const staticData = await loadStaticOperationalData();
     if (staticData) return staticData;
     return { ...base, status: "empty", message: "누적 데이터 없음" };
@@ -492,7 +215,7 @@ async function loadStaticOperationalData() {
   for (const path of STATIC_DATA_PATHS) {
     try {
       const payload = await fetchJson(path);
-      const articles = Array.isArray(payload?.articles) ? payload.articles.map(normalizeArticle).filter(Boolean) : [];
+      const articles = Array.isArray(payload?.articles) ? deduplicateArticles(payload.articles.map(normalizeArticle).filter(Boolean)) : [];
       const reportRuns = Array.isArray(payload?.report_runs) ? payload.report_runs.map(normalizeReportRun) : [];
       if (!articles.length && !reportRuns.length) continue;
       return {
@@ -503,7 +226,7 @@ async function loadStaticOperationalData() {
         notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification) : [],
         watchRuns: Array.isArray(payload?.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
         reportRuns,
-        scraps: mergeScraps(Array.isArray(payload?.scraps) ? payload.scraps.map(normalizeScrap).filter(Boolean) : []),
+        scraps: Array.isArray(payload?.scraps) ? payload.scraps.map(normalizeScrap).filter(Boolean) : [],
         mediaRelations: Array.isArray(payload?.media_relations)
           ? payload.media_relations.filter((row) => !row.hidden).map(normalizeMedia)
           : [],
@@ -511,7 +234,6 @@ async function loadStaticOperationalData() {
         ads: Array.isArray(payload?.ads) ? payload.ads.map(normalizeAd) : [],
         aliases: Array.isArray(payload?.aliases) ? payload.aliases : [],
         keywords: Array.isArray(payload?.keywords) ? payload.keywords.map(normalizeKeyword).filter(Boolean) : [],
-        customization: normalizeCustomizationProfile(payload?.customization || payload?.monitor_profile || payload?.monitor_profiles),
         session: null,
       };
     } catch {
@@ -536,7 +258,6 @@ async function loadOperationalDataFromSupabaseSession() {
     ads: [],
     aliases: [],
     keywords: [],
-    customization: null,
     session: getStoredSession(),
   };
 
@@ -550,13 +271,13 @@ async function loadOperationalDataFromSupabaseSession() {
       return { ...base, message: "운영 로그인 필요" };
     }
 
-    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords, customizationRows] = await Promise.all([
+    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords] = await Promise.all([
       fetchTable(
         config,
         session,
         "news_articles",
         [
-          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size,raw,created_at",
+          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
           "order=report_date.desc,score.desc",
         ].join("&"),
         1000,
@@ -587,29 +308,22 @@ async function loadOperationalDataFromSupabaseSession() {
       rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
       rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
       rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
-      rest(config, session, "monitor_profiles?select=profile_key,profile,updated_at,updated_by&profile_key=eq.default&limit=1"),
     ]);
-
-    const aliasRows = Array.isArray(aliases) ? aliases : [];
-    const normalizedArticles = Array.isArray(articles)
-      ? articles.map(normalizeArticle).filter(Boolean).map((article) => applyPressAliases(article, aliasRows))
-      : [];
 
     return {
       source: "supabase",
       status: "live",
       message: "운영 DB 연결",
-      articles: normalizedArticles,
+      articles: Array.isArray(articles) ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean)) : [],
       notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(reportRuns) ? reportRuns.map(normalizeReportRun) : [],
-      scraps: mergeScraps(Array.isArray(scraps) ? scraps.map(normalizeScrap).filter(Boolean) : []),
+      scraps: Array.isArray(scraps) ? scraps.map(normalizeScrap).filter(Boolean) : [],
       mediaRelations: Array.isArray(mediaRelations) ? mediaRelations.filter((row) => !row.hidden).map(normalizeMedia) : [],
       reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
-      aliases: aliasRows,
+      aliases: Array.isArray(aliases) ? aliases : [],
       keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
-      customization: normalizeCustomizationProfile(customizationRows),
       session,
     };
   } catch (error) {
@@ -627,17 +341,6 @@ function normalizeKeyword(row) {
   };
 }
 
-function normalizeCustomizationProfile(rows) {
-  const row = Array.isArray(rows) ? rows[0] : rows;
-  const profile = row?.profile || row;
-  if (!profile || typeof profile !== "object") return null;
-  return {
-    ...profile,
-    updatedAt: row?.updated_at || profile.updatedAt || "",
-    updatedBy: row?.updated_by || profile.updatedBy || "",
-  };
-}
-
 function normalizeScrap(row) {
   const snapshot = row?.article_snapshot || {};
   const article = normalizeArticle({
@@ -651,232 +354,106 @@ function normalizeScrap(row) {
   };
 }
 
-function canonicalHost(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  try {
-    const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
-    return url.hostname.toLowerCase().replace(/^www\./, "").replace(/^m\./, "");
-  } catch {
-    return raw
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/^www\./, "")
-      .replace(/^m\./, "")
-      .split(/[/?#]/)[0]
-      .trim();
-  }
-}
-
-function hostMatchesAlias(aliasHost, host) {
-  return host === aliasHost || host.endsWith(`.${aliasHost}`);
-}
-
-function normalizeAliasRow(row) {
-  const host = canonicalHost(row?.host || row?.domain || row?.url);
-  const pressName = String(row?.press_name || row?.pressName || row?.name || "").trim();
-  return host && pressName ? { host, pressName } : null;
-}
-
-function applyPressAliases(article, aliases = []) {
-  const hostCandidates = [
-    canonicalHost(article.link),
-    canonicalHost(article.source),
-  ].filter(Boolean);
-  const alias = aliases
-    .map(normalizeAliasRow)
-    .filter(Boolean)
-    .find((row) => hostCandidates.some((host) => hostMatchesAlias(row.host, host)));
-  return alias ? { ...article, source: alias.pressName } : article;
-}
-
-function isPortalSourceName(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  const host = canonicalHost(raw);
-  return !raw || raw.includes("google") || PORTAL_SOURCE_VALUES.has(raw) || PORTAL_SOURCE_VALUES.has(host);
-}
-
-function sourceFromHost(value) {
-  const host = canonicalHost(value);
-  if (!host || isPortalSourceName(host)) return "";
-  const fallback = Object.entries(PRESS_HOST_FALLBACKS).find(([knownHost]) => hostMatchesAlias(knownHost, host));
-  return fallback?.[1] || "";
-}
-
-function sourceFromTitle(title) {
-  const normalized = String(title || "").replace(/\u2013|\u2014/g, "-");
-  const parts = normalized.split(" - ");
-  if (parts.length < 2) return "";
-  const candidate = parts.at(-1).replace(/\s+/g, " ").trim();
-  if (!candidate || isPortalSourceName(candidate)) return "";
-  if (/[0-9]|기자|특징주|속보|포토|인터뷰|종합/.test(candidate)) return "";
-  return candidate;
-}
-
-function normalizeArticleSource(row, raw) {
-  const candidates = [
-    row.source,
-    raw.source,
-    raw.press,
-    raw.publisher,
-    raw.media,
-  ].filter(Boolean);
-  const direct = candidates.find((value) => !isPortalSourceName(value) && !canonicalHost(value).includes("."));
-  if (direct) return String(direct).trim();
-
-  const titleSource = sourceFromTitle(row.title || raw.title);
-  if (titleSource) return titleSource;
-
-  const urlCandidates = [
-    row.link,
-    raw._original_url,
-    raw.original_url,
-    raw.originallink,
-    raw.link,
-    raw.url,
-  ].filter(Boolean);
-  for (const value of urlCandidates) {
-    const press = sourceFromHost(value);
-    if (press) return press;
-  }
-
-  for (const value of candidates) {
-    const press = sourceFromHost(value);
-    if (press) return press;
-  }
-
-  const hostCandidate = candidates.map(canonicalHost).find((host) => host && !isPortalSourceName(host));
-  return hostCandidate || "언론사 확인";
-}
-
 function normalizeArticle(row) {
   if (!row?.title) return null;
-  if (isOutOfDomainArticle(row)) return null;
-  const raw = row.raw && typeof row.raw === "object" ? row.raw : {};
   const dateSource = row.report_date || row.date || row.pub_date || row.pub_date_raw || "";
-  const knownOriginal = inferKnownOriginalPublication(row);
-  const originalPublished = knownOriginal || row.original_pub_date || raw._original_pub_date || raw.original_pub_date || raw.pub_date_original || "";
-  const published = originalPublished || row.pub_date || row.pub_date_raw || row.published_at || row.created_at || "";
-  const reportDate = String(row.report_date || row.date || dateSource || "").slice(0, 10);
-  const publishedDate = formatDate(published) || String(row.pub_date_raw || row.published_at || "").slice(0, 10);
-  const periodDate = publishedDate || reportDate;
-  const category = normalizeCategory(row.category_label || row.category);
-  let tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
-  if (isOwnMarketCautionRow(row)) {
-    tone = "주의";
-  } else if (isOwnCertifiedPlannerAchievementRow(row)) {
-    tone = "긍정";
-  }
-  if (tone === "긍정" && category !== "당사" && !hasOwnMention(row)) {
-    tone = "중립";
-  }
   return {
     id: row.article_hash || row.id || row.link || row.title,
-    date: reportDate,
-    reportDate,
-    publishedDate,
-    periodDate,
-    time: formatTime(published || row.report_date || row.date),
-    pubDate: published,
+    date: String(row.report_date || row.date || dateSource || "").slice(0, 10),
+    time: formatTime(row.pub_date || row.pub_date_raw || row.report_date || row.date),
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
-    windowLabel: row.window_label || row.window || "",
-    createdAt: row.created_at || row.createdAt || "",
-    source: normalizeArticleSource(row, raw),
+    source: row.source || "미확인",
     title: row.title,
     link: row.link || "#",
     keyword: row.keyword || "",
     summary: row.summary || "",
-    category,
-    tone,
+    category: normalizeCategory(row.category_label || row.category),
+    tone: normalizeTone(row.tone || row.risk_level || row.risk || row.status),
     riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),
     score: Number(row.score || 0),
     status: row.status || "분석 완료",
     clusterSize: Number(row.cluster_size || row.clusterSize || 1),
-    scrapedAt: row.scrapedAt || row.scraped_at || "",
   };
 }
 
+function deduplicateArticles(rows = []) {
+  const byKey = new Map();
+  rows.forEach((row) => {
+    const key = articleDedupKey(row);
+    if (!key) return;
+    const current = byKey.get(key);
+    if (!current || shouldReplaceDedupedArticle(current, row)) {
+      byKey.set(key, row);
+    }
+  });
+  return Array.from(byKey.values());
+}
+
+function articleDedupKey(row) {
+  if (isOfficialRegulatorArticle(row)) {
+    const title = normalizeRegulatorTitle(row.title);
+    if (title) return `regulator:${row.date || ""}:${title.slice(0, 44)}`;
+  }
+  const link = normalizeArticleLink(row.link);
+  if (link) return `link:${link}`;
+  const title = normalizeRegulatorTitle(row.title);
+  return title ? `article:${row.date || ""}:${row.source || ""}:${title}` : "";
+}
+
+function isOfficialRegulatorArticle(row) {
+  const text = `${row.source || ""} ${row.keyword || ""} ${row.category || ""}`;
+  return /금융감독원|금융위원회|금융당국|정책\/규제/.test(text);
+}
+
+function normalizeRegulatorTitle(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[“”"''「」『』()[\]{}]/g, " ")
+    .replace(/금융위원회\s*,?/g, " ")
+    .replace(/금융위\s*,?/g, " ")
+    .replace(/금감원\s*,?/g, " ")
+    .replace(/-\s*(금융위|금융위원회|금감원|금융감독원).*$/g, " ")
+    .replace(/\b\d{1,2}월\s*\d{1,2}일\b/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeArticleLink(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "#") return "";
+  return raw.replace(/[?#].*$/, "").replace(/\/$/, "").toLowerCase();
+}
+
+function shouldReplaceDedupedArticle(current, next) {
+  const toneRank = { 부정: 4, 주의: 3, 긍정: 2, 중립: 1, 제외: 0 };
+  const currentTone = toneRank[current.tone] || 0;
+  const nextTone = toneRank[next.tone] || 0;
+  if (nextTone !== currentTone) return nextTone > currentTone;
+  const currentScore = Number(current.score || 0);
+  const nextScore = Number(next.score || 0);
+  if (nextScore !== currentScore) return nextScore > currentScore;
+  const currentSummary = String(current.summary || "").length;
+  const nextSummary = String(next.summary || "").length;
+  return nextSummary > currentSummary;
+}
+
 function normalizeNotification(row) {
-  const messageType = row.message_type || row.messageType || "";
   return {
     id: row.id || `${row.sent_at}-${row.message_type}`,
-    sentAt: row.sent_at || row.created_at || "",
-    messageType,
     time: formatTime(row.sent_at || row.created_at),
-    type: row.title || notificationTypeLabel(messageType) || row.channel || "알림톡",
+    type: row.title || row.message_type || row.channel || "알림톡",
     status: row.status === "success" || row.status === "sent" || row.status === "성공" ? "성공" : row.status || "확인",
     body: row.body || row.error || "",
     link: row.link_url || "",
   };
 }
 
-function isOwnCertifiedPlannerAchievementRow(row = {}) {
-  if (!hasOwnMention(row)) return false;
-  const text = `${row.title || ""} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""}`;
-  return /우수\s*인증\s*설계사|우수인증설계사|인증설계사/.test(text)
-    && /최다|1위|배출|선정|성과|증가|성장|완전판매|신뢰도/.test(text)
-    && !/불법|사기|제재|검사|점검|고발|논란|피해|민원|불완전판매/.test(text);
-}
-
-function mergeScraps(remoteScraps = []) {
-  const map = new Map();
-  remoteScraps.forEach((item) => {
-    const key = item?.id || item?.article_hash || item?.link || item?.title;
-    if (key) map.set(key, item);
-  });
-  return Array.from(map.values()).sort((a, b) => new Date(b.scrapedAt || b.date || 0) - new Date(a.scrapedAt || a.date || 0));
-}
-
-function inferKnownOriginalPublication(row) {
-  const text = `${row?.title || ""} ${row?.summary || ""} ${row?.source || ""} ${row?.link || ""}`;
-  if (/인카금융스캔들/i.test(text) && /불법\s*사채놀이|약탈\s*영업/i.test(text) && /위즈경제|wikyung/i.test(text)) {
-    return "2026-04-20T11:29:00+09:00";
-  }
-  return "";
-}
-
-function hasOwnMention(row) {
-  const text = `${row?.title || ""} ${row?.summary || ""} ${row?.keyword || ""}`;
-  return /인카금융서비스|인카금융|에인|Incar|INCAR/i.test(text);
-}
-
-function isOwnMarketCautionRow(row) {
-  const text = `${row?.title || ""} ${row?.summary || ""} ${row?.description || ""} ${row?.keyword || ""}`;
-  return hasOwnMention(row)
-    && /주가|증시|코스피|코스닥|상장|시총|거래|52주|최고가|최저가|투자의견|목표가|목표주가|증권가|리포트|애널리스트/i.test(text)
-    && /하락|급락|약세|낙폭|신저가|최저가|부진|조정|매도|▼|↓|목표가\s*하향|목표주가\s*하향|투자의견.*(하향|낮|중립|매도)|매수.*(접|철회)|너무\s*올랐다/i.test(text);
-}
-
-function isOutOfDomainArticle(row) {
-  const text = `${row?.title || ""} ${row?.summary || ""} ${row?.description || ""} ${row?.keyword || ""} ${row?.source || ""}`;
-  if (!text.trim()) return true;
-  if (hasOwnMention(row)) return false;
-  if (hasInsuranceDomainContext(text)) return false;
-  if (/수수료|정책|규제|당국|제도|법안|공시|감독/i.test(text)) return true;
-  if (/소상공인|포항시장|시장 후보|지역업체|하도급|입찰제도|수수료 제로 플랫폼/i.test(text)) return true;
-  return false;
-}
-
-function hasInsuranceDomainContext(text) {
-  return /보험|손보|생보|생명보험|손해보험|보험사|보험대리점|법인보험대리점|GA|설계사|전속설계사|보험모집인|모집인|보험업법|1200%|정착지원금|불완전판매|내부통제|인카금융|글로벌금융판매|메가금융서비스|한화생명금융서비스|에이플러스에셋|리치앤코|굿리치|지에이코리아|프라임에셋|피플라이프|보험저널|보험매일|보험신보/i.test(text);
-}
-
-function notificationTypeLabel(value) {
-  return {
-    weekly_report: "주간 언론 모니터링 보고서",
-    monthly_report: "월간 언론 모니터링 보고서",
-    daily_report: "일일 언론 동향",
-    negative_alert: "부정기사 알림",
-  }[value] || "";
-}
-
 function normalizeWatchRun(row) {
   return {
     id: row.run_key || row.scanned_at,
-    scannedAt: row.scanned_at || "",
-    minutesBack: Number(row.minutes_back || 0),
     label: "부정기사 감시",
-    cadence: "5분 주기",
+    cadence: "24시간 · 5분",
     latest: formatTime(row.scanned_at),
     state: row.status === "ok" || row.status === "success" ? "정상" : row.status || "확인",
     scanned: Number(row.scanned_count || 0),
@@ -992,21 +569,5 @@ function formatTime(value) {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(date);
-}
-
-function formatDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    const raw = String(value);
-    const match = raw.match(/(\d{4})[.-](\d{1,2})[.-](\d{1,2})/);
-    return match ? `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}` : "";
-  }
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
   }).format(date);
 }
