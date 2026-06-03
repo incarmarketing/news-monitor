@@ -863,23 +863,27 @@ function MediaAnalysis({ data, period, setPeriod, allArticles, scraps, onOpenMon
         )}
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
-      <section className="content-grid two media-analysis-grid">
-        <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
-          <ToneTrend rows={dailyTrend} />
-        </Panel>
-        <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
-          <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
-        </Panel>
-        <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
-          <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
-          <KeywordBrief rows={keywordRows} />
-        </Panel>
-        <Panel title={`${scopeLabel} 핵심 이슈`} icon={Newspaper} meta={`${issueRows.length}건`}>
-          <MonthlyIssueDigest issues={issueRows} />
-        </Panel>
-        <Panel title={`${scopeLabel} 관찰 코멘트`} icon={Gauge} meta="핵심 흐름 요약">
-          <InsightList insights={observations} />
-        </Panel>
+      <section className="media-analysis-layout">
+        <div className="media-analysis-column">
+          <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
+            <ToneTrend rows={dailyTrend} />
+          </Panel>
+          <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
+            <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
+            <KeywordBrief rows={keywordRows} />
+          </Panel>
+          <Panel title={`${scopeLabel} 관찰 코멘트`} icon={Gauge} meta="핵심 흐름 요약">
+            <InsightList insights={observations} />
+          </Panel>
+        </div>
+        <div className="media-analysis-column">
+          <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
+            <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
+          </Panel>
+          <Panel title={`${scopeLabel} 핵심 이슈`} icon={Newspaper} meta={`${issueRows.length}건`}>
+            <MonthlyIssueDigest issues={issueRows} />
+          </Panel>
+        </div>
       </section>
     </main>
   );
