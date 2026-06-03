@@ -16,10 +16,6 @@ STATE_DIR = Path(".run-state")
 PERIOD_SLOT = "07"
 DAILY_SLOTS = ("08", "13", "18")
 SCHEDULE_SLOT_MAP = {
-    "0,10 22 * * *": "07",
-    "0,10,20 23 * * *": "08",
-    "0,10,20 4 * * *": "13",
-    "0,10,20 9 * * *": "18",
     "*/5 22 * * *": "07",
     "*/5 23 * * *": "08",
     "*/5 4 * * *": "13",
@@ -128,12 +124,15 @@ def begin_manual_or_push(event_name: str) -> None:
         marker = STATE_DIR / f"{today}-{manual_slot}.txt"
         marker_path = marker.as_posix()
         should_mark = "true"
+        backfill_only = os.getenv("MANUAL_BACKFILL_ONLY", "").strip().lower() in {"1", "true", "yes", "y"}
         if is_period_dispatch and not period_report_due(now):
             should_run = "false"
             print("Period report dispatch skipped: not Monday or first day of month.")
-        elif not os.getenv("FORCE_KAKAO_SEND") and slot_is_complete(today, manual_slot, marker):
+        elif not backfill_only and not os.getenv("FORCE_KAKAO_SEND") and slot_is_complete(today, manual_slot, marker):
             should_run = "false"
             print(f"Already completed manually dispatched slot: {marker}")
+        elif backfill_only:
+            print(f"Backfill dispatch allowed for slot: {marker}")
 
     github_output("should_run", should_run)
     github_output("should_mark", should_mark)

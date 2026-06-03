@@ -42,10 +42,8 @@ on:
       - ".watch-state/**"
       - "data/daily/**"
   schedule:
-    - cron: "0,10 22 * * *" # 07:00/07:10 KST weekly/monthly report primary + backup
-    - cron: "0,10,20 23 * * *" # 08:00/08:10/08:20 KST daily report primary + backup
-    - cron: "0,10,20 4 * * *" # 13:00/13:10/13:20 KST daily report primary + backup
-    - cron: "0,10,20 9 * * *" # 18:00/18:10/18:20 KST daily report primary + backup
+    - cron: "*/5 22 * * *" # 07:00-07:59 KST weekly/monthly reports only
+    - cron: "*/5 23,0-14 * * *" # 08:00-23:59 KST daily report watchdog only
 
 permissions:
   contents: write
@@ -81,12 +79,18 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Check schedule slot
         id: guard
         run: python schedule_guard.py begin
         env:
           SCHEDULE_CRON: ${{ github.event.schedule }}
           MANUAL_REPORT_SLOT: ${{ github.event.inputs.report_slot }}
+          MANUAL_BACKFILL_ONLY: ${{ github.event.inputs.backfill_only }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
@@ -104,25 +108,8 @@ jobs:
         if: steps.guard.outputs.should_run == 'true'
         run: python -m pip install -r requirements.txt
 
-      - name: Refresh official regulator releases
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
-        run: timeout 120s python refresh_regulator_releases.py --days 14 --pages 10 || echo "Regulator refresh skipped for briefing workflow."
-        env:
-          FSS_API_AUTH_KEY: ${{ secrets.FSS_API_AUTH_KEY }}
-          FSS_OPENAPI_AUTH_KEY: ${{ secrets.FSS_OPENAPI_AUTH_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-      - name: Set up Node
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-
       - name: Build rebuilt dashboard
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
         working-directory: frontend
         run: |
           npm install --no-audit --no-fund
@@ -230,21 +217,17 @@ jobs:
         if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && github.event.inputs.send_kakao == 'true'))
         run: |
           PERIOD="${{ github.event.inputs.period_reports }}"
-          SENT_WEEKLY="false"
-          SENT_MONTHLY="false"
 
           if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
             python kakao_period_send.py weekly
-            SENT_WEEKLY="true"
           fi
           if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%d)" = "01" ]; then
             python kakao_period_send.py monthly
-            SENT_MONTHLY="true"
           fi
-          if { [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; } && [ "$SENT_WEEKLY" != "true" ]; then
+          if [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
             python kakao_period_send.py weekly
           fi
-          if { [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; } && [ "$SENT_MONTHLY" != "true" ]; then
+          if [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
             python kakao_period_send.py monthly
           fi
         env:
@@ -271,7 +254,7 @@ jobs:
             git add -f period_reports
           fi
           if [ -d .run-state ]; then
-            git add .run-state
+            git add -f .run-state
           fi
           if git diff --cached --quiet; then
             echo "No archive changes to commit."
