@@ -715,7 +715,7 @@ button.kpi-card {
 
 .feed-row {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr) 34px;
+  grid-template-columns: minmax(0, 1fr) 34px;
   gap: 10px;
   align-items: center;
   min-width: 0;
@@ -726,7 +726,7 @@ button.kpi-card {
   background: var(--paper-soft);
 }
 
-.feed-row time, .feed-row em {
+.feed-row em {
   align-self: center;
   color: var(--muted);
   font-size: 12px;
@@ -996,6 +996,10 @@ button.kpi-card {
   font-size: 12px;
   font-weight: 900;
   overflow-wrap: anywhere;
+}
+
+.feed-meta {
+  margin-top: 4px;
 }
 
 .watch-lines b, .job-rows b, .notification-list b {
@@ -2175,22 +2179,6 @@ button.kpi-card {
   box-shadow: 0 1px 4px rgba(16, 24, 40, .1);
 }
 
-.feed-row {
-  grid-template-columns: 54px minmax(0, 1fr) 34px;
-}
-
-.feed-row.no-time {
-  grid-template-columns: minmax(0, 1fr) 34px;
-}
-
-.feed-table.compact .feed-row {
-  grid-template-columns: 52px minmax(0, 1fr);
-}
-
-.feed-table.compact .feed-row.no-time {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 .feed-main {
   align-self: center;
   min-width: 0;
@@ -2213,29 +2201,9 @@ button.kpi-card {
   margin-top: 0;
 }
 
-.related-badge {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  min-height: 22px;
-  margin-top: 0;
-  padding: 3px 7px;
-  border: 1px solid #bed0ff;
-  border-radius: 999px;
-  background: var(--blue-soft);
-  color: var(--blue);
-  font-size: 11px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
 .feed-row.related {
   border-color: #cbd8ff;
   background: #fbfcff;
-}
-
-.related-sources {
-  color: var(--blue) !important;
 }
 
 .feed-main p {
@@ -2829,18 +2797,13 @@ button.kpi-card {
 
   .feed-row,
   .feed-table.compact .feed-row {
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     min-height: auto;
     align-items: start;
   }
 
-  .feed-row.no-time,
-  .feed-table.compact .feed-row.no-time {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .feed-row > a {
-    grid-column: 2;
+    grid-column: 1;
     justify-self: start;
     margin-top: 6px;
   }

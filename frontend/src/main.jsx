@@ -1757,23 +1757,20 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function ArticleFeed({ rows, compact = false, showTime = true }) {
+function ArticleFeed({ rows, compact = false, showTime = false }) {
   return (
-    <div className={`${compact ? "feed-table compact" : "feed-table"} ${showTime ? "" : "no-time"}`}>
+    <div className={compact ? "feed-table compact" : "feed-table"}>
       {rows.map((row) => {
         const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
         const hasRelated = related.length > 1;
         return (
-          <article key={`${row.id || row.link || row.title}-${row.time}`} className={`${hasRelated ? "feed-row related" : "feed-row"} ${showTime ? "" : "no-time"}`}>
-            {showTime && <time>{row.time || "-"}</time>}
+          <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
             <div className="feed-main">
               <div className="feed-title-line">
                 <Chip tone={row.tone}>{row.tone}</Chip>
                 <b>{row.title}</b>
-                {hasRelated && <span className="related-badge">관련 {related.length}건</span>}
               </div>
-              <span>{row.source} · {row.keyword || row.category} · {row.date || row.slot || ""}</span>
-              {hasRelated && <span className="related-sources">{row.relatedSources}</span>}
+              <span className="feed-meta">{formatFeedMeta(row, hasRelated)}</span>
               {!compact && <ArticleSummaryBlock item={row} dense />}
               {!compact && hasRelated && (
                 <details className="related-details">
@@ -1812,6 +1809,22 @@ function ArticleFeed({ rows, compact = false, showTime = true }) {
       })}
     </div>
   );
+}
+
+function formatFeedMeta(row = {}, hasRelated = false) {
+  const parts = [
+    row.source,
+    row.keyword || row.category,
+    [row.date || row.slot || "", row.time || ""].filter(Boolean).join(" "),
+  ].filter(Boolean);
+  if (hasRelated) {
+    const sourceCount = Number(row.relatedSourceCount || 0);
+    const extraSources = Math.max(0, sourceCount - 1);
+    const extraArticles = Math.max(0, Number(row.relatedCount || 0) - 1);
+    const extra = extraSources || extraArticles;
+    if (extra > 0) parts.push(`외 ${extra}곳`);
+  }
+  return parts.join(" · ");
 }
 
 function openArticleLink(event, url) {
@@ -3096,6 +3109,7 @@ function buildRelatedArticleGroups(articles = []) {
         ...representative,
         relatedArticles: members,
         relatedCount: members.length,
+        relatedSourceCount: sources.length,
         relatedSources: sources.length
           ? `${sources.slice(0, 5).join(" · ")}${sources.length > 5 ? ` 외 ${sources.length - 5}곳` : ""}`
           : "",
