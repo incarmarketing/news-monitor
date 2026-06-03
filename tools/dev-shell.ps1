@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 
 $Root = (Resolve-Path "$PSScriptRoot\..").Path
 $PortableGit = Join-Path $env:LOCALAPPDATA "Programs\news-monitor-tools\mingit\cmd"
+$PortableGhRoot = Join-Path $env:LOCALAPPDATA "Programs\news-monitor-tools\gh"
 $PortableGh = Join-Path $env:LOCALAPPDATA "Programs\news-monitor-tools\gh\bin"
 $PortableSupabase = Join-Path $env:LOCALAPPDATA "Programs\news-monitor-tools\supabase"
 $CodexNodeRoot = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node"
@@ -16,6 +17,9 @@ if (Test-Path $PortableGit) {
 }
 if (Test-Path $PortableGh) {
     $env:Path = "$PortableGh;$env:Path"
+}
+if (Test-Path $PortableGhRoot) {
+    $env:Path = "$PortableGhRoot;$env:Path"
 }
 if (Test-Path $PortableSupabase) {
     $env:Path = "$PortableSupabase;$env:Path"
@@ -78,8 +82,10 @@ try {
 
 Write-Host ""
 Write-Host "Next:"
+Write-Host "  .\START_WORK.cmd"
 Write-Host "  git status --short --branch"
 Write-Host "  python run_once.py"
 Write-Host "  powershell -ExecutionPolicy Bypass -File .\tools\ui-qa.ps1"
 Write-Host ""
 Write-Host "Tip: run as '. .\tools\dev-shell.ps1' to keep PATH and venv activation in the current PowerShell session."
+Write-Host "Tip: use START_WORK.cmd when switching PCs; it aligns the folder to GitHub main first."

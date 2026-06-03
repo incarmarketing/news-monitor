@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$branch" != "main" ]; then
+  echo "Blocked: push from '$branch' is not allowed for this workspace."
+  echo "Run START_WORK.cmd and continue from main."
+  exit 1
+fi
+
+git fetch origin main --quiet
+if ! git merge-base --is-ancestor origin/main HEAD; then
+  echo "Blocked: local main is behind origin/main."
+  echo "Run START_WORK.cmd before pushing."
+  exit 1
+fi
