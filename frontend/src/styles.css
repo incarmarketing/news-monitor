@@ -1784,6 +1784,105 @@ button.kpi-card {
   font-weight: 800;
 }
 
+.risk-url-drop {
+  padding: 6px;
+  border: 1px dashed transparent;
+  border-radius: 10px;
+  background: var(--paper-soft);
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.risk-url-drop.drop-active {
+  border-color: var(--blue);
+  background: #eef4ff;
+  box-shadow: 0 0 0 3px rgba(40, 85, 217, .12);
+}
+
+.risk-recent-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.risk-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.risk-section-head span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.risk-article-card {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  cursor: grab;
+}
+
+.risk-article-card:hover,
+.risk-article-card.active {
+  border-color: #b8c9ff;
+  background: #f7f9ff;
+}
+
+.risk-article-card > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.risk-article-card em {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.risk-article-card b {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.risk-empty {
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.risk-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.risk-actions .confirm-button { width: 100%; }
+
 .confirm-button { width: 100%; }
 
 .report-workspace {
@@ -2947,6 +3046,15 @@ button.kpi-card {
   .scrap-workspace-v2,
   .monitoring-layout {
     grid-template-columns: 1fr;
+  }
+
+  .risk-url-drop,
+  .risk-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-article-card {
+    cursor: pointer;
   }
 
   .story-grid {

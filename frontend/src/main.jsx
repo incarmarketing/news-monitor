@@ -298,7 +298,7 @@ function App() {
     regulators: Regulators,
     media: MediaAnalysis,
     scraps: Scraps,
-    risk: RiskCenter,
+    risk: RiskCenterV2,
     reports: Reports,
     management: Management,
   }[activeSection] || Overview;
@@ -1015,6 +1015,170 @@ function ScrapDigest({ scraps }) {
   );
 }
 
+function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) {
+  const sourceArticles = allArticles.length ? allArticles : articles;
+  const riskArticles = useMemo(() => selectRiskCenterArticles(sourceArticles), [sourceArticles]);
+  const [draftType, setDraftType] = useState("press");
+  const [articleUrl, setArticleUrl] = useState("");
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [dropActive, setDropActive] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    if (articleUrl || selectedArticle || !riskArticles.length) return;
+    const lead = riskArticles[0];
+    setSelectedArticle(lead);
+    setArticleUrl(lead.link && lead.link !== "#" ? lead.link : "");
+  }, [articleUrl, selectedArticle, riskArticles]);
+
+  const matchedArticle = findArticleByUrl(sourceArticles, articleUrl);
+  const activeArticle = matchedArticle || selectedArticle || makeManualRiskArticle(articleUrl);
+  const facts = buildRiskCenterFacts(activeArticle, articleUrl);
+  const activeKey = articleSelectionKey(activeArticle);
+
+  const applyArticle = (article) => {
+    setSelectedArticle(article);
+    setArticleUrl(article.link && article.link !== "#" ? article.link : "");
+    setDraft("");
+  };
+
+  const applyUrl = (value) => {
+    const nextUrl = extractFirstUrl(value) || value.trim();
+    setArticleUrl(nextUrl);
+    setSelectedArticle(findArticleByUrl(sourceArticles, nextUrl));
+    setDraft("");
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setDropActive(false);
+    const articleId = event.dataTransfer.getData("application/x-news-monitor-article");
+    const draggedArticle = riskArticles.find((item) => articleSelectionKey(item) === articleId);
+    if (draggedArticle) {
+      applyArticle(draggedArticle);
+      return;
+    }
+    const droppedUrl = event.dataTransfer.getData("text/uri-list")
+      || event.dataTransfer.getData("text/plain")
+      || "";
+    applyUrl(droppedUrl);
+  };
+
+  const handleDragStart = (event, article) => {
+    event.dataTransfer.setData("application/x-news-monitor-article", articleSelectionKey(article));
+    if (article.link && article.link !== "#") {
+      event.dataTransfer.setData("text/uri-list", article.link);
+      event.dataTransfer.setData("text/plain", article.link);
+    }
+  };
+
+  const handleGenerateDraft = () => {
+    if (typeof window !== "undefined" && !window.confirm("선택한 기사 기준으로 초안을 생성할까요?")) return;
+    setDraft(buildRiskResponseDraft(draftType, activeArticle, facts));
+  };
+
+  return (
+    <main className="workspace">
+      <PageTitle
+        eyebrow="Risk Response"
+        title="리스크 대응센터"
+        description="최근 부정·주의 기사와 외부 URL을 기준으로 팩트체크와 대응 초안을 관리합니다."
+        right={(
+          <button
+            className="ghost-button"
+            onClick={() => onRefreshOperations?.({ trigger: true, label: "리스크 기사 갱신", source: "risk_center_refresh" })}
+          >
+            <RefreshCw />갱신
+          </button>
+        )}
+      />
+      <section className="risk-layout">
+        <Panel title="기사 URL / 팩트 체크" icon={ShieldCheck} meta={facts.tone || "확인"}>
+          <div
+            className={`url-box risk-url-drop ${dropActive ? "drop-active" : ""}`}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDropActive(true);
+            }}
+            onDragLeave={() => setDropActive(false)}
+            onDrop={handleDrop}
+          >
+            <input
+              value={articleUrl}
+              onChange={(event) => applyUrl(event.target.value)}
+              onPaste={(event) => {
+                const pasted = event.clipboardData.getData("text");
+                if (extractFirstUrl(pasted)) {
+                  event.preventDefault();
+                  applyUrl(pasted);
+                }
+              }}
+              placeholder="기사 URL"
+            />
+            <button className="primary-button" onClick={() => applyUrl(articleUrl)}>분석</button>
+          </div>
+          <div className="fact-grid">
+            <Fact label="핵심 주장" value={facts.claim} />
+            <Fact label="당사 관련성" value={facts.relevance} />
+            <Fact label="논조" value={facts.tone} />
+            <Fact label="대응 강도" value={facts.intensity} />
+          </div>
+          <div className="risk-recent-list">
+            <div className="risk-section-head">
+              <b>최근 부정/주의 기사</b>
+              <span>{riskArticles.length.toLocaleString("ko-KR")}건</span>
+            </div>
+            {riskArticles.slice(0, 8).map((article) => (
+              <button
+                key={articleSelectionKey(article)}
+                type="button"
+                draggable
+                className={`risk-article-card ${activeKey === articleSelectionKey(article) ? "active" : ""}`}
+                onClick={() => applyArticle(article)}
+                onDragStart={(event) => handleDragStart(event, article)}
+              >
+                <span>
+                  <Chip tone={article.tone}>{article.tone}</Chip>
+                  <em>{article.source} · {[article.date, article.time].filter(Boolean).join(" ") || "-"}</em>
+                </span>
+                <b>{article.title}</b>
+                <ArticleSummaryBlock item={article} dense />
+              </button>
+            ))}
+            {!riskArticles.length && (
+              <div className="risk-empty">최근 부정/주의 기사 데이터가 없습니다.</div>
+            )}
+          </div>
+        </Panel>
+        <Panel title="대응 초안" icon={FilePenLine} meta={draft ? "생성 완료" : "생성 전 확인"}>
+          <div className="segmented">
+            <button className={draftType === "press" ? "active" : ""} onClick={() => { setDraftType("press"); setDraft(""); }}>언론 해명용</button>
+            <button className={draftType === "internal" ? "active" : ""} onClick={() => { setDraftType("internal"); setDraft(""); }}>사내 해명용</button>
+          </div>
+          <div className="draft-preview">
+            <b>{draftType === "press" ? "언론 해명용 초안" : "사내 공유용 초안"}</b>
+            <p>{draft || "팩트체크 내용을 확인한 뒤 초안을 생성합니다."}</p>
+          </div>
+          <div className="risk-actions">
+            {activeArticle?.link && activeArticle.link !== "#" && (
+              <a
+                className="ghost-button"
+                href={activeArticle.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => openArticleLink(event, activeArticle.link)}
+              >
+                <ExternalLink />기사 열기
+              </a>
+            )}
+            <button className="primary-button confirm-button" onClick={handleGenerateDraft}>초안 생성</button>
+          </div>
+        </Panel>
+      </section>
+    </main>
+  );
+}
+
 function RiskCenter() {
   const [draftType, setDraftType] = useState("press");
   return (
@@ -1053,6 +1217,118 @@ function RiskCenter() {
       </section>
     </main>
   );
+}
+
+function selectRiskCenterArticles(articles = []) {
+  const usable = articles
+    .filter((article) => article?.title && article.link && article.link !== "#")
+    .filter((article) => !isOfficialRegulatorSource(article.source));
+  const negative = usable.filter((article) => article.tone === "부정" || String(article.riskLevel || "").toUpperCase() === "HIGH");
+  const caution = usable.filter((article) => article.tone === "주의" || String(article.riskLevel || "").toUpperCase() === "MEDIUM");
+  const selected = negative.length ? negative : caution;
+  return selected
+    .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
+    .slice(0, 20);
+}
+
+function findArticleByUrl(articles = [], value = "") {
+  const target = normalizeRiskUrl(value);
+  if (!target) return null;
+  return articles.find((article) => normalizeRiskUrl(article.link) === target) || null;
+}
+
+function extractFirstUrl(value = "") {
+  const match = String(value || "").match(/https?:\/\/[^\s<>"']+/i);
+  return match ? match[0].replace(/[)\].,;]+$/g, "") : "";
+}
+
+function normalizeRiskUrl(value = "") {
+  const raw = extractFirstUrl(value) || String(value || "").trim();
+  if (!raw || raw === "#") return "";
+  try {
+    const url = new URL(raw);
+    ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"].forEach((key) => url.searchParams.delete(key));
+    url.hash = "";
+    return `${url.origin}${url.pathname}${url.search}`.replace(/\/$/g, "").toLowerCase();
+  } catch {
+    return raw.replace(/\/$/g, "").toLowerCase();
+  }
+}
+
+function makeManualRiskArticle(articleUrl = "") {
+  const host = (() => {
+    try {
+      return new URL(articleUrl).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  })();
+  return {
+    title: articleUrl ? "URL 입력 기사" : "기사 선택 필요",
+    link: articleUrl,
+    source: host || "직접 입력",
+    tone: articleUrl ? "주의" : "확인 필요",
+    category: "외부 URL",
+    summary: "",
+  };
+}
+
+function buildRiskCenterFacts(article = {}, articleUrl = "") {
+  const summaryLines = buildArticleSummaryLines(article);
+  const claim = summaryLines[0]
+    || compactArticleSummary(article)
+    || cleanSummaryText(article.title)
+    || (articleUrl ? "URL 기준으로 기사 원문 확인이 필요합니다." : "최근 부정/주의 기사를 선택하세요.");
+  const tone = article.tone && article.tone !== "확인 필요"
+    ? article.tone
+    : String(article.riskLevel || "").toUpperCase() === "HIGH"
+      ? "부정"
+      : articleUrl
+        ? "주의"
+        : "확인 필요";
+  return {
+    claim,
+    relevance: buildRiskRelevance(article),
+    tone,
+    intensity: buildRiskIntensity(article, tone),
+  };
+}
+
+function buildRiskRelevance(article = {}) {
+  if (!article?.title || article.title === "기사 선택 필요") return "확인 필요";
+  if (isOwnArticle(article)) return "당사 직접 언급";
+  if (article.category === "GA" || /GA|보험대리점|설계사|인카금융/i.test(`${article.title} ${article.summary} ${article.keyword}`)) {
+    return "업계/GA 문맥";
+  }
+  return "간접 이슈";
+}
+
+function buildRiskIntensity(article = {}, tone = "") {
+  if (tone === "부정" && isOwnArticle(article)) return "즉시 확인";
+  if (tone === "부정") return "부정 후보 검토";
+  if (tone === "주의") return "모니터링";
+  return "대기";
+}
+
+function buildRiskResponseDraft(type, article = {}, facts = {}) {
+  const title = cleanSummaryText(article.title || "확인 대상 기사");
+  const source = article.source ? `${article.source} 보도` : "해당 보도";
+  const claim = facts.claim || "핵심 주장 확인이 필요합니다.";
+  const relevance = facts.relevance || "관련성 확인 필요";
+  if (type === "internal") {
+    return [
+      `공유 대상은 ${source} "${title}"입니다.`,
+      `현재 분류는 ${facts.tone || "확인 필요"}이며, 당사 관련성은 ${relevance}로 확인됩니다.`,
+      `핵심 쟁점은 ${claim}`,
+      `사실관계, 이해관계자 영향, 추가 보도 가능성을 확인한 뒤 필요 시 대외 메시지를 별도로 정리하겠습니다.`,
+    ].join("\n");
+  }
+  return [
+    `해당 보도와 관련해 현재 확인 가능한 핵심 쟁점은 ${claim}`,
+    `당사는 보도 내용 중 사실관계가 필요한 부분을 확인하고 있으며, 확인되지 않은 내용에 대해서는 단정적인 입장을 내지 않겠습니다.`,
+    `소비자와 이해관계자에게 영향을 줄 수 있는 사안은 관련 기준과 절차에 따라 신속히 점검하겠습니다.`,
+    `추가 확인이 완료되는 대로 필요한 범위에서 설명드리겠습니다.`,
+  ].join("\n");
 }
 
 function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }) {
