@@ -379,7 +379,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
             <CategoryChart rows={data.categoryFlow} />
           </Panel>
           <Panel title="언론사 영향도" icon={Building2} meta="노출량 · 당사 · 부정">
-            <PressInfluence rows={data.pressInfluence} />
+            <PressInfluence rows={data.pressInfluence} onOpenMonitoring={onOpenMonitoring} />
           </Panel>
         </div>
         <div className="side-column">
@@ -889,7 +889,7 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
               <span>Media Map</span>
               <b>언론사 영향도</b>
             </div>
-            <PressInfluence rows={data.pressInfluence} compact />
+            <PressInfluence rows={data.pressInfluence} compact onOpenMonitoring={onOpenMonitoring} />
           </section>
 
           <section className="paper-section chart-page">
@@ -1818,8 +1818,9 @@ function JobRows({ rows }) {
 }
 
 function PressInfluence({ rows, detailed = false, compact = false, onOpenMonitoring }) {
-  const max = Math.max(1, ...rows.map((item) => item.total));
-  const visibleRows = compact ? rows.slice(0, 5) : rows;
+  const pressRows = rows.filter((item) => !isOfficialRegulatorSource(item.source));
+  const max = Math.max(1, ...pressRows.map((item) => item.total));
+  const visibleRows = compact ? pressRows.slice(0, 5) : pressRows;
   return (
     <div className={detailed ? "press-list detailed" : "press-list"}>
       {visibleRows.map((item) => (
@@ -2353,8 +2354,9 @@ function expandReportIssues(issues, articles, period) {
 }
 
 function buildPressInfluence(articles) {
-  return groupArticles(articles, "source").slice(0, 10).map(([source, total]) => {
-    const scoped = articles.filter((article) => article.source === source);
+  const pressArticles = articles.filter((article) => !isOfficialRegulatorSource(article.source));
+  return groupArticles(pressArticles, "source").slice(0, 10).map(([source, total]) => {
+    const scoped = pressArticles.filter((article) => article.source === source);
     return {
       source,
       total,
@@ -2363,6 +2365,10 @@ function buildPressInfluence(articles) {
       type: scoped[0]?.category || "일반",
     };
   });
+}
+
+function isOfficialRegulatorSource(source) {
+  return /금융감독원|금융위원회/.test(String(source || ""));
 }
 
 const PRESS_ALIAS_DRAFT_KEY = "news_monitor_press_alias_drafts_v1";

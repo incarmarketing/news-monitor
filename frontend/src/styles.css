@@ -991,6 +991,10 @@ button.kpi-card {
   text-align: left;
 }
 
+.press-row.clickable {
+  cursor: pointer;
+}
+
 .press-row b {
   min-width: 0;
   color: var(--ink);
