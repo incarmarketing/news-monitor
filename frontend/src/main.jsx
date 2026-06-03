@@ -394,6 +394,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 }
 
 function Monitoring({ data, articles, monitoringPreset }) {
+  const latestDate = useMemo(() => latestArticleDate(articles), [articles]);
   const [query, setQuery] = useState("");
   const [queryInput, setQueryInput] = useState("");
   const [tone, setTone] = useState("all");
@@ -401,9 +402,20 @@ function Monitoring({ data, articles, monitoringPreset }) {
   const [source, setSource] = useState("all");
   const [viewMode, setViewMode] = useState("related");
   const [visible, setVisible] = useState(30);
+  const [startDateInput, setStartDateInput] = useState("");
+  const [endDateInput, setEndDateInput] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const sources = useMemo(() => unique(articles.map((article) => article.source)).slice(0, 80), [articles]);
   const categories = useMemo(() => unique(articles.map((article) => article.category)).slice(0, 40), [articles]);
+  useEffect(() => {
+    if (!latestDate || startDateInput || endDateInput || startDate || endDate) return;
+    setStartDateInput(latestDate);
+    setEndDateInput(latestDate);
+    setStartDate(latestDate);
+    setEndDate(latestDate);
+  }, [endDate, endDateInput, latestDate, startDate, startDateInput]);
   useEffect(() => {
     if (!monitoringPreset) return;
     setQuery(monitoringPreset.query || "");
@@ -417,14 +429,29 @@ function Monitoring({ data, articles, monitoringPreset }) {
     const needle = query.trim().toLowerCase();
     return articles.filter((article) => {
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
+      const articleDate = article.date || "";
       return (
         (!needle || text.includes(needle)) &&
+        (!startDate || !articleDate || articleDate >= startDate) &&
+        (!endDate || !articleDate || articleDate <= endDate) &&
         (tone === "all" || article.tone === tone) &&
         (category === "all" || article.category === category) &&
         (source === "all" || article.source === source)
       );
     });
-  }, [articles, category, query, source, tone]);
+  }, [articles, category, endDate, query, source, startDate, tone]);
+  const applyDateFilter = () => {
+    let nextStart = startDateInput;
+    let nextEnd = endDateInput;
+    if (nextStart && nextEnd && nextStart > nextEnd) {
+      [nextStart, nextEnd] = [nextEnd, nextStart];
+      setStartDateInput(nextStart);
+      setEndDateInput(nextEnd);
+    }
+    setStartDate(nextStart);
+    setEndDate(nextEnd);
+    setVisible(30);
+  };
   const grouped = useMemo(() => buildRelatedArticleGroups(filtered), [filtered]);
   const visibleRows = viewMode === "related" ? grouped : filtered;
   const feedMeta = viewMode === "related"
@@ -442,12 +469,15 @@ function Monitoring({ data, articles, monitoringPreset }) {
       <section className="filter-card">
         <label>
           <span>시작 기준일</span>
-          <input type="date" defaultValue="2026-05-31" />
+          <input type="date" value={startDateInput} onChange={(event) => setStartDateInput(event.target.value)} />
         </label>
         <label>
           <span>종료 기준일</span>
-          <input type="date" defaultValue="2026-05-31" />
+          <input type="date" value={endDateInput} onChange={(event) => setEndDateInput(event.target.value)} />
         </label>
+        <button className="primary-button filter-action" onClick={applyDateFilter}>
+          <Search />조회
+        </button>
         <label className="tone-filter">
           <span>논조</span>
           <select value={tone} onChange={(event) => setTone(event.target.value)}>
@@ -495,13 +525,18 @@ function Monitoring({ data, articles, monitoringPreset }) {
         <button className="primary-button" onClick={() => { setQuery(queryInput); setVisible(30); }}>
           <Search />검색
         </button>
-        <button className="ghost-button" onClick={() => {
+        <button className="ghost-button compact-button" onClick={() => {
           setQuery("");
           setQueryInput("");
           setTone("all");
           setCategory("all");
           setSource("all");
           setViewMode("related");
+          setStartDateInput(latestDate);
+          setEndDateInput(latestDate);
+          setStartDate(latestDate);
+          setEndDate(latestDate);
+          setVisible(30);
         }}>
           <Filter />초기화
         </button>
@@ -2750,6 +2785,14 @@ function composeManagementData(operations, articles) {
 
 function filterArticlesByPeriod(articles, period) {
   return filterRowsByPeriod(articles, period);
+}
+
+function latestArticleDate(articles = []) {
+  return articles
+    .map((article) => article.date)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || "";
 }
 
 function filterRowsByPeriod(articles, period) {
