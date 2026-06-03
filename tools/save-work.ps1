@@ -74,7 +74,12 @@ if ($branch -ne "main") {
     & $git add -A
     & $git commit -m $Message
     if (-not $NoPush) {
-        & $git push origin "HEAD:refs/heads/$safeBranch"
+        $env:NEWS_MONITOR_ALLOW_SAFETY_PUSH = "1"
+        try {
+            & $git push origin "HEAD:refs/heads/$safeBranch"
+        } finally {
+            Remove-Item Env:\NEWS_MONITOR_ALLOW_SAFETY_PUSH -ErrorAction SilentlyContinue
+        }
     }
     Write-Host "Saved to $safeBranch. Run START_WORK.cmd again to move this folder back to main."
     exit 0
