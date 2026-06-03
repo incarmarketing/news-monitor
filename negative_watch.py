@@ -14,6 +14,7 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import requests
 from dotenv import load_dotenv
@@ -108,7 +109,7 @@ def save_state(state: dict) -> None:
 
 
 def article_key(article: dict) -> str:
-    raw = article.get("article_hash") or article.get("link") or article.get("title", "")
+    raw = article.get("link") or article.get("article_hash") or article.get("title", "")
     normalized = re.sub(r"\s+", " ", raw).strip().lower()
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
 
@@ -187,6 +188,30 @@ def merge_negative_candidates(*groups: list[dict]) -> list[dict]:
 def compact(text: str, limit: int) -> str:
     cleaned = re.sub(r"\s+", " ", text or "").strip()
     return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
+
+
+def dashboard_base_url() -> str:
+    return (
+        os.getenv("NEGATIVE_ALERT_DASHBOARD_URL")
+        or os.getenv("DASHBOARD_URL")
+        or "https://incarmarketing.github.io/news-monitor/dashboard.html"
+    )
+
+
+def build_alert_link(article: dict) -> str:
+    """Open the shared dashboard instead of an article domain that Kakao may block."""
+    base = dashboard_base_url()
+    split = urlsplit(base)
+    params = dict(parse_qsl(split.query, keep_blank_values=True))
+    params.update(
+        {
+            "section": "monitoring",
+            "query": compact(article.get("title", "") or article.get("source", ""), 90),
+        }
+    )
+    if article.get("article_hash"):
+        params["article"] = article["article_hash"]
+    return urlunsplit((split.scheme, split.netloc, split.path, urlencode(params), split.fragment))
 
 
 def build_alert_message(articles: list[dict], metrics: dict, minutes_back: int, db_count: int = 0) -> str:
@@ -317,7 +342,7 @@ def main() -> None:
         print(build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives)))
         return
 
-    link = new_negatives[0].get("link") or "https://incarmarketing.github.io/news-monitor/"
+    link = build_alert_link(new_negatives[0])
     message = build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives))
     alert_title = f"부정기사 감지 {article_key(new_negatives[0])}"
     if notification_already_sent("negative_alert", alert_title):

@@ -46,12 +46,6 @@ DOMAIN_CONTEXT_WORDS = [
     "수수료", "정착지원금", "불완전판매", "내부통제",
 ]
 
-GENERIC_POLICY_WORDS = {"수수료", "규제", "법안", "감독", "공시", "제도"}
-INSURANCE_DOMAIN_CONTEXT_WORDS = [
-    word for word in DOMAIN_CONTEXT_WORDS
-    if word not in GENERIC_POLICY_WORDS and word != "금융서비스"
-]
-
 INDUSTRY_WORDS = [
     "보험", "보험사", "GA", "보험설계사", "설계사", "전속설계사",
     "전속 설계사", "GA설계사", "GA 설계사", "보험모집인", "보험 모집인",
@@ -79,6 +73,21 @@ SEVERE_NEGATIVE_WORDS = [
     "소송", "논란", "스캔들", "피해", "민원", "고객 DB", "고객DB",
     "고객정보", "개인정보", "불완전판매", "관리부실", "관리 부실",
     "무단", "먹통", "오류",
+]
+
+PREVENTIVE_SECURITY_WORDS = [
+    "예방", "사전예방", "사전 예방", "보완", "보안 강화", "보안 체계",
+    "보안 역량", "취약점 점검", "가입", "회원사", "대응훈련",
+]
+
+SECURITY_RISK_WORDS = [
+    "해킹", "침해", "정보보안", "개인정보", "고객정보", "금융보안원",
+    "보안", "사이버", "취약점",
+]
+
+DIRECT_SECURITY_INCIDENT_WORDS = [
+    "유출", "발생", "확인", "다크웹", "피해 확산", "사고 발생", "해킹 발생",
+    "해킹당", "침해사고 발생", "개인정보 유출", "고객정보 유출",
 ]
 
 CAUTION_WORDS = [
@@ -132,7 +141,7 @@ STOCK_DECLINE_CONTEXT_WORDS = [
 ]
 
 STOCK_DECLINE_WORDS = [
-    "하락", "급락", "약세", "낙폭", "신저가", "최저가", "부진", "조정", "매도", "▼", "↓",
+    "하락", "급락", "약세", "낙폭", "신저가", "부진", "조정", "매도",
 ]
 
 POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
@@ -140,19 +149,6 @@ POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고
 PHOTO_SPORTS_NOISE_WORDS = [
     "포토", "화보", "갤러리", "골프", "여자오픈", "오픈", "라운드", "최종라운드",
     "1번홀", "홀에서", "리조트", "파72", "우승상금", "순위를 올린다",
-]
-
-SPORTS_MARKETING_NOISE_WORDS = [
-    "스포츠마케팅", "스포츠 마케팅", "프로야구", "프로농구", "프로배구",
-    "농구단", "배구단", "야구단", "축구단", "골프단", "구단", "선수단",
-    "배구", "농구", "야구", "축구", "골프", "KBO", "KBL", "V리그",
-    "시구", "시타", "홈경기", "원정경기", "플레이오프", "챔피언결정전",
-    "유니폼", "스폰서", "후원", "스폰서십", "타이틀스폰서",
-]
-
-SPORTS_BUSINESS_KEEP_WORDS = [
-    "보험금", "보험료", "상품", "계약", "민원", "제재", "소송", "실적",
-    "매출", "영업이익", "M/S", "점유율", "금감원", "금융감독원", "금융위",
 ]
 
 MATERIAL_CAUTION_CONTEXT_WORDS = [
@@ -181,252 +177,11 @@ def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
         article["_category"] = categorize(article)
         article["_tone"] = analyze_tone(article)
         article["_score"] = score_article(article)
-        article["_summary"] = build_quality_summary(article)
 
     articles.sort(key=lambda x: x.get("_score", 0), reverse=True)
     clustered = cluster_articles(articles[:top_n])
     clustered.sort(key=lambda x: x.get("_score", 0), reverse=True)
     return clustered, build_metrics(articles, clustered)
-
-
-def build_quality_summary(article: dict) -> str:
-    """Return an operational article summary, not a photo caption or portal fragment."""
-    title = clean_summary_text(article.get("title", ""))
-    description = strip_caption_prefix(clean_summary_text(article.get("description", "") or article.get("summary", "")))
-    complaint_summary = consumer_complaint_summary(article, title, description)
-    if complaint_summary:
-        return complaint_summary
-    if re.search(r"우수\s*인증\s*설계사|우수인증설계사|인증설계사", f"{title} {description}"):
-        certified_summary = title_based_summary(article, title)
-        if certified_summary:
-            return certified_summary
-    if description and not is_caption_like_summary(description):
-        sentences = split_summary_sentences(description)
-        usable = [
-            sentence for sentence in sentences
-            if sentence != title and not is_caption_like_summary(sentence)
-        ]
-        if usable:
-            summary = limit_summary(" ".join(usable[:2]))
-            if summary:
-                return summary
-        if len(description) >= 38 and not is_broken_summary_fragment(description):
-            summary = limit_summary(description)
-            if summary:
-                return summary
-    return title_based_summary(article, title)
-
-
-def clean_summary_text(value: object) -> str:
-    text = re.sub(r"<[^>]+>", " ", str(value or ""))
-    text = (
-        text.replace("&nbsp;", " ")
-        .replace("&amp;nbsp;", " ")
-        .replace("&quot;", '"')
-        .replace("&#39;", "'")
-    )
-    text = re.sub(r"^[\[［【(（].{0,60}[=＝].{0,30}기자[\]］】)）]\s*", "", text)
-    text = re.sub(r"^\[[^\]]+\s+[^\]]*기자\]\s*", "", text)
-    text = re.sub(r"^[［【].{1,60}기자[］】]\s*", "", text)
-    text = re.sub(r"^[가-힣A-Za-z0-9_.·\s-]{1,30}\s*[=＝]\s*[가-힣]{2,5}\s*기자\s*", "", text)
-    text = re.sub(r"^[^\s]+ 기자\s*=\s*", "", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip(" \t\r\n.·")
-
-
-def strip_caption_prefix(value: str) -> str:
-    text = clean_summary_text(value)
-    if not re.search(r"전경|사진\s*=|제공\s*=|이미지|기념\s*촬영|로고", text):
-        return text
-    if "◇" in text:
-        head, tail = text.split("◇", 1)
-        if re.search(r"전경|사진\s*=|제공\s*=|이미지", head):
-            return clean_summary_text(tail)
-
-    text = re.sub(
-        r"^[^.!?。]{0,130}(?:사옥\s*전경|본사\s*전경|건물\s*외관)\s*(?:[.,。/ ]|\([^)]*\))*\s*",
-        "",
-        text,
-    )
-    text = re.sub(r"^[\[/ ]*(?:사진|제공)\s*=\s*[^◇.。\]]{0,90}[\]◇.。]?\s*", "", text)
-    text = re.sub(r"^[/ ]*사진\s*/\s*[^ ]{1,20}\s*", "", text)
-    return clean_summary_text(text)
-
-
-def split_summary_sentences(value: str) -> list[str]:
-    text = clean_summary_text(value)
-    if not text:
-        return []
-    text = re.sub(r"([.!?。])\s*", r"\1|", text)
-    text = re.sub(
-        r"(다|했다|밝혔다|전망했다|설명했다|진단했다|분석했다|마무리했다|참여한다고)\s+",
-        r"\1.|",
-        text,
-    )
-    return [
-        sentence.strip(" .")
-        for sentence in text.split("|")
-        if len(sentence.strip()) >= 18 and not is_broken_summary_fragment(sentence)
-    ][:3]
-
-
-def is_caption_like_summary(value: str) -> bool:
-    text = clean_summary_text(value)
-    if not text:
-        return True
-    caption_patterns = [
-        r"사옥\s*전경",
-        r"본사\s*전경",
-        r"건물\s*외관",
-        r"사진\s*=",
-        r"제공\s*=",
-        r"자료\s*사진",
-        r"이미지",
-        r"기념\s*촬영",
-        r"로고",
-    ]
-    if re.match(r"^[\[/ ]*(?:사진|제공)\s*=", text):
-        return True
-    if any(re.search(pattern, text, re.I) for pattern in caption_patterns) and len(text) <= 80:
-        return True
-    if len(text) < 18 and not re.search(r"(인수|실적|검사|점검|제재|승인|협약|출시|선정|상승|하락)", text):
-        return True
-    return False
-
-
-def is_broken_summary_fragment(value: str) -> bool:
-    text = clean_summary_text(value)
-    stem = re.sub(r"[.!?。]+$", "", text).strip()
-    return bool(
-        re.fullmatch(r"(강력히|적극적으로|지속적으로|본격적으로|확대|강화|추진|확인|필요)", text)
-        or re.search(r"(강력히|적극적으로|지속적으로|본격적으로)$", text)
-        or (len(text) < 8 and not re.search(r"\d", text))
-        or text.endswith(("고", "며", "또한", "통해", "위해"))
-        or re.search(r"(을|를|에|의|과|와|로|으로|에게|에서|부터|까지|보다|처럼)$", stem)
-        or (not re.search(r"[.!?。]$|다$|요$|임$|함$|필요$", text) and text.endswith(("에", "을", "를", "의", "과", "와", "로", "으로")))
-        or re.search(r"전망했\s*또한|밝혔\s*또한|한다고\s*\d{1,2}일?$", text)
-        or len(text) > 230
-    )
-
-
-def title_based_summary(article: dict, title: str) -> str:
-    description = strip_caption_prefix(clean_summary_text(article.get("description", "") or article.get("summary", "")))
-    text = f"{title} {description} {article.get('keyword', '')}"
-    category = article.get("_category") or article.get("category") or "other"
-    tone = article.get("_tone") or article.get("tone") or "neutral"
-    actor = extract_primary_entity(text)
-
-    complaint_summary = consumer_complaint_summary(article, title, description)
-    if complaint_summary:
-        return complaint_summary
-    if re.search(r"공공\s*마이데이터|장기보상|보험금\s*청구", text):
-        subject = actor or "보험사"
-        return (
-            f"{subject}이 공공 마이데이터를 보험금 청구·장기보상 업무에 연계한 서비스 사례입니다. "
-            "고객 서류 제출 부담을 낮추고 보상 처리 효율을 높이는 보험사 디지털 전환 흐름으로 볼 수 있습니다."
-        )
-    if re.search(r"해외|인수|M&A|포테그라|글로벌", text, re.I) and re.search(r"보험|손보|생보", text):
-        subject = actor or "보험업계"
-        return (
-            f"{subject}의 해외 사업 확대와 보험사 인수 흐름을 다룬 기사입니다. "
-            "국내 보험시장 성장 정체와 IFRS17 이후 수익성 중심 경쟁 속에서 수익원 다변화 필요성이 함께 제기됩니다."
-        )
-    if re.search(r"금감원|금융감독원|금융위|금융위원회|제재|검사|점검|승인|경영개선", text):
-        return (
-            f"{actor or '금융당국'} 관련 감독·정책 이슈를 다룬 기사입니다. "
-            "당사 직접 이슈인지 업계 공통 관리 신호인지 분리해 확인할 필요가 있습니다."
-        )
-    if re.search(r"우수\s*인증\s*설계사|우수인증설계사|인증설계사", text):
-        subject = actor or "보험·GA 업계"
-        count_match = re.search(r"(\d{1,3}(?:,\d{3})*|\d{3,5})\s*명", text)
-        count_text = f" {count_match.group(1)}명" if count_match else ""
-        top_text = " GA업계 최다 규모로" if re.search(r"최다|1위|가장", text) else ""
-        return (
-            f"{subject}{topic_particle(subject)} 우수인증설계사{count_text}을 배출하며{top_text} 영업조직의 전문성과 계약관리 역량을 부각한 보도입니다. "
-            "설계사 신뢰도와 완전판매 성과를 홍보 자산으로 활용할 수 있는 내용입니다."
-        )
-    if re.search(r"실적|마감|매출|순이익|영업익|역성장|감소|증가|성장", text):
-        return (
-            f"{actor or '보험·GA 업계'}의 실적과 영업 흐름을 다룬 기사입니다. "
-            "시장 점유, 생산성, 성장 둔화 여부를 당사 영향과 비교해 볼 필요가 있습니다."
-        )
-    if re.search(r"브랜드평판|평판|1위|순위|선정|수상", text):
-        return (
-            f"{actor or '보험·GA 업계'}의 평판·순위성 보도입니다. "
-            "홍보 활용 가능성과 경쟁사 동시 노출 여부를 함께 확인합니다."
-        )
-    if category == "own":
-        return headline_based_summary(title)
-    if category == "regulation":
-        return "보험·GA 관련 정책 또는 감독 이슈입니다. 영업 환경과 소비자 보호 기준 변화 가능성을 확인합니다."
-    if tone == "caution":
-        return "직접 부정은 아니지만 시장성·규제성 신호가 있는 기사입니다. 반복 노출 여부와 당사 관련성을 분리해 봅니다."
-    return headline_based_summary(title)
-
-
-def headline_based_summary(title: str) -> str:
-    cleaned = clean_summary_text(re.sub(r"\s+-\s+[^-]{2,24}$", "", title or ""))
-    if not cleaned:
-        return ""
-    return limit_summary(f"{cleaned} 기사입니다.")
-
-
-def consumer_complaint_summary(article: dict, title: str, description: str = "") -> str:
-    text = f"{title} {description} {article.get('keyword', '')}"
-    if not re.search(r"소비자\s*민원|민원평가|민원\s*점유율|민원\s*건수|불만\s*건수|분쟁", text):
-        return ""
-    actor = extract_primary_entity(text) or "손해보험사"
-    ranking = ""
-    if re.search(r"2년\s*연속\s*1위", text):
-        ranking = "2년 연속 1위로 언급됐습니다"
-    elif re.search(r"1위", text):
-        ranking = "1위로 언급됐습니다"
-    elif re.search(r"상위|빅5|집중|점유율", text):
-        ranking = "민원 비중 상위권으로 언급됐습니다"
-    else:
-        ranking = "소비자 민원 지표에 언급됐습니다"
-    return limit_summary(
-        f"{actor}{topic_particle(actor)} 손해보험 소비자 민원 평가에서 민원 점유율이 높은 회사로 {ranking}. "
-        "여기서 순위는 우호 성과가 아니라 민원·불만 집중도 의미이므로 소비자보호 리스크 흐름으로 봐야 합니다."
-    )
-
-
-def topic_particle(value: str) -> str:
-    if not value:
-        return "은"
-    last = value[-1]
-    if "가" <= last <= "힣":
-        return "은" if (ord(last) - ord("가")) % 28 else "는"
-    return "은"
-
-
-def extract_primary_entity(text: str) -> str:
-    candidates = OWN_NAMES + COMPETITOR_WORDS
-    for name in candidates:
-        if name in text:
-            return name
-    match = re.search(r"([가-힣A-Za-z0-9]+(?:손해보험|손보|생명|화재|금융서비스|보험))", text)
-    return match.group(1) if match else ""
-
-
-def limit_summary(value: str, limit: int = 210) -> str:
-    text = clean_summary_text(value)
-    if is_broken_summary_fragment(text):
-        return ""
-    if len(text) <= limit:
-        return ensure_summary_sentence(text)
-    cut = text[:limit].rsplit(" ", 1)[0]
-    cut = cut.rstrip(" ,·")
-    if is_broken_summary_fragment(cut):
-        return ""
-    return ensure_summary_sentence(cut)
-
-
-def ensure_summary_sentence(value: str) -> str:
-    text = clean_summary_text(value)
-    if not text:
-        return ""
-    return text if re.search(r"[.!?。]$", text) else f"{text}."
 
 
 def score_article(article: dict) -> int:
@@ -476,7 +231,7 @@ def categorize(article: dict) -> str:
         return "other"
     if contains_competitor_word(text):
         return "competitor"
-    if any(keyword in text for keyword in REGULATION_WORDS) and has_domain_context(text):
+    if any(keyword in text for keyword in REGULATION_WORDS):
         return "regulation"
     if any(keyword in text for keyword in INDUSTRY_WORDS):
         return "industry"
@@ -509,21 +264,12 @@ def is_ambiguous_competitor_match(text: str, keyword: str) -> bool:
 def has_domain_context(text: str) -> bool:
     if any(word in text for word in OWN_NAMES):
         return True
+    if any(word in text for word in REGULATION_WORDS):
+        return True
     if any(word in text for word in INDUSTRY_WORDS):
         return True
-    if contains_unambiguous_competitor_word(text):
+    if any(word in text for word in DOMAIN_CONTEXT_WORDS):
         return True
-    if any(word in text for word in INSURANCE_DOMAIN_CONTEXT_WORDS):
-        return True
-    return False
-
-
-def contains_unambiguous_competitor_word(text: str) -> bool:
-    for keyword in COMPETITOR_WORDS:
-        if keyword in AMBIGUOUS_COMPETITOR_WORDS:
-            continue
-        if keyword in text:
-            return True
     return False
 
 
@@ -536,26 +282,11 @@ def is_non_business_noise(article: dict) -> bool:
     title = article.get("title", "")
     if not text.strip():
         return True
-    if is_sports_marketing_noise(article):
-        return True
     has_photo_sports_signal = any(word in title or word in text for word in PHOTO_SPORTS_NOISE_WORDS)
     has_material_signal = any(word in text for word in MATERIAL_CAUTION_CONTEXT_WORDS) or any(name in text for name in OWN_NAMES)
     if has_photo_sports_signal and not has_material_signal:
         return True
     return False
-
-
-def is_sports_marketing_noise(article: dict) -> bool:
-    text = article.get("title", "") + " " + article.get("description", "") + " " + article.get("keyword", "")
-    if any(name in text for name in OWN_NAMES):
-        return False
-    if not any(word in text for word in SPORTS_MARKETING_NOISE_WORDS):
-        return False
-    if any(word in text for word in SPORTS_BUSINESS_KEEP_WORDS):
-        return False
-    sports_context = bool(re.search(r"스포츠|배구|농구|야구|축구|골프|구단|선수|리그|시구|후원|스폰서", text, re.I))
-    insurance_context = bool(re.search(r"보험|손보|생보|화재|생명", text))
-    return sports_context and insurance_context
 
 
 def analyze_tone(article: dict) -> str:
@@ -564,6 +295,8 @@ def analyze_tone(article: dict) -> str:
     category = article.get("_category") or categorize(article)
 
     if is_non_business_noise(article):
+        return "neutral"
+    if is_preventive_security_article(article):
         return "neutral"
 
     severe_score = 0
@@ -587,17 +320,13 @@ def analyze_tone(article: dict) -> str:
     positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
     positive_score += sum(1 for word in CSR_CONTEXT_WORDS if word in text)
 
-    if is_own_article(article) and is_certified_planner_achievement_article(article):
-        return "positive"
-    if is_own_article(article) and is_zero_misconduct_positive_article(article):
+    if is_zero_misconduct_positive_article(article):
         return "positive"
 
     # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
-    if is_investment_downgrade_article(article) or is_stock_decline_article(article):
-        return "caution"
     if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
         return "negative"
-    if category == "own" and positive_score >= 2 and severe_score == 0 and caution_score <= 1:
+    if positive_score >= 2 and severe_score == 0 and caution_score <= 1:
         return "positive"
     if should_mark_caution(article, category, severe_score, caution_score):
         return "caution"
@@ -606,6 +335,8 @@ def analyze_tone(article: dict) -> str:
 
 def should_mark_caution(article: dict, category: str, severe_score: int, caution_score: int) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
+    if is_preventive_security_article(article):
+        return False
     if is_investment_downgrade_article(article) or is_stock_decline_article(article):
         return True
     if is_settlement_support_caution_article(article):
@@ -626,19 +357,17 @@ def is_zero_misconduct_positive_article(article: dict) -> bool:
     return "불완전판매" in text and any(word in text for word in ("0건", "제로", "우수", "인증", "선정"))
 
 
-def is_certified_planner_achievement_article(article: dict) -> bool:
-    if not is_own_article(article):
-        return False
-    text = article.get("title", "") + " " + article.get("description", "")
-    has_certified_planner = bool(re.search(r"우수\s*인증\s*설계사|우수인증설계사|인증설계사", text))
-    has_achievement = bool(re.search(r"최다|1위|배출|선정|성과|증가|성장|완전판매|신뢰도", text))
-    has_negative_signal = any(word in text for word in SEVERE_NEGATIVE_WORDS)
-    return has_certified_planner and has_achievement and not has_negative_signal
-
-
 def is_own_article(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     return any(name in text for name in OWN_NAMES)
+
+
+def is_preventive_security_article(article: dict) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "")
+    has_security_context = any(word in text for word in SECURITY_RISK_WORDS)
+    has_preventive_context = any(word in text for word in PREVENTIVE_SECURITY_WORDS)
+    has_direct_incident = any(word in text for word in DIRECT_SECURITY_INCIDENT_WORDS)
+    return has_security_context and has_preventive_context and not has_direct_incident
 
 
 def is_investment_downgrade_article(article: dict) -> bool:
