@@ -1172,6 +1172,14 @@ button.kpi-card {
   min-width: 78px;
 }
 
+.filter-card.regulator-filter {
+  grid-template-columns: minmax(260px, 2fr) repeat(2, minmax(120px, 1fr)) auto auto;
+}
+
+.filter-card.regulator-filter .wide-filter {
+  grid-column: auto;
+}
+
 .rule-stack article, .keyword-groups article {
   display: grid;
   grid-template-columns: auto minmax(78px, 102px) minmax(0, 1fr);
@@ -2121,8 +2129,16 @@ button.kpi-card {
   grid-template-columns: 54px minmax(0, 1fr) 34px;
 }
 
+.feed-row.no-time {
+  grid-template-columns: minmax(0, 1fr) 34px;
+}
+
 .feed-table.compact .feed-row {
   grid-template-columns: 52px minmax(0, 1fr);
+}
+
+.feed-table.compact .feed-row.no-time {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .feed-main {
@@ -2751,6 +2767,7 @@ button.kpi-card {
   .kpi-grid,
   .kpi-grid.compact,
   .filter-card,
+  .filter-card.regulator-filter,
   .fact-grid {
     grid-template-columns: 1fr;
   }
@@ -2760,6 +2777,11 @@ button.kpi-card {
     grid-template-columns: 42px minmax(0, 1fr);
     min-height: auto;
     align-items: start;
+  }
+
+  .feed-row.no-time,
+  .feed-table.compact .feed-row.no-time {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .feed-row > a {

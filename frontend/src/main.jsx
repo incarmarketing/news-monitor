@@ -20,6 +20,7 @@ import {
   Megaphone,
   Newspaper,
   Radar,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
@@ -248,6 +249,7 @@ function App() {
         notifications={notifications}
         management={management}
         operations={operations}
+        onRefreshOperations={refreshOperations}
         setActiveSection={setActiveSection}
         monitoringPreset={monitoringPreset}
         onOpenMonitoring={openMonitoring}
@@ -560,18 +562,31 @@ function Monitoring({ data, articles, monitoringPreset }) {
   );
 }
 
-function Regulators({ articles = [] }) {
+function Regulators({ articles = [], operations, onRefreshOperations }) {
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
+  const [source, setSource] = useState("all");
+  const [tone, setTone] = useState("all");
   const regulatorRows = useMemo(() => selectRegulatorRows(articles), [articles]);
+  const sources = useMemo(() => unique(regulatorRows.map((article) => article.source)).slice(0, 40), [regulatorRows]);
+  const tones = useMemo(() => unique(regulatorRows.map((article) => article.tone)).slice(0, 8), [regulatorRows]);
   const filteredRows = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return regulatorRows;
     return regulatorRows.filter((article) => {
       const text = `${article.title || ""} ${article.source || ""} ${article.summary || ""}`.toLowerCase();
-      return text.includes(needle);
+      return (
+        (!needle || text.includes(needle)) &&
+        (source === "all" || article.source === source) &&
+        (tone === "all" || article.tone === tone)
+      );
     });
-  }, [query, regulatorRows]);
+  }, [query, regulatorRows, source, tone]);
+  const resetFilters = () => {
+    setQuery("");
+    setQueryInput("");
+    setSource("all");
+    setTone("all");
+  };
 
   return (
     <main className="workspace">
@@ -580,23 +595,48 @@ function Regulators({ articles = [] }) {
         title="금융당국 보도자료"
         description="금융감독원·금융위원회 보도자료를 중복 제거 기준으로 모아 정책/규제 이슈만 빠르게 확인합니다."
         right={(
-          <div className="page-actions regulator-search">
-            <input
-              value={queryInput}
-              onChange={(event) => setQueryInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") setQuery(queryInput);
-              }}
-              placeholder="제목·요약 검색"
-            />
-            <button className="primary-button filter-action" onClick={() => setQuery(queryInput)}>
-              <Search />조회
+          <div className="page-actions">
+            <button className="ghost-button" onClick={onRefreshOperations} disabled={operations?.status === "loading"}>
+              <RefreshCw />갱신
             </button>
           </div>
         )}
       />
+      <section className="filter-card regulator-filter">
+        <label className="wide-filter">
+          <span>검색어</span>
+          <input
+            value={queryInput}
+            onChange={(event) => setQueryInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") setQuery(queryInput);
+            }}
+            placeholder="제목, 출처, 요약 검색"
+          />
+        </label>
+        <label>
+          <span>출처</span>
+          <select value={source} onChange={(event) => setSource(event.target.value)}>
+            <option value="all">전체</option>
+            {sources.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>논조</span>
+          <select value={tone} onChange={(event) => setTone(event.target.value)}>
+            <option value="all">전체</option>
+            {tones.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </label>
+        <button className="primary-button filter-action" onClick={() => setQuery(queryInput)}>
+          <Search />조회
+        </button>
+        <button className="ghost-button compact-button" onClick={resetFilters}>
+          <Filter />초기화
+        </button>
+      </section>
       <Panel title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>
-        <ArticleFeed rows={filteredRows} />
+        <ArticleFeed rows={filteredRows} showTime={false} />
       </Panel>
     </main>
   );
@@ -1650,15 +1690,15 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function ArticleFeed({ rows, compact = false }) {
+function ArticleFeed({ rows, compact = false, showTime = true }) {
   return (
-    <div className={compact ? "feed-table compact" : "feed-table"}>
+    <div className={`${compact ? "feed-table compact" : "feed-table"} ${showTime ? "" : "no-time"}`}>
       {rows.map((row) => {
         const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
         const hasRelated = related.length > 1;
         return (
-          <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
-            <time>{row.time || "-"}</time>
+          <article key={`${row.id || row.link || row.title}-${row.time}`} className={`${hasRelated ? "feed-row related" : "feed-row"} ${showTime ? "" : "no-time"}`}>
+            {showTime && <time>{row.time || "-"}</time>}
             <div className="feed-main">
               <div className="feed-title-line">
                 <Chip tone={row.tone}>{row.tone}</Chip>
