@@ -2144,7 +2144,7 @@ function buildToneTrend(articles) {
 function buildDailyToneTrend(articles, days = 31, fallback = []) {
   const dated = articles.filter((article) => article.date);
   if (!dated.length) return ensureTrendHasTone(fallback);
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = lastItem(dated.map((article) => article.date).sort());
   const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
   if (Number.isNaN(latestTime)) return buildToneTrend(dated);
   const startTime = latestTime - (days - 1) * 24 * 60 * 60 * 1000;
@@ -2185,7 +2185,7 @@ function buildWeeklyToneTrend(articles, fallback = []) {
   if (!dated.length) {
     return ensureTrendHasTone(fallback);
   }
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = lastItem(dated.map((article) => article.date).sort());
   const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
   const startTime = latestTime - 30 * 24 * 60 * 60 * 1000;
   const buckets = new Map();
@@ -2228,7 +2228,7 @@ function ensureTrendHasTone(rows = []) {
 function lastNDays(articles, days) {
   const dated = articles.filter((article) => article.date);
   if (!dated.length) return articles;
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = lastItem(dated.map((article) => article.date).sort());
   const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
   const minTime = latestTime - (days - 1) * 24 * 60 * 60 * 1000;
   return dated.filter((article) => {
@@ -2787,19 +2787,22 @@ function filterArticlesByPeriod(articles, period) {
   return filterRowsByPeriod(articles, period);
 }
 
+function lastItem(items = []) {
+  return items.length ? items[items.length - 1] : undefined;
+}
+
 function latestArticleDate(articles = []) {
-  return articles
+  return lastItem(articles
     .map((article) => article.date)
     .filter(Boolean)
-    .sort()
-    .at(-1) || "";
+    .sort()) || "";
 }
 
 function filterRowsByPeriod(articles, period) {
   if (!articles.length) return [];
   const dated = articles.filter((article) => article.date);
   if (!dated.length) return articles;
-  const latest = dated.map((article) => article.date).sort().at(-1);
+  const latest = lastItem(dated.map((article) => article.date).sort());
   if (!latest) return articles;
   if (period === "daily") return dated.filter((article) => article.date === latest);
   if (period === "monthly") return dated.filter((article) => article.date.startsWith(latest.slice(0, 7)));
