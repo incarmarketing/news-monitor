@@ -902,6 +902,73 @@ button.kpi-card {
   background: var(--blue-soft);
 }
 
+.issue-related-details {
+  margin-top: 10px;
+  min-width: 0;
+}
+
+.issue-related-details summary {
+  width: max-content;
+  max-width: 100%;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.issue-related-details > div {
+  display: grid;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.issue-related-details a {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.issue-related-details.compact a {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.issue-related-details a span,
+.issue-related-details a em {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.issue-related-details a b {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.issue-related-details.compact a span {
+  display: none;
+}
+
 .monthly-issue-empty {
   padding: 14px;
 }
@@ -3268,6 +3335,17 @@ button.kpi-card {
     grid-column: 1;
     justify-self: start;
     margin-top: 6px;
+  }
+
+  .issue-related-details a,
+  .issue-related-details.compact a {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .issue-related-details a span,
+  .issue-related-details.compact a span,
+  .issue-related-details a em {
+    display: block;
   }
 
   .regulator-release-row > a {

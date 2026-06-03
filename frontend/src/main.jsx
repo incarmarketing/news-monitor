@@ -912,7 +912,10 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
     () => buildKeywordFlow(analysisArticles, selectedKeywords),
     [analysisArticles, selectedKeywords],
   );
-  const issueRows = buildIssues(analysisArticles, []).slice(0, 6);
+  const issueRows = useMemo(
+    () => buildMediaAnalysisIssues(analysisArticles, period).slice(0, 6),
+    [analysisArticles, period],
+  );
   const observations = buildPeriodObservations(data, issueRows, period);
   return (
     <main className="workspace">
@@ -2382,7 +2385,7 @@ function MonthlyIssueDigest({ issues }) {
         <div className="issue-meta">
           <Chip tone={lead.tone}>{lead.tone}</Chip>
           <Chip>{lead.category}</Chip>
-          <span>{lead.source} · {lead.publishedAt}</span>
+          <span>{formatIssueMeta(lead)}</span>
         </div>
         <span className="monthly-issue-kicker">Headline</span>
         <h3>{lead.title}</h3>
@@ -2392,14 +2395,16 @@ function MonthlyIssueDigest({ issues }) {
             <ExternalLink />기사 열기
           </a>
         )}
+        <RelatedIssueDetails issue={lead} />
       </article>
       <div className="monthly-issue-list">
         {rest.slice(0, 3).map((issue) => (
           <article key={`${issue.source}-${issue.title}`}>
             <div>
-              <span>{issue.source} · {issue.publishedAt}</span>
+              <span>{formatIssueMeta(issue)}</span>
               <h4>{issue.title}</h4>
               <ArticleSummaryBlock item={issue} dense />
+              <RelatedIssueDetails issue={issue} compact />
             </div>
             <Chip tone={issue.tone}>{issue.tone}</Chip>
             {issue.link && issue.link !== "#" && (
@@ -2434,6 +2439,42 @@ function IssueList({ issues, compact = false }) {
         </article>
       ))}
     </div>
+  );
+}
+
+function formatIssueMeta(issue = {}) {
+  const parts = [
+    issue.source || issue.representativeSource,
+    issue.publishedAt || issue.time || issue.date,
+  ].filter(Boolean);
+  if (Number(issue.relatedCount || 1) > 1) {
+    parts.push(`관련 ${Number(issue.relatedCount).toLocaleString("ko-KR")}건`);
+  }
+  return parts.join(" · ");
+}
+
+function RelatedIssueDetails({ issue = {}, compact = false }) {
+  const related = Array.isArray(issue.relatedArticles) ? issue.relatedArticles : [];
+  if (related.length <= 1) return null;
+  return (
+    <details className={compact ? "issue-related-details compact" : "issue-related-details"}>
+      <summary>관련 기사 {related.length.toLocaleString("ko-KR")}건 보기</summary>
+      <div>
+        {related.slice(0, compact ? 4 : 8).map((article) => (
+          <a
+            key={`${articleSelectionKey(article)}-${article.source}`}
+            href={article.link && article.link !== "#" ? article.link : undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(event) => article.link && article.link !== "#" ? openArticleLink(event, article.link) : undefined}
+          >
+            <span>{article.source || "-"}</span>
+            <b>{article.title}</b>
+            <em>{[article.date, article.time].filter(Boolean).join(" ") || "-"}</em>
+          </a>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -2940,6 +2981,95 @@ function buildIssues(articles, fallback) {
     if (uniqueIssues.length >= 5) break;
   }
   return uniqueIssues.length ? uniqueIssues : fallback;
+}
+
+function buildMediaAnalysisIssues(articles = [], period = "monthly") {
+  const scoped = articles
+    .filter((article) => article?.title && article.tone !== "제외")
+    .filter((article) => !isPortalSource(article.source));
+  const grouped = buildRelatedArticleGroups(scoped);
+  return grouped
+    .map((group) => normalizeMediaIssueGroup(group, period))
+    .filter((issue) => issue.title)
+    .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a))
+    .slice(0, 12);
+}
+
+function normalizeMediaIssueGroup(group = {}, period = "monthly") {
+  const members = dedupeIssueMembers(Array.isArray(group.relatedArticles) && group.relatedArticles.length ? group.relatedArticles : [group]);
+  const representative = [...members]
+    .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a))[0] || group;
+  const relatedSources = unique(members.map((item) => item.source).filter(Boolean));
+  const sourceLabel = relatedSources.length > 1
+    ? `${relatedSources[0]} 외 ${relatedSources.length - 1}곳`
+    : representative.source;
+  return {
+    ...representative,
+    source: sourceLabel || representative.source,
+    representativeSource: representative.source,
+    relatedArticles: members,
+    relatedCount: members.length,
+    relatedSourceCount: relatedSources.length,
+    relatedSources,
+    category: representative.category || group.category || "이슈",
+    tone: representative.tone || group.tone || "중립",
+    title: representative.title || group.title,
+    summary: compactArticleSummary(representative),
+    summaryLines: buildMediaIssueSummaryLines(representative, members),
+    publishedAt: representative.time || representative.date || group.time || group.date || "-",
+    link: representative.link || group.link,
+  };
+}
+
+function dedupeIssueMembers(members = []) {
+  const map = new Map();
+  members.forEach((article) => {
+    const key = issueMemberKey(article);
+    const previous = map.get(key);
+    if (!previous || articleTimeValue(article) > articleTimeValue(previous) || reportFrontScore(article) > reportFrontScore(previous)) {
+      map.set(key, article);
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => mediaIssueScore(b) - mediaIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
+}
+
+function issueMemberKey(article = {}) {
+  const url = normalizeRiskUrl(article.link || article.url || "");
+  if (url) return `url:${url}`;
+  return `title:${article.date || ""}:${normalizeGroupTitle(article.title || "").slice(0, 90)}`;
+}
+
+function mediaIssueScore(item = {}, period = "monthly") {
+  const relatedBoost = Math.min(Number(item.relatedCount || item.clusterSize || 1), 8) * (period === "daily" ? 10 : 18);
+  const ownBoost = isOwnArticle(item) ? 420 : 0;
+  const performanceBoost = isOwnPerformanceArticle(item) ? 360 : 0;
+  const riskBoost = isOwnArticle(item) && ["부정", "주의"].includes(item.tone) ? 220 : 0;
+  return reportFrontScore(item) + relatedBoost + ownBoost + performanceBoost + riskBoost;
+}
+
+function isOwnPerformanceArticle(item = {}) {
+  const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`;
+  return isOwnArticle(item) && /우수인증|인증설계사|최다|배출|수상|성과|선정|1위|성장|매출|협약|CSR|사회공헌/.test(text);
+}
+
+function buildMediaIssueSummaryLines(representative = {}, members = []) {
+  const titleKeys = new Set(members.map((article) => normalizeRiskSummaryKey(article.title)).filter(Boolean));
+  const candidates = [];
+  [...members].sort((a, b) => mediaIssueScore(b) - mediaIssueScore(a) || articleTimeValue(b) - articleTimeValue(a)).forEach((article) => {
+    buildArticleSummaryLines(article).forEach((line) => candidates.push(line));
+  });
+  if (!candidates.length) {
+    const fallback = normalizeSummaryLine(headlineBasedSummary(representative));
+    if (fallback) candidates.push(fallback);
+  }
+  const seen = new Set();
+  return candidates.filter((line) => {
+    const key = normalizeRiskSummaryKey(line);
+    if (!key || titleKeys.has(key)) return false;
+    if (isDuplicateRiskSummaryKey(key, seen)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 3);
 }
 
 function buildArticleSummaryLines(item = {}) {
