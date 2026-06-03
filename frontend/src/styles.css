@@ -850,7 +850,8 @@ button.kpi-card {
 
 .chip.negative { border-color: #ffc1ca; background: var(--red-soft); color: var(--red); }
 .chip.caution { border-color: #f4cf87; background: var(--amber-soft); color: var(--amber); }
-.chip.neutral, .chip.positive { border-color: #bdebd6; background: var(--green-soft); color: var(--green); }
+.chip.positive { border-color: #bdebd6; background: var(--green-soft); color: var(--green); }
+.chip.neutral { border-color: #c8d6ff; background: var(--blue-soft); color: var(--blue); }
 .chip.muted { color: #64748b; }
 
 .feed-table {
