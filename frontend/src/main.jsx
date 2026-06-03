@@ -398,7 +398,11 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 }
 
 function Monitoring({ data, articles, monitoringPreset }) {
-  const latestDate = useMemo(() => latestArticleDate(articles), [articles]);
+  const regularArticles = useMemo(
+    () => articles.filter((article) => !isOfficialRegulatorSource(article.source)),
+    [articles],
+  );
+  const latestDate = useMemo(() => latestArticleDate(regularArticles), [regularArticles]);
   const [query, setQuery] = useState("");
   const [queryInput, setQueryInput] = useState("");
   const [tone, setTone] = useState("all");
@@ -411,8 +415,8 @@ function Monitoring({ data, articles, monitoringPreset }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const sources = useMemo(() => unique(articles.map((article) => article.source)).slice(0, 80), [articles]);
-  const categories = useMemo(() => unique(articles.map((article) => article.category)).slice(0, 40), [articles]);
+  const sources = useMemo(() => unique(regularArticles.map((article) => article.source)).slice(0, 80), [regularArticles]);
+  const categories = useMemo(() => unique(regularArticles.map((article) => article.category)).slice(0, 40), [regularArticles]);
   useEffect(() => {
     if (!latestDate || startDateInput || endDateInput || startDate || endDate) return;
     setStartDateInput(latestDate);
@@ -431,7 +435,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
   }, [monitoringPreset]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return articles.filter((article) => {
+    return regularArticles.filter((article) => {
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
       const articleDate = article.date || "";
       return (
@@ -443,7 +447,7 @@ function Monitoring({ data, articles, monitoringPreset }) {
         (source === "all" || article.source === source)
       );
     });
-  }, [articles, category, endDate, query, source, startDate, tone]);
+  }, [regularArticles, category, endDate, query, source, startDate, tone]);
   const applyDateFilter = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
