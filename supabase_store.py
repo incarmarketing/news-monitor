@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
@@ -13,7 +14,10 @@ from urllib.parse import quote
 import requests
 from dotenv import load_dotenv
 
+import analyzer
+
 load_dotenv()
+KST = timezone(timedelta(hours=9))
 
 ARTICLE_COLUMNS = (
     "article_hash",
@@ -129,13 +133,39 @@ def article_hash(article: dict) -> str:
 def parse_pub_date(value: str) -> str | None:
     if not value:
         return None
+    raw = str(value).strip()
     try:
-        parsed = parsedate_to_datetime(value)
+        parsed = parsedate_to_datetime(raw)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.astimezone(timezone.utc).isoformat()
     except Exception:
-        return None
+        pass
+    normalized = (
+        raw.replace("년", "-")
+        .replace("월", "-")
+        .replace("일", "")
+        .replace(".", "-")
+        .strip()
+    )
+    normalized = " ".join(normalized.split())
+    normalized = re.sub(r"(\d{4}-\d{1,2}-\d{1,2})-\s+", r"\1 ", normalized)
+    for fmt in (
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+    ):
+        try:
+            parsed = datetime.strptime(normalized, fmt)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=KST)
+            return parsed.astimezone(timezone.utc).isoformat()
+        except ValueError:
+            continue
+    return None
 
 
 def save_report_run(archive_payload: dict) -> None:
@@ -166,6 +196,21 @@ def save_report_run(archive_payload: dict) -> None:
         normalize_article(article, archive_payload)
         for article in archive_payload.get("articles", [])
     ]
+    if rows:
+        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
+        save_own_media_relations(rows)
+
+
+def save_dashboard_articles(articles: list[dict], *, report_date: str, window: dict, metrics: dict | None = None) -> None:
+    """Persist analyzed articles without creating a report run."""
+    if not is_enabled() or not articles:
+        return
+    archive_payload = {
+        "date": report_date,
+        "window": window,
+        "metrics": metrics or {},
+    }
+    rows = [normalize_article(article, archive_payload) for article in articles]
     if rows:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
         save_own_media_relations(rows)
@@ -315,7 +360,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "link": article.get("link", ""),
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
-        "summary": article.get("description", "") or article.get("summary", ""),
+        "summary": article.get("_summary", "") or analyzer.build_quality_summary(article),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),
@@ -491,6 +536,25 @@ def load_press_alias_rows(limit: int = 1000) -> list[dict]:
             continue
         rows.append({"host": host, "press_name": press_name})
     return rows
+
+
+def load_monitor_profile() -> dict:
+    if not is_enabled():
+        return {}
+    response = request(
+        "GET",
+        "monitor_profiles?select=profile_key,profile,updated_at,updated_by&profile_key=eq.default&limit=1",
+    )
+    rows = response.json()
+    if not rows:
+        return {}
+    row = rows[0]
+    profile = row.get("profile") if isinstance(row.get("profile"), dict) else {}
+    return {
+        **profile,
+        "updatedAt": row.get("updated_at") or profile.get("updatedAt"),
+        "updatedBy": row.get("updated_by") or profile.get("updatedBy"),
+    }
 
 
 def load_monitor_keywords() -> list[str]:
