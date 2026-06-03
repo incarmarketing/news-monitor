@@ -368,11 +368,14 @@ function normalizeScrap(row) {
 
 function normalizeArticle(row) {
   if (!row?.title) return null;
-  const dateSource = row.report_date || row.date || row.pub_date || row.pub_date_raw || "";
+  const publicationSource = row.pub_date || row.pub_date_raw || row.published_at || row.published_date || "";
+  const dateSource = publicationSource || row.date || row.report_date || "";
+  const showTime = shouldShowArticleTime(row, publicationSource || row.date || row.report_date);
   return {
     id: row.article_hash || row.id || row.link || row.title,
-    date: String(row.report_date || row.date || dateSource || "").slice(0, 10),
-    time: formatTime(row.pub_date || row.pub_date_raw || row.report_date || row.date),
+    date: formatArticleDate(dateSource) || String(row.report_date || row.date || "").slice(0, 10),
+    time: showTime ? formatTime(publicationSource || row.date || row.report_date) : "",
+    pubDate: publicationSource || "",
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
     source: row.source || "미확인",
     title: row.title,
@@ -386,6 +389,43 @@ function normalizeArticle(row) {
     status: row.status || "분석 완료",
     clusterSize: Number(row.cluster_size || row.clusterSize || 1),
   };
+}
+
+function formatArticleDate(value) {
+  if (!value) return "";
+  const raw = String(value).trim();
+  const dateOnly = raw.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if (dateOnly && !hasExplicitTime(raw)) {
+    return `${dateOnly[1]}-${dateOnly[2].padStart(2, "0")}-${dateOnly[3].padStart(2, "0")}`;
+  }
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    return dateOnly
+      ? `${dateOnly[1]}-${dateOnly[2].padStart(2, "0")}-${dateOnly[3].padStart(2, "0")}`
+      : "";
+  }
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const get = (type) => parts.find((part) => part.type === type)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function shouldShowArticleTime(row, value) {
+  if (!hasExplicitTime(value)) return false;
+  if (isOfficialRegulatorArticle(row) && isDateOnlyRegulatorTimestamp(value)) return false;
+  return true;
+}
+
+function hasExplicitTime(value) {
+  return /(?:T|\s)\d{1,2}:\d{2}/.test(String(value || ""));
+}
+
+function isDateOnlyRegulatorTimestamp(value) {
+  return /(?:T|\s)00:00(?::00)?(?:\.000)?(?:Z|\+00:00)?$/i.test(String(value || "").trim());
 }
 
 function deduplicateArticles(rows = []) {
@@ -413,8 +453,8 @@ function articleDedupKey(row) {
 }
 
 function isOfficialRegulatorArticle(row) {
-  const text = `${row.source || ""} ${row.keyword || ""} ${row.category || ""}`;
-  return /금융감독원|금융위원회|금융당국|정책\/규제/.test(text);
+  const text = `${row.source || ""} ${row.keyword || ""} ${row.category || ""} ${row.category_label || ""} ${row.link || ""}`;
+  return /금융감독원|금융위원회|금융당국|정책\/규제|fss\.or\.kr|fsc\.go\.kr/.test(text);
 }
 
 function normalizeRegulatorTitle(value) {
