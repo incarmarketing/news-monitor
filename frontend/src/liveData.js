@@ -56,18 +56,21 @@ export async function loadSupabaseConfig() {
   return null;
 }
 
-async function dashboardApi(config, session, action, payload = {}) {
+async function dashboardApi(config, session, action, payload = {}, options = {}) {
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
-  if (!session?.session_token) throw new Error("missing_dashboard_session");
+  if (!session?.session_token && !options.allowAnonymous) throw new Error("missing_dashboard_session");
+  const headers = {
+    apikey: config.anon_key,
+    Authorization: `Bearer ${config.anon_key}`,
+    "Content-Type": "application/json",
+  };
+  if (session?.session_token) {
+    headers["X-Dashboard-Session"] = session.session_token;
+  }
   const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/dashboard-api`, {
     method: "POST",
     cache: "no-store",
-    headers: {
-      apikey: config.anon_key,
-      Authorization: `Bearer ${config.anon_key}`,
-      "Content-Type": "application/json",
-      "X-Dashboard-Session": session.session_token,
-    },
+    headers,
     body: JSON.stringify({ action, payload }),
   });
   const text = await response.text();
@@ -93,7 +96,7 @@ export async function triggerNewsCollection(payload = {}) {
     send_kakao: payload.send_kakao === true,
     report_slot: payload.report_slot || "auto",
     source: payload.source || "dashboard_manual_refresh",
-  });
+  }, { allowAnonymous: true });
 }
 
 async function writeRest(path, method, body, headers = {}) {
@@ -377,7 +380,7 @@ function normalizeArticle(row) {
     time: showTime ? formatTime(publicationSource || row.date || row.report_date) : "",
     pubDate: publicationSource || "",
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
-    source: row.source || "미확인",
+    source: normalizeArticleSource(row.source, row.link, row.title),
     title: row.title,
     link: row.link || "#",
     keyword: row.keyword || "",
@@ -389,6 +392,29 @@ function normalizeArticle(row) {
     status: row.status || "분석 완료",
     clusterSize: Number(row.cluster_size || row.clusterSize || 1),
   };
+}
+
+function normalizeArticleSource(source, link = "", title = "") {
+  const raw = String(source || "").trim();
+  if (raw && !isPortalSource(raw)) return raw;
+  const titleSource = String(title || "").match(/\s[-–]\s([^-\n|]+)$/)?.[1]?.trim();
+  if (titleSource && !isPortalSource(titleSource)) return titleSource.replace(/^www\./, "");
+  const host = safeHost(link);
+  if (host && !isPortalSource(host)) return host;
+  return raw || "미확인";
+}
+
+function isPortalSource(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return text === "google" || text === "naver" || text === "daum" || text === "bing" || text.includes("google.");
+}
+
+function safeHost(value) {
+  try {
+    return new URL(String(value || "")).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }
 
 function formatArticleDate(value) {
