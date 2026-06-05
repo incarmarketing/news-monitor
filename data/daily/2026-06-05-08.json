@@ -1,6 +1,6 @@
 {
   "date": "2026-06-05",
-  "timestamp": "2026-06-05T14:08:02.259407+09:00",
+  "timestamp": "2026-06-05T14:10:54.214334+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,12 +9,12 @@
     "end": "2026-06-05T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 4,
-    "total_after_cluster": 4,
+    "total_collected": 3,
+    "total_after_cluster": 3,
     "by_category": {
       "own": 0,
       "regulation": 0,
-      "competitor": 4,
+      "competitor": 3,
       "industry": 0,
       "other": 0
     },
@@ -22,7 +22,7 @@
       "negative": 0,
       "caution": 0,
       "positive": 0,
-      "neutral": 4
+      "neutral": 3
     },
     "own_negative": 0,
     "own_total": 0,
@@ -34,21 +34,8 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n전일 18:00~당일 08:00 기준 리스크는 LOW이며, 당사 부정 0건입니다.\n\n## 핵심 이슈\n- [1] ‘2조 5000억’ DB손해보험의 Fort…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n- [2] 올드 뮤추얼, 1분기 생명보험 매출 28%…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n\n## 지표 해석\n전체 4건 중 당사 보도 0건, 당사 부정 0건입니다.\n\n\n## 분석 키워드\n인카금융서비스, 정착률, GA, 보험설계사",
+  "briefing": "## 최종 결론\n전일 18:00~당일 08:00 기준 리스크는 LOW이며, 당사 부정 0건입니다.\n\n## 핵심 이슈\n- [1] 올드 뮤추얼, 1분기 생명보험 매출 28%…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n- [2] 라온시큐어, KDB생명보험과 PQC 솔루션…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n\n## 지표 해석\n전체 3건 중 당사 보도 0건, 당사 부정 0건입니다.\n\n\n## 분석 키워드\n인카금융서비스, 정착률, GA, 보험설계사",
   "articles": [
-    {
-      "title": "‘2조 5000억’ DB손해보험의 Fortegra 인수, 법무법인 율촌 등 자문 - Law.asia",
-      "link": "https://news.google.com/rss/articles/CBMiekFVX3lxTE0tZF95cS1tNGh2NzBnRVJBV0JDMmhmeXZEUXM0Mmtaclg2WUtVR05HLWY5amhtU3lxQmtBeWt4LS1fbjNyMWNNTXprT3RKTndKSzFpbWIta0dwQ3hXR1lReEQzU1JUbkpOSF9XOTVkZ1JkWVV1cHJWTUdn?oc=5",
-      "source": "Law.asia",
-      "keyword": "손해보험",
-      "description": "‘2조 5000억’ DB손해보험의 Fortegra 인수, 법무법인 율촌 등 자문&nbsp;&nbsp;Law.asia",
-      "pub_date": "Thu, 04 Jun 2026 10:26:55 GMT",
-      "_report_id": 1,
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
     {
       "title": "올드 뮤추얼, 1분기 생명보험 매출 28% 증가, 자사주 매입 완료 - Investing.com 한국어",
       "link": "https://news.google.com/rss/articles/CBMicEFVX3lxTE4tWU4xbzVjanhtVHR3ZXVsaDk2QkxNZjE0OU1wYkVqd3h1MXlLQVcwMkdVODItYXRtZDQ3Q3pURFRQQmpWcGZpTzRFSHhtMjZ0MW1IUGlCdFJqQ29OZnFQcExnUWw3OWtBUmhTRGROcTM?oc=5",
@@ -56,7 +43,7 @@
       "keyword": "생명보험",
       "description": "올드 뮤추얼, 1분기 생명보험 매출 28% 증가, 자사주 매입 완료&nbsp;&nbsp;Investing.com 한국어",
       "pub_date": "Thu, 04 Jun 2026 15:27:00 GMT",
-      "_report_id": 2,
+      "_report_id": 1,
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
@@ -69,7 +56,7 @@
       "keyword": "생명보험",
       "description": "라온시큐어, KDB생명보험과 PQC 솔루션 공급 계약 맺어&nbsp;&nbsp;디지털경제뉴스",
       "pub_date": "Thu, 04 Jun 2026 12:12:57 GMT",
-      "_report_id": 3,
+      "_report_id": 2,
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
@@ -82,7 +69,7 @@
       "keyword": "생명보험",
       "description": "PayPay, T&D 파이낸셜 생명보험 지분 인수…자회사 편입 By Investing.com&nbsp;&nbsp;Investing.com 한국어",
       "pub_date": "Thu, 04 Jun 2026 10:19:00 GMT",
-      "_report_id": 4,
+      "_report_id": 3,
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
