@@ -96,6 +96,7 @@ jobs:
           SCHEDULE_CRON: ${{ github.event.schedule }}
           MANUAL_REPORT_SLOT: ${{ github.event.inputs.report_slot }}
           MANUAL_BACKFILL_ONLY: ${{ github.event.inputs.backfill_only }}
+          FORCE_KAKAO_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_kakao_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
