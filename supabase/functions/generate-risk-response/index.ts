@@ -1,6 +1,6 @@
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-dashboard-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -9,6 +9,15 @@ type DraftRequest = {
   issue?: string;
   url?: string;
   context?: unknown;
+};
+
+type SessionInfo = {
+  ok?: boolean;
+  employee_no?: string;
+  display_name?: string;
+  role?: "admin" | "editor" | "viewer" | "reporter";
+  session_expires_at?: string;
+  message?: string;
 };
 
 Deno.serve(async (req) => {
@@ -21,6 +30,10 @@ Deno.serve(async (req) => {
 
   if (!isAllowedApiKey(req.headers.get("apikey"))) {
     return jsonResponse({ error: "unauthorized" }, 401);
+  }
+  const session = await verifyDashboardSession(req.headers.get("x-dashboard-session") || "");
+  if (!session.ok || !["admin", "editor", "reporter"].includes(session.role || "")) {
+    return jsonResponse({ error: "invalid_session", detail: session.message || "risk_response_requires_login" }, 401);
   }
 
   const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -35,7 +48,7 @@ Deno.serve(async (req) => {
   }
 
   const type = body.type === "press" ? "press" : "internal";
-  const model = "gemini-2.5-pro";
+  const model = Deno.env.get("GEMINI_EDGE_MODEL") || "gemini-2.5-flash";
   const maxOutputTokens = Number(Deno.env.get("GEMINI_MAX_OUTPUT_TOKENS") || "3600") || 3600;
   const prompt = buildPrompt({ type, issue, url: body.url || "", context: body.context });
   const response = await fetch(
@@ -69,7 +82,14 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "empty_gemini_response" }, 502);
   }
 
-  return jsonResponse({ ok: true, draft, model, finishReason: data?.candidates?.[0]?.finishReason || "" });
+  return jsonResponse({
+    ok: true,
+    draft,
+    model,
+    finishReason: data?.candidates?.[0]?.finishReason || "",
+    usageMetadata: data?.usageMetadata || {},
+    requestedBy: session.employee_no || "",
+  });
 });
 
 function buildPrompt(input: { type: "internal" | "press"; issue: string; url: string; context: unknown }) {
@@ -152,6 +172,43 @@ function jsonResponse(payload: unknown, status = 200) {
       "Content-Type": "application/json; charset=utf-8",
     },
   });
+}
+
+async function verifyDashboardSession(token: string): Promise<SessionInfo> {
+  if (!token || token.trim().length < 32) {
+    return { ok: false, message: "missing_session" };
+  }
+  const result = await supabaseRpc("verify_dashboard_session", { p_session_token: token.trim() });
+  if (!result.ok) return { ok: false, message: `session_rpc_${result.status}` };
+  return result.data as SessionInfo;
+}
+
+async function supabaseRpc(functionName: string, body: Record<string, unknown>) {
+  const url = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) {
+    return { ok: false, status: 500, data: { error: "missing_supabase_service_config" } };
+  }
+  const response = await fetch(`${url}/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await response.text();
+  let data: unknown = {};
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
+    }
+  }
+  return { ok: response.ok, status: response.status, data };
 }
 
 function isAllowedApiKey(apiKey: string | null) {

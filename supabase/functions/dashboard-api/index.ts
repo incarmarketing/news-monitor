@@ -29,6 +29,7 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   press_aliases: { read: true, writeRoles: ["admin", "editor"] },
   notification_sends: { read: true, writeRoles: [] },
   negative_watch_runs: { read: true, writeRoles: [] },
+  classification_feedback: { read: true, writeRoles: ["admin", "editor", "reporter"] },
 };
 
 Deno.serve(async (req) => {
@@ -144,6 +145,31 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     return jsonResponse({ error: "missing_github_dispatch_token" }, 500);
   }
 
+  const cooldownMinutes = authenticated
+    ? numberEnv("DASHBOARD_REFRESH_COOLDOWN_MINUTES", 2)
+    : numberEnv("DASHBOARD_PUBLIC_REFRESH_COOLDOWN_MINUTES", 5);
+  const runKey = dashboardRefreshRunKey(workflow, periodReports, sendKakao, reportSlot, authenticated);
+  const recentDispatch = await hasRecentDashboardDispatch(runKey, cooldownMinutes);
+  if (recentDispatch.active) {
+    return jsonResponse({
+      ok: true,
+      throttled: true,
+      workflow,
+      ref,
+      retry_after_seconds: recentDispatch.retryAfterSeconds,
+      message: `최근 갱신 요청이 처리 중입니다. ${recentDispatch.retryAfterSeconds}초 후 다시 시도하세요.`,
+      requested_at: new Date().toISOString(),
+    }, 202);
+  }
+
+  await recordDashboardDispatch(runKey, {
+    workflow,
+    status: "dashboard_dispatched",
+    source: String(payload.source || "dashboard_manual_refresh"),
+    requestedBy: session.employee_no || "dashboard_public_refresh",
+    authenticated,
+  });
+
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/dispatches`,
     {
@@ -163,6 +189,14 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
 
   if (!response.ok) {
     const detail = await response.text();
+    await recordDashboardDispatch(runKey, {
+      workflow,
+      status: "failed",
+      source: String(payload.source || "dashboard_manual_refresh"),
+      requestedBy: session.employee_no || "dashboard_public_refresh",
+      authenticated,
+      error: detail.slice(0, 500),
+    });
     return jsonResponse({ error: "github_dispatch_failed", status: response.status, detail }, 502);
   }
 
@@ -173,6 +207,71 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     inputs: workflowInputs(workflow, periodReports, sendKakao, reportSlot),
     requested_by: session.employee_no || "dashboard_public_refresh",
     requested_at: new Date().toISOString(),
+  });
+}
+
+function dashboardRefreshRunKey(
+  workflow: string,
+  periodReports: string,
+  sendKakao: boolean,
+  reportSlot: string,
+  authenticated: boolean,
+) {
+  const scope = authenticated ? "auth" : "public";
+  return `dashboard_refresh:${scope}:${workflow}:${periodReports}:${sendKakao ? "send" : "nosend"}:${reportSlot}`;
+}
+
+async function hasRecentDashboardDispatch(runKey: string, cooldownMinutes: number) {
+  if (cooldownMinutes <= 0) return { active: false, retryAfterSeconds: 0 };
+  const result = await supabaseRest(
+    `job_runs?select=run_key,status,last_seen_at&run_key=eq.${encodeURIComponent(runKey)}&limit=1`,
+    { method: "GET" },
+  );
+  const rows = Array.isArray(result.data) ? result.data as Array<Record<string, unknown>> : [];
+  const row = rows[0];
+  if (!row?.last_seen_at) return { active: false, retryAfterSeconds: 0 };
+  const lastSeen = new Date(String(row.last_seen_at)).getTime();
+  if (!Number.isFinite(lastSeen)) return { active: false, retryAfterSeconds: 0 };
+  const elapsedSeconds = Math.floor((Date.now() - lastSeen) / 1000);
+  const cooldownSeconds = cooldownMinutes * 60;
+  if (elapsedSeconds >= cooldownSeconds) return { active: false, retryAfterSeconds: 0 };
+  return { active: true, retryAfterSeconds: Math.max(1, cooldownSeconds - elapsedSeconds) };
+}
+
+async function recordDashboardDispatch(
+  runKey: string,
+  details: {
+    workflow: string;
+    status: string;
+    source: string;
+    requestedBy: string;
+    authenticated: boolean;
+    error?: string;
+  },
+) {
+  const now = new Date().toISOString();
+  await supabaseRest("job_runs?on_conflict=run_key", {
+    method: "POST",
+    body: JSON.stringify([{
+      run_key: runKey,
+      job_type: "dashboard_refresh",
+      expected_at: now,
+      status: details.status,
+      started_at: details.status === "failed" ? undefined : now,
+      finished_at: details.status === "failed" ? now : undefined,
+      last_seen_at: now,
+      triggered_by: "dashboard",
+      provider: details.source,
+      workflow: details.workflow,
+      error: details.error || "",
+      details: {
+        requested_by: details.requestedBy,
+        authenticated: details.authenticated,
+        source: details.source,
+      },
+    }]),
+    prefer: "resolution=merge-duplicates,return=minimal",
+    contentType: "application/json",
   });
 }
 
@@ -194,6 +293,11 @@ function workflowInputs(workflow: string, periodReports: string, sendKakao: bool
 function sanitizeChoice(value: unknown, allowed: string[], fallback: string) {
   const normalized = String(value || "").trim();
   return allowed.includes(normalized) ? normalized : fallback;
+}
+
+function numberEnv(name: string, fallback: number) {
+  const parsed = Number(Deno.env.get(name) || "");
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 async function supabaseRpc(functionName: string, body: Record<string, unknown>) {

@@ -156,6 +156,28 @@ export async function saveMonitorKeyword(keyword, category = "other") {
   );
 }
 
+export async function saveClassificationFeedback(article = {}, correction = {}) {
+  const title = String(article.title || "").trim();
+  const articleHash = String(article.id || article.article_hash || article.articleHash || "").trim();
+  if (!title && !articleHash) throw new Error("feedback_article_required");
+  return writeRest(
+    "classification_feedback",
+    "POST",
+    [{
+      article_hash: articleHash || null,
+      title,
+      link: String(article.link || "").trim(),
+      previous_category: String(article.category || article.category_label || "").trim(),
+      previous_tone: String(article.tone || article.tone_label || "").trim(),
+      corrected_category: String(correction.category || "").trim(),
+      corrected_tone: String(correction.tone || "").trim(),
+      reason: String(correction.reason || "").trim(),
+      created_by: String(correction.createdBy || "").trim(),
+    }],
+    { Prefer: "return=representation" },
+  );
+}
+
 export async function saveReporterProfile(reporter = {}) {
   const name = String(reporter.name || "").trim();
   const media = String(reporter.media || reporter.outlet || "").trim();

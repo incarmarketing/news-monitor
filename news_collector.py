@@ -20,7 +20,6 @@ from rich.table import Table
 import config
 import analyzer
 import report_window
-import regulator_collector
 import supabase_store
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -182,12 +181,6 @@ COLLECTION_CONTEXT_WORDS = [
     "손보", "생보",
 ]
 
-GENERIC_COLLECTION_CONTEXT_WORDS = {"수수료", "규제", "법안", "감독", "공시", "제도"}
-COLLECTION_DOMAIN_CONTEXT_WORDS = [
-    word for word in COLLECTION_CONTEXT_WORDS
-    if word not in GENERIC_COLLECTION_CONTEXT_WORDS and word != "금융서비스"
-]
-
 NAVER_OFFICE_ID_MAP = {
     "001": "연합뉴스",
     "005": "국민일보",
@@ -236,11 +229,6 @@ def collect_news() -> list[dict]:
             all_articles.extend(naver + google)
             stats.append((f"{label} · {category_label(category)}", len(naver), len(google)))
             progress.advance(task)
-
-    regulator_articles = regulator_collector.fetch_regulator_releases()
-    if regulator_articles:
-        all_articles.extend(regulator_articles)
-        stats.append(("금융당국 보도자료 · 정책", len(regulator_articles), 0))
 
     before = len(all_articles)
     articles = deduplicate(all_articles)
@@ -389,55 +377,24 @@ def fetch_google_news(
 
     try:
         feed = feedparser.parse(url)
-        articles = []
-        for entry in feed.entries[:config.ARTICLES_PER_KEYWORD]:
-            source_hint = google_entry_source_hint(entry)
-            source = infer_press_name(entry.get("title", ""), entry.get("link", ""), source_hint or "google")
-            if is_portal_press_value(source):
-                source = source_hint if source_hint and not is_portal_press_value(source_hint) else ""
-            articles.append(
-                {
-                    "title": entry.get("title", ""),
-                    "link": entry.get("link", ""),
-                    "description": clean_html(entry.get("summary", "")),
-                    "pub_date": entry.get("published", ""),
-                    "source": normalize_press_name(source) or "press_unresolved",
-                    "keyword": keyword,
-                    "keyword_query": query,
-                    "keyword_category": normalize_keyword_category(keyword_category),
-                    "keyword_strict_query": strict_query,
-                    "portal": "google",
-                }
-            )
-        return articles
+        return [
+            {
+                "title": entry.get("title", ""),
+                "link": entry.get("link", ""),
+                "description": clean_html(entry.get("summary", "")),
+                "pub_date": entry.get("published", ""),
+                "source": infer_press_name(entry.get("title", ""), entry.get("link", ""), "google"),
+                "keyword": keyword,
+                "keyword_query": query,
+                "keyword_category": normalize_keyword_category(keyword_category),
+                "keyword_strict_query": strict_query,
+                "portal": "google",
+            }
+            for entry in feed.entries[:config.ARTICLES_PER_KEYWORD]
+        ]
     except Exception as exc:
         console.print(f"[red]Google '{query}' 오류:[/] {exc}")
         return []
-
-
-def google_entry_source_hint(entry) -> str:
-    """Return Google RSS publisher metadata before falling back to the article URL."""
-    source = entry.get("source")
-    if isinstance(source, dict):
-        title = source.get("title") or source.get("name")
-        if title and not is_portal_press_value(title):
-            return normalize_press_name(title)
-        href = source.get("href") or source.get("url")
-        if href:
-            press = extract_press_from_url(href)
-            if press and not is_portal_press_value(press):
-                return normalize_press_name(press)
-    source_detail = entry.get("source_detail")
-    if isinstance(source_detail, dict):
-        title = source_detail.get("title") or source_detail.get("name")
-        if title and not is_portal_press_value(title):
-            return normalize_press_name(title)
-        href = source_detail.get("href") or source_detail.get("url")
-        if href:
-            press = extract_press_from_url(href)
-            if press and not is_portal_press_value(press):
-                return normalize_press_name(press)
-    return ""
 
 
 def fetch_article_html(link: str, timeout: int = 6) -> tuple[str, str]:
@@ -467,8 +424,6 @@ def parse_article_date_from_html(html: str) -> datetime | None:
         r'"datePublished"\s*:\s*"([^"]+)"',
         r'"dateCreated"\s*:\s*"([^"]+)"',
         r'"publishedDate"\s*:\s*"([^"]+)"',
-        r'(?:입력|승인|등록|작성|게재)\s*[:：]\s*(\d{4}[.-]\d{1,2}[.-]\d{1,2}\.?\s+\d{1,2}:\d{2})',
-        r'(?:입력|승인|등록|작성|게재)\s*[:：]\s*(\d{4}년\s*\d{1,2}월\s*\d{1,2}일\s+\d{1,2}:\d{2})',
     ]
     for pattern in patterns:
         match = re.search(pattern, html, re.I | re.S)
@@ -504,16 +459,10 @@ def original_date_allows_article(article: dict, parsed: datetime, window: dict) 
     original_url = extract_original_article_url(html, final_url)
     if original_url:
         article["_original_url"] = original_url
-        original_press = extract_press_from_url(original_url)
-        if original_press and not is_portal_press_value(original_press):
-            article["source"] = normalize_press_name(original_press)
         original_html, _ = fetch_article_html(original_url)
         original_date = parse_article_date_from_html(original_html)
         if original_date:
             article["_original_pub_date"] = original_date.isoformat()
-            article["pub_date"] = original_date.isoformat()
-            if original_url:
-                article["link"] = original_url
             start = window["start"].astimezone(timezone.utc)
             end = window["end"].astimezone(timezone.utc)
             return start <= original_date <= end
@@ -548,19 +497,6 @@ def normalize_press_name(value: str) -> str:
     aliased = PRESS_ALIAS_MAP.get(press, press)
     host = canonical_host(aliased)
     return DOMAIN_PRESS_MAP.get(host, aliased)
-
-
-def is_portal_press_value(value: str) -> bool:
-    raw = str(value or "").strip().lower()
-    if not raw:
-        return True
-    host = canonical_host(raw)
-    return (
-        raw in {"google", "google news", "naver", "daum", "press_unresolved"}
-        or "google" in raw
-        or raw in {"news.google.com", "news.google.co.kr", "news.naver.com", "n.news.naver.com", "m.news.naver.com"}
-        or host in PORTAL_HOSTS
-    )
 
 
 def extract_press_from_title(title: str) -> str:
@@ -641,10 +577,11 @@ def resolve_portal_press_from_page(link: str) -> str:
             if candidate and candidate not in {"네이버뉴스", "네이버 스포츠", "구글뉴스"}:
                 return candidate
     host = (urlparse(link).hostname or "").removeprefix("www.")
-    original_url = extract_original_article_url(html, response.url)
+    original_url = "" if host.startswith("news.google.") else extract_original_article_url(html, response.url)
     if original_url:
         host = (urlparse(original_url).hostname or "").removeprefix("www.")
-        return DOMAIN_PRESS_MAP.get(host, host)
+        if host in DOMAIN_PRESS_MAP:
+            return DOMAIN_PRESS_MAP[host]
     office_id = extract_naver_office_id(html)
     if office_id in NAVER_OFFICE_ID_MAP:
         return NAVER_OFFICE_ID_MAP[office_id]
@@ -765,8 +702,7 @@ def is_relevant_article(article: dict) -> bool:
     if category == "other":
         return keyword_matches_text(text, keyword) or keyword_matches_text(text, query)
 
-    is_regulator_release = article.get("portal") == "regulator" or article.get("source") in {"금융감독원", "금융위원회"}
-    if not is_regulator_release and not article_matches_collection_keyword(article, text):
+    if not article_matches_collection_keyword(article, text):
         return False
 
     if category == "own":
@@ -779,9 +715,9 @@ def is_relevant_article(article: dict) -> bool:
 
 
 def has_collection_context(text: str) -> bool:
-    if analyzer.contains_unambiguous_competitor_word(text):
+    if analyzer.contains_competitor_word(text):
         return True
-    return any(word in text for word in COLLECTION_DOMAIN_CONTEXT_WORDS)
+    return any(word in text for word in COLLECTION_CONTEXT_WORDS)
 
 
 def article_matches_collection_keyword(article: dict, text: str) -> bool:
@@ -832,9 +768,10 @@ def apply_collection_window_filter(articles: list[dict], window: dict) -> list[d
     for article in articles:
         parsed = parse_pub_date(article.get("pub_date", ""))
         if not parsed:
-            result.append(article)
+            article["_excluded_reason"] = "missing_or_unparseable_pub_date"
             continue
         if not (start <= parsed <= end):
+            article["_excluded_reason"] = "outside_collection_window"
             continue
         if is_stale_google_reexposure(article, parsed, window) and not original_date_allows_article(article, parsed, window):
             article["_excluded_reason"] = "google_rss_reexposure_without_current_original_date"
@@ -846,40 +783,13 @@ def apply_collection_window_filter(articles: list[dict], window: dict) -> list[d
 def parse_pub_date(value: str) -> datetime | None:
     if not value:
         return None
-    raw = clean_html(str(value))
-    raw = re.sub(r"\s+", " ", raw).strip()
     try:
-        parsed = parsedate_to_datetime(raw)
+        parsed = parsedate_to_datetime(value)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.astimezone(timezone.utc)
     except Exception:
-        pass
-    normalized = (
-        raw.replace("년", "-")
-        .replace("월", "-")
-        .replace("일", "")
-        .replace(".", "-")
-        .strip()
-    )
-    normalized = re.sub(r"\s+", " ", normalized)
-    normalized = re.sub(r"(\d{4}-\d{1,2}-\d{1,2})-\s+", r"\1 ", normalized)
-    for fmt in (
-        "%Y-%m-%dT%H:%M:%S%z",
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-        "%Y-%m-%d %H:%M:%S%z",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d",
-    ):
-        try:
-            parsed = datetime.strptime(normalized, fmt)
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=KST)
-            return parsed.astimezone(timezone.utc)
-        except ValueError:
-            continue
-    return None
+        return None
 
 
 def print_collection_stats(

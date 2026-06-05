@@ -1,8 +1,9 @@
 """AI provider fallback helpers.
 
 The application decides which articles matter before calling this module.
-This module only chooses the text-generation provider for the same input:
-Gemini first, then Groq, then deterministic rules.
+This module only chooses the text-generation provider for the same input.
+Dashboard issue summaries default to Groq/rules so routine page builds do not
+burn the primary report model quota.
 """
 
 from __future__ import annotations
@@ -85,7 +86,7 @@ def summarize_issue_groups_with_provider(groups: list[dict], *, retries: int = 0
 
 
 def issue_summary_provider_mode() -> str:
-    value = os.getenv("AI_ISSUE_SUMMARY_PROVIDER", "auto").strip().lower()
+    value = os.getenv("AI_ISSUE_SUMMARY_PROVIDER", "groq").strip().lower()
     return value if value in {"auto", "gemini", "groq", "rules"} else "auto"
 
 
