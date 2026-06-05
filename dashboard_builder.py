@@ -15,7 +15,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import supabase_store
 import config
 import archiver
-import analyzer
 
 BASE_DIR = Path(__file__).parent
 PUBLIC_DIR = BASE_DIR / "public"
@@ -26,19 +25,26 @@ DEFAULT_SUPABASE_PROJECT_REF = "moszekksbhprhevxdynb"
 KST = timezone(timedelta(hours=9))
 
 CATEGORY_LABELS = {
-    "own": "\ub2f9\uc0ac \ubcf4\ub3c4",
-    "regulation": "\uaddc\uc81c/\uc815\ucc45",
-    "competitor": "\uacbd\uc7c1\uc0ac",
-    "industry": "\uc5c5\uacc4 \ub3d9\ud5a5",
-    "other": "\uae30\ud0c0",
+    "own": "당사 보도",
+    "regulation": "규제/정책",
+    "competitor": "경쟁사",
+    "industry": "업계 동향",
+    "other": "기타",
 }
 
 TONE_LABELS = {
-    "positive": "\uae0d\uc815",
-    "caution": "\uc8fc\uc758",
-    "neutral": "\uc911\ub9bd",
-    "negative": "\ubd80\uc815",
+    "positive": "긍정",
+    "caution": "주의",
+    "neutral": "중립",
+    "negative": "부정",
 }
+
+STOCK_LISTING_NOISE_TITLE_RE = re.compile(
+    r"52주\s*(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]"
+)
+INVESTMENT_REPORT_RE = re.compile(r"투자의견|목표주가|목표가|증권가|리포트|애널리스트")
+OWN_NAME_RE = re.compile(r"인카금융서비스|인카금융")
+
 
 def load_daily_archives() -> list[dict]:
     return archiver.load_all_archives()
@@ -57,6 +63,8 @@ def build_articles(archives: list[dict]) -> list[dict]:
         window = archive.get("window", {})
         metrics = archive.get("metrics", {})
         for index, article in enumerate(archive.get("articles", []), 1):
+            if is_stock_listing_noise(article):
+                continue
             link = article.get("link", "")
             title = article.get("title", "")
             dedupe_key = link or f"{date}:{title}"
@@ -93,58 +101,34 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 
 def article_summary(article: dict, category: str, tone: str) -> str:
-    article_for_summary = {**article, "_category": category, "_tone": tone}
-    generated = analyzer.build_quality_summary(article_for_summary)
-    existing = clean_summary_text(generated or article.get("description", "") or article.get("summary", ""))
-    title = clean_summary_text(article.get("title", ""))
+    existing = clean_summary_text(article.get("description", "") or article.get("summary", ""))
     lines = []
-    sentences = [line for line in split_summary_sentences(existing) if not is_broken_summary_sentence(line)]
-    if sentences:
-        lines.extend(sentences[:2])
-    elif title:
-        lines.append(f"{title} \ubcf4\ub3c4\uc785\ub2c8\ub2e4.")
-    filtered = unique_lines(lines)
-    if not filtered and title:
-        fallback = analyzer.headline_based_summary(title) or f"{title} \ubcf4\ub3c4\uc785\ub2c8\ub2e4."
-        filtered = [fallback]
-    return " ".join(ensure_sentence(line) for line in filtered[:2])
+    if existing:
+        lines.extend(split_summary_sentences(existing)[:2])
+    elif article.get("title"):
+        lines.append(clean_summary_text(article.get("title", "")))
+    if tone == "negative":
+        lines.append("소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인합니다.")
+    elif tone == "caution":
+        lines.append("직접 부정과 분리해 시장 평가, 투자 의견, 규제성 신호로 추적합니다.")
+    elif tone == "positive":
+        lines.append("우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.")
+    return " ".join(unique_lines(lines)[:4])
 
 
 def clean_summary_text(value: object) -> str:
     text = str(value or "")
     text = text.replace("&nbsp;", " ").replace("&amp;nbsp;", " ").replace("&quot;", '"').replace("&#39;", "'")
-    text = re.sub("^\\[[^\\]]+\\s+[^\\]]*(?:\uae30\uc790|reporter)\\]\\s*", "", text, flags=re.IGNORECASE)
-    text = re.sub("^[^\\s]+ (?:\uae30\uc790|reporter)\\s*=\\s*", "", text, flags=re.IGNORECASE)
     text = " ".join(text.split())
-    return text.rstrip(".!? ")
+    return text.rstrip(".… ")
 
 
 def split_summary_sentences(value: object) -> list[str]:
     text = clean_summary_text(value)
     if not text:
         return []
-    text = re.sub(r"([.!?])\s+", r"\1|", text)
-    text = re.sub("(\ub2e4|\uc694|\ub2c8\ub2e4)\\s+", r"\1.|", text)
-    chunks = text.split("|")
+    chunks = re.split(r"(?:[.!?。]\s+|(?:다|요|임|함)\.\s+)", text)
     return [chunk.strip() for chunk in chunks if len(chunk.strip()) >= 8]
-
-
-def ensure_sentence(value: str) -> str:
-    text = clean_summary_text(value)
-    if not text:
-        return ""
-    if re.search("([.!?]|\ub2e4|\uc694|\ud568|\ub428)$", text):
-        return text
-    return f"{text}."
-
-
-def is_broken_summary_sentence(value: object) -> bool:
-    text = clean_summary_text(value)
-    return (
-        text.endswith(("\uace0", "\uba70", "\ub610\ud55c", "\uc774\ub77c\uace0", "\ud558\uace0"))
-        or bool(re.search("(\ubc1d\ud600|\uc124\uba85|\uc804\ud588|\uac15\uc870)\\s*$", text))
-        or len(text) > 160
-    )
 
 
 def unique_lines(lines: list[str]) -> list[str]:
@@ -164,15 +148,13 @@ def is_generic_summary_line(value: object) -> bool:
     return any(
         phrase in text
         for phrase in (
-            "\ud0a4\uc6cc\ub4dc \uae30\uc900\uc73c\ub85c \uc218\uc9d1\ub41c \uae30\uc0ac\uc785\ub2c8\ub2e4",
-            "\ud0a4\uc6cc\ub4dc\ub85c \uc218\uc9d1\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
-            "\uae30\uc0ac \uc6d0\ubb38\ub9cc \uc694\uc57d\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
-            "\ub2f9\uc0ac \uc9c1\uc811 \uc5b8\uae09 \uae30\uc0ac\uc785\ub2c8\ub2e4",
-            "\ud3c9\ud310 \uc601\ud5a5\uacfc \uc0ac\uc2e4\uad00\uacc4 \ud655\uc778",
-            "\uc5c5\uacc4 \ub3d9\ud5a5\uc785\ub2c8\ub2e4",
-            "\ubcc4\ub3c4 \ucd94\uc801\ud569\ub2c8\ub2e4",
+            "키워드 기준으로 수집된 기사입니다",
+            "키워드로 수집됐습니다",
+            "기준 핵심만 요약했습니다",
         )
     )
+
+
 def load_supabase_articles() -> list[dict]:
     try:
         rows = supabase_store.load_dashboard_articles()
@@ -182,6 +164,8 @@ def load_supabase_articles() -> list[dict]:
 
     articles = []
     for row in rows:
+        if is_stock_listing_noise(row):
+            continue
         category = row.get("category", "other")
         tone = row.get("tone", "caution")
         articles.append(
@@ -207,6 +191,16 @@ def load_supabase_articles() -> list[dict]:
             }
         )
     return articles
+
+
+def is_stock_listing_noise(row: dict) -> bool:
+    title = str(row.get("title") or "")
+    text = f"{title} {row.get('summary') or ''} {row.get('description') or ''} {row.get('keyword') or ''}"
+    if not STOCK_LISTING_NOISE_TITLE_RE.search(title):
+        return False
+    if OWN_NAME_RE.search(title) and INVESTMENT_REPORT_RE.search(text):
+        return False
+    return True
 
 
 def build_summary(archives: list[dict], articles: list[dict]) -> dict:
@@ -329,14 +323,6 @@ def load_dashboard_aliases() -> list[dict]:
     return []
 
 
-def load_dashboard_customization() -> dict:
-    try:
-        return supabase_store.load_monitor_profile()
-    except Exception as exc:
-        print(f"Supabase monitor profile source skipped: {exc}")
-    return {}
-
-
 def publish_dashboard() -> Path:
     archives = load_daily_archives()
     articles = build_articles(archives)
@@ -347,7 +333,6 @@ def publish_dashboard() -> Path:
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
-    customization = load_dashboard_customization()
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -364,7 +349,6 @@ def publish_dashboard() -> Path:
                 "notifications": notifications,
                 "watch_runs": watch_runs,
                 "scraps": scraps,
-                "customization": customization,
             },
             ensure_ascii=False,
             indent=2,
