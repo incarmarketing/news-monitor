@@ -26,6 +26,7 @@ import config
 import gemini_helper
 import groq_helper
 import report_window
+import supabase_store
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -66,6 +67,11 @@ TONE_LABELS = {
 def run_briefing(articles: list[dict]) -> Path:
     console.print("\n[cyan]분석 단계: 스코어링 / 카테고리화 / 유사 기사 묶기[/]")
     clustered, metrics = analyzer.analyze(articles, top_n=config.TOP_N_FOR_BRIEFING)
+    if supabase_store.apply_classification_feedback_to_articles(articles):
+        articles.sort(key=lambda item: item.get("_score", 0), reverse=True)
+        clustered = analyzer.cluster_articles(articles[: config.TOP_N_FOR_BRIEFING])
+        clustered.sort(key=lambda item: item.get("_score", 0), reverse=True)
+        metrics = analyzer.build_metrics(articles, clustered)
     assign_report_ids(clustered)
     yesterday = archiver.load_yesterday()
 

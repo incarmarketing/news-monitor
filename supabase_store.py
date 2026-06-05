@@ -75,6 +75,54 @@ MEDIA_RELATION_EXCLUDED_SOURCES = {
     "금융소비자보호처",
 }
 
+CATEGORY_FEEDBACK_MAP = {
+    "own": "own",
+    "company": "own",
+    "당사": "own",
+    "당사 보도": "own",
+    "인카": "own",
+    "regulation": "regulation",
+    "policy": "regulation",
+    "정책/규제": "regulation",
+    "규제/정책": "regulation",
+    "정책": "regulation",
+    "규제": "regulation",
+    "competitor": "competitor",
+    "ga": "competitor",
+    "GA": "competitor",
+    "보험사": "competitor",
+    "경쟁사": "competitor",
+    "industry": "industry",
+    "market": "industry",
+    "업계동향": "industry",
+    "업계 동향": "industry",
+    "기타": "other",
+    "other": "other",
+    "제외": "other",
+    "exclude": "other",
+    "noise": "other",
+}
+
+TONE_FEEDBACK_MAP = {
+    "positive": "positive",
+    "긍정": "positive",
+    "neutral": "neutral",
+    "중립": "neutral",
+    "caution": "caution",
+    "warning": "caution",
+    "주의": "caution",
+    "negative": "negative",
+    "high": "negative",
+    "부정": "negative",
+    "exclude": "exclude",
+    "excluded": "exclude",
+    "noise": "exclude",
+    "제외": "exclude",
+    "노이즈": "exclude",
+}
+
+EXCLUDE_CATEGORY_LABELS = {"제외", "exclude", "excluded", "noise", "노이즈"}
+
 
 class SupabaseConfigError(RuntimeError):
     """Raised when Supabase credentials are incomplete."""
@@ -128,6 +176,145 @@ def request(method: str, path: str, **kwargs: Any) -> requests.Response:
 def article_hash(article: dict) -> str:
     seed = article.get("link") or f"{article.get('title', '')}|{article.get('pub_date', '')}"
     return hashlib.sha256(seed.encode("utf-8")).hexdigest()
+
+
+def normalize_feedback_link(value: object) -> str:
+    raw = str(value or "").strip()
+    if not raw or raw == "#":
+        return ""
+    return raw.split("#", 1)[0].split("?", 1)[0].rstrip("/").lower()
+
+
+def normalize_feedback_title(value: object) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip().lower())
+
+
+def normalize_feedback_category(value: object) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return CATEGORY_FEEDBACK_MAP.get(text) or CATEGORY_FEEDBACK_MAP.get(text.lower(), "")
+
+
+def normalize_feedback_tone(value: object) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return TONE_FEEDBACK_MAP.get(text) or TONE_FEEDBACK_MAP.get(text.lower(), "")
+
+
+def feedback_index_key(kind: str, value: str) -> str:
+    return f"{kind}:{value}"
+
+
+def build_classification_feedback_index(rows: list[dict]) -> dict[str, dict]:
+    """Build a latest-first correction lookup keyed by hash, link, and title."""
+    index: dict[str, dict] = {}
+    for row in rows:
+        category = normalize_feedback_category(row.get("corrected_category"))
+        tone = normalize_feedback_tone(row.get("corrected_tone"))
+        if str(row.get("corrected_category") or "").strip() in EXCLUDE_CATEGORY_LABELS and not tone:
+            tone = "exclude"
+        if not category and not tone:
+            continue
+        correction = {
+            "category": category,
+            "tone": tone,
+            "reason": row.get("reason", ""),
+            "created_at": row.get("created_at", ""),
+        }
+        keys = []
+        article_hash_value = str(row.get("article_hash") or "").strip()
+        if article_hash_value:
+            keys.append(feedback_index_key("hash", article_hash_value))
+        link = normalize_feedback_link(row.get("link"))
+        if link:
+            keys.append(feedback_index_key("link", link))
+        title = normalize_feedback_title(row.get("title"))
+        if title:
+            keys.append(feedback_index_key("title", title))
+        for key in keys:
+            index.setdefault(key, correction)
+    return index
+
+
+def load_classification_feedback_index(limit: int = 5000) -> dict[str, dict]:
+    if not is_enabled():
+        return {}
+    query = (
+        "classification_feedback?"
+        "select=article_hash,title,link,corrected_category,corrected_tone,reason,created_at"
+        "&order=created_at.desc"
+        f"&limit={limit}"
+    )
+    try:
+        rows = request("GET", query).json()
+        return build_classification_feedback_index(rows if isinstance(rows, list) else [])
+    except Exception as error:
+        print(f"Supabase classification feedback lookup skipped: {error}")
+        return {}
+
+
+def classification_feedback_keys_for_article(article: dict) -> list[str]:
+    keys = []
+    existing_hash = str(article.get("article_hash") or article.get("id") or "").strip()
+    if existing_hash and len(existing_hash) >= 24:
+        keys.append(feedback_index_key("hash", existing_hash))
+    try:
+        keys.append(feedback_index_key("hash", article_hash(article)))
+    except Exception:
+        pass
+    link = normalize_feedback_link(article.get("link"))
+    if link:
+        keys.append(feedback_index_key("link", link))
+    title = normalize_feedback_title(article.get("title"))
+    if title:
+        keys.append(feedback_index_key("title", title))
+    return list(dict.fromkeys(keys))
+
+
+def apply_classification_feedback(article: dict, feedback_index: dict[str, dict]) -> bool:
+    if not feedback_index:
+        return False
+    correction = None
+    for key in classification_feedback_keys_for_article(article):
+        correction = feedback_index.get(key)
+        if correction:
+            break
+    if not correction:
+        return False
+
+    category = correction.get("category", "")
+    tone = correction.get("tone", "")
+    if category:
+        article["_category"] = category
+        article["category"] = category
+    if tone:
+        article["_tone"] = tone
+        article["tone"] = tone
+    if tone == "exclude":
+        article["_score"] = min(int(article.get("_score") or article.get("score") or 0), 0)
+        article["status"] = "excluded_by_feedback"
+    article["_feedback_applied"] = True
+    if correction.get("reason"):
+        article["_feedback_reason"] = correction.get("reason")
+    return bool(category or tone)
+
+
+def apply_classification_feedback_to_articles(
+    articles: list[dict],
+    feedback_index: dict[str, dict] | None = None,
+) -> int:
+    feedback_index = feedback_index if feedback_index is not None else load_classification_feedback_index()
+    if not feedback_index:
+        return 0
+    applied = 0
+    for article in articles:
+        if apply_classification_feedback(article, feedback_index):
+            applied += 1
+    if applied:
+        print(f"Classification feedback applied: {applied} article(s)")
+    return applied
 
 
 def parse_pub_date(value: str) -> str | None:
@@ -192,9 +379,11 @@ def save_report_run(archive_payload: dict) -> None:
     }
     request("POST", "report_runs?on_conflict=run_key", data=json.dumps([run_row], ensure_ascii=False))
 
+    articles = archive_payload.get("articles", [])
+    apply_classification_feedback_to_articles(articles)
     rows = [
         normalize_article(article, archive_payload)
-        for article in archive_payload.get("articles", [])
+        for article in articles
     ]
     if rows:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
@@ -210,6 +399,7 @@ def save_dashboard_articles(articles: list[dict], *, report_date: str, window: d
         "window": window,
         "metrics": metrics or {},
     }
+    apply_classification_feedback_to_articles(articles)
     rows = [normalize_article(article, archive_payload) for article in articles]
     if rows:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))

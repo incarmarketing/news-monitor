@@ -24,6 +24,7 @@ import config
 import news_collector
 from kakao_report_send import KAKAO_API, refresh_access_token
 from supabase_store import (
+    apply_classification_feedback_to_articles,
     load_latest_negative_watch_run,
     load_recent_negative_articles,
     notification_already_sent,
@@ -137,6 +138,8 @@ def is_within_minutes(article: dict, minutes_back: int) -> bool:
 
 def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
     analyzed, metrics = analyzer.analyze(articles, top_n=max(len(articles), 1))
+    if apply_classification_feedback_to_articles(analyzed):
+        metrics = analyzer.build_metrics(analyzed, analyzed)
     negatives = [
         article
         for article in analyzed
@@ -302,6 +305,12 @@ def main() -> None:
     articles = collect_recent_company_news(minutes_back)
     negatives, metrics = find_negative_articles(articles)
     db_negatives = collect_recent_db_negatives(minutes_back)
+    if apply_classification_feedback_to_articles(db_negatives):
+        db_negatives = [
+            article
+            for article in db_negatives
+            if article.get("_category") == "own" and article.get("_tone") == "negative"
+        ]
     if db_negatives:
         metrics["own_total"] = max(metrics.get("own_total", 0), len(db_negatives))
 

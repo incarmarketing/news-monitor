@@ -158,9 +158,9 @@ export async function saveMonitorKeyword(keyword, category = "other") {
 
 export async function saveClassificationFeedback(article = {}, correction = {}) {
   const title = String(article.title || "").trim();
-  const articleHash = String(article.id || article.article_hash || article.articleHash || "").trim();
+  const articleHash = stableArticleHash(article);
   if (!title && !articleHash) throw new Error("feedback_article_required");
-  return writeRest(
+  const feedback = await writeRest(
     "classification_feedback",
     "POST",
     [{
@@ -176,6 +176,67 @@ export async function saveClassificationFeedback(article = {}, correction = {}) 
     }],
     { Prefer: "return=representation" },
   );
+  const patch = articlePatchFromCorrection(correction);
+  let patched = false;
+  let patchError = "";
+  if (Object.keys(patch).length) {
+    const target = articleHash
+      ? `news_articles?article_hash=eq.${encodeURIComponent(articleHash)}`
+      : article.link
+        ? `news_articles?link=eq.${encodeURIComponent(String(article.link).trim())}`
+        : "";
+    if (target) {
+      try {
+        await writeRest(target, "PATCH", patch, { Prefer: "return=minimal" });
+        patched = true;
+      } catch (error) {
+        patchError = error?.message || "article_patch_failed";
+      }
+    }
+  }
+  return { feedback, patched, patchError };
+}
+
+function stableArticleHash(article = {}) {
+  const candidates = [article.article_hash, article.articleHash, article.id]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  return candidates.find((value) => /^[a-f0-9]{32,64}$/i.test(value)) || "";
+}
+
+function articlePatchFromCorrection(correction = {}) {
+  const category = backendCategory(correction.category);
+  const tone = backendTone(correction.tone);
+  const patch = {};
+  if (category) patch.category = category;
+  if (tone) patch.tone = tone;
+  if (tone === "exclude") patch.status = "excluded_by_feedback";
+  return patch;
+}
+
+function backendCategory(value) {
+  const text = String(value || "").trim();
+  const canonical = text.toLowerCase();
+  if (!text) return "";
+  if (["own", "company"].includes(canonical) || /당사|인카/.test(text)) return "own";
+  if (["regulation", "policy"].includes(canonical) || /정책|규제|당국|수수료/.test(text)) return "regulation";
+  if (["competitor"].includes(canonical) || /ga|보험사|경쟁사|글로벌금융|메가|설계사/i.test(text)) return "competitor";
+  if (["industry", "market"].includes(canonical) || /업계|동향|시장/.test(text)) return "industry";
+  if (["exclude", "noise"].includes(canonical) || /제외|노이즈/.test(text)) return "other";
+  if (["other"].includes(canonical) || /기타/.test(text)) return "other";
+  return "";
+}
+
+function backendTone(value) {
+  const text = String(value || "").trim();
+  const canonical = text.toLowerCase();
+  if (!text) return "";
+  if (["exclude", "noise", "excluded"].includes(canonical) || /제외|노이즈/.test(text)) return "exclude";
+  if (["negative", "high"].includes(canonical) || /부정|위험|악재/.test(text)) return "negative";
+  if (["caution", "medium", "warning"].includes(canonical) || /주의|경계/.test(text)) return "caution";
+  if (["positive"].includes(canonical) || /긍정|호재/.test(text)) return "positive";
+  if (["neutral"].includes(canonical) || /중립/.test(text)) return "neutral";
+  return "";
 }
 
 export async function saveReporterProfile(reporter = {}) {

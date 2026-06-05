@@ -54,6 +54,7 @@ import {
 import {
   deleteReporterProfile,
   loadOperationalData,
+  saveClassificationFeedback,
   saveMediaRelation,
   saveMonitorKeyword,
   savePressAlias,
@@ -238,6 +239,12 @@ function App() {
   }, []);
 
   useEffect(() => () => clearWorkTimers(), []);
+
+  useEffect(() => {
+    const openLogin = () => setLoginOpen(true);
+    window.addEventListener("news-monitor:login-required", openLogin);
+    return () => window.removeEventListener("news-monitor:login-required", openLogin);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -676,7 +683,7 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
       </section>
       <section className="monitoring-layout">
         <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
-          <ArticleFeed rows={visibleRows.slice(0, visible)} />
+          <ArticleFeed rows={visibleRows.slice(0, visible)} onFeedbackSaved={() => onRefreshOperations?.()} />
           {visibleRows.length > visible && (
             <button className="ghost-button full" onClick={() => setVisible((count) => count + 30)}>
               더보기
@@ -2589,7 +2596,7 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function ArticleFeed({ rows, compact = false, showTime = false }) {
+function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved }) {
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
       {rows.map((row) => {
@@ -2624,23 +2631,103 @@ function ArticleFeed({ rows, compact = false, showTime = false }) {
                   </div>
                 </details>
               )}
+              {!compact && <ArticleCorrectionControl article={row} onSaved={onFeedbackSaved} />}
             </div>
-            {!compact && row.link && row.link !== "#" && (
-              <a
-                href={row.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="기사 열기"
-                onClick={(event) => openArticleLink(event, row.link)}
-              >
-                <ExternalLink />
-              </a>
+            {!compact && (
+              <div className="feed-actions">
+                {row.link && row.link !== "#" && (
+                  <a
+                    href={row.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="기사 열기"
+                    onClick={(event) => openArticleLink(event, row.link)}
+                  >
+                    <ExternalLink />
+                  </a>
+                )}
+              </div>
             )}
           </article>
         );
       })}
     </div>
   );
+}
+
+const FEEDBACK_CATEGORY_OPTIONS = ["당사", "GA", "보험사", "정책/규제", "업계동향", "기타", "제외"];
+const FEEDBACK_TONE_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
+
+function ArticleCorrectionControl({ article, onSaved }) {
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState(article.category || "기타");
+  const [tone, setTone] = useState(article.tone || "중립");
+  const [status, setStatus] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    setStatus("저장 중");
+    try {
+      const result = await saveClassificationFeedback(article, {
+        category,
+        tone,
+        reason: "dashboard_manual_correction",
+        createdBy: "dashboard",
+      });
+      const patchNote = result?.patchError ? " · 원문 패치는 권한 확인 필요" : "";
+      setStatus(`저장 완료${patchNote}`);
+      window.setTimeout(() => setOpen(false), 900);
+      await onSaved?.();
+    } catch (error) {
+      setStatus(feedbackErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={open ? "article-correction open" : "article-correction"}>
+      <button type="button" className="correction-toggle" onClick={() => setOpen((value) => !value)}>
+        <FilePenLine />분류 수정
+      </button>
+      {open && (
+        <div className="correction-editor">
+          <label>
+            <span>논조</span>
+            <select value={tone} onChange={(event) => setTone(event.target.value)}>
+              {FEEDBACK_TONE_OPTIONS.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>분류</span>
+            <select value={category} onChange={(event) => setCategory(event.target.value)}>
+              {FEEDBACK_CATEGORY_OPTIONS.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <button type="button" className="primary-button compact-save" onClick={save} disabled={saving}>
+            저장
+          </button>
+          <button type="button" className="ghost-button compact-cancel" onClick={() => setOpen(false)} disabled={saving}>
+            취소
+          </button>
+          {status && <span className="correction-status">{status}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function feedbackErrorMessage(error) {
+  const message = error?.message || "";
+  if (message.includes("missing_dashboard_session") || message.includes("invalid_session")) {
+    window.dispatchEvent(new CustomEvent("news-monitor:login-required"));
+    return "운영 DB 세션이 필요합니다. 로그인창을 열었습니다.";
+  }
+  if (message.includes("write_not_allowed")) {
+    return "수정 권한이 없습니다.";
+  }
+  return "저장 실패 · 연결을 확인해 주세요.";
 }
 
 function formatFeedMeta(row = {}, hasRelated = false) {

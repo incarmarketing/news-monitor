@@ -1001,7 +1001,7 @@ button.kpi-card {
 
 .feed-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   min-width: 0;
@@ -2962,7 +2962,14 @@ button.kpi-card {
   overflow-wrap: anywhere;
 }
 
-.feed-row > a {
+.feed-actions {
+  display: grid;
+  gap: 6px;
+  align-self: center;
+  justify-items: center;
+}
+
+.feed-actions a {
   display: grid;
   place-items: center;
   align-self: center;
@@ -2973,6 +2980,82 @@ button.kpi-card {
   border-radius: 8px;
   background: #fff;
   color: var(--blue);
+}
+
+.article-correction {
+  margin-top: 8px;
+}
+
+.correction-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.correction-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.correction-editor {
+  display: grid;
+  grid-template-columns: minmax(92px, 120px) minmax(108px, 140px) auto auto minmax(0, 1fr);
+  gap: 7px;
+  align-items: end;
+  margin-top: 7px;
+  padding: 8px;
+  border: 1px solid #d8e2ff;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.correction-editor label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.correction-editor label span {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.correction-editor select {
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 4px 7px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.correction-editor .compact-save,
+.correction-editor .compact-cancel {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+
+.correction-status {
+  align-self: center;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
 }
 
 .related-details {
@@ -3592,10 +3675,16 @@ button.kpi-card {
     align-items: start;
   }
 
-  .feed-row > a {
+  .feed-actions {
     grid-column: 1;
     justify-self: start;
+    justify-items: start;
     margin-top: 6px;
+  }
+
+  .correction-editor {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .issue-related-details a,

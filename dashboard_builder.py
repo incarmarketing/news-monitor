@@ -40,6 +40,7 @@ TONE_LABELS = {
     "caution": "주의",
     "neutral": "중립",
     "negative": "부정",
+    "exclude": "제외",
 }
 
 STOCK_LISTING_NOISE_TITLE_RE = re.compile(
@@ -61,12 +62,15 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
     rows: list[dict] = []
     seen: set[str] = set()
+    feedback_index = supabase_store.load_classification_feedback_index()
 
     for archive in archives:
         date = archive.get("date", "")
         window = archive.get("window", {})
         metrics = archive.get("metrics", {})
-        for index, article in enumerate(archive.get("articles", []), 1):
+        archive_articles = archive.get("articles", [])
+        supabase_store.apply_classification_feedback_to_articles(archive_articles, feedback_index)
+        for index, article in enumerate(archive_articles, 1):
             if is_stock_listing_noise(article):
                 continue
             link = article.get("link", "")
@@ -166,6 +170,7 @@ def load_supabase_articles() -> list[dict]:
         print(f"Supabase dashboard source skipped: {exc}")
         return []
 
+    supabase_store.apply_classification_feedback_to_articles(rows)
     articles = []
     for row in rows:
         if is_stock_listing_noise(row):
