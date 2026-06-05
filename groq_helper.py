@@ -384,3 +384,46 @@ def clean_period_report_text(value: object) -> str:
         print("Groq period_report discarded: instruction-like wording")
         return ""
     return text
+
+
+def summarize_issue(articles: list[dict], *, retries: int = 1) -> str:
+    """Return one concise Korean sentence for a grouped dashboard issue."""
+    if not is_enabled() or not articles:
+        return ""
+
+    text = chat_completion(
+        [
+            {
+                "role": "system",
+                "content": (
+                    "You summarize Korean news for a media monitoring dashboard. "
+                    "Return only one concise Korean sentence about the factual issue. "
+                    "Do not add advice, risk judgment, dates, source names, or labels."
+                ),
+            },
+            {"role": "user", "content": build_issue_prompt(articles)},
+        ],
+        max_tokens=int(os.getenv("GROQ_ISSUE_MAX_TOKENS", "90")),
+        temperature=0.1,
+        retries=retries,
+        purpose="issue_summary",
+    )
+    return clean_issue_summary(text)
+
+
+def build_issue_prompt(articles: list[dict]) -> str:
+    rows = []
+    for index, article in enumerate(articles[: int(os.getenv("GROQ_ISSUE_ARTICLE_LIMIT", "3"))], 1):
+        title = clean_prompt_text(article.get("title", ""))[:90]
+        source = clean_prompt_text(article.get("source", ""))[:28]
+        category = clean_prompt_text(article.get("_category", article.get("category", "")))[:16]
+        tone = clean_prompt_text(article.get("_tone", article.get("tone", "")))[:16]
+        summary = clean_prompt_text(article.get("summary", "") or article.get("description", ""))[:110]
+        rows.append(f"{index}. {source} | {category}/{tone} | {title}\nsummary: {summary}")
+
+    return (
+        "다음 관련 기사 묶음의 핵심 이슈를 한국어 한 문장으로 요약하세요.\n"
+        "제목을 그대로 반복하지 말고, 무엇이 보도됐는지만 말하세요.\n"
+        "판단/대응/위험평가/출처/날짜는 쓰지 마세요.\n\n"
+        + "\n".join(rows)
+    )
