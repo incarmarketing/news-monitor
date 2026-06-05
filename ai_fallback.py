@@ -37,7 +37,7 @@ def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> 
     if provider_mode == "groq":
         groq_summary = summarize_issue_with_groq(articles, retries=retries)
         if groq_summary:
-            return groq_summary, f"groq:{config.GROQ_MODEL}"
+            return groq_summary, f"groq:{groq_issue_model()}"
         rules_summary = rules_issue_summary(articles)
         return rules_summary, "rules" if rules_summary else "none"
 
@@ -54,7 +54,7 @@ def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> 
 
     groq_summary = summarize_issue_with_groq(articles, retries=retries)
     if groq_summary:
-        return groq_summary, f"groq:{config.GROQ_MODEL}"
+        return groq_summary, f"groq:{groq_issue_model()}"
 
     rules_summary = rules_issue_summary(articles)
     return rules_summary, "rules" if rules_summary else "none"
@@ -75,7 +75,7 @@ def summarize_issue_groups_with_provider(groups: list[dict], *, retries: int = 0
             for index, group in enumerate(groups):
                 summary = summaries[index] if index < len(summaries) else ""
                 if summary:
-                    result.append((summary, f"groq:{config.GROQ_MODEL}"))
+                    result.append((summary, f"groq:{groq_issue_model()}"))
                 else:
                     result.append((rules_issue_summary(group.get("members", [])), "rules"))
             return result
@@ -93,6 +93,10 @@ def summarize_issue_with_groq(articles: list[dict], *, retries: int = 0) -> str:
     if not groq_helper.is_enabled():
         return ""
     return groq_helper.summarize_issue(articles, retries=retries)
+
+
+def groq_issue_model() -> str:
+    return os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL)
 
 
 def summarize_issue_groups_with_groq(groups: list[dict], *, retries: int = 0) -> list[str]:
@@ -114,6 +118,7 @@ def summarize_issue_groups_with_groq(groups: list[dict], *, retries: int = 0) ->
         temperature=0.1,
         retries=retries,
         purpose="issue_summary_batch",
+        model=groq_issue_model(),
     )
     return parse_issue_batch_response(text, len(groups))
 

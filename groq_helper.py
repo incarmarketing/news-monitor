@@ -166,6 +166,7 @@ def chat_completion(
     temperature: float,
     retries: int = 0,
     purpose: str = "groq",
+    model: str | None = None,
 ) -> str:
     global _GROQ_BLOCKED_UNTIL
     api_key = os.getenv("GROQ_API_KEY", "").strip()
@@ -175,7 +176,7 @@ def chat_completion(
         return ""
 
     payload = {
-        "model": config.GROQ_MODEL,
+        "model": model or config.GROQ_MODEL,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -407,6 +408,7 @@ def summarize_issue(articles: list[dict], *, retries: int = 1) -> str:
         temperature=0.1,
         retries=retries,
         purpose="issue_summary",
+        model=os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL),
     )
     return clean_issue_summary(text)
 
