@@ -56,6 +56,7 @@ CATEGORY_LABELS = {
 
 TONE_LABELS = {
     "negative": "부정",
+    "caution": "주의",
     "positive": "긍정",
     "neutral": "중립",
 }
@@ -235,10 +236,9 @@ def select_prompt_articles(clustered: list[dict], limit: int) -> list[dict]:
         selected.append(article)
         seen_links.add(key)
 
+    for article in select_fallback_highlights(clustered, limit):
+        add(article)
     priority_terms = ("브랜드평판", "1위", "수성", "금감원", "금융위", "근로자성", "불완전판매")
-    for article in clustered:
-        if article.get("_category") == "own":
-            add(article)
     for article in clustered:
         text = article.get("title", "") + " " + article.get("description", "")
         if any(term in text for term in priority_terms):
@@ -256,10 +256,12 @@ def select_prompt_articles(clustered: list[dict], limit: int) -> list[dict]:
 def format_articles_for_prompt(articles: list[dict]) -> str:
     rows = []
     for article in articles:
+        summary = article_summary(article, limit=90)
         rows.append(
             f"{article.get('_report_id')}. [{article.get('_category')}/{article.get('_tone')}/점수{article.get('_score')}] "
             f"{article.get('title', '')[:95]} "
-            f"(출처 {article.get('source')}, 검색어 {article.get('keyword')}, 유사 {article.get('_cluster_size', 1)}건)"
+            f"(출처 {article.get('source')}, 검색어 {article.get('keyword')}, 유사 {article.get('_cluster_size', 1)}건) "
+            f"요약: {summary}"
         )
     return "\n".join(rows)
 
@@ -327,26 +329,10 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
 
 
 def select_fallback_highlights(clustered: list[dict], limit: int) -> list[dict]:
-    def priority(article: dict) -> tuple[int, int]:
-        category = article.get("_category", "")
-        tone = article.get("_tone", "")
-        score = int(article.get("_score", 0) or 0)
-        if category == "own" and tone == "negative":
-            return (0, -score)
-        if category == "own":
-            return (1, -score)
-        if tone == "negative":
-            return (2, -score)
-        if category == "regulation":
-            return (3, -score)
-        if category in {"competitor", "industry"}:
-            return (4, -score)
-        return (5, -score)
-
     selected = []
     seen: set[str] = set()
-    for article in sorted(clustered, key=priority):
-        key = article.get("link") or article.get("title", "")
+    for article in sorted(clustered, key=fallback_priority):
+        key = dedupe_key(article)
         if key in seen:
             continue
         selected.append(article)
@@ -356,22 +342,84 @@ def select_fallback_highlights(clustered: list[dict], limit: int) -> list[dict]:
     return selected
 
 
+def fallback_priority(article: dict) -> tuple[int, int]:
+    category = article.get("_category", "")
+    tone = article.get("_tone", "")
+    score = int(article.get("_score", 0) or 0)
+    title = article.get("title", "")
+    text = title + " " + article.get("description", "")
+    own_in_title = contains_own_name(title)
+    own_positive_signal = any(
+        term in text
+        for term in ("우수인증설계사", "GA업계 최다", "최다", "수상", "선정", "배출", "성장", "성과")
+    )
+    own_list_only = category == "own" and not own_in_title and re.search(r"[△,·]\s*인카금융서비스|인카금융", text)
+
+    if category == "own" and tone == "negative":
+        rank = 0
+    elif category == "own" and tone == "positive" and own_in_title:
+        rank = 1
+    elif category == "own" and own_positive_signal and own_in_title:
+        rank = 2
+    elif category == "own" and tone == "caution":
+        rank = 3
+    elif category == "own" and not own_list_only:
+        rank = 4
+    elif tone == "negative":
+        rank = 5
+    elif category == "regulation" or tone == "caution":
+        rank = 6
+    elif category in {"competitor", "industry"}:
+        rank = 7
+    else:
+        rank = 8
+    direct_bonus = 10 if own_in_title else 0
+    return (rank, -(score + direct_bonus))
+
+
+def contains_own_name(value: object) -> bool:
+    text = str(value or "")
+    return any(name in text for name in analyzer.OWN_NAMES)
+
+
+def dedupe_key(article: dict) -> str:
+    title = re.sub(r"\[[^\]]+\]|\([^)]+\)|[^\w가-힣]", "", article.get("title", ""))
+    title = re.sub(r"(인카금융서비스|인카금융|GA업계최다|기록|배출|우수인증설계사)", "", title)
+    return title[:36] or article.get("link") or article.get("title", "")
+
+
 def build_fallback_conclusion(clustered: list[dict], metrics: dict, window: dict) -> str:
     own_total = metrics.get("by_category", {}).get("own", 0)
     own_negative = metrics.get("own_negative", 0)
     own_tone = metrics.get("own_by_tone", {})
     risk = metrics.get("risk_level", "LOW")
-    highlights = select_fallback_highlights(clustered, 1)
-    top_title = compact_text(highlights[0].get("title", ""), 32) if highlights else ""
+    top = select_fallback_highlights(clustered, 1)[0] if clustered else None
+    positive_top = first_matching_article(clustered, "own", "positive")
+    caution_top = first_matching_article(clustered, "own", "caution")
+    top_title = compact_text((top or {}).get("title", ""), 34)
     if own_negative:
-        return f"{window['label']} 분석 대상에서 당사 부정 {own_negative}건이 확인되어 리스크는 {risk}입니다. 핵심 기사는 \"{top_title}\"입니다."
+        return f"당사 부정 {own_negative}건이 확인돼 {risk} 리스크입니다. 핵심은 \"{top_title}\"입니다."
     if own_tone.get("positive", 0):
-        return f"{window['label']} 분석 대상에서 당사 긍정 {own_tone.get('positive', 0)}건이 우선 관찰됐고 직접 부정은 없습니다."
+        title = compact_text((positive_top or top or {}).get("title", ""), 34)
+        return f"\"{title}\"가 당사 우호 보도의 중심입니다. 직접 부정은 없습니다."
+    if own_tone.get("caution", 0):
+        title = compact_text((caution_top or top or {}).get("title", ""), 34)
+        return f"\"{title}\"는 부정과 분리해 주의 이슈로 추적합니다."
     if own_total:
-        return f"{window['label']} 분석 대상에서 당사 언급 {own_total}건이 확인됐으며 직접 부정 이슈는 없습니다."
+        return f"당사 언급 {own_total}건이 확인됐고 직접 부정 이슈는 없습니다."
     if top_title:
-        return f"{window['label']} 분석 대상은 당사 직접 이슈보다 \"{top_title}\" 등 업계 흐름 중심입니다."
-    return f"{window['label']} 분석 대상에서 주요 모니터링 이슈는 확인되지 않았습니다."
+        return f"당사 직접 이슈보다 \"{top_title}\" 등 업계 흐름이 중심입니다."
+    return "주요 모니터링 이슈는 확인되지 않았습니다."
+
+
+def first_matching_article(clustered: list[dict], category: str, tone: str | None = None) -> dict | None:
+    for article in select_fallback_highlights(clustered, len(clustered)):
+        if article.get("_category") != category:
+            continue
+        if tone and article.get("_tone") != tone:
+            continue
+        return article
+    return None
 
 
 def build_fallback_interpretation(metrics: dict) -> str:
@@ -381,8 +429,8 @@ def build_fallback_interpretation(metrics: dict) -> str:
     market = cats.get("competitor", 0) + cats.get("industry", 0)
     return (
         f"전체 수집 {metrics.get('total_collected', 0)}건 중 분석 대상은 {metrics.get('total_after_cluster', 0)}건입니다. "
-        f"당사 {cats.get('own', 0)}건(긍정 {own_tone.get('positive', 0)}, 중립 {own_tone.get('neutral', 0)}, 부정 {own_tone.get('negative', metrics.get('own_negative', 0))})이며, "
-        f"정책/규제 {cats.get('regulation', 0)}건, 경쟁/업계 {market}건, 전체 부정 논조 {tones.get('negative', 0)}건으로 분리해 봅니다."
+        f"당사 {cats.get('own', 0)}건은 긍정 {own_tone.get('positive', 0)}, 주의 {own_tone.get('caution', 0)}, 중립 {own_tone.get('neutral', 0)}, 부정 {own_tone.get('negative', metrics.get('own_negative', 0))}건으로 나눕니다. "
+        f"정책/규제 {cats.get('regulation', 0)}건, 경쟁/업계 {market}건이며 전체 주의 {tones.get('caution', 0)}건과 부정 {tones.get('negative', 0)}건은 별도 관찰합니다."
     )
 
 
@@ -408,11 +456,13 @@ def fallback_article_judgement(article: dict) -> str:
     category = article.get("_category", "")
     tone = article.get("_tone", "")
     text = f"{article.get('title', '')} {article.get('description', '')}"
-    summary = compact_text(article.get("description", ""), 34)
+    summary = article_summary(article, limit=58)
     if category == "own" and tone == "negative":
         return summary or "당사 직접 리스크로 원문 확인이 필요합니다."
     if category == "own" and tone == "positive":
-        return summary or "당사 우호 보도로 보고서 우선 근거입니다."
+        return summary or "당사 성과와 조직 경쟁력을 보여주는 우호 보도입니다."
+    if category == "own" and tone == "caution":
+        return summary or "부정 알림과 분리해 주의 이슈로 추적합니다."
     if category == "own":
         return summary or "당사 언급 흐름으로 함께 확인할 기사입니다."
     if any(term in text for term in ("투자의견", "목표가", "주가", "수수료", "정착지원금")):
@@ -422,6 +472,34 @@ def fallback_article_judgement(article: dict) -> str:
     if category == "competitor":
         return summary or "경쟁사·GA 시장 흐름을 보여주는 기사입니다."
     return summary or "업계 동향으로 참고할 기사입니다."
+
+
+def article_summary(article: dict, limit: int = 80) -> str:
+    summary = str(article.get("_summary") or "").strip()
+    if not summary:
+        summary = analyzer.build_quality_summary(article)
+    summary = remove_generic_report_phrases(summary)
+    sentences = analyzer.unique_quality_sentences(analyzer.split_quality_sentences(summary))
+    if not sentences:
+        sentences = analyzer.unique_quality_sentences(
+            analyzer.split_quality_sentences(article.get("description", "") or article.get("summary", ""))
+        )
+    text = " ".join(analyzer.ensure_summary_sentence(sentence) for sentence in sentences[:2])
+    return compact_text(text, limit)
+
+
+def remove_generic_report_phrases(value: str) -> str:
+    text = value or ""
+    banned = [
+        "당사 직접 언급 기사로 보고서와 리스크 점검 근거에 우선 포함합니다.",
+        "정책·규제 변화가 영업 환경에 미칠 수 있는 영향을 확인합니다.",
+        "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다.",
+        "경쟁사 키워드 기준으로 수집된 기사입니다.",
+        "기준 핵심만 요약했습니다.",
+    ]
+    for phrase in banned:
+        text = text.replace(phrase, "")
+    return " ".join(text.split())
 
 
 def build_html_report(
@@ -638,6 +716,7 @@ def enrich_articles(articles: list[dict]) -> list[dict]:
             "_tone_label": TONE_LABELS.get(article.get("_tone", "neutral"), "중립"),
             "_impact": article_impact(article),
             "_evidence_id": article.get("_report_id", "-"),
+            "_summary": article_summary(article, limit=120),
         }
         for article in articles
     ]
