@@ -2551,9 +2551,6 @@ function formatIssueMeta(issue = {}) {
     sourceLabel,
     issue.publishedAt || issue.time || issue.date,
   ].filter(Boolean);
-  if (false && Number(issue.relatedCount || 1) > 1) {
-    parts.push(`관련 ${Number(issue.relatedCount).toLocaleString("ko-KR")}건`);
-  }
   return parts.join(" · ");
 }
 
