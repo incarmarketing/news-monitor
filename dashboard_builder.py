@@ -40,7 +40,8 @@ TONE_LABELS = {
 }
 
 STOCK_LISTING_NOISE_TITLE_RE = re.compile(
-    r"52주\s*(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]"
+    r"(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|"
+    r"오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선"
 )
 INVESTMENT_REPORT_RE = re.compile(r"투자의견|목표주가|목표가|증권가|리포트|애널리스트")
 OWN_NAME_RE = re.compile(r"인카금융서비스|인카금융")
@@ -195,8 +196,11 @@ def load_supabase_articles() -> list[dict]:
 
 def is_stock_listing_noise(row: dict) -> bool:
     title = str(row.get("title") or "")
-    text = f"{title} {row.get('summary') or ''} {row.get('description') or ''} {row.get('keyword') or ''}"
-    if not STOCK_LISTING_NOISE_TITLE_RE.search(title):
+    source = str(row.get("source") or "")
+    link = str(row.get("link") or "")
+    text = f"{title} {source} {link} {row.get('summary') or ''} {row.get('description') or ''} {row.get('keyword') or ''}"
+    is_itooza_listing = "itooza" in f"{source} {link}".lower() and re.search(r"52주|최고가|최저가|MVP|리스트|상위\s*\d+\s*선", title)
+    if not STOCK_LISTING_NOISE_TITLE_RE.search(title) and not is_itooza_listing:
         return False
     if OWN_NAME_RE.search(title) and INVESTMENT_REPORT_RE.search(text):
         return False
