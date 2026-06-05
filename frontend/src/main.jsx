@@ -2698,9 +2698,15 @@ function AiUsagePanel({ status }) {
   const gemini = status?.gemini || {};
   const groq = status?.groq || {};
   const rate = groq.rate_limit || {};
-  const groqDailyText = formatUsagePair(rate.daily_used_tokens, rate.daily_limit_tokens);
-  const groqTokenText = formatLimitPair(rate.remaining_tokens, rate.limit_tokens);
-  const groqRequestText = formatLimitPair(rate.remaining_requests, rate.limit_requests);
+  const requestPercent = percentRemaining(rate.remaining_requests, rate.limit_requests);
+  const tokenPercent = percentRemaining(rate.remaining_tokens, rate.limit_tokens);
+  const dailyPercent = percentUnusedFromUsage(rate.daily_used_tokens, rate.daily_limit_tokens);
+  const reserveValues = [requestPercent, tokenPercent, dailyPercent].filter(Number.isFinite);
+  const groqReserve = reserveValues.length
+    ? Math.round(reserveValues.reduce((sum, value) => sum + value, 0) / reserveValues.length)
+    : null;
+  const meterFill = Number.isFinite(groqReserve) ? groqReserve : 0;
+  const reserveLabel = groqReserve === null ? "측정 대기" : groqReserve >= 70 ? "넉넉" : groqReserve >= 35 ? "주의" : "부족";
   const geminiState = gemini.circuit_open
     ? `차단 중${gemini.blocked_until ? ` · ${formatCompactDateTime(gemini.blocked_until)}` : ""}`
     : gemini.has_key ? "대기" : "키 없음";
@@ -2710,24 +2716,78 @@ function AiUsagePanel({ status }) {
         <span><Gauge />AI 사용 상태</span>
         <b>{status?.generated_at ? formatCompactDateTime(status.generated_at) : "대기"}</b>
       </div>
-      <div className="ai-usage-grid">
-        <div>
-          <strong>Groq</strong>
+      <div className="ai-power-layout">
+        <div className="ai-power-meter" style={{ "--meter-fill": `${meterFill}%` }}>
+          <div className="ai-power-core">
+            <strong>{groqReserve === null ? "--" : groqReserve}</strong>
+            <span>{groqReserve === null ? "대기" : "% 잔량"}</span>
+          </div>
+        </div>
+        <div className="ai-power-copy">
+          <span>Groq 전력 여유</span>
+          <b>{reserveLabel}</b>
           <em>{groq.model || "-"}</em>
-          <span>일일 토큰 {groqDailyText}</span>
-          <span>분당 토큰 {groqTokenText}</span>
-          <span>일 요청 {groqRequestText}</span>
-          {rate.reset_tokens && <small>분당 토큰 리셋 {rate.reset_tokens}</small>}
         </div>
-        <div>
-          <strong>Gemini</strong>
-          <em>{gemini.model || "-"}</em>
-          <span>{geminiState}</span>
-          {gemini.circuit_reason && <small>{gemini.circuit_reason}</small>}
-        </div>
+      </div>
+      <div className="ai-meter-bars">
+        <AiMeterRow label="일 요청" percent={requestPercent} value={formatLimitPair(rate.remaining_requests, rate.limit_requests)} />
+        <AiMeterRow label="분당 토큰" percent={tokenPercent} value={formatLimitPair(rate.remaining_tokens, rate.limit_tokens)} />
+        <AiMeterRow label="일일 토큰" percent={dailyPercent} value={formatUsagePair(rate.daily_used_tokens, rate.daily_limit_tokens)} mode="used" />
+      </div>
+      <div className="ai-backup-strip">
+        <span>Gemini 백업</span>
+        <b>{geminiState}</b>
+        <em>{gemini.model || "-"}</em>
+        {gemini.circuit_reason && <small>{gemini.circuit_reason}</small>}
       </div>
     </section>
   );
+}
+
+function AiMeterRow({ label, percent, value, mode = "remaining" }) {
+  const fill = Number.isFinite(percent) ? percent : 0;
+  const status = percent === null || percent === undefined
+    ? "대기"
+    : percent >= 70 ? "정상"
+    : percent >= 35 ? "주의"
+    : "낮음";
+  return (
+    <div className="ai-meter-row" style={{ "--bar-fill": `${fill}%` }}>
+      <div>
+        <span>{label}</span>
+        <b>{status}</b>
+      </div>
+      <div className="ai-meter-track" aria-label={`${label} ${mode === "used" ? "사용량" : "잔량"}`}>
+        <i />
+      </div>
+      <em>{value}</em>
+    </div>
+  );
+}
+
+function percentRemaining(remaining, limit) {
+  const remainingNumber = toNumericLimit(remaining);
+  const limitNumber = toNumericLimit(limit);
+  if (!Number.isFinite(remainingNumber) || !Number.isFinite(limitNumber) || limitNumber <= 0) return null;
+  return clampPercent(Math.round((remainingNumber / limitNumber) * 100));
+}
+
+function percentUnusedFromUsage(used, limit) {
+  const usedNumber = toNumericLimit(used);
+  const limitNumber = toNumericLimit(limit);
+  if (!Number.isFinite(usedNumber) || !Number.isFinite(limitNumber) || limitNumber <= 0) return null;
+  return clampPercent(Math.round(((limitNumber - usedNumber) / limitNumber) * 100));
+}
+
+function toNumericLimit(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const number = Number(String(value).replace(/,/g, ""));
+  return Number.isFinite(number) ? number : null;
+}
+
+function clampPercent(value) {
+  if (!Number.isFinite(value)) return null;
+  return Math.max(0, Math.min(100, value));
 }
 
 function formatLimitPair(remaining, limit) {
@@ -2738,7 +2798,7 @@ function formatLimitPair(remaining, limit) {
 }
 
 function formatUsagePair(used, limit) {
-  if (used === undefined && limit === undefined) return "다음 한도 응답 후 표시";
+  if (used === undefined && limit === undefined) return "한도 응답 대기";
   const left = used === undefined ? "-" : formatCompactNumber(used);
   const right = limit === undefined ? "-" : formatCompactNumber(limit);
   return `${left} / ${right}`;
