@@ -13,7 +13,7 @@ const STATIC_DATA_PATHS = [
   `${import.meta.env.BASE_URL || "/"}data/articles.json`,
 ];
 
-const STOCK_LISTING_NOISE_TITLE_RE = /52주\s*(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]/;
+const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/;
 const INVESTMENT_REPORT_RE = /투자의견|목표주가|목표가|증권가|리포트|애널리스트/;
 const OWN_NAME_RE = /인카금융서비스|인카금융/;
 
@@ -421,8 +421,10 @@ function normalizeArticle(row) {
 
 function isStockListingNoise(row = {}) {
   const title = String(row.title || "");
-  const text = `${title} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""}`;
-  if (!STOCK_LISTING_NOISE_TITLE_RE.test(title)) return false;
+  const sourceLink = `${row.source || ""} ${row.link || ""}`.toLowerCase();
+  const text = `${title} ${sourceLink} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""}`;
+  const isItoozaListing = sourceLink.includes("itooza") && /52주|최고가|최저가|MVP|리스트|상위\s*\d+\s*선/.test(title);
+  if (!STOCK_LISTING_NOISE_TITLE_RE.test(title) && !isItoozaListing) return false;
   if (OWN_NAME_RE.test(title) && INVESTMENT_REPORT_RE.test(text)) return false;
   return true;
 }
