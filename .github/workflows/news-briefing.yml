@@ -18,6 +18,11 @@ on:
         required: true
         default: true
         type: boolean
+      force_kakao_send:
+        description: "Force resend even when the same report was already sent"
+        required: true
+        default: false
+        type: boolean
       report_slot:
         description: "Daily report slot for external cron calls"
         required: true
@@ -32,7 +37,7 @@ on:
       backfill_only:
         description: "Archive missed slot without Pages deploy or Kakao send"
         required: true
-        default: true
+        default: false
         type: boolean
   push:
     branches:
@@ -210,6 +215,7 @@ jobs:
           KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
           REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
           REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
+          FORCE_KAKAO_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_kakao_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
@@ -262,7 +268,6 @@ jobs:
             exit 0
           fi
           git commit -m "Archive briefing data"
-          git stash push --include-untracked -m "discard generated static artifacts before archive push" || true
           git pull --rebase
           git push
 
