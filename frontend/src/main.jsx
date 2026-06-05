@@ -2934,24 +2934,25 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
   if (!articles.length && !reportRuns.length) {
     return buildDisconnectedPeriodData(base, "선택 기간 데이터가 없습니다.");
   }
-  const ownMentions = articles.filter(isOwnArticle).length;
-  const ownNegative = articles.filter((article) => isOwnArticle(article) && article.tone === "부정").length;
-  const caution = articles.filter((article) => article.tone === "주의").length;
-  const gaInsurance = articles.filter((article) => ["GA", "보험사"].includes(article.category)).length;
+  const usableArticles = articles.filter(isUsableArticle);
+  const ownMentions = usableArticles.filter(isOwnArticle).length;
+  const ownNegative = usableArticles.filter((article) => isOwnArticle(article) && article.tone === "부정").length;
+  const caution = usableArticles.filter((article) => article.tone === "주의").length;
+  const gaInsurance = usableArticles.filter((article) => ["GA", "보험사"].includes(article.category)).length;
   const headlineOwnMentions = ownMentions;
   const headlineOwnNegative = ownNegative;
   const headlineCaution = caution;
   const summary = {
     ...base.summary,
-    collected: runSummary.collected ?? articles.length,
-    analyzed: runSummary.analyzed ?? articles.filter((article) => article.tone !== "제외").length,
+    collected: runSummary.collected ?? usableArticles.length,
+    analyzed: runSummary.analyzed ?? usableArticles.filter((article) => article.tone !== "제외").length,
     ownMentions: headlineOwnMentions,
     ownNegative: headlineOwnNegative,
     caution: headlineCaution,
     gaInsurance,
     risk: headlineOwnNegative >= 3 ? "HIGH" : headlineOwnNegative > 0 ? "MEDIUM" : "LOW",
-    headline: buildHeadline(articles, headlineOwnMentions, headlineOwnNegative, headlineCaution),
-    watchTime: articles[0]?.time || base.summary.watchTime,
+    headline: buildHeadline(usableArticles, headlineOwnMentions, headlineOwnNegative, headlineCaution),
+    watchTime: usableArticles[0]?.time || base.summary.watchTime,
   };
   return {
     ...base,
@@ -2964,11 +2965,11 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
       minute: "2-digit",
       hour12: false,
     }).format(new Date()),
-    scope: articles[0]?.date ? `${articles[0].date} 기준` : base.scope,
-    issues: articles.length ? buildIssues(articles, base.issues) : [],
-    categoryFlow: groupArticles(articles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
-    toneTrend: buildToneTrend(articles),
-    pressInfluence: buildPressInfluence(articles),
+    scope: usableArticles[0]?.date ? `${usableArticles[0].date} 기준` : base.scope,
+    issues: usableArticles.length ? buildIssues(usableArticles, base.issues) : [],
+    categoryFlow: groupArticles(usableArticles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
+    toneTrend: buildToneTrend(usableArticles),
+    pressInfluence: buildPressInfluence(usableArticles),
   };
 }
 
@@ -3057,10 +3058,11 @@ function buildHeadline(articles, ownMentions, ownNegative, caution) {
 }
 
 function buildIssues(articles, fallback) {
+  const usableArticles = articles.filter(isUsableArticle);
   const important = [
-    ...articles.filter((article) => isOwnArticle(article)),
-    ...articles.filter((article) => ["부정", "주의"].includes(article.tone)),
-    ...articles,
+    ...usableArticles.filter((article) => isOwnArticle(article)),
+    ...usableArticles.filter((article) => ["부정", "주의"].includes(article.tone)),
+    ...usableArticles,
   ];
   const uniqueIssues = [];
   for (const article of important) {
@@ -4490,8 +4492,25 @@ function groupArticles(articles, key) {
   return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
 }
 
+function isUsableArticle(article) {
+  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article);
+}
+
 function isOwnArticle(article) {
+  if (isStockListingNoiseArticle(article)) return false;
   return article.category === "당사" || /인카금융|인카금융서비스/i.test(`${article.title} ${article.keyword} ${article.summary}`);
+}
+
+function isStockListingNoiseArticle(article = {}) {
+  const title = String(article.title || "");
+  const text = `${title} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`;
+  if (!/52주\s*(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]/.test(title)) {
+    return false;
+  }
+  if (/인카금융서비스|인카금융/.test(title) && /투자의견|목표주가|목표가|증권가|리포트|애널리스트/.test(text)) {
+    return false;
+  }
+  return true;
 }
 
 function categoryPresetFor(value) {
