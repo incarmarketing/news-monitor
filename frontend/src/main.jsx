@@ -4503,8 +4503,11 @@ function isOwnArticle(article) {
 
 function isStockListingNoiseArticle(article = {}) {
   const title = String(article.title || "");
-  const text = `${title} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`;
-  if (!/52주\s*(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]/.test(title)) {
+  const sourceLink = `${article.source || ""} ${article.link || ""}`.toLowerCase();
+  const text = `${title} ${sourceLink} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`;
+  const stockListingTitle = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/.test(title);
+  const isItoozaListing = sourceLink.includes("itooza") && /52주|최고가|최저가|MVP|리스트|상위\s*\d+\s*선/.test(title);
+  if (!stockListingTitle && !isItoozaListing) {
     return false;
   }
   if (/인카금융서비스|인카금융/.test(title) && /투자의견|목표주가|목표가|증권가|리포트|애널리스트/.test(text)) {
