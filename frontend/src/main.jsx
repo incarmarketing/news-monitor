@@ -2712,7 +2712,7 @@ function AiUsagePanel({ status }) {
   return (
     <section className="panel ai-usage-panel">
       <div className="ai-usage-head">
-        <span><Gauge />AI 사용 상태</span>
+        <span><Gauge />API 사용 현황</span>
         <b>{status?.generated_at ? formatCompactDateTime(status.generated_at) : "대기"}</b>
       </div>
       <div className="ai-power-layout">
