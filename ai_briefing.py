@@ -373,7 +373,7 @@ def normalize_window_phrasing(markdown: str, window: dict) -> str:
     label = window.get("label", "")
     if not label:
         return markdown
-    return (markdown or "").replace(f"{label} 기준", f"분석 대상 {label}")
+    return re.sub(rf"{re.escape(label)}\s*기준", f"분석 대상 {label}", markdown or "")
 
 
 def ensure_report_ids(articles: list[dict]) -> None:
