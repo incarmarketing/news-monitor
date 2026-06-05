@@ -18,6 +18,7 @@ from rich.panel import Panel
 
 import archiver
 import config
+import gemini_helper
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -125,13 +126,32 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 - "공유", "활용", "선별", "대응하세요", "확인합니다"처럼 실행 제안으로 읽히는 표현을 피하세요.
 """
 
-    with console.status(f"[cyan]Gemini AI {period_label} 보고서 작성 중...[/]", spinner="dots"):
-        model = genai.GenerativeModel(config.GEMINI_MODEL)
-        response = model.generate_content(
-            prompt,
-            generation_config={"max_output_tokens": config.MAX_TOKENS, "temperature": 0.45},
-        )
-    return response.text
+    failures: list[dict] = []
+    for model_name in gemini_helper.model_candidates():
+        try:
+            with console.status(f"[cyan]Gemini AI {model_name} {period_label} 보고서 작성 중...[/]", spinner="dots"):
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(
+                    prompt,
+                    generation_config={"max_output_tokens": config.MAX_TOKENS, "temperature": 0.45},
+                )
+            text = getattr(response, "text", "") or ""
+            if text.strip():
+                if failures:
+                    console.print(f"[yellow]Gemini 기본 모델 실패 후 {model_name}로 보고서를 작성했습니다.[/]")
+                return text
+            failures.append({"model": model_name, "error": "empty_response", "quota": False})
+        except Exception as exc:
+            failures.append(
+                {
+                    "model": model_name,
+                    "error": gemini_helper.error_summary(exc),
+                    "quota": gemini_helper.is_quota_error(exc),
+                }
+            )
+            console.print(f"[yellow]Gemini {model_name} {period_label} 보고서 생성 실패: {exc}[/]")
+    console.print("[yellow]모든 Gemini 모델 실패: 기간 보고서를 규칙 기반 요약으로 작성합니다.[/]")
+    return fallback_period_summary(aggregate, top_articles, period_label)
 
 
 def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_label: str) -> str:
@@ -151,7 +171,6 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
     top_source_count = aggregate.get("top_sources", [{}])[0].get("count", 0) if aggregate.get("top_sources") else 0
     daily_volume = aggregate.get("daily_volume", [])
     peak_day = max(daily_volume, key=lambda row: row.get("total", 0), default={})
-    own_peak_day = max(daily_volume, key=lambda row: row.get("own", 0), default={})
     latest_day = daily_volume[-1] if daily_volume else {}
     risk_dates = [
         row.get("date", "")[5:]
@@ -340,38 +359,6 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     top_source = top_sources[0].get("source", "-") if top_sources else "-"
     top_source_count = top_sources[0].get("count", 0) if top_sources else 0
     negative_count = tones.get("negative", 0)
-    latest_total = latest_day.get("total", 0)
-    peak_total = peak_day.get("total", 0)
-    if latest_total > peak_total * 0.8 and peak_total:
-        trend_direction = "최근 기준일까지 높은 노출 밀도가 유지됩니다."
-    elif latest_total and peak_total and latest_total < peak_total * 0.45:
-        trend_direction = "최대 노출일 이후 기사량은 안정 구간으로 내려왔습니다."
-    elif latest_total:
-        trend_direction = "최근 기준일은 기간 평균권의 노출 흐름입니다."
-    else:
-        trend_direction = "최근 기준일의 별도 노출 신호는 제한적입니다."
-    trend_summary = (
-        f"기간 내 최대 노출은 {peak_day.get('date', '-')} {peak_total:,}건입니다. "
-        f"당사 직접 언급 피크는 {own_peak_day.get('date', '-')} {own_peak_day.get('own', 0):,}건이며, "
-        f"주의 관찰일은 {risk_date_text}입니다. {trend_direction}"
-    )
-    trend_highlights = [
-        {
-            "label": "최대 노출일",
-            "value": f"{peak_day.get('date', '-')} · {peak_total:,}건",
-            "body": f"{top_keyword} 및 GA/보험 동향이 같은 날 반복 노출됐는지 확인하는 기준일입니다.",
-        },
-        {
-            "label": "당사 노출 피크",
-            "value": f"{own_peak_day.get('date', '-')} · {own_peak_day.get('own', 0):,}건",
-            "body": "성과성 보도와 리스크성 보도를 분리해 브랜드 노출의 성격을 봅니다.",
-        },
-        {
-            "label": "주의 관찰일",
-            "value": risk_date_text,
-            "body": f"HIGH/MEDIUM 판정일입니다. 당사 부정 {own_negative:,}건과 일반 부정 논조 {negative_count:,}건을 분리해 읽습니다.",
-        },
-    ]
     interpretation_notes = [
         {
             "title": "노출 구조",
@@ -440,35 +427,10 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         "density_rows": density_rows,
         "keyword_rows": keyword_rows,
         "source_rows": source_rows,
-        "trend_summary": trend_summary,
-        "trend_highlights": trend_highlights,
         "interpretation_notes": interpretation_notes,
         "evidence_groups": evidence_groups,
         "daily_rows": daily_rows,
     }
-
-
-def decorate_trend_days(rows: list[dict]) -> list[dict]:
-    if not rows:
-        return []
-    max_total = max((row.get("total", 0) for row in rows), default=0)
-    max_own = max((row.get("own", 0) for row in rows), default=0)
-    max_negative = max((row.get("negative", 0) for row in rows), default=0)
-    decorated: list[dict] = []
-    for row in rows:
-        total = row.get("total", 0)
-        own = row.get("own", 0)
-        negative = row.get("negative", 0)
-        decorated.append({
-            **row,
-            "total_height": max(6, round(total / max(max_total, 1) * 100)) if total else 4,
-            "own_height": max(6, round(own / max(max_own, 1) * 100)) if own else 4,
-            "negative_height": max(6, round(negative / max(max_negative, 1) * 100)) if negative else 0,
-            "is_peak": bool(total and total == max_total),
-            "is_own_peak": bool(own and own == max_own),
-            "has_negative": bool(negative),
-        })
-    return decorated
 
 
 def markdown_to_html(md: str) -> str:
@@ -540,7 +502,7 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
 
     aggregate = archiver.aggregate_metrics(daily_data)
     top_articles = archiver.collect_top_articles(daily_data, limit=800)
-    trend_days = decorate_trend_days(aggregate.get("daily_volume", [])[-12:])
+    trend_days = aggregate.get("daily_volume", [])[-12:]
     risk_trend_days = aggregate.get("daily_own_negative", [])[-12:]
     max_trend_total = max((d["total"] for d in trend_days), default=0)
     max_own_trend_total = max((d.get("own", 0) for d in trend_days), default=0)
