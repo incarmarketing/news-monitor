@@ -139,6 +139,7 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
     own_tone = metrics.get("own_by_tone", {})
     action_instruction = build_action_instruction(metrics)
     window = report_window.current_window()
+    baseline_report = fallback_report(clustered, metrics)
 
     return f"""
 당신은 {config.COMPANY_NAME} {config.TEAM_NAME}의 언론 모니터링 분석 담당자입니다.
@@ -161,6 +162,14 @@ def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -
 
 주요 기사:
 {articles_text}
+
+고정 분석 초안:
+{baseline_report}
+
+모델 일관성 기준:
+- 위 고정 분석 초안의 리스크 레벨, 핵심 이슈 선정, 당사/경쟁사/정책 구분을 유지하세요.
+- 모델이 달라도 같은 판단이 나오도록 초안의 사실관계와 우선순위를 바꾸지 마세요.
+- 문장만 더 자연스럽고 보고서답게 다듬되, 새로운 이슈를 만들거나 기사 목록에 없는 내용을 추가하지 마세요.
 
 출력 규칙:
 - 전체 700자 이내.
@@ -291,7 +300,7 @@ def clean_markdown(text: str) -> str:
 
 def fallback_report(clustered: list[dict], metrics: dict) -> str:
     window = report_window.current_window()
-    highlights = select_prompt_articles(clustered, 2) or clustered[:2]
+    highlights = select_fallback_highlights(clustered, 2)
     issue_lines = "\n".join(fallback_issue_line(article) for article in highlights)
     if not issue_lines:
         issue_lines = "- 수집 기사 없음: 특이 리스크가 확인되지 않았습니다."
@@ -304,23 +313,94 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
 """
 
     return f"""## 최종 결론
-{window['label']} 기준 리스크는 {metrics['risk_level']}이며, 당사 부정 {metrics['own_negative']}건입니다.
+{build_fallback_conclusion(clustered, metrics, window)}
 
 ## 핵심 이슈
 {issue_lines}
 
 ## 지표 해석
-전체 {metrics['total_collected']}건 중 당사 보도 {metrics['by_category']['own']}건, 당사 부정 {metrics['own_negative']}건입니다.
+{build_fallback_interpretation(metrics)}
 {response_section}
 
 ## 분석 키워드
-인카금융서비스, 정착률, GA, 보험설계사"""
+{build_fallback_keywords(clustered)}"""
+
+
+def select_fallback_highlights(clustered: list[dict], limit: int) -> list[dict]:
+    def priority(article: dict) -> tuple[int, int]:
+        category = article.get("_category", "")
+        tone = article.get("_tone", "")
+        score = int(article.get("_score", 0) or 0)
+        if category == "own" and tone == "negative":
+            return (0, -score)
+        if category == "own":
+            return (1, -score)
+        if tone == "negative":
+            return (2, -score)
+        if category == "regulation":
+            return (3, -score)
+        if category in {"competitor", "industry"}:
+            return (4, -score)
+        return (5, -score)
+
+    selected = []
+    seen: set[str] = set()
+    for article in sorted(clustered, key=priority):
+        key = article.get("link") or article.get("title", "")
+        if key in seen:
+            continue
+        selected.append(article)
+        seen.add(key)
+        if len(selected) >= limit:
+            break
+    return selected
+
+
+def build_fallback_conclusion(clustered: list[dict], metrics: dict, window: dict) -> str:
+    own_total = metrics.get("by_category", {}).get("own", 0)
+    own_negative = metrics.get("own_negative", 0)
+    own_tone = metrics.get("own_by_tone", {})
+    risk = metrics.get("risk_level", "LOW")
+    highlights = select_fallback_highlights(clustered, 1)
+    top_title = compact_text(highlights[0].get("title", ""), 32) if highlights else ""
+    if own_negative:
+        return f"{window['label']} 분석 대상에서 당사 부정 {own_negative}건이 확인되어 리스크는 {risk}입니다. 핵심 기사는 \"{top_title}\"입니다."
+    if own_tone.get("positive", 0):
+        return f"{window['label']} 분석 대상에서 당사 긍정 {own_tone.get('positive', 0)}건이 우선 관찰됐고 직접 부정은 없습니다."
+    if own_total:
+        return f"{window['label']} 분석 대상에서 당사 언급 {own_total}건이 확인됐으며 직접 부정 이슈는 없습니다."
+    if top_title:
+        return f"{window['label']} 분석 대상은 당사 직접 이슈보다 \"{top_title}\" 등 업계 흐름 중심입니다."
+    return f"{window['label']} 분석 대상에서 주요 모니터링 이슈는 확인되지 않았습니다."
+
+
+def build_fallback_interpretation(metrics: dict) -> str:
+    cats = metrics.get("by_category", {})
+    tones = metrics.get("by_tone", {})
+    own_tone = metrics.get("own_by_tone", {})
+    market = cats.get("competitor", 0) + cats.get("industry", 0)
+    return (
+        f"전체 수집 {metrics.get('total_collected', 0)}건 중 분석 대상은 {metrics.get('total_after_cluster', 0)}건입니다. "
+        f"당사 {cats.get('own', 0)}건(긍정 {own_tone.get('positive', 0)}, 중립 {own_tone.get('neutral', 0)}, 부정 {own_tone.get('negative', metrics.get('own_negative', 0))})이며, "
+        f"정책/규제 {cats.get('regulation', 0)}건, 경쟁/업계 {market}건, 전체 부정 논조 {tones.get('negative', 0)}건으로 분리해 봅니다."
+    )
+
+
+def build_fallback_keywords(clustered: list[dict]) -> str:
+    keywords: list[str] = []
+    for article in select_fallback_highlights(clustered, 5):
+        keyword = str(article.get("keyword") or "").strip()
+        if keyword and keyword not in keywords:
+            keywords.append(keyword)
+    if not keywords:
+        keywords = ["인카금융서비스", "GA", "보험업계"]
+    return ", ".join(keywords[:5])
 
 
 def fallback_issue_line(article: dict) -> str:
     ref = article.get("_report_id", "")
     ref_label = f"[{ref}] " if ref else ""
-    title = compact_text(article.get("title", ""), 24)
+    title = compact_text(article.get("title", ""), 30)
     return f"- {ref_label}{title}: {fallback_article_judgement(article)}"
 
 
@@ -328,28 +408,35 @@ def fallback_article_judgement(article: dict) -> str:
     category = article.get("_category", "")
     tone = article.get("_tone", "")
     text = f"{article.get('title', '')} {article.get('description', '')}"
+    summary = compact_text(article.get("description", ""), 34)
     if category == "own" and tone == "negative":
-        return "당사 직접 리스크로 원문 확인이 필요합니다."
+        return summary or "당사 직접 리스크로 원문 확인이 필요합니다."
     if category == "own" and tone == "positive":
-        return "당사 우호 보도로 보고서 우선 근거입니다."
+        return summary or "당사 우호 보도로 보고서 우선 근거입니다."
     if category == "own":
-        return "당사 언급 흐름으로 함께 확인할 기사입니다."
+        return summary or "당사 언급 흐름으로 함께 확인할 기사입니다."
     if any(term in text for term in ("투자의견", "목표가", "주가", "수수료", "정착지원금")):
-        return "시장 평가와 제도 신호로 분리 관찰합니다."
+        return summary or "시장 평가와 제도 신호로 분리 관찰합니다."
     if category == "regulation":
-        return "정책·감독 방향성 확인이 필요한 보도입니다."
+        return summary or "정책·감독 방향성 확인이 필요한 보도입니다."
     if category == "competitor":
-        return "경쟁사·GA 시장 흐름을 보여주는 기사입니다."
-    return "업계 동향으로 참고할 기사입니다."
+        return summary or "경쟁사·GA 시장 흐름을 보여주는 기사입니다."
+    return summary or "업계 동향으로 참고할 기사입니다."
 
 
-def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:
+def build_html_report(
+    report_md: str,
+    clustered: list[dict],
+    metrics: dict,
+    yesterday: dict | None,
+    window_override: dict | None = None,
+) -> str:
     ensure_report_ids(clustered)
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
     template = env.get_template("email.html")
     y_metrics = yesterday.get("metrics") if yesterday else None
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
-    window = report_window.current_window()
+    window = window_override or report_window.current_window()
     report_md = normalize_window_phrasing(report_md, window)
     sections = parse_report_sections(report_md, metrics)
 
