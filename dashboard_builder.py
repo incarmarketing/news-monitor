@@ -629,6 +629,8 @@ def article_topic_signature(row: dict) -> str:
         return "인카금융서비스-우수인증설계사"
     if includes_all(["정착지원금", "인카금융서비스"]):
         return "ga-정착지원금-인카"
+    if "투자의견" in text and ("하향" in text or "낮아" in text) and ("인카" in text or ("코스피" in text and "증권가" in text)):
+        return "인카금융서비스-투자의견-하향"
     return ""
 
 
