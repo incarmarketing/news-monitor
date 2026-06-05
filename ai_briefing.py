@@ -348,9 +348,10 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
     template = env.get_template("email.html")
     y_metrics = yesterday.get("metrics") if yesterday else None
-    sections = parse_report_sections(report_md, metrics)
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
     window = report_window.current_window()
+    report_md = normalize_window_phrasing(report_md, window)
+    sections = parse_report_sections(report_md, metrics)
 
     return template.render(
         subject_prefix=config.EMAIL_SUBJECT_PREFIX,
@@ -366,6 +367,13 @@ def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yest
         methodology=build_methodology(metrics),
         window=window,
     )
+
+
+def normalize_window_phrasing(markdown: str, window: dict) -> str:
+    label = window.get("label", "")
+    if not label:
+        return markdown
+    return (markdown or "").replace(f"{label} 기준", f"분석 대상 {label}")
 
 
 def ensure_report_ids(articles: list[dict]) -> None:
