@@ -490,6 +490,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         </div>
         <div className="side-column">
           <WatchPanel jobs={jobs} risk={summary.risk} />
+          <AiUsagePanel status={operations?.aiStatus} />
           <Panel title="알림톡 발송 이력" icon={Bell} meta={`${notifications.length.toLocaleString("ko-KR")}건`}>
             <NotificationList rows={notifications} />
           </Panel>
@@ -2550,7 +2551,7 @@ function formatIssueMeta(issue = {}) {
     sourceLabel,
     issue.publishedAt || issue.time || issue.date,
   ].filter(Boolean);
-  if (Number(issue.relatedCount || 1) > 1) {
+  if (false && Number(issue.relatedCount || 1) > 1) {
     parts.push(`관련 ${Number(issue.relatedCount).toLocaleString("ko-KR")}건`);
   }
   return parts.join(" · ");
@@ -2694,6 +2695,74 @@ function WatchPanel({ jobs, risk = "LOW" }) {
       <div className="watch-progress"><span /></div>
     </section>
   );
+}
+
+function AiUsagePanel({ status }) {
+  const gemini = status?.gemini || {};
+  const groq = status?.groq || {};
+  const rate = groq.rate_limit || {};
+  const groqDailyText = formatUsagePair(rate.daily_used_tokens, rate.daily_limit_tokens);
+  const groqTokenText = formatLimitPair(rate.remaining_tokens, rate.limit_tokens);
+  const groqRequestText = formatLimitPair(rate.remaining_requests, rate.limit_requests);
+  const geminiState = gemini.circuit_open
+    ? `차단 중${gemini.blocked_until ? ` · ${formatCompactDateTime(gemini.blocked_until)}` : ""}`
+    : gemini.has_key ? "대기" : "키 없음";
+  return (
+    <section className="panel ai-usage-panel">
+      <div className="ai-usage-head">
+        <span><Gauge />AI 사용 상태</span>
+        <b>{status?.generated_at ? formatCompactDateTime(status.generated_at) : "대기"}</b>
+      </div>
+      <div className="ai-usage-grid">
+        <div>
+          <strong>Groq</strong>
+          <em>{groq.model || "-"}</em>
+          <span>일일 토큰 {groqDailyText}</span>
+          <span>분당 토큰 {groqTokenText}</span>
+          <span>일 요청 {groqRequestText}</span>
+          {rate.reset_tokens && <small>분당 토큰 리셋 {rate.reset_tokens}</small>}
+        </div>
+        <div>
+          <strong>Gemini</strong>
+          <em>{gemini.model || "-"}</em>
+          <span>{geminiState}</span>
+          {gemini.circuit_reason && <small>{gemini.circuit_reason}</small>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function formatLimitPair(remaining, limit) {
+  if (remaining === undefined && limit === undefined) return "다음 호출 후 표시";
+  const left = remaining === undefined ? "-" : formatCompactNumber(remaining);
+  const right = limit === undefined ? "-" : formatCompactNumber(limit);
+  return `${left} / ${right}`;
+}
+
+function formatUsagePair(used, limit) {
+  if (used === undefined && limit === undefined) return "다음 한도 응답 후 표시";
+  const left = used === undefined ? "-" : formatCompactNumber(used);
+  const right = limit === undefined ? "-" : formatCompactNumber(limit);
+  return `${left} / ${right}`;
+}
+
+function formatCompactNumber(value) {
+  const number = Number(String(value || "").replace(/,/g, ""));
+  if (!Number.isFinite(number)) return String(value || "-");
+  return number.toLocaleString("ko-KR");
+}
+
+function formatCompactDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || "-");
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
 }
 
 function NotificationList({ rows }) {

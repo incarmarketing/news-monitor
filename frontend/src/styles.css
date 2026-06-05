@@ -1257,6 +1257,85 @@ button.kpi-card {
   background: linear-gradient(90deg, #86efac, #9bd5ff);
 }
 
+.ai-usage-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-usage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-usage-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ai-usage-head svg {
+  width: 17px;
+  height: 17px;
+  color: var(--blue);
+}
+
+.ai-usage-head b {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ai-usage-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-usage-grid > div {
+  display: grid;
+  grid-template-columns: minmax(54px, .42fr) minmax(0, 1fr);
+  gap: 3px 8px;
+  align-items: center;
+  padding: 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.ai-usage-grid strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ai-usage-grid em {
+  min-width: 0;
+  color: var(--blue);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-usage-grid span,
+.ai-usage-grid small {
+  grid-column: 2;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ai-usage-grid small {
+  color: var(--muted);
+}
+
 @keyframes radar { to { transform: rotate(360deg); } }
 
 .watch-lines, .job-rows, .notification-list {

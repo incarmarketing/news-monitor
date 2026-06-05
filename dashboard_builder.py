@@ -16,6 +16,8 @@ import supabase_store
 import config
 import archiver
 import ai_fallback
+import gemini_helper
+import groq_helper
 
 BASE_DIR = Path(__file__).parent
 PUBLIC_DIR = BASE_DIR / "public"
@@ -504,6 +506,7 @@ def publish_dashboard() -> Path:
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
+    ai_status = build_ai_status()
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -520,6 +523,7 @@ def publish_dashboard() -> Path:
                 "notifications": notifications,
                 "watch_runs": watch_runs,
                 "scraps": scraps,
+                "ai_status": ai_status,
             },
             ensure_ascii=False,
             indent=2,
@@ -543,6 +547,30 @@ def publish_dashboard() -> Path:
     print(f"Published dashboard: {target}")
     print(f"Dashboard articles: {len(articles)}")
     return target
+
+
+def build_ai_status() -> dict:
+    circuit_open, circuit_state = gemini_helper.circuit_open()
+    groq_status = groq_helper.rate_limit_status()
+    return {
+        "generated_at": datetime.now(KST).isoformat(),
+        "gemini": {
+            "model": config.GEMINI_MODEL,
+            "fallback_models": getattr(config, "GEMINI_FALLBACK_MODELS", []),
+            "has_key": bool(os.getenv("GEMINI_API_KEY", "").strip()),
+            "circuit_open": circuit_open,
+            "circuit_reason": circuit_state.get("reason", ""),
+            "blocked_until": circuit_state.get("blocked_until", ""),
+            "usage_url": getattr(config, "GEMINI_USAGE_URL", "https://aistudio.google.com/usage"),
+        },
+        "groq": {
+            "model": os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL),
+            "report_model": config.GROQ_MODEL,
+            "has_key": bool(os.getenv("GROQ_API_KEY", "").strip()),
+            "rate_limit": groq_status,
+            "limits_url": "https://console.groq.com/settings/limits",
+        },
+    }
 
 
 def publish_rebuilt_dashboard() -> Path | None:

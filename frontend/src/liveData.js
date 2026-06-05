@@ -238,6 +238,7 @@ export async function loadOperationalData() {
     ads: [],
     aliases: [],
     keywords: [],
+    aiStatus: null,
     session: null,
   };
 
@@ -273,6 +274,7 @@ async function loadStaticOperationalData() {
         ads: Array.isArray(payload?.ads) ? payload.ads.map(normalizeAd) : [],
         aliases: Array.isArray(payload?.aliases) ? payload.aliases : [],
         keywords: Array.isArray(payload?.keywords) ? payload.keywords.map(normalizeKeyword).filter(Boolean) : [],
+        aiStatus: payload?.ai_status || null,
         session: null,
       };
     } catch {
@@ -297,6 +299,7 @@ async function loadOperationalDataFromSupabaseSession() {
     ads: [],
     aliases: [],
     keywords: [],
+    aiStatus: null,
     session: getStoredSession(),
   };
 
@@ -363,6 +366,7 @@ async function loadOperationalDataFromSupabaseSession() {
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
       aliases: Array.isArray(aliases) ? aliases : [],
       keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
+      aiStatus: null,
       session,
     };
   } catch (error) {

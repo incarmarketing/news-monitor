@@ -13,6 +13,7 @@ import config
 
 GROQ_API_URL = os.getenv("GROQ_API_URL", "https://api.groq.com/openai/v1/chat/completions")
 _GROQ_BLOCKED_UNTIL = 0.0
+_LAST_GROQ_RATE_LIMIT: dict = {}
 
 
 def is_enabled() -> bool:
@@ -197,11 +198,14 @@ def chat_completion(
         )
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
+                record_rate_limit_headers(response.headers, payload["model"], purpose, status=200)
                 data = json.loads(response.read().decode("utf-8"))
             text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
             return str(text or "").strip()
         except urllib.error.HTTPError as exc:
+            record_rate_limit_headers(exc.headers, payload["model"], purpose, status=exc.code)
             detail = exc.read().decode("utf-8", errors="replace")[:300]
+            record_rate_limit_error_detail(detail)
             print(f"Groq {purpose} failed: HTTP {exc.code} {detail}")
             if exc.code == 429:
                 retry_after = int(exc.headers.get("Retry-After", "3") or "3")
@@ -217,6 +221,53 @@ def chat_completion(
             print(f"Groq {purpose} failed: {type(exc).__name__} {str(exc)[:300]}")
             return ""
     return ""
+
+
+def record_rate_limit_headers(headers, model: str, purpose: str, *, status: int) -> None:
+    global _LAST_GROQ_RATE_LIMIT
+    if not headers:
+        return
+    keys = {
+        "limit_requests": "x-ratelimit-limit-requests",
+        "remaining_requests": "x-ratelimit-remaining-requests",
+        "reset_requests": "x-ratelimit-reset-requests",
+        "limit_tokens": "x-ratelimit-limit-tokens",
+        "remaining_tokens": "x-ratelimit-remaining-tokens",
+        "reset_tokens": "x-ratelimit-reset-tokens",
+        "retry_after": "retry-after",
+    }
+    values = {name: headers.get(header) for name, header in keys.items() if headers.get(header)}
+    if not values:
+        return
+    values.update(
+        {
+            "model": model,
+            "purpose": purpose,
+            "status": status,
+            "captured_at": int(time.time()),
+        }
+    )
+    _LAST_GROQ_RATE_LIMIT = values
+
+
+def record_rate_limit_error_detail(detail: str) -> None:
+    global _LAST_GROQ_RATE_LIMIT
+    if not detail:
+        return
+    match = re.search(r"TPD\):\s*Limit\s*(\d+),\s*Used\s*(\d+),\s*Requested\s*(\d+)", detail)
+    if not match:
+        return
+    _LAST_GROQ_RATE_LIMIT.update(
+        {
+            "daily_limit_tokens": match.group(1),
+            "daily_used_tokens": match.group(2),
+            "daily_requested_tokens": match.group(3),
+        }
+    )
+
+
+def rate_limit_status() -> dict:
+    return dict(_LAST_GROQ_RATE_LIMIT)
 
 
 def build_issue_prompt(articles: list[dict]) -> str:
