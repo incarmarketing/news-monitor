@@ -144,6 +144,11 @@ STOCK_DECLINE_WORDS = [
     "하락", "급락", "약세", "낙폭", "신저가", "부진", "조정", "매도",
 ]
 
+STOCK_LISTING_NOISE_TITLE_WORDS = [
+    "52주 최저가", "52주 최고가", "장중 신저가", "장중 신고가",
+    "강세 토픽", "약세 토픽", "특징주", "오전 이슈 [보험]",
+]
+
 POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
 
 PHOTO_SPORTS_NOISE_WORDS = [
@@ -287,11 +292,23 @@ def is_non_business_noise(article: dict) -> bool:
     title = article.get("title", "")
     if not text.strip():
         return True
+    if is_stock_listing_noise(article):
+        return True
     has_photo_sports_signal = any(word in title or word in text for word in PHOTO_SPORTS_NOISE_WORDS)
     has_material_signal = any(word in text for word in MATERIAL_CAUTION_CONTEXT_WORDS) or any(name in text for name in OWN_NAMES)
     if has_photo_sports_signal and not has_material_signal:
         return True
     return False
+
+
+def is_stock_listing_noise(article: dict) -> bool:
+    title = article.get("title", "")
+    text = title + " " + article.get("description", "")
+    if not any(word in title for word in STOCK_LISTING_NOISE_TITLE_WORDS):
+        return False
+    if any(name in title for name in OWN_NAMES) and any(word in text for word in INVESTMENT_DOWNGRADE_CONTEXT_WORDS):
+        return False
+    return True
 
 
 def analyze_tone(article: dict) -> str:
