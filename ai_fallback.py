@@ -29,6 +29,17 @@ def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> 
     if not articles:
         return "", "none"
 
+    provider_mode = issue_summary_provider_mode()
+    if provider_mode == "rules":
+        rules_summary = rules_issue_summary(articles)
+        return rules_summary, "rules" if rules_summary else "none"
+    if provider_mode == "groq":
+        groq_summary = summarize_issue_with_groq(articles, retries=retries)
+        if groq_summary:
+            return groq_summary, f"groq:{config.GROQ_MODEL}"
+        rules_summary = rules_issue_summary(articles)
+        return rules_summary, "rules" if rules_summary else "none"
+
     prompt = groq_helper.build_issue_prompt(articles)
     gemini_text, gemini_provider = generate_gemini_text(
         f"{ISSUE_SYSTEM_PROMPT}\n\n{prompt}",
@@ -40,10 +51,9 @@ def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> 
     if gemini_summary:
         return gemini_summary, gemini_provider
 
-    if groq_helper.is_enabled():
-        groq_summary = groq_helper.summarize_issue(articles, retries=retries)
-        if groq_summary:
-            return groq_summary, f"groq:{config.GROQ_MODEL}"
+    groq_summary = summarize_issue_with_groq(articles, retries=retries)
+    if groq_summary:
+        return groq_summary, f"groq:{config.GROQ_MODEL}"
 
     rules_summary = rules_issue_summary(articles)
     return rules_summary, "rules" if rules_summary else "none"
@@ -52,6 +62,17 @@ def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> 
 def summarize_issue(articles: list[dict], *, retries: int = 0) -> str:
     summary, _provider = summarize_issue_with_provider(articles, retries=retries)
     return summary
+
+
+def issue_summary_provider_mode() -> str:
+    value = os.getenv("AI_ISSUE_SUMMARY_PROVIDER", "auto").strip().lower()
+    return value if value in {"auto", "gemini", "groq", "rules"} else "auto"
+
+
+def summarize_issue_with_groq(articles: list[dict], *, retries: int = 0) -> str:
+    if not groq_helper.is_enabled():
+        return ""
+    return groq_helper.summarize_issue(articles, retries=retries)
 
 
 def generate_gemini_text(

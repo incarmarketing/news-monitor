@@ -205,6 +205,7 @@ jobs:
           GROQ_MODEL: ${{ secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
           GROQ_MAX_ISSUE_SUMMARIES: ${{ secrets.GROQ_MAX_ISSUE_SUMMARIES || '20' }}
           AI_MAX_ISSUE_SUMMARIES: ${{ secrets.AI_MAX_ISSUE_SUMMARIES || '8' }}
+          AI_ISSUE_SUMMARY_PROVIDER: groq
 
       - name: Configure GitHub Pages
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))

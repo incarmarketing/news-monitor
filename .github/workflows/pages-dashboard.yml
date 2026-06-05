@@ -85,6 +85,7 @@ jobs:
           GROQ_MODEL: ${{ secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
           GROQ_MAX_ISSUE_SUMMARIES: ${{ secrets.GROQ_MAX_ISSUE_SUMMARIES || '20' }}
           AI_MAX_ISSUE_SUMMARIES: ${{ secrets.AI_MAX_ISSUE_SUMMARIES || '8' }}
+          AI_ISSUE_SUMMARY_PROVIDER: groq
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
