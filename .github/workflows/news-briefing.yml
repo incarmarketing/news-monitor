@@ -261,6 +261,7 @@ jobs:
             exit 0
           fi
           git commit -m "Archive briefing data"
+          git stash push --include-untracked -m "discard generated static artifacts before archive push" || true
           git pull --rebase
           git push
 
