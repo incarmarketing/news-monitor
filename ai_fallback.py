@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import json
 
 import google.generativeai as genai
 
@@ -64,6 +65,25 @@ def summarize_issue(articles: list[dict], *, retries: int = 0) -> str:
     return summary
 
 
+def summarize_issue_groups_with_provider(groups: list[dict], *, retries: int = 0) -> list[tuple[str, str]]:
+    """Summarize dashboard issue groups, batching Groq when explicitly requested."""
+    provider_mode = issue_summary_provider_mode()
+    if provider_mode == "groq":
+        summaries = summarize_issue_groups_with_groq(groups, retries=retries)
+        if summaries:
+            result: list[tuple[str, str]] = []
+            for index, group in enumerate(groups):
+                summary = summaries[index] if index < len(summaries) else ""
+                if summary:
+                    result.append((summary, f"groq:{config.GROQ_MODEL}"))
+                else:
+                    result.append((rules_issue_summary(group.get("members", [])), "rules"))
+            return result
+        return [(rules_issue_summary(group.get("members", [])), "rules") for group in groups]
+
+    return [summarize_issue_with_provider(group.get("members", []), retries=retries) for group in groups]
+
+
 def issue_summary_provider_mode() -> str:
     value = os.getenv("AI_ISSUE_SUMMARY_PROVIDER", "auto").strip().lower()
     return value if value in {"auto", "gemini", "groq", "rules"} else "auto"
@@ -73,6 +93,76 @@ def summarize_issue_with_groq(articles: list[dict], *, retries: int = 0) -> str:
     if not groq_helper.is_enabled():
         return ""
     return groq_helper.summarize_issue(articles, retries=retries)
+
+
+def summarize_issue_groups_with_groq(groups: list[dict], *, retries: int = 0) -> list[str]:
+    if not groq_helper.is_enabled() or not groups:
+        return []
+    text = groq_helper.chat_completion(
+        [
+            {
+                "role": "system",
+                "content": (
+                    "You summarize Korean news issue groups for a media monitoring dashboard. "
+                    "Return only a JSON array of concise Korean sentences. "
+                    "No advice, no risk judgment, no markdown."
+                ),
+            },
+            {"role": "user", "content": build_group_batch_prompt(groups)},
+        ],
+        max_tokens=int(os.getenv("GROQ_ISSUE_BATCH_MAX_TOKENS", "420")),
+        temperature=0.1,
+        retries=retries,
+        purpose="issue_summary_batch",
+    )
+    return parse_issue_batch_response(text, len(groups))
+
+
+def build_group_batch_prompt(groups: list[dict]) -> str:
+    sections = [
+        "각 관련 기사 묶음의 핵심 이슈를 한국어 한 문장으로 요약하세요.",
+        "반드시 입력 순서와 같은 JSON 문자열 배열만 출력하세요.",
+        "제목 반복, 출처, 날짜, 판단, 대응 제안은 쓰지 마세요.",
+    ]
+    for index, group in enumerate(groups, 1):
+        rows = []
+        for article in group.get("members", [])[:2]:
+            title = groq_helper.clean_prompt_text(article.get("title", ""))[:80]
+            summary = groq_helper.clean_prompt_text(article.get("summary", "") or article.get("description", ""))[:90]
+            rows.append(f"- {title} / {summary}")
+        sections.append(f"\n[{index}]\n" + "\n".join(rows))
+    return "\n".join(sections)
+
+
+def parse_issue_batch_response(value: object, expected: int) -> list[str]:
+    text = groq_helper.clean_prompt_text(value)
+    if not text:
+        return []
+    try:
+        start = text.index("[")
+        end = text.rindex("]") + 1
+        parsed = json.loads(text[start:end])
+        if isinstance(parsed, list):
+            return [clean_batch_issue_sentence(item) for item in parsed[:expected]]
+    except Exception:
+        pass
+    lines = re.split(r"\s*(?:\d+[\).]|[-•])\s*", text)
+    cleaned = [clean_batch_issue_sentence(line) for line in lines if line.strip()]
+    return [item for item in cleaned if item][:expected]
+
+
+def clean_batch_issue_sentence(value: object) -> str:
+    text = groq_helper.clean_prompt_text(value)
+    text = text.strip("\"'`[] ")
+    text = re.sub(r"^(요약|이슈|핵심)\s*[:：]\s*", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) < 8:
+        return ""
+    if len(text) > 120:
+        text = text[:120].rstrip()
+    if not re.search(r"[.!?。]$", text):
+        text += "."
+    return text
 
 
 def generate_gemini_text(

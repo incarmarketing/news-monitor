@@ -217,11 +217,12 @@ def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
     selected = sorted(groups, key=issue_group_score, reverse=True)[:limit]
     generated = 0
     providers: Counter[str] = Counter()
-    for group in selected:
+    summaries = ai_fallback.summarize_issue_groups_with_provider(selected)
+    for group, result in zip(selected, summaries):
         members = group.get("members", [])
         if not members:
             continue
-        summary, provider = ai_fallback.summarize_issue_with_provider(members)
+        summary, provider = result
         if not summary:
             continue
         generated += 1
@@ -702,11 +703,12 @@ def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
     selected = select_current_issue_summary_groups(rows, limit)
     generated = 0
     providers: Counter[str] = Counter()
-    for group in selected:
+    summaries = ai_fallback.summarize_issue_groups_with_provider(selected)
+    for group, result in zip(selected, summaries):
         members = group.get("members", [])
         if not members:
             continue
-        summary, provider = ai_fallback.summarize_issue_with_provider(members)
+        summary, provider = result
         if not summary:
             continue
         generated += 1
