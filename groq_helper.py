@@ -284,6 +284,8 @@ def normalize_risk_claim_wording(text: str) -> str:
         return ""
     if "인카" in text and ("가로챈" in text or ("가로" in text and "밝혀" in text)):
         return "인카금융 관련 보험 대리점 관리 부실 논란이 제기됐다"
+    if "인카" in text and "투자의견" in text and ("하향" in text or "낮아" in text):
+        return "인카금융서비스의 투자의견 하향 보도가 나왔다"
     text = re.sub(r"(.+?)(?:이|가)\s*문제가 되고 있다\.?$", r"\1 논란이 제기됐다", text)
     text = re.sub(r"(.+?)이\s*밝혀졌다\.?$", r"\1 관련 논란이 제기됐다", text)
     return text.strip()
