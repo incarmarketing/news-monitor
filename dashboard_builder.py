@@ -7,7 +7,7 @@ import os
 import re
 import shutil
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -23,6 +23,7 @@ PUBLIC_DATA_DIR = PUBLIC_DIR / "data"
 TEMPLATE_DIR = BASE_DIR / "templates"
 FRONTEND_DIST_DIR = BASE_DIR / "frontend" / "dist"
 DEFAULT_SUPABASE_PROJECT_REF = "moszekksbhprhevxdynb"
+KST = timezone(timedelta(hours=9))
 
 CATEGORY_LABELS = {
     "own": "\ub2f9\uc0ac \ubcf4\ub3c4",
@@ -220,7 +221,7 @@ def build_summary(archives: list[dict], articles: list[dict]) -> dict:
     latest_window = latest_archive.get("window", {})
 
     return {
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "generated_at": datetime.now(KST).strftime("%Y-%m-%d %H:%M"),
         "days": len(dates),
         "first_date": min(dates) if dates else "",
         "last_date": max(dates) if dates else "",
