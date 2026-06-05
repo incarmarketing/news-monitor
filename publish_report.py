@@ -25,12 +25,7 @@ def latest_report() -> Path:
     return files[0]
 
 
-def latest_archive_report() -> tuple[str, str | None, str] | None:
-    archives = archiver.load_all_archives()
-    if not archives:
-        return None
-
-    payload = archives[-1]
+def render_archive_report(payload: dict) -> tuple[str, str | None, str]:
     timestamp = datetime.fromisoformat(payload["timestamp"])
     report_name = f"briefing_{timestamp.strftime('%Y%m%d_%H%M')}.html"
     stable_name = stable_daily_report_name(payload)
@@ -38,8 +33,22 @@ def latest_archive_report() -> tuple[str, str | None, str] | None:
     articles = payload.get("articles", [])
     metrics = payload.get("metrics", {})
     previous_day = archiver.load_day(timestamp.date() - timedelta(days=1))
-    html_body = ai_briefing.build_html_report(report_md, articles, metrics, previous_day)
+    html_body = ai_briefing.build_html_report(
+        report_md,
+        articles,
+        metrics,
+        previous_day,
+        window_override=payload.get("window") or None,
+    )
     return report_name, stable_name, html_body
+
+
+def latest_archive_report() -> tuple[str, str | None, str] | None:
+    archives = archiver.load_all_archives()
+    if not archives:
+        return None
+
+    return render_archive_report(archives[-1])
 
 
 def stable_daily_report_name(payload: dict) -> str | None:
@@ -62,6 +71,7 @@ def publish() -> Path:
         source = None
 
     if archive:
+        publish_all_daily_slots()
         report_name, stable_name, html_body = archive
         archive_target = REPORTS_DIR / report_name
         archive_target.write_text(html_body, encoding="utf-8")
@@ -102,6 +112,18 @@ def publish() -> Path:
     publish_period_report("monthly")
     dashboard_builder.publish_dashboard()
     return index_target
+
+
+def publish_all_daily_slots() -> None:
+    for payload in archiver.load_all_archives():
+        report_name, stable_name, html_body = render_archive_report(payload)
+        archive_target = REPORTS_DIR / report_name
+        archive_target.write_text(html_body, encoding="utf-8")
+        if stable_name:
+            stable_target = REPORTS_DIR / stable_name
+            stable_target.parent.mkdir(parents=True, exist_ok=True)
+            stable_target.write_text(html_body, encoding="utf-8")
+            print(f"Static daily slot: {stable_target}")
 
 
 def publish_assets() -> None:
