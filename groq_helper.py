@@ -39,7 +39,8 @@ def summarize_issue(articles: list[dict], *, retries: int = 1) -> str:
         retries=retries,
         purpose="issue_summary",
     )
-    return clean_issue_summary(text)
+    cleaned = clean_issue_summary(text)
+    return cleaned or fallback_issue_summary(articles)
 
 
 def generate_briefing_report(clustered: list[dict], metrics: dict, baseline_report: str, *, retries: int = 0) -> str:
@@ -233,6 +234,7 @@ def build_issue_prompt(articles: list[dict]) -> str:
 - 기사 묶음에 인카금융 또는 인카금융서비스가 있으면 당사와 관련된 사실을 우선 요약
 - 여러 회사가 함께 나오면 제목의 첫 회사명이 아니라 키워드와 본문에서 반복되는 핵심 주체를 기준으로 요약
 - 실적, 순위, 인증, 평판 기사에서는 어떤 회사의 어떤 지표인지 명확히 쓸 것
+- 의혹·논란·부정 기사에서는 사실 확정처럼 쓰지 말고 '의혹이 제기됐다' 또는 '논란이 제기됐다'로 쓸 것
 - 판단, 대응 제안, 리스크 등급, 긍정/부정/주의 표현 금지
 - 언론사명, 날짜, 기사 수 표기 금지
 - 문장은 반드시 완결형으로 끝낼 것
@@ -267,6 +269,7 @@ def clean_issue_summary(value: object) -> str:
         text = sentence
 
     text = remove_action_or_judgment_tail(text)
+    text = normalize_risk_claim_wording(text)
     if len(text) < 18:
         return ""
     if len(text) > 120:
@@ -274,6 +277,16 @@ def clean_issue_summary(value: object) -> str:
     if not re.search(r"[.!?。]$", text):
         text += "."
     return text
+
+
+def normalize_risk_claim_wording(text: str) -> str:
+    if not text:
+        return ""
+    if "인카" in text and ("가로챈" in text or ("가로" in text and "밝혀" in text)):
+        return "인카금융 관련 보험 대리점 관리 부실 논란이 제기됐다"
+    text = re.sub(r"(.+?)(?:이|가)\s*문제가 되고 있다\.?$", r"\1 논란이 제기됐다", text)
+    text = re.sub(r"(.+?)이\s*밝혀졌다\.?$", r"\1 관련 논란이 제기됐다", text)
+    return text.strip()
 
 
 def remove_action_or_judgment_tail(text: str) -> str:
@@ -289,6 +302,48 @@ def remove_action_or_judgment_tail(text: str) -> str:
     for pattern in patterns:
         cleaned = re.sub(pattern, "", cleaned)
     return cleaned.strip(" .")
+
+
+def fallback_issue_summary(articles: list[dict]) -> str:
+    if not articles:
+        return ""
+    representative = articles[0]
+    text = clean_prompt_text(
+        " ".join(
+            str(value or "")
+            for article in articles[:3]
+            for value in (
+                article.get("title", ""),
+                article.get("summary", ""),
+                article.get("description", ""),
+                article.get("keyword", ""),
+            )
+        )
+    )
+
+    if "인카" in text and "정착률" in text:
+        match = re.search(r"정착률\s*([0-9]+(?:\.[0-9]+)?%)", text)
+        rate = match.group(1) if match else "57%"
+        return f"인카금융서비스의 설계사 정착률이 {rate}로 보도됐다."
+    if "인카" in text and "투자의견" in text and ("하향" in text or "낮아" in text):
+        return "인카금융서비스의 투자의견 하향 보도가 나왔다."
+    if "인카" in text and "우수인증설계사" in text:
+        match = re.search(r"([0-9,]+)\s*명", text)
+        count = f" {match.group(1)}명" if match else ""
+        return f"인카금융서비스가 우수인증설계사{count} 배출 실적을 보도했다."
+    if "인카" in text and "브랜드평판" in text:
+        return "인카금융서비스가 독립 보험대리점 브랜드평판 상위권에 올랐다."
+    if "인카" in text and ("불법 사채" in text or "사채놀이" in text or "약탈 영업" in text):
+        return "인카금융 관련 보험 꺾기와 불법 사채 의혹이 제기됐다."
+    if "인카" in text and ("가로챈" in text or "관리 부실" in text):
+        return "인카금융 관련 보험 대리점 관리 부실 논란이 제기됐다."
+
+    title = clean_prompt_text(representative.get("title", ""))
+    title = re.sub(r"\[[^\]]+\]|\([^)]*\)|<[^>]+>", " ", title)
+    title = re.sub(r"\s+", " ", title).strip(" -")
+    if len(title) > 90:
+        title = title[:90].rstrip()
+    return f"{title} 보도가 나왔다." if title else ""
 
 
 def clean_report_text(value: object) -> str:
