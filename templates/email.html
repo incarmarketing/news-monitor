@@ -399,13 +399,22 @@
   .cat-other { background:#f1f5f9; color:#475569; }
   .tone-negative { background:var(--red-soft); color:#a1122b; }
   .tone-positive { background:var(--green-soft); color:#166534; }
-  .tone-caution,
-  .tone-neutral { background:#fff7ed; color:#b45309; }
+  .tone-caution { background:#fff7ed; color:#b45309; }
+  .tone-neutral { background:#eff6ff; color:#1d4ed8; }
   .article-title {
     color:var(--ink);
     font-size:12.5px;
     font-weight:900;
     line-height:1.35;
+    overflow-wrap:anywhere;
+    word-break:keep-all;
+  }
+  .article-summary {
+    margin-top:4px;
+    color:#344054;
+    font-size:11px;
+    font-weight:800;
+    line-height:1.45;
     overflow-wrap:anywhere;
     word-break:keep-all;
   }
@@ -550,6 +559,7 @@
       font-size:6.5px;
     }
     .article-title { font-size:7.3px; line-height:1.22; }
+    .article-summary { margin-top:1px; font-size:6.6px; line-height:1.18; }
     .source { margin-top:1px; font-size:6.5px; }
     .impact { padding:2px 3px; border-radius:4px; font-size:6.5px; }
     .method-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
@@ -713,6 +723,9 @@
               </div>
               <div>
                 <a class="article-title" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
+                {% if a._summary %}
+                <div class="article-summary">{{ a._summary }}</div>
+                {% endif %}
                 <div class="source">{{ a.source|upper }} · {{ a.keyword }}{% if a._cluster_size > 1 %} · 유사 {{ a._cluster_size }}건{% endif %}</div>
               </div>
               <div class="impact">{{ a._impact }}</div>
