@@ -584,5 +584,109 @@ def publish_supabase_public_config() -> None:
     )
 
 
+def article_group_seed(row: dict) -> dict:
+    canonical = normalize_group_title(row.get("title", ""))
+    topic = article_topic_signature(row)
+    tokens = article_tokens(f"{canonical} {row.get('keyword', '')}")
+    return {"canonical": canonical, "topic": topic, "tokens": tokens, "token_set": set(tokens)}
+
+
+def are_related_article_seeds(a: dict, b: dict) -> bool:
+    if not a.get("canonical") or not b.get("canonical"):
+        return False
+    shorter, longer = sorted([a["canonical"], b["canonical"]], key=len)
+    if len(shorter) >= 24 and shorter in longer:
+        return True
+    if len(a["canonical"]) >= 32 and len(b["canonical"]) >= 32 and a["canonical"][:32] == b["canonical"][:32]:
+        return True
+    if a.get("topic") and b.get("topic") and a["topic"] == b["topic"]:
+        return shared_meaningful_tokens(a.get("tokens", []), b.get("tokens", []), minimum=2)
+    overlap = token_overlap_ratio(a.get("token_set", set()), b.get("token_set", set()))
+    return overlap >= 0.72 and shared_long_token(a.get("tokens", []), b.get("tokens", []))
+
+
+def article_topic_signature(row: dict) -> str:
+    text = normalize_group_title(
+        f"{row.get('title', '')} {row.get('summary', '') or row.get('description', '')} {row.get('keyword', '')}"
+    )
+
+    def includes_all(terms: list[str]) -> bool:
+        return all(normalize_group_title(term) in text for term in terms)
+
+    if includes_all(["금감원", "금융지주", "소비자보호"]):
+        return "금감원-금융지주-소비자보호"
+    if includes_all(["홍콩els", "제재"]):
+        return "홍콩els-제재"
+    if includes_all(["신협", "특혜대출"]):
+        return "신협-특혜대출"
+    if includes_all(["신협", "부실채권"]):
+        return "신협-부실채권"
+    if includes_all(["소비자보호", "금융현장"]) and ("금감원" in text or "금융감독원" in text):
+        return "금감원-소비자보호-금융현장"
+    if includes_all(["롯데손해보험", "경영개선계획"]):
+        return "롯데손해보험-경영개선계획"
+    if includes_all(["인카금융서비스", "우수인증설계사"]):
+        return "인카금융서비스-우수인증설계사"
+    if includes_all(["정착지원금", "인카금융서비스"]):
+        return "ga-정착지원금-인카"
+    return ""
+
+
+def normalize_group_title(value: object) -> str:
+    text = str(value or "").lower()
+    text = re.sub(r"\[[^\]]+\]|\([^)]*\)|<[^>]+>", " ", text)
+    text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"[^\w\s가-힣]", " ", text)
+    text = re.sub(r"\b(?:단독|종합|속보|영상|포토|인터뷰|기획|칼럼|사설)\b", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def article_tokens(value: object) -> list[str]:
+    stop = {
+        "기자",
+        "뉴스",
+        "보도",
+        "관련",
+        "통해",
+        "대한",
+        "위해",
+        "올해",
+        "이번",
+        "추진",
+        "강화",
+        "본격",
+        "금융",
+        "보험",
+        "보험사",
+        "금융위",
+        "금감원",
+        "금융감독원",
+        "금융위원회",
+        "서비스",
+        "업계",
+        "시장",
+        "관리",
+        "확대",
+        "개최",
+        "결정",
+    }
+    return [
+        token
+        for token in normalize_group_title(value).split()
+        if len(token) > 1 and token not in stop and not token.isdigit() and not token.endswith("기자")
+    ]
+
+
+def shared_long_token(a_tokens: list[str], b_tokens: list[str]) -> bool:
+    b_set = set(b_tokens)
+    return any(len(token) >= 5 and token in b_set for token in a_tokens)
+
+
+def shared_meaningful_tokens(a_tokens: list[str], b_tokens: list[str], *, minimum: int) -> bool:
+    b_set = set(b_tokens)
+    shared = {token for token in a_tokens if len(token) >= 3 and token in b_set}
+    return len(shared) >= minimum
+
+
 if __name__ == "__main__":
     publish_dashboard()
