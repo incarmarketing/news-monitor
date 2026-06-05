@@ -210,7 +210,7 @@ NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 def collect_news() -> list[dict]:
     window = report_window.current_window()
     console.print(Panel.fit(
-        f"[bold cyan]뉴스 수집 시작[/]  [dim]{datetime.now().strftime('%Y-%m-%d %H:%M')} · {window['label']}[/]",
+        f"[bold cyan]뉴스 수집 시작[/]  [dim]{datetime.now(KST).strftime('%Y-%m-%d %H:%M')} · {window['label']}[/]",
         border_style="cyan",
     ))
 
