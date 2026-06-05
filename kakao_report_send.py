@@ -11,6 +11,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 import archiver
+import config
 from supabase_store import notification_already_sent, save_notification_send
 
 BASE_DIR = Path(__file__).parent
@@ -68,11 +69,30 @@ def latest_html_path() -> Path | None:
     return files[0] if files else None
 
 
-def report_link() -> str:
+def report_link(report: dict | None = None) -> str:
     configured = os.getenv("REPORT_PUBLIC_URL", "").strip()
-    if configured and not is_local_url(configured):
-        return with_cache_buster(configured)
-    return with_cache_buster(DEFAULT_REPORT_URL)
+    base_url = configured if configured and not is_local_url(configured) else DEFAULT_REPORT_URL
+    slot_path = daily_slot_report_path(report or {})
+    if slot_path:
+        return with_cache_buster(join_public_url(base_url, slot_path))
+    return with_cache_buster(base_url)
+
+
+def daily_slot_report_path(report: dict) -> str | None:
+    date_value = str(report.get("date") or "").strip()
+    slot = str(report.get("window", {}).get("slot") or "").strip().zfill(2)
+    if not date_value or slot not in {"08", "13", "18"}:
+        return None
+    return f"reports/daily/{date_value}-{slot}.html"
+
+
+def join_public_url(base_url: str, path: str) -> str:
+    clean = base_url.split("?", 1)[0].strip()
+    if clean.endswith("index.html"):
+        clean = clean[: -len("index.html")]
+    if not clean.endswith("/"):
+        clean += "/"
+    return clean + path.lstrip("/")
 
 
 def with_cache_buster(url: str) -> str:
@@ -98,16 +118,19 @@ def build_message(report: dict) -> str:
     risk = metrics.get("risk_level", "-")
     window = report.get("window", {})
     window_label = kakao_window_label(window)
+    sent_at = datetime.now(KST).strftime("%H:%M")
 
     header = [
         f"언론 동향 {short_report_date(report.get('date', ''))} {window_label['name']}".strip(),
-        f"기준 {window_label['range']} · 리스크 {risk}",
+        f"분석대상 {window_label['range']} · 발송 {sent_at} · 리스크 {risk}",
         (
             f"당사 {own_total} · 부정 "
             f"{own_tone.get('negative', metrics.get('own_negative', 0))} · "
             f"긍정 {own_tone.get('positive', 0)} · 중립 {own_tone.get('neutral', 0)}"
         ),
     ]
+    if metrics.get("ai_primary_failed") or metrics.get("ai_fallback_used"):
+        header.append(f"AI 요약 {metrics.get('ai_model_used', '백업')} 사용")
 
     lines = header + ["", "동향 분석", compact(sections["conclusion"], 46, ellipsis=False)]
     if sections["issues"]:
@@ -226,12 +249,12 @@ def first_text(section_map: dict[str, list[str]], names: list[str]) -> str:
     return ""
 
 
-def send_text_to_me(access_token: str, text: str, link_url: str) -> dict:
+def send_text_to_me(access_token: str, text: str, link_url: str, button_title: str = "보고서 보기") -> dict:
     template = {
         "object_type": "text",
         "text": text,
         "link": {"web_url": link_url, "mobile_web_url": link_url},
-        "button_title": "보고서 보기",
+        "button_title": button_title,
     }
     response = requests.post(
         f"{KAKAO_API}/v2/api/talk/memo/default/send",
@@ -243,15 +266,75 @@ def send_text_to_me(access_token: str, text: str, link_url: str) -> dict:
     return response.json()
 
 
+def needs_ai_usage_alert(report: dict) -> bool:
+    metrics = report.get("metrics", {})
+    return bool(metrics.get("ai_quota_exhausted") or metrics.get("ai_primary_failed") or metrics.get("ai_fallback_used"))
+
+
+def ai_usage_alert_title(report: dict) -> str:
+    return f"AI 요약 사용량 확인 {report.get('date', '')}"
+
+
+def build_ai_usage_alert(report: dict) -> str:
+    metrics = report.get("metrics", {})
+    used_model = metrics.get("ai_model_used", "백업")
+    primary = config.GEMINI_MODEL
+    window = kakao_window_label(report.get("window", {}))
+    reason = "사용량/크레딧 한도 확인 필요" if metrics.get("ai_quota_exhausted") else "기본 모델 응답 실패"
+    return "\n".join(
+        [
+            "AI 요약 사용량 확인 필요",
+            f"{short_report_date(report.get('date', ''))} {window['name']} · {reason}",
+            f"{primary} 대신 {used_model} 경로를 사용했습니다.",
+            "AI Studio 사용량/결제 상태를 확인하세요.",
+        ]
+    )[:300]
+
+
+def maybe_send_ai_usage_alert(access_token: str, report: dict) -> None:
+    if not needs_ai_usage_alert(report):
+        return
+    title = ai_usage_alert_title(report)
+    if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent("ai_usage_alert", title):
+        print(f"AI usage alert already sent: {title}")
+        return
+    link = os.getenv("GEMINI_USAGE_URL", "").strip() or config.GEMINI_USAGE_URL
+    text = build_ai_usage_alert(report)
+    try:
+        result = send_text_to_me(access_token, text, link, button_title="사용량 확인")
+        save_notification_send(
+            message_type="ai_usage_alert",
+            title=title,
+            body=text,
+            link_url=link,
+            status="success",
+            provider_response=result,
+        )
+        print("AI usage alert result:", result)
+    except Exception as error:
+        save_notification_send(
+            message_type="ai_usage_alert",
+            title=title,
+            body=text,
+            link_url=link,
+            status="failed",
+            error=str(error),
+        )
+        print(f"AI usage alert failed: {error}")
+
+
 def main() -> None:
     load_dotenv()
     report = load_latest_daily()
-    link = report_link()
+    link = report_link(report)
     text = build_message(report)
     title = notification_title(report)
     if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent("daily_report", title):
         print(f"Kakao daily report already sent: {title}")
         print("Set FORCE_KAKAO_SEND=1 to send again intentionally.")
+        if needs_ai_usage_alert(report):
+            token = refresh_access_token()
+            maybe_send_ai_usage_alert(token, report)
         return
     try:
         token = refresh_access_token()
@@ -266,6 +349,7 @@ def main() -> None:
         )
         print("Kakao send result:", result)
         print("Report link:", link)
+        maybe_send_ai_usage_alert(token, report)
     except Exception as error:
         save_notification_send(
             message_type="daily_report",
