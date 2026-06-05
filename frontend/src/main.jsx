@@ -2524,10 +2524,11 @@ function IssueList({ issues, compact = false }) {
           <div className="issue-meta">
             <Chip tone={issue.tone}>{issue.tone}</Chip>
             <Chip>{issue.category}</Chip>
-            <span>{issue.source} · {issue.publishedAt}</span>
+            <span>{formatIssueMeta(issue)}</span>
           </div>
           <h3>{issue.title}</h3>
           <ArticleSummaryBlock item={issue} />
+          <RelatedIssueDetails issue={issue} compact />
           {!compact && issue.link && issue.link !== "#" && (
             <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
               <ExternalLink />기사 열기
@@ -3059,27 +3060,42 @@ function buildHeadline(articles, ownMentions, ownNegative, caution) {
 
 function buildIssues(articles, fallback) {
   const usableArticles = articles.filter(isUsableArticle);
-  const important = [
-    ...usableArticles.filter((article) => isOwnArticle(article)),
-    ...usableArticles.filter((article) => ["부정", "주의"].includes(article.tone)),
-    ...usableArticles,
-  ];
+  const important = buildRelatedArticleGroups(usableArticles)
+    .filter((article) => article?.title)
+    .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
   const uniqueIssues = [];
   for (const article of important) {
-    if (uniqueIssues.some((item) => item.title === article.title)) continue;
+    const titleKey = normalizeGroupTitle(article.title || "");
+    if (uniqueIssues.some((item) => normalizeGroupTitle(item.title || "") === titleKey)) continue;
+    const relatedArticles = dedupeIssueMembers(Array.isArray(article.relatedArticles) && article.relatedArticles.length
+      ? article.relatedArticles
+      : [article]);
     uniqueIssues.push({
       tone: article.tone,
       category: article.category,
       source: article.source,
+      representativeSource: article.representativeSource || article.source,
       title: article.title,
       summary: compactArticleSummary(article),
       summaryLines: buildArticleSummaryLines(article),
       publishedAt: article.time || article.date || "-",
       link: article.link,
+      relatedArticles,
+      relatedCount: Number(article.relatedCount || relatedArticles.length || 1),
+      relatedSourceCount: Number(article.relatedSourceCount || unique(relatedArticles.map((item) => item.source).filter(Boolean)).length || 1),
+      relatedSources: article.relatedSources,
     });
     if (uniqueIssues.length >= 5) break;
   }
   return uniqueIssues.length ? uniqueIssues : fallback;
+}
+
+function dashboardIssueScore(issue = {}) {
+  const toneScore = { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0;
+  const categoryScore = issue.category === "정책/규제" ? 130 : ["GA", "보험사"].includes(issue.category) ? 80 : 0;
+  const ownScore = isOwnArticle(issue) ? 520 : 0;
+  const relatedScore = Math.min(Number(issue.relatedCount || 1), 6) * 24;
+  return ownScore + toneScore + categoryScore + relatedScore + Number(issue.score || 0);
 }
 
 function buildMediaAnalysisIssues(articles = [], period = "monthly") {
@@ -4366,9 +4382,12 @@ function buildRelatedArticleGroups(articles = []) {
 
 function articleGroupSeed(article) {
   const canonical = normalizeGroupTitle(article.title || "");
-  const tokens = articleTokens(`${canonical} ${article.keyword || ""}`);
+  const topic = articleTopicSignature(article);
+  const summaryTokens = articleTokens(`${article.summary || article.description || article.content || ""}`).slice(0, 16);
+  const tokens = articleTokens(`${canonical} ${summaryTokens.join(" ")} ${article.keyword || ""}`);
   return {
     canonical,
+    topic,
     tokens,
     tokenSet: new Set(tokens),
   };
@@ -4378,6 +4397,7 @@ function mergeGroupSeed(current, next) {
   const tokens = unique([...(current.tokens || []), ...(next.tokens || [])]);
   return {
     canonical: current.canonical.length >= next.canonical.length ? current.canonical : next.canonical,
+    topic: current.topic || next.topic || "",
     tokens,
     tokenSet: new Set(tokens),
   };
@@ -4385,12 +4405,30 @@ function mergeGroupSeed(current, next) {
 
 function areRelatedArticleSeeds(a, b) {
   if (!a.canonical || !b.canonical) return false;
+  if (a.topic && b.topic && a.topic === b.topic) return true;
   const shorter = a.canonical.length < b.canonical.length ? a.canonical : b.canonical;
   const longer = a.canonical.length < b.canonical.length ? b.canonical : a.canonical;
   if (shorter.length >= 22 && longer.includes(shorter)) return true;
   if (a.canonical.slice(0, 28) === b.canonical.slice(0, 28)) return true;
   const overlap = tokenOverlapRatio(a.tokenSet, b.tokenSet);
   return overlap >= 0.62 || (overlap >= 0.48 && sharedLongToken(a.tokens, b.tokens));
+}
+
+function articleTopicSignature(article = {}) {
+  const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""} ${article.keyword || ""}`);
+  const includesAll = (terms) => terms.every((term) => text.includes(normalizeGroupTitle(term)));
+  if (
+    (text.includes("금감원") || text.includes("금융감독원")) &&
+    (text.includes("8대 금융지주") || text.includes("8대 지주") || text.includes("금융지주")) &&
+    (text.includes("소비자보호") || text.includes("소비자 중심") || text.includes("금융문화"))
+  ) {
+    return "금감원-금융지주-소비자보호";
+  }
+  if (includesAll(["홍콩els", "제재"])) return "홍콩els-제재";
+  if (includesAll(["신협", "특혜대출"])) return "신협-특혜대출";
+  if (includesAll(["신협", "부실채권"])) return "신협-부실채권";
+  if (includesAll(["소비자보호", "금융현장"]) && (text.includes("금감원") || text.includes("금융감독원"))) return "금감원-소비자보호-현장";
+  return "";
 }
 
 function normalizeGroupTitle(value) {
@@ -4405,7 +4443,7 @@ function normalizeGroupTitle(value) {
 }
 
 function articleTokens(value) {
-  const stop = new Set(["기자", "뉴스", "보도", "관련", "통해", "대한", "위해", "올해", "지난", "이번"]);
+  const stop = new Set(["기자", "뉴스", "보도", "관련", "통해", "대한", "위해", "올해", "지난", "이번", "추진", "확산", "맞손", "역량", "마음", "지원", "강화", "본격화"]);
   return normalizeGroupTitle(value)
     .split(/\s+/)
     .filter((token) => token.length > 1 && !stop.has(token) && !/^\d+$/.test(token));
