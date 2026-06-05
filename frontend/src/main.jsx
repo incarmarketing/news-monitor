@@ -2724,7 +2724,7 @@ function AiUsagePanel({ status }) {
           </div>
         </div>
         <div className="ai-power-copy">
-          <span>Groq 전력 여유</span>
+          <span>Groq 토큰 여유</span>
           <b>{reserveLabel}</b>
           <em>{groq.model || "-"}</em>
         </div>
