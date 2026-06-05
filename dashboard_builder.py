@@ -15,7 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import supabase_store
 import config
 import archiver
-import groq_helper
+import ai_fallback
 
 BASE_DIR = Path(__file__).parent
 PUBLIC_DIR = BASE_DIR / "public"
@@ -209,24 +209,28 @@ def is_stock_listing_noise(row: dict) -> bool:
 
 
 def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
-    if not rows or not groq_helper.is_enabled() or config.GROQ_MAX_ISSUE_SUMMARIES <= 0:
+    limit = getattr(config, "AI_MAX_ISSUE_SUMMARIES", getattr(config, "GROQ_MAX_ISSUE_SUMMARIES", 8))
+    if not rows or limit <= 0:
         return rows
 
     groups = build_related_article_groups(rows)
-    selected = sorted(groups, key=issue_group_score, reverse=True)[: config.GROQ_MAX_ISSUE_SUMMARIES]
+    selected = sorted(groups, key=issue_group_score, reverse=True)[:limit]
     generated = 0
+    providers: Counter[str] = Counter()
     for group in selected:
         members = group.get("members", [])
         if not members:
             continue
-        summary = groq_helper.summarize_issue(members)
+        summary, provider = ai_fallback.summarize_issue_with_provider(members)
         if not summary:
             continue
         generated += 1
+        providers[provider] += 1
         for article in members:
             article["issue_summary"] = summary
     if generated:
-        print(f"Groq issue summaries generated: {generated}")
+        provider_text = ", ".join(f"{name} {count}" for name, count in providers.items())
+        print(f"Issue summaries generated: {generated} ({provider_text})")
     return rows
 
 
@@ -688,6 +692,114 @@ def shared_meaningful_tokens(a_tokens: list[str], b_tokens: list[str], *, minimu
     b_set = set(b_tokens)
     shared = {token for token in a_tokens if len(token) >= 3 and token in b_set}
     return len(shared) >= minimum
+
+
+def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
+    limit = getattr(config, "AI_MAX_ISSUE_SUMMARIES", getattr(config, "GROQ_MAX_ISSUE_SUMMARIES", 8))
+    if not rows or limit <= 0:
+        return rows
+
+    selected = select_current_issue_summary_groups(rows, limit)
+    generated = 0
+    providers: Counter[str] = Counter()
+    for group in selected:
+        members = group.get("members", [])
+        if not members:
+            continue
+        summary, provider = ai_fallback.summarize_issue_with_provider(members)
+        if not summary:
+            continue
+        generated += 1
+        providers[provider] += 1
+        for article in members:
+            article["issue_summary"] = summary
+    if generated:
+        provider_text = ", ".join(f"{name} {count}" for name, count in providers.items())
+        print(f"Current-day issue summaries generated: {generated} ({provider_text})")
+    return rows
+
+
+def select_current_issue_summary_groups(rows: list[dict], limit: int) -> list[dict]:
+    current_rows = current_day_rows(rows)
+    groups = build_related_article_groups(current_rows)
+    selected: list[dict] = []
+    seen: set[str] = set()
+
+    def add_bucket(predicate, quota: int) -> None:
+        candidates = [group for group in groups if predicate(group)]
+        for group in sorted(candidates, key=current_issue_group_score, reverse=True):
+            if len([item for item in selected if predicate(item)]) >= quota:
+                break
+            add_group_if_new(selected, seen, group, limit)
+
+    add_bucket(lambda group: group_has_category(group, "own") and group_has_tone(group, "positive"), 3)
+    add_bucket(lambda group: group_has_category(group, "own") and group_has_tone(group, {"negative", "caution"}), 4)
+    add_bucket(lambda group: group_has_category(group, "regulation"), 4)
+    add_bucket(lambda group: group_has_category(group, {"competitor", "industry"}), 4)
+
+    for group in sorted(groups, key=current_issue_group_score, reverse=True):
+        add_group_if_new(selected, seen, group, limit)
+        if len(selected) >= limit:
+            break
+    return selected[:limit]
+
+
+def current_day_rows(rows: list[dict]) -> list[dict]:
+    dates = sorted({str(row.get("date") or "")[:10] for row in rows if row.get("date")})
+    if not dates:
+        return rows
+    latest = dates[-1]
+    return [row for row in rows if str(row.get("date") or "")[:10] == latest]
+
+
+def add_group_if_new(selected: list[dict], seen: set[str], group: dict, limit: int) -> None:
+    if len(selected) >= limit:
+        return
+    members = group.get("members", [])
+    if not members:
+        return
+    representative = choose_current_issue_representative(members)
+    key = group_identity_key(group, representative)
+    if not key or key in seen:
+        return
+    seen.add(key)
+    selected.append(group)
+
+
+def group_identity_key(group: dict, representative: dict) -> str:
+    topic = str(group.get("seed", {}).get("topic") or "")
+    if topic:
+        return f"topic:{topic}"
+    link = str(representative.get("link") or "")
+    if link:
+        return f"link:{link}"
+    return f"title:{normalize_group_title(representative.get('title', ''))[:90]}"
+
+
+def choose_current_issue_representative(members: list[dict]) -> dict:
+    return sorted(members, key=article_importance_score, reverse=True)[0] if members else {}
+
+
+def current_issue_group_score(group: dict) -> int:
+    members = group.get("members", [])
+    if not members:
+        return 0
+    representative = choose_current_issue_representative(members)
+    diversity = min(len({row.get("source") for row in members if row.get("source")}), 5) * 24
+    related = min(len(members), 8) * 18
+    return article_importance_score(representative) + diversity + related
+
+
+def group_has_category(group: dict, categories) -> bool:
+    if isinstance(categories, str):
+        categories = {categories}
+    return any(row.get("category") in categories for row in group.get("members", []))
+
+
+def group_has_tone(group: dict, tones) -> bool:
+    if isinstance(tones, str):
+        tones = {tones}
+    return any(row.get("tone") in tones for row in group.get("members", []))
 
 
 if __name__ == "__main__":

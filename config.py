@@ -47,6 +47,7 @@ GEMINI_CIRCUIT_DISABLED = os.getenv("GEMINI_CIRCUIT_DISABLED", "").lower() in {"
 
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_MAX_ISSUE_SUMMARIES = int(os.getenv("GROQ_MAX_ISSUE_SUMMARIES", "20"))
+AI_MAX_ISSUE_SUMMARIES = int(os.getenv("AI_MAX_ISSUE_SUMMARIES", os.getenv("GROQ_MAX_ISSUE_SUMMARIES", "8")))
 
 EMAIL_SUBJECT_PREFIX = "[언론 동향]"
 COMPANY_NAME = "인카금융서비스"

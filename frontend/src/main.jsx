@@ -2918,15 +2918,16 @@ function Chip({ children, tone }) {
   return <span className={`chip ${cls}`}>{children}</span>;
 }
 
-function composeRealtimeData(base, articles, liveConnected = false) {
+function composeRealtimeDataUnused(base, articles, liveConnected = false) {
   if (!liveConnected) {
     return buildDisconnectedPeriodData(base);
   }
-  if (!articles.length) {
+  const realtimeArticles = filterRowsByPeriod(articles, "daily");
+  if (!realtimeArticles.length) {
     return buildDisconnectedPeriodData(base, "최근 24시간 기준 표시할 운영 기사가 없습니다.");
   }
   return {
-    ...composePeriodData(base, articles, [], true),
+    ...composePeriodData(base, realtimeArticles, [], true),
     label: "실시간",
     scope: "최근 24시간 · 5분 자동 갱신",
   };
@@ -4581,6 +4582,21 @@ function formatMoney(value) {
   if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억원`;
   if (amount >= 10000) return `${Math.round(amount / 10000).toLocaleString("ko-KR")}만원`;
   return `${amount.toLocaleString("ko-KR")}원`;
+}
+
+function composeRealtimeData(base, articles, liveConnected = false) {
+  if (!liveConnected) {
+    return buildDisconnectedPeriodData(base);
+  }
+  const realtimeArticles = filterRowsByPeriod(articles, "daily");
+  if (!realtimeArticles.length) {
+    return buildDisconnectedPeriodData(base, "당일 기준으로 표시할 운영 기사가 없습니다.");
+  }
+  return {
+    ...composePeriodData(base, realtimeArticles, [], true),
+    label: "실시간",
+    scope: realtimeArticles[0]?.date ? `${realtimeArticles[0].date} 당일 기사` : "당일 기사",
+  };
 }
 
 createRoot(document.getElementById("root")).render(<App />);

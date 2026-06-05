@@ -29,6 +29,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     articles = load_current_articles()
+    current_articles = dashboard_builder.current_day_rows(articles)
     groups = select_major_issue_groups(articles, max(1, args.count))
     preview = []
     for index, group in enumerate(groups, 1):
@@ -52,6 +53,8 @@ def main() -> None:
         "generated_at": generated_at,
         "model": config.GROQ_MODEL,
         "article_count": len(articles),
+        "current_article_count": len(current_articles),
+        "current_date": latest_article_date(current_articles),
         "issue_count": len(preview),
         "issues": preview,
     }
@@ -74,23 +77,12 @@ def load_current_articles() -> list[dict]:
 
 def select_major_issue_groups(articles: list[dict], count: int) -> list[dict]:
     usable = [item for item in articles if item.get("title") and item.get("tone") != "excluded"]
-    groups = dashboard_builder.build_related_article_groups(usable)
-    ranked = sorted(groups, key=major_issue_group_score, reverse=True)
-    selected = []
-    seen = set()
-    for group in ranked:
-        members = dedupe_group_members(group.get("members", []))
-        if not members:
-            continue
-        representative = choose_representative(members)
-        key = dashboard_builder.normalize_group_title(representative.get("title", ""))[:80]
-        if not key or key in seen:
-            continue
-        seen.add(key)
-        selected.append({"seed": group.get("seed", {}), "members": members})
-        if len(selected) >= count:
-            break
-    return selected
+    return dashboard_builder.select_current_issue_summary_groups(usable, count)
+
+
+def latest_article_date(articles: list[dict]) -> str:
+    dates = sorted({str(article.get("date") or "")[:10] for article in articles if article.get("date")})
+    return dates[-1] if dates else ""
 
 
 def major_issue_group_score(group: dict) -> int:
@@ -159,6 +151,8 @@ def render_markdown(payload: dict) -> str:
         f"- 생성: {payload['generated_at']}",
         f"- 모델: {payload['model']}",
         f"- 운영 기사: {payload['article_count']:,}건",
+        f"- 기준일 기사: {payload.get('current_article_count', 0):,}건",
+        f"- 기준일: {payload.get('current_date') or '-'}",
         f"- 미리보기 이슈: {payload['issue_count']}건",
         "",
     ]
