@@ -3096,9 +3096,11 @@ function buildIssues(articles, fallback) {
 }
 
 function dashboardIssueScore(issue = {}) {
-  const toneScore = { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0;
+  const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
+  const groupToneScore = Math.max(...members.map((item) => ({ 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[item.tone] || 0)));
+  const toneScore = Math.max(groupToneScore, { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0);
   const categoryScore = issue.category === "정책/규제" ? 130 : ["GA", "보험사"].includes(issue.category) ? 80 : 0;
-  const ownScore = isOwnArticle(issue) ? 520 : 0;
+  const ownScore = members.some(isOwnArticle) ? 520 : 0;
   const relatedScore = Math.min(Number(issue.relatedCount || 1), 6) * 24;
   return ownScore + toneScore + categoryScore + relatedScore + Number(issue.score || 0);
 }
