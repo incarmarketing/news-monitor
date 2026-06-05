@@ -1,4 +1,4 @@
-"""Groq issue-summary helper for static dashboard generation."""
+"""Groq fallback helpers for dashboard issue summaries and reports."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def is_enabled() -> bool:
 
 
 def summarize_issue(articles: list[dict], *, retries: int = 1) -> str:
-    """Return a one-sentence Korean issue summary, without judgment/action text."""
+    """Return one Korean sentence explaining what the grouped issue is."""
     if not is_enabled() or not articles:
         return ""
 
@@ -28,55 +28,45 @@ def summarize_issue(articles: list[dict], *, retries: int = 1) -> str:
             {
                 "role": "system",
                 "content": (
-                    "너는 한국어 언론 모니터링 기사 요약 도우미다. "
-                    "판단, 대응, 리스크 평가, 홍보 활용 가능성은 쓰지 않는다. "
-                    "오직 이 기사 묶음이 어떤 이슈인지 사실만 한 문장으로 정리한다."
+                    "너는 한국어 언론 모니터링 기사 요약 전문가다. "
+                    "판단, 대응 제안, 위험 평가를 하지 말고 기사 묶음이 다루는 이슈의 사실관계만 한 문장으로 정리한다."
                 ),
             },
-            {
-                "role": "user",
-                "content": build_issue_prompt(articles),
-            },
+            {"role": "user", "content": build_issue_prompt(articles)},
         ],
-        max_tokens=120,
+        max_tokens=130,
         temperature=0.1,
         retries=retries,
+        purpose="issue_summary",
     )
     return clean_issue_summary(text)
 
 
 def generate_briefing_report(clustered: list[dict], metrics: dict, baseline_report: str, *, retries: int = 0) -> str:
-    """Generate a compact fallback briefing from the deterministic baseline."""
+    """Generate a daily briefing fallback report from selected articles."""
     if not is_enabled() or not clustered:
         return ""
-    articles = sorted(clustered, key=lambda item: item.get("_score", item.get("score", 0)), reverse=True)[:8]
-    rows = []
-    for index, article in enumerate(articles, 1):
-        title = clean_prompt_text(article.get("title", ""))[:100]
-        source = clean_prompt_text(article.get("source", ""))
-        category = clean_prompt_text(article.get("_category", article.get("category", "")))
-        tone = clean_prompt_text(article.get("_tone", article.get("tone", "")))
-        summary = clean_prompt_text(article.get("_summary", "") or article.get("summary", "") or article.get("description", ""))[:140]
-        rows.append(f"{index}. {source} | {category}/{tone} | {title}\n요지: {summary}")
 
+    rows = format_report_articles(clustered[:8])
     prompt = f"""
-아래 고정 분석 초안과 기사 후보만 근거로 사내 언론 모니터링 보고서를 다듬어라.
-새로운 사실, 대응 지시, 과장된 판단은 추가하지 마라.
+아래 기사 목록과 규칙 기반 초안을 근거로 사내 언론 모니터링 보고서를 다시 작성하라.
+새로운 사실을 만들지 말고, 기사에 있는 내용만 사용하라.
+표현은 간결하게 하되 Gemini 보고서와 비슷한 수준의 완성도를 목표로 한다.
 
 지표:
 - 수집 {metrics.get('total_collected', 0)}건
 - 분석 {metrics.get('total_after_cluster', 0)}건
 - 리스크 {metrics.get('risk_level', 'LOW')}
 
-기사 후보:
-{chr(10).join(rows)}
+기사 목록:
+{rows}
 
-고정 분석 초안:
+규칙 기반 초안:
 {baseline_report}
 
 출력 형식:
 ## 최종 결론
-한 문장. 55자 이내.
+2문장. 각 문장은 55자 이내.
 
 ## 핵심 이슈
 - 최대 2개. 각 45자 이내.
@@ -90,43 +80,43 @@ def generate_briefing_report(clustered: list[dict], metrics: dict, baseline_repo
 
     text = chat_completion(
         [
-            {
-                "role": "system",
-                "content": "너는 한국어 언론 모니터링 보고서 편집자다. 사실 기반으로 짧게 쓴다.",
-            },
+            {"role": "system", "content": "너는 한국어 언론 모니터링 보고서 편집자다. 사실 기반으로 짧고 정확하게 쓴다."},
             {"role": "user", "content": prompt},
         ],
         max_tokens=850,
         temperature=0.15,
         retries=retries,
+        purpose="daily_report",
     )
     return clean_report_text(text)
 
 
-def generate_period_report(top_articles: list[dict], metrics: dict, baseline_report: str, period_label: str, *, retries: int = 0) -> str:
-    if not is_enabled():
+def generate_period_report(
+    top_articles: list[dict],
+    metrics: dict,
+    baseline_report: str,
+    period_label: str,
+    *,
+    retries: int = 0,
+) -> str:
+    """Generate a weekly/monthly briefing fallback report."""
+    if not is_enabled() or not top_articles:
         return ""
-    rows = []
-    for index, article in enumerate(top_articles[:8], 1):
-        title = clean_prompt_text(article.get("title", ""))[:100]
-        source = clean_prompt_text(article.get("source", ""))
-        category = clean_prompt_text(article.get("_category", article.get("category", "")))
-        tone = clean_prompt_text(article.get("_tone", article.get("tone", "")))
-        summary = clean_prompt_text(article.get("_summary", "") or article.get("summary", "") or article.get("description", ""))[:140]
-        rows.append(f"{index}. {source} | {category}/{tone} | {title}\n요지: {summary}")
 
+    rows = format_report_articles(top_articles[:10])
     prompt = f"""
-아래 고정 분석 초안을 기준으로 {period_label} 누적 보고서를 다듬어라.
-제언이나 실행 지시는 쓰지 말고, 기간 흐름과 관찰 사실만 쓴다.
+아래 기사 목록과 규칙 기반 초안을 근거로 {period_label} 언론 동향 보고서를 작성하라.
+제언이나 실행 지시는 쓰지 말고, 기간 내 보도 흐름과 관찰 사실만 정리하라.
+대표 이슈는 당사 직접 언급, 당사 긍정/주의/부정, 반복 노출 기사 순으로 우선한다.
 
 지표:
 - 수집 {metrics.get('total_collected', 0)}건
 - 분석 {metrics.get('total_after_cluster', 0)}건
 
-기사 후보:
-{chr(10).join(rows)}
+기사 목록:
+{rows}
 
-고정 분석 초안:
+규칙 기반 초안:
 {baseline_report}
 
 출력 형식:
@@ -136,7 +126,7 @@ def generate_period_report(top_articles: list[dict], metrics: dict, baseline_rep
 ## 기간 해석
 4문장 이내.
 
-## 리스크 판독
+## 리스크 모니터링
 - 4개 bullet 이내.
 
 ## 관찰 포인트
@@ -145,23 +135,41 @@ def generate_period_report(top_articles: list[dict], metrics: dict, baseline_rep
 
     text = chat_completion(
         [
-            {
-                "role": "system",
-                "content": "너는 한국어 언론 모니터링 기간 보고서 편집자다. 사실 기반으로 짧게 쓴다.",
-            },
+            {"role": "system", "content": "너는 한국어 언론 모니터링 기간 보고서 편집자다. 과장 없이 사실 흐름을 압축한다."},
             {"role": "user", "content": prompt},
         ],
-        max_tokens=1000,
+        max_tokens=1100,
         temperature=0.15,
         retries=retries,
+        purpose="period_report",
     )
     return clean_period_report_text(text)
 
 
-def chat_completion(messages: list[dict], *, max_tokens: int, temperature: float, retries: int = 0) -> str:
+def format_report_articles(articles: list[dict]) -> str:
+    rows = []
+    for index, article in enumerate(articles, 1):
+        title = clean_prompt_text(article.get("title", ""))[:110]
+        source = clean_prompt_text(article.get("source", ""))
+        category = clean_prompt_text(article.get("_category", article.get("category", "")))
+        tone = clean_prompt_text(article.get("_tone", article.get("tone", "")))
+        summary = clean_prompt_text(article.get("_summary", "") or article.get("summary", "") or article.get("description", ""))[:180]
+        rows.append(f"{index}. {source} | {category}/{tone} | {title}\n요약: {summary}")
+    return "\n".join(rows)
+
+
+def chat_completion(
+    messages: list[dict],
+    *,
+    max_tokens: int,
+    temperature: float,
+    retries: int = 0,
+    purpose: str = "groq",
+) -> str:
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
         return ""
+
     payload = {
         "model": config.GROQ_MODEL,
         "messages": messages,
@@ -169,29 +177,32 @@ def chat_completion(messages: list[dict], *, max_tokens: int, temperature: float
         "max_tokens": max_tokens,
     }
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    request = urllib.request.Request(
-        GROQ_API_URL,
-        data=body,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
 
     for attempt in range(retries + 1):
+        request = urllib.request.Request(
+            GROQ_API_URL,
+            data=body,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
         try:
             with urllib.request.urlopen(request, timeout=30) as response:
                 data = json.loads(response.read().decode("utf-8"))
             text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
             return str(text or "").strip()
         except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")[:300]
+            print(f"Groq {purpose} failed: HTTP {exc.code} {detail}")
             if exc.code == 429 and attempt < retries:
                 retry_after = int(exc.headers.get("Retry-After", "3") or "3")
                 time.sleep(min(retry_after, 10))
                 continue
             return ""
-        except Exception:
+        except Exception as exc:
+            print(f"Groq {purpose} failed: {type(exc).__name__} {str(exc)[:300]}")
             return ""
     return ""
 
@@ -202,20 +213,20 @@ def build_issue_prompt(articles: list[dict]) -> str:
         title = clean_prompt_text(article.get("title", ""))
         source = clean_prompt_text(article.get("source", ""))
         summary = clean_prompt_text(article.get("summary", "") or article.get("description", ""))
-        if len(summary) > 180:
-            summary = summary[:180].rstrip() + "."
-        rows.append(f"{index}. {source} | {title}\n요지: {summary}")
+        if len(summary) > 220:
+            summary = summary[:220].rstrip() + "."
+        rows.append(f"{index}. {source} | {title}\n요약: {summary}")
 
     return f"""
-아래 기사들은 같은 이슈로 묶인 기사입니다.
+아래 기사들은 같은 이슈로 묶인 기사다.
 
 요구사항:
 - 한국어 1문장만 출력
 - 45~95자
-- 이 이슈가 무엇인지 사실만 정리
 - 기사 제목을 그대로 반복하지 말 것
-- 판단/영향/대응/리스크/주의/긍정/부정 표현 금지
-- 언론사명, 날짜, 기사 수, 라벨 표기 금지
+- 이슈가 무엇인지 사실만 정리
+- 판단, 대응 제안, 리스크 등급, 긍정/부정/주의 표현 금지
+- 언론사명, 날짜, 기사 수 표기 금지
 - 문장은 반드시 완결형으로 끝낼 것
 
 기사 묶음:
@@ -225,6 +236,8 @@ def build_issue_prompt(articles: list[dict]) -> str:
 
 def clean_prompt_text(value: object) -> str:
     text = str(value or "")
+    text = text.replace("&nbsp;", " ").replace("&amp;nbsp;", " ")
+    text = text.replace("&quot;", '"').replace("&#39;", "'")
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
@@ -233,39 +246,52 @@ def clean_prompt_text(value: object) -> str:
 def clean_issue_summary(value: object) -> str:
     text = clean_prompt_text(value)
     text = text.strip("\"'` ")
-    text = re.sub(r"^(요약|이슈|핵심)\s*[:：]\s*", "", text)
+    text = re.sub(r"^(요약|이슈|핵심|정리)\s*[:：-]\s*", "", text)
+    text = re.sub(r"^[\-•]\s*", "", text)
     text = re.sub(r"\s+", " ", text)
     if not text:
         return ""
-    text = re.split(r"(?<=[.!?。])\s+", text)[0].strip()
-    forbidden = (
-        "주의",
-        "부정",
-        "긍정",
-        "리스크",
-        "대응",
-        "확인해야",
-        "검토해야",
-        "필요합니다",
-        "영향",
-        "활용",
-    )
-    if any(word in text for word in forbidden):
+
+    lines = [line.strip() for line in re.split(r"[\r\n]+", text) if line.strip()]
+    text = lines[0] if lines else text
+    sentence = re.split(r"(?<=[.!?。])\s+", text)[0].strip()
+    if sentence:
+        text = sentence
+
+    text = remove_action_or_judgment_tail(text)
+    if len(text) < 18:
         return ""
     if len(text) > 120:
         text = text[:120].rstrip()
-    if not re.search(r"[.!?。다요임함됨]$", text):
+    if not re.search(r"[.!?。]$", text):
         text += "."
     return text
+
+
+def remove_action_or_judgment_tail(text: str) -> str:
+    patterns = (
+        r"\s*확인이 필요.*$",
+        r"\s*검토가 필요.*$",
+        r"\s*주의가 필요.*$",
+        r"\s*모니터링이 필요.*$",
+        r"\s*추적이 필요.*$",
+        r"\s*리스크로.*$",
+    )
+    cleaned = text
+    for pattern in patterns:
+        cleaned = re.sub(pattern, "", cleaned)
+    return cleaned.strip(" .")
 
 
 def clean_report_text(value: object) -> str:
     text = clean_prompt_text(value)
     text = re.sub(r"```(?:markdown)?|```", "", text).strip()
     if not text.startswith("## 최종 결론"):
+        print("Groq daily_report discarded: missing expected heading")
         return ""
-    forbidden = ("대응하세요", "공유하세요", "활용하세요")
+    forbidden = ("작성하세요", "공유하세요", "사용하세요")
     if any(word in text for word in forbidden):
+        print("Groq daily_report discarded: instruction-like wording")
         return ""
     return text
 
@@ -274,8 +300,10 @@ def clean_period_report_text(value: object) -> str:
     text = clean_prompt_text(value)
     text = re.sub(r"```(?:markdown)?|```", "", text).strip()
     if not text.startswith("## 핵심 브리핑"):
+        print("Groq period_report discarded: missing expected heading")
         return ""
-    forbidden = ("대응하세요", "공유하세요", "활용하세요")
+    forbidden = ("작성하세요", "공유하세요", "사용하세요")
     if any(word in text for word in forbidden):
+        print("Groq period_report discarded: instruction-like wording")
         return ""
     return text
