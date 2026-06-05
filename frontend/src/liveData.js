@@ -13,6 +13,10 @@ const STATIC_DATA_PATHS = [
   `${import.meta.env.BASE_URL || "/"}data/articles.json`,
 ];
 
+const STOCK_LISTING_NOISE_TITLE_RE = /52주\s*(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]/;
+const INVESTMENT_REPORT_RE = /투자의견|목표주가|목표가|증권가|리포트|애널리스트/;
+const OWN_NAME_RE = /인카금융서비스|인카금융/;
+
 function isExpired(session) {
   return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
 }
@@ -391,6 +395,7 @@ function normalizeScrap(row) {
 
 function normalizeArticle(row) {
   if (!row?.title) return null;
+  if (isStockListingNoise(row)) return null;
   const publicationSource = row.pub_date || row.pub_date_raw || row.published_at || row.published_date || "";
   const dateSource = publicationSource || row.date || row.report_date || "";
   const showTime = shouldShowArticleTime(row, publicationSource || row.date || row.report_date);
@@ -412,6 +417,14 @@ function normalizeArticle(row) {
     status: row.status || "분석 완료",
     clusterSize: Number(row.cluster_size || row.clusterSize || 1),
   };
+}
+
+function isStockListingNoise(row = {}) {
+  const title = String(row.title || "");
+  const text = `${title} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""}`;
+  if (!STOCK_LISTING_NOISE_TITLE_RE.test(title)) return false;
+  if (OWN_NAME_RE.test(title) && INVESTMENT_REPORT_RE.test(text)) return false;
+  return true;
 }
 
 function normalizeArticleSource(source, link = "", title = "") {
