@@ -185,6 +185,8 @@ def chat_completion(
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                "Accept": "application/json",
+                "User-Agent": "news-monitor/1.0 (GitHub Actions; Python urllib)",
             },
             method="POST",
         )
