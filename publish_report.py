@@ -25,7 +25,7 @@ def latest_report() -> Path:
     return files[0]
 
 
-def latest_archive_report() -> tuple[str, str] | None:
+def latest_archive_report() -> tuple[str, str | None, str] | None:
     archives = archiver.load_all_archives()
     if not archives:
         return None
@@ -33,12 +33,21 @@ def latest_archive_report() -> tuple[str, str] | None:
     payload = archives[-1]
     timestamp = datetime.fromisoformat(payload["timestamp"])
     report_name = f"briefing_{timestamp.strftime('%Y%m%d_%H%M')}.html"
+    stable_name = stable_daily_report_name(payload)
     report_md = payload.get("briefing", "")
     articles = payload.get("articles", [])
     metrics = payload.get("metrics", {})
     previous_day = archiver.load_day(timestamp.date() - timedelta(days=1))
     html_body = ai_briefing.build_html_report(report_md, articles, metrics, previous_day)
-    return report_name, html_body
+    return report_name, stable_name, html_body
+
+
+def stable_daily_report_name(payload: dict) -> str | None:
+    date_value = str(payload.get("date") or "").strip()
+    slot = str(payload.get("window", {}).get("slot") or "").strip().zfill(2)
+    if not date_value or slot not in {"08", "13", "18"}:
+        return None
+    return f"daily/{date_value}-{slot}.html"
 
 
 def publish() -> Path:
@@ -53,13 +62,19 @@ def publish() -> Path:
         source = None
 
     if archive:
-        report_name, html_body = archive
+        report_name, stable_name, html_body = archive
         archive_target = REPORTS_DIR / report_name
         archive_target.write_text(html_body, encoding="utf-8")
+        if stable_name:
+            stable_target = REPORTS_DIR / stable_name
+            stable_target.parent.mkdir(parents=True, exist_ok=True)
+            stable_target.write_text(html_body, encoding="utf-8")
         index_target.write_text(html_body, encoding="utf-8")
         print(f"Published latest archived report: {report_name}")
         print(f"Static index: {index_target}")
         print(f"Static archive: {archive_target}")
+        if stable_name:
+            print(f"Static daily slot: {stable_target}")
     elif source:
         archive_target = REPORTS_DIR / source.name
         shutil.copy2(source, archive_target)
