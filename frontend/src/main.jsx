@@ -3081,10 +3081,11 @@ function buildIssues(articles, fallback) {
       source: article.source,
       representativeSource: article.representativeSource || article.source,
       title: article.title,
-      summary: compactArticleSummary(article),
-      summaryLines: buildArticleSummaryLines(article),
+      summary: article.issueSummary || compactArticleSummary(article),
+      summaryLines: article.issueSummary ? [article.issueSummary] : buildArticleSummaryLines(article),
       publishedAt: article.time || article.date || "-",
       link: article.link,
+      issueSummary: article.issueSummary || "",
       relatedArticles,
       relatedCount: Number(article.relatedCount || relatedArticles.length || 1),
       relatedSourceCount: Number(article.relatedSourceCount || unique(relatedArticles.map((item) => item.source).filter(Boolean)).length || 1),
@@ -3136,10 +3137,11 @@ function normalizeMediaIssueGroup(group = {}, period = "monthly") {
     category: representative.category || group.category || "이슈",
     tone: representative.tone || group.tone || "중립",
     title: representative.title || group.title,
-    summary: compactArticleSummary(representative),
-    summaryLines: buildMediaIssueSummaryLines(representative, members),
+    summary: representative.issueSummary || compactArticleSummary(representative),
+    summaryLines: representative.issueSummary ? [representative.issueSummary] : buildMediaIssueSummaryLines(representative, members),
     publishedAt: representative.time || representative.date || group.time || group.date || "-",
     link: representative.link || group.link,
+    issueSummary: representative.issueSummary || "",
   };
 }
 

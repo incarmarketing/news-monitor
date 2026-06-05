@@ -410,6 +410,7 @@ function normalizeArticle(row) {
     link: row.link || "#",
     keyword: row.keyword || "",
     summary: row.summary || "",
+    issueSummary: row.issue_summary || row.issueSummary || "",
     category: normalizeCategory(row.category_label || row.category),
     tone: normalizeTone(row.tone || row.risk_level || row.risk || row.status),
     riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),

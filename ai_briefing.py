@@ -510,6 +510,7 @@ def build_html_report(
     window_override: dict | None = None,
 ) -> str:
     ensure_report_ids(clustered)
+    metrics = normalize_metrics_for_template(metrics)
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
     template = env.get_template("email.html")
     y_metrics = yesterday.get("metrics") if yesterday else None
@@ -532,6 +533,24 @@ def build_html_report(
         methodology=build_methodology(metrics),
         window=window,
     )
+
+
+def normalize_metrics_for_template(metrics: dict | None) -> dict:
+    normalized = dict(metrics or {})
+    by_category = dict(normalized.get("by_category") or {})
+    for key in ("own", "regulation", "competitor", "industry", "other"):
+        by_category.setdefault(key, 0)
+    normalized["by_category"] = by_category
+
+    own_by_tone = dict(normalized.get("own_by_tone") or {})
+    for key in ("positive", "caution", "neutral", "negative"):
+        own_by_tone.setdefault(key, 0)
+    normalized["own_by_tone"] = own_by_tone
+    normalized.setdefault("own_negative", own_by_tone.get("negative", 0))
+    normalized.setdefault("risk_level", "LOW")
+    normalized.setdefault("total_collected", 0)
+    normalized.setdefault("total_after_cluster", 0)
+    return normalized
 
 
 def normalize_window_phrasing(markdown: str, window: dict) -> str:

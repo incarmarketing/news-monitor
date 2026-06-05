@@ -41,6 +41,9 @@ GEMINI_USAGE_URL = os.getenv("GEMINI_USAGE_URL", "https://aistudio.google.com/us
 GEMINI_BILLING_URL = os.getenv("GEMINI_BILLING_URL", "https://aistudio.google.com/billing")
 MAX_TOKENS = 4096
 
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MAX_ISSUE_SUMMARIES = int(os.getenv("GROQ_MAX_ISSUE_SUMMARIES", "20"))
+
 EMAIL_SUBJECT_PREFIX = "[언론 동향]"
 COMPANY_NAME = "인카금융서비스"
 TEAM_NAME = "마케팅부"

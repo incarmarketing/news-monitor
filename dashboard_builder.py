@@ -15,6 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import supabase_store
 import config
 import archiver
+import groq_helper
 
 BASE_DIR = Path(__file__).parent
 PUBLIC_DIR = BASE_DIR / "public"
@@ -54,7 +55,7 @@ def load_daily_archives() -> list[dict]:
 def build_articles(archives: list[dict]) -> list[dict]:
     supabase_articles = load_supabase_articles()
     if supabase_articles:
-        return supabase_articles
+        return enrich_issue_summaries(supabase_articles)
 
     rows: list[dict] = []
     seen: set[str] = set()
@@ -98,7 +99,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
             )
 
     rows.sort(key=lambda row: (row["date"], row["score"]), reverse=True)
-    return rows
+    return enrich_issue_summaries(rows)
 
 
 def article_summary(article: dict, category: str, tone: str) -> str:
@@ -205,6 +206,167 @@ def is_stock_listing_noise(row: dict) -> bool:
     if OWN_NAME_RE.search(title) and INVESTMENT_REPORT_RE.search(text):
         return False
     return True
+
+
+def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
+    if not rows or not groq_helper.is_enabled() or config.GROQ_MAX_ISSUE_SUMMARIES <= 0:
+        return rows
+
+    groups = build_related_article_groups(rows)
+    selected = sorted(groups, key=issue_group_score, reverse=True)[: config.GROQ_MAX_ISSUE_SUMMARIES]
+    generated = 0
+    for group in selected:
+        members = group.get("members", [])
+        if not members:
+            continue
+        summary = groq_helper.summarize_issue(members)
+        if not summary:
+            continue
+        generated += 1
+        for article in members:
+            article["issue_summary"] = summary
+    if generated:
+        print(f"Groq issue summaries generated: {generated}")
+    return rows
+
+
+def build_related_article_groups(rows: list[dict]) -> list[dict]:
+    groups: list[dict] = []
+    for row in rows:
+        seed = article_group_seed(row)
+        target = next((group for group in groups if are_related_article_seeds(seed, group["seed"])), None)
+        if target:
+            target["members"].append(row)
+            target["seed"] = merge_group_seed(target["seed"], seed)
+        else:
+            groups.append({"seed": seed, "members": [row]})
+    for group in groups:
+        group["members"].sort(key=article_importance_score, reverse=True)
+    return groups
+
+
+def article_group_seed(row: dict) -> dict:
+    canonical = normalize_group_title(row.get("title", ""))
+    topic = article_topic_signature(row)
+    summary_tokens = article_tokens(row.get("summary", "") or row.get("description", ""))[:16]
+    tokens = article_tokens(f"{canonical} {' '.join(summary_tokens)} {row.get('keyword', '')}")
+    return {"canonical": canonical, "topic": topic, "tokens": tokens, "token_set": set(tokens)}
+
+
+def merge_group_seed(current: dict, next_seed: dict) -> dict:
+    tokens = unique_lines([*(current.get("tokens") or []), *(next_seed.get("tokens") or [])])
+    return {
+        "canonical": current.get("canonical", "")
+        if len(current.get("canonical", "")) >= len(next_seed.get("canonical", ""))
+        else next_seed.get("canonical", ""),
+        "topic": current.get("topic") or next_seed.get("topic") or "",
+        "tokens": tokens,
+        "token_set": set(tokens),
+    }
+
+
+def are_related_article_seeds(a: dict, b: dict) -> bool:
+    if not a.get("canonical") or not b.get("canonical"):
+        return False
+    if a.get("topic") and b.get("topic") and a["topic"] == b["topic"]:
+        return True
+    shorter, longer = sorted([a["canonical"], b["canonical"]], key=len)
+    if len(shorter) >= 22 and shorter in longer:
+        return True
+    if a["canonical"][:28] == b["canonical"][:28]:
+        return True
+    overlap = token_overlap_ratio(a.get("token_set", set()), b.get("token_set", set()))
+    return overlap >= 0.62 or (overlap >= 0.48 and shared_long_token(a.get("tokens", []), b.get("tokens", [])))
+
+
+def article_topic_signature(row: dict) -> str:
+    text = normalize_group_title(
+        f"{row.get('title', '')} {row.get('summary', '') or row.get('description', '')} {row.get('keyword', '')}"
+    )
+
+    def includes_all(terms: list[str]) -> bool:
+        return all(normalize_group_title(term) in text for term in terms)
+
+    if (
+        ("금감원" in text or "금융감독원" in text)
+        and ("8대 금융지주" in text or "8대 지주" in text or "금융지주" in text)
+        and ("소비자보호" in text or "소비자 중심" in text or "금융문화" in text)
+    ):
+        return "금감원-금융지주-소비자보호"
+    if includes_all(["홍콩els", "제재"]):
+        return "홍콩els-제재"
+    if includes_all(["신협", "특혜대출"]):
+        return "신협-특혜대출"
+    if includes_all(["신협", "부실채권"]):
+        return "신협-부실채권"
+    if includes_all(["소비자보호", "금융현장"]) and ("금감원" in text or "금융감독원" in text):
+        return "금감원-소비자보호-현장"
+    return ""
+
+
+def normalize_group_title(value: object) -> str:
+    text = str(value or "").lower()
+    text = re.sub(r"\[[^\]]+\]|\([^)]*\)|<[^>]+>", " ", text)
+    text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"[^\w\s가-힣]", " ", text)
+    text = re.sub(r"\b(단독|종합|속보|영상|포토|인터뷰|기획|칼럼)\b", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def article_tokens(value: object) -> list[str]:
+    stop = {
+        "기자",
+        "뉴스",
+        "보도",
+        "관련",
+        "통해",
+        "대한",
+        "위해",
+        "올해",
+        "지난",
+        "이번",
+        "추진",
+        "확산",
+        "맞손",
+        "역량",
+        "마음",
+        "지원",
+        "강화",
+        "본격화",
+    }
+    return [
+        token
+        for token in normalize_group_title(value).split()
+        if len(token) > 1 and token not in stop and not token.isdigit()
+    ]
+
+
+def token_overlap_ratio(a_set: set[str], b_set: set[str]) -> float:
+    if not a_set or not b_set:
+        return 0.0
+    return len(a_set & b_set) / min(len(a_set), len(b_set))
+
+
+def shared_long_token(a_tokens: list[str], b_tokens: list[str]) -> bool:
+    b_set = set(b_tokens)
+    return any(len(token) >= 5 and token in b_set for token in a_tokens)
+
+
+def issue_group_score(group: dict) -> int:
+    members = group.get("members", [])
+    if not members:
+        return 0
+    best = max(article_importance_score(row) for row in members)
+    related = min(len(members), 8) * 25
+    own = 520 if any(row.get("category") == "own" for row in members) else 0
+    return best + related + own
+
+
+def article_importance_score(row: dict) -> int:
+    tone_score = {"negative": 420, "caution": 280, "positive": 170, "neutral": 90}.get(str(row.get("tone", "")), 0)
+    category_score = 130 if row.get("category") == "regulation" else 80 if row.get("category") in {"competitor", "industry"} else 0
+    own_score = 520 if row.get("category") == "own" else 0
+    return own_score + tone_score + category_score + int(float(row.get("score") or 0))
 
 
 def build_summary(archives: list[dict], articles: list[dict]) -> dict:
