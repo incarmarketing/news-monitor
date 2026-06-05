@@ -269,6 +269,9 @@ jobs:
             exit 0
           fi
           git commit -m "Archive briefing data"
+          if ! git diff --quiet || [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+            git stash push --include-untracked -m "generated files before archive push"
+          fi
           git pull --rebase
           git push
 
