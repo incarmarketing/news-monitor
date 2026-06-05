@@ -1,5 +1,7 @@
 """News monitoring configuration."""
 
+import os
+
 KEYWORDS = [
     "인카금융",
     "인카금융서비스",
@@ -29,7 +31,14 @@ MAX_ARTICLES_FOR_PROMPT = 32
 
 SCHEDULE_TIMES = ["08:00", "13:00", "18:00"]
 
-GEMINI_MODEL = "gemini-2.5-pro"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+GEMINI_FALLBACK_MODELS = [
+    model.strip()
+    for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-2.5-flash,gemini-2.5-flash-lite").split(",")
+    if model.strip()
+]
+GEMINI_USAGE_URL = os.getenv("GEMINI_USAGE_URL", "https://aistudio.google.com/usage")
+GEMINI_BILLING_URL = os.getenv("GEMINI_BILLING_URL", "https://aistudio.google.com/billing")
 MAX_TOKENS = 4096
 
 EMAIL_SUBJECT_PREFIX = "[언론 동향]"
