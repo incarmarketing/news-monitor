@@ -1449,7 +1449,7 @@ button.kpi-card {
 
 .ai-backup-strip {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   gap: 6px 8px;
   align-items: center;
   padding-top: 2px;
@@ -1477,6 +1477,14 @@ button.kpi-card {
   font-weight: 800;
 }
 
+.ai-backup-strip a {
+  color: #86efac;
+  font-size: 10px;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 @media (max-width: 520px) {
   .ai-power-layout {
     grid-template-columns: 92px minmax(0, 1fr);
@@ -1498,6 +1506,15 @@ button.kpi-card {
   .ai-meter-row em {
     grid-column: 2;
     justify-self: end;
+  }
+
+  .ai-backup-strip {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .ai-backup-strip a {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 }
 

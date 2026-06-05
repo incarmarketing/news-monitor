@@ -506,7 +506,7 @@ def publish_dashboard() -> Path:
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
-    ai_status = build_ai_status()
+    ai_status = build_ai_status(report_runs)
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -549,9 +549,11 @@ def publish_dashboard() -> Path:
     return target
 
 
-def build_ai_status() -> dict:
+def build_ai_status(report_runs: list[dict] | None = None) -> dict:
     circuit_open, circuit_state = gemini_helper.circuit_open()
     groq_status = groq_helper.rate_limit_status()
+    latest_gemini_report = latest_gemini_report_status(report_runs or [])
+    gemini_usage_state = gemini_helper.read_usage_state()
     return {
         "generated_at": datetime.now(KST).isoformat(),
         "gemini": {
@@ -562,6 +564,8 @@ def build_ai_status() -> dict:
             "circuit_reason": circuit_state.get("reason", ""),
             "blocked_until": circuit_state.get("blocked_until", ""),
             "usage_url": getattr(config, "GEMINI_USAGE_URL", "https://aistudio.google.com/usage"),
+            "latest_report": latest_gemini_report,
+            "last_response": gemini_usage_state,
         },
         "groq": {
             "model": os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL),
@@ -571,6 +575,34 @@ def build_ai_status() -> dict:
             "limits_url": "https://console.groq.com/settings/limits",
         },
     }
+
+
+def latest_gemini_report_status(report_runs: list[dict]) -> dict:
+    for row in report_runs:
+        metrics = row.get("metrics") if isinstance(row, dict) else {}
+        if not isinstance(metrics, dict):
+            continue
+        if not any(key in metrics for key in ("ai_model_used", "ai_primary_failed", "ai_quota_exhausted", "ai_errors")):
+            continue
+        errors = metrics.get("ai_errors") if isinstance(metrics.get("ai_errors"), list) else []
+        first_error = errors[0] if errors and isinstance(errors[0], dict) else {}
+        error_text = str(first_error.get("error", ""))
+        credit_depleted = "prepayment credits are depleted" in error_text.lower() or "credits are depleted" in error_text.lower()
+        return {
+            "run_key": row.get("run_key", ""),
+            "report_date": row.get("report_date", ""),
+            "report_slot": row.get("report_slot", ""),
+            "ai_model_used": metrics.get("ai_model_used", ""),
+            "primary_failed": bool(metrics.get("ai_primary_failed")),
+            "fallback_used": bool(metrics.get("ai_fallback_used")),
+            "quota_exhausted": bool(metrics.get("ai_quota_exhausted")),
+            "credit_depleted": credit_depleted,
+            "error": error_text[:220],
+            "error_model": first_error.get("model", ""),
+            "usage": metrics.get("ai_usage_metadata") if isinstance(metrics.get("ai_usage_metadata"), dict) else {},
+            "model_version": metrics.get("ai_response_model_version", ""),
+        }
+    return {}
 
 
 def publish_rebuilt_dashboard() -> Path | None:

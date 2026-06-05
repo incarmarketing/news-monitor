@@ -11,6 +11,7 @@ import config
 
 UTC = timezone.utc
 DEFAULT_CIRCUIT_PATH = Path(".run-state") / "gemini_circuit.json"
+DEFAULT_USAGE_PATH = Path(".run-state") / "gemini_usage.json"
 
 
 def model_candidates() -> list[str]:
@@ -68,6 +69,10 @@ def request_options() -> dict:
 
 def circuit_path() -> Path:
     return Path(os.getenv("GEMINI_CIRCUIT_PATH", "") or DEFAULT_CIRCUIT_PATH)
+
+
+def usage_path() -> Path:
+    return Path(os.getenv("GEMINI_USAGE_PATH", "") or DEFAULT_USAGE_PATH)
 
 
 def now_utc() -> datetime:
@@ -131,6 +136,14 @@ def trip_circuit(error: Exception, *, model: str = "") -> dict:
         "error": error_summary(error),
     }
     write_circuit(state)
+    write_usage_state(
+        {
+            "status": "quota_error" if reason == "quota_or_rate_limit" else "credit_depleted",
+            "model": model,
+            "captured_at": current.isoformat(),
+            "error": error_summary(error),
+        }
+    )
     return state
 
 
@@ -148,3 +161,60 @@ def set_ai_failure_metrics(metrics: dict, failures: list[dict], *, used_model: s
     metrics["ai_quota_exhausted"] = quota_exhausted
     if failures:
         metrics["ai_errors"] = failures[:3]
+
+
+def extract_usage_metadata(response: object) -> dict:
+    raw = getattr(response, "usage_metadata", None) or getattr(response, "usageMetadata", None)
+    if raw is None and isinstance(response, dict):
+        raw = response.get("usageMetadata") or response.get("usage_metadata")
+    if raw is None:
+        return {}
+
+    def get_value(*names: str) -> int | None:
+        for name in names:
+            value = raw.get(name) if isinstance(raw, dict) else getattr(raw, name, None)
+            if value is not None:
+                try:
+                    return int(value)
+                except (TypeError, ValueError):
+                    return None
+        return None
+
+    fields = {
+        "prompt_token_count": get_value("prompt_token_count", "promptTokenCount"),
+        "candidates_token_count": get_value("candidates_token_count", "candidatesTokenCount"),
+        "thoughts_token_count": get_value("thoughts_token_count", "thoughtsTokenCount"),
+        "total_token_count": get_value("total_token_count", "totalTokenCount"),
+    }
+    return {key: value for key, value in fields.items() if value is not None}
+
+
+def record_response(response: object, *, model: str, purpose: str) -> dict:
+    usage = extract_usage_metadata(response)
+    state = {
+        "status": "success",
+        "model": model,
+        "purpose": purpose,
+        "captured_at": now_utc().isoformat(),
+        "model_version": getattr(response, "model_version", "") or getattr(response, "modelVersion", ""),
+        "response_id": getattr(response, "response_id", "") or getattr(response, "responseId", ""),
+        "usage": usage,
+    }
+    write_usage_state(state)
+    return state
+
+
+def read_usage_state() -> dict:
+    path = usage_path()
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def write_usage_state(state: dict) -> None:
+    path = usage_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -197,6 +197,7 @@ def generate_gemini_text(
             )
             text = str(getattr(response, "text", "") or "").strip()
             if text:
+                gemini_helper.record_response(response, model=model_name, purpose=purpose)
                 gemini_helper.reset_circuit()
                 return text, model_name
         except BaseException as exc:

@@ -147,6 +147,7 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
             if text.strip():
                 if failures:
                     console.print(f"[yellow]Gemini 기본 모델 실패 후 {model_name}로 보고서를 작성했습니다.[/]")
+                gemini_helper.record_response(response, model=model_name, purpose=f"period_report:{period_label}")
                 gemini_helper.reset_circuit()
                 return text
             failures.append({"model": model_name, "error": "empty_response", "quota": False})

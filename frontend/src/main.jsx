@@ -2700,16 +2700,15 @@ function AiUsagePanel({ status }) {
   const rate = groq.rate_limit || {};
   const requestPercent = percentRemaining(rate.remaining_requests, rate.limit_requests);
   const tokenPercent = percentRemaining(rate.remaining_tokens, rate.limit_tokens);
-  const dailyPercent = percentUnusedFromUsage(rate.daily_used_tokens, rate.daily_limit_tokens);
-  const reserveValues = [requestPercent, tokenPercent, dailyPercent].filter(Number.isFinite);
+  const reserveValues = [requestPercent, tokenPercent].filter(Number.isFinite);
   const groqReserve = reserveValues.length
     ? Math.round(reserveValues.reduce((sum, value) => sum + value, 0) / reserveValues.length)
     : null;
   const meterFill = Number.isFinite(groqReserve) ? groqReserve : 0;
   const reserveLabel = groqReserve === null ? "측정 대기" : groqReserve >= 70 ? "넉넉" : groqReserve >= 35 ? "주의" : "부족";
-  const geminiState = gemini.circuit_open
-    ? `차단 중${gemini.blocked_until ? ` · ${formatCompactDateTime(gemini.blocked_until)}` : ""}`
-    : gemini.has_key ? "대기" : "키 없음";
+  const geminiReport = gemini.latest_report || {};
+  const geminiState = formatGeminiState(gemini, geminiReport);
+  const geminiDetail = formatGeminiDetail(gemini, geminiReport);
   return (
     <section className="panel ai-usage-panel">
       <div className="ai-usage-head">
@@ -2732,13 +2731,13 @@ function AiUsagePanel({ status }) {
       <div className="ai-meter-bars">
         <AiMeterRow label="일 요청" percent={requestPercent} value={formatLimitPair(rate.remaining_requests, rate.limit_requests)} />
         <AiMeterRow label="분당 토큰" percent={tokenPercent} value={formatLimitPair(rate.remaining_tokens, rate.limit_tokens)} />
-        <AiMeterRow label="일일 토큰" percent={dailyPercent} value={formatUsagePair(rate.daily_used_tokens, rate.daily_limit_tokens)} mode="used" />
       </div>
       <div className="ai-backup-strip">
-        <span>Gemini 백업</span>
+        <span>Gemini 상태</span>
         <b>{geminiState}</b>
         <em>{gemini.model || "-"}</em>
-        {gemini.circuit_reason && <small>{gemini.circuit_reason}</small>}
+        {geminiDetail && <small>{geminiDetail}</small>}
+        {gemini.usage_url && <a href={gemini.usage_url} target="_blank" rel="noopener noreferrer">사용량 확인</a>}
       </div>
     </section>
   );
@@ -2772,13 +2771,6 @@ function percentRemaining(remaining, limit) {
   return clampPercent(Math.round((remainingNumber / limitNumber) * 100));
 }
 
-function percentUnusedFromUsage(used, limit) {
-  const usedNumber = toNumericLimit(used);
-  const limitNumber = toNumericLimit(limit);
-  if (!Number.isFinite(usedNumber) || !Number.isFinite(limitNumber) || limitNumber <= 0) return null;
-  return clampPercent(Math.round(((limitNumber - usedNumber) / limitNumber) * 100));
-}
-
 function toNumericLimit(value) {
   if (value === undefined || value === null || value === "") return null;
   const number = Number(String(value).replace(/,/g, ""));
@@ -2793,13 +2785,6 @@ function clampPercent(value) {
 function formatLimitPair(remaining, limit) {
   if (remaining === undefined && limit === undefined) return "다음 호출 후 표시";
   const left = remaining === undefined ? "-" : formatCompactNumber(remaining);
-  const right = limit === undefined ? "-" : formatCompactNumber(limit);
-  return `${left} / ${right}`;
-}
-
-function formatUsagePair(used, limit) {
-  if (used === undefined && limit === undefined) return "한도 응답 대기";
-  const left = used === undefined ? "-" : formatCompactNumber(used);
   const right = limit === undefined ? "-" : formatCompactNumber(limit);
   return `${left} / ${right}`;
 }
@@ -2820,6 +2805,48 @@ function formatCompactDateTime(value) {
     minute: "2-digit",
     hour12: false,
   }).format(date);
+}
+
+function formatGeminiState(gemini = {}, report = {}) {
+  const lastResponse = gemini.last_response || {};
+  if (!gemini.has_key) return "키 없음";
+  if (report.credit_depleted) return "크레딧 소진";
+  if (report.quota_exhausted) return "쿼터 소진";
+  if (lastResponse.status === "credit_depleted") return "크레딧 소진";
+  if (lastResponse.status === "quota_error") return "쿼터 소진";
+  if (gemini.circuit_open) return "차단 중";
+  if (report.fallback_used) return "백업 전환";
+  if (lastResponse.status === "success") return "정상";
+  if (report.ai_model_used && report.primary_failed === false) return "정상";
+  return "최근 기록 없음";
+}
+
+function formatGeminiDetail(gemini = {}, report = {}) {
+  if (report.run_key) {
+    const slot = report.report_slot ? `${report.report_slot}시 보고서` : "최근 보고서";
+    const usageText = formatGeminiUsageText(report.usage);
+    if (report.credit_depleted) return `${slot}에서 Gemini 크레딧 소진이 감지되어 Groq/규칙 백업을 사용했습니다.`;
+    if (report.quota_exhausted) return `${slot}에서 Gemini 쿼터 한도가 감지되어 백업을 사용했습니다.`;
+    if (report.fallback_used) return `${slot}에서 ${report.ai_model_used || "백업 모델"}로 전환했습니다.`;
+    if (report.ai_model_used) return `${slot}에서 ${report.ai_model_used} 응답을 사용했습니다${usageText ? ` · ${usageText}` : ""}.`;
+  }
+  const lastUsageText = formatGeminiUsageText(gemini.last_response?.usage);
+  if (lastUsageText) return `최근 Gemini 호출 ${lastUsageText}.`;
+  if (gemini.circuit_open && gemini.blocked_until) return `${formatCompactDateTime(gemini.blocked_until)}까지 Gemini 호출을 쉬고 있습니다.`;
+  if (gemini.circuit_reason) return gemini.circuit_reason;
+  if (gemini.has_key) return "정확한 잔여 무료량은 Gemini API 응답으로 제공되지 않아, 최근 호출 결과와 오류로 상태를 판단합니다.";
+  return "GEMINI_API_KEY가 설정되지 않았습니다.";
+}
+
+function formatGeminiUsageText(usage = {}) {
+  const total = usage?.total_token_count;
+  if (total === undefined || total === null || total === "") return "";
+  const prompt = usage.prompt_token_count;
+  const output = usage.candidates_token_count;
+  const pieces = [`총 ${formatCompactNumber(total)}토큰`];
+  if (prompt !== undefined) pieces.push(`입력 ${formatCompactNumber(prompt)}`);
+  if (output !== undefined) pieces.push(`출력 ${formatCompactNumber(output)}`);
+  return pieces.join(" · ");
 }
 
 function NotificationList({ rows }) {

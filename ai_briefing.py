@@ -127,6 +127,10 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
                 )
             text = clean_markdown(getattr(response, "text", "") or "")
             if text:
+                usage_state = gemini_helper.record_response(response, model=model_name, purpose="daily_report")
+                if usage_state.get("usage"):
+                    metrics["ai_usage_metadata"] = usage_state["usage"]
+                    metrics["ai_response_model_version"] = usage_state.get("model_version", "")
                 gemini_helper.set_ai_failure_metrics(metrics, failures, used_model=model_name)
                 gemini_helper.reset_circuit()
                 return text
