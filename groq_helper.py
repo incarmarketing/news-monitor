@@ -12,6 +12,7 @@ import urllib.request
 import config
 
 GROQ_API_URL = os.getenv("GROQ_API_URL", "https://api.groq.com/openai/v1/chat/completions")
+_GROQ_BLOCKED_UNTIL = 0.0
 
 
 def is_enabled() -> bool:
@@ -39,8 +40,7 @@ def summarize_issue(articles: list[dict], *, retries: int = 1) -> str:
         retries=retries,
         purpose="issue_summary",
     )
-    cleaned = clean_issue_summary(text)
-    return cleaned or fallback_issue_summary(articles)
+    return clean_issue_summary(text)
 
 
 def generate_briefing_report(clustered: list[dict], metrics: dict, baseline_report: str, *, retries: int = 0) -> str:
@@ -167,8 +167,11 @@ def chat_completion(
     retries: int = 0,
     purpose: str = "groq",
 ) -> str:
+    global _GROQ_BLOCKED_UNTIL
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
+        return ""
+    if time.time() < _GROQ_BLOCKED_UNTIL:
         return ""
 
     payload = {
@@ -199,10 +202,15 @@ def chat_completion(
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:300]
             print(f"Groq {purpose} failed: HTTP {exc.code} {detail}")
-            if exc.code == 429 and attempt < retries:
+            if exc.code == 429:
                 retry_after = int(exc.headers.get("Retry-After", "3") or "3")
-                time.sleep(min(retry_after, 10))
-                continue
+                _GROQ_BLOCKED_UNTIL = max(
+                    _GROQ_BLOCKED_UNTIL,
+                    time.time() + min(max(retry_after, 60), 900),
+                )
+                if attempt < retries:
+                    time.sleep(min(retry_after, 10))
+                    continue
             return ""
         except Exception as exc:
             print(f"Groq {purpose} failed: {type(exc).__name__} {str(exc)[:300]}")
