@@ -1,6 +1,6 @@
 {
   "date": "2026-06-05",
-  "timestamp": "2026-06-05T14:16:21.859425+09:00",
+  "timestamp": "2026-06-05T14:21:37.578406+09:00",
   "window": {
     "slot": "08",
     "label": "전일 18:00~당일 08:00",
@@ -9,12 +9,12 @@
     "end": "2026-06-05T08:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 3,
-    "total_after_cluster": 3,
+    "total_collected": 2,
+    "total_after_cluster": 2,
     "by_category": {
       "own": 0,
       "regulation": 0,
-      "competitor": 3,
+      "competitor": 2,
       "industry": 0,
       "other": 0
     },
@@ -22,7 +22,7 @@
       "negative": 0,
       "caution": 0,
       "positive": 0,
-      "neutral": 3
+      "neutral": 2
     },
     "own_negative": 0,
     "own_total": 0,
@@ -34,7 +34,7 @@
     },
     "risk_level": "LOW"
   },
-  "briefing": "## 최종 결론\n전일 18:00~당일 08:00 기준 리스크는 LOW이며, 당사 부정 0건입니다.\n\n## 핵심 이슈\n- [1] 올드 뮤추얼, 1분기 생명보험 매출 28%…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n- [2] 라온시큐어, KDB생명보험과 PQC 솔루션…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n\n## 지표 해석\n전체 3건 중 당사 보도 0건, 당사 부정 0건입니다.\n\n\n## 분석 키워드\n인카금융서비스, 정착률, GA, 보험설계사",
+  "briefing": "## 최종 결론\n전일 18:00~당일 08:00 기준 리스크는 LOW이며, 당사 부정 0건입니다.\n\n## 핵심 이슈\n- [1] 올드 뮤추얼, 1분기 생명보험 매출 28%…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n- [2] 라온시큐어, KDB생명보험과 PQC 솔루션…: 경쟁사·GA 시장 흐름을 보여주는 기사입니다.\n\n## 지표 해석\n전체 2건 중 당사 보도 0건, 당사 부정 0건입니다.\n\n\n## 분석 키워드\n인카금융서비스, 정착률, GA, 보험설계사",
   "articles": [
     {
       "title": "올드 뮤추얼, 1분기 생명보험 매출 28% 증가, 자사주 매입 완료 - Investing.com 한국어",
@@ -57,19 +57,6 @@
       "description": "라온시큐어, KDB생명보험과 PQC 솔루션 공급 계약 맺어&nbsp;&nbsp;디지털경제뉴스",
       "pub_date": "Thu, 04 Jun 2026 12:12:57 GMT",
       "_report_id": 2,
-      "_score": 12,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
-      "title": "PayPay, T&D 파이낸셜 생명보험 지분 인수…자회사 편입 By Investing.com - Investing.com 한국어",
-      "link": "https://news.google.com/rss/articles/CBMicEFVX3lxTE82UFNqMS00dkpCZE9uNnNta1ZiNDRSckE3YmowVE5RTzN4YWpvUWRFMFFvSFBVTlBfVGd4UDFuLWVZQll3cm5BZS1ORzlDc2VkYWhRYkV4RW9iREduLW9hM0ZqcU5jUlEzRVdlZk4tNGw?oc=5",
-      "source": "Investing.com 한국어",
-      "keyword": "생명보험",
-      "description": "PayPay, T&D 파이낸셜 생명보험 지분 인수…자회사 편입 By Investing.com&nbsp;&nbsp;Investing.com 한국어",
-      "pub_date": "Thu, 04 Jun 2026 10:19:00 GMT",
-      "_report_id": 3,
       "_score": 12,
       "_category": "competitor",
       "_tone": "neutral",
