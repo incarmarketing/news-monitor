@@ -2541,8 +2541,13 @@ function IssueList({ issues, compact = false }) {
 }
 
 function formatIssueMeta(issue = {}) {
+  const baseSource = issue.representativeSource || issue.source;
+  const relatedSourceCount = Number(issue.relatedSourceCount || 1);
+  const sourceLabel = baseSource && relatedSourceCount > 1
+    ? `${baseSource} 외 ${relatedSourceCount - 1}곳`
+    : issue.source || baseSource;
   const parts = [
-    issue.source || issue.representativeSource,
+    sourceLabel,
     issue.publishedAt || issue.time || issue.date,
   ].filter(Boolean);
   if (Number(issue.relatedCount || 1) > 1) {
