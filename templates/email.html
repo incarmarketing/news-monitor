@@ -398,9 +398,9 @@
   .cat-industry { background:#cffafe; color:#0e7490; }
   .cat-other { background:#f1f5f9; color:#475569; }
   .tone-negative { background:var(--red-soft); color:#a1122b; }
-  .tone-caution { background:#fff7ed; color:#b45309; }
   .tone-positive { background:var(--green-soft); color:#166534; }
-  .tone-neutral { background:#eef2f7; color:#475467; }
+  .tone-caution,
+  .tone-neutral { background:#fff7ed; color:#b45309; }
   .article-title {
     color:var(--ink);
     font-size:12.5px;
@@ -622,7 +622,7 @@
       <div>
         <div class="report-kicker">
           <span class="report-chip">{{ subject_prefix }}</span>
-          <span class="report-chip">{{ window.label }} 기준</span>
+          <span class="report-chip">분석 대상 {{ window.label }}</span>
         </div>
         <h1>일일 언론 동향 보고서</h1>
         <div class="meta">{{ company }} {{ team }} · 당일 모니터링 브리핑</div>
@@ -632,7 +632,7 @@
         <div class="risk-copy">
           <div class="risk-label">리스크 레벨</div>
           <div class="risk-message">{{ risk_message }}</div>
-          <div class="risk-sub">{{ window.short_label }} 기준</div>
+          <div class="risk-sub">{{ window.short_label }} 수집분 분석</div>
         </div>
       </aside>
     </header>
@@ -689,9 +689,9 @@
         <section class="panel">
           <h2 class="panel-title">보고 기준</h2>
           <div class="brief-note">
-            <div><span>수집 구간</span><b>{{ window.label }}</b></div>
+            <div><span>분석 대상 구간</span><b>{{ window.label }}</b></div>
             <div><span>수집/분석</span><b>{{ metrics.total_collected }}건 / {{ metrics.total_after_cluster }}건</b></div>
-            <div><span>생성 시각</span><b>{{ date_str }}</b></div>
+            <div><span>보고서 생성(KST)</span><b>{{ date_str }}</b></div>
             <div><span>데이터 출처</span><b>{{ methodology.sources }}</b></div>
             <div><span>검색 키워드</span><b>{{ methodology.keywords }}개</b></div>
           </div>
