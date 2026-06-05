@@ -214,10 +214,13 @@ def build_issue_prompt(articles: list[dict]) -> str:
     for index, article in enumerate(articles[:8], 1):
         title = clean_prompt_text(article.get("title", ""))
         source = clean_prompt_text(article.get("source", ""))
+        keyword = clean_prompt_text(article.get("keyword", ""))
+        category = clean_prompt_text(article.get("_category", article.get("category", "")))
+        tone = clean_prompt_text(article.get("_tone", article.get("tone", "")))
         summary = clean_prompt_text(article.get("summary", "") or article.get("description", ""))
         if len(summary) > 220:
             summary = summary[:220].rstrip() + "."
-        rows.append(f"{index}. {source} | {title}\n요약: {summary}")
+        rows.append(f"{index}. {source} | {keyword} | {category}/{tone} | {title}\n요약: {summary}")
 
     return f"""
 아래 기사들은 같은 이슈로 묶인 기사다.
@@ -227,6 +230,9 @@ def build_issue_prompt(articles: list[dict]) -> str:
 - 45~95자
 - 기사 제목을 그대로 반복하지 말 것
 - 이슈가 무엇인지 사실만 정리
+- 기사 묶음에 인카금융 또는 인카금융서비스가 있으면 당사와 관련된 사실을 우선 요약
+- 여러 회사가 함께 나오면 제목의 첫 회사명이 아니라 키워드와 본문에서 반복되는 핵심 주체를 기준으로 요약
+- 실적, 순위, 인증, 평판 기사에서는 어떤 회사의 어떤 지표인지 명확히 쓸 것
 - 판단, 대응 제안, 리스크 등급, 긍정/부정/주의 표현 금지
 - 언론사명, 날짜, 기사 수 표기 금지
 - 문장은 반드시 완결형으로 끝낼 것
