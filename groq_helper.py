@@ -331,6 +331,8 @@ def fallback_issue_summary(articles: list[dict]) -> str:
         return f"인카금융서비스의 설계사 정착률이 {rate}로 보도됐다."
     if "인카" in text and "투자의견" in text and ("하향" in text or "낮아" in text):
         return "인카금융서비스의 투자의견 하향 보도가 나왔다."
+    if "금감원" in text and "인카" in text and ("전격 점검" in text or "이직 보따리" in text or "정착지원금" in text):
+        return "금감원이 인카금융서비스 등 GA 정착지원금 지급 실태를 점검했다."
     if "인카" in text and "우수인증설계사" in text:
         match = re.search(r"([0-9,]+)\s*명", text)
         count = f" {match.group(1)}명" if match else ""
