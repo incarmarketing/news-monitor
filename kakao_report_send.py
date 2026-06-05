@@ -43,10 +43,24 @@ def refresh_access_token() -> str:
 
 
 def load_latest_daily() -> dict:
+    slot = os.getenv("REPORT_SLOT", "").strip()
+    if slot in {"08", "13", "18"}:
+        report = load_daily_for_slot(slot)
+        if report:
+            return report
     latest = archiver.load_latest()
     if not latest:
         raise FileNotFoundError("No daily report archive found.")
     return latest
+
+
+def load_daily_for_slot(slot: str) -> dict | None:
+    today = archiver.today_kst()
+    for report in archiver.load_day_slots(today):
+        window = report.get("window", {})
+        if str(window.get("slot", "")).zfill(2) == slot:
+            return report
+    return None
 
 
 def latest_html_path() -> Path | None:
