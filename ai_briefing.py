@@ -83,7 +83,7 @@ def run_briefing(articles: list[dict]) -> Path:
     html_body = build_html_report(report, clustered, metrics, yesterday)
     send_email(html_body, metrics)
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    timestamp = datetime.now(KST).strftime("%Y%m%d_%H%M")
     html_path = LOG_DIR / f"briefing_{timestamp}.html"
     json_path = LOG_DIR / f"articles_{timestamp}.json"
     html_path.write_text(html_body, encoding="utf-8")
@@ -102,13 +102,21 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
         return fallback_report(clustered, metrics)
 
     prompt = build_prompt(clustered, metrics, yesterday)
-    with console.status("[cyan]Gemini가 보고서를 작성 중...[/]", spinner="dots"):
-        model = genai.GenerativeModel(config.GEMINI_MODEL)
-        response = model.generate_content(
-            prompt,
-            generation_config={"max_output_tokens": config.MAX_TOKENS, "temperature": 0.25},
-        )
-    return clean_markdown(response.text)
+    try:
+        with console.status("[cyan]Gemini가 보고서를 작성 중...[/]", spinner="dots"):
+            model = genai.GenerativeModel(config.GEMINI_MODEL)
+            response = model.generate_content(
+                prompt,
+                generation_config={"max_output_tokens": config.MAX_TOKENS, "temperature": 0.25},
+            )
+        text = clean_markdown(getattr(response, "text", "") or "")
+        if text:
+            return text
+        console.print("[yellow]Gemini 응답이 비어 있어 백업 보고서로 전환합니다.[/]")
+    except Exception as exc:
+        console.print(f"[yellow]Gemini 보고서 생성 실패: {exc}[/]")
+        console.print("[yellow]백업 보고서로 전환해 발송 흐름을 계속합니다.[/]")
+    return fallback_report(clustered, metrics)
 
 
 def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:
@@ -272,10 +280,10 @@ def clean_markdown(text: str) -> str:
 
 def fallback_report(clustered: list[dict], metrics: dict) -> str:
     window = report_window.current_window()
-    issue_lines = "\n".join(
-        f"- [{article.get('_report_id', idx)}] {article.get('title', '')[:55]}: 확인 필요"
-        for idx, article in enumerate(clustered[:2], 1)
-    )
+    highlights = select_prompt_articles(clustered, 2) or clustered[:2]
+    issue_lines = "\n".join(fallback_issue_line(article) for article in highlights)
+    if not issue_lines:
+        issue_lines = "- 수집 기사 없음: 특이 리스크가 확인되지 않았습니다."
     response_section = ""
     if should_show_action(metrics):
         response_section = """
@@ -297,6 +305,31 @@ def fallback_report(clustered: list[dict], metrics: dict) -> str:
 ## 분석 키워드
 인카금융서비스, 정착률, GA, 보험설계사"""
 
+
+def fallback_issue_line(article: dict) -> str:
+    ref = article.get("_report_id", "")
+    ref_label = f"[{ref}] " if ref else ""
+    title = compact_text(article.get("title", ""), 24)
+    return f"- {ref_label}{title}: {fallback_article_judgement(article)}"
+
+
+def fallback_article_judgement(article: dict) -> str:
+    category = article.get("_category", "")
+    tone = article.get("_tone", "")
+    text = f"{article.get('title', '')} {article.get('description', '')}"
+    if category == "own" and tone == "negative":
+        return "당사 직접 리스크로 원문 확인이 필요합니다."
+    if category == "own" and tone == "positive":
+        return "당사 우호 보도로 보고서 우선 근거입니다."
+    if category == "own":
+        return "당사 언급 흐름으로 함께 확인할 기사입니다."
+    if any(term in text for term in ("투자의견", "목표가", "주가", "수수료", "정착지원금")):
+        return "시장 평가와 제도 신호로 분리 관찰합니다."
+    if category == "regulation":
+        return "정책·감독 방향성 확인이 필요한 보도입니다."
+    if category == "competitor":
+        return "경쟁사·GA 시장 흐름을 보여주는 기사입니다."
+    return "업계 동향으로 참고할 기사입니다."
 
 def build_html_report(report_md: str, clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:
     ensure_report_ids(clustered)
@@ -887,7 +920,7 @@ def send_email(html_body: str, metrics: dict) -> bool:
         return False
 
     subject = (
-        f"{config.EMAIL_SUBJECT_PREFIX} {datetime.now().strftime('%Y.%m.%d')} "
+        f"{config.EMAIL_SUBJECT_PREFIX} {datetime.now(KST).strftime('%Y.%m.%d')} "
         f"{metrics['risk_level']} 당사{metrics['by_category']['own']} 부정{metrics['own_negative']}"
     )
     message = MIMEMultipart("alternative")
