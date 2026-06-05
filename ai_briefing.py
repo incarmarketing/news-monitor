@@ -24,6 +24,7 @@ import analyzer
 import archiver
 import config
 import gemini_helper
+import groq_helper
 import report_window
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -99,8 +100,19 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
     if not clustered:
         window = report_window.current_window()
         return f"## 최종 결론\n{window['label']} 기준 주요 모니터링 대상 뉴스가 없습니다."
+    baseline_report = fallback_report(clustered, metrics)
     if not GEMINI_API_KEY:
-        return fallback_report(clustered, metrics)
+        return groq_or_rules_report(clustered, metrics, baseline_report, reason="gemini_key_missing")
+
+    is_open, circuit_state = gemini_helper.circuit_open()
+    if is_open:
+        console.print(f"[yellow]{gemini_helper.circuit_message(circuit_state)}[/]")
+        gemini_helper.set_ai_failure_metrics(
+            metrics,
+            [{"model": "gemini", "error": gemini_helper.circuit_message(circuit_state), "quota": True}],
+            used_model="groq_or_rules_fallback",
+        )
+        return groq_or_rules_report(clustered, metrics, baseline_report, reason="gemini_circuit_open")
 
     prompt = build_prompt(clustered, metrics, yesterday)
     failures: list[dict] = []
@@ -111,26 +123,50 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
                 response = model.generate_content(
                     prompt,
                     generation_config={"max_output_tokens": config.MAX_TOKENS, "temperature": 0.25},
+                    request_options=gemini_helper.request_options(),
                 )
             text = clean_markdown(getattr(response, "text", "") or "")
             if text:
                 gemini_helper.set_ai_failure_metrics(metrics, failures, used_model=model_name)
+                gemini_helper.reset_circuit()
                 return text
             failures.append({"model": model_name, "error": "empty_response", "quota": False})
             console.print(f"[yellow]Gemini {model_name} 응답이 비어 있어 다음 모델을 시도합니다.[/]")
-        except Exception as exc:
+        except BaseException as exc:
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            quota = gemini_helper.is_quota_error(exc)
             failures.append(
                 {
                     "model": model_name,
                     "error": gemini_helper.error_summary(exc),
-                    "quota": gemini_helper.is_quota_error(exc),
+                    "quota": quota,
                 }
             )
             console.print(f"[yellow]Gemini {model_name} 보고서 생성 실패: {exc}[/]")
+            if quota:
+                state = gemini_helper.trip_circuit(exc, model=model_name)
+                console.print(f"[yellow]{gemini_helper.circuit_message(state)}[/]")
+                break
             console.print("[yellow]다음 백업 모델을 시도합니다.[/]")
-    gemini_helper.set_ai_failure_metrics(metrics, failures, used_model="rules_fallback")
-    console.print("[yellow]모든 Gemini 모델 실패: 규칙 기반 백업 보고서로 전환해 발송 흐름을 계속합니다.[/]")
-    return fallback_report(clustered, metrics)
+    gemini_helper.set_ai_failure_metrics(metrics, failures, used_model="groq_or_rules_fallback")
+    console.print("[yellow]Gemini 사용 불가: Groq/규칙 기반 백업 보고서로 전환해 발송 흐름을 계속합니다.[/]")
+    return groq_or_rules_report(clustered, metrics, baseline_report, reason="gemini_failed")
+
+
+def groq_or_rules_report(clustered: list[dict], metrics: dict, baseline_report: str, *, reason: str) -> str:
+    if groq_helper.is_enabled():
+        with console.status("[cyan]Groq 백업 보고서 작성 중...[/]", spinner="dots"):
+            report = groq_helper.generate_briefing_report(clustered, metrics, baseline_report)
+        if report:
+            metrics["ai_model_used"] = f"groq:{config.GROQ_MODEL}"
+            metrics["ai_fallback_used"] = True
+            metrics["ai_fallback_reason"] = reason
+            return report
+    metrics["ai_model_used"] = "rules_fallback"
+    metrics["ai_fallback_used"] = True
+    metrics["ai_fallback_reason"] = reason
+    return baseline_report
 
 
 def build_prompt(clustered: list[dict], metrics: dict, yesterday: dict | None) -> str:

@@ -57,6 +57,9 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  REPORT_FAILURE_COOLDOWN_MINUTES: "30"
+  GEMINI_CIRCUIT_HOURS: "6"
+  GEMINI_CIRCUIT_CREDIT_HOURS: "24"
 
 concurrency:
   group: github-pages

@@ -387,12 +387,23 @@ CRON_DISPATCH_TOKEN
 AI 요약 백업용:
 
 ```text
+GEMINI_TIMEOUT_SECONDS=45
+GEMINI_CIRCUIT_HOURS=6
+GEMINI_CIRCUIT_CREDIT_HOURS=24
 GROQ_API_KEY
 GROQ_MODEL=llama-3.3-70b-versatile
 GROQ_MAX_ISSUE_SUMMARIES=20
 ```
 
-`GROQ_API_KEY`가 있으면 GitHub Actions 대시보드 빌드 단계에서 관련 기사 묶음별로 "이 이슈가 무엇인지"만 1문장 요약합니다. 키가 없거나 한도 초과가 발생하면 기존 규칙 기반 요약으로 자동 전환합니다.
+`GROQ_API_KEY`가 있으면 GitHub Actions 대시보드 빌드 단계에서 관련 기사 묶음별로 "이 이슈가 무엇인지"만 1문장 요약합니다. Gemini가 429, quota, prepay credit depleted 상태가 되면 `.run-state/gemini_circuit.json`에 회로차단 상태를 기록하고 일정 시간 Gemini 호출을 건너뜁니다. 키가 없거나 한도 초과가 발생하면 Groq 또는 기존 규칙 기반 요약으로 자동 전환합니다.
+
+반복 실패 방지:
+
+```text
+REPORT_FAILURE_COOLDOWN_MINUTES=30
+```
+
+같은 일일 보고서 슬롯이 실패한 직후에는 외부 cron이 5분마다 같은 슬롯을 계속 재호출하지 않도록 기본 30분 동안 실행을 보류합니다.
 
 주의: `SUPABASE_SERVICE_ROLE_KEY`, `CRON_DISPATCH_TOKEN`, `KAKAO_REFRESH_TOKEN`, `GEMINI_API_KEY`, `GROQ_API_KEY`는 코드, README, 채팅, 이슈에 붙여넣지 않습니다.
 

@@ -40,6 +40,10 @@ GEMINI_FALLBACK_MODELS = [
 GEMINI_USAGE_URL = os.getenv("GEMINI_USAGE_URL", "https://aistudio.google.com/usage")
 GEMINI_BILLING_URL = os.getenv("GEMINI_BILLING_URL", "https://aistudio.google.com/billing")
 MAX_TOKENS = 4096
+GEMINI_TIMEOUT_SECONDS = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "45"))
+GEMINI_CIRCUIT_HOURS = int(os.getenv("GEMINI_CIRCUIT_HOURS", "6"))
+GEMINI_CIRCUIT_CREDIT_HOURS = int(os.getenv("GEMINI_CIRCUIT_CREDIT_HOURS", "24"))
+GEMINI_CIRCUIT_DISABLED = os.getenv("GEMINI_CIRCUIT_DISABLED", "").lower() in {"1", "true", "yes", "y"}
 
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_MAX_ISSUE_SUMMARIES = int(os.getenv("GROQ_MAX_ISSUE_SUMMARIES", "20"))

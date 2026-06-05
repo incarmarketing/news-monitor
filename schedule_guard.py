@@ -68,6 +68,9 @@ def begin_daily_schedule(now: datetime, cron: str) -> None:
         if slot_is_complete(today, slot, marker_path):
             print(f"Already completed scheduled slot: {marker_path}")
             continue
+        if slot_recently_failed(today, slot, now):
+            print(f"Recent failed run is cooling down for {today} {slot}.")
+            continue
 
         github_output("should_run", "true")
         github_output("should_mark", "true")
@@ -131,6 +134,9 @@ def begin_manual_or_push(event_name: str) -> None:
         elif not backfill_only and not os.getenv("FORCE_KAKAO_SEND") and slot_is_complete(today, manual_slot, marker):
             should_run = "false"
             print(f"Already completed manually dispatched slot: {marker}")
+        elif not backfill_only and not os.getenv("FORCE_KAKAO_SEND") and slot_recently_failed(today, manual_slot, now):
+            should_run = "false"
+            print(f"Manual dispatch skipped during failure cooldown: {marker}")
         elif backfill_only:
             print(f"Backfill dispatch allowed for slot: {marker}")
 
@@ -195,6 +201,59 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
         print(f"Supabase completion check unavailable: {error}")
         return None
     return bool(report_rows) and bool(send_rows)
+
+
+def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:
+    cooldown = failure_cooldown_minutes()
+    if cooldown <= 0 or slot not in DAILY_SLOTS:
+        return False
+    run_key = f"daily_report:{report_date}:{slot}"
+    try:
+        rows = supabase_select(
+            "job_runs",
+            "select=status,last_seen_at,finished_at,error"
+            f"&run_key=eq.{quote(run_key)}"
+            "&limit=1",
+        )
+    except RuntimeError as error:
+        print(f"Supabase failure cooldown check unavailable: {error}")
+        return False
+    if not rows:
+        return False
+    row = rows[0]
+    status = str(row.get("status", ""))
+    if status not in {"failed", "cancelled"}:
+        return False
+    last_seen = parse_supabase_time(row.get("last_seen_at") or row.get("finished_at"))
+    if not last_seen:
+        return False
+    age_minutes = (now - last_seen.astimezone(KST)).total_seconds() / 60
+    if age_minutes <= cooldown:
+        print(
+            "Recent report failure cooldown active: "
+            f"{run_key}, status={status}, age={age_minutes:.1f}m, cooldown={cooldown}m"
+        )
+        return True
+    return False
+
+
+def failure_cooldown_minutes() -> int:
+    value = os.getenv("REPORT_FAILURE_COOLDOWN_MINUTES", "30").strip()
+    try:
+        return max(0, int(value))
+    except ValueError:
+        return 30
+
+
+def parse_supabase_time(value: object) -> datetime | None:
+    if not value:
+        return None
+    try:
+        text = str(value).replace("Z", "+00:00")
+        parsed = datetime.fromisoformat(text)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=KST)
+    except ValueError:
+        return None
 
 
 def supabase_select(table: str, query: str) -> list[dict]:
