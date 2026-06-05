@@ -30,20 +30,6 @@ EXCLUDED_PRESS_NAMES = {
     "엠에이치앤포토",
     "mhn포토",
 }
-DOMAIN_CONTEXT_RE = re.compile(
-    r"보험|손보|생보|생명보험|손해보험|보험사|보험대리점|법인보험대리점|"
-    r"\bGA\b|GA업계|GA채널|보험GA|보험설계사|설계사|전속설계사|"
-    r"보험모집인|보험업법|1200%|정착지원금|불완전판매|내부통제|"
-    r"인카금융|글로벌금융판매|메가금융서비스|한화생명금융서비스|"
-    r"에이플러스에셋|리치앤코|굿리치|지에이코리아|프라임에셋|피플라이프|"
-    r"보험저널|보험매일|보험신보",
-    re.I,
-)
-GENERIC_POLICY_RE = re.compile(
-    r"수수료|정책|규제|당국|제도|법안|공시|감독|소상공인|포항시장|"
-    r"시장 후보|지역업체|하도급|입찰제도|수수료 제로 플랫폼",
-    re.I,
-)
 
 
 def today_kst() -> date:
@@ -98,6 +84,7 @@ def lighten(article: dict) -> dict:
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
         "description": article.get("description", "") or article.get("summary", ""),
+        "_summary": article.get("_summary", ""),
         "pub_date": article.get("pub_date", ""),
         "_report_id": article.get("_report_id"),
         "_score": article.get("_score", 0),
@@ -130,23 +117,7 @@ def is_excluded_article(article: dict) -> bool:
         return True
     if any(name.lower().startswith("mhn") for name in names if name):
         return True
-    if re.match(r"^\s*\[(?:MHN포토|MHN스포츠|엠에이치앤포토)\]", title, re.I):
-        return True
-    return is_out_of_domain_article(article)
-
-
-def is_out_of_domain_article(article: dict) -> bool:
-    text = " ".join(
-        str(article.get(key) or "")
-        for key in ("title", "description", "summary", "keyword", "source", "press")
-    )
-    if not text.strip():
-        return True
-    if "인카금융" in text:
-        return False
-    if DOMAIN_CONTEXT_RE.search(text):
-        return False
-    return bool(GENERIC_POLICY_RE.search(text))
+    return bool(re.match(r"^\s*\[(?:MHN포토|MHN스포츠|엠에이치앤포토)\]", title, re.I))
 
 
 def load_archive(path: Path) -> dict | None:
