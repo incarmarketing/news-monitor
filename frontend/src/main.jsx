@@ -582,11 +582,11 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         <div className="side-column">
           <WatchPanel jobs={jobs} risk={summary.risk} health={watchHealth} />
           <AiUsagePanel status={operations?.aiStatus} />
-          <Panel title="알림톡 발송 이력" icon={Bell} meta={notificationHealth?.label || `${notifications.length.toLocaleString("ko-KR")}건`}>
+          <Panel title="알림톡 발송 이력" icon={Bell} meta={`${notifications.length.toLocaleString("ko-KR")}건`}>
             <NotificationStatusSummary health={notificationHealth} total={notifications.length} />
             <NotificationList rows={notifications} />
           </Panel>
-          <Panel title="보고서 자동화" icon={CalendarDays} meta={reportHealth?.label || "스케줄"}>
+          <Panel title="보고서 자동화" icon={CalendarDays} meta="08 · 13 · 18">
             <ReportAutomationStatus reportHealth={reportHealth} actionsHealth={actionsHealth} historyHealth={historyHealth} />
           </Panel>
         </div>
@@ -3200,10 +3200,10 @@ function kstHour(value) {
 }
 
 function isDailyReportNotificationForSlot(item = {}, dateKey, slot) {
-  const text = `${item.type || ""} ${item.messageType || ""}`.toLowerCase();
+  const text = `${item.rawTitle || item.type || ""} ${item.messageType || ""}`.toLowerCase();
   const isDaily = /daily_report|일일|언론 동향/.test(text);
   if (!isDaily) return false;
-  const title = String(item.type || "");
+  const title = String(item.rawTitle || item.type || "");
   const titleHasSlot = title.includes(`${dateKey} ${slot}`) || title.includes(`${dateKey}-${slot}`);
   const sentMatchesSlot = item.sentAt && kstDateKey(item.sentAt) === dateKey && kstHour(item.sentAt) === slot;
   return isNotificationSuccess(item) && (titleHasSlot || sentMatchesSlot);
@@ -3478,7 +3478,7 @@ function NotificationDetail({ item, onClose }) {
           <X />
         </button>
         <span className="detail-kicker">알림톡 발송 내역</span>
-        <h2>{item.type || "알림톡"}</h2>
+        <h2>{item.rawTitle || item.type || "알림톡"}</h2>
         <div className="detail-meta">
           <Chip tone={item.status}>{item.status}</Chip>
           <span>{item.time}</span>

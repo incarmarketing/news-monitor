@@ -669,18 +669,46 @@ function shouldReplaceDedupedArticle(current, next) {
 }
 
 function normalizeNotification(row) {
+  const rawTitle = row.title || row.message_type || row.channel || "알림톡";
   return {
     id: row.id || `${row.sent_at}-${row.message_type}`,
     sentAt: row.sent_at || row.created_at || "",
     rawStatus: row.status || "",
+    rawTitle,
     messageType: row.message_type || "",
     channel: row.channel || "",
     time: formatTime(row.sent_at || row.created_at),
-    type: row.title || row.message_type || row.channel || "알림톡",
+    type: compactNotificationTitle(row),
     status: row.status === "success" || row.status === "sent" || row.status === "성공" ? "성공" : row.status || "확인",
     body: row.body || row.error || "",
     link: row.link_url || "",
   };
+}
+
+function compactNotificationTitle(row) {
+  const rawTitle = String(row?.title || row?.message_type || row?.channel || "알림톡").trim();
+  const dateText = compactNotificationDate(rawTitle) || compactNotificationDate(row?.sent_at || row?.created_at);
+  const titleKey = `${rawTitle} ${row?.message_type || ""}`.toLowerCase();
+  if (/ai_usage_alert|ai\s*요약\s*사용량|ai.*사용량/.test(titleKey)) {
+    return dateText ? `API 사용량 확인 ${dateText}` : "API 사용량 확인";
+  }
+  if (/daily_report|일일\s*언론\s*동향/.test(titleKey)) {
+    return dateText ? `일일 언론 동향 ${dateText}` : "일일 언론 동향";
+  }
+  if (/weekly_report|주간\s*언론\s*동향/.test(titleKey)) {
+    return dateText ? `주간 언론 동향 ${dateText}` : "주간 언론 동향";
+  }
+  if (/monthly_report|월간\s*언론\s*동향/.test(titleKey)) {
+    return dateText ? `월간 언론 동향 ${dateText}` : "월간 언론 동향";
+  }
+  return rawTitle;
+}
+
+function compactNotificationDate(value) {
+  const text = String(value || "");
+  const match = text.match(/(20\d{2})[-.](\d{2})[-.](\d{2})/);
+  if (!match) return "";
+  return `${match[1].slice(2)}.${match[2]}.${match[3]}`;
 }
 
 function normalizeWatchRun(row) {
