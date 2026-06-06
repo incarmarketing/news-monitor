@@ -1,6 +1,9 @@
-import { chromium } from "playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || "playwright");
 
 const DEFAULT_URL = "https://incarmarketing.github.io/news-monitor/dashboard.html";
 const baseUrl = process.env.DESIGN_QA_URL || DEFAULT_URL;
