@@ -561,19 +561,6 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           <span className="live-label"><span /> LIVE MEDIA BRIEFING</span>
           <h2>{summary.headline}</h2>
           <p>{data.scope} · {data.generatedAt || summary.watchTime || "-"}</p>
-          <div className="overview-status-strip">
-            <button
-              type="button"
-              className={`overview-status-chip ${summary.risk.toLowerCase()}`}
-              onClick={() => onOpenMonitoring?.({ category: "?뱀궗" })}
-            >
-              <span>Risk</span>
-              <b>{summary.risk}</b>
-            </button>
-            <span className="overview-mini-stat negative">遺??{summary.ownNegative}</span>
-            <span className="overview-mini-stat caution">二쇱쓽 {summary.caution}</span>
-            <span className="overview-mini-stat">?뱀궗 ?멸툒 {summary.ownMentions}</span>
-          </div>
         </div>
       </section>
 
@@ -3866,13 +3853,21 @@ function numberOrZero(value) {
 
 function buildHeadline(articles, ownMentions, ownNegative, caution) {
   const ownLead = articles.find(isOwnArticle);
+  const leadTitle = ownLead?.title || articles[0]?.title || "핵심 기사 확인 필요";
+  const gaInsuranceCount = articles.filter((item) => ["GA", "보험사"].includes(item.category)).length;
   if (ownNegative > 0) {
-    return `당사 부정 ${ownNegative}건이 확인됐습니다. 최신 당사 언급 기사 "${ownLead?.title || "확인 필요"}"를 우선 점검합니다.`;
+    return `당사 부정 ${ownNegative}건이 확인됐습니다. "${leadTitle}" 중심으로 사실관계와 확산 가능성을 먼저 점검해야 합니다.`;
+  }
+  if (ownMentions > 0 && caution > 0) {
+    return `당사 언급 ${ownMentions}건은 직접 부정보다는 시장성·영업환경 이슈로 분류됩니다. "${leadTitle}"의 쟁점과 업계 파급 가능성을 함께 확인해야 합니다.`;
   }
   if (ownMentions > 0) {
-    return `당사 언급 ${ownMentions}건은 직접 부정보다 주의/시장성 이슈에 가깝습니다. 핵심 기사 "${ownLead?.title}"를 보고서에 포함합니다.`;
+    return `당사 언급 ${ownMentions}건이 확인됐습니다. "${leadTitle}"를 기준으로 보도 맥락과 당사 노출 방향을 점검합니다.`;
   }
-  return `당사 직접 언급은 없습니다. 주의 ${caution}건과 GA/보험사 동향 ${articles.filter((item) => ["GA", "보험사"].includes(item.category)).length}건을 추적합니다.`;
+  if (caution > 0) {
+    return `당사 직접 언급은 없지만 주의 이슈 ${caution}건이 관찰됐습니다. 규제·수수료·GA 운영 흐름이 영업 환경에 미칠 영향을 확인합니다.`;
+  }
+  return `당사 직접 리스크는 낮고, GA·보험사 동향 ${gaInsuranceCount}건을 중심으로 업계 흐름을 추적합니다.`;
 }
 
 function buildIssues(articles, fallback) {

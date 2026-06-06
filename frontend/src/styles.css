@@ -325,8 +325,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
-  min-height: 124px;
-  padding: 18px;
+  min-height: 106px;
+  padding: 16px 18px;
   overflow: hidden;
   border: 1px solid #bfcbdf;
   border-left: 0;
@@ -385,73 +385,6 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
-}
-
-.overview-status-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  align-items: center;
-  margin-top: 3px;
-}
-
-.overview-status-chip,
-.overview-mini-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  max-width: 100%;
-  padding: 0 9px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .72);
-  color: var(--ink-2);
-  font-size: 11px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.overview-status-chip {
-  border-color: #bdebd6;
-  background: rgba(234, 248, 242, .82);
-  color: var(--green);
-}
-
-.overview-status-chip.medium {
-  border-color: #f4cf87;
-  background: rgba(255, 246, 223, .88);
-  color: var(--amber);
-}
-
-.overview-status-chip.high {
-  border-color: #ffc1ca;
-  background: rgba(255, 240, 242, .9);
-  color: var(--red);
-}
-
-.overview-status-chip span {
-  color: var(--muted);
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.overview-status-chip b {
-  font-size: 12px;
-  line-height: 1;
-  font-weight: 900;
-}
-
-.overview-mini-stat.negative {
-  border-color: #ffc1ca;
-  background: rgba(255, 240, 242, .72);
-  color: var(--red);
-}
-
-.overview-mini-stat.caution {
-  border-color: #f4cf87;
-  background: rgba(255, 246, 223, .72);
-  color: var(--amber);
 }
 
 .overview-kpi-shelf {
@@ -4315,17 +4248,6 @@ button.kpi-card {
   .overview-command-main h2 {
     font-size: 20px;
     line-height: 1.32;
-  }
-
-  .overview-status-strip {
-    gap: 6px;
-  }
-
-  .overview-status-chip,
-  .overview-mini-stat {
-    min-height: 26px;
-    padding: 0 8px;
-    font-size: 10px;
   }
 
   .overview-kpi-shelf {
