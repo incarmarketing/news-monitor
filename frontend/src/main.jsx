@@ -582,11 +582,11 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         <div className="side-column">
           <WatchPanel jobs={jobs} risk={summary.risk} health={watchHealth} />
           <AiUsagePanel status={operations?.aiStatus} />
-          <Panel title="알림톡 발송 이력" icon={Bell} meta={`${notifications.length.toLocaleString("ko-KR")}건`}>
+          <Panel title="알림톡 발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
             <NotificationStatusSummary health={notificationHealth} total={notifications.length} />
             <NotificationList rows={notifications} />
           </Panel>
-          <Panel title="보고서 자동화" icon={CalendarDays} meta="08 · 13 · 18">
+          <Panel title="보고서 자동화" icon={CalendarDays} meta="일 3회">
             <ReportAutomationStatus reportHealth={reportHealth} actionsHealth={actionsHealth} historyHealth={historyHealth} />
           </Panel>
         </div>
@@ -3021,6 +3021,9 @@ function buildDailyReportHealth(notifications = [], reportRuns = []) {
     } else if (due && notificationOk) {
       state = "발송";
       status = "warn";
+    } else if (due && reportOk) {
+      state = "반영중";
+      status = "warn";
     } else if (due) {
       state = "누락";
       status = "fail";
@@ -3029,18 +3032,23 @@ function buildDailyReportHealth(notifications = [], reportRuns = []) {
   });
   const status = worstHealthStatus(slots.filter((slot) => slot.due).map((slot) => slot.status));
   const dueCount = slots.filter((slot) => slot.due).length;
-  const doneCount = slots.filter((slot) => slot.notificationOk).length;
-  const completedDueCount = slots.filter((slot) => slot.due && slot.notificationOk).length;
+  const sentCount = slots.filter((slot) => slot.notificationOk).length;
+  const confirmedCount = slots.filter((slot) => slot.notificationOk || slot.reportOk).length;
+  const completedDueCount = slots.filter((slot) => slot.due && (slot.notificationOk || slot.reportOk)).length;
+  const syncingCount = slots.filter((slot) => slot.due && !slot.notificationOk && slot.reportOk).length;
   const totalSlots = slots.length;
+  const progress = dueCount
+    ? [`도래 ${dueCount}회 중 확인 ${completedDueCount}회`, syncingCount ? `반영중 ${syncingCount}회` : ""].filter(Boolean).join(" · ")
+    : "첫 발송 전";
   return {
     title: "일일보고서",
     icon: CalendarDays,
     status: dueCount ? status : "pending",
     label: dueCount ? healthStatusLabel(status) : "대기",
-    detail: `오늘 ${totalSlots}회 중 발송 ${doneCount}회`,
-    progress: dueCount ? `도래 ${dueCount}회 중 완료 ${completedDueCount}회` : "첫 발송 전",
+    detail: `오늘 ${totalSlots}회 중 확인 ${confirmedCount}회`,
+    progress,
     slots,
-    meta: slots.map((slot) => `${slot.slot} ${slot.state}`).join(" · "),
+    meta: `발송 ${sentCount}회 · 생성 ${Math.max(0, confirmedCount - sentCount)}회`,
   };
 }
 
@@ -3430,7 +3438,11 @@ function formatGeminiUsageText(usage = {}) {
 function NotificationList({ rows }) {
   const [showAll, setShowAll] = useState(false);
   const [selected, setSelected] = useState(null);
-  const visibleRows = showAll ? rows : rows.slice(0, 5);
+  const collapsedLimit = 5;
+  const expandedLimit = 20;
+  const displayLimit = showAll ? expandedLimit : collapsedLimit;
+  const visibleRows = rows.slice(0, displayLimit);
+  const hiddenCount = Math.max(0, rows.length - visibleRows.length);
   return (
     <>
       <div className="notification-list">
@@ -3448,10 +3460,13 @@ function NotificationList({ rows }) {
           </button>
         ))}
       </div>
-      {rows.length > 5 && (
+      {rows.length > collapsedLimit && (
         <button className="ghost-button notification-more" onClick={() => setShowAll((value) => !value)}>
-          {showAll ? "접기" : "더보기"}
+          {showAll ? "접기" : `최근 ${Math.min(expandedLimit, rows.length)}건 보기`}
         </button>
+      )}
+      {showAll && hiddenCount > 0 && (
+        <p className="notification-limit-note">화면에는 최근 {expandedLimit}건만 표시합니다. 전체 이력은 운영 DB 기준으로 보관됩니다.</p>
       )}
       {selected && <NotificationDetail item={selected} onClose={() => setSelected(null)} />}
     </>

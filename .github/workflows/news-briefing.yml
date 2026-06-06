@@ -52,6 +52,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
   pages: write
   id-token: write
 
@@ -237,6 +238,15 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Refresh dashboard after daily notification log
+        if: always() && steps.guard.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true') && ((github.event_name == 'schedule' && steps.guard.outputs.should_period != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none' && github.event.inputs.send_kakao == 'true') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[send-kakao]')))
+        run: |
+          if ! gh workflow run pages-dashboard.yml --ref main; then
+            echo "::warning::Dashboard refresh dispatch failed. The next dashboard publish will still sync notification history."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Send period KakaoTalk link
         if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && github.event.inputs.send_kakao == 'true'))

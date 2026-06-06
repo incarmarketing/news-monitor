@@ -1856,6 +1856,14 @@ button.kpi-card {
   margin-top: 8px;
 }
 
+.notification-limit-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .detail-panel {
   position: relative;
   display: grid;
