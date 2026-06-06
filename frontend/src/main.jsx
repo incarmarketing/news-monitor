@@ -3992,11 +3992,62 @@ function mediaIssueScore(item = {}, period = "monthly") {
 
 function isOwnPerformanceArticle(item = {}) {
   const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`;
-  return isOwnArticle(item) && /우수인증|인증설계사|최다|배출|수상|성과|선정|1위|성장|매출|협약|CSR|사회공헌/.test(text);
+  return isOwnArticle(item) && isOwnPerformanceSummaryText(text);
+}
+
+function articlePrimarySummaryTopic(item = {}) {
+  const title = cleanSummaryText(item.title || "");
+  const text = summaryHaystack(item);
+  const own = isOwnArticle(item);
+
+  if (own && isOwnPerformanceSummaryText(title)) return "own-performance";
+  if (isInvestmentSummaryText(title)) return "investment";
+  if (isSettlementSupportSummaryText(title)) return "settlement-support";
+  if (isInsuranceLossSummaryText(title)) return "insurance-loss";
+  if (isPreventiveSecuritySummaryText(title)) return "security";
+
+  if (own && isOwnPerformanceSummaryText(text)) return "own-performance";
+  if (isInvestmentSummaryText(text)) return "investment";
+  if (isSettlementSupportSummaryText(text)) return "settlement-support";
+  if (isInsuranceLossSummaryText(text)) return "insurance-loss";
+  if (isPreventiveSecuritySummaryText(text)) return "security";
+  return "";
+}
+
+function isOwnPerformanceSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /우수인증|인증설계사|최다|배출|수상|성과|선정|1위|성장|매출|협약|CSR|사회공헌/.test(text);
+}
+
+function isInvestmentSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /투자의견|목표주가|목표가|증권가|리포트|주가/.test(text) && /하향|낮아|조정|중립|매도|약세|급락|하락/.test(text);
+}
+
+function isSettlementSupportSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /정착지원금|1200%|수수료/.test(text) && /GA|보험대리점|설계사|공시/.test(text);
+}
+
+function isInsuranceLossSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /실손|손해율|적자폭|보험 민원|민원/.test(text) && /보험|손보|생보|계약/.test(text);
+}
+
+function isPreventiveSecuritySummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /금융보안원/.test(text) && /가입|확대|예방|보안/.test(text) && /해킹|보안|침해|취약점/.test(text);
+}
+
+function summaryLineMatchesTopic(line = "", topic = "") {
+  if (!topic) return true;
+  const lineTopic = summarySemanticTopicKey(line);
+  return !lineTopic || lineTopic === topic;
 }
 
 function buildMediaIssueSummaryLines(representative = {}, members = []) {
   const titleKeys = new Set(members.map((article) => normalizeRiskSummaryKey(article.title)).filter(Boolean));
+  const representativeTopic = articlePrimarySummaryTopic(representative);
   const candidates = [];
   [...members].sort((a, b) => mediaIssueScore(b) - mediaIssueScore(a) || articleTimeValue(b) - articleTimeValue(a)).forEach((article) => {
     buildArticleSummaryLines(article).forEach((line) => candidates.push(line));
@@ -4009,6 +4060,7 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
   return candidates.filter((line) => {
     const key = normalizeRiskSummaryKey(line);
     if (!key || titleKeys.has(key)) return false;
+    if (representativeTopic && !summaryLineMatchesTopic(line, representativeTopic)) return false;
     if (isDuplicateRiskSummaryKey(key, seen)) return false;
     seen.add(key);
     return true;
@@ -4027,8 +4079,14 @@ function buildArticleSummaryLines(item = {}) {
   const sentences = splitSummarySentences(text)
     .map(normalizeSummaryLine)
     .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence) && !isSummaryDuplicateOfTitle(sentence, titleKeys));
+  const primaryTopic = articlePrimarySummaryTopic(item);
   const contextLines = buildContextualSummaryLines(item);
   const titleLine = normalizeSummaryLine(headlineBasedSummary(item));
+  if (primaryTopic && contextLines.length) {
+    const topicLines = dedupeSummaryLines([...contextLines, titleLine].filter((line) => line && summaryLineMatchesTopic(line, primaryTopic)), titleKeys)
+      .slice(0, primaryTopic === "own-performance" ? 2 : 3);
+    if (topicLines.length) return topicLines;
+  }
   const candidates = contextLines.length >= 2
     ? [...contextLines, ...sentences]
     : [...contextLines, ...sentences, titleLine];
@@ -4093,6 +4151,7 @@ function summarySemanticTopicKey(value = "") {
   const text = cleanSummaryText(value);
   if (!text) return "";
   if (/제목과 본문 근거|세부 내용을 확인|핵심 내용을 확인/.test(text)) return "generic-fallback";
+  if (/우수인증|인증설계사|최다|배출/.test(text) && /인카금융|당사|GA업계/.test(text)) return "own-performance";
   if (/정착지원금|수수료|지급 규모|순위|공시/.test(text) && /GA|보험대리점|설계사/.test(text)) return "settlement-support";
   if (/GA 리포트|리포트성|조직 현황|운영 지표/.test(text)) return "ga-report";
   if (/투자의견|목표가|목표주가|주가|시장 평가|증권가/.test(text)) return "investment";
@@ -4199,16 +4258,23 @@ function isBrokenSummaryLine(value) {
 function headlineBasedSummary(item = {}) {
   const title = cleanSummaryText(item.title || "");
   if (!title || isGenericSummaryLine(title)) return "";
-  if (isPreventiveSecuritySummary(item)) {
+  const topic = articlePrimarySummaryTopic(item);
+  const text = summaryHaystack(item);
+  if (topic === "own-performance") {
+    return /2,?262|2262/.test(text)
+      ? "인카금융서비스가 우수인증설계사 2,262명 배출로 GA업계 최다 기록을 알린 성과성 보도입니다."
+      : "인카금융서비스의 우수인증설계사 배출 성과를 다룬 당사 성과성 보도입니다.";
+  }
+  if (topic === "security") {
     return "보도 초점은 해킹 사고 발생이 아니라 금융보안원 가입 확대와 보안 예방 체계 강화입니다.";
   }
-  if (isInvestmentSummary(item)) {
+  if (topic === "investment") {
     return "투자의견, 목표가, 주가 흐름처럼 시장 평가 변화가 핵심입니다.";
   }
-  if (isSettlementSupportSummary(item)) {
+  if (topic === "settlement-support") {
     return "GA 정착지원금 공시에서 지급 규모와 순위가 비교된 내용입니다.";
   }
-  if (isInsuranceLossSummary(item)) {
+  if (topic === "insurance-loss") {
     return "실손보험 손해율과 적자 흐름을 다룬 보험업계 지표 기사입니다.";
   }
   return title;
@@ -4217,16 +4283,21 @@ function headlineBasedSummary(item = {}) {
 function buildContextualSummaryLines(item = {}) {
   const lines = [];
   const text = summaryHaystack(item);
-  if (isPreventiveSecuritySummary(item)) {
+  const topic = articlePrimarySummaryTopic(item);
+  if (topic === "own-performance") {
+    lines.push(/2,?262|2262/.test(text)
+      ? "인카금융서비스가 우수인증설계사 2,262명을 배출해 GA업계 최다 기록을 낸 성과성 기사입니다."
+      : "인카금융서비스의 우수인증설계사 배출 성과를 다룬 당사 성과성 기사입니다.");
+  } else if (topic === "security") {
     if (isOwnArticle(item)) {
       lines.push("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
     }
     lines.push("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다.");
-  } else if (isInvestmentSummary(item)) {
+  } else if (topic === "investment") {
     lines.push("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.");
-  } else if (isSettlementSupportSummary(item)) {
+  } else if (topic === "settlement-support") {
     lines.push("GA별 정착지원금 지급 규모와 순위를 비교한 공시성 기사입니다.");
-  } else if (isInsuranceLossSummary(item)) {
+  } else if (topic === "insurance-loss") {
     lines.push("실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다.");
   }
   if (/한눈에보는GA리포트|GA리포트/i.test(text)) {
@@ -4260,23 +4331,19 @@ function summaryHaystack(item = {}) {
 }
 
 function isPreventiveSecuritySummary(item = {}) {
-  const text = summaryHaystack(item);
-  return /금융보안원/.test(text) && /가입|확대|예방|보안/.test(text) && /해킹|보안|침해|취약점/.test(text);
+  return articlePrimarySummaryTopic(item) === "security";
 }
 
 function isInvestmentSummary(item = {}) {
-  const text = summaryHaystack(item);
-  return /투자의견|목표주가|목표가|증권가|리포트|주가/.test(text) && /하향|낮아|조정|중립|매도|약세|급락|하락/.test(text);
+  return articlePrimarySummaryTopic(item) === "investment";
 }
 
 function isSettlementSupportSummary(item = {}) {
-  const text = summaryHaystack(item);
-  return /정착지원금|1200%|수수료/.test(text) && /GA|보험대리점|설계사|공시/.test(text);
+  return articlePrimarySummaryTopic(item) === "settlement-support";
 }
 
 function isInsuranceLossSummary(item = {}) {
-  const text = summaryHaystack(item);
-  return /실손|손해율|적자폭|보험 민원|민원/.test(text) && /보험|손보|생보|계약/.test(text);
+  return articlePrimarySummaryTopic(item) === "insurance-loss";
 }
 
 function periodScopeLabel(period) {
