@@ -24,22 +24,13 @@ jobs:
   visual-layout-check:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-1.56.1-${{ runner.os }}
 
       - name: Cache Playwright runtime
         uses: actions/cache@v4
@@ -50,12 +41,12 @@ jobs:
       - name: Install Playwright
         run: |
           npm install --prefix .qa/playwright-runtime --package-lock=false --no-save --no-audit --no-fund playwright@1.56.1
-          ./.qa/playwright-runtime/node_modules/.bin/playwright install chromium
 
       - name: Inspect deployed dashboard
         env:
           DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
           PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
+          PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
         run: node frontend/scripts/design-qa.mjs
 
       - name: Upload screenshots
