@@ -13,9 +13,9 @@ const STATIC_DATA_PATHS = [
   `${import.meta.env.BASE_URL || "/"}data/articles.json`,
 ];
 
-const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/;
-const INVESTMENT_REPORT_RE = /투자의견|목표주가|목표가|증권가|리포트|애널리스트/;
-const OWN_NAME_RE = /인카금융서비스|인카금융/;
+const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52?\]?\s*)?(?:???|???)|??\s*(?:???|???)|??\s*??|??\s*??|???|??\s*??\s*\[??\]|\[???\]|MVP\s*??|??\s*\d+\s*?/;
+const INVESTMENT_REPORT_RE = /????|????|???|???|???|?????/;
+const OWN_NAME_RE = /???????|????/;
 
 function isExpired(session) {
   return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
@@ -129,7 +129,7 @@ export async function saveMediaRelation(media = {}) {
   if (!name) throw new Error("media_name_required");
   const body = {
     name,
-    status: String(media.status || "중립").trim() || "중립",
+    status: String(media.status || "??").trim() || "??",
     grade: String(media.grade || "B").trim() || "B",
     owner: String(media.owner || "").trim(),
     contact_date: media.contactDate || media.contact_date || null,
@@ -218,12 +218,12 @@ function backendCategory(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
   if (!text) return "";
-  if (["own", "company"].includes(canonical) || /당사|인카/.test(text)) return "own";
-  if (["regulation", "policy"].includes(canonical) || /정책|규제|당국|수수료/.test(text)) return "regulation";
-  if (["competitor"].includes(canonical) || /ga|보험사|경쟁사|글로벌금융|메가|설계사/i.test(text)) return "competitor";
-  if (["industry", "market"].includes(canonical) || /업계|동향|시장/.test(text)) return "industry";
-  if (["exclude", "noise"].includes(canonical) || /제외|노이즈/.test(text)) return "other";
-  if (["other"].includes(canonical) || /기타/.test(text)) return "other";
+  if (["own", "company"].includes(canonical) || /??|??/.test(text)) return "own";
+  if (["regulation", "policy"].includes(canonical) || /??|??|??|???/.test(text)) return "regulation";
+  if (["competitor"].includes(canonical) || /ga|???|???|?????|??|???/i.test(text)) return "competitor";
+  if (["industry", "market"].includes(canonical) || /??|??|??/.test(text)) return "industry";
+  if (["exclude", "noise"].includes(canonical) || /??|???/.test(text)) return "other";
+  if (["other"].includes(canonical) || /??/.test(text)) return "other";
   return "";
 }
 
@@ -231,11 +231,11 @@ function backendTone(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
   if (!text) return "";
-  if (["exclude", "noise", "excluded"].includes(canonical) || /제외|노이즈/.test(text)) return "exclude";
-  if (["negative", "high"].includes(canonical) || /부정|위험|악재/.test(text)) return "negative";
-  if (["caution", "medium", "warning"].includes(canonical) || /주의|경계/.test(text)) return "caution";
-  if (["positive"].includes(canonical) || /긍정|호재/.test(text)) return "positive";
-  if (["neutral"].includes(canonical) || /중립/.test(text)) return "neutral";
+  if (["exclude", "noise", "excluded"].includes(canonical) || /??|???/.test(text)) return "exclude";
+  if (["negative", "high"].includes(canonical) || /??|??|??/.test(text)) return "negative";
+  if (["caution", "medium", "warning"].includes(canonical) || /??|??/.test(text)) return "caution";
+  if (["positive"].includes(canonical) || /??|??/.test(text)) return "positive";
+  if (["neutral"].includes(canonical) || /??/.test(text)) return "neutral";
   return "";
 }
 
@@ -246,7 +246,7 @@ export async function saveReporterProfile(reporter = {}) {
   const body = {
     name,
     media,
-    status: String(reporter.status || "중립").trim() || "중립",
+    status: String(reporter.status || "??").trim() || "??",
     contact_date: reporter.contactDate || reporter.contact_date || null,
     memo: String(reporter.memo || "").trim(),
   };
@@ -310,7 +310,7 @@ export async function loadOperationalData() {
   const base = {
     source: "static",
     status: "loading",
-    message: "누적 데이터 확인 중",
+    message: "?? ??? ?? ?",
     articles: [],
     notifications: [],
     watchRuns: [],
@@ -321,16 +321,22 @@ export async function loadOperationalData() {
     ads: [],
     aliases: [],
     keywords: [],
+    feedback: [],
     aiStatus: null,
     session: null,
   };
 
   try {
+    const session = getStoredSession();
+    if (session?.session_token) {
+      const remoteData = await loadOperationalDataFromSupabaseSession();
+      if (remoteData?.status === "live") return remoteData;
+    }
     const staticData = await loadStaticOperationalData();
     if (staticData) return staticData;
-    return { ...base, status: "empty", message: "누적 데이터 없음" };
+    return { ...base, status: "empty", message: "?? ??? ??" };
   } catch (error) {
-    return { ...base, status: "error", message: error?.message || "누적 데이터 연결 실패" };
+    return { ...base, status: "error", message: error?.message || "?? ??? ?? ??" };
   }
 }
 
@@ -344,7 +350,7 @@ async function loadStaticOperationalData() {
       return {
         source: "static",
         status: "live",
-        message: `누적 데이터 ${articles.length.toLocaleString("ko-KR")}건`,
+        message: `?? ??? ${articles.length.toLocaleString("ko-KR")}?`,
         articles,
         notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification) : [],
         watchRuns: Array.isArray(payload?.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
@@ -357,6 +363,7 @@ async function loadStaticOperationalData() {
         ads: Array.isArray(payload?.ads) ? payload.ads.map(normalizeAd) : [],
         aliases: Array.isArray(payload?.aliases) ? payload.aliases : [],
         keywords: Array.isArray(payload?.keywords) ? payload.keywords.map(normalizeKeyword).filter(Boolean) : [],
+        feedback: Array.isArray(payload?.classification_feedback) ? payload.classification_feedback.map(normalizeFeedback).filter(Boolean) : [],
         aiStatus: payload?.ai_status || null,
         session: null,
       };
@@ -371,7 +378,7 @@ async function loadOperationalDataFromSupabaseSession() {
   const base = {
     source: "sample",
     status: "sample",
-    message: "샘플 데이터",
+    message: "?? ???",
     articles: [],
     notifications: [],
     watchRuns: [],
@@ -382,6 +389,7 @@ async function loadOperationalDataFromSupabaseSession() {
     ads: [],
     aliases: [],
     keywords: [],
+    feedback: [],
     aiStatus: null,
     session: getStoredSession(),
   };
@@ -390,13 +398,13 @@ async function loadOperationalDataFromSupabaseSession() {
     const config = await loadSupabaseConfig();
     const session = getStoredSession();
     if (!config?.url || !config?.anon_key) {
-      return { ...base, message: "Supabase 설정 대기" };
+      return { ...base, message: "Supabase ?? ??" };
     }
     if (!session?.session_token) {
-      return { ...base, message: "운영 로그인 필요" };
+      return { ...base, message: "?? ??? ??" };
     }
 
-    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords] = await Promise.all([
+    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords, feedback] = await Promise.all([
       fetchTable(
         config,
         session,
@@ -433,12 +441,13 @@ async function loadOperationalDataFromSupabaseSession() {
       rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
       rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
       rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
+      rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500"),
     ]);
 
     return {
       source: "supabase",
       status: "live",
-      message: "운영 DB 연결",
+      message: "?? DB ??",
       articles: Array.isArray(articles) ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean)) : [],
       notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
@@ -449,11 +458,12 @@ async function loadOperationalDataFromSupabaseSession() {
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
       aliases: Array.isArray(aliases) ? aliases : [],
       keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
+      feedback: Array.isArray(feedback) ? feedback.map(normalizeFeedback).filter(Boolean) : [],
       aiStatus: null,
       session,
     };
   } catch (error) {
-    return { ...base, status: "error", message: error?.message || "운영 데이터 연결 실패" };
+    return { ...base, status: "error", message: error?.message || "?? ??? ?? ??" };
   }
 }
 
@@ -464,6 +474,25 @@ function normalizeKeyword(row) {
     keyword: String(keyword).trim(),
     category: row?.category || "other",
     enabled: row?.enabled !== false,
+  };
+}
+
+function normalizeFeedback(row) {
+  if (!row?.title && !row?.article_hash && !row?.link) return null;
+  return {
+    id: row.id || `${row.article_hash || row.link || row.title}-${row.created_at || ""}`,
+    articleHash: row.article_hash || "",
+    title: row.title || "",
+    link: row.link || "",
+    previousCategory: row.previous_category || "",
+    previousTone: row.previous_tone || "",
+    correctedCategory: row.corrected_category || "",
+    correctedTone: row.corrected_tone || "",
+    reason: row.reason || "",
+    createdBy: row.created_by || "",
+    createdAt: row.created_at || "",
+    date: formatArticleDate(row.created_at) || String(row.created_at || "").slice(0, 10),
+    time: formatTime(row.created_at),
   };
 }
 
@@ -502,7 +531,7 @@ function normalizeArticle(row) {
     tone: normalizeTone(row.tone || row.risk_level || row.risk || row.status),
     riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),
     score: Number(row.score || 0),
-    status: row.status || "분석 완료",
+    status: row.status || "?? ??",
     clusterSize: Number(row.cluster_size || row.clusterSize || 1),
   };
 }
@@ -511,7 +540,7 @@ function isStockListingNoise(row = {}) {
   const title = String(row.title || "");
   const sourceLink = `${row.source || ""} ${row.link || ""}`.toLowerCase();
   const text = `${title} ${sourceLink} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""}`;
-  const isItoozaListing = sourceLink.includes("itooza") && /52주|최고가|최저가|MVP|리스트|상위\s*\d+\s*선/.test(title);
+  const isItoozaListing = sourceLink.includes("itooza") && /52?|???|???|MVP|???|??\s*\d+\s*?/.test(title);
   if (!STOCK_LISTING_NOISE_TITLE_RE.test(title) && !isItoozaListing) return false;
   if (OWN_NAME_RE.test(title) && INVESTMENT_REPORT_RE.test(text)) return false;
   return true;
@@ -520,11 +549,11 @@ function isStockListingNoise(row = {}) {
 function normalizeArticleSource(source, link = "", title = "") {
   const raw = String(source || "").trim();
   if (raw && !isPortalSource(raw)) return raw;
-  const titleSource = String(title || "").match(/\s[-–]\s([^-\n|]+)$/)?.[1]?.trim();
+  const titleSource = String(title || "").match(/\s[-?]\s([^-\n|]+)$/)?.[1]?.trim();
   if (titleSource && !isPortalSource(titleSource)) return titleSource.replace(/^www\./, "");
   const host = safeHost(link);
   if (host && !isPortalSource(host)) return host;
-  return raw || "미확인";
+  return raw || "???";
 }
 
 function isPortalSource(value) {
@@ -603,18 +632,18 @@ function articleDedupKey(row) {
 
 function isOfficialRegulatorArticle(row) {
   const text = `${row.source || ""} ${row.keyword || ""} ${row.category || ""} ${row.category_label || ""} ${row.link || ""}`;
-  return /금융감독원|금융위원회|금융당국|정책\/규제|fss\.or\.kr|fsc\.go\.kr/.test(text);
+  return /?????|?????|????|??\/??|fss\.or\.kr|fsc\.go\.kr/.test(text);
 }
 
 function normalizeRegulatorTitle(value) {
   return String(value || "")
     .toLowerCase()
-    .replace(/[“”"''「」『』()[\]{}]/g, " ")
-    .replace(/금융위원회\s*,?/g, " ")
-    .replace(/금융위\s*,?/g, " ")
-    .replace(/금감원\s*,?/g, " ")
-    .replace(/-\s*(금융위|금융위원회|금감원|금융감독원).*$/g, " ")
-    .replace(/\b\d{1,2}월\s*\d{1,2}일\b/g, " ")
+    .replace(/[??"''????()[\]{}]/g, " ")
+    .replace(/?????\s*,?/g, " ")
+    .replace(/???\s*,?/g, " ")
+    .replace(/???\s*,?/g, " ")
+    .replace(/-\s*(???|?????|???|?????).*$/g, " ")
+    .replace(/\b\d{1,2}?\s*\d{1,2}?\b/g, " ")
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -627,7 +656,7 @@ function normalizeArticleLink(value) {
 }
 
 function shouldReplaceDedupedArticle(current, next) {
-  const toneRank = { 부정: 4, 주의: 3, 긍정: 2, 중립: 1, 제외: 0 };
+  const toneRank = { ??: 4, ??: 3, ??: 2, ??: 1, ??: 0 };
   const currentTone = toneRank[current.tone] || 0;
   const nextTone = toneRank[next.tone] || 0;
   if (nextTone !== currentTone) return nextTone > currentTone;
@@ -643,8 +672,8 @@ function normalizeNotification(row) {
   return {
     id: row.id || `${row.sent_at}-${row.message_type}`,
     time: formatTime(row.sent_at || row.created_at),
-    type: row.title || row.message_type || row.channel || "알림톡",
-    status: row.status === "success" || row.status === "sent" || row.status === "성공" ? "성공" : row.status || "확인",
+    type: row.title || row.message_type || row.channel || "???",
+    status: row.status === "success" || row.status === "sent" || row.status === "??" ? "??" : row.status || "??",
     body: row.body || row.error || "",
     link: row.link_url || "",
   };
@@ -653,10 +682,10 @@ function normalizeNotification(row) {
 function normalizeWatchRun(row) {
   return {
     id: row.run_key || row.scanned_at,
-    label: "부정기사 감시",
-    cadence: "24시간 · 5분",
+    label: "???? ??",
+    cadence: "24?? ? 5?",
     latest: formatTime(row.scanned_at),
-    state: row.status === "ok" || row.status === "success" ? "정상" : row.status || "확인",
+    state: row.status === "ok" || row.status === "success" ? "??" : row.status || "??",
     scanned: Number(row.scanned_count || 0),
     negative: Number(row.negative_count || 0),
     fresh: Number(row.new_negative_count || 0),
@@ -678,8 +707,8 @@ function normalizeReportRun(row) {
 
 function normalizeMedia(row) {
   return {
-    name: row.name || "미확인",
-    status: row.status || "중립",
+    name: row.name || "???",
+    status: row.status || "??",
     grade: row.grade || "B",
     owner: row.owner || "",
     contactDate: row.contact_date || "",
@@ -690,12 +719,12 @@ function normalizeMedia(row) {
 function normalizeReporter(row) {
   return {
     id: row.id || `${row.media}-${row.name}`,
-    name: row.name || "미확인",
-    media: row.media || "미확인",
-    outlet: row.media || "미확인",
+    name: row.name || "???",
+    media: row.media || "???",
+    outlet: row.media || "???",
     beat: row.memo || "-",
     recent: "-",
-    status: row.status || "중립",
+    status: row.status || "??",
     contactDate: row.contact_date || "",
     memo: row.memo || "",
   };
@@ -705,9 +734,9 @@ function normalizeAd(row) {
   return {
     id: row.id || `${row.media}-${row.spend_month}`,
     month: row.spend_month || "",
-    media: row.media || "미확인",
+    media: row.media || "???",
     amount: Number(row.amount || 0),
-    type: row.spend_type || "광고",
+    type: row.spend_type || "??",
     memo: row.memo || "",
   };
 }
@@ -715,45 +744,45 @@ function normalizeAd(row) {
 export function normalizeTone(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
-  if (["exclude", "noise", "excluded"].includes(canonical) || /제외|노이즈/.test(text)) return "제외";
-  if (["negative", "high"].includes(canonical) || /부정|위험|악재/.test(text)) return "부정";
-  if (["caution", "medium", "warning"].includes(canonical) || /주의|경계/.test(text)) return "주의";
-  if (["positive"].includes(canonical) || /긍정|호재/.test(text)) return "긍정";
-  return "중립";
+  if (["exclude", "noise", "excluded"].includes(canonical) || /??|???/.test(text)) return "??";
+  if (["negative", "high"].includes(canonical) || /??|??|??/.test(text)) return "??";
+  if (["caution", "medium", "warning"].includes(canonical) || /??|??/.test(text)) return "??";
+  if (["positive"].includes(canonical) || /??|??/.test(text)) return "??";
+  return "??";
 }
 
 function normalizeToneLegacy(value) {
   const text = String(value || "").toLowerCase();
-  if (text.includes("exclude") || text.includes("제외") || text.includes("노이즈")) return "제외";
-  if (text.includes("negative") || text.includes("부정") || text.includes("high")) return "부정";
-  if (text.includes("caution") || text.includes("주의") || text.includes("medium")) return "주의";
-  if (text.includes("positive") || text.includes("긍정")) return "긍정";
-  return "중립";
+  if (text.includes("exclude") || text.includes("??") || text.includes("???")) return "??";
+  if (text.includes("negative") || text.includes("??") || text.includes("high")) return "??";
+  if (text.includes("caution") || text.includes("??") || text.includes("medium")) return "??";
+  if (text.includes("positive") || text.includes("??")) return "??";
+  return "??";
 }
 
 function normalizeCategory(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
-  if (!text) return "미분류";
-  if (["own", "company"].includes(canonical) || /당사|인카/.test(text)) return "당사";
-  if (["regulation", "policy"].includes(canonical) || /정책|규제|당국|수수료/.test(text)) return "정책/규제";
-  if (["competitor"].includes(canonical)) return "보험사";
-  if (["industry", "market"].includes(canonical) || /업계|동향|시장/.test(text)) return "업계동향";
-  if (["other"].includes(canonical)) return "기타";
-  if (["exclude", "noise"].includes(canonical) || /제외|노이즈/.test(text)) return "제외";
-  if (/ga|글로벌금융|메가|설계사/.test(canonical)) return "GA";
-  if (/보험|생명|손해/.test(text)) return "보험사";
+  if (!text) return "???";
+  if (["own", "company"].includes(canonical) || /??|??/.test(text)) return "??";
+  if (["regulation", "policy"].includes(canonical) || /??|??|??|???/.test(text)) return "??/??";
+  if (["competitor"].includes(canonical)) return "???";
+  if (["industry", "market"].includes(canonical) || /??|??|??/.test(text)) return "????";
+  if (["other"].includes(canonical)) return "??";
+  if (["exclude", "noise"].includes(canonical) || /??|???/.test(text)) return "??";
+  if (/ga|?????|??|???/.test(canonical)) return "GA";
+  if (/??|??|??/.test(text)) return "???";
   return text;
 }
 
 function normalizeCategoryLegacy(value) {
   const text = String(value || "").trim();
-  if (!text) return "미분류";
-  if (/own|company|당사|인카/i.test(text)) return "당사";
-  if (/ga|글로벌금융|메가금융|설계사/i.test(text)) return "GA";
-  if (/보험사|생명|손해/i.test(text)) return "보험사";
-  if (/정책|규제|당국|수수료|룰/i.test(text)) return "정책/규제";
-  if (/exclude|noise|제외|노이즈/i.test(text)) return "제외";
+  if (!text) return "???";
+  if (/own|company|??|??/i.test(text)) return "??";
+  if (/ga|?????|????|???/i.test(text)) return "GA";
+  if (/???|??|??/i.test(text)) return "???";
+  if (/??|??|??|???|?/i.test(text)) return "??/??";
+  if (/exclude|noise|??|???/i.test(text)) return "??";
   return text;
 }
 

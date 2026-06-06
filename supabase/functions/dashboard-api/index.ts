@@ -157,7 +157,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
       workflow,
       ref,
       retry_after_seconds: recentDispatch.retryAfterSeconds,
-      message: `최근 갱신 요청이 처리 중입니다. ${recentDispatch.retryAfterSeconds}초 후 다시 시도하세요.`,
+      message: `?? ?? ??? ?? ????. ${recentDispatch.retryAfterSeconds}? ? ?? ?????.`,
       requested_at: new Date().toISOString(),
     }, 202);
   }

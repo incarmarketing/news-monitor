@@ -76,7 +76,7 @@ const navIcons = {
 };
 
 const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
-const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
+const TONE_FILTER_OPTIONS = ["??", "??", "??", "??", "??"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
 
 function readInitialRoute() {
@@ -111,34 +111,34 @@ function buildMonitoringPresetFromParams(params) {
 function normalizeDeepLinkTone(value) {
   const tone = String(value || "").trim().toLowerCase();
   return {
-    negative: "부정",
-    danger: "부정",
-    caution: "주의",
-    warning: "주의",
-    positive: "긍정",
-    neutral: "중립",
-    exclude: "제외",
-    noise: "제외",
-    "부정": "부정",
-    "주의": "주의",
-    "긍정": "긍정",
-    "중립": "중립",
-    "제외": "제외",
+    negative: "??",
+    danger: "??",
+    caution: "??",
+    warning: "??",
+    positive: "??",
+    neutral: "??",
+    exclude: "??",
+    noise: "??",
+    "??": "??",
+    "??": "??",
+    "??": "??",
+    "??": "??",
+    "??": "??",
   }[tone] || "";
 }
 
 function normalizeDeepLinkCategory(value) {
   const category = String(value || "").trim().toLowerCase();
   return {
-    own: "당사",
-    company: "당사",
+    own: "??",
+    company: "??",
     competitor: "GA",
-    regulation: "정책/규제",
-    industry: "보험사",
-    "당사": "당사",
+    regulation: "??/??",
+    industry: "???",
+    "??": "??",
     "ga": "GA",
-    "보험사": "보험사",
-    "정책/규제": "정책/규제",
+    "???": "???",
+    "??/??": "??/??",
   }[category] || "";
 }
 
@@ -146,7 +146,7 @@ function App() {
   const initialRoute = useMemo(() => readInitialRoute(), []);
   const [activeSection, setActiveSection] = useState(initialRoute.section);
   const [period, setPeriod] = useState("daily");
-  const [operations, setOperations] = useState({ status: "loading", message: "연결 확인 중", articles: [] });
+  const [operations, setOperations] = useState({ status: "loading", message: "?? ?? ?", articles: [] });
   const [loginOpen, setLoginOpen] = useState(false);
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [working, setWorking] = useState(false);
@@ -160,7 +160,7 @@ function App() {
 
   const finishWorkStatus = (label) => {
     setWorking(true);
-    setWorkLabel(`${label} 완료`);
+    setWorkLabel(`${label} ??`);
     clearWorkTimers();
     workTimers.current.push(window.setTimeout(() => {
       setWorking(false);
@@ -170,14 +170,14 @@ function App() {
 
   const refreshOperations = async (options = {}) => {
     const trigger = options.trigger === true;
-    const label = options.label || (options.workflow === "regulator-releases.yml" ? "금융당국 보도자료 갱신" : "뉴스 수집·분석 갱신");
+    const label = options.label || (options.workflow === "regulator-releases.yml" ? "???? ???? ??" : "?? ????? ??");
     clearWorkTimers();
     setWorking(true);
-    setWorkLabel(`${label} 작업 중`);
+    setWorkLabel(`${label} ?? ?`);
     setOperations((current) => ({
       ...current,
       status: trigger ? current.status : "loading",
-      message: trigger ? `${label} 요청 중` : "연결 확인 중",
+      message: trigger ? `${label} ?? ?` : "?? ?? ?",
     }));
     let triggerMessage = "";
     let triggerFailed = false;
@@ -190,14 +190,14 @@ function App() {
           report_slot: "auto",
           source: options.source || "dashboard_manual_refresh",
         });
-        triggerMessage = `${label} 요청 완료`;
+        triggerMessage = `${label} ?? ??`;
       } catch (error) {
-        triggerMessage = `${label} 요청 실패: ${error?.message || "확인 필요"}`;
+        triggerMessage = `${label} ?? ??: ${error?.message || "?? ??"}`;
         triggerFailed = true;
       }
     }
     const next = await loadOperationalData();
-    setOperations(triggerMessage ? { ...next, message: `${triggerMessage} · ${next.message}` } : next);
+    setOperations(triggerMessage ? { ...next, message: `${triggerMessage} ? ${next.message}` } : next);
     if (trigger && triggerFailed) {
       setWorkLabel(triggerMessage);
       workTimers.current.push(window.setTimeout(() => {
@@ -207,14 +207,14 @@ function App() {
       return;
     }
     if (trigger) {
-      setWorkLabel(`${label} 반영 대기 중`);
+      setWorkLabel(`${label} ?? ?? ?`);
       workTimers.current.push(window.setTimeout(async () => {
-        setWorkLabel(`${label} 반영 확인 중`);
+        setWorkLabel(`${label} ?? ?? ?`);
         const delayed = await loadOperationalData();
-        setOperations({ ...delayed, message: `${label} 반영 확인 중 · ${delayed.message}` });
+        setOperations({ ...delayed, message: `${label} ?? ?? ? ? ${delayed.message}` });
       }, 20000));
       workTimers.current.push(window.setTimeout(async () => {
-        setWorkLabel(`${label} 최종 확인 중`);
+        setWorkLabel(`${label} ?? ?? ?`);
         const delayed = await loadOperationalData();
         setOperations(delayed);
         finishWorkStatus(label);
@@ -285,12 +285,12 @@ function App() {
   const jobs = liveConnected && operations.watchRuns?.length
     ? [
         {
-          label: "부정기사 감시",
-          cadence: "24시간 · 5분",
+          label: "???? ??",
+          cadence: "24?? ? 5?",
           latest: operations.watchRuns[0].latest,
           state: operations.watchRuns[0].state,
         },
-        ...watchJobs.filter((job) => job.label !== "부정기사 감시"),
+        ...watchJobs.filter((job) => job.label !== "???? ??"),
       ]
     : [];
 
@@ -313,7 +313,7 @@ function App() {
   return (
     <div className="app-shell">
       <Header working={working} workLabel={workLabel} />
-      <aside className="side-nav" aria-label="주요 메뉴">
+      <aside className="side-nav" aria-label="?? ??">
         <div className="side-title">Menu</div>
         {navItems.map((item) => {
           const Icon = navIcons[item.id] || FileText;
@@ -366,19 +366,19 @@ function App() {
 }
 
 function Header({ working = false, workLabel = "" }) {
-  const userText = "최진우 1611499 관리자";
+  const userText = "??? 1611499 ???";
 
   return (
     <header className="app-header">
       <div className="brand">
         <div className="brand-mark">IN</div>
         <div>
-          <strong>인카 언론 모니터링</strong>
-          <span>실시간 기사 · 보고서 · 운영 관리</span>
+          <strong>?? ?? ????</strong>
+          <span>??? ?? ? ??? ? ?? ??</span>
         </div>
       </div>
       <div className="header-user-area">
-        {working && <span className="work-status">작업 중{workLabel ? ` · ${workLabel}` : ""}</span>}
+        {working && <span className="work-status">?? ?{workLabel ? ` ? ${workLabel}` : ""}</span>}
         <div className="user-chip">
           <span>{userText}</span>
         </div>
@@ -389,7 +389,7 @@ function Header({ working = false, workLabel = "" }) {
 
 function PeriodControl({ period, setPeriod, compact = false }) {
   return (
-    <div className={compact ? "period-control compact" : "period-control"} aria-label="기간 선택">
+    <div className={compact ? "period-control compact" : "period-control"} aria-label="?? ??">
       {periodTabs.map((item) => (
         <button key={item.id} className={period === item.id ? "active" : ""} onClick={() => setPeriod(item.id)}>
           <span className="desktop-only">{item.label}</span>
@@ -411,16 +411,16 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   const submit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
-    setStatus("운영 DB 확인 중");
+    setStatus("?? DB ?? ?");
     try {
       const result = await verifyDashboardLogin(employeeNo.trim(), password);
       if (!result?.ok) {
-        setStatus(result?.message || "로그인 정보를 확인해 주세요.");
+        setStatus(result?.message || "??? ??? ??? ???.");
         return;
       }
       await onLoggedIn();
     } catch {
-      setStatus("Supabase 설정 또는 로그인 정보를 확인해 주세요.");
+      setStatus("Supabase ?? ?? ??? ??? ??? ???.");
     } finally {
       setSubmitting(false);
     }
@@ -429,22 +429,22 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="login-panel" onSubmit={submit}>
-        <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
+        <button type="button" className="icon-button close" onClick={onClose} aria-label="??">
           <X />
         </button>
-        <h2>운영 데이터 연결</h2>
-        <p>기존 대시보드와 같은 사번 로그인으로 실시간 기사, 언론사, 기자, 광고비 데이터를 불러옵니다.</p>
+        <h2>?? ??? ??</h2>
+        <p>?? ????? ?? ?? ????? ??? ??, ???, ??, ??? ???? ?????.</p>
         <label>
-          <span>사번</span>
+          <span>??</span>
           <input value={employeeNo} onChange={(event) => setEmployeeNo(event.target.value)} autoFocus />
         </label>
         <label>
-          <span>비밀번호</span>
+          <span>????</span>
           <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
         </label>
         {status && <div className="login-status">{status}</div>}
         <button className="primary-button" disabled={submitting}>
-          <LogIn />연결
+          <LogIn />??
         </button>
       </form>
     </div>
@@ -457,9 +457,9 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   return (
     <main className="workspace">
       <PageTitle
-        eyebrow={`${data.label} · ${data.scope}`}
-        title="실시간 대시보드"
-        description="검색 키워드 기준 최신 이슈, 당사 리스크, 알림톡, 보고서 생성 상태를 5분 단위로 확인합니다."
+        eyebrow={`${data.label} ? ${data.scope}`}
+        title="??? ????"
+        description="?? ??? ?? ?? ??, ?? ???, ???, ??? ?? ??? 5? ??? ?????."
         right={(
           <button
             type="button"
@@ -467,7 +467,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
             onClick={() => onRefreshOperations?.({ trigger: true, source: "overview_issues" })}
             disabled={isLoading}
           >
-            <RefreshCw />갱신
+            <RefreshCw />??
           </button>
         )}
       />
@@ -483,25 +483,25 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
       <section className="dashboard-grid">
         <div className="main-column">
-          <Panel title="주요 이슈" icon={Newspaper} meta="키워드 기준 5분 갱신">
+          <Panel title="?? ??" icon={Newspaper} meta="??? ?? 5? ??">
             <IssueList issues={data.issues} />
           </Panel>
         </div>
         <div className="middle-column">
-          <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
+          <Panel title="??? ???" icon={LineChart} meta="?? ??">
             <CategoryChart rows={data.categoryFlow} />
           </Panel>
-          <Panel title="언론사 영향도" icon={Building2} meta="노출량 · 당사 · 부정">
+          <Panel title="??? ???" icon={Building2} meta="??? ? ?? ? ??">
             <PressInfluence rows={data.pressInfluence} onOpenMonitoring={onOpenMonitoring} />
           </Panel>
         </div>
         <div className="side-column">
           <WatchPanel jobs={jobs} risk={summary.risk} />
           <AiUsagePanel status={operations?.aiStatus} />
-          <Panel title="알림톡 발송 이력" icon={Bell} meta={`${notifications.length.toLocaleString("ko-KR")}건`}>
+          <Panel title="??? ?? ??" icon={Bell} meta={`${notifications.length.toLocaleString("ko-KR")}?`}>
             <NotificationList rows={notifications} />
           </Panel>
-          <Panel title="보고서 자동화" icon={CalendarDays} meta="스케줄">
+          <Panel title="??? ???" icon={CalendarDays} meta="???">
             <JobRows rows={jobs} />
           </Panel>
         </div>
@@ -584,16 +584,16 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
   const grouped = useMemo(() => buildRelatedArticleGroups(filtered), [filtered]);
   const visibleRows = viewMode === "related" ? grouped : filtered;
   const feedMeta = viewMode === "related"
-    ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
-    : `${filtered.length.toLocaleString("ko-KR")}건`;
+    ? `${filtered.length.toLocaleString("ko-KR")}? ? ?? ${grouped.length.toLocaleString("ko-KR")}?`
+    : `${filtered.length.toLocaleString("ko-KR")}?`;
   const isLoading = operations?.status === "loading" || isWorking;
 
   return (
     <main className="workspace">
       <PageTitle
         eyebrow="Live Monitoring"
-        title="실시간 모니터링"
-        description="기사 목록을 샘플 5개로 줄이지 않고, 연결 가능한 운영 기사 전체를 필터와 함께 펼쳐 봅니다."
+        title="??? ????"
+        description="?? ??? ?? 5?? ??? ??, ?? ??? ?? ?? ??? ??? ?? ?? ???."
         right={(
           <div className="page-actions">
             <button
@@ -602,54 +602,54 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
               onClick={() => onRefreshOperations?.({ trigger: true, source: "monitoring_feed" })}
               disabled={isLoading}
             >
-              <RefreshCw />갱신
+              <RefreshCw />??
             </button>
-            <button className="primary-button"><Download />CSV 출력</button>
+            <button className="primary-button"><Download />CSV ??</button>
           </div>
         )}
       />
       <section className="filter-card">
         <label>
-          <span>시작 기준일</span>
+          <span>?? ???</span>
           <input type="date" value={startDateInput} onChange={(event) => setStartDateInput(event.target.value)} />
         </label>
         <label>
-          <span>종료 기준일</span>
+          <span>?? ???</span>
           <input type="date" value={endDateInput} onChange={(event) => setEndDateInput(event.target.value)} />
         </label>
         <button className="primary-button filter-action" onClick={applyDateFilter}>
-          조회
+          ??
         </button>
         <label className="tone-filter">
-          <span>논조</span>
+          <span>??</span>
           <select value={tone} onChange={(event) => setTone(event.target.value)}>
-            <option value="all">전체</option>
+            <option value="all">??</option>
             {TONE_FILTER_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>
         <label className="sort-filter">
-          <span>정렬</span>
+          <span>??</span>
           <select value={viewMode} onChange={(event) => { setViewMode(event.target.value); setVisible(30); }}>
-            <option value="related">관련순</option>
-            <option value="latest">최신순</option>
+            <option value="related">???</option>
+            <option value="latest">???</option>
           </select>
         </label>
         <label>
-          <span>분류</span>
+          <span>??</span>
           <select value={category} onChange={(event) => setCategory(event.target.value)}>
-            <option value="all">전체</option>
+            <option value="all">??</option>
             {categories.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
         <label>
-          <span>언론사</span>
+          <span>???</span>
           <select value={source} onChange={(event) => setSource(event.target.value)}>
-            <option value="all">전체</option>
+            <option value="all">??</option>
             {sources.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
         <label className="wide-filter">
-          <span>검색어</span>
+          <span>???</span>
           <input
             value={queryInput}
             onChange={(event) => setQueryInput(event.target.value)}
@@ -659,11 +659,11 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
                 setVisible(30);
               }
             }}
-            placeholder="제목, 언론사, 키워드 검색"
+            placeholder="??, ???, ??? ??"
           />
         </label>
         <button className="primary-button" onClick={() => { setQuery(queryInput); setVisible(30); }}>
-          검색
+          ??
         </button>
         <button className="ghost-button compact-button" onClick={() => {
           setQuery("");
@@ -678,19 +678,19 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
           setEndDate(latestDate);
           setVisible(30);
         }}>
-          초기화
+          ???
         </button>
       </section>
       <section className="monitoring-layout">
-        <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
+        <Panel title="?? ?? ??" icon={Newspaper} meta={feedMeta}>
           <ArticleFeed rows={visibleRows.slice(0, visible)} onFeedbackSaved={() => onRefreshOperations?.()} />
           {visibleRows.length > visible && (
             <button className="ghost-button full" onClick={() => setVisible((count) => count + 30)}>
-              더보기
+              ???
             </button>
           )}
         </Panel>
-        <Panel title="문맥 필터 기준" icon={ShieldCheck} meta="키워드 컬럼별 해석">
+        <Panel title="?? ?? ??" icon={ShieldCheck} meta="??? ??? ??">
           <RuleStack />
         </Panel>
       </section>
@@ -755,61 +755,61 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
     <main className="workspace">
       <PageTitle
         eyebrow="Official Releases"
-        title="금융당국 보도자료"
-        description="금융감독원·금융위원회 보도자료를 중복 제거 기준으로 모아 정책/규제 이슈만 빠르게 확인합니다."
+        title="???? ????"
+        description="??????????? ????? ?? ?? ???? ?? ??/?? ??? ??? ?????."
         right={(
           <div className="page-actions">
             <button
               type="button"
               className="ghost-button"
-              onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases", label: "금융당국 보도자료 갱신" })}
+              onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases", label: "???? ???? ??" })}
               disabled={operations?.status === "loading" || isWorking}
             >
-              <RefreshCw />갱신
+              <RefreshCw />??
             </button>
           </div>
         )}
       />
       <section className="filter-card regulator-filter">
         <label className="wide-filter">
-          <span>검색어</span>
+          <span>???</span>
           <input
             value={queryInput}
             onChange={(event) => setQueryInput(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") setQuery(queryInput);
             }}
-            placeholder="제목, 출처, 요약 검색"
+            placeholder="??, ??, ?? ??"
           />
         </label>
         <label>
-          <span>출처</span>
+          <span>??</span>
           <select value={source} onChange={(event) => setSource(event.target.value)}>
-            <option value="all">전체</option>
+            <option value="all">??</option>
             {sources.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
         <label>
-          <span>논조</span>
+          <span>??</span>
           <select value={tone} onChange={(event) => setTone(event.target.value)}>
-            <option value="all">전체</option>
+            <option value="all">??</option>
             {tones.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
         <button className="primary-button filter-action" onClick={() => setQuery(queryInput)}>
-          조회
+          ??
         </button>
         <button className="ghost-button compact-button" onClick={resetFilters}>
-          초기화
+          ???
         </button>
       </section>
       <RegulatorDirectionPanel rows={analysisRows} selectedCount={selectedRows.length} totalCount={filteredRows.length} />
-      <Panel title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>
+      <Panel title="???? ??" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}?`}>
         <div className="regulator-list-actions">
           <button className="ghost-button compact-button" onClick={toggleVisibleSelection}>
-            {allVisibleSelected ? "선택 해제" : "현재 목록 선택"}
+            {allVisibleSelected ? "?? ??" : "?? ?? ??"}
           </button>
-          <span>{selectedRows.length ? `${selectedRows.length.toLocaleString("ko-KR")}건 선택 분석 중` : "선택하면 위 분석이 선택 보도자료 기준으로 바뀝니다"}</span>
+          <span>{selectedRows.length ? `${selectedRows.length.toLocaleString("ko-KR")}? ?? ?? ?` : "???? ? ??? ?? ???? ???? ????"}</span>
         </div>
         <RegulatorReleaseFeed rows={filteredRows} selected={selected} onToggle={toggleSelected} />
       </Panel>
@@ -822,15 +822,15 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
   return (
     <section className="panel regulator-analysis-panel">
       <div className="panel-head">
-        <h2><ShieldCheck />당국 방향성 분석</h2>
-        <span>{selectedCount ? `${selectedCount.toLocaleString("ko-KR")}건 선택` : `최근 ${Math.min(totalCount, rows.length).toLocaleString("ko-KR")}건 기준`}</span>
+        <h2><ShieldCheck />?? ??? ??</h2>
+        <span>{selectedCount ? `${selectedCount.toLocaleString("ko-KR")}? ??` : `?? ${Math.min(totalCount, rows.length).toLocaleString("ko-KR")}? ??`}</span>
       </div>
       <div className="regulator-analysis-body">
         <div className="regulator-analysis-lead">
           <b>{analysis.headline}</b>
           <p>{analysis.summary}</p>
           <div className="regulator-watch-list">
-            <span>후속 확인 포인트</span>
+            <span>?? ?? ???</span>
             <ul>
               {analysis.watchItems.map((item) => <li key={item}>{item}</li>)}
             </ul>
@@ -841,7 +841,7 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
             {analysis.themes.map((theme) => (
               <article key={theme.label}>
                 <span>{theme.label}</span>
-                <b>{theme.count.toLocaleString("ko-KR")}건</b>
+                <b>{theme.count.toLocaleString("ko-KR")}?</b>
                 <p>{theme.note}</p>
                 {theme.examples.length > 0 && <small>{theme.examples[0]}</small>}
               </article>
@@ -872,7 +872,7 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
           <article key={key} className={checked ? "regulator-release-row selected" : "regulator-release-row"}>
             <label>
               <input type="checkbox" checked={checked} onChange={() => onToggle(row)} />
-              <span className="sr-only">보도자료 선택</span>
+              <span className="sr-only">???? ??</span>
             </label>
             <div>
               <div className="feed-title-line">
@@ -887,7 +887,7 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
                 href={row.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="보도자료 열기"
+                aria-label="???? ??"
                 onClick={(event) => openArticleLink(event, row.link)}
               >
                 <ExternalLink />
@@ -928,14 +928,14 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
   return (
     <main className="workspace">
       <PageTitle
-        eyebrow={`${scopeLabel} 분석`}
-        title="미디어 분석 리포트"
-        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 핵심 이슈를 함께 봅니다."
+        eyebrow={`${scopeLabel} ??`}
+        title="??? ?? ???"
+        description="?? ???????? ??, ??? ???, ???? ???, ?? ??? ?? ???."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
-            <button className="primary-button" onClick={() => printCurrentView("미디어 분석 리포트")}>
-              <FileText />인쇄/PDF 저장
+            <button className="primary-button" onClick={() => printCurrentView("??? ?? ???")}>
+              <FileText />??/PDF ??
             </button>
           </div>
         )}
@@ -943,22 +943,22 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
       <section className="media-analysis-layout">
         <div className="media-analysis-column">
-          <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
+          <Panel title="?? ?? ??" icon={Activity} meta="?? 31? ? ??/??/??">
             <ToneTrend rows={dailyTrend} />
           </Panel>
-          <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
+          <Panel title="???? ???" icon={LineChart} meta="?? ??? 10?">
             <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
             <KeywordBrief rows={keywordRows} />
           </Panel>
-          <Panel title="관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약">
+          <Panel title="?? ???" icon={Gauge} meta="?? ?? ??">
             <InsightList insights={observations} />
           </Panel>
         </div>
         <div className="media-analysis-column">
-          <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
+          <Panel title="??? ???" icon={Building2} meta="?? ?? ?? ??">
             <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
           </Panel>
-          <Panel title="핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`}>
+          <Panel title="?? ??" icon={Newspaper} meta={`${issueRows.length}?`}>
             <MonthlyIssueDigest issues={issueRows} />
           </Panel>
         </div>
@@ -969,11 +969,11 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
 
 function AnalysisDrillCards({ data, onOpenMonitoring }) {
   const cards = [
-    { label: "부정 기사", value: `${data.summary.ownNegative}건`, tone: "negative", preset: { tone: "부정" }, detail: "즉시 확인 대상" },
-    { label: "주의 기사", value: `${data.summary.caution}건`, tone: "caution", preset: { tone: "주의" }, detail: "시장성·규제성 신호" },
-    { label: "긍정 기사", value: `${(data.toneTrend || []).reduce((sum, row) => sum + Number(row.positive || 0), 0)}건`, tone: "positive", preset: { tone: "긍정" }, detail: "우호 활용 후보" },
-    { label: "당사 언급", value: `${data.summary.ownMentions}건`, tone: "default", preset: { category: "당사" }, detail: "보고서 필수 근거" },
-    { label: "GA/보험사", value: `${data.summary.gaInsurance}건`, tone: "positive", preset: { category: "GA" }, detail: "업계 동향 기사" },
+    { label: "?? ??", value: `${data.summary.ownNegative}?`, tone: "negative", preset: { tone: "??" }, detail: "?? ?? ??" },
+    { label: "?? ??", value: `${data.summary.caution}?`, tone: "caution", preset: { tone: "??" }, detail: "??????? ??" },
+    { label: "?? ??", value: `${(data.toneTrend || []).reduce((sum, row) => sum + Number(row.positive || 0), 0)}?`, tone: "positive", preset: { tone: "??" }, detail: "?? ?? ??" },
+    { label: "?? ??", value: `${data.summary.ownMentions}?`, tone: "default", preset: { category: "??" }, detail: "??? ?? ??" },
+    { label: "GA/???", value: `${data.summary.gaInsurance}?`, tone: "positive", preset: { category: "GA" }, detail: "?? ?? ??" },
   ];
   return (
     <section className="analysis-drill-grid">
@@ -989,41 +989,41 @@ function AnalysisDrillCards({ data, onOpenMonitoring }) {
 }
 
 function Scraps({ scraps, onOpenMonitoring }) {
-  const [prompt, setPrompt] = useState("홍보 대응 관점에서 부정 이슈와 우호적으로 활용할 수 있는 기사 흐름을 나눠 분석해줘.");
+  const [prompt, setPrompt] = useState("?? ?? ???? ?? ??? ????? ??? ? ?? ?? ??? ?? ????.");
   const grouped = groupArticles(scraps, "category").slice(0, 5).map(([name, value]) => ({ name, value }));
   return (
     <main className="workspace">
       <PageTitle
         eyebrow="Scrap File"
-        title="주요 기사 스크랩"
-        description="중요 기사를 모아 임원 보고, 홍보 대응, 동향 점검용으로 다시 분석하는 작업 공간입니다."
-        right={<button className="primary-button"><FileText />스크랩 보고서</button>}
+        title="?? ?? ???"
+        description="?? ??? ?? ?? ??, ?? ??, ?? ????? ?? ???? ?? ?????."
+        right={<button className="primary-button"><FileText />??? ???</button>}
       />
       <section className="scrap-workspace-v2">
-        <Panel title="스크랩 분석" icon={Bookmark} meta={`${scraps.length}건`}>
+        <Panel title="??? ??" icon={Bookmark} meta={`${scraps.length}?`}>
           <div className="scrap-preset-row-v2">
-            {["임원 보고", "홍보 대응", "동향 점검"].map((label) => (
-              <button key={label} className="ghost-button" onClick={() => setPrompt(`${label} 관점에서 스크랩 기사를 핵심 판단, 리스크, 후속 확인 포인트로 정리해줘.`)}>
+            {["?? ??", "?? ??", "?? ??"].map((label) => (
+              <button key={label} className="ghost-button" onClick={() => setPrompt(`${label} ???? ??? ??? ?? ??, ???, ?? ?? ???? ????.`)}>
                 {label}
               </button>
             ))}
           </div>
           <textarea className="scrap-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} />
           <div className="scrap-analysis-preview">
-            <b>요약 초안</b>
-            <p>스크랩 {scraps.length}건 중 당사 언급, 주의 이슈, 정책/GA 동향을 분리해 보고서 근거로 사용할 수 있습니다.</p>
+            <b>?? ??</b>
+            <p>??? {scraps.length}? ? ?? ??, ?? ??, ??/GA ??? ??? ??? ??? ??? ? ????.</p>
           </div>
           <div className="scrap-actions-v2">
-            <button className="primary-button">스크랩 분석</button>
-            <button className="ghost-button">JSON 복사</button>
-            <button className="ghost-button">결과 복사</button>
+            <button className="primary-button">??? ??</button>
+            <button className="ghost-button">JSON ??</button>
+            <button className="ghost-button">?? ??</button>
           </div>
         </Panel>
         <div className="scrap-side-stack">
-          <Panel title="스크랩 분류" icon={LineChart} meta="근거 구성">
-            <CategoryChart rows={grouped.length ? grouped : [{ name: "스크랩", value: scraps.length }]} mini onOpenMonitoring={onOpenMonitoring} />
+          <Panel title="??? ??" icon={LineChart} meta="?? ??">
+            <CategoryChart rows={grouped.length ? grouped : [{ name: "???", value: scraps.length }]} mini onOpenMonitoring={onOpenMonitoring} />
           </Panel>
-          <Panel title="스크랩 기사 목록" icon={Newspaper} meta={`${scraps.length}건`}>
+          <Panel title="??? ?? ??" icon={Newspaper} meta={`${scraps.length}?`}>
             <ArticleFeed rows={scraps} />
           </Panel>
         </div>
@@ -1041,12 +1041,12 @@ function ScrapDigest({ scraps }) {
           <Bookmark />
           <div>
             <b>{item.title}</b>
-            <span>{item.source} · {item.tone} · {item.scrapedAt || item.date || "-"}</span>
+            <span>{item.source} ? {item.tone} ? {item.scrapedAt || item.date || "-"}</span>
             <ArticleSummaryBlock item={item} dense />
           </div>
         </article>
       ))}
-      {!rows.length && <p>스크랩된 기사가 없습니다.</p>}
+      {!rows.length && <p>???? ??? ????.</p>}
     </div>
   );
 }
@@ -1110,7 +1110,7 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
   };
 
   const handleGenerateDraft = () => {
-    if (typeof window !== "undefined" && !window.confirm("선택한 기사 기준으로 초안을 생성할까요?")) return;
+    if (typeof window !== "undefined" && !window.confirm("??? ?? ???? ??? ??????")) return;
     setDraft(buildRiskResponseDraft(draftType, activeArticle, facts));
   };
 
@@ -1118,19 +1118,19 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
     <main className="workspace">
       <PageTitle
         eyebrow="Risk Response"
-        title="리스크 대응센터"
-        description="최근 부정·주의 기사와 외부 URL을 기준으로 팩트체크와 대응 초안을 관리합니다."
+        title="??? ????"
+        description="?? ????? ??? ?? URL? ???? ????? ?? ??? ?????."
         right={(
           <button
             className="ghost-button"
-            onClick={() => onRefreshOperations?.({ trigger: true, label: "리스크 기사 갱신", source: "risk_center_refresh" })}
+            onClick={() => onRefreshOperations?.({ trigger: true, label: "??? ?? ??", source: "risk_center_refresh" })}
           >
-            <RefreshCw />갱신
+            <RefreshCw />??
           </button>
         )}
       />
       <section className="risk-layout">
-        <Panel title="기사 URL / 팩트 체크" icon={ShieldCheck} meta={facts.tone || "확인"}>
+        <Panel title="?? URL / ?? ??" icon={ShieldCheck} meta={facts.tone || "??"}>
           <div
             className={`url-box risk-url-drop ${dropActive ? "drop-active" : ""}`}
             onDragOver={(event) => {
@@ -1150,20 +1150,20 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
                   applyUrl(pasted);
                 }
               }}
-              placeholder="기사 URL"
+              placeholder="?? URL"
             />
-            <button className="primary-button" onClick={() => applyUrl(articleUrl)}>분석</button>
+            <button className="primary-button" onClick={() => applyUrl(articleUrl)}>??</button>
           </div>
           <div className="fact-grid">
-            <Fact label="핵심 주장" value={facts.claim} />
-            <Fact label="당사 관련성" value={facts.relevance} />
-            <Fact label="논조" value={facts.tone} />
-            <Fact label="대응 강도" value={facts.intensity} />
+            <Fact label="?? ??" value={facts.claim} />
+            <Fact label="?? ???" value={facts.relevance} />
+            <Fact label="??" value={facts.tone} />
+            <Fact label="?? ??" value={facts.intensity} />
           </div>
           <div className="risk-recent-list">
             <div className="risk-section-head">
-              <b>최근 부정/주의 기사</b>
-              <span>{riskArticles.length.toLocaleString("ko-KR")}건</span>
+              <b>?? ??/?? ??</b>
+              <span>{riskArticles.length.toLocaleString("ko-KR")}?</span>
             </div>
             {riskArticles.slice(0, 8).map((article) => (
               <button
@@ -1177,8 +1177,8 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
                 <span>
                   <Chip tone={article.tone}>{article.tone}</Chip>
                   <em>
-                    {article.source} · {[article.date, article.time].filter(Boolean).join(" ") || "-"}
-                    {Number(article.relatedCount || 1) > 1 ? ` · 관련 ${article.relatedCount}건` : ""}
+                    {article.source} ? {[article.date, article.time].filter(Boolean).join(" ") || "-"}
+                    {Number(article.relatedCount || 1) > 1 ? ` ? ?? ${article.relatedCount}?` : ""}
                   </em>
                 </span>
                 <b>{article.title}</b>
@@ -1186,18 +1186,18 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
               </button>
             ))}
             {!riskArticles.length && (
-              <div className="risk-empty">최근 부정/주의 기사 데이터가 없습니다.</div>
+              <div className="risk-empty">?? ??/?? ?? ???? ????.</div>
             )}
           </div>
         </Panel>
-        <Panel title="대응 초안" icon={FilePenLine} meta={draft ? "생성 완료" : "생성 전 확인"}>
+        <Panel title="?? ??" icon={FilePenLine} meta={draft ? "?? ??" : "?? ? ??"}>
           <div className="segmented">
-            <button className={draftType === "press" ? "active" : ""} onClick={() => { setDraftType("press"); setDraft(""); }}>언론 해명용</button>
-            <button className={draftType === "internal" ? "active" : ""} onClick={() => { setDraftType("internal"); setDraft(""); }}>사내 해명용</button>
+            <button className={draftType === "press" ? "active" : ""} onClick={() => { setDraftType("press"); setDraft(""); }}>?? ???</button>
+            <button className={draftType === "internal" ? "active" : ""} onClick={() => { setDraftType("internal"); setDraft(""); }}>?? ???</button>
           </div>
           <div className="draft-preview">
-            <b>{draftType === "press" ? "언론 해명용 초안" : "사내 공유용 초안"}</b>
-            <p>{draft || "팩트체크 내용을 확인한 뒤 초안을 생성합니다."}</p>
+            <b>{draftType === "press" ? "?? ??? ??" : "?? ??? ??"}</b>
+            <p>{draft || "???? ??? ??? ? ??? ?????."}</p>
           </div>
           <div className="risk-actions">
             {activeArticle?.link && activeArticle.link !== "#" && (
@@ -1208,10 +1208,10 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
                 rel="noopener noreferrer"
                 onClick={(event) => openArticleLink(event, activeArticle.link)}
               >
-                <ExternalLink />기사 열기
+                <ExternalLink />?? ??
               </a>
             )}
-            <button className="primary-button confirm-button" onClick={handleGenerateDraft}>초안 생성</button>
+            <button className="primary-button confirm-button" onClick={handleGenerateDraft}>?? ??</button>
           </div>
         </Panel>
       </section>
@@ -1225,34 +1225,34 @@ function RiskCenter() {
     <main className="workspace">
       <PageTitle
         eyebrow="Risk Response"
-        title="리스크 대응센터"
-        description="기사 URL을 넣으면 핵심 주장, 당사 관련성, 논조를 확인하고 필요한 초안만 생성합니다."
+        title="??? ????"
+        description="?? URL? ??? ?? ??, ?? ???, ??? ???? ??? ??? ?????."
       />
       <section className="risk-layout">
-        <Panel title="기사 URL / 팩트 체크" icon={ShieldCheck} meta="생성 전 확인">
+        <Panel title="?? URL / ?? ??" icon={ShieldCheck} meta="?? ? ??">
           <div className="url-box">
-            <input placeholder="기사 URL을 붙여넣으세요" defaultValue="https://www.mk.co.kr/news/stock/12034143" />
-            <button className="primary-button">분석</button>
+            <input placeholder="?? URL? ??????" defaultValue="https://www.mk.co.kr/news/stock/12034143" />
+            <button className="primary-button">??</button>
           </div>
           <div className="fact-grid">
-            <Fact label="핵심 주장" value="투자의견 및 목표가 조정" />
-            <Fact label="당사 관련성" value="직접 언급 있음" />
-            <Fact label="논조" value="주의" />
-            <Fact label="대응 강도" value="모니터링 후 필요 시 확인" />
+            <Fact label="?? ??" value="???? ? ??? ??" />
+            <Fact label="?? ???" value="?? ?? ??" />
+            <Fact label="??" value="??" />
+            <Fact label="?? ??" value="???? ? ?? ? ??" />
           </div>
         </Panel>
-        <Panel title="대응 초안" icon={FilePenLine} meta="길이 조정">
+        <Panel title="?? ??" icon={FilePenLine} meta="?? ??">
           <div className="segmented">
-            <button className={draftType === "press" ? "active" : ""} onClick={() => setDraftType("press")}>언론 해명용</button>
-            <button className={draftType === "internal" ? "active" : ""} onClick={() => setDraftType("internal")}>사내 해명용</button>
+            <button className={draftType === "press" ? "active" : ""} onClick={() => setDraftType("press")}>?? ???</button>
+            <button className={draftType === "internal" ? "active" : ""} onClick={() => setDraftType("internal")}>?? ???</button>
           </div>
           <div className="draft-preview">
-            <b>{draftType === "press" ? "언론 해명용 초안" : "사내 공유용 초안"}</b>
+            <b>{draftType === "press" ? "?? ??? ??" : "?? ??? ??"}</b>
             <p>
-              해당 보도는 시장 의견과 투자 판단에 따른 기사로, 현재 확인된 범위에서는 당사 영업 및 준법 이슈와 직접 연결되는 내용은 확인되지 않았습니다.
+              ?? ??? ?? ??? ?? ??? ?? ???, ?? ??? ????? ?? ?? ? ?? ??? ?? ???? ??? ???? ?????.
             </p>
           </div>
-          <button className="primary-button confirm-button">초안을 생성할까요?</button>
+          <button className="primary-button confirm-button">??? ??????</button>
         </Panel>
       </section>
     </main>
@@ -1263,8 +1263,8 @@ function selectRiskCenterArticles(articles = []) {
   const usable = articles
     .filter((article) => article?.title && article.link && article.link !== "#")
     .filter((article) => !isOfficialRegulatorSource(article.source));
-  const negative = usable.filter((article) => article.tone === "부정" || String(article.riskLevel || "").toUpperCase() === "HIGH");
-  const caution = usable.filter((article) => article.tone === "주의" || String(article.riskLevel || "").toUpperCase() === "MEDIUM");
+  const negative = usable.filter((article) => article.tone === "??" || String(article.riskLevel || "").toUpperCase() === "HIGH");
+  const caution = usable.filter((article) => article.tone === "??" || String(article.riskLevel || "").toUpperCase() === "MEDIUM");
   const selected = negative.length ? negative : caution;
   return buildRiskArticleGroups(dedupeRiskArticles(selected))
     .map((article) => {
@@ -1344,12 +1344,12 @@ function buildRiskArticleGroups(articles = []) {
 
 function riskIssueSignature(article = {}) {
   const text = normalizeKeywordText(`${article.title || ""} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`);
-  if (/전세사기/.test(text) && /청년/.test(text) && /지원|상환|학자금/.test(text)) return "risk:jeonse-youth-support";
-  if (/보험설계사/.test(text) && /개인정보|처리자|판매 주체|판매주체/.test(text)) return "risk:planner-privacy-controller";
-  if (/인카금융스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) return "risk:incar-scandal-illegal-sales";
-  if (/인카금융/.test(text) && /관리 부실|관리부실|대리점|가로챈/.test(text)) return "risk:incar-agency-control";
-  if (/사칭|고객 db|고객db|db 수집|디비 수집/.test(text) && /금융|저축은행|보험/.test(text)) return "risk:impersonation-customer-db";
-  if (/개인정보|고객정보|정보유출|해킹/.test(text) && /보험|ga|설계사|대리점/.test(text)) return "risk:insurance-privacy-security";
+  if (/????/.test(text) && /??/.test(text) && /??|??|???/.test(text)) return "risk:jeonse-youth-support";
+  if (/?????/.test(text) && /????|???|?? ??|????/.test(text)) return "risk:planner-privacy-controller";
+  if (/???????|?? ??|????|?? ??|????/.test(text)) return "risk:incar-scandal-illegal-sales";
+  if (/????/.test(text) && /?? ??|????|???|???/.test(text)) return "risk:incar-agency-control";
+  if (/??|?? db|??db|db ??|?? ??/.test(text) && /??|????|??/.test(text)) return "risk:impersonation-customer-db";
+  if (/????|????|????|??/.test(text) && /??|ga|???|???/.test(text)) return "risk:insurance-privacy-security";
   return "";
 }
 
@@ -1363,7 +1363,7 @@ function areRiskRelatedArticleSeeds(a, b) {
 }
 
 function isRiskGroupingToken(token = "") {
-  return /전세사기|피해|청년|지원|학자금|상환|개인정보|처리자|보험설계사|판매주체|인카금융|스캔들|보험꺾기|사채|사칭|고객db|대리점|관리부실|해킹|정보유출/.test(token);
+  return /????|??|??|??|???|??|????|???|?????|????|????|???|????|??|??|??db|???|????|??|????/.test(token);
 }
 
 function buildRiskGroupSummaryLines(articles = []) {
@@ -1393,35 +1393,35 @@ function buildRiskFallbackSummaryLines(articles = []) {
   const text = summaryHaystack(representative);
   const count = articles.length;
   const lines = [];
-  if (/전세사기/.test(text) && /청년/.test(text)) {
-    lines.push("전세사기 피해 청년 지원과 관련된 보험업계 사회공헌 보도입니다.");
-    lines.push("직접 부정 이슈보다는 피해·지원 키워드로 포착된 기사라 리스크 분류 재확인이 필요합니다.");
-  } else if (/보험설계사/.test(text) && /개인정보|처리자|판매 주체|판매주체/.test(text)) {
-    lines.push("보험설계사의 개인정보 처리 책임과 판매 주체별 법적 지위가 핵심 쟁점입니다.");
-    lines.push("GA와 판매채널 운영 기준에 영향을 줄 수 있어 내부 기준 확인이 필요합니다.");
-  } else if (/인카금융스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) {
-    lines.push("GA 영업 관행과 불법 사채 의혹을 다룬 고위험 평판 이슈입니다.");
-    lines.push("당사명 노출 여부와 사실관계, 추가 보도 확산 가능성을 우선 확인해야 합니다.");
-  } else if (/사칭|고객 DB|고객DB|DB 수집|디비 수집/i.test(text)) {
-    lines.push("금융사 사칭과 고객 DB 수집 의혹이 핵심인 소비자보호 리스크 기사입니다.");
-    lines.push("당사 관련성, 피해 범위, 후속 보도 가능성을 분리해 확인해야 합니다.");
-  } else if (/관리 부실|관리부실|대리점|가로챈/.test(text) && /인카금융/.test(text)) {
-    lines.push("보험대리점 관리와 당사 언급이 함께 나온 평판 리스크 기사입니다.");
-    lines.push("관리 책임, 피해 주장, 보도 근거를 나눠 사실관계를 확인해야 합니다.");
+  if (/????/.test(text) && /??/.test(text)) {
+    lines.push("???? ?? ?? ??? ??? ???? ???? ?????.");
+    lines.push("?? ?? ????? ????? ???? ??? ??? ??? ?? ???? ?????.");
+  } else if (/?????/.test(text) && /????|???|?? ??|????/.test(text)) {
+    lines.push("?????? ???? ?? ??? ?? ??? ?? ??? ?? ?????.");
+    lines.push("GA? ???? ?? ??? ??? ? ? ?? ?? ?? ??? ?????.");
+  } else if (/???????|?? ??|????|?? ??|????/.test(text)) {
+    lines.push("GA ?? ??? ?? ?? ??? ?? ??? ?? ?????.");
+    lines.push("??? ?? ??? ????, ?? ?? ?? ???? ?? ???? ???.");
+  } else if (/??|?? DB|??DB|DB ??|?? ??/i.test(text)) {
+    lines.push("??? ??? ?? DB ?? ??? ??? ????? ??? ?????.");
+    lines.push("?? ???, ?? ??, ?? ?? ???? ??? ???? ???.");
+  } else if (/?? ??|????|???|???/.test(text) && /????/.test(text)) {
+    lines.push("????? ??? ?? ??? ?? ?? ?? ??? ?????.");
+    lines.push("?? ??, ?? ??, ?? ??? ?? ????? ???? ???.");
   } else {
     const topic = summarizeRiskTitleTopic(representative.title);
-    lines.push(`${topic} 관련 리스크 기사로, 사실관계와 당사 관련성을 확인해야 합니다.`);
+    lines.push(`${topic} ?? ??? ???, ????? ?? ???? ???? ???.`);
   }
-  if (count > 1) lines.push(`같은 이슈로 묶인 관련 기사 ${count.toLocaleString("ko-KR")}건을 함께 확인합니다.`);
+  if (count > 1) lines.push(`?? ??? ?? ?? ?? ${count.toLocaleString("ko-KR")}?? ?? ?????.`);
   return dedupeSummaryLines(lines, summaryTitleKeys({ ...representative, relatedArticles: articles })).slice(0, 3);
 }
 
 function summarizeRiskTitleTopic(title = "") {
   const clean = cleanSummaryText(title)
-    .replace(/\s*[-–—]\s*[^-–—]{2,30}$/u, "")
-    .replace(/^[\[【][^\]】]+[\]】]\s*/u, "");
-  const tokens = articleTokens(clean).filter((token) => !/신문|뉴스|경제|일보|투데이|연합뉴스/.test(token));
-  return tokens.slice(0, 5).join(" ") || "선택 기사";
+    .replace(/\s*[-??]\s*[^-??]{2,30}$/u, "")
+    .replace(/^[\[?][^\]?]+[\]?]\s*/u, "");
+  const tokens = articleTokens(clean).filter((token) => !/??|??|??|??|???|????/.test(token));
+  return tokens.slice(0, 5).join(" ") || "?? ??";
 }
 
 function normalizeRiskSummaryKey(value = "") {
@@ -1473,11 +1473,11 @@ function makeManualRiskArticle(articleUrl = "") {
     }
   })();
   return {
-    title: articleUrl ? "URL 입력 기사" : "기사 선택 필요",
+    title: articleUrl ? "URL ?? ??" : "?? ?? ??",
     link: articleUrl,
-    source: host || "직접 입력",
-    tone: articleUrl ? "주의" : "확인 필요",
-    category: "외부 URL",
+    source: host || "?? ??",
+    tone: articleUrl ? "??" : "?? ??",
+    category: "?? URL",
     summary: "",
   };
 }
@@ -1487,14 +1487,14 @@ function buildRiskCenterFacts(article = {}, articleUrl = "") {
   const claim = summaryLines[0]
     || compactArticleSummary(article)
     || cleanSummaryText(article.title)
-    || (articleUrl ? "URL 기준으로 기사 원문 확인이 필요합니다." : "최근 부정/주의 기사를 선택하세요.");
-  const tone = article.tone && article.tone !== "확인 필요"
+    || (articleUrl ? "URL ???? ?? ?? ??? ?????." : "?? ??/?? ??? ?????.");
+  const tone = article.tone && article.tone !== "?? ??"
     ? article.tone
     : String(article.riskLevel || "").toUpperCase() === "HIGH"
-      ? "부정"
+      ? "??"
       : articleUrl
-        ? "주의"
-        : "확인 필요";
+        ? "??"
+        : "?? ??";
   return {
     claim,
     relevance: buildRiskRelevance(article),
@@ -1504,39 +1504,39 @@ function buildRiskCenterFacts(article = {}, articleUrl = "") {
 }
 
 function buildRiskRelevance(article = {}) {
-  if (!article?.title || article.title === "기사 선택 필요") return "확인 필요";
-  if (isOwnArticle(article)) return "당사 직접 언급";
-  if (article.category === "GA" || /GA|보험대리점|설계사|인카금융/i.test(`${article.title} ${article.summary} ${article.keyword}`)) {
-    return "업계/GA 문맥";
+  if (!article?.title || article.title === "?? ?? ??") return "?? ??";
+  if (isOwnArticle(article)) return "?? ?? ??";
+  if (article.category === "GA" || /GA|?????|???|????/i.test(`${article.title} ${article.summary} ${article.keyword}`)) {
+    return "??/GA ??";
   }
-  return "간접 이슈";
+  return "?? ??";
 }
 
 function buildRiskIntensity(article = {}, tone = "") {
-  if (tone === "부정" && isOwnArticle(article)) return "즉시 확인";
-  if (tone === "부정") return "부정 후보 검토";
-  if (tone === "주의") return "모니터링";
-  return "대기";
+  if (tone === "??" && isOwnArticle(article)) return "?? ??";
+  if (tone === "??") return "?? ?? ??";
+  if (tone === "??") return "????";
+  return "??";
 }
 
 function buildRiskResponseDraft(type, article = {}, facts = {}) {
-  const title = cleanSummaryText(article.title || "확인 대상 기사");
-  const source = article.source ? `${article.source} 보도` : "해당 보도";
-  const claim = facts.claim || "핵심 주장 확인이 필요합니다.";
-  const relevance = facts.relevance || "관련성 확인 필요";
+  const title = cleanSummaryText(article.title || "?? ?? ??");
+  const source = article.source ? `${article.source} ??` : "?? ??";
+  const claim = facts.claim || "?? ?? ??? ?????.";
+  const relevance = facts.relevance || "??? ?? ??";
   if (type === "internal") {
     return [
-      `공유 대상은 ${source} "${title}"입니다.`,
-      `현재 분류는 ${facts.tone || "확인 필요"}이며, 당사 관련성은 ${relevance}로 확인됩니다.`,
-      `핵심 쟁점은 ${claim}`,
-      `사실관계, 이해관계자 영향, 추가 보도 가능성을 확인한 뒤 필요 시 대외 메시지를 별도로 정리하겠습니다.`,
+      `?? ??? ${source} "${title}"???.`,
+      `?? ??? ${facts.tone || "?? ??"}??, ?? ???? ${relevance}? ?????.`,
+      `?? ??? ${claim}`,
+      `????, ????? ??, ?? ?? ???? ??? ? ?? ? ?? ???? ??? ???????.`,
     ].join("\n");
   }
   return [
-    `해당 보도와 관련해 현재 확인 가능한 핵심 쟁점은 ${claim}`,
-    `당사는 보도 내용 중 사실관계가 필요한 부분을 확인하고 있으며, 확인되지 않은 내용에 대해서는 단정적인 입장을 내지 않겠습니다.`,
-    `소비자와 이해관계자에게 영향을 줄 수 있는 사안은 관련 기준과 절차에 따라 신속히 점검하겠습니다.`,
-    `추가 확인이 완료되는 대로 필요한 범위에서 설명드리겠습니다.`,
+    `?? ??? ??? ?? ?? ??? ?? ??? ${claim}`,
+    `??? ?? ?? ? ????? ??? ??? ???? ???, ???? ?? ??? ???? ???? ??? ?? ?????.`,
+    `???? ??????? ??? ? ? ?? ??? ?? ??? ??? ?? ??? ???????.`,
+    `?? ??? ???? ?? ??? ???? ????????.`,
   ].join("\n");
 }
 
@@ -1554,13 +1554,13 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
     <main className="workspace report-workspace">
       <PageTitle
         eyebrow={edition.kicker}
-        title="일간/주간/월간 보고서"
-        description="매일, 매주, 매월 받아보는 언론 동향지처럼 읽히도록 지면형 보고서로 구성합니다."
+        title="??/??/?? ???"
+        description="??, ??, ?? ???? ?? ????? ???? ??? ???? ?????."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
             <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${data.scope || ""}`)}>
-              <Download />인쇄/PDF 저장
+              <Download />??/PDF ??
             </button>
           </div>
         )}
@@ -1584,11 +1584,11 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
           <article className="lead-story">
             <span className="section-label">Front Page</span>
             <h2>{lead?.title || summary.headline}</h2>
-            <ArticleSummaryBlock item={lead || { title: summary.headline, summary: summary.headline, category: data.label, tone: summary.risk === "LOW" ? "중립" : "주의" }} />
+            <ArticleSummaryBlock item={lead || { title: summary.headline, summary: summary.headline, category: data.label, tone: summary.risk === "LOW" ? "??" : "??" }} />
             <div className="story-meta">
               {lead?.tone && <Chip tone={lead.tone}>{lead.tone}</Chip>}
               {lead?.category && <Chip>{lead.category}</Chip>}
-              <span>{lead?.source || data.label} · {lead?.publishedAt || data.scope}</span>
+              <span>{lead?.source || data.label} ? {lead?.publishedAt || data.scope}</span>
             </div>
           </article>
 
@@ -1604,7 +1604,7 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
           <section className="paper-section story-grid">
             <div className="paper-section-head">
               <span>Inside Pages</span>
-              <b>주요 기사</b>
+              <b>?? ??</b>
             </div>
             {secondary.map((issue) => <ReportStory key={`${issue.source}-${issue.title}`} issue={issue} />)}
           </section>
@@ -1612,7 +1612,7 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
           <section className="paper-section analysis-page">
             <div className="paper-section-head">
               <span>Media Map</span>
-              <b>언론사 영향도</b>
+              <b>??? ???</b>
             </div>
             <PressInfluence rows={data.pressInfluence} compact onOpenMonitoring={onOpenMonitoring} />
           </section>
@@ -1620,7 +1620,7 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
           <section className="paper-section chart-page">
             <div className="paper-section-head">
               <span>Data Page</span>
-              <b>분류별 흐름</b>
+              <b>??? ??</b>
             </div>
             <CategoryChart rows={data.categoryFlow} mini />
           </section>
@@ -1630,14 +1630,14 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
               <section className="paper-section trend-page">
                 <div className="paper-section-head">
                   <span>Trend Page</span>
-                  <b>일별 논조</b>
+                  <b>?? ??</b>
                 </div>
                 <ToneTrend rows={reportTrend} compact />
               </section>
               <section className="paper-section scrap-page">
                 <div className="paper-section-head">
                   <span>Scrap File</span>
-                  <b>스크랩 기사</b>
+                  <b>??? ??</b>
                 </div>
                 <ScrapDigest scraps={scraps} />
               </section>
@@ -1655,20 +1655,20 @@ function publicationMeta(period, data) {
     daily: {
       kicker: "Daily Edition",
       title: "INCAR MEDIA DAILY",
-      subtitle: "오늘의 언론 동향을 지면처럼 읽는 일간 브리핑",
-      issue: `${date} · Daily No. 01`,
+      subtitle: "??? ?? ??? ???? ?? ?? ???",
+      issue: `${date} ? Daily No. 01`,
     },
     weekly: {
       kicker: "Weekly Edition",
       title: "INCAR MEDIA WEEKLY",
-      subtitle: "한 주의 보도 흐름과 리스크 신호를 묶은 주간지",
-      issue: `${date} · Weekly Review`,
+      subtitle: "? ?? ?? ??? ??? ??? ?? ???",
+      issue: `${date} ? Weekly Review`,
     },
     monthly: {
       kicker: "Monthly Edition",
       title: "INCAR MEDIA MONTHLY",
-      subtitle: "월간 누적 데이터를 기반으로 보는 언론 동향 매거진",
-      issue: `${date} · Monthly Desk`,
+      subtitle: "?? ?? ???? ???? ?? ?? ?? ???",
+      issue: `${date} ? Monthly Desk`,
     },
   };
   return meta[period] || meta.daily;
@@ -1677,8 +1677,8 @@ function publicationMeta(period, data) {
 function buildReportLead(period, data, articles, issues) {
   if (period === "daily") {
     return issues[0] || {
-      tone: data.summary.risk === "LOW" ? "중립" : "주의",
-      category: "데일리",
+      tone: data.summary.risk === "LOW" ? "??" : "??",
+      category: "???",
       source: data.label,
       title: data.summary.headline,
       summary: data.summary.headline,
@@ -1686,44 +1686,44 @@ function buildReportLead(period, data, articles, issues) {
     };
   }
   const frontArticle = selectReportFrontArticle(articles, issues);
-  const topCategories = groupArticles(articles, "category").slice(0, 2).map(([name]) => name).join("·") || "주요 보도";
+  const topCategories = groupArticles(articles, "category").slice(0, 2).map(([name]) => name).join("?") || "?? ??";
   const riskText = data.summary.ownNegative > 0
-    ? `당사 부정 ${data.summary.ownNegative}건은 별도 확인 대상으로 분리하고`
-    : "당사 직접 부정은 제한적이며";
-  const cadence = period === "weekly" ? "이번 주" : "이번 달";
+    ? `?? ?? ${data.summary.ownNegative}?? ?? ?? ???? ????`
+    : "?? ?? ??? ?????";
+  const cadence = period === "weekly" ? "?? ?" : "?? ?";
   if (frontArticle) {
-    const ownPositive = isOwnArticle(frontArticle) && frontArticle.tone === "긍정";
-    const ownNeutral = isOwnArticle(frontArticle) && frontArticle.tone === "중립";
+    const ownPositive = isOwnArticle(frontArticle) && frontArticle.tone === "??";
+    const ownNeutral = isOwnArticle(frontArticle) && frontArticle.tone === "??";
     const leadLines = buildArticleSummaryLines(frontArticle);
     return {
       ...frontArticle,
-      category: frontArticle.category || "당사",
+      category: frontArticle.category || "??",
       source: frontArticle.source || "INCAR Media Desk",
       summary: compactArticleSummary(frontArticle),
       summaryLines: unique([
         ownPositive
-          ? `${cadence} 당사 보도에서는 성과성 이슈가 대표 흐름으로 확인됩니다.`
+          ? `${cadence} ?? ????? ??? ??? ?? ???? ?????.`
           : ownNeutral
-            ? `${cadence} 당사 직접 언급 보도가 대표 관찰 이슈로 확인됩니다.`
-            : `${cadence} 핵심 이슈로 확인된 보도입니다.`,
+            ? `${cadence} ?? ?? ?? ??? ?? ?? ??? ?????.`
+            : `${cadence} ?? ??? ??? ?????.`,
         ...leadLines,
-        `당사 언급 ${data.summary.ownMentions}건, 당사 부정 ${data.summary.ownNegative}건, 주의 ${data.summary.caution}건을 분리해 봅니다.`,
+        `?? ?? ${data.summary.ownMentions}?, ?? ?? ${data.summary.ownNegative}?, ?? ${data.summary.caution}?? ??? ???.`,
       ]).slice(0, 4),
       publishedAt: frontArticle.publishedAt || frontArticle.time || frontArticle.date || data.scope,
     };
   }
   const leadIssue = issues[0];
   return {
-    tone: data.summary.risk === "LOW" ? "중립" : "주의",
-    category: period === "weekly" ? "주간 종합" : "월간 종합",
+    tone: data.summary.risk === "LOW" ? "??" : "??",
+    category: period === "weekly" ? "?? ??" : "?? ??",
     source: "INCAR Media Desk",
-    title: leadIssue?.title || `${cadence} 언론 흐름은 ${topCategories} 중심으로 형성`,
-    summary: `${riskText}, 직접 부정과 시장성 주의 이슈를 분리해 추적합니다. ${topCategories} 보도량이 기간 흐름을 만들었고, 당사 언급 ${data.summary.ownMentions}건은 보고서 근거로 우선 확인합니다.`,
+    title: leadIssue?.title || `${cadence} ?? ??? ${topCategories} ???? ??`,
+    summary: `${riskText}, ?? ??? ??? ?? ??? ??? ?????. ${topCategories} ???? ?? ??? ????, ?? ?? ${data.summary.ownMentions}?? ??? ??? ?? ?????.`,
     summaryLines: [
-      `${cadence} 보도 흐름은 ${topCategories} 중심으로 형성됐습니다.`,
+      `${cadence} ?? ??? ${topCategories} ???? ??????.`,
       riskText,
-      `당사 언급 ${data.summary.ownMentions}건, 당사 부정 ${data.summary.ownNegative}건, 주의 ${data.summary.caution}건을 분리해 관리합니다.`,
-      leadIssue?.title ? `대표 헤드라인은 "${leadIssue.title}"입니다.` : "대표 이슈는 기간 내 기사량과 논조를 기준으로 선정했습니다.",
+      `?? ?? ${data.summary.ownMentions}?, ?? ?? ${data.summary.ownNegative}?, ?? ${data.summary.caution}?? ??? ?????.`,
+      leadIssue?.title ? `?? ????? "${leadIssue.title}"???.` : "?? ??? ?? ? ???? ??? ???? ??????.",
     ],
     publishedAt: data.scope,
   };
@@ -1731,7 +1731,7 @@ function buildReportLead(period, data, articles, issues) {
 
 function selectReportFrontArticle(articles = [], issues = []) {
   const candidates = [...articles, ...issues]
-    .filter((item) => item && item.title && item.tone !== "제외");
+    .filter((item) => item && item.title && item.tone !== "??");
   if (!candidates.length) return null;
   return candidates
     .map((item, index) => ({ item, index, score: reportFrontScore(item) }))
@@ -1743,17 +1743,17 @@ function reportFrontScore(item = {}) {
   const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`;
   let score = 0;
   if (own) score += 1000;
-  if (own && item.tone === "부정") score += 900;
-  if (own && item.tone === "긍정") score += 520;
-  if (own && item.tone === "중립") score += 360;
-  if (own && item.tone === "주의") score += 240;
-  if (/우수인증|최다|성과|수상|배출|선정|1위|성장|매출|인증설계사/.test(text)) score += own ? 180 : 40;
-  if (/사기|불법|제재|피해|사칭|개인정보|금융사고/.test(text)) score += own ? 220 : 80;
-  if (item.category === "정책/규제") score += 45;
-  if (item.tone === "주의") score += 35;
-  if (item.tone === "부정") score += 80;
-  if (item.tone === "긍정") score += 70;
-  if (/브랜드평판|스포츠|골프|행사|문화센터|마이데이터 평판/.test(text) && !own) score -= 300;
+  if (own && item.tone === "??") score += 900;
+  if (own && item.tone === "??") score += 520;
+  if (own && item.tone === "??") score += 360;
+  if (own && item.tone === "??") score += 240;
+  if (/????|??|??|??|??|??|1?|??|??|?????/.test(text)) score += own ? 180 : 40;
+  if (/??|??|??|??|??|????|????/.test(text)) score += own ? 220 : 80;
+  if (item.category === "??/??") score += 45;
+  if (item.tone === "??") score += 35;
+  if (item.tone === "??") score += 80;
+  if (item.tone === "??") score += 70;
+  if (/?????|???|??|??|????|????? ??/.test(text) && !own) score -= 300;
   return score + Math.min(Number(item.score || 0), 100);
 }
 
@@ -1775,17 +1775,17 @@ function normalizeIssueTitle(value) {
 function ReportMetricBoard({ summary, articles = [], period = "daily", onOpenMonitoring }) {
   const showLedger = period !== "daily";
   const stats = [
-    { label: "수집", value: summary.collected.toLocaleString("ko-KR"), preset: {} },
-    { label: "분석", value: summary.analyzed.toLocaleString("ko-KR"), preset: {} },
-    { label: "당사", value: summary.ownMentions, preset: { category: "당사" } },
-    { label: "GA/보험사", value: summary.gaInsurance, preset: { category: "GA" } },
+    { label: "??", value: summary.collected.toLocaleString("ko-KR"), preset: {} },
+    { label: "??", value: summary.analyzed.toLocaleString("ko-KR"), preset: {} },
+    { label: "??", value: summary.ownMentions, preset: { category: "??" } },
+    { label: "GA/???", value: summary.gaInsurance, preset: { category: "GA" } },
   ];
   return (
     <section className={`report-metric-board ${showLedger ? "has-ledger" : ""}`}>
-      <button className={`report-risk-line ${summary.risk.toLowerCase()}`} onClick={() => onOpenMonitoring?.({ category: "당사" })}>
-        <span>리스크 레벨</span>
+      <button className={`report-risk-line ${summary.risk.toLowerCase()}`} onClick={() => onOpenMonitoring?.({ category: "??" })}>
+        <span>??? ??</span>
         <b>{summary.risk}</b>
-        <em>부정 {summary.ownNegative} · 주의 {summary.caution}</em>
+        <em>?? {summary.ownNegative} ? ?? {summary.caution}</em>
       </button>
       <div className="report-stat-grid">
         {stats.map((item) => (
@@ -1799,7 +1799,7 @@ function ReportMetricBoard({ summary, articles = [], period = "daily", onOpenMon
         <div className="top-ledger">
           <div className="top-ledger-head">
             <span>Desk Ledger</span>
-            <b>누적 관리 항목</b>
+            <b>?? ?? ??</b>
           </div>
           <ReportLedger articles={articles} compact />
         </div>
@@ -1827,24 +1827,24 @@ function ReportStory({ issue }) {
       </div>
       <h3>{issue.title}</h3>
       <ArticleSummaryBlock item={issue} dense />
-      <span>{issue.source} · {issue.publishedAt}</span>
+      <span>{issue.source} ? {issue.publishedAt}</span>
     </article>
   );
 }
 
 function ReportLedger({ articles, compact = false }) {
   const rows = [
-    { label: "당사 직접 언급", value: articles.filter(isOwnArticle).length, preset: "당사" },
-    { label: "부정/주의 합산", value: articles.filter((item) => ["부정", "주의"].includes(item.tone)).length, preset: "리스크" },
-    { label: "GA·보험사 동향", value: articles.filter((item) => ["GA", "보험사"].includes(item.category)).length, preset: "업계" },
-    { label: "제외/노이즈 후보", value: articles.filter((item) => item.tone === "제외" || item.category === "제외").length, preset: "정제" },
+    { label: "?? ?? ??", value: articles.filter(isOwnArticle).length, preset: "??" },
+    { label: "??/?? ??", value: articles.filter((item) => ["??", "??"].includes(item.tone)).length, preset: "???" },
+    { label: "GA???? ??", value: articles.filter((item) => ["GA", "???"].includes(item.category)).length, preset: "??" },
+    { label: "??/??? ??", value: articles.filter((item) => item.tone === "??" || item.category === "??").length, preset: "??" },
   ];
   return (
     <div className={`report-ledger ${compact ? "compact" : ""}`}>
       {rows.map((row) => (
         <article key={row.label}>
           <span>{row.label}</span>
-          <b>{row.value.toLocaleString("ko-KR")}건</b>
+          <b>{row.value.toLocaleString("ko-KR")}?</b>
           <em>{row.preset}</em>
         </article>
       ))}
@@ -1854,7 +1854,7 @@ function ReportLedger({ articles, compact = false }) {
 
 function AdSpendChart({ rows, color = "#2855d9", compact = false }) {
   if (!rows.length) {
-    return <div className="chart-empty">광고비 집행 데이터가 없습니다.</div>;
+    return <div className="chart-empty">??? ?? ???? ????.</div>;
   }
   return (
     <div className={`ad-chart-box ${compact ? "compact" : ""}`}>
@@ -1879,17 +1879,18 @@ function Management({ management, operations }) {
     <main className="workspace">
       <PageTitle
         eyebrow="Operations"
-        title="운영 관리"
-        description="언론사, 기자, 광고비 관리가 축소되지 않도록 기존 운영 메뉴 단위를 살려서 보여줍니다."
+        title="?? ??"
+        description="???, ??, ??? ??? ???? ??? ?? ?? ?? ??? ??? ?????."
         right={<DataSourcePill operations={operations} />}
       />
       <ManagementSummary management={management} />
       <div className="management-tabs">
         {[
-          ["media", "언론사 관리", Building2],
-          ["reporters", "기자 관리", Users],
-          ["ads", "광고비 관리", WalletCards],
-          ["keywords", "키워드/문맥", Settings],
+          ["media", "??? ??", Building2],
+          ["reporters", "?? ??", Users],
+          ["ads", "??? ??", WalletCards],
+          ["keywords", "???/??", Settings],
+          ["feedback", "?? ???", FilePenLine],
         ].map(([id, label, Icon]) => (
           <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>
             <Icon />{label}
@@ -1900,6 +1901,7 @@ function Management({ management, operations }) {
       {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
       {tab === "ads" && <AdManagement rows={management.ads} />}
       {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} />}
+      {tab === "feedback" && <FeedbackManagement feedback={operations.feedback || []} operations={operations} />}
     </main>
   );
 }
@@ -1908,10 +1910,10 @@ function ManagementSummary({ management }) {
   const totalAd = management.ads.reduce((sum, row) => sum + Number(row.amount || 0), 0);
   return (
     <section className="management-summary">
-      <StatCard icon={Building2} label="관리 언론사" value={`${management.media.length.toLocaleString("ko-KR")}곳`} />
-      <StatCard icon={Users} label="기자 프로필" value={`${management.reporters.length.toLocaleString("ko-KR")}명`} />
-      <StatCard icon={WalletCards} label="광고비 누적" value={formatMoney(totalAd)} />
-      <StatCard icon={Megaphone} label="문맥 규칙" value={`${keywordGroups.length}개 그룹`} />
+      <StatCard icon={Building2} label="?? ???" value={`${management.media.length.toLocaleString("ko-KR")}?`} />
+      <StatCard icon={Users} label="?? ???" value={`${management.reporters.length.toLocaleString("ko-KR")}?`} />
+      <StatCard icon={WalletCards} label="??? ??" value={formatMoney(totalAd)} />
+      <StatCard icon={Megaphone} label="?? ??" value={`${keywordGroups.length}? ??`} />
     </section>
   );
 }
@@ -1947,7 +1949,7 @@ function MediaManagement({ rows, aliases = [] }) {
       name: row.name || "",
       url: row.url || domains[0] || "",
       grade: row.grade || "B",
-      status: row.status || "중립",
+      status: row.status || "??",
       owner: row.owner || "",
       contactDate: row.contactDate || "",
       beat: row.beat || "",
@@ -1957,13 +1959,13 @@ function MediaManagement({ rows, aliases = [] }) {
       memo: row.memo || "",
     });
     setManagingMedia(true);
-    setMediaStatus(row.name ? `${row.name} 관리 정보를 편집 중입니다.` : "새 언론사 정보를 입력하세요.");
+    setMediaStatus(row.name ? `${row.name} ?? ??? ?? ????.` : "? ??? ??? ?????.");
   };
 
   const handleSaveMedia = async () => {
     const item = normalizeMediaDraft(mediaForm);
     if (!item.name) {
-      setMediaStatus("언론사명을 입력해야 합니다.");
+      setMediaStatus("????? ???? ???.");
       return;
     }
     const host = canonicalHost(item.url);
@@ -1977,72 +1979,72 @@ function MediaManagement({ rows, aliases = [] }) {
     try {
       await saveMediaRelation({ ...item, memo: buildMediaMemo(item) });
       if (host) await savePressAlias(host, item.name);
-      setMediaStatus("Supabase 저장 완료");
+      setMediaStatus("Supabase ?? ??");
     } catch {
-      setMediaStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      setMediaStatus("?? ?? ?? ?? ? ?? ?? ?? ? DB ??");
     }
   };
 
   return (
-    <Panel title="언론사 관리" icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}곳`}>
+    <Panel title="??? ??" icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}?`}>
       <div className="management-toolbar">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="언론사명, 도메인, 메모 검색" />
-        <button className="ghost-button">등급 정리</button>
-        <button className="primary-button" onClick={() => handleManageMedia()}>언론사 추가</button>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="????, ???, ?? ??" />
+        <button className="ghost-button">?? ??</button>
+        <button className="primary-button" onClick={() => handleManageMedia()}>??? ??</button>
       </div>
       {managingMedia && (
         <div className="operation-form media-detail-form">
           <label>
-            <span>언론사명</span>
-            <input value={mediaForm.name} onChange={(event) => updateMediaForm("name", event.target.value)} placeholder="예: 보험매일" />
+            <span>????</span>
+            <input value={mediaForm.name} onChange={(event) => updateMediaForm("name", event.target.value)} placeholder="?: ????" />
           </label>
           <label>
-            <span>대표 URL/도메인</span>
+            <span>?? URL/???</span>
             <input value={mediaForm.url} onChange={(event) => updateMediaForm("url", event.target.value)} placeholder="https://example.co.kr" />
           </label>
           <label>
-            <span>등급</span>
+            <span>??</span>
             <select value={mediaForm.grade} onChange={(event) => updateMediaForm("grade", event.target.value)}>
-              {["A", "B", "C", "보류"].map((value) => <option key={value}>{value}</option>)}
+              {["A", "B", "C", "??"].map((value) => <option key={value}>{value}</option>)}
             </select>
           </label>
           <label>
-            <span>관계 상태</span>
+            <span>?? ??</span>
             <select value={mediaForm.status} onChange={(event) => updateMediaForm("status", event.target.value)}>
-              {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
+              {["??", "??", "??", "??"].map((value) => <option key={value}>{value}</option>)}
             </select>
           </label>
           <label>
-            <span>담당자</span>
-            <input value={mediaForm.owner} onChange={(event) => updateMediaForm("owner", event.target.value)} placeholder="홍보팀 / 담당자" />
+            <span>???</span>
+            <input value={mediaForm.owner} onChange={(event) => updateMediaForm("owner", event.target.value)} placeholder="??? / ???" />
           </label>
           <label>
-            <span>최근 접촉일</span>
+            <span>?? ???</span>
             <input type="date" value={mediaForm.contactDate} onChange={(event) => updateMediaForm("contactDate", event.target.value)} />
           </label>
           <label>
-            <span>주요 분야</span>
-            <input value={mediaForm.beat} onChange={(event) => updateMediaForm("beat", event.target.value)} placeholder="보험/GA, 경제, 금융정책" />
+            <span>?? ??</span>
+            <input value={mediaForm.beat} onChange={(event) => updateMediaForm("beat", event.target.value)} placeholder="??/GA, ??, ????" />
           </label>
           <label>
-            <span>대표 기자</span>
-            <input value={mediaForm.leadReporter} onChange={(event) => updateMediaForm("leadReporter", event.target.value)} placeholder="주요 담당 기자" />
+            <span>?? ??</span>
+            <input value={mediaForm.leadReporter} onChange={(event) => updateMediaForm("leadReporter", event.target.value)} placeholder="?? ?? ??" />
           </label>
           <label>
-            <span>이메일</span>
+            <span>???</span>
             <input value={mediaForm.email} onChange={(event) => updateMediaForm("email", event.target.value)} placeholder="desk@example.co.kr" />
           </label>
           <label>
-            <span>전화</span>
+            <span>??</span>
             <input value={mediaForm.phone} onChange={(event) => updateMediaForm("phone", event.target.value)} placeholder="02-0000-0000" />
           </label>
           <label className="media-memo-field">
-            <span>관리 메모</span>
-            <textarea value={mediaForm.memo} onChange={(event) => updateMediaForm("memo", event.target.value)} placeholder="보도자료 발송 이력, 선호 주제, 주의사항, 후속 접촉 기록" />
+            <span>?? ??</span>
+            <textarea value={mediaForm.memo} onChange={(event) => updateMediaForm("memo", event.target.value)} placeholder="???? ?? ??, ?? ??, ????, ?? ?? ??" />
           </label>
           <div className="operation-form-actions media-detail-actions">
-            <button className="ghost-button" onClick={() => { setManagingMedia(false); setMediaForm(emptyMediaForm); setMediaStatus(""); }}>닫기</button>
-            <button className="primary-button" onClick={handleSaveMedia}>관리 정보 저장</button>
+            <button className="ghost-button" onClick={() => { setManagingMedia(false); setMediaForm(emptyMediaForm); setMediaStatus(""); }}>??</button>
+            <button className="primary-button" onClick={handleSaveMedia}>?? ?? ??</button>
           </div>
           {mediaStatus && <p className="status-note">{mediaStatus}</p>}
         </div>
@@ -2051,15 +2053,15 @@ function MediaManagement({ rows, aliases = [] }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>언론사</th>
-              <th>주소 보정</th>
-              <th>등급</th>
-              <th>관계</th>
-              <th>담당</th>
-              <th>최근 접촉</th>
-              <th>기사량</th>
-              <th>메모</th>
-              <th>관리</th>
+              <th>???</th>
+              <th>?? ??</th>
+              <th>??</th>
+              <th>??</th>
+              <th>??</th>
+              <th>?? ??</th>
+              <th>???</th>
+              <th>??</th>
+              <th>??</th>
             </tr>
           </thead>
           <tbody>
@@ -2073,13 +2075,13 @@ function MediaManagement({ rows, aliases = [] }) {
                   </div>
                 </td>
                 <td><Chip>{row.grade || "B"}</Chip></td>
-                <td><Chip tone={row.status}>{row.status || "중립"}</Chip></td>
+                <td><Chip tone={row.status}>{row.status || "??"}</Chip></td>
                 <td>{row.owner || "-"}</td>
                 <td>{row.contactDate || "-"}</td>
-                <td>{Number(row.total || 0).toLocaleString("ko-KR")}건</td>
+                <td>{Number(row.total || 0).toLocaleString("ko-KR")}?</td>
                 <td>{row.memo || "-"}</td>
                 <td>
-                  <button className="ghost-button compact-button" onClick={() => handleManageMedia(row)}>관리</button>
+                  <button className="ghost-button compact-button" onClick={() => handleManageMedia(row)}>??</button>
                 </td>
               </tr>
             ))}
@@ -2088,7 +2090,7 @@ function MediaManagement({ rows, aliases = [] }) {
       </div>
       {filteredRows.length > 15 && (
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
-          {showAll ? "접기" : "더보기"}
+          {showAll ? "??" : "???"}
         </button>
       )}
     </Panel>
@@ -2123,20 +2125,20 @@ function ReporterManagement({ rows }) {
       name: row.name || "",
       media: row.outlet || row.media || "",
       beat: row.beat === "-" ? "" : row.beat || "",
-      status: row.status || "중립",
+      status: row.status || "??",
       contactDate: row.contactDate || row.date || "",
       email: row.email || "",
       phone: row.phone || "",
       request: row.request || "",
       memo: row.memo || "",
     });
-    setStatus("선택한 기자 정보를 편집 중입니다.");
+    setStatus("??? ?? ??? ?? ????.");
   };
 
   const handleSaveReporter = async () => {
     const item = normalizeReporterDraft(form);
     if (!item.name || !item.media) {
-      setStatus("기자명과 언론사를 입력해야 합니다.");
+      setStatus("???? ???? ???? ???.");
       return;
     }
     const optimistic = { ...item, id: item.id || `local-${Date.now()}` };
@@ -2147,9 +2149,9 @@ function ReporterManagement({ rows }) {
       const saved = await saveReporterProfile({ ...item, memo: buildReporterMemo(item) });
       const savedRow = Array.isArray(saved) && saved[0] ? reporterDraftFromRemote(saved[0]) : optimistic;
       persistLocalState(upsertReporterLocal(localFirst, savedRow, optimistic.id));
-      setStatus("Supabase 저장 완료");
+      setStatus("Supabase ?? ??");
     } catch {
-      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      setStatus("?? ?? ?? ?? ? ?? ?? ?? ? DB ??");
     }
   };
 
@@ -2160,80 +2162,80 @@ function ReporterManagement({ rows }) {
     try {
       if (/^\d+$/.test(String(row.id || ""))) {
         await deleteReporterProfile(row.id);
-        setStatus("Supabase 삭제 완료");
+        setStatus("Supabase ?? ??");
       } else {
-        setStatus("현재 화면에서 제외했습니다.");
+        setStatus("?? ???? ??????.");
       }
     } catch {
       persistLocalState({ ...nextState, hidden: unique([...nextState.hidden, key]) });
-      setStatus("현재 화면에서 제외했습니다. 운영 세션 연결 시 DB 삭제 가능");
+      setStatus("?? ???? ??????. ?? ?? ?? ? DB ?? ??");
     }
   };
 
   return (
-    <Panel title="기자 관리" icon={Users} meta={`${managedRows.length.toLocaleString("ko-KR")}명`}>
+    <Panel title="?? ??" icon={Users} meta={`${managedRows.length.toLocaleString("ko-KR")}?`}>
       <div className="operation-form reporter-form">
         <label>
-          <span>기자명</span>
-          <input value={form.name} onChange={(event) => updateForm("name", event.target.value)} placeholder="예: 홍길동" />
+          <span>???</span>
+          <input value={form.name} onChange={(event) => updateForm("name", event.target.value)} placeholder="?: ???" />
         </label>
         <label>
-          <span>언론사</span>
-          <input value={form.media} onChange={(event) => updateForm("media", event.target.value)} placeholder="예: 보험저널" />
+          <span>???</span>
+          <input value={form.media} onChange={(event) => updateForm("media", event.target.value)} placeholder="?: ????" />
         </label>
         <label>
-          <span>담당 분야</span>
-          <input value={form.beat} onChange={(event) => updateForm("beat", event.target.value)} placeholder="보험/GA, 금융정책" />
+          <span>?? ??</span>
+          <input value={form.beat} onChange={(event) => updateForm("beat", event.target.value)} placeholder="??/GA, ????" />
         </label>
         <label>
-          <span>관계 상태</span>
+          <span>?? ??</span>
           <select value={form.status} onChange={(event) => updateForm("status", event.target.value)}>
-            {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
+            {["??", "??", "??", "??"].map((value) => <option key={value}>{value}</option>)}
           </select>
         </label>
         <label>
-          <span>최근 접촉일</span>
+          <span>?? ???</span>
           <input type="date" value={form.contactDate} onChange={(event) => updateForm("contactDate", event.target.value)} />
         </label>
         <label>
-          <span>이메일</span>
+          <span>???</span>
           <input value={form.email} onChange={(event) => updateForm("email", event.target.value)} placeholder="reporter@example.co.kr" />
         </label>
         <label>
-          <span>전화</span>
+          <span>??</span>
           <input value={form.phone} onChange={(event) => updateForm("phone", event.target.value)} placeholder="010-0000-0000" />
         </label>
         <label>
-          <span>요청/선호</span>
-          <input value={form.request} onChange={(event) => updateForm("request", event.target.value)} placeholder="선호 자료, 마감, 관심 이슈" />
+          <span>??/??</span>
+          <input value={form.request} onChange={(event) => updateForm("request", event.target.value)} placeholder="?? ??, ??, ?? ??" />
         </label>
         <label className="reporter-memo-field">
-          <span>메모</span>
-          <textarea value={form.memo} onChange={(event) => updateForm("memo", event.target.value)} placeholder="관심 주제, 요청사항, 접촉 이력" />
+          <span>??</span>
+          <textarea value={form.memo} onChange={(event) => updateForm("memo", event.target.value)} placeholder="?? ??, ????, ?? ??" />
         </label>
         <div className="operation-form-actions reporter-actions">
-          <button className="ghost-button" onClick={() => { setForm(emptyReporterForm); setStatus(""); }}>초기화</button>
-          <button className="primary-button" onClick={handleSaveReporter}>{form.id ? "수정 저장" : "기자 추가"}</button>
+          <button className="ghost-button" onClick={() => { setForm(emptyReporterForm); setStatus(""); }}>???</button>
+          <button className="primary-button" onClick={handleSaveReporter}>{form.id ? "?? ??" : "?? ??"}</button>
         </div>
         {status && <p className="status-note">{status}</p>}
       </div>
       <div className="management-toolbar reporter-toolbar">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="기자명, 언론사, 관계, 메모 검색" />
-        <button className="ghost-button" onClick={() => setQuery(form.media || form.name)}>선택 기자 검색</button>
-        <button className="primary-button" onClick={handleSaveReporter}>관리 기록 저장</button>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="???, ???, ??, ?? ??" />
+        <button className="ghost-button" onClick={() => setQuery(form.media || form.name)}>?? ?? ??</button>
+        <button className="primary-button" onClick={handleSaveReporter}>?? ?? ??</button>
       </div>
       <div className="data-table-wrap">
         <table className="data-table">
           <thead>
             <tr>
-              <th>기자</th>
-              <th>언론사</th>
-              <th>담당</th>
-              <th>관계</th>
-              <th>최근 접촉</th>
-              <th>최근 기사</th>
-              <th>메모</th>
-              <th>관리</th>
+              <th>??</th>
+              <th>???</th>
+              <th>??</th>
+              <th>??</th>
+              <th>?? ??</th>
+              <th>?? ??</th>
+              <th>??</th>
+              <th>??</th>
             </tr>
           </thead>
           <tbody>
@@ -2242,14 +2244,14 @@ function ReporterManagement({ rows }) {
                 <td><b>{row.name}</b></td>
                 <td>{row.outlet || row.media}</td>
                 <td>{row.beat || "-"}</td>
-                <td><Chip tone={row.status}>{row.status || "중립"}</Chip></td>
+                <td><Chip tone={row.status}>{row.status || "??"}</Chip></td>
                 <td>{row.contactDate || row.date || "-"}</td>
                 <td>{row.recent}</td>
                 <td>{row.memo || "-"}</td>
                 <td>
                   <div className="row-actions">
-                    <button className="ghost-button" onClick={() => handleEditReporter(row)}>관리</button>
-                    <button className="ghost-button danger" onClick={() => handleDeleteReporter(row)}>삭제</button>
+                    <button className="ghost-button" onClick={() => handleEditReporter(row)}>??</button>
+                    <button className="ghost-button danger" onClick={() => handleDeleteReporter(row)}>??</button>
                   </div>
                 </td>
               </tr>
@@ -2259,7 +2261,7 @@ function ReporterManagement({ rows }) {
       </div>
       {filteredRows.length > 15 && (
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
-          {showAll ? "접기" : "더보기"}
+          {showAll ? "??" : "???"}
         </button>
       )}
     </Panel>
@@ -2277,50 +2279,50 @@ function AdManagement({ rows }) {
   }, [rows, query]);
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
   return (
-    <Panel title="광고비 관리" icon={WalletCards} meta={`${rows.length.toLocaleString("ko-KR")}건`}>
+    <Panel title="??? ??" icon={WalletCards} meta={`${rows.length.toLocaleString("ko-KR")}?`}>
       <div className="ad-summary-row">
-        <StatCard icon={WalletCards} label="총 집행액" value={formatMoney(rows.reduce((sum, row) => sum + Number(row.amount || 0), 0))} />
-        <StatCard icon={CalendarDays} label="집행 월" value={`${unique(rows.map((row) => row.month)).length}개월`} />
-        <StatCard icon={Building2} label="매체 수" value={`${unique(rows.map((row) => row.media)).length}곳`} />
+        <StatCard icon={WalletCards} label="? ???" value={formatMoney(rows.reduce((sum, row) => sum + Number(row.amount || 0), 0))} />
+        <StatCard icon={CalendarDays} label="?? ?" value={`${unique(rows.map((row) => row.month)).length}??`} />
+        <StatCard icon={Building2} label="?? ?" value={`${unique(rows.map((row) => row.media)).length}?`} />
       </div>
       <div className="ad-chart-grid">
         <article className="ad-chart-card wide">
           <div>
-            <b>월별 집행 추이</b>
-            <span>{adData.monthly.length.toLocaleString("ko-KR")}개월</span>
+            <b>?? ?? ??</b>
+            <span>{adData.monthly.length.toLocaleString("ko-KR")}??</span>
           </div>
           <AdSpendChart rows={adData.monthly} color="#2855d9" />
         </article>
         <article className="ad-chart-card">
           <div>
-            <b>매체별 집행</b>
-            <span>상위 6개</span>
+            <b>??? ??</b>
+            <span>?? 6?</span>
           </div>
           <AdSpendChart rows={adData.media} color="#14805f" compact />
         </article>
         <article className="ad-chart-card">
           <div>
-            <b>유형별 집행</b>
-            <span>구분</span>
+            <b>??? ??</b>
+            <span>??</span>
           </div>
           <AdSpendChart rows={adData.type} color="#b45309" compact />
         </article>
       </div>
       <div className="management-toolbar ad-toolbar">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="매체명, 메모 검색" />
-        <button className="ghost-button">월별 보기</button>
-        <button className="ghost-button" onClick={() => printAdReport(rows)}><Download />인쇄/PDF 저장</button>
-        <button className="primary-button">광고비 추가</button>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="???, ?? ??" />
+        <button className="ghost-button">?? ??</button>
+        <button className="ghost-button" onClick={() => printAdReport(rows)}><Download />??/PDF ??</button>
+        <button className="primary-button">??? ??</button>
       </div>
       <div className="data-table-wrap">
         <table className="data-table">
           <thead>
             <tr>
-              <th>월</th>
-              <th>매체</th>
-              <th>유형</th>
-              <th>금액</th>
-              <th>메모</th>
+              <th>?</th>
+              <th>??</th>
+              <th>??</th>
+              <th>??</th>
+              <th>??</th>
             </tr>
           </thead>
           <tbody>
@@ -2338,7 +2340,7 @@ function AdManagement({ rows }) {
       </div>
       {filteredRows.length > 15 && (
         <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
-          {showAll ? "접기" : "더보기"}
+          {showAll ? "??" : "???"}
         </button>
       )}
     </Panel>
@@ -2359,7 +2361,7 @@ function KeywordManagement({ keywords = [] }) {
   const handleAddKeyword = async () => {
     const cleanKeyword = keyword.trim();
     if (!cleanKeyword) {
-      setStatus("추가할 키워드를 입력하세요.");
+      setStatus("??? ???? ?????.");
       return;
     }
     const nextKeyword = { keyword: cleanKeyword, category, enabled: true };
@@ -2369,18 +2371,18 @@ function KeywordManagement({ keywords = [] }) {
     setKeyword("");
     try {
       await saveMonitorKeyword(cleanKeyword, category);
-      setStatus("Supabase 저장 완료");
+      setStatus("Supabase ?? ??");
     } catch {
-      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      setStatus("?? ?? ?? ?? ? ?? ?? ?? ? DB ??");
     }
   };
 
   return (
     <section className="content-grid two">
-      <Panel title="상위 구분별 키워드" icon={Settings} meta={`${rows.length.toLocaleString("ko-KR")}개`}>
+      <Panel title="?? ??? ???" icon={Settings} meta={`${rows.length.toLocaleString("ko-KR")}?`}>
         <div className="operation-form keyword-add-form">
           <label>
-            <span>상위 구분</span>
+            <span>?? ??</span>
             <select value={category} onChange={(event) => setCategory(event.target.value)}>
               {keywordCategories.map((item) => (
                 <option key={item.id} value={item.id}>{item.label}</option>
@@ -2388,18 +2390,18 @@ function KeywordManagement({ keywords = [] }) {
             </select>
           </label>
           <label>
-            <span>키워드</span>
+            <span>???</span>
             <input
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") handleAddKeyword();
               }}
-              placeholder="예: 글로벌금융판매"
+              placeholder="?: ???????"
             />
           </label>
           <div className="operation-form-actions">
-            <button className="primary-button" onClick={handleAddKeyword}>키워드 추가</button>
+            <button className="primary-button" onClick={handleAddKeyword}>??? ??</button>
           </div>
           {status && <p className="status-note">{status}</p>}
         </div>
@@ -2408,7 +2410,7 @@ function KeywordManagement({ keywords = [] }) {
             <article key={group.category} className="keyword-manager-group">
               <div>
                 <b>{keywordCategoryLabel(group.category)}</b>
-                <span>{group.items.length.toLocaleString("ko-KR")}개</span>
+                <span>{group.items.length.toLocaleString("ko-KR")}?</span>
               </div>
               <p>{keywordCategoryRule(group.category)}</p>
               <div className="keyword-chip-grid">
@@ -2418,8 +2420,119 @@ function KeywordManagement({ keywords = [] }) {
           ))}
         </div>
       </Panel>
-      <Panel title="분류 규칙" icon={ShieldCheck} meta="긍정·중립·주의·부정·제외">
+      <Panel title="?? ??" icon={ShieldCheck} meta="??????????????">
         <RuleStack />
+      </Panel>
+    </section>
+  );
+}
+
+function FeedbackManagement({ feedback = [], operations }) {
+  const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [status, setStatus] = useState("");
+  const rows = useMemo(() => [...feedback].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))), [feedback]);
+  const filteredRows = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((row) =>
+      `${row.title} ${row.previousCategory} ${row.previousTone} ${row.correctedCategory} ${row.correctedTone} ${row.reason}`.toLowerCase().includes(term),
+    );
+  }, [query, rows]);
+  const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
+  const candidates = useMemo(() => buildFeedbackRuleCandidates(rows), [rows]);
+  const needsLogin = !operations?.session?.session_token;
+
+  const openLogin = () => window.dispatchEvent(new CustomEvent("news-monitor:login-required"));
+  const approveCandidate = async (candidate) => {
+    if (needsLogin) {
+      setStatus("?? DB ??? ?????. ????? ?????.");
+      openLogin();
+      return;
+    }
+    try {
+      await saveMonitorKeyword(candidate.keyword, candidate.category);
+      setStatus(`${candidate.keyword} ?? ??? ${keywordCategoryLabel(candidate.category)}? ??????.`);
+    } catch (error) {
+      setStatus(error?.message?.includes("missing_dashboard_session") ? "?? DB ??? ?????." : "?? ?? ?? ? ??? ?????.");
+      if (error?.message?.includes("missing_dashboard_session") || error?.message?.includes("invalid_session")) openLogin();
+    }
+  };
+
+  return (
+    <section className="content-grid two">
+      <Panel title="?? ?? ??" icon={ShieldCheck} meta={`${candidates.length.toLocaleString("ko-KR")}?`}>
+        {needsLogin && (
+          <div className="status-note feedback-login-note">
+            ??? ?? ??? ?? DB ???? ?????.
+            <button className="ghost-button compact-button" onClick={openLogin}>?? DB ??</button>
+          </div>
+        )}
+        <div className="feedback-candidate-list">
+          {candidates.length ? candidates.slice(0, 8).map((candidate) => (
+            <article key={candidate.key} className="feedback-candidate">
+              <div>
+                <Chip tone={keywordCategoryTone(candidate.category)}>{candidate.action}</Chip>
+                <b>{candidate.label}</b>
+                <span>{candidate.count.toLocaleString("ko-KR")}? ?? ? {candidate.example}</span>
+              </div>
+              <button className="ghost-button compact-button" onClick={() => approveCandidate(candidate)}>
+                ?? ??
+              </button>
+            </article>
+          )) : (
+            <div className="empty-state">?? ???? ??? ?? ??? ??? ???? ????.</div>
+          )}
+        </div>
+        {status && <p className="status-note">{status}</p>}
+      </Panel>
+      <Panel title="?? ?? ??" icon={FilePenLine} meta={`${rows.length.toLocaleString("ko-KR")}?`}>
+        <div className="management-toolbar feedback-toolbar">
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="???, ??/?? ??, ?? ??" />
+          <button className="ghost-button compact-button" onClick={() => setQuery("")}>???</button>
+        </div>
+        <div className="data-table-wrap">
+          <table className="data-table feedback-table">
+            <thead>
+              <tr>
+                <th>???</th>
+                <th>??</th>
+                <th>??</th>
+                <th>??</th>
+                <th>??</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((row) => (
+                <tr key={row.id}>
+                  <td>{[row.date, row.time].filter(Boolean).join(" ") || "-"}</td>
+                  <td>
+                    <b>{row.title || row.link || row.articleHash || "-"}</b>
+                    {row.link && row.link !== "#" && (
+                      <a href={row.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, row.link)}>
+                        ?? ??
+                      </a>
+                    )}
+                  </td>
+                  <td>
+                    <Chip>{row.previousCategory || "-"}</Chip>
+                    <Chip tone={row.previousTone}>{row.previousTone || "-"}</Chip>
+                  </td>
+                  <td>
+                    <Chip>{row.correctedCategory || "-"}</Chip>
+                    <Chip tone={row.correctedTone}>{row.correctedTone || "-"}</Chip>
+                  </td>
+                  <td>{row.reason || row.createdBy || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filteredRows.length > 15 && (
+          <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
+            {showAll ? "??" : "???"}
+          </button>
+        )}
       </Panel>
     </section>
   );
@@ -2440,12 +2553,12 @@ function PageTitle({ eyebrow, title, description, right }) {
 
 function KpiGrid({ summary, compact = false, onOpenMonitoring }) {
   const items = [
-    { label: "수집기사", value: summary.collected.toLocaleString("ko-KR"), icon: Newspaper, preset: {} },
-    { label: "분석기사", value: summary.analyzed.toLocaleString("ko-KR"), icon: Gauge, preset: {} },
-    { label: "당사언급", value: summary.ownMentions, icon: Building2, preset: { category: "당사" } },
-    { label: "당사부정", value: summary.ownNegative, icon: AlertTriangle, tone: "negative", preset: { category: "당사", tone: "부정" } },
-    { label: "주의", value: summary.caution, icon: Bell, tone: "caution", preset: { tone: "주의" } },
-    { label: "GA/보험사", value: summary.gaInsurance, icon: Activity, tone: "positive", preset: { category: "GA" } },
+    { label: "????", value: summary.collected.toLocaleString("ko-KR"), icon: Newspaper, preset: {} },
+    { label: "????", value: summary.analyzed.toLocaleString("ko-KR"), icon: Gauge, preset: {} },
+    { label: "????", value: summary.ownMentions, icon: Building2, preset: { category: "??" } },
+    { label: "????", value: summary.ownNegative, icon: AlertTriangle, tone: "negative", preset: { category: "??", tone: "??" } },
+    { label: "??", value: summary.caution, icon: Bell, tone: "caution", preset: { tone: "??" } },
+    { label: "GA/???", value: summary.gaInsurance, icon: Activity, tone: "positive", preset: { category: "GA" } },
   ];
   return (
     <section className={compact ? "kpi-grid compact" : "kpi-grid"}>
@@ -2482,7 +2595,7 @@ function Panel({ title, icon: Icon = FileText, meta, children }) {
 function MonthlyIssueDigest({ issues }) {
   const [lead, ...rest] = issues;
   if (!lead) {
-    return <div className="monthly-issue-empty">최근 1개월 기준으로 표시할 핵심 이슈가 없습니다.</div>;
+    return <div className="monthly-issue-empty">?? 1?? ???? ??? ?? ??? ????.</div>;
   }
   return (
     <div className="monthly-issue-digest">
@@ -2497,7 +2610,7 @@ function MonthlyIssueDigest({ issues }) {
         <ArticleSummaryBlock item={lead} />
         {lead.link && lead.link !== "#" && (
           <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
-            <ExternalLink />기사 열기
+            <ExternalLink />?? ??
           </a>
         )}
         <RelatedIssueDetails issue={lead} />
@@ -2513,7 +2626,7 @@ function MonthlyIssueDigest({ issues }) {
             </div>
             <Chip tone={issue.tone}>{issue.tone}</Chip>
             {issue.link && issue.link !== "#" && (
-              <a href={issue.link} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" onClick={(event) => openArticleLink(event, issue.link)}>
+              <a href={issue.link} target="_blank" rel="noopener noreferrer" aria-label="?? ??" onClick={(event) => openArticleLink(event, issue.link)}>
                 <ExternalLink />
               </a>
             )}
@@ -2539,7 +2652,7 @@ function IssueList({ issues, compact = false }) {
           <RelatedIssueDetails issue={issue} compact />
           {!compact && issue.link && issue.link !== "#" && (
             <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
-              <ExternalLink />기사 열기
+              <ExternalLink />?? ??
             </a>
           )}
         </article>
@@ -2552,13 +2665,13 @@ function formatIssueMeta(issue = {}) {
   const baseSource = issue.representativeSource || issue.source;
   const relatedSourceCount = Number(issue.relatedSourceCount || 1);
   const sourceLabel = baseSource && relatedSourceCount > 1
-    ? `${baseSource} 외 ${relatedSourceCount - 1}곳`
+    ? `${baseSource} ? ${relatedSourceCount - 1}?`
     : issue.source || baseSource;
   const parts = [
     sourceLabel,
     issue.publishedAt || issue.time || issue.date,
   ].filter(Boolean);
-  return parts.join(" · ");
+  return parts.join(" ? ");
 }
 
 function RelatedIssueDetails({ issue = {}, compact = false }) {
@@ -2566,7 +2679,7 @@ function RelatedIssueDetails({ issue = {}, compact = false }) {
   if (related.length <= 1) return null;
   return (
     <details className={compact ? "issue-related-details compact" : "issue-related-details"}>
-      <summary>관련 기사 {related.length.toLocaleString("ko-KR")}건 보기</summary>
+      <summary>?? ?? {related.length.toLocaleString("ko-KR")}? ??</summary>
       <div>
         {related.slice(0, compact ? 4 : 8).map((article) => (
           <a
@@ -2613,7 +2726,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved 
               {!compact && <ArticleSummaryBlock item={row} dense />}
               {!compact && hasRelated && (
                 <details className="related-details">
-                  <summary>묶인 기사 보기</summary>
+                  <summary>?? ?? ??</summary>
                   <div>
                     {related.slice(0, 8).map((item) => (
                       <a
@@ -2640,7 +2753,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved 
                     href={row.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="기사 열기"
+                    aria-label="?? ??"
                     onClick={(event) => openArticleLink(event, row.link)}
                   >
                     <ExternalLink />
@@ -2655,19 +2768,19 @@ function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved 
   );
 }
 
-const FEEDBACK_CATEGORY_OPTIONS = ["당사", "GA", "보험사", "정책/규제", "업계동향", "기타", "제외"];
-const FEEDBACK_TONE_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
+const FEEDBACK_CATEGORY_OPTIONS = ["??", "GA", "???", "??/??", "????", "??", "??"];
+const FEEDBACK_TONE_OPTIONS = ["??", "??", "??", "??", "??"];
 
 function ArticleCorrectionControl({ article, onSaved }) {
   const [open, setOpen] = useState(false);
-  const [category, setCategory] = useState(article.category || "기타");
-  const [tone, setTone] = useState(article.tone || "중립");
+  const [category, setCategory] = useState(article.category || "??");
+  const [tone, setTone] = useState(article.tone || "??");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     setSaving(true);
-    setStatus("저장 중");
+    setStatus("?? ?");
     try {
       const result = await saveClassificationFeedback(article, {
         category,
@@ -2675,8 +2788,8 @@ function ArticleCorrectionControl({ article, onSaved }) {
         reason: "dashboard_manual_correction",
         createdBy: "dashboard",
       });
-      const patchNote = result?.patchError ? " · 원문 패치는 권한 확인 필요" : "";
-      setStatus(`저장 완료${patchNote}`);
+      const patchNote = result?.patchError ? " ? ?? ??? ?? ?? ??" : "";
+      setStatus(`?? ??${patchNote}`);
       window.setTimeout(() => setOpen(false), 900);
       await onSaved?.();
     } catch (error) {
@@ -2689,27 +2802,27 @@ function ArticleCorrectionControl({ article, onSaved }) {
   return (
     <div className={open ? "article-correction open" : "article-correction"}>
       <button type="button" className="correction-toggle" onClick={() => setOpen((value) => !value)}>
-        <FilePenLine />분류 수정
+        <FilePenLine />?? ??
       </button>
       {open && (
         <div className="correction-editor">
           <label>
-            <span>논조</span>
+            <span>??</span>
             <select value={tone} onChange={(event) => setTone(event.target.value)}>
               {FEEDBACK_TONE_OPTIONS.map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label>
-            <span>분류</span>
+            <span>??</span>
             <select value={category} onChange={(event) => setCategory(event.target.value)}>
               {FEEDBACK_CATEGORY_OPTIONS.map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <button type="button" className="primary-button compact-save" onClick={save} disabled={saving}>
-            저장
+            ??
           </button>
           <button type="button" className="ghost-button compact-cancel" onClick={() => setOpen(false)} disabled={saving}>
-            취소
+            ??
           </button>
           {status && <span className="correction-status">{status}</span>}
         </div>
@@ -2722,12 +2835,12 @@ function feedbackErrorMessage(error) {
   const message = error?.message || "";
   if (message.includes("missing_dashboard_session") || message.includes("invalid_session")) {
     window.dispatchEvent(new CustomEvent("news-monitor:login-required"));
-    return "운영 DB 세션이 필요합니다. 로그인창을 열었습니다.";
+    return "?? DB ??? ?????. ????? ?????.";
   }
   if (message.includes("write_not_allowed")) {
-    return "수정 권한이 없습니다.";
+    return "?? ??? ????.";
   }
-  return "저장 실패 · 연결을 확인해 주세요.";
+  return "?? ?? ? ??? ??? ???.";
 }
 
 function formatFeedMeta(row = {}, hasRelated = false) {
@@ -2741,9 +2854,9 @@ function formatFeedMeta(row = {}, hasRelated = false) {
     const extraSources = Math.max(0, sourceCount - 1);
     const extraArticles = Math.max(0, Number(row.relatedCount || 0) - 1);
     const extra = extraSources || extraArticles;
-    if (extra > 0) parts.push(`외 ${extra}곳`);
+    if (extra > 0) parts.push(`? ${extra}?`);
   }
-  return parts.join(" · ");
+  return parts.join(" ? ");
 }
 
 function openArticleLink(event, url) {
@@ -2753,12 +2866,12 @@ function openArticleLink(event, url) {
 }
 
 function WatchPanel({ jobs, risk = "LOW" }) {
-  const watchJob = jobs.find((job) => job.label === "부정기사 감시") || jobs[0] || {};
+  const watchJob = jobs.find((job) => job.label === "???? ??") || jobs[0] || {};
   return (
     <section className="panel watch-panel">
       <div className="watch-title-row">
-        <span><Radar />부정기사 탐색</span>
-        <b>당사 리스크 <em>{risk}</em></b>
+        <span><Radar />???? ??</span>
+        <b>?? ??? <em>{risk}</em></b>
       </div>
       <div className="watch-top">
         <div className="radar-asset">
@@ -2770,10 +2883,10 @@ function WatchPanel({ jobs, risk = "LOW" }) {
           <Radar />
         </div>
         <div className="watch-copy">
-          <h2>정상 감시</h2>
-          <p>최근 6분 검사 완료</p>
-          <strong>{watchJob.latest || "-"} · 24시간 감시 중</strong>
-          <span>24시간 5분 주기</span>
+          <h2>?? ??</h2>
+          <p>?? 6? ?? ??</p>
+          <strong>{watchJob.latest || "-"} ? 24?? ?? ?</strong>
+          <span>24?? 5? ??</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>
@@ -2792,39 +2905,39 @@ function AiUsagePanel({ status }) {
     ? Math.round(reserveValues.reduce((sum, value) => sum + value, 0) / reserveValues.length)
     : null;
   const meterFill = Number.isFinite(groqReserve) ? groqReserve : 0;
-  const reserveLabel = groqReserve === null ? "측정 대기" : groqReserve >= 70 ? "넉넉" : groqReserve >= 35 ? "주의" : "부족";
+  const reserveLabel = groqReserve === null ? "?? ??" : groqReserve >= 70 ? "??" : groqReserve >= 35 ? "??" : "??";
   const geminiReport = gemini.latest_report || {};
   const geminiState = formatGeminiState(gemini, geminiReport);
   const geminiDetail = formatGeminiDetail(gemini, geminiReport);
   return (
     <section className="panel ai-usage-panel">
       <div className="ai-usage-head">
-        <span><Gauge />API 사용 현황</span>
-        <b>{status?.generated_at ? formatCompactDateTime(status.generated_at) : "대기"}</b>
+        <span><Gauge />API ?? ??</span>
+        <b>{status?.generated_at ? formatCompactDateTime(status.generated_at) : "??"}</b>
       </div>
       <div className="ai-power-layout">
         <div className="ai-power-meter" style={{ "--meter-fill": `${meterFill}%` }}>
           <div className="ai-power-core">
             <strong>{groqReserve === null ? "--" : groqReserve}</strong>
-            <span>{groqReserve === null ? "대기" : "% 잔량"}</span>
+            <span>{groqReserve === null ? "??" : "% ??"}</span>
           </div>
         </div>
         <div className="ai-power-copy">
-          <span>Groq 토큰 여유</span>
+          <span>Groq ?? ??</span>
           <b>{reserveLabel}</b>
           <em>{groq.model || "-"}</em>
         </div>
       </div>
       <div className="ai-meter-bars">
-        <AiMeterRow label="일 요청" percent={requestPercent} value={formatLimitPair(rate.remaining_requests, rate.limit_requests)} />
-        <AiMeterRow label="분당 토큰" percent={tokenPercent} value={formatLimitPair(rate.remaining_tokens, rate.limit_tokens)} />
+        <AiMeterRow label="? ??" percent={requestPercent} value={formatLimitPair(rate.remaining_requests, rate.limit_requests)} />
+        <AiMeterRow label="?? ??" percent={tokenPercent} value={formatLimitPair(rate.remaining_tokens, rate.limit_tokens)} />
       </div>
       <div className="ai-backup-strip">
-        <span>Gemini 상태</span>
+        <span>Gemini ??</span>
         <b>{geminiState}</b>
         <em>{gemini.model || "-"}</em>
         {geminiDetail && <small>{geminiDetail}</small>}
-        {gemini.usage_url && <a href={gemini.usage_url} target="_blank" rel="noopener noreferrer">사용량 확인</a>}
+        {gemini.usage_url && <a href={gemini.usage_url} target="_blank" rel="noopener noreferrer">??? ??</a>}
       </div>
     </section>
   );
@@ -2833,17 +2946,17 @@ function AiUsagePanel({ status }) {
 function AiMeterRow({ label, percent, value, mode = "remaining" }) {
   const fill = Number.isFinite(percent) ? percent : 0;
   const status = percent === null || percent === undefined
-    ? "대기"
-    : percent >= 70 ? "정상"
-    : percent >= 35 ? "주의"
-    : "낮음";
+    ? "??"
+    : percent >= 70 ? "??"
+    : percent >= 35 ? "??"
+    : "??";
   return (
     <div className="ai-meter-row" style={{ "--bar-fill": `${fill}%` }}>
       <div>
         <span>{label}</span>
         <b>{status}</b>
       </div>
-      <div className="ai-meter-track" aria-label={`${label} ${mode === "used" ? "사용량" : "잔량"}`}>
+      <div className="ai-meter-track" aria-label={`${label} ${mode === "used" ? "???" : "??"}`}>
         <i />
       </div>
       <em>{value}</em>
@@ -2870,7 +2983,7 @@ function clampPercent(value) {
 }
 
 function formatLimitPair(remaining, limit) {
-  if (remaining === undefined && limit === undefined) return "다음 호출 후 표시";
+  if (remaining === undefined && limit === undefined) return "?? ?? ? ??";
   const left = remaining === undefined ? "-" : formatCompactNumber(remaining);
   const right = limit === undefined ? "-" : formatCompactNumber(limit);
   return `${left} / ${right}`;
@@ -2896,33 +3009,33 @@ function formatCompactDateTime(value) {
 
 function formatGeminiState(gemini = {}, report = {}) {
   const lastResponse = gemini.last_response || {};
-  if (!gemini.has_key) return "키 없음";
-  if (report.credit_depleted) return "크레딧 소진";
-  if (report.quota_exhausted) return "쿼터 소진";
-  if (lastResponse.status === "credit_depleted") return "크레딧 소진";
-  if (lastResponse.status === "quota_error") return "쿼터 소진";
-  if (gemini.circuit_open) return "차단 중";
-  if (report.fallback_used) return "백업 전환";
-  if (lastResponse.status === "success") return "정상";
-  if (report.ai_model_used && report.primary_failed === false) return "정상";
-  return "최근 기록 없음";
+  if (!gemini.has_key) return "? ??";
+  if (report.credit_depleted) return "??? ??";
+  if (report.quota_exhausted) return "?? ??";
+  if (lastResponse.status === "credit_depleted") return "??? ??";
+  if (lastResponse.status === "quota_error") return "?? ??";
+  if (gemini.circuit_open) return "?? ?";
+  if (report.fallback_used) return "?? ??";
+  if (lastResponse.status === "success") return "??";
+  if (report.ai_model_used && report.primary_failed === false) return "??";
+  return "?? ?? ??";
 }
 
 function formatGeminiDetail(gemini = {}, report = {}) {
   if (report.run_key) {
-    const slot = report.report_slot ? `${report.report_slot}시 보고서` : "최근 보고서";
+    const slot = report.report_slot ? `${report.report_slot}? ???` : "?? ???";
     const usageText = formatGeminiUsageText(report.usage);
-    if (report.credit_depleted) return `${slot}에서 Gemini 크레딧 소진이 감지되어 Groq/규칙 백업을 사용했습니다.`;
-    if (report.quota_exhausted) return `${slot}에서 Gemini 쿼터 한도가 감지되어 백업을 사용했습니다.`;
-    if (report.fallback_used) return `${slot}에서 ${report.ai_model_used || "백업 모델"}로 전환했습니다.`;
-    if (report.ai_model_used) return `${slot}에서 ${report.ai_model_used} 응답을 사용했습니다${usageText ? ` · ${usageText}` : ""}.`;
+    if (report.credit_depleted) return `${slot}?? Gemini ??? ??? ???? Groq/?? ??? ??????.`;
+    if (report.quota_exhausted) return `${slot}?? Gemini ?? ??? ???? ??? ??????.`;
+    if (report.fallback_used) return `${slot}?? ${report.ai_model_used || "?? ??"}? ??????.`;
+    if (report.ai_model_used) return `${slot}?? ${report.ai_model_used} ??? ??????${usageText ? ` ? ${usageText}` : ""}.`;
   }
   const lastUsageText = formatGeminiUsageText(gemini.last_response?.usage);
-  if (lastUsageText) return `최근 Gemini 호출 ${lastUsageText}.`;
-  if (gemini.circuit_open && gemini.blocked_until) return `${formatCompactDateTime(gemini.blocked_until)}까지 Gemini 호출을 쉬고 있습니다.`;
+  if (lastUsageText) return `?? Gemini ?? ${lastUsageText}.`;
+  if (gemini.circuit_open && gemini.blocked_until) return `${formatCompactDateTime(gemini.blocked_until)}?? Gemini ??? ?? ????.`;
   if (gemini.circuit_reason) return gemini.circuit_reason;
-  if (gemini.has_key) return "정확한 잔여 무료량은 Gemini API 응답으로 제공되지 않아, 최근 호출 결과와 오류로 상태를 판단합니다.";
-  return "GEMINI_API_KEY가 설정되지 않았습니다.";
+  if (gemini.has_key) return "??? ?? ???? Gemini API ???? ???? ??, ?? ?? ??? ??? ??? ?????.";
+  return "GEMINI_API_KEY? ???? ?????.";
 }
 
 function formatGeminiUsageText(usage = {}) {
@@ -2930,10 +3043,10 @@ function formatGeminiUsageText(usage = {}) {
   if (total === undefined || total === null || total === "") return "";
   const prompt = usage.prompt_token_count;
   const output = usage.candidates_token_count;
-  const pieces = [`총 ${formatCompactNumber(total)}토큰`];
-  if (prompt !== undefined) pieces.push(`입력 ${formatCompactNumber(prompt)}`);
-  if (output !== undefined) pieces.push(`출력 ${formatCompactNumber(output)}`);
-  return pieces.join(" · ");
+  const pieces = [`? ${formatCompactNumber(total)}??`];
+  if (prompt !== undefined) pieces.push(`?? ${formatCompactNumber(prompt)}`);
+  if (output !== undefined) pieces.push(`?? ${formatCompactNumber(output)}`);
+  return pieces.join(" ? ");
 }
 
 function NotificationList({ rows }) {
@@ -2959,7 +3072,7 @@ function NotificationList({ rows }) {
       </div>
       {rows.length > 5 && (
         <button className="ghost-button notification-more" onClick={() => setShowAll((value) => !value)}>
-          {showAll ? "접기" : "더보기"}
+          {showAll ? "??" : "???"}
         </button>
       )}
       {selected && <NotificationDetail item={selected} onClose={() => setSelected(null)} />}
@@ -2971,19 +3084,19 @@ function NotificationDetail({ item, onClose }) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <section className="detail-panel">
-        <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
+        <button type="button" className="icon-button close" onClick={onClose} aria-label="??">
           <X />
         </button>
-        <span className="detail-kicker">알림톡 발송 내역</span>
-        <h2>{item.type || "알림톡"}</h2>
+        <span className="detail-kicker">??? ?? ??</span>
+        <h2>{item.type || "???"}</h2>
         <div className="detail-meta">
           <Chip tone={item.status}>{item.status}</Chip>
           <span>{item.time}</span>
         </div>
-        <pre>{item.body || "저장된 발송 본문이 없습니다."}</pre>
+        <pre>{item.body || "??? ?? ??? ????."}</pre>
         {item.link && (
           <a className="article-link-button" href={item.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, item.link)}>
-            <ExternalLink />연결 링크 열기
+            <ExternalLink />?? ?? ??
           </a>
         )}
       </section>
@@ -3015,8 +3128,8 @@ function PressInfluence({ rows, detailed = false, compact = false, onOpenMonitor
         <button className={`press-row ${onOpenMonitoring ? "clickable" : ""}`} key={item.source} onClick={() => onOpenMonitoring?.({ source: item.source })}>
           <b>{item.source}</b>
           <span className="press-bar"><span style={{ width: `${Math.max(6, (item.total / max) * 100)}%` }} /></span>
-          <em>{item.total}건</em>
-          {detailed && <small>당사 {item.own} · 부정 {item.negative} · {item.type || "일반"}</small>}
+          <em>{item.total}?</em>
+          {detailed && <small>?? {item.own} ? ?? {item.negative} ? {item.type || "??"}</small>}
         </button>
       ))}
     </div>
@@ -3069,9 +3182,9 @@ function ToneTrend({ rows, compact = false }) {
           <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={compact ? 8 : 14} tick={{ fontSize: compact ? 9 : 12, fontWeight: 800 }} />
           <YAxis hide />
           <Tooltip />
-          <Line type="monotone" dataKey="positive" stroke="#14805f" strokeWidth={2.5} dot={false} name="긍정" />
-          <Line type="monotone" dataKey="caution" stroke="#b45309" strokeWidth={2.5} dot={false} name="주의" />
-          <Line type="monotone" dataKey="negative" stroke="#c92337" strokeWidth={2.5} dot={false} name="부정" />
+          <Line type="monotone" dataKey="positive" stroke="#14805f" strokeWidth={2.5} dot={false} name="??" />
+          <Line type="monotone" dataKey="caution" stroke="#b45309" strokeWidth={2.5} dot={false} name="??" />
+          <Line type="monotone" dataKey="negative" stroke="#c92337" strokeWidth={2.5} dot={false} name="??" />
         </RechartsLineChart>
       </ResponsiveContainer>
     </div>
@@ -3084,13 +3197,13 @@ function InsightList({ insights = [] }) {
 
 function KeywordBrief({ rows = [] }) {
   const leaders = rows.filter((row) => Number(row.value || 0) > 0).slice(0, 4);
-  if (!leaders.length) return <div className="keyword-brief empty">선정 키워드 기준으로 관찰된 기사가 아직 없습니다.</div>;
+  if (!leaders.length) return <div className="keyword-brief empty">?? ??? ???? ??? ??? ?? ????.</div>;
   return (
     <div className="keyword-brief">
       {leaders.map((row, index) => (
         <span key={row.keyword || row.name}>
           <b>{index + 1}</b>
-          {row.name} {Number(row.value || 0).toLocaleString("ko-KR")}건
+          {row.name} {Number(row.value || 0).toLocaleString("ko-KR")}?
         </span>
       ))}
     </div>
@@ -3136,24 +3249,24 @@ function StatCard({ icon: Icon, label, value }) {
 }
 
 function RiskPill({ level }) {
-  return <div className={`risk-pill ${level.toLowerCase()}`}><ShieldCheck />당사 리스크 <b>{level}</b></div>;
+  return <div className={`risk-pill ${level.toLowerCase()}`}><ShieldCheck />?? ??? <b>{level}</b></div>;
 }
 
 function DataSourcePill({ operations }) {
-  return <div className={`data-source-pill ${operations.status}`}>{operations.message || "샘플 데이터"}</div>;
+  return <div className={`data-source-pill ${operations.status}`}>{operations.message || "?? ???"}</div>;
 }
 
 function Chip({ children, tone }) {
   const cls = {
-    부정: "negative",
-    주의: "caution",
-    중립: "neutral",
-    긍정: "positive",
-    정상: "positive",
-    성공: "positive",
-    우호: "positive",
-    예약: "neutral",
-    제외: "muted",
+    ??: "negative",
+    ??: "caution",
+    ??: "neutral",
+    ??: "positive",
+    ??: "positive",
+    ??: "positive",
+    ??: "positive",
+    ??: "neutral",
+    ??: "muted",
   }[tone] || "plain";
   return <span className={`chip ${cls}`}>{children}</span>;
 }
@@ -3164,12 +3277,12 @@ function composeRealtimeDataUnused(base, articles, liveConnected = false) {
   }
   const realtimeArticles = filterRowsByPeriod(articles, "daily");
   if (!realtimeArticles.length) {
-    return buildDisconnectedPeriodData(base, "최근 24시간 기준 표시할 운영 기사가 없습니다.");
+    return buildDisconnectedPeriodData(base, "?? 24?? ?? ??? ?? ??? ????.");
   }
   return {
     ...composePeriodData(base, realtimeArticles, [], true),
-    label: "실시간",
-    scope: "최근 24시간 · 5분 자동 갱신",
+    label: "???",
+    scope: "?? 24?? ? 5? ?? ??",
   };
 }
 
@@ -3179,20 +3292,20 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
   }
   const runSummary = summarizeReportRuns(reportRuns);
   if (!articles.length && !reportRuns.length) {
-    return buildDisconnectedPeriodData(base, "선택 기간 데이터가 없습니다.");
+    return buildDisconnectedPeriodData(base, "?? ?? ???? ????.");
   }
   const usableArticles = articles.filter(isUsableArticle);
   const ownMentions = usableArticles.filter(isOwnArticle).length;
-  const ownNegative = usableArticles.filter((article) => isOwnArticle(article) && article.tone === "부정").length;
-  const caution = usableArticles.filter((article) => article.tone === "주의").length;
-  const gaInsurance = usableArticles.filter((article) => ["GA", "보험사"].includes(article.category)).length;
+  const ownNegative = usableArticles.filter((article) => isOwnArticle(article) && article.tone === "??").length;
+  const caution = usableArticles.filter((article) => article.tone === "??").length;
+  const gaInsurance = usableArticles.filter((article) => ["GA", "???"].includes(article.category)).length;
   const headlineOwnMentions = ownMentions;
   const headlineOwnNegative = ownNegative;
   const headlineCaution = caution;
   const summary = {
     ...base.summary,
     collected: runSummary.collected ?? usableArticles.length,
-    analyzed: runSummary.analyzed ?? usableArticles.filter((article) => article.tone !== "제외").length,
+    analyzed: runSummary.analyzed ?? usableArticles.filter((article) => article.tone !== "??").length,
     ownMentions: headlineOwnMentions,
     ownNegative: headlineOwnNegative,
     caution: headlineCaution,
@@ -3212,7 +3325,7 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
       minute: "2-digit",
       hour12: false,
     }).format(new Date()),
-    scope: usableArticles[0]?.date ? `${usableArticles[0].date} 기준` : base.scope,
+    scope: usableArticles[0]?.date ? `${usableArticles[0].date} ??` : base.scope,
     issues: usableArticles.length ? buildIssues(usableArticles, base.issues) : [],
     categoryFlow: groupArticles(usableArticles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
     toneTrend: buildToneTrend(usableArticles),
@@ -3220,10 +3333,10 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
   };
 }
 
-function buildDisconnectedPeriodData(base, headline = "운영 DB 로그인 후 실제 수집/분석 수치가 표시됩니다.") {
+function buildDisconnectedPeriodData(base, headline = "?? DB ??? ? ?? ??/?? ??? ?????.") {
   return {
     ...base,
-    scope: "데이터 연결 필요",
+    scope: "??? ?? ??",
     generatedAt: "-",
     summary: {
       ...base.summary,
@@ -3296,12 +3409,12 @@ function numberOrZero(value) {
 function buildHeadline(articles, ownMentions, ownNegative, caution) {
   const ownLead = articles.find(isOwnArticle);
   if (ownNegative > 0) {
-    return `당사 부정 ${ownNegative}건이 확인됐습니다. 최신 당사 언급 기사 "${ownLead?.title || "확인 필요"}"를 우선 점검합니다.`;
+    return `?? ?? ${ownNegative}?? ??????. ?? ?? ?? ?? "${ownLead?.title || "?? ??"}"? ?? ?????.`;
   }
   if (ownMentions > 0) {
-    return `당사 언급 ${ownMentions}건은 직접 부정보다 주의/시장성 이슈에 가깝습니다. 핵심 기사 "${ownLead?.title}"를 보고서에 포함합니다.`;
+    return `?? ?? ${ownMentions}?? ?? ???? ??/??? ??? ?????. ?? ?? "${ownLead?.title}"? ???? ?????.`;
   }
-  return `당사 직접 언급은 없습니다. 주의 ${caution}건과 GA/보험사 동향 ${articles.filter((item) => ["GA", "보험사"].includes(item.category)).length}건을 추적합니다.`;
+  return `?? ?? ??? ????. ?? ${caution}?? GA/??? ?? ${articles.filter((item) => ["GA", "???"].includes(item.category)).length}?? ?????.`;
 }
 
 function buildIssues(articles, fallback) {
@@ -3339,9 +3452,9 @@ function buildIssues(articles, fallback) {
 
 function dashboardIssueScore(issue = {}) {
   const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
-  const groupToneScore = Math.max(...members.map((item) => ({ 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[item.tone] || 0)));
-  const toneScore = Math.max(groupToneScore, { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0);
-  const categoryScore = issue.category === "정책/규제" ? 130 : ["GA", "보험사"].includes(issue.category) ? 80 : 0;
+  const groupToneScore = Math.max(...members.map((item) => ({ ??: 420, ??: 280, ??: 170, ??: 90, ??: 0 }[item.tone] || 0)));
+  const toneScore = Math.max(groupToneScore, { ??: 420, ??: 280, ??: 170, ??: 90, ??: 0 }[issue.tone] || 0);
+  const categoryScore = issue.category === "??/??" ? 130 : ["GA", "???"].includes(issue.category) ? 80 : 0;
   const ownScore = members.some(isOwnArticle) ? 520 : 0;
   const relatedScore = Math.min(Number(issue.relatedCount || 1), 6) * 24;
   return ownScore + toneScore + categoryScore + relatedScore + Number(issue.score || 0);
@@ -3349,7 +3462,7 @@ function dashboardIssueScore(issue = {}) {
 
 function buildMediaAnalysisIssues(articles = [], period = "monthly") {
   const scoped = articles
-    .filter((article) => article?.title && article.tone !== "제외")
+    .filter((article) => article?.title && article.tone !== "??")
     .filter((article) => !isPortalSource(article.source));
   const grouped = buildRelatedArticleGroups(scoped);
   return grouped
@@ -3365,7 +3478,7 @@ function normalizeMediaIssueGroup(group = {}, period = "monthly") {
     .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a))[0] || group;
   const relatedSources = unique(members.map((item) => item.source).filter(Boolean));
   const sourceLabel = relatedSources.length > 1
-    ? `${relatedSources[0]} 외 ${relatedSources.length - 1}곳`
+    ? `${relatedSources[0]} ? ${relatedSources.length - 1}?`
     : representative.source;
   return {
     ...representative,
@@ -3375,8 +3488,8 @@ function normalizeMediaIssueGroup(group = {}, period = "monthly") {
     relatedCount: members.length,
     relatedSourceCount: relatedSources.length,
     relatedSources,
-    category: representative.category || group.category || "이슈",
-    tone: representative.tone || group.tone || "중립",
+    category: representative.category || group.category || "??",
+    tone: representative.tone || group.tone || "??",
     title: representative.title || group.title,
     summary: representative.issueSummary || compactArticleSummary(representative),
     summaryLines: representative.issueSummary ? [representative.issueSummary] : buildMediaIssueSummaryLines(representative, members),
@@ -3408,13 +3521,13 @@ function mediaIssueScore(item = {}, period = "monthly") {
   const relatedBoost = Math.min(Number(item.relatedCount || item.clusterSize || 1), 8) * (period === "daily" ? 10 : 18);
   const ownBoost = isOwnArticle(item) ? 420 : 0;
   const performanceBoost = isOwnPerformanceArticle(item) ? 360 : 0;
-  const riskBoost = isOwnArticle(item) && ["부정", "주의"].includes(item.tone) ? 220 : 0;
+  const riskBoost = isOwnArticle(item) && ["??", "??"].includes(item.tone) ? 220 : 0;
   return reportFrontScore(item) + relatedBoost + ownBoost + performanceBoost + riskBoost;
 }
 
 function isOwnPerformanceArticle(item = {}) {
   const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`;
-  return isOwnArticle(item) && /우수인증|인증설계사|최다|배출|수상|성과|선정|1위|성장|매출|협약|CSR|사회공헌/.test(text);
+  return isOwnArticle(item) && /????|?????|??|??|??|??|??|1?|??|??|??|CSR|????/.test(text);
 }
 
 function buildMediaIssueSummaryLines(representative = {}, members = []) {
@@ -3495,7 +3608,7 @@ function isSummaryDuplicateOfTitle(line = "", titleKeys = new Set()) {
 function normalizeSummaryCompareKey(value = "") {
   return cleanSummaryText(value)
     .toLowerCase()
-    .replace(/\s*[-–—]\s*[\p{L}\p{N}._·\s]{2,30}$/u, "")
+    .replace(/\s*[-??]\s*[\p{L}\p{N}._?\s]{2,30}$/u, "")
     .replace(/(?:\.com|\.co\.kr|\.kr)$/i, "")
     .replace(/[^\p{L}\p{N}]+/gu, "")
     .slice(0, 130);
@@ -3518,10 +3631,10 @@ function cleanSummaryText(value) {
     .replace(/&quot;/gi, "\"")
     .replace(/&#39;/g, "'")
     .replace(/<[^>]+>/g, " ")
-    .replace(/^\[[^\]]+\s+[^\]]*(?:기자|reporter)\]\s*/i, "")
-    .replace(/^[^\s]+ (?:기자|reporter)\s*=\s*/i, "")
+    .replace(/^\[[^\]]+\s+[^\]]*(?:??|reporter)\]\s*/i, "")
+    .replace(/^[^\s]+ (?:??|reporter)\s*=\s*/i, "")
     .replace(/\s+/g, " ")
-    .replace(/(\.\.\.|…)+$/g, "")
+    .replace(/(\.\.\.|?)+$/g, "")
     .trim();
 }
 
@@ -3529,11 +3642,11 @@ function splitSummarySentences(value) {
   const clean = cleanSummaryText(value);
   if (!clean) return [];
   const normalized = clean
-    .replace(/([.!?。])\s+/g, "$1|")
-    .replace(/(습니다|했습니다|합니다|됩니다|됐습니다|있습니다|없습니다|다|요|임|함|됨)\s+/g, "$1.|");
+    .replace(/([.!??])\s+/g, "$1|")
+    .replace(/(???|????|???|???|????|????|????|?|?|?|?|?)\s+/g, "$1.|");
   return normalized
     .split("|")
-    .map((sentence) => sentence.replace(/(\.\.\.|…)+$/g, "").trim())
+    .map((sentence) => sentence.replace(/(\.\.\.|?)+$/g, "").trim())
     .filter((sentence) => sentence.length >= 8)
     .slice(0, 6);
 }
@@ -3541,49 +3654,49 @@ function splitSummarySentences(value) {
 function isGenericSummaryLine(value) {
   const text = cleanSummaryText(value);
   return (
-    /키워드 기준으로 수집된 기사입니다/.test(text) ||
-    /키워드로 수집됐습니다/.test(text) ||
-    /기준 핵심만 요약했습니다/.test(text) ||
-    /당사 직접 언급 기사/.test(text) ||
-    /보고서와 리스크 점검 근거/.test(text) ||
-    /정책·규제 변화가 영업 환경/.test(text) ||
-    /직접 부정은 아니지만 시장 평가/.test(text) ||
-    /시장 평가, 투자 의견, 규제성 신호/.test(text) ||
-    /보험사·GA 시장 흐름/.test(text) ||
-    /업계 동향 기사로 분리/.test(text) ||
-    /분석 대상에서 제외한 노이즈성 기사/.test(text) ||
-    /홍보 활용 가능성을 검토/.test(text) ||
-    /소비자 피해, 제재, 사칭, 법적 분쟁/.test(text)
+    /??? ???? ??? ?????/.test(text) ||
+    /???? ??????/.test(text) ||
+    /?? ??? ??????/.test(text) ||
+    /?? ?? ?? ??/.test(text) ||
+    /???? ??? ?? ??/.test(text) ||
+    /????? ??? ?? ??/.test(text) ||
+    /?? ??? ???? ?? ??/.test(text) ||
+    /?? ??, ?? ??, ??? ??/.test(text) ||
+    /????GA ?? ??/.test(text) ||
+    /?? ?? ??? ??/.test(text) ||
+    /?? ???? ??? ???? ??/.test(text) ||
+    /?? ?? ???? ??/.test(text) ||
+    /??? ??, ??, ??, ?? ??/.test(text)
   );
 }
 
 function normalizeSummaryLine(value) {
-  const text = cleanSummaryText(value).replace(/[.。!?]+$/g, "").trim();
+  const text = cleanSummaryText(value).replace(/[.?!?]+$/g, "").trim();
   if (!text || isGenericSummaryLine(text) || isBrokenSummaryLine(text)) return "";
   return `${text}.`;
 }
 
 function isBrokenSummaryLine(value) {
-  const text = cleanSummaryText(value).replace(/[.。!?]+$/g, "").trim();
+  const text = cleanSummaryText(value).replace(/[.?!?]+$/g, "").trim();
   if (!text) return true;
   if (text.length > 150) return true;
-  return /(대폭|위해|통해|으로|로|및|또한|이어|했고|하며|밝혀|설명|전했|강조)$/.test(text);
+  return /(??|??|??|??|?|?|??|??|??|??|??|??|??|??)$/.test(text);
 }
 
 function headlineBasedSummary(item = {}) {
   const title = cleanSummaryText(item.title || "");
   if (!title || isGenericSummaryLine(title)) return "";
   if (isPreventiveSecuritySummary(item)) {
-    return "보도 초점은 해킹 사고 발생이 아니라 금융보안원 가입 확대와 보안 예방 체계 강화입니다.";
+    return "?? ??? ?? ?? ??? ??? ????? ?? ??? ?? ?? ?? ?????.";
   }
   if (isInvestmentSummary(item)) {
-    return "투자의견, 목표가, 주가 흐름처럼 시장 평가 변화가 핵심입니다.";
+    return "????, ???, ?? ???? ?? ?? ??? ?????.";
   }
   if (isSettlementSupportSummary(item)) {
-    return "GA 정착지원금 공시에서 지급 규모와 순위가 비교된 내용입니다.";
+    return "GA ????? ???? ?? ??? ??? ??? ?????.";
   }
   if (isInsuranceLossSummary(item)) {
-    return "실손보험 손해율과 적자 흐름을 다룬 보험업계 지표 기사입니다.";
+    return "???? ???? ?? ??? ?? ???? ?? ?????.";
   }
   return title;
 }
@@ -3592,15 +3705,15 @@ function buildContextualSummaryLines(item = {}) {
   const lines = [];
   if (isPreventiveSecuritySummary(item)) {
     if (isOwnArticle(item)) {
-      lines.push("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
+      lines.push("???????? ??? GA? ????? ?? ?? ?????.");
     }
-    lines.push("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다.");
+    lines.push("??? ?? ?? ??? ??? ?? ??? ?? ?? ?? ?????.");
   } else if (isInvestmentSummary(item)) {
-    lines.push("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.");
+    lines.push("??? ?????? ??? ?? ? ?? ?? ??? ?? ?????.");
   } else if (isSettlementSupportSummary(item)) {
-    lines.push("GA별 정착지원금 지급 규모와 순위를 비교한 공시성 기사입니다.");
+    lines.push("GA? ????? ?? ??? ??? ??? ??? ?????.");
   } else if (isInsuranceLossSummary(item)) {
-    lines.push("실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다.");
+    lines.push("???? ??, ???, ??? ??? ??? ???? ?? ?????.");
   }
   return unique(lines.map(normalizeSummaryLine).filter(Boolean));
 }
@@ -3611,26 +3724,26 @@ function summaryHaystack(item = {}) {
 
 function isPreventiveSecuritySummary(item = {}) {
   const text = summaryHaystack(item);
-  return /금융보안원/.test(text) && /가입|확대|예방|보안/.test(text) && /해킹|보안|침해|취약점/.test(text);
+  return /?????/.test(text) && /??|??|??|??/.test(text) && /??|??|??|???/.test(text);
 }
 
 function isInvestmentSummary(item = {}) {
   const text = summaryHaystack(item);
-  return /투자의견|목표주가|목표가|증권가|리포트|주가/.test(text) && /하향|낮아|조정|중립|매도|약세|급락|하락/.test(text);
+  return /????|????|???|???|???|??/.test(text) && /??|??|??|??|??|??|??|??/.test(text);
 }
 
 function isSettlementSupportSummary(item = {}) {
   const text = summaryHaystack(item);
-  return /정착지원금|1200%|수수료/.test(text) && /GA|보험대리점|설계사|공시/.test(text);
+  return /?????|1200%|???/.test(text) && /GA|?????|???|??/.test(text);
 }
 
 function isInsuranceLossSummary(item = {}) {
   const text = summaryHaystack(item);
-  return /실손|손해율|적자폭|보험 민원|민원/.test(text) && /보험|손보|생보|계약/.test(text);
+  return /??|???|???|?? ??|??/.test(text) && /??|??|??|??/.test(text);
 }
 
 function periodScopeLabel(period) {
-  return { daily: "일간", weekly: "주간", monthly: "월간" }[period] || "기간";
+  return { daily: "??", weekly: "??", monthly: "??" }[period] || "??";
 }
 
 function buildPeriodObservations(data, issues = [], period = "monthly") {
@@ -3640,20 +3753,20 @@ function buildPeriodObservations(data, issues = [], period = "monthly") {
   const scope = periodScopeLabel(period);
   const observations = [];
   if (summary.ownNegative > 0) {
-    observations.push(`당사 부정 이슈 ${summary.ownNegative}건이 확인돼 ${scope} 리스크 점검 대상으로 우선 배치했습니다.`);
+    observations.push(`?? ?? ?? ${summary.ownNegative}?? ??? ${scope} ??? ?? ???? ?? ??????.`);
   } else if (summary.ownMentions > 0) {
-    observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 시장 평가와 업계 흐름을 함께 확인하는 관찰 이슈로 봅니다.`);
+    observations.push(`?? ?? ${summary.ownMentions}?? ?? ???? ?? ??? ?? ??? ?? ???? ?? ??? ???.`);
   } else {
-    observations.push(`${scope} 기준 당사 직접 부정 이슈는 확인되지 않았고, 업계성 이슈 중심으로 흐름을 추적합니다.`);
+    observations.push(`${scope} ?? ?? ?? ?? ??? ???? ???, ??? ?? ???? ??? ?????.`);
   }
   if (summary.caution > 0) {
-    observations.push(`주의 이슈 ${summary.caution}건은 투자 의견, 수수료, 규제, GA 운영 이슈처럼 의사결정자가 확인할 만한 신호로 분리했습니다.`);
+    observations.push(`?? ?? ${summary.caution}?? ?? ??, ???, ??, GA ?? ???? ?????? ??? ?? ??? ??????.`);
   }
   if (lead?.title) {
-    observations.push(`대표 헤드라인은 "${lead.title}"이며, ${scope} 핵심 이슈 영역에서 기사 원문까지 바로 확인할 수 있습니다.`);
+    observations.push(`?? ????? "${lead.title}"??, ${scope} ?? ?? ???? ?? ???? ?? ??? ? ????.`);
   }
   if (topPress?.source) {
-    observations.push(`${topPress.source} 보도가 가장 많이 관찰돼 해당 매체의 반복 보도 흐름을 우선 확인하는 구성이 적절합니다.`);
+    observations.push(`${topPress.source} ??? ?? ?? ??? ?? ??? ?? ?? ??? ?? ???? ??? ?????.`);
   }
   return observations.slice(0, 4);
 }
@@ -3661,12 +3774,12 @@ function buildPeriodObservations(data, issues = [], period = "monthly") {
 function buildToneTrend(articles) {
   const byDate = new Map();
   articles.forEach((article) => {
-    const date = article.date || "미확인";
+    const date = article.date || "???";
     if (!byDate.has(date)) byDate.set(date, { date: date.slice(5) || date, positive: 0, negative: 0, caution: 0, neutral: 0 });
     const bucket = byDate.get(date);
-    if (article.tone === "긍정") bucket.positive += 1;
-    else if (article.tone === "부정") bucket.negative += 1;
-    else if (article.tone === "주의") bucket.caution += 1;
+    if (article.tone === "??") bucket.positive += 1;
+    else if (article.tone === "??") bucket.negative += 1;
+    else if (article.tone === "??") bucket.caution += 1;
     else bucket.neutral += 1;
   });
   return Array.from(byDate.values()).slice(-7);
@@ -3690,9 +3803,9 @@ function buildDailyToneTrend(articles, days = 31, fallback = []) {
     if (Number.isNaN(time) || time < startTime || time > latestTime) return;
     const bucket = buckets.get(article.date);
     if (!bucket) return;
-    if (article.tone === "긍정") bucket.positive += 1;
-    else if (article.tone === "부정") bucket.negative += 1;
-    else if (article.tone === "주의") bucket.caution += 1;
+    if (article.tone === "??") bucket.positive += 1;
+    else if (article.tone === "??") bucket.negative += 1;
+    else if (article.tone === "??") bucket.caution += 1;
     else bucket.neutral += 1;
   });
   const rows = Array.from(buckets.values());
@@ -3721,16 +3834,16 @@ function buildWeeklyToneTrend(articles, fallback = []) {
   const startTime = latestTime - 30 * 24 * 60 * 60 * 1000;
   const buckets = new Map();
   for (let index = 0; index < 5; index += 1) {
-    buckets.set(index, { date: `${index + 1}주`, positive: 0, negative: 0, caution: 0, neutral: 0 });
+    buckets.set(index, { date: `${index + 1}?`, positive: 0, negative: 0, caution: 0, neutral: 0 });
   }
   dated.forEach((article) => {
     const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
     if (Number.isNaN(time) || time < startTime || time > latestTime) return;
     const index = Math.min(4, Math.max(0, Math.floor((time - startTime) / (7 * 24 * 60 * 60 * 1000))));
     const bucket = buckets.get(index);
-    if (article.tone === "긍정") bucket.positive += 1;
-    else if (article.tone === "부정") bucket.negative += 1;
-    else if (article.tone === "주의") bucket.caution += 1;
+    if (article.tone === "??") bucket.positive += 1;
+    else if (article.tone === "??") bucket.negative += 1;
+    else if (article.tone === "??") bucket.caution += 1;
     else bucket.neutral += 1;
   });
   const rows = Array.from(buckets.values());
@@ -3741,14 +3854,14 @@ function buildWeeklyToneTrend(articles, fallback = []) {
 function ensureTrendHasTone(rows = []) {
   if (!rows.length) return [];
   const fallback = rows.length ? rows : [
-    { date: "1주", positive: 5, caution: 1, negative: 0 },
-    { date: "2주", positive: 7, caution: 2, negative: 1 },
-    { date: "3주", positive: 4, caution: 1, negative: 0 },
-    { date: "4주", positive: 8, caution: 2, negative: 0 },
-    { date: "5주", positive: 6, caution: 1, negative: 0 },
+    { date: "1?", positive: 5, caution: 1, negative: 0 },
+    { date: "2?", positive: 7, caution: 2, negative: 1 },
+    { date: "3?", positive: 4, caution: 1, negative: 0 },
+    { date: "4?", positive: 8, caution: 2, negative: 0 },
+    { date: "5?", positive: 6, caution: 1, negative: 0 },
   ];
   return rows.map((row, index) => ({
-    date: row.date || `${index + 1}주`,
+    date: row.date || `${index + 1}?`,
     positive: Number(row.positive || 0),
     caution: Number(row.caution || 0),
     negative: Number(row.negative || 0),
@@ -3805,14 +3918,14 @@ function buildPressInfluence(articles) {
       source,
       total,
       own: scoped.filter(isOwnArticle).length,
-      negative: scoped.filter((article) => article.tone === "부정").length,
-      type: scoped[0]?.category || "일반",
+      negative: scoped.filter((article) => article.tone === "??").length,
+      type: scoped[0]?.category || "??",
     };
   });
 }
 
 function isOfficialRegulatorSource(source) {
-  return /금융감독원|금융위원회/.test(String(source || ""));
+  return /?????|?????/.test(String(source || ""));
 }
 
 function isPortalSource(source) {
@@ -3828,7 +3941,7 @@ const emptyReporterForm = {
   name: "",
   media: "",
   beat: "",
-  status: "중립",
+  status: "??",
   contactDate: "",
   email: "",
   phone: "",
@@ -3840,7 +3953,7 @@ const emptyMediaForm = {
   name: "",
   url: "",
   grade: "B",
-  status: "중립",
+  status: "??",
   owner: "",
   contactDate: "",
   beat: "",
@@ -3851,12 +3964,12 @@ const emptyMediaForm = {
 };
 
 const keywordCategories = [
-  { id: "own", label: "당사", rule: "당사명, 브랜드, 임직원처럼 직접 언급만 당사로 분류합니다." },
-  { id: "competitor", label: "경쟁사/GA", rule: "보험, GA, 설계사, 정착지원금 문맥이 함께 있을 때만 경쟁사 이슈로 봅니다." },
-  { id: "industry", label: "업계동향", rule: "보험 시장, 판매채널, 소비자 동향처럼 업계 흐름을 추적합니다." },
-  { id: "regulation", label: "정책/규제", rule: "금융당국, 수수료, 제도, 법령 이슈를 주의 관찰로 분리합니다." },
-  { id: "other", label: "기타", rule: "일반 관심 키워드나 별도 문맥 분석 대상입니다." },
-  { id: "exclude", label: "제외 후보", rule: "브랜드평판, 스포츠, 상품명 오탐처럼 수집 제외 후보로 관리합니다." },
+  { id: "own", label: "??", rule: "???, ???, ????? ?? ??? ??? ?????." },
+  { id: "competitor", label: "???/GA", rule: "??, GA, ???, ????? ??? ?? ?? ?? ??? ??? ???." },
+  { id: "industry", label: "????", rule: "?? ??, ????, ??? ???? ?? ??? ?????." },
+  { id: "regulation", label: "??/??", rule: "????, ???, ??, ?? ??? ?? ??? ?????." },
+  { id: "other", label: "??", rule: "?? ?? ???? ?? ?? ?? ?????." },
+  { id: "exclude", label: "?? ??", rule: "?????, ???, ??? ???? ?? ?? ??? ?????." },
 ];
 
 function readLocalRows(key) {
@@ -3938,7 +4051,7 @@ function normalizeMediaDraft(row = {}) {
     name: String(row.name || "").trim(),
     url: String(row.url || "").trim(),
     grade: String(row.grade || "B").trim() || "B",
-    status: String(row.status || "중립").trim() || "중립",
+    status: String(row.status || "??").trim() || "??",
     owner: String(row.owner || "").trim(),
     contactDate: row.contactDate || row.contact_date || "",
     beat: String(row.beat || "").trim(),
@@ -3966,12 +4079,12 @@ function upsertMediaLocal(rows = [], row = {}) {
 
 function buildMediaMemo(row = {}) {
   const lines = [
-    row.beat ? `주요 분야: ${row.beat}` : "",
-    row.leadReporter ? `대표 기자: ${row.leadReporter}` : "",
-    row.email ? `이메일: ${row.email}` : "",
-    row.phone ? `전화: ${row.phone}` : "",
-    row.url ? `대표 URL: ${row.url}` : "",
-    row.memo ? `메모: ${row.memo}` : "",
+    row.beat ? `?? ??: ${row.beat}` : "",
+    row.leadReporter ? `?? ??: ${row.leadReporter}` : "",
+    row.email ? `???: ${row.email}` : "",
+    row.phone ? `??: ${row.phone}` : "",
+    row.url ? `?? URL: ${row.url}` : "",
+    row.memo ? `??: ${row.memo}` : "",
   ].filter(Boolean);
   return lines.join("\n");
 }
@@ -4004,10 +4117,10 @@ function mergeMediaRows(rows = [], aliases = [], localRows = []) {
       map.set(alias.pressName, {
         name: alias.pressName,
         grade: "B",
-        status: "중립",
+        status: "??",
         owner: "",
         contactDate: "",
-        memo: `주소 보정: ${alias.host}`,
+        memo: `?? ??: ${alias.host}`,
         total: 0,
         own: 0,
         negative: 0,
@@ -4032,7 +4145,7 @@ function normalizeReporterDraft(row = {}) {
     outlet: String(row.outlet || row.media || "").trim(),
     beat: row.beat || row.memo || "-",
     recent: row.recent || "-",
-    status: String(row.status || "중립").trim() || "중립",
+    status: String(row.status || "??").trim() || "??",
     contactDate: row.contactDate || row.contact_date || row.date || "",
     email: String(row.email || "").trim(),
     phone: String(row.phone || "").trim(),
@@ -4043,11 +4156,11 @@ function normalizeReporterDraft(row = {}) {
 
 function buildReporterMemo(row = {}) {
   const lines = [
-    row.beat ? `담당 분야: ${row.beat}` : "",
-    row.email ? `이메일: ${row.email}` : "",
-    row.phone ? `전화: ${row.phone}` : "",
-    row.request ? `요청/선호: ${row.request}` : "",
-    row.memo ? `메모: ${row.memo}` : "",
+    row.beat ? `?? ??: ${row.beat}` : "",
+    row.email ? `???: ${row.email}` : "",
+    row.phone ? `??: ${row.phone}` : "",
+    row.request ? `??/??: ${row.request}` : "",
+    row.memo ? `??: ${row.memo}` : "",
   ].filter(Boolean);
   return lines.join("\n");
 }
@@ -4101,11 +4214,11 @@ function hideReporterLocal(state = {}, row = {}) {
 
 function keywordRowsFromGroups() {
   const categoryMap = {
-    당사: "own",
+    ??: "own",
     GA: "competitor",
-    보험사: "industry",
-    "정책/규제": "regulation",
-    "제외 후보": "exclude",
+    ???: "industry",
+    "??/??": "regulation",
+    "?? ??": "exclude",
   };
   return keywordGroups.flatMap((group) =>
     group.keywords.map((keyword) => ({
@@ -4144,21 +4257,21 @@ function upsertKeywordRow(rows, row) {
 }
 
 function keywordCategoryLabel(category) {
-  return keywordCategories.find((item) => item.id === category)?.label || "기타";
+  return keywordCategories.find((item) => item.id === category)?.label || "??";
 }
 
 function keywordCategoryRule(category) {
-  return keywordCategories.find((item) => item.id === category)?.rule || "운영자가 지정한 문맥으로 분류합니다.";
+  return keywordCategories.find((item) => item.id === category)?.rule || "???? ??? ???? ?????.";
 }
 
 function keywordCategoryTone(category) {
   return {
-    own: "긍정",
-    competitor: "중립",
-    industry: "중립",
-    regulation: "주의",
-    exclude: "제외",
-  }[category] || "중립";
+    own: "??",
+    competitor: "??",
+    industry: "??",
+    regulation: "??",
+    exclude: "??",
+  }[category] || "??";
 }
 
 function groupKeywordRows(rows = []) {
@@ -4178,6 +4291,103 @@ function groupKeywordRows(rows = []) {
       const bOrder = order.includes(b.category) ? order.indexOf(b.category) : order.length;
       return aOrder - bOrder;
     });
+}
+
+function buildFeedbackRuleCandidates(rows = []) {
+  const map = new Map();
+  rows.forEach((row) => {
+    const pattern = feedbackPattern(row);
+    if (!pattern.keyword) return;
+    const key = `${pattern.category}:${pattern.keyword}:${pattern.action}`;
+    const current = map.get(key) || {
+      key,
+      ...pattern,
+      count: 0,
+      example: row.title || row.link || "-",
+    };
+    current.count += 1;
+    if (!current.example || current.example === "-") current.example = row.title || row.link || "-";
+    map.set(key, current);
+  });
+  return Array.from(map.values())
+    .filter((item) => item.count >= 1)
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ko-KR"));
+}
+
+function feedbackPattern(row = {}) {
+  const title = String(row.title || "");
+  const text = normalizeKeywordText(`${title} ${row.reason || ""}`);
+  const correctedTone = String(row.correctedTone || "");
+  const correctedCategory = String(row.correctedCategory || "");
+  if (/????|???|????|??\s*???|??\s*??|??/.test(title)) {
+    return {
+      keyword: "???? ??",
+      category: "regulation",
+      action: "?? ??",
+      label: "?? ??/???? ??? ??? ??",
+    };
+  }
+  if (/?????|????|?????\s*??/.test(title)) {
+    return {
+      keyword: "?????",
+      category: correctedTone === "??" ? "exclude" : "industry",
+      action: correctedTone === "??" ? "?? ??" : "?? ??",
+      label: "????? ??? ?? ?? ??",
+    };
+  }
+  if (/??|??|??|???|??|??/.test(title) && correctedTone === "??") {
+    return {
+      keyword: "?? ???",
+      category: "exclude",
+      action: "?? ??",
+      label: "???/??? ?? ??",
+    };
+  }
+  if (correctedTone === "??" || correctedCategory === "??") {
+    return {
+      keyword: compactFeedbackKeyword(title),
+      category: "exclude",
+      action: "?? ??",
+      label: "?? ??? ?? ??",
+    };
+  }
+  if (correctedTone === "??" && /??|negative|high/.test(String(row.previousTone || "").toLowerCase())) {
+    return {
+      keyword: compactFeedbackKeyword(title),
+      category: "regulation",
+      action: "?? ??",
+      label: "???? ??? ?? ??",
+    };
+  }
+  if (correctedCategory && correctedCategory !== row.previousCategory) {
+    return {
+      keyword: compactFeedbackKeyword(title),
+      category: categoryIdFromFeedbackLabel(correctedCategory),
+      action: "?? ??",
+      label: `${row.previousCategory || "??"} ? ${correctedCategory} ?? ??`,
+    };
+  }
+  return {
+    keyword: text.split(" ").filter((token) => token.length > 1)[0] || "",
+    category: categoryIdFromFeedbackLabel(correctedCategory),
+    action: "?? ??",
+    label: "?? ?? ??",
+  };
+}
+
+function compactFeedbackKeyword(title = "") {
+  const tokens = articleTokens(title).filter((token) => !/??|??|??|??/.test(token));
+  return tokens.slice(0, 2).join(" ") || String(title || "").slice(0, 16).trim();
+}
+
+function categoryIdFromFeedbackLabel(value = "") {
+  const text = String(value || "").toLowerCase();
+  if (/??|own|??/.test(value)) return "own";
+  if (/ga|???|??|competitor/.test(text)) return "competitor";
+  if (/??|??|??|regulation|policy/.test(value)) return "regulation";
+  if (/??|??|industry|market/.test(value)) return "industry";
+  if (/??|exclude|noise/.test(value)) return "exclude";
+  return "other";
 }
 
 function printCurrentView(title) {
@@ -4233,7 +4443,7 @@ function buildAdSpendData(rows = []) {
 function amountRows(rows = [], key, limit = 8) {
   const totals = new Map();
   rows.forEach((row) => {
-    const name = row[key] || "미분류";
+    const name = row[key] || "???";
     totals.set(name, (totals.get(name) || 0) + Number(row.amount || 0));
   });
   const sorted = Array.from(totals.entries()).map(([name, value]) => ({ name, value }));
@@ -4267,7 +4477,7 @@ function buildAdReportDocument(rows = []) {
   <html lang="ko">
   <head>
     <meta charset="utf-8" />
-    <title>광고비 집행 리포트</title>
+    <title>??? ?? ???</title>
     <style>
       @page { size: A4 landscape; margin: 10mm; }
       * { box-sizing: border-box; }
@@ -4304,28 +4514,28 @@ function buildAdReportDocument(rows = []) {
       <header>
         <div>
           <div class="eyebrow">Advertising Spend Report</div>
-          <h1>광고비 집행 리포트</h1>
+          <h1>??? ?? ???</h1>
         </div>
         <div class="meta">
-          <span>생성 ${escapeHtml(generated)}</span>
-          <span>기준 ${rows.length.toLocaleString("ko-KR")}건</span>
+          <span>?? ${escapeHtml(generated)}</span>
+          <span>?? ${rows.length.toLocaleString("ko-KR")}?</span>
         </div>
       </header>
       <div class="kpis">
-        <div><span>총 집행액</span><b>${escapeHtml(formatMoney(total))}</b></div>
-        <div><span>집행 월수</span><b>${unique(rows.map((row) => row.month)).length.toLocaleString("ko-KR")}개월</b></div>
-        <div><span>매체 수</span><b>${unique(rows.map((row) => row.media)).length.toLocaleString("ko-KR")}곳</b></div>
-        <div><span>최대 집행 매체</span><b>${escapeHtml(topMedia)}</b></div>
+        <div><span>? ???</span><b>${escapeHtml(formatMoney(total))}</b></div>
+        <div><span>?? ??</span><b>${unique(rows.map((row) => row.month)).length.toLocaleString("ko-KR")}??</b></div>
+        <div><span>?? ?</span><b>${unique(rows.map((row) => row.media)).length.toLocaleString("ko-KR")}?</b></div>
+        <div><span>?? ?? ??</span><b>${escapeHtml(topMedia)}</b></div>
       </div>
       <div class="grid">
-        <section><h2>월별 집행 추이</h2><div class="bars">${adReportBars(data.monthly, total)}</div></section>
-        <section><h2>매체별 집행</h2><div class="bars">${adReportBars(data.media, total)}</div></section>
-        <section><h2>유형별 집행</h2><div class="bars">${adReportBars(data.type, total)}</div></section>
+        <section><h2>?? ?? ??</h2><div class="bars">${adReportBars(data.monthly, total)}</div></section>
+        <section><h2>??? ??</h2><div class="bars">${adReportBars(data.media, total)}</div></section>
+        <section><h2>??? ??</h2><div class="bars">${adReportBars(data.type, total)}</div></section>
         <section class="table-card">
-          <h2>집행 내역</h2>
+          <h2>?? ??</h2>
           <table>
-            <thead><tr><th>월</th><th>매체</th><th>유형</th><th>금액</th><th>메모</th></tr></thead>
-            <tbody>${tableRows || '<tr><td colspan="5">등록된 광고비 집행 내역이 없습니다.</td></tr>'}</tbody>
+            <thead><tr><th>?</th><th>??</th><th>??</th><th>??</th><th>??</th></tr></thead>
+            <tbody>${tableRows || '<tr><td colspan="5">??? ??? ?? ??? ????.</td></tr>'}</tbody>
           </table>
         </section>
       </div>
@@ -4335,7 +4545,7 @@ function buildAdReportDocument(rows = []) {
 }
 
 function adReportBars(rows = [], total = 0) {
-  if (!rows.length) return '<p>데이터 없음</p>';
+  if (!rows.length) return '<p>??? ??</p>';
   const max = Math.max(...rows.map((row) => row.value), 1);
   return rows.map((row) => {
     const width = Math.max(4, Math.round((row.value / max) * 100));
@@ -4361,10 +4571,10 @@ function composeManagementData(operations, articles) {
     : pressRegistry.map((name, index) => ({
         name,
         grade: index < 5 ? "A" : "B",
-        status: index % 5 === 0 ? "우호" : "중립",
-        owner: index < 6 ? "홍보팀" : "",
+        status: index % 5 === 0 ? "??" : "??",
+        owner: index < 6 ? "???" : "",
         contactDate: index < 8 ? "2026-05" : "",
-        memo: index < 15 ? "보도자료 발송 이력 확인" : "",
+        memo: index < 15 ? "???? ?? ?? ??" : "",
         ...(pressStats.get(name) || { total: 0, own: 0, negative: 0 }),
       }));
   const media = mergeRequiredOwnPressRows(baseMedia, ownPressRows);
@@ -4381,8 +4591,8 @@ function buildPressStatsForManagement(articles = []) {
       source,
       total,
       own: scoped.filter(isOwnArticle).length,
-      negative: scoped.filter((article) => article.tone === "부정").length,
-      type: scoped[0]?.category || "일반",
+      negative: scoped.filter((article) => article.tone === "??").length,
+      type: scoped[0]?.category || "??",
     };
   });
 }
@@ -4396,10 +4606,10 @@ function buildOwnPressRelationRows(articles = [], pressStats = new Map()) {
   ).map((name) => ({
     name,
     grade: "B",
-    status: "중립",
+    status: "??",
     owner: "",
     contactDate: "",
-    memo: "당사 기사 게재 이력으로 자동 등록된 관리 대상",
+    memo: "?? ?? ?? ???? ?? ??? ?? ??",
     ...(pressStats.get(name) || { total: 0, own: 1, negative: 0 }),
   }));
 }
@@ -4475,34 +4685,34 @@ function buildRegulatorDirectionAnalysis(rows = []) {
   const sourceRows = rows.filter((row) => row?.title);
   const themes = [
     {
-      label: "소비자보호",
-      note: "민원, 분쟁, 실손 청구, 보험금 지급처럼 소비자 접점 관리가 중심입니다.",
-      action: "민원, 분쟁, 실손, 보험금 지급 기준이 고객 안내와 민원 대응 프로세스에 미치는 영향을 확인합니다.",
-      pattern: /소비자|민원|분쟁|실손|보험금|청구|유의|보호|피해|장애인|불완전판매|광고/i,
+      label: "?????",
+      note: "??, ??, ?? ??, ??? ???? ??? ?? ??? ?????.",
+      action: "??, ??, ??, ??? ?? ??? ?? ??? ?? ?? ????? ??? ??? ?????.",
+      pattern: /???|??|??|??|???|??|??|??|??|???|?????|??/i,
     },
     {
-      label: "판매채널/GA",
-      note: "GA, 설계사, 수수료, 정착지원금, 부당승환 등 판매 과정의 책임성 강화 신호입니다.",
-      action: "GA, 설계사, 수수료, 정착지원금, 광고심의 문맥이 영업 현장 운영 기준과 연결되는지 점검합니다.",
-      pattern: /GA|법인보험대리점|대리점|설계사|판매|수수료|정착지원금|부당승환|채널|모집|영업|시책/i,
+      label: "????/GA",
+      note: "GA, ???, ???, ?????, ???? ? ?? ??? ??? ?? ?????.",
+      action: "GA, ???, ???, ?????, ???? ??? ?? ?? ?? ??? ????? ?????.",
+      pattern: /GA|???????|???|???|??|???|?????|????|??|??|??|??/i,
     },
     {
-      label: "건전성/자본",
-      note: "지급여력, 자본, 대출채권, 경영개선처럼 재무·자본 관리 흐름입니다.",
-      action: "손해율, 지급여력, 자본, 대출채권, 경영개선 이슈가 업권 평판과 거래처 리스크로 번지는지 봅니다.",
-      pattern: /지급여력|자본|대출채권|경영개선|건전성|손해율|실적|리스크|적자|충당금/i,
+      label: "???/??",
+      note: "????, ??, ????, ?????? ????? ?? ?????.",
+      action: "???, ????, ??, ????, ???? ??? ?? ??? ??? ???? ???? ???.",
+      pattern: /????|??|????|????|???|???|??|???|??|???/i,
     },
     {
-      label: "감독·검사",
-      note: "검사, 제재, 내부통제, 감독방향 등 당국의 점검 강도가 드러나는 영역입니다.",
-      action: "검사, 제재, 내부통제, 공시, 승인 조건처럼 후속 조치가 필요한 항목을 별도로 추적합니다.",
-      pattern: /검사|제재|내부통제|감독|업무설명회|운영계획|관리 강화|공시|승인|조건부|보고|제도/i,
+      label: "?????",
+      note: "??, ??, ????, ???? ? ??? ?? ??? ???? ?????.",
+      action: "??, ??, ????, ??, ?? ???? ?? ??? ??? ??? ??? ?????.",
+      pattern: /??|??|????|??|?????|????|?? ??|??|??|???|??|??/i,
     },
     {
-      label: "디지털/보안",
-      note: "마이데이터, 해킹, 보안, AI, 플랫폼처럼 기술·데이터 운영 리스크가 포함됩니다.",
-      action: "금융보안, 개인정보, AI, 플랫폼 관련 보도는 보안 점검과 데이터 처리 기준 변화 여부를 확인합니다.",
-      pattern: /디지털|보안|해킹|AI|마이데이터|플랫폼|전산|개인정보|침해|금융보안/i,
+      label: "???/??",
+      note: "?????, ??, ??, AI, ????? ?????? ?? ???? ?????.",
+      action: "????, ????, AI, ??? ?? ??? ?? ??? ??? ?? ?? ?? ??? ?????.",
+      pattern: /???|??|??|AI|?????|???|??|????|??|????/i,
     },
   ].map((theme) => ({
     ...theme,
@@ -4517,11 +4727,11 @@ function buildRegulatorDirectionAnalysis(rows = []) {
   const second = ranked.find((theme) => theme.count > 0 && theme.label !== top.label);
   const latest = [...sourceRows].sort((a, b) => articleTimeValue(b) - articleTimeValue(a))[0];
   const headline = rows.length
-    ? `${top.label} 중심의 당국 신호가 가장 강하게 잡힙니다`
-    : "선택된 보도자료가 없습니다";
+    ? `${top.label} ??? ?? ??? ?? ??? ????`
+    : "??? ????? ????";
   const summary = rows.length
-    ? `${rows.length.toLocaleString("ko-KR")}건 기준으로 ${top.label}${second ? `와 ${second.label}` : ""} 흐름이 우선 관찰됩니다. 최신 보도 "${normalizeRegulatorDisplayTitle(latest?.title)}"는 시행 대상, 후속 가이드, 현장 적용 기준을 분리해 확인하는 것이 좋습니다.`
-    : "보도자료를 선택하면 선택 묶음 기준으로 당국 방향성을 분석합니다.";
+    ? `${rows.length.toLocaleString("ko-KR")}? ???? ${top.label}${second ? `? ${second.label}` : ""} ??? ?? ?????. ?? ?? "${normalizeRegulatorDisplayTitle(latest?.title)}"? ?? ??, ?? ???, ?? ?? ??? ??? ???? ?? ????.`
+    : "????? ???? ?? ?? ???? ?? ???? ?????.";
   return {
     headline,
     summary,
@@ -4539,33 +4749,33 @@ function buildRegulatorImpactCards(themes = []) {
   const activeThemes = themes.filter((theme) => theme.count > 0);
   const cards = (activeThemes.length ? activeThemes : themes).slice(0, 3).map((theme) => ({
     label: theme.label,
-    value: theme.count > 0 ? "우선 점검" : "관찰 유지",
+    value: theme.count > 0 ? "?? ??" : "?? ??",
     detail: theme.action || theme.note,
   }));
   while (cards.length < 3) {
     cards.push({
-      label: "후속 보도",
-      value: "대기",
-      detail: "선택한 보도자료가 늘어나면 시행일, 대상 업권, 후속 브리핑 기준으로 세부 분석을 보강합니다.",
+      label: "?? ??",
+      value: "??",
+      detail: "??? ????? ???? ???, ?? ??, ?? ??? ???? ?? ??? ?????.",
     });
   }
   return cards;
 }
 
 function buildRegulatorWatchItems(rows = [], themes = []) {
-  if (!rows.length) return ["보도자료를 선택하면 시행 대상, 후속 일정, 영업 영향 기준으로 분석합니다."];
+  if (!rows.length) return ["????? ???? ?? ??, ?? ??, ?? ?? ???? ?????."];
   const top = themes.find((theme) => theme.count > 0);
   const latest = [...rows].sort((a, b) => articleTimeValue(b) - articleTimeValue(a))[0];
   const items = [];
   if (top) items.push(top.action);
-  if (themes.find((theme) => theme.label === "판매채널/GA" && theme.count > 0)) {
-    items.push("GA·설계사 관련 항목은 모집 절차, 광고심의, 수수료·정착지원금 관리 기준과 연결해 봅니다.");
+  if (themes.find((theme) => theme.label === "????/GA" && theme.count > 0)) {
+    items.push("GA???? ?? ??? ?? ??, ????, ????????? ?? ??? ??? ???.");
   }
-  if (themes.find((theme) => theme.label === "소비자보호" && theme.count > 0)) {
-    items.push("소비자보호 항목은 민원, 불완전판매, 보험금 지급 안내 문구에 반영할 필요가 있는지 확인합니다.");
+  if (themes.find((theme) => theme.label === "?????" && theme.count > 0)) {
+    items.push("????? ??? ??, ?????, ??? ?? ?? ??? ??? ??? ??? ?????.");
   }
   if (latest?.title) {
-    items.push(`최신 보도 "${normalizeRegulatorDisplayTitle(latest.title)}"의 시행일과 적용 대상 업권을 확인합니다.`);
+    items.push(`?? ?? "${normalizeRegulatorDisplayTitle(latest.title)}"? ???? ?? ?? ??? ?????.`);
   }
   return unique(items).slice(0, 4);
 }
@@ -4576,7 +4786,7 @@ function selectRegulatorRows(articles = []) {
     .filter((article) => {
       const source = String(article.source || "");
       const link = String(article.link || article.url || "");
-      return /금융감독원|금융위원회/.test(source) || /fss\.or\.kr|fsc\.go\.kr/.test(link);
+      return /?????|?????/.test(source) || /fss\.or\.kr|fsc\.go\.kr/.test(link);
     })
     .filter((article) => {
       const title = normalizeRegulatorDisplayTitle(article.title);
@@ -4590,7 +4800,7 @@ function selectRegulatorRows(articles = []) {
 
 function normalizeRegulatorDisplayTitle(value) {
   return String(value || "")
-    .replace(/\s+-\s+금융(?:위원회|감독원).*$/g, "")
+    .replace(/\s+-\s+??(?:???|???).*$/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -4619,7 +4829,7 @@ function buildRelatedArticleGroups(articles = []) {
         relatedCount: members.length,
         relatedSourceCount: sources.length,
         relatedSources: sources.length
-          ? `${sources.slice(0, 5).join(" · ")}${sources.length > 5 ? ` 외 ${sources.length - 5}곳` : ""}`
+          ? `${sources.slice(0, 5).join(" ? ")}${sources.length > 5 ? ` ? ${sources.length - 5}?` : ""}`
           : "",
         clusterSize: Math.max(Number(representative.clusterSize || 1), members.length),
       };
@@ -4668,16 +4878,16 @@ function articleTopicSignature(article = {}) {
   const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""} ${article.keyword || ""}`);
   const includesAll = (terms) => terms.every((term) => text.includes(normalizeGroupTitle(term)));
   if (
-    (text.includes("금감원") || text.includes("금융감독원")) &&
-    (text.includes("8대 금융지주") || text.includes("8대 지주") || text.includes("금융지주")) &&
-    (text.includes("소비자보호") || text.includes("소비자 중심") || text.includes("금융문화"))
+    (text.includes("???") || text.includes("?????")) &&
+    (text.includes("8? ????") || text.includes("8? ??") || text.includes("????")) &&
+    (text.includes("?????") || text.includes("??? ??") || text.includes("????"))
   ) {
-    return "금감원-금융지주-소비자보호";
+    return "???-????-?????";
   }
-  if (includesAll(["홍콩els", "제재"])) return "홍콩els-제재";
-  if (includesAll(["신협", "특혜대출"])) return "신협-특혜대출";
-  if (includesAll(["신협", "부실채권"])) return "신협-부실채권";
-  if (includesAll(["소비자보호", "금융현장"]) && (text.includes("금감원") || text.includes("금융감독원"))) return "금감원-소비자보호-현장";
+  if (includesAll(["??els", "??"])) return "??els-??";
+  if (includesAll(["??", "????"])) return "??-????";
+  if (includesAll(["??", "????"])) return "??-????";
+  if (includesAll(["?????", "????"]) && (text.includes("???") || text.includes("?????"))) return "???-?????-??";
   return "";
 }
 
@@ -4687,13 +4897,13 @@ function normalizeGroupTitle(value) {
     .replace(/\[[^\]]+\]|\([^)]*\)|<[^>]+>/g, " ")
     .replace(/https?:\/\/\S+/g, " ")
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .replace(/\b(단독|종합|속보|영상|포토|인터뷰|기획|칼럼)\b/g, " ")
+    .replace(/\b(??|??|??|??|??|???|??|??)\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 function articleTokens(value) {
-  const stop = new Set(["기자", "뉴스", "보도", "관련", "통해", "대한", "위해", "올해", "지난", "이번", "추진", "확산", "맞손", "역량", "마음", "지원", "강화", "본격화"]);
+  const stop = new Set(["??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "??", "???"]);
   return normalizeGroupTitle(value)
     .split(/\s+/)
     .filter((token) => token.length > 1 && !stop.has(token) && !/^\d+$/.test(token));
@@ -4714,7 +4924,7 @@ function sharedLongToken(aTokens, bTokens) {
 }
 
 function compareArticleImportance(a, b) {
-  const toneOrder = { 부정: 4, 주의: 3, 긍정: 2, 중립: 1, 제외: 0 };
+  const toneOrder = { ??: 4, ??: 3, ??: 2, ??: 1, ??: 0 };
   const toneDiff = (toneOrder[b.tone] || 0) - (toneOrder[a.tone] || 0);
   if (toneDiff) return toneDiff;
   const scoreDiff = Number(b.score || 0) - Number(a.score || 0);
@@ -4774,31 +4984,31 @@ function normalizeKeywordText(value) {
 function groupArticles(articles, key) {
   const counts = new Map();
   articles.forEach((article) => {
-    const value = article[key] || "미분류";
+    const value = article[key] || "???";
     counts.set(value, (counts.get(value) || 0) + 1);
   });
   return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
 }
 
 function isUsableArticle(article) {
-  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article);
+  return article && article.tone !== "??" && article.category !== "??" && !isStockListingNoiseArticle(article);
 }
 
 function isOwnArticle(article) {
   if (isStockListingNoiseArticle(article)) return false;
-  return article.category === "당사" || /인카금융|인카금융서비스/i.test(`${article.title} ${article.keyword} ${article.summary}`);
+  return article.category === "??" || /????|???????/i.test(`${article.title} ${article.keyword} ${article.summary}`);
 }
 
 function isStockListingNoiseArticle(article = {}) {
   const title = String(article.title || "");
   const sourceLink = `${article.source || ""} ${article.link || ""}`.toLowerCase();
   const text = `${title} ${sourceLink} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`;
-  const stockListingTitle = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/.test(title);
-  const isItoozaListing = sourceLink.includes("itooza") && /52주|최고가|최저가|MVP|리스트|상위\s*\d+\s*선/.test(title);
+  const stockListingTitle = /(?:\[?52?\]?\s*)?(?:???|???)|??\s*(?:???|???)|??\s*??|??\s*??|???|??\s*??\s*\[??\]|\[???\]|MVP\s*??|??\s*\d+\s*?/.test(title);
+  const isItoozaListing = sourceLink.includes("itooza") && /52?|???|???|MVP|???|??\s*\d+\s*?/.test(title);
   if (!stockListingTitle && !isItoozaListing) {
     return false;
   }
-  if (/인카금융서비스|인카금융/.test(title) && /투자의견|목표주가|목표가|증권가|리포트|애널리스트/.test(text)) {
+  if (/???????|????/.test(title) && /????|????|???|???|???|?????/.test(text)) {
     return false;
   }
   return true;
@@ -4806,10 +5016,10 @@ function isStockListingNoiseArticle(article = {}) {
 
 function categoryPresetFor(value) {
   if (/GA/i.test(value)) return "GA";
-  if (/보험사|보험/i.test(value)) return "보험사";
-  if (/당사|인카/i.test(value)) return "당사";
-  if (/정책|규제/i.test(value)) return "정책/규제";
-  if (/제외|노이즈/i.test(value)) return "제외";
+  if (/???|??/i.test(value)) return "???";
+  if (/??|??/i.test(value)) return "??";
+  if (/??|??/i.test(value)) return "??/??";
+  if (/??|???/i.test(value)) return "??";
   return value;
 }
 
@@ -4819,9 +5029,9 @@ function unique(values) {
 
 function formatMoney(value) {
   const amount = Number(value || 0);
-  if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억원`;
-  if (amount >= 10000) return `${Math.round(amount / 10000).toLocaleString("ko-KR")}만원`;
-  return `${amount.toLocaleString("ko-KR")}원`;
+  if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}??`;
+  if (amount >= 10000) return `${Math.round(amount / 10000).toLocaleString("ko-KR")}??`;
+  return `${amount.toLocaleString("ko-KR")}?`;
 }
 
 function composeRealtimeData(base, articles, liveConnected = false) {
@@ -4830,12 +5040,12 @@ function composeRealtimeData(base, articles, liveConnected = false) {
   }
   const realtimeArticles = filterRowsByPeriod(articles, "daily");
   if (!realtimeArticles.length) {
-    return buildDisconnectedPeriodData(base, "당일 기준으로 표시할 운영 기사가 없습니다.");
+    return buildDisconnectedPeriodData(base, "?? ???? ??? ?? ??? ????.");
   }
   return {
     ...composePeriodData(base, realtimeArticles, [], true),
-    label: "실시간",
-    scope: realtimeArticles[0]?.date ? `${realtimeArticles[0].date} 당일 기사` : "당일 기사",
+    label: "???",
+    scope: realtimeArticles[0]?.date ? `${realtimeArticles[0].date} ?? ??` : "?? ??",
   };
 }
 

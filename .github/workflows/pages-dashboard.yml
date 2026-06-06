@@ -87,6 +87,7 @@ jobs:
           GROQ_MAX_ISSUE_SUMMARIES: ${{ secrets.GROQ_MAX_ISSUE_SUMMARIES || '20' }}
           AI_MAX_ISSUE_SUMMARIES: ${{ secrets.AI_MAX_ISSUE_SUMMARIES || '5' }}
           AI_ISSUE_SUMMARY_PROVIDER: groq
+          REQUIRE_DASHBOARD_HISTORY: "true"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

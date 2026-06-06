@@ -3444,6 +3444,66 @@ button.kpi-card {
   line-height: 1.4;
 }
 
+.feedback-login-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.feedback-candidate-list {
+  display: grid;
+  gap: 8px;
+}
+
+.feedback-candidate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.feedback-candidate div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.feedback-candidate b {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.feedback-candidate span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.feedback-table td:nth-child(2) {
+  min-width: 220px;
+}
+
+.feedback-table td:nth-child(2) a {
+  display: inline-flex;
+  margin-left: 6px;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.feedback-table td:nth-child(3),
+.feedback-table td:nth-child(4) {
+  white-space: nowrap;
+}
+
 .data-table-wrap {
   width: 100%;
   max-width: 100%;
@@ -3684,6 +3744,15 @@ button.kpi-card {
 
   .correction-editor {
     grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .feedback-candidate {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-login-note {
+    flex-direction: column;
     align-items: stretch;
   }
 
