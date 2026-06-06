@@ -3991,8 +3991,9 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
 function buildArticleSummaryLines(item = {}) {
   const titleKeys = summaryTitleKeys(item);
   if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
-    return dedupeSummaryLines(item.summaryLines.map(normalizeSummaryLine).filter(Boolean), titleKeys)
+    const explicitLines = dedupeSummaryLines(item.summaryLines.map(normalizeSummaryLine).filter(Boolean), titleKeys)
       .slice(0, 4);
+    if (explicitLines.length) return explicitLines;
   }
   const cleanTitle = cleanSummaryText(item.title || "");
   const text = cleanSummaryText(item.summary || item.description || "");
@@ -4004,8 +4005,10 @@ function buildArticleSummaryLines(item = {}) {
   const candidates = contextLines.length >= 2
     ? [...contextLines, ...sentences]
     : [...contextLines, ...sentences, titleLine];
-  return dedupeSummaryLines(candidates.filter(Boolean), titleKeys)
+  const lines = dedupeSummaryLines(candidates.filter(Boolean), titleKeys)
     .slice(0, 3);
+  if (lines.length) return lines;
+  return buildLastResortSummaryLines(item, titleKeys);
 }
 
 function summaryTitleKeys(item = {}) {
@@ -4141,6 +4144,7 @@ function headlineBasedSummary(item = {}) {
 
 function buildContextualSummaryLines(item = {}) {
   const lines = [];
+  const text = summaryHaystack(item);
   if (isPreventiveSecuritySummary(item)) {
     if (isOwnArticle(item)) {
       lines.push("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
@@ -4153,7 +4157,32 @@ function buildContextualSummaryLines(item = {}) {
   } else if (isInsuranceLossSummary(item)) {
     lines.push("실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다.");
   }
+  if (/한눈에보는GA리포트|GA리포트/i.test(text)) {
+    if (isOwnArticle(item)) {
+      lines.push("인카금융서비스의 GA 리포트성 보도로, 조직 현황과 운영 지표 확인에 쓰이는 자료성 기사입니다.");
+    } else {
+      lines.push("GA 리포트성 보도로, 해당 대리점의 조직 현황과 운영 지표를 확인할 수 있는 자료성 기사입니다.");
+    }
+  }
+  if (/보험사기|진단서|데이터\s*전쟁|AI로\s*진단서/i.test(text)) {
+    lines.push("AI를 활용한 보험사기 수법 확산과 보험업계 데이터 대응 필요성을 다룬 기사입니다.");
+  }
+  if (/실손24|팩스\s*청구|종이\s*서류|전산화/i.test(text)) {
+    lines.push("실손24 전산화 이후에도 팩스 청구가 병행되는 현장 불편과 제도 안착 과제를 다룬 기사입니다.");
+  }
+  if (/금융취약계층|사회공헌|포용금융|금융안심지원/i.test(text)) {
+    lines.push("금융취약계층 보호와 사회공헌 활동을 다룬 경쟁사 ESG·소비자보호 보도입니다.");
+  }
   return unique(lines.map(normalizeSummaryLine).filter(Boolean));
+}
+
+function buildLastResortSummaryLines(item = {}, titleKeys = new Set()) {
+  const text = summaryHaystack(item);
+  const category = item.category || "이슈";
+  const tone = item.tone || "중립";
+  const target = isOwnArticle(item) ? "당사 관련" : category === "경쟁사" ? "경쟁사" : category;
+  const line = normalizeSummaryLine(`${target} ${tone} 기사로, 제목과 본문 근거를 기준으로 세부 내용을 확인할 필요가 있습니다.`);
+  return dedupeSummaryLines([line, headlineBasedSummary(item), text], titleKeys).slice(0, 1);
 }
 
 function summaryHaystack(item = {}) {
