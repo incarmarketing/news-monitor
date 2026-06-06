@@ -4283,6 +4283,89 @@ button.kpi-card {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .data-table-wrap {
+    overflow: visible;
+  }
+
+  .data-table {
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: transparent;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table tbody {
+    display: grid;
+    gap: 9px;
+  }
+
+  .data-table tr {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+    padding: 11px;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .data-table td {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    align-items: start;
+    overflow-wrap: anywhere;
+  }
+
+  .data-table td::before {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.45;
+  }
+
+  .data-table td > * {
+    min-width: 0;
+  }
+
+  .media-data-table td:nth-child(1)::before { content: "언론사"; }
+  .media-data-table td:nth-child(2)::before { content: "주소"; }
+  .media-data-table td:nth-child(3)::before { content: "등급"; }
+  .media-data-table td:nth-child(4)::before { content: "관계"; }
+  .media-data-table td:nth-child(5)::before { content: "담당"; }
+  .media-data-table td:nth-child(6)::before { content: "접촉"; }
+  .media-data-table td:nth-child(7)::before { content: "기사"; }
+  .media-data-table td:nth-child(8)::before { content: "메모"; }
+  .media-data-table td:nth-child(9)::before { content: "관리"; }
+
+  .reporter-data-table td:nth-child(1)::before { content: "기자"; }
+  .reporter-data-table td:nth-child(2)::before { content: "언론사"; }
+  .reporter-data-table td:nth-child(3)::before { content: "담당"; }
+  .reporter-data-table td:nth-child(4)::before { content: "관계"; }
+  .reporter-data-table td:nth-child(5)::before { content: "접촉"; }
+  .reporter-data-table td:nth-child(6)::before { content: "기사"; }
+  .reporter-data-table td:nth-child(7)::before { content: "메모"; }
+  .reporter-data-table td:nth-child(8)::before { content: "관리"; }
+
+  .ad-data-table td:nth-child(1)::before { content: "월"; }
+  .ad-data-table td:nth-child(2)::before { content: "매체"; }
+  .ad-data-table td:nth-child(3)::before { content: "유형"; }
+  .ad-data-table td:nth-child(4)::before { content: "금액"; }
+  .ad-data-table td:nth-child(5)::before { content: "메모"; }
+
+  .feedback-table td:nth-child(1)::before { content: "수정일"; }
+  .feedback-table td:nth-child(2)::before { content: "기사"; }
+  .feedback-table td:nth-child(3)::before { content: "이전"; }
+  .feedback-table td:nth-child(4)::before { content: "수정"; }
+  .feedback-table td:nth-child(5)::before { content: "사유"; }
+
   .management-toolbar,
   .ad-toolbar,
   .reporter-toolbar,
