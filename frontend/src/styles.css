@@ -2173,6 +2173,13 @@ button.kpi-card {
 }
 .chart-box.tall { height: 280px; }
 .chart-box.mini { height: 178px; }
+.chart-box.vertical-bars {
+  height: 230px;
+  padding: 12px 10px 9px;
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, .95), #fff),
+    repeating-linear-gradient(0deg, transparent 0 46px, rgba(148, 163, 184, .12) 47px);
+}
 .chart-box.with-drill {
   grid-template-rows: minmax(0, 1fr) auto;
   height: 272px;
@@ -2190,6 +2197,12 @@ button.kpi-card {
   fill: var(--ink-2);
   font-size: 12px;
   font-weight: 800;
+}
+
+.chart-box.vertical-bars .recharts-cartesian-axis-tick-value {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .chart-canvas .recharts-tooltip-wrapper {

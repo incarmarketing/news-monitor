@@ -32,6 +32,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Line,
   LineChart as RechartsLineChart,
   ResponsiveContainer,
@@ -576,7 +577,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         </div>
         <div className="middle-column">
           <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
-            <CategoryChart rows={data.categoryFlow} />
+            <CategoryChart rows={data.categoryFlow} verticalBars />
           </Panel>
           <Panel title="언론사 영향도" icon={Building2} meta="노출량 · 당사 · 부정">
             <PressInfluence rows={data.pressInfluence} onOpenMonitoring={onOpenMonitoring} />
@@ -3577,8 +3578,8 @@ function PressInfluence({ rows, detailed = false, compact = false, onOpenMonitor
   );
 }
 
-function CategoryChart({ rows, tall = false, mini = false, onOpenMonitoring, drillBy = "category", labelWidth = 86 }) {
-  const className = ["chart-box", tall ? "tall" : "", mini ? "mini" : "", onOpenMonitoring ? "with-drill" : ""]
+function CategoryChart({ rows, tall = false, mini = false, verticalBars = false, onOpenMonitoring, drillBy = "category", labelWidth = 86 }) {
+  const className = ["chart-box", tall ? "tall" : "", mini ? "mini" : "", verticalBars ? "vertical-bars" : "", onOpenMonitoring ? "with-drill" : ""]
     .filter(Boolean)
     .join(" ");
   const openPreset = (row) => {
@@ -3593,14 +3594,27 @@ function CategoryChart({ rows, tall = false, mini = false, onOpenMonitoring, dri
     <div className={className}>
       <div className="chart-canvas">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} layout="vertical" margin={{ left: 0, right: 12, top: 4, bottom: 8 }}>
-            <XAxis type="number" hide />
-            <YAxis dataKey="name" type="category" width={labelWidth} tickLine={false} axisLine={false} />
-            <Tooltip />
-            <Bar dataKey="value" radius={[0, 7, 7, 0]}>
-              {rows.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
-            </Bar>
-          </BarChart>
+          {verticalBars ? (
+            <BarChart data={rows} margin={{ left: 4, right: 6, top: 26, bottom: 4 }} barCategoryGap={18}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 11, fontWeight: 900 }} />
+              <YAxis type="number" hide />
+              <Tooltip formatter={(value) => [`${Number(value || 0).toLocaleString("ko-KR")}건`, "기사량"]} />
+              <Bar dataKey="value" radius={[7, 7, 0, 0]} maxBarSize={46}>
+                <LabelList dataKey="value" position="top" formatter={(value) => `${Number(value || 0).toLocaleString("ko-KR")}건`} fill="#0f1f3d" fontSize={11} fontWeight={900} />
+                {rows.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
+              </Bar>
+            </BarChart>
+          ) : (
+            <BarChart data={rows} layout="vertical" margin={{ left: 0, right: 12, top: 4, bottom: 8 }}>
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" width={labelWidth} tickLine={false} axisLine={false} />
+              <Tooltip formatter={(value) => [`${Number(value || 0).toLocaleString("ko-KR")}건`, "기사량"]} />
+              <Bar dataKey="value" radius={[0, 7, 7, 0]}>
+                {rows.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
+              </Bar>
+            </BarChart>
+          )}
         </ResponsiveContainer>
       </div>
       {onOpenMonitoring && (
