@@ -4421,7 +4421,9 @@ button.kpi-card {
   }
 
   .data-table {
-    min-width: 680px;
+    display: grid;
+    width: 100%;
+    min-width: 0;
   }
 
   .stat-card b {
@@ -4430,6 +4432,47 @@ button.kpi-card {
 
   .report-ledger {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .data-table {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table tbody {
+    display: grid;
+    gap: 9px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .data-table tr {
+    display: grid;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    padding: 11px;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .data-table td {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    align-items: start;
+    overflow-wrap: anywhere;
   }
 }
 
