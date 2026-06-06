@@ -2135,7 +2135,7 @@ function MediaManagement({ rows, aliases = [] }) {
         </div>
       )}
       <div className="data-table-wrap">
-        <table className="data-table">
+        <table className="data-table media-data-table">
           <thead>
             <tr>
               <th>언론사</th>
@@ -2310,7 +2310,7 @@ function ReporterManagement({ rows }) {
         <button className="primary-button" onClick={handleSaveReporter}>관리 기록 저장</button>
       </div>
       <div className="data-table-wrap">
-        <table className="data-table">
+        <table className="data-table reporter-data-table">
           <thead>
             <tr>
               <th>기자</th>
@@ -2400,7 +2400,7 @@ function AdManagement({ rows }) {
         <button className="primary-button">광고비 추가</button>
       </div>
       <div className="data-table-wrap">
-        <table className="data-table">
+        <table className="data-table ad-data-table">
           <thead>
             <tr>
               <th>월</th>
