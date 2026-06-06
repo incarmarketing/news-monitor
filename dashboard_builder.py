@@ -753,7 +753,8 @@ def normalize_window_label(value: object) -> str:
 
 def invalid_notification_report_links(notifications: list[dict]) -> list[dict]:
     failures = []
-    for row in notifications:
+    daily_rows = latest_daily_notification_rows(notifications)
+    for row in daily_rows:
         message_type = str(row.get("message_type") or row.get("type") or "")
         title = str(row.get("title") or "")
         if "daily" not in message_type and "일일 언론 동향" not in title:
@@ -774,6 +775,24 @@ def invalid_notification_report_links(notifications: list[dict]) -> list[dict]:
                 "actual": link,
             })
     return failures
+
+
+def latest_daily_notification_rows(rows: list[dict]) -> list[dict]:
+    daily_rows = []
+    for row in rows:
+        message_type = str(row.get("message_type") or row.get("type") or "")
+        title = str(row.get("title") or "")
+        if "daily" not in message_type and "일일 언론 동향" not in title:
+            continue
+        match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", title)
+        if match:
+            row = {**row, "_daily_report_date": match.group(1), "_daily_report_slot": match.group(2)}
+        daily_rows.append(row)
+    dates = sorted({row.get("_daily_report_date", "") for row in daily_rows if row.get("_daily_report_date")})
+    if not dates:
+        return daily_rows
+    latest = dates[-1]
+    return [row for row in daily_rows if row.get("_daily_report_date") == latest]
 
 
 def build_ai_status(report_runs: list[dict] | None = None) -> dict:
