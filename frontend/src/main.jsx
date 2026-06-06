@@ -4048,6 +4048,8 @@ function summaryTitleKeys(item = {}) {
 
 function dedupeSummaryLines(lines = [], titleKeys = new Set()) {
   const seen = new Set();
+  const seenTopics = new Set();
+  const accepted = [];
   return lines
     .map(normalizeSummaryLine)
     .filter(Boolean)
@@ -4055,7 +4057,12 @@ function dedupeSummaryLines(lines = [], titleKeys = new Set()) {
     .filter((line) => {
       const key = normalizeSummaryCompareKey(line);
       if (!key || isDuplicateRiskSummaryKey(key, seen)) return false;
+      const topicKey = summarySemanticTopicKey(line);
+      if (topicKey && seenTopics.has(topicKey)) return false;
+      if (isNearDuplicateSummaryLine(line, accepted)) return false;
       seen.add(key);
+      if (topicKey) seenTopics.add(topicKey);
+      accepted.push(line);
       return true;
     });
 }
@@ -4080,6 +4087,41 @@ function normalizeSummaryCompareKey(value = "") {
     .replace(/(?:\.com|\.co\.kr|\.kr)$/i, "")
     .replace(/[^\p{L}\p{N}]+/gu, "")
     .slice(0, 130);
+}
+
+function summarySemanticTopicKey(value = "") {
+  const text = cleanSummaryText(value);
+  if (!text) return "";
+  if (/제목과 본문 근거|세부 내용을 확인|핵심 내용을 확인/.test(text)) return "generic-fallback";
+  if (/정착지원금|수수료|지급 규모|순위|공시/.test(text) && /GA|보험대리점|설계사/.test(text)) return "settlement-support";
+  if (/GA 리포트|리포트성|조직 현황|운영 지표/.test(text)) return "ga-report";
+  if (/투자의견|목표가|목표주가|주가|시장 평가|증권가/.test(text)) return "investment";
+  if (/금융보안원|해킹|보안|피해 예방/.test(text)) return "security";
+  if (/실손|손해율|적자폭|보험 민원|민원/.test(text)) return "insurance-loss";
+  if (/보험사기|진단서|데이터 대응|AI를 활용한 보험사기/.test(text)) return "insurance-fraud";
+  if (/실손24|팩스 청구|종이 서류|전산화/.test(text)) return "claim-digital";
+  if (/금융취약계층|사회공헌|포용금융|ESG|소비자보호/.test(text)) return "csr-consumer";
+  return "";
+}
+
+function isNearDuplicateSummaryLine(line = "", accepted = []) {
+  const tokens = summaryDedupTokens(line);
+  if (tokens.size < 3) return false;
+  return accepted.some((previous) => {
+    const previousTokens = summaryDedupTokens(previous);
+    if (previousTokens.size < 3) return false;
+    const overlap = tokenOverlapRatio(tokens, previousTokens);
+    if (overlap >= 0.62) return true;
+    return overlap >= 0.48 && sharedLongToken(Array.from(tokens), Array.from(previousTokens));
+  });
+}
+
+function summaryDedupTokens(value = "") {
+  return new Set(articleTokens(cleanSummaryText(value)).filter(isSummaryMeaningfulToken));
+}
+
+function isSummaryMeaningfulToken(token = "") {
+  return token.length >= 2 && !/기사|보도|내용|확인|기준|관련|이슈|자료|중심|비교|흐름|문맥|분류|근거/.test(token);
 }
 
 function commonPrefixLength(a = "", b = "") {
@@ -4132,6 +4174,9 @@ function isGenericSummaryLine(value) {
     /시장 평가, 투자 의견, 규제성 신호/.test(text) ||
     /보험사·GA 시장 흐름/.test(text) ||
     /업계 동향 기사로 분리/.test(text) ||
+    /제목과 본문 근거를 기준으로/.test(text) ||
+    /세부 내용을 확인할 필요가 있습니다/.test(text) ||
+    /핵심 내용을 확인합니다/.test(text) ||
     /분석 대상에서 제외한 노이즈성 기사/.test(text) ||
     /홍보 활용 가능성을 검토/.test(text) ||
     /소비자 피해, 제재, 사칭, 법적 분쟁/.test(text)
@@ -4205,10 +4250,8 @@ function buildContextualSummaryLines(item = {}) {
 
 function buildLastResortSummaryLines(item = {}, titleKeys = new Set()) {
   const text = summaryHaystack(item);
-  const category = item.category || "이슈";
-  const tone = item.tone || "중립";
-  const target = isOwnArticle(item) ? "당사 관련" : category === "경쟁사" ? "경쟁사" : category;
-  const line = normalizeSummaryLine(`${target} ${tone} 기사로, 제목과 본문 근거를 기준으로 세부 내용을 확인할 필요가 있습니다.`);
+  const topic = summarizeRiskTitleTopic(item.title || text);
+  const line = normalizeSummaryLine(`${topic} 이슈가 핵심입니다.`);
   return dedupeSummaryLines([line, headlineBasedSummary(item), text], titleKeys).slice(0, 1);
 }
 
