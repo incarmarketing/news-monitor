@@ -323,10 +323,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  gap: 8px;
   align-items: stretch;
-  min-height: 106px;
-  padding: 16px 18px;
+  min-height: 92px;
+  padding: 14px 16px;
   overflow: hidden;
   border: 1px solid #bfcbdf;
   border-left: 0;
@@ -365,17 +365,17 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   z-index: 1;
   display: grid;
   align-content: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .overview-command-main h2 {
   margin: 0;
-  max-width: 920px;
+  max-width: 760px;
   color: var(--ink);
-  font-size: clamp(20px, 2.1vw, 29px);
-  line-height: 1.24;
-  font-weight: 900;
+  font-size: clamp(17px, 1.55vw, 22px);
+  line-height: 1.32;
+  font-weight: 850;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
@@ -383,7 +383,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .overview-command-main p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
 }
 
@@ -4241,13 +4241,13 @@ button.kpi-card {
 
   .overview-command {
     min-height: auto;
-    padding: 15px;
-    gap: 12px;
+    padding: 13px 14px;
+    gap: 8px;
   }
 
   .overview-command-main h2 {
-    font-size: 20px;
-    line-height: 1.32;
+    font-size: 17px;
+    line-height: 1.36;
   }
 
   .overview-kpi-shelf {
