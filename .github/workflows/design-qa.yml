@@ -41,15 +41,21 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-1.56.1-${{ runner.os }}
 
+      - name: Cache Playwright runtime
+        uses: actions/cache@v4
+        with:
+          path: .qa/playwright-runtime/node_modules
+          key: playwright-runtime-1.56.1-${{ runner.os }}
+
       - name: Install Playwright
-        working-directory: frontend
         run: |
-          npm install --package-lock=false --no-save --no-audit --no-fund playwright@1.56.1
-          npx playwright install chromium
+          npm install --prefix .qa/playwright-runtime --package-lock=false --no-save --no-audit --no-fund playwright@1.56.1
+          ./.qa/playwright-runtime/node_modules/.bin/playwright install chromium
 
       - name: Inspect deployed dashboard
         env:
           DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
+          PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
         run: node frontend/scripts/design-qa.mjs
 
       - name: Upload screenshots
