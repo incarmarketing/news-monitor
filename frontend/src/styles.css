@@ -53,7 +53,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   grid-template-rows: 64px minmax(0, 1fr);
+  min-width: 0;
   min-height: 100vh;
+  max-width: 100%;
 }
 
 .app-header {
@@ -243,6 +245,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .workspace {
   width: min(1480px, 100%);
+  min-width: 0;
   padding: 18px;
   margin: 0 auto;
 }
@@ -454,6 +457,7 @@ button.kpi-card {
 .main-column, .middle-column, .side-column, .content-grid, .issue-list, .press-list, .rule-stack, .keyword-groups {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .content-grid.two {
@@ -3716,6 +3720,7 @@ button.kpi-card {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+  min-width: 0;
   margin-bottom: 14px;
 }
 
@@ -3743,6 +3748,7 @@ button.kpi-card {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) auto auto;
   gap: 8px;
+  min-width: 0;
   margin-bottom: 12px;
 }
 
@@ -3911,6 +3917,7 @@ button.kpi-card {
 
 .data-table-wrap {
   width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow-x: auto;
   border: 1px solid var(--line-soft);
