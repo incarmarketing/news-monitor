@@ -3973,20 +3973,22 @@ button.kpi-card {
     position: sticky;
     top: 0;
     z-index: 15;
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
     gap: 6px;
     height: auto;
     padding: 8px 12px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .side-title { display: none; }
 
   .side-nav button {
-    width: max-content;
-    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
   }
 
   .dashboard-grid,
@@ -4068,6 +4070,31 @@ button.kpi-card {
   }
 
   .brand span { white-space: normal; }
+
+  .side-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    padding: 6px 8px;
+  }
+
+  .side-nav button {
+    flex-direction: column;
+    gap: 3px;
+    min-height: 42px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+
+  .side-nav button svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .side-nav button span {
+    width: 100%;
+    font-size: 10px;
+    line-height: 1.15;
+  }
 
   .header-user-area {
     justify-self: start;
