@@ -556,14 +556,26 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         )}
       />
 
-      <section className="briefing-card">
-        <div>
+      <section className="overview-command">
+        <div className="overview-command-main">
           <span className="live-label"><span /> LIVE MEDIA BRIEFING</span>
           <h2>{summary.headline}</h2>
+          <p>{data.scope} · {data.generatedAt || summary.watchTime || "-"}</p>
         </div>
+        <button
+          type="button"
+          className={`overview-command-risk ${summary.risk.toLowerCase()}`}
+          onClick={() => onOpenMonitoring?.({ category: "?뱀궗" })}
+        >
+          <span>Risk Level</span>
+          <b>{summary.risk}</b>
+          <em>遺??{summary.ownNegative} · 二쇱쓽 {summary.caution}</em>
+        </button>
       </section>
 
-      <KpiGrid summary={summary} onOpenMonitoring={onOpenMonitoring} />
+      <section className="overview-kpi-shelf">
+        <KpiGrid summary={summary} onOpenMonitoring={onOpenMonitoring} />
+      </section>
 
       <section className="dashboard-grid">
         <div className="main-column">
