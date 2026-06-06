@@ -78,6 +78,59 @@ const navIcons = {
 const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
 const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
+const GITHUB_REPO = "incarmarketing/news-monitor";
+const WORKFLOW_HEALTH_TARGETS = [
+  { id: "negative-watch.yml", label: "부정기사 감시" },
+  { id: "news-briefing.yml", label: "보고서 생성·발송" },
+  { id: "pages-dashboard.yml", label: "대시보드 배포" },
+];
+
+async function loadGithubWorkflowHealth() {
+  if (typeof fetch === "undefined") return { status: "unsupported", workflows: [] };
+  const workflows = await Promise.all(WORKFLOW_HEALTH_TARGETS.map(async (target) => {
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${target.id}/runs?branch=main&per_page=5`;
+    try {
+      const response = await fetch(url, {
+        cache: "no-store",
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!response.ok) throw new Error(`github_${response.status}`);
+      const payload = await response.json();
+      const latest = Array.isArray(payload.workflow_runs) ? payload.workflow_runs[0] : null;
+      const previousFailures = Array.isArray(payload.workflow_runs)
+        ? payload.workflow_runs.filter((run) => ["failure", "timed_out", "action_required"].includes(run.conclusion)).length
+        : 0;
+      return {
+        ...target,
+        status: "live",
+        previousFailures,
+        latest: latest ? {
+          id: latest.id,
+          title: latest.display_title || latest.name || target.label,
+          event: latest.event || "",
+          status: latest.status || "",
+          conclusion: latest.conclusion || "",
+          createdAt: latest.created_at || "",
+          updatedAt: latest.updated_at || latest.created_at || "",
+          url: latest.html_url || "",
+        } : null,
+      };
+    } catch (error) {
+      return {
+        ...target,
+        status: "error",
+        error: error?.message || "workflow_fetch_failed",
+        latest: null,
+        previousFailures: 0,
+      };
+    }
+  }));
+  return {
+    status: workflows.some((item) => item.status === "live") ? "live" : "error",
+    checkedAt: new Date().toISOString(),
+    workflows,
+  };
+}
 
 function readInitialRoute() {
   const fallback = { section: "overview", monitoringPreset: null };
@@ -151,6 +204,7 @@ function App() {
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
+  const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
   const workTimers = useRef([]);
 
   const clearWorkTimers = () => {
@@ -229,6 +283,20 @@ function App() {
     const load = async () => {
       const next = await loadOperationalData();
       if (active) setOperations(next);
+    };
+    load();
+    const timer = window.setInterval(load, 5 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const next = await loadGithubWorkflowHealth();
+      if (active) setWorkflowHealth(next);
     };
     load();
     const timer = window.setInterval(load, 5 * 60 * 1000);
@@ -347,6 +415,7 @@ function App() {
         notifications={notifications}
         management={management}
         operations={operations}
+        workflowHealth={workflowHealth}
         isWorking={working}
         onRefreshOperations={refreshOperations}
         setActiveSection={setActiveSection}
@@ -451,7 +520,7 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, isWorking, onRefreshOperations }) {
+function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations }) {
   const { summary } = data;
   const isLoading = operations?.status === "loading" || isWorking;
   return (
@@ -480,6 +549,14 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
       </section>
 
       <KpiGrid summary={summary} onOpenMonitoring={onOpenMonitoring} />
+
+      <OperationsHealthPanel
+        operations={operations}
+        notifications={notifications}
+        watchRuns={operations?.watchRuns || []}
+        reportRuns={operations?.reportRuns || []}
+        workflowHealth={workflowHealth}
+      />
 
       <section className="dashboard-grid">
         <div className="main-column">
@@ -2863,6 +2940,315 @@ function openArticleLink(event, url) {
   event.preventDefault();
   event.stopPropagation();
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function OperationsHealthPanel({ operations, notifications = [], watchRuns = [], reportRuns = [], workflowHealth }) {
+  const health = useMemo(
+    () => buildOperationsHealth({ operations, notifications, watchRuns, reportRuns, workflowHealth }),
+    [operations, notifications, watchRuns, reportRuns, workflowHealth],
+  );
+  return (
+    <section className={`panel operations-health-panel ${health.status}`}>
+      <div className="operations-health-head">
+        <div>
+          <span><Activity />운영 헬스체크</span>
+          <h2>{health.headline}</h2>
+        </div>
+        <HealthStatusPill status={health.status} label={health.label} />
+      </div>
+      <div className="operations-health-grid">
+        {health.items.map((item) => (
+          <article className={`health-item ${item.status}`} key={item.title}>
+            <div className="health-item-top">
+              <span><item.icon />{item.title}</span>
+              <HealthStatusPill status={item.status} label={item.label} />
+            </div>
+            <b>{item.detail}</b>
+            <em>{item.meta}</em>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HealthStatusPill({ status = "unknown", label }) {
+  return <strong className={`health-pill ${status}`}>{label || healthStatusLabel(status)}</strong>;
+}
+
+function buildOperationsHealth({ operations, notifications, watchRuns, reportRuns, workflowHealth }) {
+  const items = [
+    buildWatchHealth(watchRuns, workflowHealth),
+    buildDailyReportHealth(notifications, reportRuns),
+    buildNotificationHealth(notifications),
+    buildWorkflowActionsHealth(workflowHealth),
+    buildHistorySourceHealth(operations, notifications, watchRuns, reportRuns),
+  ];
+  const status = items.some((item) => item.status === "fail")
+    ? "fail"
+    : items.some((item) => item.status === "warn")
+      ? "warn"
+      : items.every((item) => item.status === "pending")
+        ? "pending"
+        : "ok";
+  const problemCount = items.filter((item) => ["fail", "warn"].includes(item.status)).length;
+  const headline = status === "fail"
+    ? `${problemCount}개 운영 항목 확인 필요`
+    : status === "warn"
+      ? `${problemCount}개 항목 주의 관찰`
+      : "감시·보고서·알림 이력이 정상 범위입니다.";
+  return { status, label: healthStatusLabel(status), headline, items };
+}
+
+function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
+  const latestRun = watchRuns[0] || {};
+  const workflow = findWorkflowHealth(workflowHealth, "negative-watch.yml");
+  const latestWorkflow = workflow?.latest || null;
+  const latestAt = latestWorkflow?.updatedAt || latestWorkflow?.createdAt || latestRun.scannedAt || "";
+  const delay = minutesSince(latestAt);
+  const failedWorkflow = latestWorkflow && ["failure", "timed_out", "action_required"].includes(latestWorkflow.conclusion);
+  let status = "ok";
+  if (failedWorkflow) status = "fail";
+  else if (delay === null) status = workflow?.status === "error" ? "warn" : "pending";
+  else if (delay > 15) status = "fail";
+  else if (delay > 10) status = "warn";
+  const detail = delay === null
+    ? "최근 실행 확인 대기"
+    : `${formatRelativeMinutes(delay)} 전 실행`;
+  const workflowText = latestWorkflow?.status === "in_progress" ? "실행 중" : formatWorkflowConclusion(latestWorkflow);
+  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 5분";
+  return {
+    title: "부정기사 감시",
+    icon: Radar,
+    status,
+    label: healthStatusLabel(status),
+    detail,
+    meta: `${scope} · 신규 ${Number(latestRun.fresh || 0).toLocaleString("ko-KR")}건 · ${workflowText}`,
+  };
+}
+
+function buildDailyReportHealth(notifications = [], reportRuns = []) {
+  const today = kstDateKey(new Date());
+  const currentMinute = kstMinuteOfDay(new Date());
+  const slots = ["08", "13", "18"].map((slot) => {
+    const dueMinute = Number(slot) * 60 + 15;
+    const due = currentMinute >= dueMinute;
+    const notificationOk = notifications.some((item) => isDailyReportNotificationForSlot(item, today, slot));
+    const reportOk = reportRuns.some((row) => isReportRunForSlot(row, today, slot));
+    let state = "대기";
+    let status = "pending";
+    if (due && notificationOk && reportOk) {
+      state = "완료";
+      status = "ok";
+    } else if (due && notificationOk) {
+      state = "발송";
+      status = "warn";
+    } else if (due) {
+      state = "누락";
+      status = "fail";
+    }
+    return { slot, state, status, notificationOk, reportOk, due };
+  });
+  const status = worstHealthStatus(slots.filter((slot) => slot.due).map((slot) => slot.status));
+  const dueCount = slots.filter((slot) => slot.due).length;
+  const doneCount = slots.filter((slot) => slot.notificationOk).length;
+  return {
+    title: "일일보고서",
+    icon: CalendarDays,
+    status: dueCount ? status : "pending",
+    label: dueCount ? healthStatusLabel(status) : "대기",
+    detail: dueCount ? `예정 ${dueCount}회 중 발송 ${doneCount}회` : "오늘 첫 발송 대기",
+    meta: slots.map((slot) => `${slot.slot} ${slot.state}`).join(" · "),
+  };
+}
+
+function buildNotificationHealth(notifications = []) {
+  const recent = notifications.filter((item) => {
+    const minutes = minutesSince(item.sentAt);
+    return minutes !== null && minutes <= 24 * 60;
+  });
+  const scoped = recent.length ? recent : notifications.slice(0, 12);
+  const failed = scoped.filter((item) => !isNotificationSuccess(item));
+  const success = scoped.filter(isNotificationSuccess);
+  const latest = notifications[0];
+  const status = !scoped.length ? "warn" : failed.length ? "fail" : "ok";
+  return {
+    title: "알림톡",
+    icon: Bell,
+    status,
+    label: healthStatusLabel(status),
+    detail: scoped.length ? `최근 이력 성공 ${success.length} · 실패 ${failed.length}` : "발송 이력 없음",
+    meta: latest ? `최신 ${latest.time} · ${latest.type}` : "알림톡 기록 확인 필요",
+  };
+}
+
+function buildWorkflowActionsHealth(workflowHealth = {}) {
+  const workflows = Array.isArray(workflowHealth.workflows) ? workflowHealth.workflows : [];
+  if (workflowHealth.status === "loading") {
+    return {
+      title: "GitHub Actions",
+      icon: RefreshCw,
+      status: "pending",
+      label: "확인 중",
+      detail: "워크플로우 상태 확인 중",
+      meta: "공개 GitHub 실행 이력 조회",
+    };
+  }
+  if (!workflows.length) {
+    return {
+      title: "GitHub Actions",
+      icon: RefreshCw,
+      status: "warn",
+      label: "확인",
+      detail: "워크플로우 이력 연결 대기",
+      meta: workflowHealth.status === "error" ? "GitHub API 응답 확인 필요" : "최근 실행 없음",
+    };
+  }
+  const latestFailures = workflows.filter((item) => item.latest && ["failure", "timed_out", "action_required"].includes(item.latest.conclusion));
+  const latestWarnings = workflows.filter((item) => item.status === "error" || item.latest?.conclusion === "cancelled");
+  const running = workflows.filter((item) => item.latest?.status === "in_progress" || item.latest?.status === "queued").length;
+  const status = latestFailures.length ? "fail" : latestWarnings.length ? "warn" : "ok";
+  const recoveredFailures = workflows.reduce((sum, item) => sum + Number(item.previousFailures || 0), 0);
+  return {
+    title: "GitHub Actions",
+    icon: RefreshCw,
+    status,
+    label: healthStatusLabel(status),
+    detail: latestFailures.length ? `최근 실패 ${latestFailures.length}개` : running ? `실행 중 ${running}개` : "주요 워크플로우 정상",
+    meta: recoveredFailures ? `최근 목록 내 복구된 실패 ${recoveredFailures}건` : workflows.map((item) => formatWorkflowConclusion(item.latest)).join(" · "),
+  };
+}
+
+function buildHistorySourceHealth(operations = {}, notifications = [], watchRuns = [], reportRuns = []) {
+  const missing = [];
+  if (!notifications.length) missing.push("알림");
+  if (!watchRuns.length) missing.push("감시");
+  if (!reportRuns.length) missing.push("보고");
+  const status = operations?.status === "error"
+    ? "fail"
+    : missing.includes("알림") || missing.includes("감시")
+      ? "fail"
+      : missing.length
+        ? "warn"
+        : "ok";
+  const source = operations?.source === "supabase" ? "DB 직접 연결" : "정적 배포 이력";
+  return {
+    title: "Supabase 기록",
+    icon: ShieldCheck,
+    status,
+    label: healthStatusLabel(status),
+    detail: missing.length ? `${missing.join("·")} 기록 확인 필요` : `${source} 정상 반영`,
+    meta: `알림 ${notifications.length} · 감시 ${watchRuns.length} · 보고 ${reportRuns.length}`,
+  };
+}
+
+function findWorkflowHealth(workflowHealth = {}, id) {
+  return (workflowHealth.workflows || []).find((item) => item.id === id);
+}
+
+function worstHealthStatus(statuses = []) {
+  const weights = { fail: 4, warn: 3, pending: 2, unknown: 1, ok: 0 };
+  if (!statuses.length) return "pending";
+  return statuses.reduce((worst, status) => (weights[status] > weights[worst] ? status : worst), "ok");
+}
+
+function healthStatusLabel(status) {
+  return {
+    ok: "정상",
+    warn: "주의",
+    fail: "실패",
+    pending: "대기",
+    unknown: "확인",
+  }[status] || "확인";
+}
+
+function minutesSince(value) {
+  const date = parseTimestamp(value);
+  if (!date) return null;
+  return Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+}
+
+function parseTimestamp(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatRelativeMinutes(minutes) {
+  if (minutes === null || minutes === undefined) return "-";
+  if (minutes < 1) return "방금";
+  if (minutes < 60) return `${minutes}분`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours}시간 ${rest}분` : `${hours}시간`;
+}
+
+function kstDateKey(value) {
+  const date = parseTimestamp(value) || new Date();
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function kstMinuteOfDay(value) {
+  const date = parseTimestamp(value) || new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+  return hour * 60 + minute;
+}
+
+function kstHour(value) {
+  const date = parseTimestamp(value);
+  if (!date) return "";
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  return parts.find((part) => part.type === "hour")?.value || "";
+}
+
+function isDailyReportNotificationForSlot(item = {}, dateKey, slot) {
+  const text = `${item.type || ""} ${item.messageType || ""}`.toLowerCase();
+  const isDaily = /daily_report|일일|언론 동향/.test(text);
+  if (!isDaily) return false;
+  const title = String(item.type || "");
+  const titleHasSlot = title.includes(`${dateKey} ${slot}`) || title.includes(`${dateKey}-${slot}`);
+  const sentMatchesSlot = item.sentAt && kstDateKey(item.sentAt) === dateKey && kstHour(item.sentAt) === slot;
+  return isNotificationSuccess(item) && (titleHasSlot || sentMatchesSlot);
+}
+
+function isReportRunForSlot(row = {}, dateKey, slot) {
+  const rowDate = row.date || (row.timestamp ? kstDateKey(row.timestamp) : "");
+  const rowSlot = String(row.slot || "");
+  return rowDate === dateKey && (rowSlot.includes(slot) || kstHour(row.timestamp) === slot);
+}
+
+function isNotificationSuccess(item = {}) {
+  const text = `${item.status || ""} ${item.rawStatus || ""}`.toLowerCase();
+  return text.includes("성공") || text.includes("success") || text.includes("sent");
+}
+
+function formatWorkflowConclusion(run) {
+  if (!run) return "이력 없음";
+  if (run.status === "queued") return "대기";
+  if (run.status === "in_progress") return "진행 중";
+  return {
+    success: "성공",
+    failure: "실패",
+    cancelled: "취소",
+    timed_out: "시간초과",
+    action_required: "조치 필요",
+  }[run.conclusion] || run.conclusion || run.status || "확인";
 }
 
 function WatchPanel({ jobs, risk = "LOW" }) {

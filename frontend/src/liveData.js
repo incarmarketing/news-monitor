@@ -671,6 +671,10 @@ function shouldReplaceDedupedArticle(current, next) {
 function normalizeNotification(row) {
   return {
     id: row.id || `${row.sent_at}-${row.message_type}`,
+    sentAt: row.sent_at || row.created_at || "",
+    rawStatus: row.status || "",
+    messageType: row.message_type || "",
+    channel: row.channel || "",
     time: formatTime(row.sent_at || row.created_at),
     type: row.title || row.message_type || row.channel || "알림톡",
     status: row.status === "success" || row.status === "sent" || row.status === "성공" ? "성공" : row.status || "확인",
@@ -684,6 +688,9 @@ function normalizeWatchRun(row) {
     id: row.run_key || row.scanned_at,
     label: "부정기사 감시",
     cadence: "24시간 · 5분",
+    scannedAt: row.scanned_at || "",
+    rawStatus: row.status || "",
+    minutesBack: Number(row.minutes_back || 0),
     latest: formatTime(row.scanned_at),
     state: row.status === "ok" || row.status === "success" ? "정상" : row.status || "확인",
     scanned: Number(row.scanned_count || 0),
