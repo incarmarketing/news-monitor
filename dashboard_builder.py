@@ -43,6 +43,12 @@ TONE_LABELS = {
     "exclude": "제외",
 }
 
+EXPECTED_DAILY_WINDOWS = {
+    "08": "전일 18:00~당일 08:00",
+    "13": "당일 08:00~13:00",
+    "18": "당일 13:00~18:00",
+}
+
 STOCK_LISTING_NOISE_TITLE_RE = re.compile(
     r"(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|"
     r"오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선"
@@ -109,19 +115,23 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 
 def article_summary(article: dict, category: str, tone: str) -> str:
+    title = clean_summary_text(article.get("title", ""))
     existing = clean_summary_text(article.get("description", "") or article.get("summary", ""))
     lines = []
     if existing:
-        lines.extend(split_summary_sentences(existing)[:2])
-    elif article.get("title"):
-        lines.append(clean_summary_text(article.get("title", "")))
-    if tone == "negative":
-        lines.append("소비자 피해, 제재, 사칭, 법적 분쟁 등 직접 리스크 문맥이 있는지 확인합니다.")
-    elif tone == "caution":
-        lines.append("직접 부정과 분리해 시장 평가, 투자 의견, 규제성 신호로 추적합니다.")
-    elif tone == "positive":
-        lines.append("우호 보도나 성과 맥락이 있어 홍보 활용 가능성을 검토할 수 있습니다.")
-    return " ".join(unique_lines(lines)[:4])
+        lines.extend(split_summary_sentences(existing)[:3])
+    lines.extend(contextual_summary_lines(article, category, tone))
+    if not lines:
+        lines.append(headline_fallback_summary(article, category, tone))
+    usable = [
+        line
+        for line in unique_lines(lines)
+        if is_usable_summary_line(line, title)
+    ]
+    if not usable:
+        fallback = headline_fallback_summary(article, category, tone)
+        usable = [fallback] if fallback else []
+    return " ".join(unique_lines(usable)[:3])
 
 
 def clean_summary_text(value: object) -> str:
@@ -159,8 +169,75 @@ def is_generic_summary_line(value: object) -> bool:
             "키워드 기준으로 수집된 기사입니다",
             "키워드로 수집됐습니다",
             "기준 핵심만 요약했습니다",
+            "당사 직접 언급 기사로 보고서와 리스크 점검 근거",
+            "직접 부정과 분리해 시장 평가",
+            "홍보 활용 가능성을 검토",
+            "정책·규제 변화가 영업 환경",
+            "보험사·GA 시장 흐름",
         )
     )
+
+
+def contextual_summary_lines(article: dict, category: str, tone: str) -> list[str]:
+    text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
+    lines: list[str] = []
+    if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
+        if category == "own" or OWN_NAME_RE.search(text):
+            lines.append("인카금융서비스의 GA 리포트성 보도로 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
+        else:
+            lines.append("GA 리포트성 보도로 해당 대리점의 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
+    if re.search(r"보험사기|진단서|데이터\s*전쟁|AI로\s*진단서", text, re.I):
+        lines.append("AI를 활용한 보험사기 수법 확산과 보험업계 데이터 대응 필요성을 다룬 기사입니다.")
+    if re.search(r"실손24|팩스\s*청구|종이\s*서류|전산화", text, re.I):
+        lines.append("실손24 전산화 이후에도 팩스 청구가 병행되는 현장 불편과 제도 안착 과제를 다룬 기사입니다.")
+    if re.search(r"금융취약계층|사회공헌|포용금융|금융안심지원", text, re.I):
+        lines.append("금융취약계층 보호와 사회공헌 활동을 다룬 소비자보호·ESG 보도입니다.")
+    if re.search(r"정착지원금|수수료|1200%|조직력", text, re.I):
+        lines.append("GA 정착지원금과 설계사 조직 경쟁 흐름을 다룬 판매채널 관찰 기사입니다.")
+    if re.search(r"투자의견|목표가|목표주가|증권가|애널리스트", text, re.I):
+        lines.append("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.")
+    if re.search(r"금융보안원|해킹|보안|개인정보", text, re.I):
+        lines.append("금융보안과 개인정보 보호 체계 강화 흐름을 확인할 수 있는 보도입니다.")
+    if not lines and tone == "negative":
+        lines.append("소비자 피해, 제재, 사칭, 법적 분쟁처럼 직접 리스크 문맥이 있는지 확인해야 하는 기사입니다.")
+    return lines
+
+
+def headline_fallback_summary(article: dict, category: str, tone: str) -> str:
+    text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
+    if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
+        return contextual_summary_lines(article, category, tone)[0]
+    if re.search(r"보험사기|실손24|금융취약계층|사회공헌|정착지원금|투자의견|금융보안원", text, re.I):
+        lines = contextual_summary_lines(article, category, tone)
+        if lines:
+            return lines[0]
+    label = CATEGORY_LABELS.get(category, category or "기타")
+    tone_label = TONE_LABELS.get(tone, tone or "중립")
+    return f"{label} {tone_label} 기사로 제목과 본문 근거를 기준으로 핵심 내용을 확인합니다."
+
+
+def is_usable_summary_line(line: object, title: object = "") -> bool:
+    clean = clean_summary_text(line)
+    if not clean or is_generic_summary_line(clean):
+        return False
+    if len(clean) < 12 or len(clean) > 220:
+        return False
+    if re.search(r"(?:\.\.\.|…)$", clean):
+        return False
+    if re.search(r"(으로|로|및|또한|이어|하며|밝혀|전했|강조)$", clean):
+        return False
+    title_key = summary_compare_key(title)
+    line_key = summary_compare_key(clean)
+    if title_key and line_key:
+        if line_key == title_key:
+            return False
+        if len(line_key) >= 16 and len(title_key) >= 16 and (line_key in title_key or title_key in line_key):
+            return False
+    return True
+
+
+def summary_compare_key(value: object) -> str:
+    return re.sub(r"[^0-9a-zA-Z가-힣]+", "", clean_summary_text(value).lower())[:130]
 
 
 def load_supabase_articles() -> list[dict]:
@@ -230,6 +307,7 @@ def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
         if not members:
             continue
         summary, provider = result
+        summary = clean_issue_summary(summary, group)
         if not summary:
             continue
         generated += 1
@@ -240,6 +318,16 @@ def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
         provider_text = ", ".join(f"{name} {count}" for name, count in providers.items())
         print(f"Issue summaries generated: {generated} ({provider_text})")
     return rows
+
+
+def clean_issue_summary(summary: object, group: dict) -> str:
+    text = clean_summary_text(summary)
+    members = group.get("members", []) if isinstance(group, dict) else []
+    representative = choose_current_issue_representative(members)
+    title = representative.get("title", "") if representative else ""
+    if not is_usable_summary_line(text, title):
+        return ""
+    return text.rstrip(".") + "."
 
 
 def build_related_article_groups(rows: list[dict]) -> list[dict]:
@@ -538,6 +626,7 @@ def publish_dashboard() -> Path:
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
     ai_status = build_ai_status(report_runs)
+    quality_checks = build_quality_checks(articles, report_runs, notifications)
 
     PUBLIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
     PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -555,6 +644,7 @@ def publish_dashboard() -> Path:
                 "watch_runs": watch_runs,
                 "scraps": scraps,
                 "ai_status": ai_status,
+                "quality_checks": quality_checks,
             },
             ensure_ascii=False,
             indent=2,
@@ -566,6 +656,9 @@ def publish_dashboard() -> Path:
     if rebuilt_target:
         print(f"Published dashboard: {rebuilt_target}")
         print(f"Dashboard articles: {len(articles)}")
+        print(f"Dashboard quality: {quality_checks['status']} - {quality_checks['summary']}")
+        if os.getenv("REQUIRE_DASHBOARD_QUALITY", "").lower() == "true" and quality_checks["status"] == "fail":
+            raise RuntimeError(quality_checks["summary"])
         return rebuilt_target
 
     env = Environment(
@@ -577,7 +670,110 @@ def publish_dashboard() -> Path:
     target.write_text(template.render(summary=summary), encoding="utf-8")
     print(f"Published dashboard: {target}")
     print(f"Dashboard articles: {len(articles)}")
+    print(f"Dashboard quality: {quality_checks['status']} - {quality_checks['summary']}")
+    if os.getenv("REQUIRE_DASHBOARD_QUALITY", "").lower() == "true" and quality_checks["status"] == "fail":
+        raise RuntimeError(quality_checks["summary"])
     return target
+
+
+def build_quality_checks(articles: list[dict], report_runs: list[dict], notifications: list[dict]) -> dict:
+    current_rows = current_day_rows(articles)
+    summary_failures = [
+        {
+            "title": row.get("title", ""),
+            "source": row.get("source", ""),
+            "reason": "summary_missing_or_title_duplicate",
+        }
+        for row in current_rows
+        if row.get("tone") != "exclude" and not is_usable_summary_line(row.get("summary", ""), row.get("title", ""))
+    ]
+    report_window_failures = invalid_report_windows(report_runs)
+    notification_link_failures = invalid_notification_report_links(notifications)
+    checks = [
+        {
+            "name": "current_day_summaries",
+            "status": "ok" if not summary_failures else "fail",
+            "total": len(current_rows),
+            "failures": summary_failures[:10],
+        },
+        {
+            "name": "daily_report_windows",
+            "status": "ok" if not report_window_failures else "fail",
+            "total": len(report_runs),
+            "failures": report_window_failures[:10],
+        },
+        {
+            "name": "notification_report_links",
+            "status": "ok" if not notification_link_failures else "fail",
+            "total": len(notifications),
+            "failures": notification_link_failures[:10],
+        },
+    ]
+    failed = [check for check in checks if check["status"] != "ok"]
+    status = "fail" if failed else "ok"
+    summary = "품질 검증 통과" if status == "ok" else f"{len(failed)}개 품질 검증 항목 확인 필요"
+    return {
+        "generated_at": datetime.now(KST).isoformat(),
+        "status": status,
+        "summary": summary,
+        "checks": checks,
+    }
+
+
+def invalid_report_windows(report_runs: list[dict]) -> list[dict]:
+    failures = []
+    scoped = latest_report_date_rows(report_runs)
+    for row in scoped:
+        slot = str(row.get("report_slot", "")).zfill(2)
+        expected = EXPECTED_DAILY_WINDOWS.get(slot)
+        if not expected:
+            continue
+        label = normalize_window_label(row.get("window_label", ""))
+        if label and label != normalize_window_label(expected):
+            failures.append({
+                "run_key": row.get("run_key", ""),
+                "slot": slot,
+                "expected": expected,
+                "actual": row.get("window_label", ""),
+            })
+    return failures
+
+
+def latest_report_date_rows(rows: list[dict]) -> list[dict]:
+    dates = sorted({str(row.get("report_date") or "")[:10] for row in rows if row.get("report_date")})
+    if not dates:
+        return rows
+    latest = dates[-1]
+    return [row for row in rows if str(row.get("report_date") or "")[:10] == latest]
+
+
+def normalize_window_label(value: object) -> str:
+    return re.sub(r"\s+", "", str(value or ""))
+
+
+def invalid_notification_report_links(notifications: list[dict]) -> list[dict]:
+    failures = []
+    for row in notifications:
+        message_type = str(row.get("message_type") or row.get("type") or "")
+        title = str(row.get("title") or "")
+        if "daily" not in message_type and "일일 언론 동향" not in title:
+            continue
+        match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", title)
+        if not match:
+            failures.append({"id": row.get("id", ""), "title": title, "reason": "daily_title_missing_date_slot"})
+            continue
+        date, slot = match.group(1), match.group(2)
+        link = str(row.get("link_url") or row.get("link") or "")
+        expected_path = f"/reports/daily/{date}-{slot}.html"
+        if expected_path not in link:
+            failures.append({
+                "id": row.get("id", ""),
+                "title": title,
+                "reason": "daily_link_mismatch",
+                "expected": expected_path,
+                "actual": link,
+            })
+    return failures
 
 
 def build_ai_status(report_runs: list[dict] | None = None) -> dict:
@@ -800,6 +996,7 @@ def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
         if not members:
             continue
         summary, provider = result
+        summary = clean_issue_summary(summary, group)
         if not summary:
             continue
         generated += 1

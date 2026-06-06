@@ -2130,6 +2130,7 @@ button.kpi-card {
 .filter-card label {
   display: grid;
   gap: 5px;
+  min-width: 0;
   color: var(--muted);
   font-size: 11px;
   font-weight: 900;
@@ -2138,10 +2139,13 @@ button.kpi-card {
 .filter-card > button {
   align-self: end;
   justify-self: start;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .filter-card input, .filter-card select, .url-box input {
   width: 100%;
+  max-width: 100%;
   min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -4150,6 +4154,13 @@ button.kpi-card {
   .keyword-add-form,
   .filter-card {
     grid-template-columns: 1fr;
+  }
+
+  .filter-card > button,
+  .filter-card .primary-button,
+  .filter-card .ghost-button {
+    justify-self: stretch;
+    width: 100%;
   }
 
   .page-actions {

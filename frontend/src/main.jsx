@@ -4356,21 +4356,18 @@ function selectRealtimeArticles(articles = []) {
 }
 
 function expandReportIssues(issues, articles, period) {
-  const max = period === "daily" ? 5 : 9;
-  const rows = articles.map((article) => ({
-      tone: article.tone,
-      category: article.category,
-      source: article.source,
-      title: article.title,
-      summary: compactArticleSummary(article),
-      summaryLines: buildArticleSummaryLines(article),
-      publishedAt: article.time || article.date || "-",
-      link: article.link,
-    }));
+  const max = period === "daily" ? 6 : 10;
+  const scoped = articles
+    .filter((article) => article?.title && article.tone !== "제외")
+    .filter(isUsableArticle);
+  const rows = buildRelatedArticleGroups(scoped)
+    .map((group) => normalizeMediaIssueGroup(group, period))
+    .filter((issue) => issue.title && buildArticleSummaryLines(issue).length)
+    .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a));
   const fallbackRows = rows.length ? [] : issues;
   const seen = new Set();
   return [...rows, ...fallbackRows].filter((item) => {
-    const key = item.title;
+    const key = normalizeGroupTitle(item.title || "");
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
