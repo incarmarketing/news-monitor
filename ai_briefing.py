@@ -25,6 +25,7 @@ import archiver
 import config
 import gemini_helper
 import groq_helper
+import public_urls
 import report_window
 import supabase_store
 
@@ -578,6 +579,7 @@ def build_html_report(
         market_count=market_count,
         methodology=build_methodology(metrics),
         window=window,
+        dashboard_url=public_urls.dashboard_url(),
     )
 
 

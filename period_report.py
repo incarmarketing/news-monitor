@@ -20,6 +20,7 @@ import archiver
 import config
 import gemini_helper
 import groq_helper
+import public_urls
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -586,6 +587,7 @@ def run(period: str, custom_days: int | None = None) -> Path | None:
         max_neg=max_neg,
         ai_report_html=markdown_to_html(ai_report),
         top_articles=top_articles[:10],
+        dashboard_url=public_urls.dashboard_url(),
     )
 
     out_path = LOG_DIR / f"{output_slug}_report_{now_kst().strftime('%Y%m%d_%H%M')}.html"
