@@ -523,6 +523,21 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
 function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations }) {
   const { summary } = data;
   const isLoading = operations?.status === "loading" || isWorking;
+  const operationsHealth = useMemo(
+    () => buildOperationsHealth({
+      operations,
+      notifications,
+      watchRuns: operations?.watchRuns || [],
+      reportRuns: operations?.reportRuns || [],
+      workflowHealth,
+    }),
+    [operations, notifications, workflowHealth],
+  );
+  const watchHealth = operationsHealth.items.find((item) => item.title === "부정기사 감시");
+  const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
+  const notificationHealth = operationsHealth.items.find((item) => item.title === "알림톡");
+  const actionsHealth = operationsHealth.items.find((item) => item.title === "GitHub Actions");
+  const historyHealth = operationsHealth.items.find((item) => item.title === "Supabase 기록");
   return (
     <main className="workspace">
       <PageTitle
@@ -550,14 +565,6 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
       <KpiGrid summary={summary} onOpenMonitoring={onOpenMonitoring} />
 
-      <OperationsHealthPanel
-        operations={operations}
-        notifications={notifications}
-        watchRuns={operations?.watchRuns || []}
-        reportRuns={operations?.reportRuns || []}
-        workflowHealth={workflowHealth}
-      />
-
       <section className="dashboard-grid">
         <div className="main-column">
           <Panel title="주요 이슈" icon={Newspaper} meta="키워드 기준 5분 갱신">
@@ -573,13 +580,14 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           </Panel>
         </div>
         <div className="side-column">
-          <WatchPanel jobs={jobs} risk={summary.risk} />
+          <WatchPanel jobs={jobs} risk={summary.risk} health={watchHealth} />
           <AiUsagePanel status={operations?.aiStatus} />
-          <Panel title="알림톡 발송 이력" icon={Bell} meta={`${notifications.length.toLocaleString("ko-KR")}건`}>
+          <Panel title="알림톡 발송 이력" icon={Bell} meta={notificationHealth?.label || `${notifications.length.toLocaleString("ko-KR")}건`}>
+            <NotificationStatusSummary health={notificationHealth} total={notifications.length} />
             <NotificationList rows={notifications} />
           </Panel>
-          <Panel title="보고서 자동화" icon={CalendarDays} meta="스케줄">
-            <JobRows rows={jobs} />
+          <Panel title="보고서 자동화" icon={CalendarDays} meta={reportHealth?.label || "스케줄"}>
+            <ReportAutomationStatus reportHealth={reportHealth} actionsHealth={actionsHealth} historyHealth={historyHealth} />
           </Panel>
         </div>
       </section>
@@ -2942,36 +2950,6 @@ function openArticleLink(event, url) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-function OperationsHealthPanel({ operations, notifications = [], watchRuns = [], reportRuns = [], workflowHealth }) {
-  const health = useMemo(
-    () => buildOperationsHealth({ operations, notifications, watchRuns, reportRuns, workflowHealth }),
-    [operations, notifications, watchRuns, reportRuns, workflowHealth],
-  );
-  return (
-    <section className={`panel operations-health-panel ${health.status}`}>
-      <div className="operations-health-head">
-        <div>
-          <span><Activity />운영 헬스체크</span>
-          <h2>{health.headline}</h2>
-        </div>
-        <HealthStatusPill status={health.status} label={health.label} />
-      </div>
-      <div className="operations-health-grid">
-        {health.items.map((item) => (
-          <article className={`health-item ${item.status}`} key={item.title}>
-            <div className="health-item-top">
-              <span><item.icon />{item.title}</span>
-              <HealthStatusPill status={item.status} label={item.label} />
-            </div>
-            <b>{item.detail}</b>
-            <em>{item.meta}</em>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function HealthStatusPill({ status = "unknown", label }) {
   return <strong className={`health-pill ${status}`}>{label || healthStatusLabel(status)}</strong>;
 }
@@ -3035,7 +3013,7 @@ function buildDailyReportHealth(notifications = [], reportRuns = []) {
     const due = currentMinute >= dueMinute;
     const notificationOk = notifications.some((item) => isDailyReportNotificationForSlot(item, today, slot));
     const reportOk = reportRuns.some((row) => isReportRunForSlot(row, today, slot));
-    let state = "대기";
+    let state = "예정";
     let status = "pending";
     if (due && notificationOk && reportOk) {
       state = "완료";
@@ -3052,12 +3030,16 @@ function buildDailyReportHealth(notifications = [], reportRuns = []) {
   const status = worstHealthStatus(slots.filter((slot) => slot.due).map((slot) => slot.status));
   const dueCount = slots.filter((slot) => slot.due).length;
   const doneCount = slots.filter((slot) => slot.notificationOk).length;
+  const completedDueCount = slots.filter((slot) => slot.due && slot.notificationOk).length;
+  const totalSlots = slots.length;
   return {
     title: "일일보고서",
     icon: CalendarDays,
     status: dueCount ? status : "pending",
     label: dueCount ? healthStatusLabel(status) : "대기",
-    detail: dueCount ? `예정 ${dueCount}회 중 발송 ${doneCount}회` : "오늘 첫 발송 대기",
+    detail: `오늘 ${totalSlots}회 중 발송 ${doneCount}회`,
+    progress: dueCount ? `도래 ${dueCount}회 중 완료 ${completedDueCount}회` : "첫 발송 전",
+    slots,
     meta: slots.map((slot) => `${slot.slot} ${slot.state}`).join(" · "),
   };
 }
@@ -3251,13 +3233,23 @@ function formatWorkflowConclusion(run) {
   }[run.conclusion] || run.conclusion || run.status || "확인";
 }
 
-function WatchPanel({ jobs, risk = "LOW" }) {
+function WatchPanel({ jobs, risk = "LOW", health }) {
   const watchJob = jobs.find((job) => job.label === "부정기사 감시") || jobs[0] || {};
+  const status = health?.status || "unknown";
+  const heading = status === "fail"
+    ? "감시 확인 필요"
+    : status === "warn"
+      ? "감시 지연 주의"
+      : status === "pending"
+        ? "감시 확인 중"
+        : "정상 감시";
+  const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
+  const meta = health?.meta || `${watchJob.cadence || "24시간 5분 주기"} · ${watchJob.state || "확인"}`;
   return (
     <section className="panel watch-panel">
       <div className="watch-title-row">
         <span><Radar />부정기사 탐색</span>
-        <b>당사 리스크 <em>{risk}</em></b>
+        <HealthStatusPill status={status} label={health?.label || risk} />
       </div>
       <div className="watch-top">
         <div className="radar-asset">
@@ -3269,9 +3261,9 @@ function WatchPanel({ jobs, risk = "LOW" }) {
           <Radar />
         </div>
         <div className="watch-copy">
-          <h2>정상 감시</h2>
-          <p>최근 6분 검사 완료</p>
-          <strong>{watchJob.latest || "-"} · 24시간 감시 중</strong>
+          <h2>{heading}</h2>
+          <p>{detail}</p>
+          <strong>{meta}</strong>
           <span>24시간 5분 주기</span>
         </div>
       </div>
@@ -3466,6 +3458,18 @@ function NotificationList({ rows }) {
   );
 }
 
+function NotificationStatusSummary({ health, total = 0 }) {
+  return (
+    <div className={`operation-status-summary ${health?.status || "unknown"}`}>
+      <div>
+        <HealthStatusPill status={health?.status || "unknown"} label={health?.label || "확인"} />
+        <b>{health?.detail || "알림톡 이력 확인 대기"}</b>
+      </div>
+      <span>{health?.meta || `누적 ${Number(total || 0).toLocaleString("ko-KR")}건`}</span>
+    </div>
+  );
+}
+
 function NotificationDetail({ item, onClose }) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
@@ -3500,6 +3504,39 @@ function JobRows({ rows }) {
           <em>{job.state}</em>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ReportAutomationStatus({ reportHealth, actionsHealth, historyHealth }) {
+  const slots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
+  return (
+    <div className="report-automation-status">
+      <div className={`operation-status-summary ${reportHealth?.status || "unknown"}`}>
+        <div>
+          <HealthStatusPill status={reportHealth?.status || "unknown"} label={reportHealth?.label || "확인"} />
+          <b>{reportHealth?.detail || "일일보고서 스케줄 확인 대기"}</b>
+        </div>
+        <span>{reportHealth?.progress || reportHealth?.meta || "08 · 13 · 18 스케줄"}</span>
+      </div>
+      <div className="daily-slot-grid">
+        {slots.map((slot) => (
+          <span className={`daily-slot ${slot.status}`} key={slot.slot}>
+            <b>{slot.slot}:00</b>
+            <em>{slot.state}</em>
+          </span>
+        ))}
+      </div>
+      <div className="automation-foot">
+        <span>
+          <b>Actions</b>
+          <em>{actionsHealth?.detail || "워크플로우 확인 대기"}</em>
+        </span>
+        <span>
+          <b>DB 기록</b>
+          <em>{historyHealth?.detail || "Supabase 기록 확인 대기"}</em>
+        </span>
+      </div>
     </div>
   );
 }

@@ -1277,6 +1277,23 @@ button.kpi-card {
   font-weight: 900;
 }
 
+.watch-title-row .health-pill {
+  min-height: 30px;
+  border-color: rgba(255, 255, 255, .18);
+  background: rgba(15, 29, 79, .5);
+  color: #71f0b0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07);
+}
+
+.watch-title-row .health-pill.warn,
+.watch-title-row .health-pill.pending {
+  color: #fde68a;
+}
+
+.watch-title-row .health-pill.fail {
+  color: #fecdd3;
+}
+
 .watch-top {
   display: grid;
   grid-template-columns: 116px minmax(0, 1fr);
@@ -1310,6 +1327,8 @@ button.kpi-card {
   color: #dbe7ff;
   font-size: 11px;
   font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1664,6 +1683,138 @@ button.kpi-card {
   display: grid;
   gap: 8px;
   margin-top: 12px;
+}
+
+.operation-status-summary {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #b7eed4;
+  border-radius: 8px;
+  background: var(--green-soft);
+}
+
+.operation-status-summary.warn,
+.operation-status-summary.pending {
+  border-color: #fedb8b;
+  background: var(--amber-soft);
+}
+
+.operation-status-summary.fail {
+  border-color: #ffc1ca;
+  background: var(--red-soft);
+}
+
+.operation-status-summary > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.operation-status-summary b {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.operation-status-summary span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.report-automation-status {
+  display: grid;
+  gap: 10px;
+}
+
+.daily-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.daily-slot {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.daily-slot.ok {
+  border-color: #b7eed4;
+  background: var(--green-soft);
+}
+
+.daily-slot.warn,
+.daily-slot.pending {
+  border-color: #fedb8b;
+  background: var(--amber-soft);
+}
+
+.daily-slot.fail {
+  border-color: #ffc1ca;
+  background: var(--red-soft);
+}
+
+.daily-slot b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.daily-slot em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.automation-foot {
+  display: grid;
+  gap: 8px;
+}
+
+.automation-foot span {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.automation-foot b {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.automation-foot em {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .watch-lines div, .job-rows div, .notification-list button {
@@ -3958,6 +4109,8 @@ button.kpi-card {
   .watch-lines div,
   .job-rows div,
   .notification-list button,
+  .operation-status-summary > div,
+  .automation-foot span,
   .press-row {
     grid-template-columns: 1fr;
   }
