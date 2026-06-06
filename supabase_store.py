@@ -9,7 +9,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse
 
 import requests
 from dotenv import load_dotenv
@@ -454,6 +454,85 @@ def notification_already_sent(message_type: str, title: str, status: str = "succ
     except Exception as error:
         print(f"Supabase notification duplicate check skipped: {error}")
         return False
+
+
+def repair_daily_notification_links(base_url: str = "https://incarmarketing.github.io/news-monitor/") -> int:
+    """Point legacy daily notification rows at their stable report HTML files."""
+    if not is_enabled():
+        return 0
+    rows = load_dashboard_notifications(limit=200)
+    fixed = 0
+    for row in rows:
+        if str(row.get("status") or "").lower() != "success":
+            continue
+        if "daily" not in str(row.get("message_type") or row.get("type") or ""):
+            continue
+        date_slot = daily_notification_date_slot(row)
+        if not date_slot:
+            continue
+        date_value, slot = date_slot
+        expected_url = stable_daily_report_url(base_url, date_value, slot)
+        current_link = str(row.get("link_url") or "")
+        title = str(row.get("title") or "")
+        update: dict[str, str] = {}
+        if current_link != expected_url:
+            update["link_url"] = expected_url
+        if not re.search(r"(20\d{2}-\d{2}-\d{2})\s+\d{2}", title):
+            update["title"] = re.sub(r"(20\d{2}-\d{2}-\d{2})", rf"\1 {slot}", title, count=1)
+        if not update:
+            continue
+        try:
+            request(
+                "PATCH",
+                f"notification_sends?id=eq.{quote(str(row.get('id')), safe='')}",
+                data=json.dumps(update, ensure_ascii=False),
+            )
+            fixed += 1
+        except Exception as error:
+            print(f"Supabase notification link repair skipped for {row.get('id')}: {error}")
+    return fixed
+
+
+def daily_notification_date_slot(row: dict) -> tuple[str, str] | None:
+    title = str(row.get("title") or "")
+    link = str(row.get("link_url") or "")
+    match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", title)
+    if match:
+        return match.group(1), match.group(2)
+    date_match = re.search(r"(20\d{2}-\d{2}-\d{2})", title)
+    date_value = date_match.group(1) if date_match else ""
+    if not date_value:
+        return None
+    slot = infer_notification_slot(row, link)
+    return (date_value, slot) if slot else None
+
+
+def infer_notification_slot(row: dict, link: str) -> str:
+    parsed = urlparse(link)
+    query = parse_qs(parsed.query)
+    version = (query.get("v") or [""])[0]
+    if re.match(r"^\d{12,14}$", version):
+        hour = int(version[8:10])
+    else:
+        sent_at = str(row.get("sent_at") or row.get("created_at") or "")
+        try:
+            hour = datetime.fromisoformat(sent_at.replace("Z", "+00:00")).astimezone(KST).hour
+        except ValueError:
+            return ""
+    if 5 <= hour <= 10:
+        return "08"
+    if 11 <= hour <= 15:
+        return "13"
+    return "18"
+
+
+def stable_daily_report_url(base_url: str, date_value: str, slot: str) -> str:
+    clean = (base_url or "https://incarmarketing.github.io/news-monitor/").split("?", 1)[0]
+    if clean.endswith(".html"):
+        clean = clean.rsplit("/", 1)[0] + "/"
+    if not clean.endswith("/"):
+        clean += "/"
+    return f"{clean}reports/daily/{date_value}-{str(slot).zfill(2)}.html"
 
 
 def save_negative_watch_run(

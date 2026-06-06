@@ -124,6 +124,7 @@ def publish() -> Path:
     publish_assets()
     publish_period_report("weekly")
     publish_period_report("monthly")
+    repair_daily_notification_history()
     dashboard_builder.publish_dashboard()
     return index_target
 
@@ -279,6 +280,16 @@ def publish_period_report(period: str) -> None:
     shutil.copy2(source, legacy_dir / f"{period}.html")
     shutil.copy2(source, archive_dir / source.name)
     print(f"Published {period} report: {source.name}")
+
+
+def repair_daily_notification_history() -> None:
+    try:
+        fixed = supabase_store.repair_daily_notification_links()
+    except Exception as exc:
+        print(f"Daily notification link repair skipped: {exc}")
+        return
+    if fixed:
+        print(f"Repaired daily notification links: {fixed}")
 
 
 if __name__ == "__main__":

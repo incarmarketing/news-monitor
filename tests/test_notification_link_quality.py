@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 import dashboard_builder
+import supabase_store
 
 
 class NotificationLinkQualityTests(unittest.TestCase):
@@ -98,6 +99,24 @@ class NotificationLinkQualityTests(unittest.TestCase):
         ]
 
         self.assertEqual(dashboard_builder.invalid_notification_action_links(notifications), [])
+
+    def test_infers_legacy_daily_notification_slot_from_cache_buster(self) -> None:
+        row = {
+            "title": "daily report 2026-05-29",
+            "link_url": "https://incarmarketing.github.io/news-monitor/?v=20260529130222",
+            "message_type": "daily_report",
+            "status": "success",
+        }
+
+        self.assertEqual(supabase_store.daily_notification_date_slot(row), ("2026-05-29", "13"))
+        self.assertEqual(
+            supabase_store.stable_daily_report_url(
+                "https://incarmarketing.github.io/news-monitor/",
+                "2026-05-29",
+                "13",
+            ),
+            "https://incarmarketing.github.io/news-monitor/reports/daily/2026-05-29-13.html",
+        )
 
 
 if __name__ == "__main__":
