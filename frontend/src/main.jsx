@@ -561,16 +561,20 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           <span className="live-label"><span /> LIVE MEDIA BRIEFING</span>
           <h2>{summary.headline}</h2>
           <p>{data.scope} · {data.generatedAt || summary.watchTime || "-"}</p>
+          <div className="overview-status-strip">
+            <button
+              type="button"
+              className={`overview-status-chip ${summary.risk.toLowerCase()}`}
+              onClick={() => onOpenMonitoring?.({ category: "?뱀궗" })}
+            >
+              <span>Risk</span>
+              <b>{summary.risk}</b>
+            </button>
+            <span className="overview-mini-stat negative">遺??{summary.ownNegative}</span>
+            <span className="overview-mini-stat caution">二쇱쓽 {summary.caution}</span>
+            <span className="overview-mini-stat">?뱀궗 ?멸툒 {summary.ownMentions}</span>
+          </div>
         </div>
-        <button
-          type="button"
-          className={`overview-command-risk ${summary.risk.toLowerCase()}`}
-          onClick={() => onOpenMonitoring?.({ category: "?뱀궗" })}
-        >
-          <span>Risk Level</span>
-          <b>{summary.risk}</b>
-          <em>遺??{summary.ownNegative} · 二쇱쓽 {summary.caution}</em>
-        </button>
       </section>
 
       <section className="overview-kpi-shelf">
