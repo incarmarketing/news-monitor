@@ -35,11 +35,17 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-1.56.1-${{ runner.os }}
+
       - name: Install Playwright
         working-directory: frontend
         run: |
           npm install --package-lock=false --no-save --no-audit --no-fund playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
 
       - name: Inspect deployed dashboard
         env:
