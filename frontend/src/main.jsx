@@ -1905,7 +1905,7 @@ function ReportMetric({ label, value, detail, tone = "default", onClick }) {
 
 function ReportStory({ issue }) {
   return (
-    <article className="report-story">
+    <article className={`report-story ${toneCssClass(issue.tone)}`}>
       <div>
         <Chip tone={issue.tone}>{issue.tone}</Chip>
         <Chip>{issue.category}</Chip>
@@ -2726,7 +2726,7 @@ function IssueList({ issues, compact = false }) {
   return (
     <div className={compact ? "issue-list compact" : "issue-list"}>
       {issues.map((issue) => (
-        <article className="issue-card" key={`${issue.source}-${issue.title}`}>
+        <article className={`issue-card ${toneCssClass(issue.tone)}`} key={`${issue.source}-${issue.title}`}>
           <div className="issue-meta">
             <Chip tone={issue.tone}>{issue.tone}</Chip>
             <Chip>{issue.category}</Chip>
@@ -3695,7 +3695,12 @@ function DataSourcePill({ operations }) {
 }
 
 function Chip({ children, tone }) {
-  const cls = {
+  const cls = toneCssClass(tone);
+  return <span className={`chip ${cls}`}>{children}</span>;
+}
+
+function toneCssClass(tone) {
+  return {
     부정: "negative",
     주의: "caution",
     중립: "neutral",
@@ -3706,7 +3711,6 @@ function Chip({ children, tone }) {
     예약: "neutral",
     제외: "muted",
   }[tone] || "plain";
-  return <span className={`chip ${cls}`}>{children}</span>;
 }
 
 function composeRealtimeDataUnused(base, articles, liveConnected = false) {
