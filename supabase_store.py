@@ -647,6 +647,37 @@ def load_dashboard_report_runs(limit: int = 1000) -> list[dict]:
     return response.json()
 
 
+def load_report_run_archives(limit: int = 60) -> list[dict]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        (
+            "report_runs?"
+            "select=run_key,report_date,report_slot,timestamp,window_label,window_start,window_end,risk_level,metrics,briefing"
+            f"&order=report_date.desc,report_slot.desc&limit={limit}"
+        ),
+    )
+    return response.json()
+
+
+def load_articles_for_report_slot(report_date: str, report_slot: str, limit: int = 5000) -> list[dict]:
+    if not is_enabled() or not report_date or not report_slot:
+        return []
+    response = request(
+        "GET",
+        (
+            "news_articles?"
+            "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
+            "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
+            f"&report_date=eq.{quote(report_date, safe='')}"
+            f"&report_slot=eq.{quote(str(report_slot).zfill(2), safe='')}"
+            f"&order=score.desc&limit={limit}"
+        ),
+    )
+    return response.json()
+
+
 def load_dashboard_notifications(limit: int = 80) -> list[dict]:
     if not is_enabled():
         return []

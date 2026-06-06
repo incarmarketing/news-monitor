@@ -9,6 +9,7 @@ import shutil
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -689,6 +690,8 @@ def build_quality_checks(articles: list[dict], report_runs: list[dict], notifica
     ]
     report_window_failures = invalid_report_windows(report_runs)
     notification_link_failures = invalid_notification_report_links(notifications)
+    notification_action_failures = invalid_notification_action_links(notifications)
+    notification_history_failures = invalid_notification_report_history(notifications, report_runs)
     checks = [
         {
             "name": "current_day_summaries",
@@ -707,6 +710,18 @@ def build_quality_checks(articles: list[dict], report_runs: list[dict], notifica
             "status": "ok" if not notification_link_failures else "fail",
             "total": len(notifications),
             "failures": notification_link_failures[:10],
+        },
+        {
+            "name": "notification_action_links",
+            "status": "ok" if not notification_action_failures else "fail",
+            "total": len(notifications),
+            "failures": notification_action_failures[:10],
+        },
+        {
+            "name": "notification_report_history",
+            "status": "ok" if not notification_history_failures else "fail",
+            "total": len(report_runs),
+            "failures": notification_history_failures[:10],
         },
     ]
     failed = [check for check in checks if check["status"] != "ok"]
@@ -775,6 +790,145 @@ def invalid_notification_report_links(notifications: list[dict]) -> list[dict]:
                 "actual": link,
             })
     return failures
+
+
+def invalid_notification_action_links(notifications: list[dict]) -> list[dict]:
+    failures = []
+    for row in recent_notification_rows(notifications):
+        status = str(row.get("status") or "").lower()
+        if status and status != "success":
+            continue
+
+        message_type = str(row.get("message_type") or row.get("type") or "")
+        title = str(row.get("title") or "")
+        link = str(row.get("link_url") or row.get("link") or "").strip()
+        if not link:
+            failures.append(notification_link_failure(row, "link_missing"))
+            continue
+
+        parsed = urlparse(link)
+        host = parsed.netloc.lower()
+        path = parsed.path or ""
+        if parsed.scheme not in {"http", "https"} or is_dashboard_local_link(link):
+            failures.append(notification_link_failure(row, "link_not_public_http", actual=link))
+            continue
+
+        if "daily" in message_type:
+            match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", title)
+            if not match:
+                failures.append(notification_link_failure(row, "daily_title_missing_date_slot", actual=link))
+                continue
+            date, slot = match.group(1), match.group(2)
+            expected_path = f"/news-monitor/reports/daily/{date}-{slot}.html"
+            if host != "incarmarketing.github.io" or path != expected_path:
+                failures.append(notification_link_failure(row, "daily_action_link_mismatch", expected=expected_path, actual=link))
+            continue
+
+        if "negative" in message_type:
+            query = parse_qs(parsed.query)
+            if host != "incarmarketing.github.io" or path != "/news-monitor/dashboard.html":
+                failures.append(notification_link_failure(row, "negative_action_link_must_open_dashboard", actual=link))
+            elif query.get("section", [""])[0] != "monitoring":
+                failures.append(notification_link_failure(row, "negative_action_link_missing_monitoring_section", actual=link))
+            continue
+
+        if "ai_usage" in message_type:
+            allowed_hosts = {"aistudio.google.com", "console.groq.com"}
+            if host not in allowed_hosts:
+                failures.append(notification_link_failure(row, "ai_usage_link_unexpected_host", actual=link))
+            continue
+
+        if host == "incarmarketing.github.io":
+            if not path.startswith("/news-monitor/"):
+                failures.append(notification_link_failure(row, "internal_link_outside_project", actual=link))
+            if "/reports/daily/dashboard.html" in path or path.endswith("/reports/dashboard.html"):
+                failures.append(notification_link_failure(row, "internal_link_uses_bad_relative_dashboard_path", actual=link))
+    return failures
+
+
+def invalid_notification_report_history(notifications: list[dict], report_runs: list[dict]) -> list[dict]:
+    failures = []
+    daily_success_keys = {
+        daily_notification_key(row)
+        for row in notifications
+        if str(row.get("status") or "").lower() == "success" and valid_daily_notification_key(row)
+    }
+    scoped_runs = latest_report_date_rows(report_runs)
+    for row in scoped_runs:
+        slot = str(row.get("report_slot") or "").zfill(2)
+        if slot not in EXPECTED_DAILY_WINDOWS:
+            continue
+        date = str(row.get("report_date") or "")[:10]
+        if not date:
+            continue
+        key = f"{date}-{slot}"
+        if key not in daily_success_keys:
+            failures.append(
+                {
+                    "run_key": row.get("run_key", key),
+                    "report_date": date,
+                    "slot": slot,
+                    "reason": "report_run_missing_success_notification",
+                }
+            )
+    return failures
+
+
+def recent_notification_rows(rows: list[dict], limit: int = 50) -> list[dict]:
+    def sort_key(row: dict) -> str:
+        return str(row.get("sent_at") or row.get("created_at") or row.get("id") or "")
+
+    return sorted(rows, key=sort_key, reverse=True)[:limit]
+
+
+def notification_link_failure(row: dict, reason: str, *, expected: str = "", actual: str = "") -> dict:
+    result = {
+        "id": row.get("id", ""),
+        "message_type": row.get("message_type") or row.get("type") or "",
+        "title": row.get("title", ""),
+        "reason": reason,
+    }
+    if expected:
+        result["expected"] = expected
+    if actual:
+        result["actual"] = actual
+    return result
+
+
+def is_dashboard_local_link(link: str) -> bool:
+    lowered = link.lower()
+    return (
+        "localhost" in lowered
+        or "127.0.0.1" in lowered
+        or "::1" in lowered
+        or lowered.startswith("file:")
+    )
+
+
+def daily_notification_key(row: dict) -> str:
+    title = str(row.get("title") or "")
+    link = str(row.get("link_url") or row.get("link") or "")
+    match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", title)
+    if match:
+        return f"{match.group(1)}-{match.group(2)}"
+    match = re.search(r"/reports/daily/(20\d{2}-\d{2}-\d{2})-(\d{2})\.html", link)
+    if match:
+        return f"{match.group(1)}-{match.group(2)}"
+    return ""
+
+
+def valid_daily_notification_key(row: dict) -> str:
+    title_key = ""
+    title_match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", str(row.get("title") or ""))
+    if title_match:
+        title_key = f"{title_match.group(1)}-{title_match.group(2)}"
+
+    link = str(row.get("link_url") or row.get("link") or "")
+    link_match = re.search(r"/reports/daily/(20\d{2}-\d{2}-\d{2})-(\d{2})\.html", link)
+    link_key = f"{link_match.group(1)}-{link_match.group(2)}" if link_match else ""
+    if title_key and link_key and title_key == link_key:
+        return title_key
+    return ""
 
 
 def latest_daily_notification_rows(rows: list[dict]) -> list[dict]:
