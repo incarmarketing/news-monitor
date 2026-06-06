@@ -1,0 +1,94 @@
+{
+  "date": "2026-06-06",
+  "timestamp": "2026-06-06T18:01:43.115570+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-06-06T13:00:00+09:00",
+    "end": "2026-06-06T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 3,
+    "total_after_cluster": 3,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 3,
+      "industry": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 1,
+      "positive": 0,
+      "neutral": 2
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-06-07 08:01 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 이슈가 중심이다. 리스크는 LOW이다. ## 핵심 이슈 - 보험사기 진화 - 손해율 방어 ## 지표 해석 수집 3건, 분석 3건, 리스크 LOW이다. 경쟁/업계 3건이다. ## 분석 키워드 손해보험, 생명보험, 보험사기, 침수 피해",
+  "articles": [
+    {
+      "title": "성큼 다가온 장마철…손보업계 차보험 손해율 방어 '총력'",
+      "link": "https://www.asiatime.co.kr/article/20260604500218",
+      "source": "asiatime.co.kr",
+      "keyword": "손해보험",
+      "description": "침수 피해 예방·비상 대응 체계 정비 집중 작년 주요 손보 4개사 차보험 손해율 87% \"장마철 사고 하반기 실적 변수 될수 있어\" [아시아타임즈=류홍민 기자] 장마철이 다가오면서 국내 손해보험사들이 차량 침수 피해...",
+      "_summary": "실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다 침수 피해 예방·비상 대응 체계 정비 집중 작년 주요 손보 4개사 차보험 손해율 87% \"장마철 사고 하반기 실적 변수 될수 있어\" 장마철이 다가오면서 국내 손해보험사들이 차량 침수 피해.",
+      "pub_date": "Sat, 06 Jun 2026 15:26:00 +0900",
+      "_report_id": 1,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "AI로 진단서까지 바꾼다…보험사기 진화, 대응은 '데이터 전쟁'",
+      "link": "https://www.bloter.net/news/articleView.html?idxno=664535",
+      "source": "블로터",
+      "keyword": "손해보험",
+      "description": "장기손해보험과 자동차보험, 생명보험 전반에서 광범위하게 발생하고 있다. 문제는 수법이다. 과거에는 영수증을 오려 붙이거나 포토샵으로 수정하는 수준이었다면, 이제는 AI가 이미지 자체를 새로 생성한다. 폰트나...",
+      "_summary": "장기손해보험과 자동차보험, 생명보험 전반에서 광범위하게 발생하고 있다 문제는 수법이다 과거에는 영수증을 오려 붙이거나 포토샵으로 수정하는 수준이었다면, 이제는 AI가 이미지 자체를 새로 생성한다",
+      "pub_date": "Sat, 06 Jun 2026 13:00:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "이동철 여신협회장 내정자…풀어야할 과제 산적",
+      "link": "https://www.asiatime.co.kr/article/20260604500389",
+      "source": "asiatime.co.kr",
+      "keyword": "생명보험",
+      "description": "1961년생인 이 전 부회장은 고려대학교 법학과를 졸업하고 미국 툴레인대 로스쿨(LLM)에서 뉴욕주 변호사를 취득했으며 △KB금융지주 전략기획부 상무 △KB생명보험 경영기획본부 부사장 △KB금융지주 전략총괄부사장(CSO)...",
+      "_summary": "1961년생인 이 전 부회장은 고려대학교 법학과를 졸업하고 미국 툴레인대 로스쿨(LLM)에서 뉴욕주 변호사를 취득했으며 △KB금융지주 전략기획부 상무 △KB생명보험 경영기획본부 부사장 △KB금융지주 전략총괄부사장(CSO). 이동철 여신협회장 내정자…풀어야할 과제 산적.",
+      "pub_date": "Sat, 06 Jun 2026 17:40:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
