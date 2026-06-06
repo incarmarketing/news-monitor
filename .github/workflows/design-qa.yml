@@ -1,0 +1,54 @@
+name: Design QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Dashboard URL to inspect"
+        required: false
+        default: "https://incarmarketing.github.io/news-monitor/dashboard.html"
+  workflow_run:
+    workflows:
+      - Publish Dashboard
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: design-qa
+  cancel-in-progress: true
+
+jobs:
+  visual-layout-check:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install Playwright
+        working-directory: frontend
+        run: |
+          npm install --package-lock=false --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Inspect deployed dashboard
+        env:
+          DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
+        run: node frontend/scripts/design-qa.mjs
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-qa
+          path: .qa/design
