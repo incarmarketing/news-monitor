@@ -1402,7 +1402,10 @@ function RiskCenter() {
           <div className="draft-preview">
             <b>{draftType === "press" ? "언론 해명용 초안" : "사내 공유용 초안"}</b>
             <p>
-              해당 보도는 시장 의견과 투자 판단에 따른 기사로, 현재 확인된 범위에서는 당사 영업 및 준법 이슈와 직접 연결되는 내용은 확인되지 않았습니다.
+              [상황 정의]
+              {"\n"}- 보도 쟁점과 당사 직접 관련성을 먼저 구분합니다.
+              {"\n\n"}[확인 범위]
+              {"\n"}- 기사 원문, 보도 근거, 고객 영향, 담당 부서 확인 결과를 분리합니다.
             </p>
           </div>
           <button className="primary-button confirm-button">초안을 생성할까요?</button>
@@ -1680,6 +1683,7 @@ function buildRiskResponseDraft(type, article = {}, facts = {}) {
   const tone = facts.tone || "확인 필요";
   const relevance = facts.relevance || "관련성 확인 필요";
   const issueType = facts.issueType || buildRiskIssueType(article);
+  const issueDefinition = buildRiskIssueDefinition(article, facts);
   const related = Array.isArray(article.relatedArticles) ? article.relatedArticles : [];
   const relatedCount = Math.max(Number(article.relatedCount || 1), related.length || 1);
   const sourceCount = Math.max(Number(article.relatedSourceCount || 1), unique(related.map((item) => item.source).filter(Boolean)).length || 1);
@@ -1698,23 +1702,24 @@ function buildRiskResponseDraft(type, article = {}, facts = {}) {
 
   if (type === "internal") {
     return formatRiskDraft([
-      ["이슈 요약", [
-        `${title}`,
+      ["상황 정의", [
+        issueDefinition,
+        `기사: ${title}`,
         meta ? `출처: ${meta}` : "",
         `분류: ${tone} · ${relevance} · ${issueType}`,
       ]],
-      ["핵심 내용", evidenceLines],
+      ["핵심 쟁점", evidenceLines],
       ["리스크 판단", buildRiskJudgementLines(article, facts, relatedCount, sourceCount)],
-      ["확인 필요", checkItems],
-      ["즉시 조치", actionItems],
-      ["공유 메시지", stanceLines],
+      ["확인 범위", checkItems],
+      ["대응 액션", actionItems],
+      ["내부 공유 문안", stanceLines],
     ]);
   }
   return formatRiskDraft([
-    ["입장 요지", buildPressPositionLead(article, facts)],
-    ["확인 중인 사항", checkItems.slice(0, 4)],
-    ["당사 대응 방향", stanceLines],
-    ["문의 응대 문구", buildPressReplyLines(article, facts)],
+    ["상황 정의", buildPressPositionLead(article, facts)],
+    ["확인 범위", checkItems.slice(0, 4)],
+    ["대응 원칙", stanceLines],
+    ["언론 응대 문안", buildPressReplyLines(article, facts)],
   ]);
 }
 
@@ -1765,6 +1770,7 @@ function factsFallbackClaim(article = {}) {
 
 function buildRiskIssueType(article = {}) {
   const text = summaryHaystack(article);
+  if (/보험\s*꺾기|불법\s*사채|사채놀이|금융사\s*사칭|고객\s*db|db\s*수집|디비\s*수집/i.test(text)) return "영업관리/소비자보호 고위험";
   if (/사칭|고객\s*db|db\s*수집|디비\s*수집|개인정보|정보유출|해킹/i.test(text)) return "소비자보호/정보보안";
   if (/보험\s*꺾기|불법\s*사채|수수료|정착지원금|리베이트|불완전판매|민원/i.test(text)) return "영업관리/판매채널";
   if (/투자의견|목표가|목표주가|주가|실적|손해율|자본|건전성/i.test(text)) return "시장평가/재무";
@@ -1773,18 +1779,43 @@ function buildRiskIssueType(article = {}) {
   return isOwnArticle(article) ? "당사 평판" : "업계 이슈";
 }
 
+function buildRiskIssueDefinition(article = {}, facts = {}) {
+  const text = summaryHaystack(article);
+  const issueType = facts.issueType || buildRiskIssueType(article);
+  if (/보험\s*꺾기|불법\s*사채|사채놀이/i.test(text)) {
+    return "보도 쟁점은 보험 꺾기·불법 사채 의혹처럼 영업관리와 소비자보호가 함께 걸린 고위험 사안입니다.";
+  }
+  if (/금융사\s*사칭|사칭|고객\s*db|db\s*수집|디비\s*수집|개인정보|정보유출|해킹/i.test(text)) {
+    return "보도 쟁점은 금융사 사칭, 고객 정보, 개인정보 관리와 연결될 수 있는 소비자보호 사안입니다.";
+  }
+  if (/투자의견|목표가|목표주가|주가|실적|손해율|자본|건전성/i.test(text)) {
+    return "보도 쟁점은 직접 부정 이슈보다 시장 평가와 재무 인식 변화에 가까운 주의 사안입니다.";
+  }
+  if (/금감원|금융위|감독|제재|검사|제도|시행령|규제/i.test(text)) {
+    return "보도 쟁점은 정책·감독 변화가 영업 환경에 미칠 영향을 확인해야 하는 규제성 사안입니다.";
+  }
+  if (isOwnArticle(article)) {
+    return `보도 쟁점은 당사 직접 언급이 포함된 ${issueType} 사안입니다.`;
+  }
+  return `보도 쟁점은 ${issueType} 관점에서 당사 관련성과 대응 필요성을 구분해야 하는 사안입니다.`;
+}
+
 function buildRiskJudgementLines(article = {}, facts = {}, relatedCount = 1, sourceCount = 1) {
   const lines = [];
   const own = isOwnArticle(article);
   const tone = facts.tone || article.tone || "확인 필요";
+  const issueType = facts.issueType || buildRiskIssueType(article);
   if (tone === "부정" && own) {
-    lines.push("당사명이 직접 포함된 부정성 보도라 사실관계와 책임 범위를 우선 분리해야 합니다.");
+    lines.push("당사명이 직접 포함된 부정성 보도라 단순 모니터링이 아니라 사실 주장별 근거 대조가 필요합니다.");
   } else if (tone === "부정") {
     lines.push("업계 부정 이슈지만 당사 직접 책임으로 보도된 것인지 별도 확인이 필요합니다.");
   } else if (tone === "주의") {
     lines.push("직접 부정보다는 시장성, 규제성, 영업환경 변화 신호로 관리하는 편이 적절합니다.");
   } else {
     lines.push("현 단계에서는 즉시 해명보다 모니터링과 근거 확보가 우선입니다.");
+  }
+  if (/고위험/.test(issueType)) {
+    lines.push("소비자 피해, 영업관리, 개인정보 쟁점이 함께 보일 수 있어 원문 보존과 내부 확인 기록을 동시에 남깁니다.");
   }
   if (relatedCount > 1 || sourceCount > 1) {
     lines.push(`관련 보도가 ${relatedCount.toLocaleString("ko-KR")}건, 매체 ${sourceCount.toLocaleString("ko-KR")}곳으로 묶여 노출 강도 변화를 확인해야 합니다.`);
@@ -1799,6 +1830,9 @@ function buildRiskCheckItems(article = {}, facts = {}) {
     "기사 제목과 본문에서 당사명, 계열/지점/설계사 등 직접 연결 표현이 있는지 확인",
     "보도 근거가 공시, 당국 자료, 제보, 업계 관계자 발언 중 무엇인지 분리",
   ];
+  if (/보험\s*꺾기|불법\s*사채|사채놀이/i.test(text)) {
+    items.push("보험 꺾기, 불법 사채, 대출·계약 유도 표현이 기사에서 사실 주장인지 인용인지 구분");
+  }
   if (/피해|민원|소비자|고객|사칭|개인정보|해킹/i.test(text)) {
     items.push("소비자 피해 주장, 접수 민원, 고객 정보 관련 사실관계와 현재 조치 여부 확인");
   }
@@ -1820,8 +1854,13 @@ function buildRiskCheckItems(article = {}, facts = {}) {
 function buildRiskActionItems(article = {}, facts = {}) {
   const own = isOwnArticle(article);
   const tone = facts.tone || article.tone || "";
+  const issueType = facts.issueType || buildRiskIssueType(article);
   const items = [];
-  if (tone === "부정" && own) {
+  if (/고위험/.test(issueType)) {
+    items.push("원문, URL, 캡처, 보도 시각을 보존하고 기사 주장별 사실 확인표를 작성");
+    items.push("영업관리, 준법, 소비자보호, 개인정보 담당 확인을 같은 기준으로 취합");
+    items.push("정정·반론·추가 설명 필요성을 사실 확인 결과와 보도 확산 정도로 판단");
+  } else if (tone === "부정" && own) {
     items.push("원문 캡처와 URL을 보존하고, 기사 내 사실 주장별 담당 부서 확인 요청");
     items.push("정정 요청 가능성, 추가 설명자료 필요 여부, 기자 문의 대응 문구를 동시에 준비");
   } else if (tone === "부정") {
@@ -1829,7 +1868,7 @@ function buildRiskActionItems(article = {}, facts = {}) {
   } else {
     items.push("추가 보도 확산 여부를 모니터링하고, 당사 관련 질문이 들어올 경우 사용할 핵심 문장만 준비");
   }
-  items.push("확인되지 않은 내용은 인정·부인하지 않고, 확인 중이라는 표현으로 통일");
+  items.push("대외 문구는 책임 인정이나 전면 부인으로 읽히지 않게 확인 범위와 조치 원칙 중심으로 통일");
   return items.slice(0, 4);
 }
 
@@ -1838,35 +1877,42 @@ function buildRiskStanceLines(article = {}, facts = {}, type = "press") {
   const own = isOwnArticle(article);
   const lines = [];
   if (type === "press") {
-    lines.push("현재 보도 내용을 확인 중이며, 사실관계가 확인된 범위 안에서 설명드리겠습니다.");
+    lines.push("기사 주장과 당사가 확인한 사실을 분리해 답변합니다.");
     if (own) {
-      lines.push("당사와 직접 관련된 부분은 내부 기준과 절차에 따라 확인하고 필요한 조치를 검토하겠습니다.");
+      lines.push("당사 관련 부분은 원문 근거, 내부 기록, 고객 영향 여부를 기준으로 확인합니다.");
     } else {
-      lines.push("당사 직접 사안으로 단정하기 어려운 부분은 업계 동향 차원에서 확인하고 있습니다.");
+      lines.push("당사 직접 사안으로 확인되지 않은 부분은 업계 동향과 별도 문의 대응으로 구분합니다.");
     }
-    lines.push(`${issueType} 관련 문의는 확인된 사실과 향후 조치 중심으로 답변합니다.`);
+    lines.push(`${issueType} 문의는 확인 범위, 확인 절차, 필요한 조치 원칙만 간결하게 설명합니다.`);
   } else {
-    lines.push("내부 공유 시에는 기사 주장, 확인된 사실, 미확인 사항을 분리해 전달합니다.");
-    lines.push("대외 답변은 확인 중인 사안을 단정하지 않고, 고객/이해관계자 영향 최소화 기준으로 정리합니다.");
+    lines.push("내부 공유 시 기사 주장, 확인된 사실, 미확인 사항, 담당 부서를 분리해 전달합니다.");
+    lines.push("대외 답변은 사실 확인 전 해명성 표현을 줄이고, 고객/이해관계자 영향 확인 기준으로 정리합니다.");
+    lines.push("확인 결과에 따라 정정 요청, 반론 보도, 추가 설명자료 중 필요한 조치를 선택합니다.");
   }
   return lines;
 }
 
 function buildPressPositionLead(article = {}, facts = {}) {
-  const title = cleanSummaryText(article.title || "해당 보도");
   const claim = facts.claim || factsFallbackClaim(article);
+  const issueDefinition = buildRiskIssueDefinition(article, facts);
+  const source = cleanSummaryText(article.source || "");
+  const sourceLine = source ? `${source} 보도 기준으로 원문과 사실관계를 대조합니다.` : "기사 원문 기준으로 사실관계를 대조합니다.";
   return [
-    `"${title}" 보도와 관련해 현재 확인 가능한 핵심 쟁점은 다음과 같습니다.`,
+    issueDefinition,
     claim,
+    sourceLine,
   ];
 }
 
 function buildPressReplyLines(article = {}, facts = {}) {
   const issueType = facts.issueType || buildRiskIssueType(article);
+  const own = isOwnArticle(article);
   return [
-    `해당 사안은 ${issueType} 관점에서 사실관계를 확인 중입니다.`,
-    "확인되지 않은 내용에 대해서는 단정적으로 말씀드리기 어렵습니다.",
-    "필요한 경우 확인된 범위 안에서 추가 설명을 드리겠습니다.",
+    `“해당 보도는 ${issueType} 관점에서 사실관계를 확인하고 있습니다.”`,
+    own
+      ? "“당사와 직접 연결된 내용은 원문 근거와 내부 확인 결과를 기준으로 설명드리겠습니다.”"
+      : "“당사 직접 사안으로 확인되지 않은 부분은 업계 동향과 구분해 보겠습니다.”",
+    "“고객 또는 이해관계자 영향이 확인되는 사안은 내부 기준에 따라 필요한 조치를 검토하겠습니다.”",
   ];
 }
 
