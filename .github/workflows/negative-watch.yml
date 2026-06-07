@@ -10,7 +10,6 @@ on:
         type: choice
         options:
           - single
-          - continuous
   repository_dispatch:
     types:
       - negative-watch
@@ -59,20 +58,7 @@ jobs:
           JOB_PROVIDER: github_actions
 
       - name: Watch negative articles
-        shell: bash
-        run: |
-          set -euo pipefail
-          iterations=1
-          if [ "${WATCH_MODE}" = "continuous" ]; then
-            iterations=13
-          fi
-          for i in $(seq 1 "$iterations"); do
-            echo "Negative watch iteration ${i}/${iterations}"
-            python negative_watch.py
-            if [ "$i" -lt "$iterations" ]; then
-              sleep 300
-            fi
-          done
+        run: python negative_watch.py
         env:
           WATCH_MODE: ${{ github.event.inputs.mode || 'single' }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
@@ -91,6 +77,7 @@ jobs:
           NEGATIVE_WATCH_REQUIRE_DB_LOG: "true"
 
       - name: Persist sent alert state
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

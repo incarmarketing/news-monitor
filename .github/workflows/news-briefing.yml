@@ -39,6 +39,11 @@ on:
         required: true
         default: false
         type: boolean
+      report_month:
+        description: "Optional monthly report month, YYYY-MM"
+        required: false
+        default: ""
+        type: string
   push:
     branches:
       - main
@@ -161,6 +166,7 @@ jobs:
         if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none'))
         run: |
           PERIOD="${{ github.event.inputs.period_reports }}"
+          REPORT_MONTH="${{ github.event.inputs.report_month }}"
           KST_WEEKDAY="$(TZ=Asia/Seoul date +%u)"
           KST_DAY="$(TZ=Asia/Seoul date +%d)"
 
@@ -182,7 +188,11 @@ jobs:
             python period_report.py weekly
           fi
           if [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
-            python period_report.py monthly
+            if [ -n "$REPORT_MONTH" ]; then
+              python period_report.py monthly "$REPORT_MONTH"
+            else
+              python period_report.py monthly
+            fi
           fi
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -209,6 +219,7 @@ jobs:
           AI_MAX_ISSUE_SUMMARIES: ${{ secrets.AI_MAX_ISSUE_SUMMARIES || '5' }}
           AI_ISSUE_SUMMARY_PROVIDER: groq
           REQUIRE_DASHBOARD_HISTORY: "true"
+          REQUIRE_DASHBOARD_QUALITY: "true"
 
       - name: Configure GitHub Pages
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
@@ -252,6 +263,7 @@ jobs:
         if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && github.event.inputs.send_kakao == 'true'))
         run: |
           PERIOD="${{ github.event.inputs.period_reports }}"
+          REPORT_MONTH="${{ github.event.inputs.report_month }}"
 
           if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
             python kakao_period_send.py weekly
@@ -263,7 +275,11 @@ jobs:
             python kakao_period_send.py weekly
           fi
           if [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
-            python kakao_period_send.py monthly
+            if [ -n "$REPORT_MONTH" ]; then
+              python kakao_period_send.py monthly "$REPORT_MONTH"
+            else
+              python kakao_period_send.py monthly
+            fi
           fi
         env:
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}

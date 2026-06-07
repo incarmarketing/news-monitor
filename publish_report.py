@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import re
 from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -109,11 +110,11 @@ def publish() -> Path:
         index_target.write_text(
             """<!DOCTYPE html>
 <html lang="ko">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>언론 동향 보고서</title></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>?? ?? ???</title></head>
 <body style="font-family:Malgun Gothic,Arial,sans-serif; padding:32px;">
-<h1>언론 동향 보고서</h1>
-<p>현재 배포된 일일 보고서가 없습니다. 주간/월간 보고서는 아래 링크에서 확인하세요.</p>
-<ul><li><a href="./weekly.html">주간 보고서</a></li><li><a href="./monthly.html">월간 보고서</a></li></ul>
+<h1>?? ?? ???</h1>
+<p>?? ??? ?? ???? ????. ??/?? ???? ?? ???? ?????.</p>
+<ul><li><a href="./weekly.html">?? ???</a></li><li><a href="./monthly.html">?? ???</a></li></ul>
 </body></html>
 """,
             encoding="utf-8",
@@ -124,6 +125,7 @@ def publish() -> Path:
     publish_assets()
     publish_period_report("weekly")
     publish_period_report("monthly")
+    publish_monthly_archives()
     repair_daily_notification_history()
     dashboard_builder.publish_dashboard()
     return index_target
@@ -280,6 +282,26 @@ def publish_period_report(period: str) -> None:
     shutil.copy2(source, legacy_dir / f"{period}.html")
     shutil.copy2(source, archive_dir / source.name)
     print(f"Published {period} report: {source.name}")
+
+
+def publish_monthly_archives() -> None:
+    monthly_dir = PUBLIC_DIR / "monthly"
+    legacy_dir = PUBLIC_DIR / "period_reports"
+    monthly_dir.mkdir(parents=True, exist_ok=True)
+    legacy_dir.mkdir(parents=True, exist_ok=True)
+    latest_by_month: dict[str, Path] = {}
+    for source in sorted(LOG_DIR.glob("monthly_????_??_report_*.html"), key=lambda p: p.stat().st_mtime):
+        match = re.match(r"monthly_(20\d{2})_(\d{2})_report_", source.name)
+        if not match:
+            continue
+        month_key = f"{match.group(1)}-{match.group(2)}"
+        latest_by_month[month_key] = source
+    for month_key, source in latest_by_month.items():
+        shutil.copy2(source, monthly_dir / f"{month_key}.html")
+        PERIOD_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, PERIOD_DIR / f"monthly-{month_key}.html")
+        shutil.copy2(source, legacy_dir / f"monthly-{month_key}.html")
+        print(f"Published monthly archive {month_key}: {source.name}")
 
 
 def repair_daily_notification_history() -> None:

@@ -45,6 +45,7 @@ NOTIFICATION_COLUMNS = (
     "sent_at",
     "channel",
     "message_type",
+    "dedupe_key",
     "title",
     "body",
     "link_url",
@@ -69,59 +70,59 @@ MEDIA_RELATION_EXCLUDED_SOURCES = {
     "naver",
     "daum",
     "bing",
-    "금융감독원",
-    "금융위원회",
-    "금융보안원",
-    "금융소비자보호처",
+    "?????",
+    "?????",
+    "?????",
+    "????????",
 }
 
 CATEGORY_FEEDBACK_MAP = {
     "own": "own",
     "company": "own",
-    "당사": "own",
-    "당사 보도": "own",
-    "인카": "own",
+    "??": "own",
+    "?? ??": "own",
+    "??": "own",
     "regulation": "regulation",
     "policy": "regulation",
-    "정책/규제": "regulation",
-    "규제/정책": "regulation",
-    "정책": "regulation",
-    "규제": "regulation",
+    "??/??": "regulation",
+    "??/??": "regulation",
+    "??": "regulation",
+    "??": "regulation",
     "competitor": "competitor",
     "ga": "competitor",
     "GA": "competitor",
-    "보험사": "competitor",
-    "경쟁사": "competitor",
+    "???": "competitor",
+    "???": "competitor",
     "industry": "industry",
     "market": "industry",
-    "업계동향": "industry",
-    "업계 동향": "industry",
-    "기타": "other",
+    "????": "industry",
+    "?? ??": "industry",
+    "??": "other",
     "other": "other",
-    "제외": "other",
+    "??": "other",
     "exclude": "other",
     "noise": "other",
 }
 
 TONE_FEEDBACK_MAP = {
     "positive": "positive",
-    "긍정": "positive",
+    "??": "positive",
     "neutral": "neutral",
-    "중립": "neutral",
+    "??": "neutral",
     "caution": "caution",
     "warning": "caution",
-    "주의": "caution",
+    "??": "caution",
     "negative": "negative",
     "high": "negative",
-    "부정": "negative",
+    "??": "negative",
     "exclude": "exclude",
     "excluded": "exclude",
     "noise": "exclude",
-    "제외": "exclude",
-    "노이즈": "exclude",
+    "??": "exclude",
+    "???": "exclude",
 }
 
-EXCLUDE_CATEGORY_LABELS = {"제외", "exclude", "excluded", "noise", "노이즈"}
+EXCLUDE_CATEGORY_LABELS = {"??", "exclude", "excluded", "noise", "???"}
 
 
 class SupabaseConfigError(RuntimeError):
@@ -158,10 +159,13 @@ def base_url() -> str:
 def request(method: str, path: str, **kwargs: Any) -> requests.Response:
     if isinstance(kwargs.get("data"), str):
         kwargs["data"] = kwargs["data"].encode("utf-8")
+    extra_headers = kwargs.pop("headers", None) or {}
+    request_headers = headers()
+    request_headers.update(extra_headers)
     response = requests.request(
         method,
         f"{base_url()}/rest/v1/{path}",
-        headers=headers(),
+        headers=request_headers,
         timeout=30,
         **kwargs,
     )
@@ -290,7 +294,7 @@ def load_classification_feedback_rows(limit: int = 500) -> list[dict]:
                 "corrected_category": row.get("corrected_category") or "",
                 "corrected_tone": row.get("corrected_tone") or "",
                 "reason": row.get("reason") or "",
-                "created_by": "운영자" if row.get("created_by") else "",
+                "created_by": "???" if row.get("created_by") else "",
                 "created_at": row.get("created_at") or "",
             }
         )
@@ -371,9 +375,9 @@ def parse_pub_date(value: str) -> str | None:
     except Exception:
         pass
     normalized = (
-        raw.replace("년", "-")
-        .replace("월", "-")
-        .replace("일", "")
+        raw.replace("?", "-")
+        .replace("?", "-")
+        .replace("?", "")
         .replace(".", "-")
         .strip()
     )
@@ -459,13 +463,18 @@ def save_notification_send(
     provider_response: dict | None = None,
     channel: str = "kakao",
     sent_at: str | None = None,
+    dedupe_key: str | None = None,
+    require_log: bool | None = None,
 ) -> None:
     if not is_enabled():
         return
+    normalized_status = str(status or "").lower()
+    key = dedupe_key or notification_dedupe_key(message_type, title, normalized_status)
     row = {
         "sent_at": sent_at or datetime.now(timezone.utc).isoformat(),
         "channel": channel,
         "message_type": message_type,
+        "dedupe_key": key,
         "title": title,
         "body": body,
         "link_url": link_url,
@@ -473,16 +482,72 @@ def save_notification_send(
         "error": error,
         "provider_response": provider_response or {},
     }
+    must_log = require_log
+    if must_log is None:
+        must_log = normalized_status == "success" and message_type in {"daily_report", "negative_alert"}
+    path = "notification_sends"
+    request_headers: dict[str, str] = {}
+    if key:
+        path = "notification_sends?on_conflict=dedupe_key"
+        request_headers["Prefer"] = "resolution=merge-duplicates"
     try:
-        request("POST", "notification_sends", data=json.dumps([{key: row.get(key) for key in NOTIFICATION_COLUMNS}], ensure_ascii=False))
-    except Exception as error:
-        print(f"Supabase notification log skipped: {error}")
+        request(
+            "POST",
+            path,
+            data=json.dumps([{column: row.get(column) for column in NOTIFICATION_COLUMNS}], ensure_ascii=False),
+            headers=request_headers,
+        )
+    except Exception as exc:
+        text = str(exc)
+        if key and ("dedupe_key" in text and ("schema cache" in text or "column" in text)):
+            legacy_row = {column: row.get(column) for column in NOTIFICATION_COLUMNS if column != "dedupe_key"}
+            try:
+                request("POST", "notification_sends", data=json.dumps([legacy_row], ensure_ascii=False))
+                print("Supabase notification log used legacy schema without dedupe_key.")
+                return
+            except Exception as legacy_exc:
+                text = str(legacy_exc)
+                exc = legacy_exc
+        if key and notification_dedupe_key_exists(key):
+            print(f"Supabase notification log already exists: {key}")
+            return
+        print(f"Supabase notification log failed: {exc}")
+        if must_log:
+            raise
 
 
-def notification_already_sent(message_type: str, title: str, status: str = "success") -> bool:
+def notification_dedupe_key(message_type: str, title: str, status: str = "success") -> str:
+    if str(status or "").lower() != "success":
+        return ""
+    clean_type = re.sub(r"\s+", " ", str(message_type or "").strip())
+    clean_title = re.sub(r"\s+", " ", str(title or "").strip())
+    if not clean_type or not clean_title:
+        return ""
+    return f"{clean_type}:{clean_title}"
+
+
+def notification_dedupe_key_exists(dedupe_key: str) -> bool:
+    if not is_enabled() or not dedupe_key:
+        return False
+    try:
+        rows = request(
+            "GET",
+            "notification_sends?select=id"
+            f"&dedupe_key=eq.{quote(dedupe_key, safe='')}"
+            "&limit=1",
+        ).json()
+        return bool(rows)
+    except Exception:
+        return False
+
+
+def notification_already_sent(message_type: str, title: str, status: str = "success", *, strict: bool = False) -> bool:
     """Return True when the same notification title already has a successful send log."""
     if not is_enabled() or not message_type or not title:
         return False
+    dedupe_key = notification_dedupe_key(message_type, title, status)
+    if dedupe_key and notification_dedupe_key_exists(dedupe_key):
+        return True
     query = (
         "notification_sends?select=id"
         f"&message_type=eq.{quote(message_type, safe='')}"
@@ -495,6 +560,8 @@ def notification_already_sent(message_type: str, title: str, status: str = "succ
         return bool(rows)
     except Exception as error:
         print(f"Supabase notification duplicate check skipped: {error}")
+        if strict:
+            raise
         return False
 
 
@@ -698,11 +765,11 @@ def save_own_media_relations(article_rows: list[dict]) -> None:
                 continue
             row = {
                 "name": source,
-                "status": "중립",
+                "status": "??",
                 "grade": "B",
                 "owner": "",
                 "contact_date": None,
-                "memo": "당사 기사 게재 이력으로 자동 등록된 관리 대상",
+                "memo": "?? ?? ?? ???? ?? ??? ?? ??",
                 "hidden": False,
             }
             request("POST", "media_relations", data=json.dumps([row], ensure_ascii=False))
@@ -806,7 +873,7 @@ def load_dashboard_notifications(limit: int = 80) -> list[dict]:
         "GET",
         (
             "notification_sends?"
-            "select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at"
+            "select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at"
             f"&order=sent_at.desc&limit={limit}"
         ),
     )

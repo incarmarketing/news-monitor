@@ -3,29 +3,30 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
 
-from kakao_report_send import DEFAULT_REPORT_URL, refresh_access_token, send_text_to_me, with_cache_buster
-from supabase_store import notification_already_sent, save_notification_send
+from kakao_report_send import DEFAULT_REPORT_URL, refresh_access_token, send_text_to_me, verify_public_report_link, with_cache_buster
+from supabase_store import save_notification_send
 
 KST = timezone(timedelta(hours=9))
 
 
 PERIODS = {
     "weekly": {
-        "label": "주간",
+        "label": "??",
         "path": "weekly.html",
-        "title": "주간 언론 모니터링 보고서",
-        "desc": "전주 기사 흐름과 자사·경쟁·규제 이슈를 누적 기준으로 정리했습니다.",
+        "title": "?? ?? ???? ???",
+        "desc": "?? ?? ??? ???????? ??? ?? ???? ??????.",
     },
     "monthly": {
-        "label": "월간",
+        "label": "??",
         "path": "monthly.html",
-        "title": "월간 언론 모니터링 보고서",
-        "desc": "전월 언론 동향과 핵심 리스크, 다음 기간 관찰 포인트를 정리했습니다.",
+        "title": "?? ?? ???? ???",
+        "desc": "?? ?? ??? ?? ???, ?? ?? ?? ???? ??????.",
     },
 }
 
@@ -35,19 +36,35 @@ def base_url() -> str:
     return configured.rstrip("/") + "/"
 
 
-def build_message(period: str) -> tuple[str, str]:
+def normalize_report_month(value: str | None) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    if not re.fullmatch(r"20\d{2}-(0[1-9]|1[0-2])", raw):
+        raise SystemExit("Monthly report month must use YYYY-MM format.")
+    return raw
+
+
+def period_path(period: str, report_month: str = "") -> str:
+    if period == "monthly" and report_month:
+        return f"monthly/{report_month}.html"
+    return PERIODS[period]["path"]
+
+
+def build_message(period: str, report_month: str = "") -> tuple[str, str]:
     info = PERIODS[period]
     today = datetime.now(KST).strftime("%Y-%m-%d")
+    date_line = f"{report_month} ??" if report_month else today
     text = "\n".join(
         [
-            f"[AI 언론 모니터링] {info['label']} 보고서",
-            today,
+            f"[AI ?? ????] {info['label']} ???",
+            date_line,
             "",
             info["title"],
             info["desc"],
         ]
     )
-    return text[:500], with_cache_buster(base_url() + info["path"])
+    return text[:500], with_cache_buster(base_url() + period_path(period, report_month))
 
 
 def main() -> None:
@@ -55,34 +72,34 @@ def main() -> None:
     period = sys.argv[1] if len(sys.argv) > 1 else "weekly"
     if period not in PERIODS:
         raise SystemExit(f"Unknown period: {period}")
+    report_month = normalize_report_month(sys.argv[2] if len(sys.argv) > 2 else "")
 
-    text, link = build_message(period)
-    title = f"{PERIODS[period]['label']} 언론 모니터링 보고서"
-    message_type = f"{period}_report"
-    if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent(message_type, title):
-        print(f"Kakao period report already sent: {title}")
-        return
+    text, link = build_message(period, report_month)
+    title = f"{PERIODS[period]['label']} ?? ???? ???{(' ' + report_month) if report_month else ''}"
     try:
+        verify_public_report_link(link, label=title)
         token = refresh_access_token()
         result = send_text_to_me(token, text, link)
         save_notification_send(
-            message_type=message_type,
+            message_type=f"{period}_report",
             title=title,
             body=text,
             link_url=link,
             status="success",
             provider_response=result,
+            require_log=True,
         )
         print("Kakao period send result:", result)
         print("Period report link:", link)
     except Exception as error:
         save_notification_send(
-            message_type=message_type,
+            message_type=f"{period}_report",
             title=title,
             body=text,
             link_url=link,
             status="failed",
             error=str(error),
+            require_log=False,
         )
         raise
 

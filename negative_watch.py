@@ -190,7 +190,7 @@ def merge_negative_candidates(*groups: list[dict]) -> list[dict]:
 
 def compact(text: str, limit: int) -> str:
     cleaned = re.sub(r"\s+", " ", text or "").strip()
-    return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
+    return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "?"
 
 
 def dashboard_base_url() -> str:
@@ -219,21 +219,21 @@ def build_alert_link(article: dict) -> str:
 
 def build_alert_message(articles: list[dict], metrics: dict, minutes_back: int, db_count: int = 0) -> str:
     current = now_kst().strftime("%Y-%m-%d %H:%M")
-    scope = f"최근 {minutes_back}분"
+    scope = f"?? {minutes_back}?"
     if db_count:
-        scope += f" · DB 신규 {db_count}건 포함"
+        scope += f" ? DB ?? {db_count}? ??"
     lines = [
-        "[부정기사 감지]",
-        f"{current} 기준 · {scope}",
-        f"당사 부정 {len(articles)}건 / 당사 언급 {metrics.get('own_total', 0)}건",
+        "[???? ??]",
+        f"{current} ?? ? {scope}",
+        f"?? ?? {len(articles)}? / ?? ?? {metrics.get('own_total', 0)}?",
         "",
-        "확인 필요 기사",
+        "?? ?? ??",
     ]
     for idx, article in enumerate(articles[:3], 1):
         source = (article.get("source") or "").upper()
         lines.append(f"{idx}. {compact(article.get('title', ''), 46)}")
         if source:
-            lines.append(f"   출처 {source} · 키워드 {article.get('keyword', '')}")
+            lines.append(f"   ?? {source} ? ??? {article.get('keyword', '')}")
     return "\n".join(lines)[:900]
 
 
@@ -242,7 +242,7 @@ def send_kakao_alert(access_token: str, text: str, link_url: str) -> dict:
         "object_type": "text",
         "text": text,
         "link": {"web_url": link_url, "mobile_web_url": link_url},
-        "button_title": "기사 확인",
+        "button_title": "?? ??",
     }
     response = requests.post(
         f"{KAKAO_API}/v2/api/talk/memo/default/send",
@@ -252,6 +252,24 @@ def send_kakao_alert(access_token: str, text: str, link_url: str) -> dict:
     )
     response.raise_for_status()
     return response.json()
+
+
+def mark_alerts_sent(state: dict, sent: set[str], articles: list[dict], sent_at: str) -> None:
+    for article in articles:
+        key = article_key(article)
+        sent.add(key)
+        state.setdefault("alerts", []).append(
+            {
+                "sent_at": sent_at,
+                "key": key,
+                "title": article.get("title", ""),
+                "link": article.get("link", ""),
+                "source": article.get("source", ""),
+                "keyword": article.get("keyword", ""),
+            }
+        )
+    state["sent_keys"] = list(sent)
+    state["alerts"] = state.get("alerts", [])[-MAX_SENT_KEYS:]
 
 
 def record_watch_run(
@@ -353,7 +371,7 @@ def main() -> None:
 
     link = build_alert_link(new_negatives[0])
     message = build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives))
-    alert_title = f"부정기사 감지 {article_key(new_negatives[0])}"
+    alert_title = f"???? ?? {article_key(new_negatives[0])}"
     if notification_already_sent("negative_alert", alert_title):
         print(f"Negative alert already sent: {alert_title}")
         for article in new_negatives:
@@ -370,9 +388,13 @@ def main() -> None:
             message="duplicate alert already sent",
         )
         return
+    state_persisted = False
     try:
         token = refresh_access_token()
         result = send_kakao_alert(token, message, link)
+        mark_alerts_sent(state, sent, new_negatives, scanned_at)
+        save_state(state)
+        state_persisted = True
         save_notification_send(
             message_type="negative_alert",
             title=alert_title,
@@ -411,23 +433,9 @@ def main() -> None:
         )
         raise
 
-    current = scanned_at
-    for article in new_negatives:
-        key = article_key(article)
-        sent.add(key)
-        state.setdefault("alerts", []).append(
-            {
-                "sent_at": current,
-                "key": key,
-                "title": article.get("title", ""),
-                "link": article.get("link", ""),
-                "source": article.get("source", ""),
-                "keyword": article.get("keyword", ""),
-            }
-        )
-    state["sent_keys"] = list(sent)
-    state["alerts"] = state.get("alerts", [])[-MAX_SENT_KEYS:]
-    save_state(state)
+    if not state_persisted:
+        mark_alerts_sent(state, sent, new_negatives, scanned_at)
+        save_state(state)
 
 
 if __name__ == "__main__":

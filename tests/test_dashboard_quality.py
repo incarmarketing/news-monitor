@@ -94,6 +94,70 @@ class DashboardQualityTests(unittest.TestCase):
 
         self.assertEqual(quality["status"], "ok")
 
+    def test_duplicate_success_notifications_only_flags_latest_daily_date(self) -> None:
+        notifications = [
+            {
+                "message_type": "daily_report",
+                "title": "?? ?? ?? 2026-06-05 08",
+                "status": "success",
+                "sent_at": "2026-06-05T08:01:00+09:00",
+            },
+            {
+                "message_type": "daily_report",
+                "title": "?? ?? ?? 2026-06-05 08",
+                "status": "success",
+                "sent_at": "2026-06-05T08:03:00+09:00",
+            },
+            {
+                "message_type": "daily_report",
+                "title": "?? ?? ?? 2026-06-06 08",
+                "status": "success",
+                "sent_at": "2026-06-06T08:01:00+09:00",
+            },
+        ]
+
+        self.assertEqual(dashboard_builder.invalid_duplicate_success_notifications(notifications), [])
+
+    def test_duplicate_success_notifications_flags_current_daily_duplicates(self) -> None:
+        notifications = [
+            {
+                "message_type": "daily_report",
+                "title": "?? ?? ?? 2026-06-06 08",
+                "status": "success",
+                "sent_at": "2026-06-06T08:01:00+09:00",
+            },
+            {
+                "message_type": "daily_report",
+                "title": "?? ?? ?? 2026-06-06 08",
+                "status": "success",
+                "sent_at": "2026-06-06T08:03:00+09:00",
+            },
+        ]
+
+        failures = dashboard_builder.invalid_duplicate_success_notifications(notifications)
+
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0]["reason"], "duplicate_success_notification")
+
+    def test_duplicate_success_notifications_ignores_forced_resend(self) -> None:
+        notifications = [
+            {
+                "message_type": "daily_report",
+                "title": "?? ?? ?? 2026-06-06 08",
+                "status": "success",
+                "sent_at": "2026-06-06T08:01:00+09:00",
+            },
+            {
+                "message_type": "daily_report",
+                "title": "?? ?? ?? 2026-06-06 08 ??? 20260606080300",
+                "dedupe_key": "daily_report:?? ?? ?? 2026-06-06 08:resend:20260606080300",
+                "status": "success",
+                "sent_at": "2026-06-06T08:03:00+09:00",
+            },
+        ]
+
+        self.assertEqual(dashboard_builder.invalid_duplicate_success_notifications(notifications), [])
+
 
 if __name__ == "__main__":
     unittest.main()

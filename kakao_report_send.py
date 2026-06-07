@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -25,8 +26,8 @@ KST = timezone(timedelta(hours=9))
 
 def refresh_access_token() -> str:
     refresh_token = os.environ["KAKAO_REFRESH_TOKEN"].strip()
-    if len(refresh_token) < 40 or "여기에" in refresh_token:
-        raise RuntimeError("KAKAO_REFRESH_TOKEN에 실제 토큰이 들어있지 않습니다.")
+    if len(refresh_token) < 40 or "???" in refresh_token:
+        raise RuntimeError("KAKAO_REFRESH_TOKEN? ?? ??? ???? ????.")
 
     data = {
         "grant_type": "refresh_token",
@@ -110,6 +111,44 @@ def is_local_url(url: str) -> bool:
     )
 
 
+def report_link_check_enabled() -> bool:
+    return os.getenv("REQUIRE_REPORT_LINK_OK", "true").strip().lower() not in {"0", "false", "no", "off"}
+
+
+def verify_public_report_link(link_url: str, *, label: str = "report", attempts: int = 5, delay_seconds: int = 4) -> None:
+    if not report_link_check_enabled() or is_local_url(link_url):
+        return
+    last_error = ""
+    for attempt in range(1, attempts + 1):
+        try:
+            response = requests.get(link_url, timeout=15, allow_redirects=True)
+            if response.status_code < 400:
+                print(f"{label} link verified: {response.status_code} {link_url}")
+                return
+            last_error = f"HTTP {response.status_code}"
+        except Exception as exc:
+            last_error = str(exc)
+        if attempt < attempts:
+            time.sleep(delay_seconds)
+    raise RuntimeError(f"{label} link check failed before Kakao send: {last_error} ({link_url})")
+
+
+def forced_resend_enabled() -> bool:
+    return os.getenv("FORCE_KAKAO_SEND", "").strip().lower() in {"1", "true", "yes", "y"}
+
+
+def notification_log_title(title: str) -> str:
+    if not forced_resend_enabled():
+        return title
+    return f"{title} ??? {datetime.now(KST):%Y%m%d%H%M%S}"
+
+
+def forced_resend_dedupe_key(message_type: str, title: str) -> str | None:
+    if not forced_resend_enabled():
+        return None
+    return f"{message_type}:{title}:resend:{datetime.now(KST):%Y%m%d%H%M%S}"
+
+
 def build_message(report: dict) -> str:
     metrics = report.get("metrics", {})
     sections = parse_briefing(report.get("briefing", ""))
@@ -121,17 +160,17 @@ def build_message(report: dict) -> str:
     sent_at = datetime.now(KST).strftime("%H:%M")
 
     header = [
-        f"언론 동향 {short_report_date(report.get('date', ''))} {window_label['name']}".strip(),
-        f"분석대상 {window_label['range']} · 발송 {sent_at} · 리스크 {risk}",
+        f"?? ?? {short_report_date(report.get('date', ''))} {window_label['name']}".strip(),
+        f"???? {window_label['range']} ? ?? {sent_at} ? ??? {risk}",
         (
-            f"당사 {own_total} · 부정 "
-            f"{own_tone.get('negative', metrics.get('own_negative', 0))} · "
-            f"긍정 {own_tone.get('positive', 0)} · 중립 {own_tone.get('neutral', 0)}"
+            f"?? {own_total} ? ?? "
+            f"{own_tone.get('negative', metrics.get('own_negative', 0))} ? "
+            f"?? {own_tone.get('positive', 0)} ? ?? {own_tone.get('neutral', 0)}"
         ),
     ]
-    lines = header + ["", "동향 분석", compact(sections["conclusion"], 46, ellipsis=False)]
+    lines = header + ["", "?? ??", compact(sections["conclusion"], 46, ellipsis=False)]
     if sections["issues"]:
-        lines += ["", "핵심 이슈"]
+        lines += ["", "?? ??"]
         lines += [f"- {compact_issue(issue, 32)}" for issue in sections["issues"][:2]]
 
     return "\n".join(lines)[:300]
@@ -140,7 +179,7 @@ def build_message(report: dict) -> str:
 def notification_title(report: dict) -> str:
     window = report.get("window", {})
     slot = window.get("slot") or os.getenv("REPORT_SLOT", "").strip() or "auto"
-    return f"일일 언론 동향 {report.get('date', '')} {slot}"
+    return f"?? ?? ?? {report.get('date', '')} {slot}"
 
 
 def short_report_date(value: str) -> str:
@@ -154,7 +193,7 @@ def short_report_date(value: str) -> str:
 
 def kakao_window_label(window: dict) -> dict[str, str]:
     slot = str(window.get("slot") or os.getenv("REPORT_SLOT", "")).zfill(2)
-    name_by_slot = {"08": "아침", "13": "점심", "18": "마감"}
+    name_by_slot = {"08": "??", "13": "??", "18": "??"}
     fallback_name = window.get("report_label") or ""
     start = parse_iso_datetime(window.get("start", ""))
     end = parse_iso_datetime(window.get("end", ""))
@@ -162,13 +201,13 @@ def kakao_window_label(window: dict) -> dict[str, str]:
         start = start.astimezone(KST)
         end = end.astimezone(KST)
         if slot == "08" and start.date() != end.date():
-            range_label = f"전일 {start:%H}시~{end:%H}시"
+            range_label = f"?? {start:%H}?~{end:%H}?"
         elif start.date() == end.date():
-            range_label = f"{start:%H}시~{end:%H}시"
+            range_label = f"{start:%H}?~{end:%H}?"
         else:
-            range_label = f"{start:%m/%d %H시}~{end:%m/%d %H시}"
+            range_label = f"{start:%m/%d %H?}~{end:%m/%d %H?}"
     else:
-        range_label = window.get("short_label") or window.get("label") or "현재"
+        range_label = window.get("short_label") or window.get("label") or "??"
     return {"name": name_by_slot.get(slot, fallback_name).strip(), "range": range_label}
 
 
@@ -196,25 +235,25 @@ def parse_iso_datetime(value: str) -> datetime | None:
 def compact(text: str, limit: int, *, ellipsis: bool = True) -> str:
     cleaned = re.sub(r"\[[\d,\s]+\]\s*", "", text or "")
     cleaned = re.sub(r"\s+", " ", cleaned)
-    cleaned = cleaned.replace("핵심 이슈", "").strip()
+    cleaned = cleaned.replace("?? ??", "").strip()
     if len(cleaned) <= limit:
         return cleaned
     if ellipsis and limit > 1:
-        return cleaned[: limit - 1].rstrip() + "…"
+        return cleaned[: limit - 1].rstrip() + "?"
     return cleaned[:limit].rstrip()
 
 
 def compact_issue(text: str, limit: int) -> str:
     cleaned = compact(text, 120, ellipsis=False).lstrip("- ").strip()
-    head = re.split(r"[:：]", cleaned, 1)[0].strip() or cleaned
-    head = re.split(r"[.!?。]", head, 1)[0].strip() or head
+    head = re.split(r"[:?]", cleaned, 1)[0].strip() or cleaned
+    head = re.split(r"[.!??]", head, 1)[0].strip() or head
     return compact(head, limit, ellipsis=False)
 
 
 def parse_briefing(briefing: str) -> dict:
     cleaned = briefing.replace("**", "").strip()
     section_map: dict[str, list[str]] = {}
-    current = "본문"
+    current = "??"
 
     for raw_line in cleaned.splitlines():
         line = raw_line.strip()
@@ -228,10 +267,10 @@ def parse_briefing(briefing: str) -> dict:
             continue
         section_map.setdefault(current, []).append(line.strip("- ").strip())
 
-    conclusion = first_text(section_map, ["최종 결론", "동향 분석", "오늘의 판단", "본문"])
-    issues = section_map.get("핵심 이슈", [])
+    conclusion = first_text(section_map, ["?? ??", "?? ??", "??? ??", "??"])
+    issues = section_map.get("?? ??", [])
     if not conclusion:
-        conclusion = "특이 리스크 없음. 전체 보고서에서 근거 기사와 지표를 확인하세요."
+        conclusion = "?? ??? ??. ?? ????? ?? ??? ??? ?????."
     return {
         "conclusion": conclusion,
         "issues": [item for item in issues if item],
@@ -246,7 +285,7 @@ def first_text(section_map: dict[str, list[str]], names: list[str]) -> str:
     return ""
 
 
-def send_text_to_me(access_token: str, text: str, link_url: str, button_title: str = "보고서 보기") -> dict:
+def send_text_to_me(access_token: str, text: str, link_url: str, button_title: str = "??? ??") -> dict:
     template = {
         "object_type": "text",
         "text": text,
@@ -269,19 +308,19 @@ def needs_ai_usage_alert(report: dict) -> bool:
 
 
 def ai_usage_alert_title(report: dict) -> str:
-    return f"AI 요약 사용량 확인 {report.get('date', '')}"
+    return f"AI ?? ??? ?? {report.get('date', '')}"
 
 
 def build_ai_usage_alert(report: dict) -> str:
     metrics = report.get("metrics", {})
     window = kakao_window_label(report.get("window", {}))
-    reason = "사용량/크레딧 한도 확인 필요" if metrics.get("ai_quota_exhausted") else "기본 모델 응답 실패"
+    reason = "???/??? ?? ?? ??" if metrics.get("ai_quota_exhausted") else "?? ?? ?? ??"
     return "\n".join(
         [
-            "AI 요약 사용량 확인 필요",
-            f"{short_report_date(report.get('date', ''))} {window['name']} · {reason}",
-            "기본 AI 대신 백업 요약 경로를 사용했습니다.",
-            "AI Studio 사용량/결제 상태를 확인하세요.",
+            "AI ?? ??? ?? ??",
+            f"{short_report_date(report.get('date', ''))} {window['name']} ? {reason}",
+            "?? AI ?? ?? ?? ??? ??????.",
+            "AI Studio ???/?? ??? ?????.",
         ]
     )[:300]
 
@@ -296,7 +335,7 @@ def maybe_send_ai_usage_alert(access_token: str, report: dict) -> None:
     link = os.getenv("GEMINI_USAGE_URL", "").strip() or config.GEMINI_USAGE_URL
     text = build_ai_usage_alert(report)
     try:
-        result = send_text_to_me(access_token, text, link, button_title="사용량 확인")
+        result = send_text_to_me(access_token, text, link, button_title="??? ??")
         save_notification_send(
             message_type="ai_usage_alert",
             title=title,
@@ -324,23 +363,27 @@ def main() -> None:
     link = report_link(report)
     text = build_message(report)
     title = notification_title(report)
-    if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent("daily_report", title):
+    if not forced_resend_enabled() and notification_already_sent("daily_report", title, strict=True):
         print(f"Kakao daily report already sent: {title}")
         print("Set FORCE_KAKAO_SEND=1 to send again intentionally.")
         if needs_ai_usage_alert(report):
             token = refresh_access_token()
             maybe_send_ai_usage_alert(token, report)
         return
+    log_title = notification_log_title(title)
+    log_dedupe_key = forced_resend_dedupe_key("daily_report", title)
     try:
+        verify_public_report_link(link, label=title)
         token = refresh_access_token()
         result = send_text_to_me(token, text, link)
         save_notification_send(
             message_type="daily_report",
-            title=title,
+            title=log_title,
             body=text,
             link_url=link,
             status="success",
             provider_response=result,
+            dedupe_key=log_dedupe_key,
         )
         print("Kakao send result:", result)
         print("Report link:", link)
@@ -348,11 +391,13 @@ def main() -> None:
     except Exception as error:
         save_notification_send(
             message_type="daily_report",
-            title=title,
+            title=log_title,
             body=text,
             link_url=link,
             status="failed",
             error=str(error),
+            dedupe_key=log_dedupe_key,
+            require_log=False,
         )
         raise
     html_path = latest_html_path()
