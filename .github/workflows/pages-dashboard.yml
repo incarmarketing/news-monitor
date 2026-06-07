@@ -56,7 +56,9 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Refresh official regulator releases
-        run: timeout 120s python refresh_regulator_releases.py --days 14 --pages 10
+        run: |
+          timeout 180s python refresh_regulator_releases.py --days 14 --pages 10 || \
+            echo "::warning::Regulator refresh did not finish; publishing with last successful data."
         env:
           FSS_API_AUTH_KEY: ${{ secrets.FSS_API_AUTH_KEY }}
           FSS_OPENAPI_AUTH_KEY: ${{ secrets.FSS_OPENAPI_AUTH_KEY }}
