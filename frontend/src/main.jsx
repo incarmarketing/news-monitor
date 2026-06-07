@@ -335,8 +335,8 @@ function App() {
   const allArticles = liveConnected ? operations.articles || [] : [];
   const scraps = liveConnected ? operations.scraps || [] : [];
   const data = useMemo(
-    () => composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected),
-    [baseData, scopedArticles, scopedReportRuns, liveConnected],
+    () => composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected, period),
+    [baseData, scopedArticles, scopedReportRuns, liveConnected, period],
   );
   const realtimeArticles = useMemo(
     () => selectRealtimeArticles(allArticles),
@@ -1700,7 +1700,7 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
       <PageTitle
         eyebrow={edition.kicker}
         title="일간/주간/월간 보고서"
-        description="일간, 주간, 월간 보고서를 A4 세로 지면 기준으로 미리 보고 인쇄/PDF로 저장합니다."
+        description="보고 기간을 고정해 A4 세로 한 장에서 핵심 이슈, 리스크, 키워드와 매체 흐름을 바로 확인합니다."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
@@ -1732,15 +1732,16 @@ function A4ReportStage({
   embedded = false,
 }) {
   const reportArticles = articles || [];
-  const edition = publicationMeta(period, data);
+  const reportScope = buildReportPeriodScope(reportArticles.length ? reportArticles : [], period, data.scope);
+  const edition = publicationMeta(period, { ...data, periodScope: reportScope });
   const expandedIssues = expandReportIssues(data.issues, reportArticles, period);
   const lead = buildReportLead(period, data, reportArticles, expandedIssues);
   const secondary = expandedIssues
     .filter((issue) => !sameIssue(issue, lead))
-    .slice(0, period === "daily" ? 4 : 6);
+    .slice(0, period === "daily" ? 4 : 5);
   const reportTrend = trendRows?.length
-    ? trendRows.slice(-(period === "daily" ? 10 : 31))
-    : buildDailyToneTrend(reportArticles, period === "daily" ? 10 : 31, data.toneTrend);
+    ? trendRows
+    : buildReportToneTrend(reportArticles, period, data.toneTrend);
   const reportKeywords = keywordRows?.length
     ? keywordRows
     : buildKeywordFlow(reportArticles, selectDashboardKeywords()).slice(0, 10);
@@ -1756,6 +1757,7 @@ function A4ReportStage({
         data={data}
         period={period}
         edition={edition}
+        reportScope={reportScope}
         lead={lead}
         issues={secondary}
         articles={reportArticles}
@@ -1772,6 +1774,7 @@ function A4ReportSheet({
   data,
   period,
   edition,
+  reportScope,
   lead,
   issues = [],
   articles = [],
@@ -1781,19 +1784,21 @@ function A4ReportSheet({
   onOpenMonitoring,
 }) {
   const summary = data.summary || {};
-  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles);
+  const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
+  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope);
   const stats = buildA4ReportStats(summary, articles);
   const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, 5);
   const scrapRows = period === "daily" ? [] : scraps.slice(0, 3);
-  const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows);
+  const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows, scope);
   const toneRows = buildA4ToneLedger(articles);
+  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, period === "daily" ? 5 : 6);
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
         <div className="a4-topline">
           <span>{edition.issue}</span>
-          <span>{data.scope || data.generatedAt || "-"}</span>
-          <span>INCAR MEDIA DESK</span>
+          <span>{scope.scopeLabel || data.scope || "-"}</span>
+          <span>{data.generatedAt || "-"}</span>
         </div>
         <div className="a4-title-row">
           <div>
@@ -1802,7 +1807,7 @@ function A4ReportSheet({
             <em>{edition.subtitle}</em>
           </div>
           <div className={`a4-risk-badge ${String(summary.risk || "LOW").toLowerCase()}`}>
-            <span>Risk</span>
+            <span>리스크</span>
             <b>{summary.risk || "LOW"}</b>
           </div>
         </div>
@@ -1811,16 +1816,15 @@ function A4ReportSheet({
 
       <section className="a4-front">
         <article className="a4-lead">
-          <span>Front Page</span>
-          <h3>{lead?.title || summary.headline || "기간 대표 이슈"}</h3>
-          <ArticleSummaryBlock
-            item={lead || { title: summary.headline, summary: summary.headline, category: data.label, tone: summary.risk === "LOW" ? "중립" : "주의" }}
-            dense
-          />
+          <span>핵심 요약</span>
+          <h3>{buildA4ReportHeadline(period, data, lead, scope)}</h3>
+          <ul className="a4-executive-lines">
+            {insightLines.map((line) => <li key={line}>{line}</li>)}
+          </ul>
           <div className="a4-article-meta">
             {lead?.tone && <Chip tone={lead.tone}>{lead.tone}</Chip>}
             {lead?.category && <Chip>{lead.category}</Chip>}
-            <span>{formatA4ArticleMeta(lead, data.scope)}</span>
+            <span>{formatA4ArticleMeta(lead, scope.scopeLabel || data.scope)}</span>
             {lead?.link && lead.link !== "#" && (
               <a href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
                 기사 열기
@@ -1829,29 +1833,42 @@ function A4ReportSheet({
           </div>
         </article>
         <aside className="a4-insight">
-          <span>Brief</span>
-          {insightLines.map((line) => <p key={line}>{line}</p>)}
+          <span>집계 기준</span>
+          <dl className="a4-basis-list">
+            <div>
+              <dt>기간</dt>
+              <dd>{scope.scopeLabel || data.scope || "-"}</dd>
+            </div>
+            <div>
+              <dt>방식</dt>
+              <dd>{scope.ruleLabel}</dd>
+            </div>
+            <div>
+              <dt>기준</dt>
+              <dd>{scope.basisLabel}</dd>
+            </div>
+          </dl>
         </aside>
       </section>
 
       <section className="a4-report-body">
         <div className="a4-report-main-column">
-          <A4Panel title="핵심 기사" meta={`${issues.length.toLocaleString("ko-KR")}건`}>
+          <A4Panel title="핵심 이슈와 요약" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
             <div className="a4-issue-list">
-              {issues.slice(0, period === "daily" ? 4 : 5).map((issue) => (
+              {reportIssues.map((issue) => (
                 <A4IssueRow key={`${issue.source}-${issue.title}-${issue.time || issue.date}`} issue={issue} />
               ))}
-              {!issues.length && <p className="a4-empty">기간 내 핵심 기사 데이터가 없습니다.</p>}
+              {!reportIssues.length && <p className="a4-empty">기간 내 핵심 기사 데이터가 없습니다.</p>}
             </div>
           </A4Panel>
         </div>
 
         <div className="a4-report-side-column">
-          <A4Panel title="일별 논조 추이" meta={period === "daily" ? "최근 10일" : "최근 31일"}>
+          <A4Panel title={scope.trendTitle} meta={scope.trendMeta}>
             <A4ToneMini rows={trendRows} />
           </A4Panel>
 
-          <A4Panel title="키워드별 기사량" meta="선정 10개">
+          <A4Panel title="키워드별 기사량" meta="선정 키워드">
             <A4BarList rows={keywordRows.slice(0, 10)} />
           </A4Panel>
 
@@ -1895,8 +1912,8 @@ function A4ReportSheet({
       </section>
 
       <footer className="a4-footer">
-        <span>보고 기준: {periodScopeLabel(period)} · {data.scope || data.generatedAt || "-"}</span>
-        <span>데이터: 수집 기사와 수동 분류 보정 반영</span>
+        <span>보고 기준: {scope.scopeLabel || data.scope || "-"}</span>
+        <span>{scope.ruleLabel} · 수집 기사와 수동 분류 보정 반영</span>
       </footer>
     </article>
   );
@@ -1929,6 +1946,7 @@ function A4Panel({ title, meta, children }) {
 }
 
 function A4IssueRow({ issue }) {
+  const lines = buildArticleSummaryLines(issue).slice(0, 2);
   return (
     <article className="a4-issue-row">
       <div>
@@ -1937,7 +1955,11 @@ function A4IssueRow({ issue }) {
         <span>{formatA4ArticleMeta(issue)}</span>
       </div>
       <h4>{issue.title}</h4>
-      <ArticleSummaryBlock item={issue} dense />
+      {lines.length > 0 && (
+        <ul className="summary-lines dense">
+          {lines.map((line) => <li key={line}>{line}</li>)}
+        </ul>
+      )}
     </article>
   );
 }
@@ -2011,7 +2033,7 @@ function buildA4ReportStats(summary = {}, articles = []) {
   ];
 }
 
-function buildA4ReportInsights(period, data, lead, issues = [], articles = []) {
+function buildA4ReportInsights(period, data, lead, issues = [], articles = [], reportScope = {}) {
   const summary = data.summary || {};
   const periodLabel = periodScopeLabel(period);
   const ownCount = Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0);
@@ -2019,16 +2041,19 @@ function buildA4ReportInsights(period, data, lead, issues = [], articles = []) {
   const cautionCount = Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0);
   const policyCount = articles.filter((item) => item.category === "정책/규제").length;
   const topic = lead ? a4TopicLabel(lead) : "기간 대표 이슈";
+  const scopeLabel = reportScope.scopeLabel || data.scope || periodLabel;
   const lines = [
-    lead?.title ? `${periodLabel} 대표 흐름은 ${topic}입니다.` : `${periodLabel} 기사 흐름을 기간 기준으로 정리합니다.`,
+    `${scopeLabel} 기준 분석 기사 ${Number(summary.analyzed || articles.length || 0).toLocaleString("ko-KR")}건 중 당사 언급 ${ownCount.toLocaleString("ko-KR")}건을 확인했습니다.`,
     negativeCount > 0
-      ? `당사 부정 ${negativeCount}건은 즉시 확인 대상으로 분리합니다.`
-      : `당사 언급 ${ownCount}건은 직접 부정보다 관찰·성과·시장성 이슈로 나눠 봅니다.`,
+      ? `당사 부정 ${negativeCount.toLocaleString("ko-KR")}건은 즉시 확인 대상으로 분리하고, 관련 보도 묶음까지 함께 점검합니다.`
+      : `직접 부정은 제한적이며, 당사 언급은 성과·시장성·업계 흐름으로 나눠 봅니다.`,
     cautionCount > 0
-      ? `주의 ${cautionCount}건은 시장 평가, 규제, 영업환경 신호를 별도로 추적합니다.`
+      ? `주의 ${cautionCount.toLocaleString("ko-KR")}건은 시장 평가, 규제, 영업환경 신호로 별도 추적합니다.`
       : "주의 신호는 낮고 일반 동향 확인 비중이 높습니다.",
-    policyCount > 0
-      ? `정책/규제 기사 ${policyCount.toLocaleString("ko-KR")}건은 영업 환경 변화 관점에서 확인합니다.`
+    lead?.title
+      ? `대표 이슈는 ${topic}이며, 핵심 헤드라인은 "${lead.title}"입니다.`
+      : policyCount > 0
+        ? `정책/규제 기사 ${policyCount.toLocaleString("ko-KR")}건은 영업 환경 변화 관점에서 확인합니다.`
       : issues[0]?.title
         ? `핵심 기사 "${issues[0].title}"의 후속 보도 여부를 확인합니다.`
         : "반복 노출 매체와 키워드 변화는 다음 보고 주기에 이어서 확인합니다.",
@@ -2036,18 +2061,18 @@ function buildA4ReportInsights(period, data, lead, issues = [], articles = []) {
   return dedupeSummaryLines(lines).slice(0, 4);
 }
 
-function buildA4ObservationRows(period, data, lead, issues = [], articles = [], keywordRows = [], pressRows = []) {
+function buildA4ObservationRows(period, data, lead, issues = [], articles = [], keywordRows = [], pressRows = [], reportScope = {}) {
   const summary = data.summary || {};
   const ownCount = Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0);
   const riskCount = Number(summary.ownNegative || 0) + Number(summary.caution || 0);
   const topKeyword = keywordRows.find((row) => Number(row.value || 0) > 0);
   const topPress = pressRows[0];
-  const periodLabel = periodScopeLabel(period);
+  const periodLabel = reportScope.shortLabel || periodScopeLabel(period);
   const leadTopic = lead ? a4TopicLabel(lead) : "대표 이슈";
   return [
     {
-      label: "대표 흐름",
-      body: `${periodLabel} 핵심은 ${leadTopic}이며, 대표 헤드라인을 기준으로 보도 확산 여부를 확인합니다.`,
+      label: "기간 기준",
+      body: `${periodLabel} 기준으로만 집계해 이전 기간 기사와 섞이지 않도록 구성했습니다.`,
     },
     {
       label: "당사/리스크",
@@ -2059,9 +2084,21 @@ function buildA4ObservationRows(period, data, lead, issues = [], articles = [], 
     },
     {
       label: "후속 관찰",
-      body: issues[0]?.title ? `"${issues[0].title}" 관련 후속 보도와 같은 이슈 묶음을 이어서 확인합니다.` : "반복 노출 이슈는 다음 보고 주기에 계속 누적합니다.",
+      body: issues[0]?.title ? `${leadTopic} 관련 후속 보도와 같은 이슈 묶음을 이어서 확인합니다.` : "반복 노출 이슈는 다음 보고 주기에 계속 누적합니다.",
     },
   ];
+}
+
+function buildA4ReportHeadline(period, data, lead, reportScope = {}) {
+  const summary = data.summary || {};
+  const ownNegative = Number(summary.ownNegative || 0);
+  const caution = Number(summary.caution || 0);
+  const topic = lead ? a4TopicLabel(lead) : "언론 동향";
+  if (ownNegative > 0) return `${reportScope.shortLabel || periodScopeLabel(period)} 당사 리스크 점검`;
+  if (period === "monthly") return `${reportScope.month || reportScope.shortLabel || "월간"} 언론 흐름 요약`;
+  if (period === "weekly") return `${reportScope.shortLabel || "해당 주차"} ${topic} 중심 보도 흐름`;
+  if (caution > 0) return `당일 주의 신호와 당사 언급 점검`;
+  return `당일 언론 동향 핵심 요약`;
 }
 
 function buildA4ToneLedger(articles = []) {
@@ -2097,25 +2134,26 @@ function formatA4ArticleMeta(item = {}, fallback = "-") {
 }
 
 function publicationMeta(period, data) {
-  const date = data.scope || data.generatedAt || "";
+  const scope = data.periodScope || {};
+  const date = scope.scopeLabel || data.scope || data.generatedAt || "";
   const meta = {
     daily: {
-      kicker: "Daily Edition",
-      title: "INCAR MEDIA DAILY",
-      subtitle: "오늘의 언론 동향을 지면처럼 읽는 일간 브리핑",
-      issue: `${date} · Daily No. 01`,
+      kicker: "Daily Report",
+      title: "일일 언론 동향 보고서",
+      subtitle: "당일 수집 기사 기준 핵심 이슈와 즉시 확인할 리스크를 정리합니다.",
+      issue: `${date} · 당일 집계`,
     },
     weekly: {
-      kicker: "Weekly Edition",
-      title: "INCAR MEDIA WEEKLY",
-      subtitle: "한 주의 보도 흐름과 리스크 신호를 묶은 주간지",
-      issue: `${date} · Weekly Review`,
+      kicker: "Weekly Report",
+      title: "주간 언론 동향 보고서",
+      subtitle: "해당 주차의 반복 노출, 논조 변화, 관리 이슈를 한 장으로 요약합니다.",
+      issue: `${date} · 주차 집계`,
     },
     monthly: {
-      kicker: "Monthly Edition",
-      title: "INCAR MEDIA MONTHLY",
-      subtitle: "월간 누적 데이터를 기반으로 보는 언론 동향 매거진",
-      issue: `${date} · Monthly Desk`,
+      kicker: "Monthly Report",
+      title: "월간 언론 동향 보고서",
+      subtitle: "집계월 기준 누적 기사, 매체 영향도, 키워드 흐름을 정리합니다.",
+      issue: `${scope.month || date} · 집계월`,
     },
   };
   return meta[period] || meta.daily;
@@ -4294,7 +4332,7 @@ function composeRealtimeDataUnused(base, articles, liveConnected = false) {
   };
 }
 
-function composePeriodData(base, articles, reportRuns = [], liveConnected = false) {
+function composePeriodData(base, articles, reportRuns = [], liveConnected = false, period = "daily") {
   if (!liveConnected) {
     return buildDisconnectedPeriodData(base);
   }
@@ -4303,6 +4341,7 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
     return buildDisconnectedPeriodData(base, "선택 기간 데이터가 없습니다.");
   }
   const usableArticles = articles.filter(isUsableArticle);
+  const periodScope = buildReportPeriodScope(usableArticles.length ? usableArticles : reportRuns, period, base.scope);
   const ownMentions = usableArticles.filter(isOwnArticle).length;
   const ownNegative = usableArticles.filter((article) => isOwnArticle(article) && article.tone === "부정").length;
   const caution = usableArticles.filter((article) => article.tone === "주의").length;
@@ -4333,7 +4372,8 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
       minute: "2-digit",
       hour12: false,
     }).format(new Date()),
-    scope: usableArticles[0]?.date ? `${usableArticles[0].date} 기준` : base.scope,
+    scope: periodScope.scopeLabel || base.scope,
+    periodScope,
     issues: usableArticles.length ? buildIssues(usableArticles, base.issues) : [],
     categoryFlow: groupArticles(usableArticles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
     toneTrend: buildToneTrend(usableArticles),
@@ -5026,6 +5066,63 @@ function buildDailyToneTrend(articles, days = 31, fallback = []) {
   const rows = Array.from(buckets.values());
   const hasSignal = rows.some((row) => row.positive || row.negative || row.caution || row.neutral);
   return hasSignal ? rows : ensureTrendHasTone(fallback);
+}
+
+function buildReportToneTrend(articles, period = "daily", fallback = []) {
+  const dated = articles
+    .map((article) => ({ article, dateKey: rowDateKey(article) }))
+    .filter((row) => row.dateKey);
+  if (!dated.length) return ensureTrendHasTone(fallback);
+  const latest = lastItem(dated.map((row) => row.dateKey).sort());
+  const scope = buildPeriodRangeFromLatest(latest, period);
+  if (!scope.start || !scope.end) return ensureTrendHasTone(fallback);
+
+  if (period === "daily") {
+    const slots = [
+      { id: "00-08", label: "00-08시", start: 0, end: 8 },
+      { id: "08-13", label: "08-13시", start: 8, end: 13 },
+      { id: "13-18", label: "13-18시", start: 13, end: 18 },
+      { id: "18-24", label: "18-24시", start: 18, end: 24 },
+    ];
+    const buckets = new Map(slots.map((slot) => [slot.id, { date: slot.label, positive: 0, negative: 0, caution: 0, neutral: 0 }]));
+    dated
+      .filter((row) => row.dateKey === scope.start)
+      .forEach(({ article }) => {
+        const hour = Number(String(article.time || article.publishedAt || "").match(/(\d{1,2}):/)?.[1] || 0);
+        const slot = slots.find((item) => hour >= item.start && hour < item.end) || slots[0];
+        addToneToBucket(buckets.get(slot.id), article.tone);
+      });
+    const rows = Array.from(buckets.values());
+    return rows.some(hasToneSignal) ? rows : ensureTrendHasTone(fallback);
+  }
+
+  const buckets = new Map();
+  let cursor = scope.start;
+  while (cursor && cursor <= scope.end) {
+    const label = period === "monthly" ? `${monthWeekIndex(cursor)}주` : cursor.slice(5);
+    if (!buckets.has(label)) buckets.set(label, { date: label, positive: 0, negative: 0, caution: 0, neutral: 0 });
+    cursor = addDaysToDateKey(cursor, 1);
+  }
+  dated.forEach(({ article, dateKey }) => {
+    if (dateKey < scope.start || dateKey > scope.end) return;
+    const label = period === "monthly" ? `${monthWeekIndex(dateKey)}주` : dateKey.slice(5);
+    const bucket = buckets.get(label);
+    if (bucket) addToneToBucket(bucket, article.tone);
+  });
+  const rows = Array.from(buckets.values());
+  return rows.some(hasToneSignal) ? rows : ensureTrendHasTone(fallback);
+}
+
+function addToneToBucket(bucket, tone) {
+  if (!bucket) return;
+  if (tone === "긍정") bucket.positive += 1;
+  else if (tone === "부정") bucket.negative += 1;
+  else if (tone === "주의") bucket.caution += 1;
+  else bucket.neutral += 1;
+}
+
+function hasToneSignal(row = {}) {
+  return Boolean(row.positive || row.negative || row.caution || row.neutral);
 }
 
 function formatKstDateKey(date) {
@@ -5869,25 +5966,157 @@ function lastItem(items = []) {
 
 function latestArticleDate(articles = []) {
   return lastItem(articles
-    .map((article) => article.date)
+    .map((article) => rowDateKey(article))
     .filter(Boolean)
     .sort()) || "";
 }
 
+function rowDateKey(row = {}) {
+  const candidates = [
+    row.date,
+    row.report_date,
+    row.reportDate,
+    row.published_date,
+    row.publishedDate,
+    row.pubDate,
+    row.pub_date,
+    row.sent_at,
+    row.sentAt,
+    row.created_at,
+    row.createdAt,
+    row.timestamp,
+    row.publishedAt,
+  ];
+  for (const value of candidates) {
+    const key = normalizeDateKey(value);
+    if (key) return key;
+  }
+  return "";
+}
+
+function normalizeDateKey(value) {
+  if (!value) return "";
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+  const raw = String(value).trim();
+  const match = raw.match(/(\d{4})[-./년\s]*(\d{1,2})[-./월\s]*(\d{1,2})/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  return "";
+}
+
+function dateKeyToUtcTime(key = "") {
+  const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return NaN;
+  const [, year, month, day] = match.map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
+function utcTimeToDateKey(time) {
+  if (!Number.isFinite(time)) return "";
+  return new Date(time).toISOString().slice(0, 10);
+}
+
+function addDaysToDateKey(key, days) {
+  const time = dateKeyToUtcTime(key);
+  if (!Number.isFinite(time)) return "";
+  return utcTimeToDateKey(time + days * 24 * 60 * 60 * 1000);
+}
+
+function startOfWeekDateKey(key) {
+  const time = dateKeyToUtcTime(key);
+  if (!Number.isFinite(time)) return key;
+  const day = new Date(time).getUTCDay();
+  const offset = (day + 6) % 7;
+  return addDaysToDateKey(key, -offset);
+}
+
+function monthWeekIndex(key = "") {
+  const day = Number(key.slice(8, 10));
+  return Math.max(1, Math.min(6, Math.floor((day - 1) / 7) + 1));
+}
+
+function buildPeriodRangeFromLatest(latest, period = "daily") {
+  const latestKey = normalizeDateKey(latest);
+  if (!latestKey) return { period, start: "", end: "", month: "", scopeLabel: "", shortLabel: "" };
+  if (period === "monthly") {
+    const month = latestKey.slice(0, 7);
+    return {
+      period,
+      start: `${month}-01`,
+      end: latestKey,
+      month,
+      scopeLabel: `${month} 집계월`,
+      shortLabel: `${month} 월간`,
+      ruleLabel: "같은 월 기사만 집계",
+      basisLabel: "월초부터 최신 수집일까지",
+      trendTitle: "주차별 논조 추이",
+      trendMeta: "집계월 기준",
+    };
+  }
+  if (period === "weekly") {
+    const start = startOfWeekDateKey(latestKey);
+    return {
+      period,
+      start,
+      end: latestKey,
+      month: latestKey.slice(0, 7),
+      scopeLabel: `${start} ~ ${latestKey} 주차`,
+      shortLabel: `${start.slice(5)}~${latestKey.slice(5)} 주간`,
+      ruleLabel: "월요일 시작 주차 기준",
+      basisLabel: "해당 주차 기사만 집계",
+      trendTitle: "일별 논조 추이",
+      trendMeta: "해당 주차 기준",
+    };
+  }
+  return {
+    period,
+    start: latestKey,
+    end: latestKey,
+    month: latestKey.slice(0, 7),
+    scopeLabel: `${latestKey} 당일`,
+    shortLabel: `${latestKey.slice(5)} 일간`,
+    ruleLabel: "당일 기사만 집계",
+    basisLabel: "00시부터 최신 수집시각까지",
+    trendTitle: "시간대별 논조 추이",
+    trendMeta: "당일 기준",
+  };
+}
+
+function buildReportPeriodScope(rows = [], period = "daily", fallbackScope = "") {
+  const latest = lastItem(rows.map(rowDateKey).filter(Boolean).sort());
+  if (!latest) {
+    return {
+      period,
+      start: "",
+      end: "",
+      month: "",
+      scopeLabel: fallbackScope || periodScopeLabel(period),
+      shortLabel: fallbackScope || periodScopeLabel(period),
+      ruleLabel: period === "monthly" ? "집계월 기준" : period === "weekly" ? "주차 기준" : "당일 기준",
+      basisLabel: "수집 데이터 기준",
+      trendTitle: period === "monthly" ? "주차별 논조 추이" : period === "daily" ? "시간대별 논조 추이" : "일별 논조 추이",
+      trendMeta: "기간 기준",
+    };
+  }
+  return buildPeriodRangeFromLatest(latest, period);
+}
+
 function filterRowsByPeriod(articles, period) {
   if (!articles.length) return [];
-  const dated = articles.filter((article) => article.date);
+  const dated = articles
+    .map((article) => ({ article, dateKey: rowDateKey(article) }))
+    .filter((row) => row.dateKey);
   if (!dated.length) return articles;
-  const latest = lastItem(dated.map((article) => article.date).sort());
+  const latest = lastItem(dated.map((row) => row.dateKey).sort());
   if (!latest) return articles;
-  if (period === "daily") return dated.filter((article) => article.date === latest);
-  if (period === "monthly") return dated.filter((article) => article.date.startsWith(latest.slice(0, 7)));
-  const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
-  const minTime = latestTime - 6 * 24 * 60 * 60 * 1000;
-  return dated.filter((article) => {
-    const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
-    return time >= minTime && time <= latestTime;
-  });
+  const scope = buildPeriodRangeFromLatest(latest, period);
+  return dated
+    .filter(({ dateKey }) => dateKey >= scope.start && dateKey <= scope.end)
+    .map(({ article }) => article);
 }
 
 function resolveMonitoringDateRange(articles = [], preset = {}) {
@@ -5897,16 +6126,14 @@ function resolveMonitoringDateRange(articles = [], preset = {}) {
       end: preset.endDate || preset.startDate || "",
     };
   }
-  const dated = articles.filter((article) => article.date).map((article) => article.date).sort();
+  const dated = articles.map(rowDateKey).filter(Boolean).sort();
   const latest = dated[dated.length - 1] || "";
   if (!latest) return { start: "", end: "" };
   if (preset.period === "monthly") {
     return { start: `${latest.slice(0, 7)}-01`, end: latest };
   }
   if (preset.period === "weekly") {
-    const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
-    const start = new Date(latestTime - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    return { start, end: latest };
+    return { start: startOfWeekDateKey(latest), end: latest };
   }
   return { start: latest, end: latest };
 }

@@ -2942,16 +2942,14 @@ button.kpi-card {
 .a4-report-sheet {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: 9px;
   width: min(210mm, 100%);
   min-height: 297mm;
   margin: 0 auto;
-  padding: 11mm;
+  padding: 10mm;
   border: 1px solid #c9d3e2;
   border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(15, 23, 42, .025) 0 1px, transparent 1px 10px),
-    linear-gradient(180deg, #ffffff 0, #fbfcff 100%);
+  background: #ffffff;
   box-shadow: 0 22px 48px rgba(15, 23, 42, .13);
   color: var(--ink);
   overflow: hidden;
@@ -2959,19 +2957,19 @@ button.kpi-card {
 
 .a4-masthead {
   display: grid;
-  gap: 9px;
-  padding-bottom: 9px;
-  border-bottom: 2px solid #172033;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #172033;
 }
 
 .a4-topline {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #172033;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #d7deea;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -2979,8 +2977,8 @@ button.kpi-card {
 .a4-title-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: end;
+  gap: 14px;
+  align-items: center;
 }
 
 .a4-title-row p {
@@ -2994,18 +2992,18 @@ button.kpi-card {
 .a4-title-row h2 {
   margin: 0;
   color: #121826;
-  font-family: Georgia, "Times New Roman", "Malgun Gothic", serif;
-  font-size: 42px;
-  line-height: .94;
+  font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 27px;
+  line-height: 1.08;
   font-weight: 900;
   letter-spacing: 0;
 }
 
 .a4-title-row em {
   display: block;
-  margin-top: 7px;
+  margin-top: 5px;
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: 10.5px;
   font-style: normal;
   font-weight: 900;
   word-break: keep-all;
@@ -3014,9 +3012,9 @@ button.kpi-card {
 .a4-risk-badge {
   display: grid;
   align-content: center;
-  min-width: 74px;
-  min-height: 58px;
-  padding: 9px 12px;
+  min-width: 62px;
+  min-height: 44px;
+  padding: 7px 10px;
   border: 1px solid #bdebd6;
   border-radius: 8px;
   background: linear-gradient(135deg, #eaf8f2, #fff);
@@ -3032,7 +3030,7 @@ button.kpi-card {
 
 .a4-risk-badge b {
   color: var(--green);
-  font-size: 22px;
+  font-size: 16px;
   line-height: 1.05;
   font-weight: 900;
 }
@@ -3054,7 +3052,7 @@ button.kpi-card {
 .a4-metric-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 
 .a4-metric-strip button {
@@ -3063,8 +3061,8 @@ button.kpi-card {
   gap: 2px 6px;
   align-items: center;
   min-width: 0;
-  min-height: 45px;
-  padding: 7px 8px;
+  min-height: 38px;
+  padding: 6px 7px;
   border: 1px solid #dde6f2;
   border-radius: 7px;
   background: #fff;
@@ -3081,7 +3079,7 @@ button.kpi-card {
   grid-row: 1 / 3;
   grid-column: 2;
   color: var(--ink);
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
   font-weight: 900;
 }
@@ -3100,9 +3098,9 @@ button.kpi-card {
 
 .a4-front {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(180px, .65fr);
-  gap: 10px;
-  min-height: 178px;
+  grid-template-columns: minmax(0, 1.22fr) minmax(170px, .78fr);
+  gap: 8px;
+  min-height: 138px;
 }
 
 .a4-lead,
@@ -3111,14 +3109,13 @@ button.kpi-card {
   min-width: 0;
   border: 1px solid #d8e1ed;
   border-radius: 8px;
-  background:
-    radial-gradient(circle at 96% 10%, rgba(40, 85, 217, .06), transparent 32%),
-    linear-gradient(180deg, #fff, #fbfcff);
+  background: linear-gradient(180deg, #fff, #fbfcff);
 }
 
 .a4-lead {
-  padding: 14px 16px;
-  border-color: #172033;
+  padding: 11px 13px;
+  border-color: #b9c8dc;
+  border-left: 4px solid var(--blue);
 }
 
 .a4-lead > span,
@@ -3131,26 +3128,34 @@ button.kpi-card {
 }
 
 .a4-lead h3 {
-  margin: 8px 0 8px;
+  margin: 7px 0 7px;
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", "Malgun Gothic", serif;
-  font-size: 27px;
-  line-height: 1.08;
+  font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 19px;
+  line-height: 1.18;
   font-weight: 900;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
 
-.a4-lead .summary-lines {
+.a4-lead .summary-lines,
+.a4-executive-lines {
   margin-top: 6px;
 }
 
 .a4-lead .summary-lines li,
-.a4-issue-row .summary-lines li {
+.a4-issue-row .summary-lines li,
+.a4-executive-lines li {
   color: var(--ink-2);
-  font-size: 10.5px;
-  line-height: 1.42;
+  font-size: 9.7px;
+  line-height: 1.36;
   font-weight: 800;
+}
+
+.a4-executive-lines {
+  display: grid;
+  gap: 3px;
+  padding-left: 16px;
 }
 
 .a4-article-meta {
@@ -3178,8 +3183,8 @@ button.kpi-card {
 .a4-insight {
   display: grid;
   align-content: start;
-  gap: 7px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .a4-insight p {
@@ -3195,17 +3200,52 @@ button.kpi-card {
   word-break: keep-all;
 }
 
+.a4-basis-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.a4-basis-list div {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: var(--paper-soft);
+}
+
+.a4-basis-list dt {
+  color: var(--blue);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.a4-basis-list dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: 10px;
+  line-height: 1.32;
+  font-weight: 900;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
 .a4-report-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.06fr) minmax(0, .94fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+  gap: 8px;
   align-items: start;
 }
 
 .a4-report-main-column,
 .a4-report-side-column {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   align-content: start;
 }
@@ -3214,14 +3254,14 @@ button.kpi-card {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(220px, .6fr);
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .a4-panel {
   display: grid;
-  gap: 8px;
-  padding: 10px 11px;
+  gap: 7px;
+  padding: 8px 9px;
 }
 
 .a4-panel-head {
@@ -3247,14 +3287,14 @@ button.kpi-card {
 
 .a4-issue-list {
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 
 .a4-issue-row {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
-  padding: 8px;
+  padding: 7px;
   border: 1px solid var(--line-soft);
   border-radius: 7px;
   background: #fff;
@@ -3276,7 +3316,7 @@ button.kpi-card {
 .a4-issue-row h4 {
   margin: 0;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.25;
   font-weight: 900;
   word-break: keep-all;
@@ -5023,7 +5063,7 @@ button.kpi-card {
   }
 
   .a4-title-row h2 {
-    font-size: 30px;
+    font-size: 24px;
   }
 
   .a4-risk-badge {
@@ -5461,7 +5501,7 @@ button.kpi-card {
     gap: 10px;
   }
   .a4-title-row h2 {
-    font-size: 26px;
+    font-size: 18px;
   }
   .a4-title-row em {
     margin-top: 4px;
@@ -5494,7 +5534,7 @@ button.kpi-card {
     gap: 6px;
   }
   .a4-front {
-    min-height: 125px;
+    min-height: 92px;
   }
   .a4-lead,
   .a4-insight,
@@ -5506,13 +5546,18 @@ button.kpi-card {
   }
   .a4-lead h3 {
     margin: 4px 0;
-    font-size: 15px;
+    font-size: 11.5px;
     line-height: 1.12;
   }
   .a4-lead .summary-lines li,
-  .a4-issue-row .summary-lines li {
+  .a4-issue-row .summary-lines li,
+  .a4-executive-lines li {
     font-size: 6.8px;
     line-height: 1.25;
+  }
+  .a4-executive-lines {
+    gap: 2px;
+    padding-left: 11px;
   }
   .a4-article-meta {
     gap: 3px;
@@ -5529,6 +5574,20 @@ button.kpi-card {
     padding: 5px;
     font-size: 6.8px;
     line-height: 1.28;
+  }
+  .a4-basis-list {
+    gap: 3px;
+  }
+  .a4-basis-list div {
+    grid-template-columns: 25px minmax(0, 1fr);
+    gap: 4px;
+    padding: 4px 5px;
+    border-radius: 5px;
+  }
+  .a4-basis-list dt,
+  .a4-basis-list dd {
+    font-size: 6.5px;
+    line-height: 1.22;
   }
   .a4-panel {
     gap: 5px;
