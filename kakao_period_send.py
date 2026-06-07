@@ -17,16 +17,16 @@ KST = timezone(timedelta(hours=9))
 
 PERIODS = {
     "weekly": {
-        "label": "??",
+        "label": "주간",
         "path": "weekly.html",
-        "title": "?? ?? ???? ???",
-        "desc": "?? ?? ??? ???????? ??? ?? ???? ??????.",
+        "title": "주간 언론 모니터링 보고서",
+        "desc": "전주 기사 흐름과 자사·경쟁·규제 이슈를 누적 기준으로 정리했습니다.",
     },
     "monthly": {
-        "label": "??",
+        "label": "월간",
         "path": "monthly.html",
-        "title": "?? ?? ???? ???",
-        "desc": "?? ?? ??? ?? ???, ?? ?? ?? ???? ??????.",
+        "title": "월간 언론 모니터링 보고서",
+        "desc": "전월 언론 동향과 핵심 리스크, 다음 기간 관찰 포인트를 정리했습니다.",
     },
 }
 
@@ -54,10 +54,10 @@ def period_path(period: str, report_month: str = "") -> str:
 def build_message(period: str, report_month: str = "") -> tuple[str, str]:
     info = PERIODS[period]
     today = datetime.now(KST).strftime("%Y-%m-%d")
-    date_line = f"{report_month} ??" if report_month else today
+    date_line = f"{report_month} 기준" if report_month else today
     text = "\n".join(
         [
-            f"[AI ?? ????] {info['label']} ???",
+            f"[AI 언론 모니터링] {info['label']} 보고서",
             date_line,
             "",
             info["title"],
@@ -75,7 +75,7 @@ def main() -> None:
     report_month = normalize_report_month(sys.argv[2] if len(sys.argv) > 2 else "")
 
     text, link = build_message(period, report_month)
-    title = f"{PERIODS[period]['label']} ?? ???? ???{(' ' + report_month) if report_month else ''}"
+    title = f"{PERIODS[period]['label']} 언론 모니터링 보고서{(' ' + report_month) if report_month else ''}"
     try:
         verify_public_report_link(link, label=title)
         token = refresh_access_token()

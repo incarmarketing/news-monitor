@@ -29,33 +29,33 @@ DEFAULT_SUPABASE_PROJECT_REF = "moszekksbhprhevxdynb"
 KST = timezone(timedelta(hours=9))
 
 CATEGORY_LABELS = {
-    "own": "?? ??",
-    "regulation": "??/??",
-    "competitor": "???",
-    "industry": "?? ??",
-    "other": "??",
+    "own": "당사 보도",
+    "regulation": "규제/정책",
+    "competitor": "경쟁사",
+    "industry": "업계 동향",
+    "other": "기타",
 }
 
 TONE_LABELS = {
-    "positive": "??",
-    "caution": "??",
-    "neutral": "??",
-    "negative": "??",
-    "exclude": "??",
+    "positive": "긍정",
+    "caution": "주의",
+    "neutral": "중립",
+    "negative": "부정",
+    "exclude": "제외",
 }
 
 EXPECTED_DAILY_WINDOWS = {
-    "08": "?? 18:00~?? 08:00",
-    "13": "?? 08:00~13:00",
-    "18": "?? 13:00~18:00",
+    "08": "전일 18:00~당일 08:00",
+    "13": "당일 08:00~13:00",
+    "18": "당일 13:00~18:00",
 }
 
 STOCK_LISTING_NOISE_TITLE_RE = re.compile(
-    r"(?:\[?52?\]?\s*)?(?:???|???)|??\s*(?:???|???)|??\s*??|??\s*??|???|"
-    r"??\s*??\s*\[??\]|\[???\]|MVP\s*??|??\s*\d+\s*?"
+    r"(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|"
+    r"오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선"
 )
-INVESTMENT_REPORT_RE = re.compile(r"????|????|???|???|???|?????")
-OWN_NAME_RE = re.compile(r"???????|????")
+INVESTMENT_REPORT_RE = re.compile(r"투자의견|목표주가|목표가|증권가|리포트|애널리스트")
+OWN_NAME_RE = re.compile(r"인카금융서비스|인카금융")
 
 
 def load_daily_archives() -> list[dict]:
@@ -104,9 +104,9 @@ def build_articles(archives: list[dict]) -> list[dict]:
                     "pub_date": article.get("pub_date", ""),
                     "score": article.get("_score", 0),
                     "category": category,
-                    "category_label": CATEGORY_LABELS.get(category, "??"),
+                    "category_label": CATEGORY_LABELS.get(category, "기타"),
                     "tone": tone,
-                    "tone_label": TONE_LABELS.get(tone, "??"),
+                    "tone_label": TONE_LABELS.get(tone, "주의"),
                     "cluster_size": article.get("_cluster_size", 1),
                 }
             )
@@ -139,14 +139,14 @@ def clean_summary_text(value: object) -> str:
     text = str(value or "")
     text = text.replace("&nbsp;", " ").replace("&amp;nbsp;", " ").replace("&quot;", '"').replace("&#39;", "'")
     text = " ".join(text.split())
-    return text.rstrip(".? ")
+    return text.rstrip(".… ")
 
 
 def split_summary_sentences(value: object) -> list[str]:
     text = clean_summary_text(value)
     if not text:
         return []
-    chunks = re.split(r"(?:[.!??]\s+|(?:?|?|?|?)\.\s+)", text)
+    chunks = re.split(r"(?:[.!?。]\s+|(?:다|요|임|함)\.\s+)", text)
     return [chunk.strip() for chunk in chunks if len(chunk.strip()) >= 8]
 
 
@@ -167,14 +167,14 @@ def is_generic_summary_line(value: object) -> bool:
     return any(
         phrase in text
         for phrase in (
-            "??? ???? ??? ?????",
-            "???? ??????",
-            "?? ??? ??????",
-            "?? ?? ?? ??? ???? ??? ?? ??",
-            "?? ??? ??? ?? ??",
-            "?? ?? ???? ??",
-            "????? ??? ?? ??",
-            "????GA ?? ??",
+            "키워드 기준으로 수집된 기사입니다",
+            "키워드로 수집됐습니다",
+            "기준 핵심만 요약했습니다",
+            "당사 직접 언급 기사로 보고서와 리스크 점검 근거",
+            "직접 부정과 분리해 시장 평가",
+            "홍보 활용 가능성을 검토",
+            "정책·규제 변화가 영업 환경",
+            "보험사·GA 시장 흐름",
         )
     )
 
@@ -182,39 +182,39 @@ def is_generic_summary_line(value: object) -> bool:
 def contextual_summary_lines(article: dict, category: str, tone: str) -> list[str]:
     text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
     lines: list[str] = []
-    if re.search(r"?????GA???|GA???", text, re.I):
+    if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
         if category == "own" or OWN_NAME_RE.search(text):
-            lines.append("???????? GA ???? ??? ?? ??? ?? ??? ???? ??? ?????.")
+            lines.append("인카금융서비스의 GA 리포트성 보도로 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
         else:
-            lines.append("GA ???? ??? ?? ???? ?? ??? ?? ??? ???? ??? ?????.")
-    if re.search(r"????|???|???\s*??|AI?\s*???", text, re.I):
-        lines.append("AI? ??? ???? ?? ??? ???? ??? ?? ???? ?? ?????.")
-    if re.search(r"??24|??\s*??|??\s*??|???", text, re.I):
-        lines.append("??24 ??? ???? ?? ??? ???? ?? ??? ?? ?? ??? ?? ?????.")
-    if re.search(r"??????|????|????|??????", text, re.I):
-        lines.append("?????? ??? ???? ??? ?? ??????ESG ?????.")
-    if re.search(r"?????|???|1200%|???", text, re.I):
-        lines.append("GA ?????? ??? ?? ?? ??? ?? ???? ?? ?????.")
-    if re.search(r"????|???|????|???|?????", text, re.I):
-        lines.append("??? ?????? ??? ?? ? ?? ?? ??? ?? ?????.")
-    if re.search(r"?????|??|??|????", text, re.I):
-        lines.append("????? ???? ?? ?? ?? ??? ??? ? ?? ?????.")
+            lines.append("GA 리포트성 보도로 해당 대리점의 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
+    if re.search(r"보험사기|진단서|데이터\s*전쟁|AI로\s*진단서", text, re.I):
+        lines.append("AI를 활용한 보험사기 수법 확산과 보험업계 데이터 대응 필요성을 다룬 기사입니다.")
+    if re.search(r"실손24|팩스\s*청구|종이\s*서류|전산화", text, re.I):
+        lines.append("실손24 전산화 이후에도 팩스 청구가 병행되는 현장 불편과 제도 안착 과제를 다룬 기사입니다.")
+    if re.search(r"금융취약계층|사회공헌|포용금융|금융안심지원", text, re.I):
+        lines.append("금융취약계층 보호와 사회공헌 활동을 다룬 소비자보호·ESG 보도입니다.")
+    if re.search(r"정착지원금|수수료|1200%|조직력", text, re.I):
+        lines.append("GA 정착지원금과 설계사 조직 경쟁 흐름을 다룬 판매채널 관찰 기사입니다.")
+    if re.search(r"투자의견|목표가|목표주가|증권가|애널리스트", text, re.I):
+        lines.append("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.")
+    if re.search(r"금융보안원|해킹|보안|개인정보", text, re.I):
+        lines.append("금융보안과 개인정보 보호 체계 강화 흐름을 확인할 수 있는 보도입니다.")
     if not lines and tone == "negative":
-        lines.append("??? ??, ??, ??, ?? ???? ?? ??? ??? ??? ???? ?? ?????.")
+        lines.append("소비자 피해, 제재, 사칭, 법적 분쟁처럼 직접 리스크 문맥이 있는지 확인해야 하는 기사입니다.")
     return lines
 
 
 def headline_fallback_summary(article: dict, category: str, tone: str) -> str:
     text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
-    if re.search(r"?????GA???|GA???", text, re.I):
+    if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
         return contextual_summary_lines(article, category, tone)[0]
-    if re.search(r"????|??24|??????|????|?????|????|?????", text, re.I):
+    if re.search(r"보험사기|실손24|금융취약계층|사회공헌|정착지원금|투자의견|금융보안원", text, re.I):
         lines = contextual_summary_lines(article, category, tone)
         if lines:
             return lines[0]
-    label = CATEGORY_LABELS.get(category, category or "??")
-    tone_label = TONE_LABELS.get(tone, tone or "??")
-    return f"{label} {tone_label} ??? ??? ?? ??? ???? ?? ??? ?????."
+    label = CATEGORY_LABELS.get(category, category or "기타")
+    tone_label = TONE_LABELS.get(tone, tone or "중립")
+    return f"{label} {tone_label} 기사로 제목과 본문 근거를 기준으로 핵심 내용을 확인합니다."
 
 
 def is_usable_summary_line(line: object, title: object = "") -> bool:
@@ -223,9 +223,9 @@ def is_usable_summary_line(line: object, title: object = "") -> bool:
         return False
     if len(clean) < 12 or len(clean) > 220:
         return False
-    if re.search(r"(?:\.\.\.|?)$", clean):
+    if re.search(r"(?:\.\.\.|…)$", clean):
         return False
-    if re.search(r"(??|?|?|??|??|??|??|??|??)$", clean):
+    if re.search(r"(으로|로|및|또한|이어|하며|밝혀|전했|강조)$", clean):
         return False
     title_key = summary_compare_key(title)
     line_key = summary_compare_key(clean)
@@ -238,7 +238,7 @@ def is_usable_summary_line(line: object, title: object = "") -> bool:
 
 
 def summary_compare_key(value: object) -> str:
-    return re.sub(r"[^0-9a-zA-Z?-?]+", "", clean_summary_text(value).lower())[:130]
+    return re.sub(r"[^0-9a-zA-Z가-힣]+", "", clean_summary_text(value).lower())[:130]
 
 
 def load_supabase_articles() -> list[dict]:
@@ -270,9 +270,9 @@ def load_supabase_articles() -> list[dict]:
                 "pub_date": row.get("pub_date") or row.get("pub_date_raw", ""),
                 "score": row.get("score", 0),
                 "category": category,
-                "category_label": CATEGORY_LABELS.get(category, "??"),
+                "category_label": CATEGORY_LABELS.get(category, "기타"),
                 "tone": tone,
-                "tone_label": TONE_LABELS.get(tone, "??"),
+                "tone_label": TONE_LABELS.get(tone, "주의"),
                 "cluster_size": row.get("cluster_size", 1),
                 "status": row.get("status", "new"),
             }
@@ -285,7 +285,7 @@ def is_stock_listing_noise(row: dict) -> bool:
     source = str(row.get("source") or "")
     link = str(row.get("link") or "")
     text = f"{title} {source} {link} {row.get('summary') or ''} {row.get('description') or ''} {row.get('keyword') or ''}"
-    is_itooza_listing = "itooza" in f"{source} {link}".lower() and re.search(r"52?|???|???|MVP|???|??\s*\d+\s*?", title)
+    is_itooza_listing = "itooza" in f"{source} {link}".lower() and re.search(r"52주|최고가|최저가|MVP|리스트|상위\s*\d+\s*선", title)
     if not STOCK_LISTING_NOISE_TITLE_RE.search(title) and not is_itooza_listing:
         return False
     if OWN_NAME_RE.search(title) and INVESTMENT_REPORT_RE.search(text):
@@ -389,19 +389,19 @@ def article_topic_signature(row: dict) -> str:
         return all(normalize_group_title(term) in text for term in terms)
 
     if (
-        ("???" in text or "?????" in text)
-        and ("8? ????" in text or "8? ??" in text or "????" in text)
-        and ("?????" in text or "??? ??" in text or "????" in text)
+        ("금감원" in text or "금융감독원" in text)
+        and ("8대 금융지주" in text or "8대 지주" in text or "금융지주" in text)
+        and ("소비자보호" in text or "소비자 중심" in text or "금융문화" in text)
     ):
-        return "???-????-?????"
-    if includes_all(["??els", "??"]):
-        return "??els-??"
-    if includes_all(["??", "????"]):
-        return "??-????"
-    if includes_all(["??", "????"]):
-        return "??-????"
-    if includes_all(["?????", "????"]) and ("???" in text or "?????" in text):
-        return "???-?????-??"
+        return "금감원-금융지주-소비자보호"
+    if includes_all(["홍콩els", "제재"]):
+        return "홍콩els-제재"
+    if includes_all(["신협", "특혜대출"]):
+        return "신협-특혜대출"
+    if includes_all(["신협", "부실채권"]):
+        return "신협-부실채권"
+    if includes_all(["소비자보호", "금융현장"]) and ("금감원" in text or "금융감독원" in text):
+        return "금감원-소비자보호-현장"
     return ""
 
 
@@ -409,31 +409,31 @@ def normalize_group_title(value: object) -> str:
     text = str(value or "").lower()
     text = re.sub(r"\[[^\]]+\]|\([^)]*\)|<[^>]+>", " ", text)
     text = re.sub(r"https?://\S+", " ", text)
-    text = re.sub(r"[^\w\s?-?]", " ", text)
-    text = re.sub(r"\b(??|??|??|??|??|???|??|??)\b", " ", text)
+    text = re.sub(r"[^\w\s가-힣]", " ", text)
+    text = re.sub(r"\b(단독|종합|속보|영상|포토|인터뷰|기획|칼럼)\b", " ", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
 def article_tokens(value: object) -> list[str]:
     stop = {
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "???",
+        "기자",
+        "뉴스",
+        "보도",
+        "관련",
+        "통해",
+        "대한",
+        "위해",
+        "올해",
+        "지난",
+        "이번",
+        "추진",
+        "확산",
+        "맞손",
+        "역량",
+        "마음",
+        "지원",
+        "강화",
+        "본격화",
     }
     return [
         token
@@ -744,7 +744,7 @@ def build_quality_checks(articles: list[dict], report_runs: list[dict], notifica
     ]
     failed = [check for check in checks if check["status"] != "ok"]
     status = "fail" if failed else "ok"
-    summary = "?? ?? ??" if status == "ok" else f"{len(failed)}? ?? ?? ?? ?? ??"
+    summary = "품질 검증 통과" if status == "ok" else f"{len(failed)}개 품질 검증 항목 확인 필요"
     return {
         "generated_at": datetime.now(KST).isoformat(),
         "status": status,
@@ -790,7 +790,7 @@ def invalid_notification_report_links(notifications: list[dict]) -> list[dict]:
     for row in daily_rows:
         message_type = str(row.get("message_type") or row.get("type") or "")
         title = str(row.get("title") or "")
-        if "daily" not in message_type and "?? ?? ??" not in title:
+        if "daily" not in message_type and "일일 언론 동향" not in title:
             continue
         match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", title)
         if not match:
@@ -908,7 +908,7 @@ def invalid_duplicate_success_notifications(notifications: list[dict]) -> list[d
         dedupe_key = str(row.get("dedupe_key") or "").strip()
         if not message_type or not title:
             continue
-        if ":resend:" in dedupe_key or "???" in title:
+        if ":resend:" in dedupe_key or "재발송" in title:
             continue
         if "daily" in message_type:
             date_slot = daily_notification_key(row)
@@ -999,7 +999,7 @@ def latest_daily_notification_rows(rows: list[dict]) -> list[dict]:
     for row in rows:
         message_type = str(row.get("message_type") or row.get("type") or "")
         title = str(row.get("title") or "")
-        if "daily" not in message_type and "?? ?? ??" not in title:
+        if "daily" not in message_type and "일일 언론 동향" not in title:
             continue
         match = re.search(r"(20\d{2}-\d{2}-\d{2})\s+(\d{2})", title)
         if match:
@@ -1141,24 +1141,24 @@ def article_topic_signature(row: dict) -> str:
     def includes_all(terms: list[str]) -> bool:
         return all(normalize_group_title(term) in text for term in terms)
 
-    if includes_all(["???", "????", "?????"]):
-        return "???-????-?????"
-    if includes_all(["??els", "??"]):
-        return "??els-??"
-    if includes_all(["??", "????"]):
-        return "??-????"
-    if includes_all(["??", "????"]):
-        return "??-????"
-    if includes_all(["?????", "????"]) and ("???" in text or "?????" in text):
-        return "???-?????-????"
-    if includes_all(["??????", "??????"]):
-        return "??????-??????"
-    if includes_all(["???????", "???????"]):
-        return "???????-???????"
-    if includes_all(["?????", "???????"]):
-        return "ga-?????-??"
-    if "????" in text and ("??" in text or "??" in text) and ("??" in text or ("???" in text and "???" in text)):
-        return "???????-????-??"
+    if includes_all(["금감원", "금융지주", "소비자보호"]):
+        return "금감원-금융지주-소비자보호"
+    if includes_all(["홍콩els", "제재"]):
+        return "홍콩els-제재"
+    if includes_all(["신협", "특혜대출"]):
+        return "신협-특혜대출"
+    if includes_all(["신협", "부실채권"]):
+        return "신협-부실채권"
+    if includes_all(["소비자보호", "금융현장"]) and ("금감원" in text or "금융감독원" in text):
+        return "금감원-소비자보호-금융현장"
+    if includes_all(["롯데손해보험", "경영개선계획"]):
+        return "롯데손해보험-경영개선계획"
+    if includes_all(["인카금융서비스", "우수인증설계사"]):
+        return "인카금융서비스-우수인증설계사"
+    if includes_all(["정착지원금", "인카금융서비스"]):
+        return "ga-정착지원금-인카"
+    if "투자의견" in text and ("하향" in text or "낮아" in text) and ("인카" in text or ("코스피" in text and "증권가" in text)):
+        return "인카금융서비스-투자의견-하향"
     return ""
 
 
@@ -1166,44 +1166,44 @@ def normalize_group_title(value: object) -> str:
     text = str(value or "").lower()
     text = re.sub(r"\[[^\]]+\]|\([^)]*\)|<[^>]+>", " ", text)
     text = re.sub(r"https?://\S+", " ", text)
-    text = re.sub(r"[^\w\s?-?]", " ", text)
-    text = re.sub(r"\b(?:??|??|??|??|??|???|??|??|??)\b", " ", text)
+    text = re.sub(r"[^\w\s가-힣]", " ", text)
+    text = re.sub(r"\b(?:단독|종합|속보|영상|포토|인터뷰|기획|칼럼|사설)\b", " ", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
 def article_tokens(value: object) -> list[str]:
     stop = {
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "???",
-        "???",
-        "???",
-        "?????",
-        "?????",
-        "???",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
-        "??",
+        "기자",
+        "뉴스",
+        "보도",
+        "관련",
+        "통해",
+        "대한",
+        "위해",
+        "올해",
+        "이번",
+        "추진",
+        "강화",
+        "본격",
+        "금융",
+        "보험",
+        "보험사",
+        "금융위",
+        "금감원",
+        "금융감독원",
+        "금융위원회",
+        "서비스",
+        "업계",
+        "시장",
+        "관리",
+        "확대",
+        "개최",
+        "결정",
     }
     return [
         token
         for token in normalize_group_title(value).split()
-        if len(token) > 1 and token not in stop and not token.isdigit() and not token.endswith("??")
+        if len(token) > 1 and token not in stop and not token.isdigit() and not token.endswith("기자")
     ]
 
 

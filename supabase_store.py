@@ -70,59 +70,59 @@ MEDIA_RELATION_EXCLUDED_SOURCES = {
     "naver",
     "daum",
     "bing",
-    "?????",
-    "?????",
-    "?????",
-    "????????",
+    "금융감독원",
+    "금융위원회",
+    "금융보안원",
+    "금융소비자보호처",
 }
 
 CATEGORY_FEEDBACK_MAP = {
     "own": "own",
     "company": "own",
-    "??": "own",
-    "?? ??": "own",
-    "??": "own",
+    "당사": "own",
+    "당사 보도": "own",
+    "인카": "own",
     "regulation": "regulation",
     "policy": "regulation",
-    "??/??": "regulation",
-    "??/??": "regulation",
-    "??": "regulation",
-    "??": "regulation",
+    "정책/규제": "regulation",
+    "규제/정책": "regulation",
+    "정책": "regulation",
+    "규제": "regulation",
     "competitor": "competitor",
     "ga": "competitor",
     "GA": "competitor",
-    "???": "competitor",
-    "???": "competitor",
+    "보험사": "competitor",
+    "경쟁사": "competitor",
     "industry": "industry",
     "market": "industry",
-    "????": "industry",
-    "?? ??": "industry",
-    "??": "other",
+    "업계동향": "industry",
+    "업계 동향": "industry",
+    "기타": "other",
     "other": "other",
-    "??": "other",
+    "제외": "other",
     "exclude": "other",
     "noise": "other",
 }
 
 TONE_FEEDBACK_MAP = {
     "positive": "positive",
-    "??": "positive",
+    "긍정": "positive",
     "neutral": "neutral",
-    "??": "neutral",
+    "중립": "neutral",
     "caution": "caution",
     "warning": "caution",
-    "??": "caution",
+    "주의": "caution",
     "negative": "negative",
     "high": "negative",
-    "??": "negative",
+    "부정": "negative",
     "exclude": "exclude",
     "excluded": "exclude",
     "noise": "exclude",
-    "??": "exclude",
-    "???": "exclude",
+    "제외": "exclude",
+    "노이즈": "exclude",
 }
 
-EXCLUDE_CATEGORY_LABELS = {"??", "exclude", "excluded", "noise", "???"}
+EXCLUDE_CATEGORY_LABELS = {"제외", "exclude", "excluded", "noise", "노이즈"}
 
 
 class SupabaseConfigError(RuntimeError):
@@ -294,7 +294,7 @@ def load_classification_feedback_rows(limit: int = 500) -> list[dict]:
                 "corrected_category": row.get("corrected_category") or "",
                 "corrected_tone": row.get("corrected_tone") or "",
                 "reason": row.get("reason") or "",
-                "created_by": "???" if row.get("created_by") else "",
+                "created_by": "운영자" if row.get("created_by") else "",
                 "created_at": row.get("created_at") or "",
             }
         )
@@ -375,9 +375,9 @@ def parse_pub_date(value: str) -> str | None:
     except Exception:
         pass
     normalized = (
-        raw.replace("?", "-")
-        .replace("?", "-")
-        .replace("?", "")
+        raw.replace("년", "-")
+        .replace("월", "-")
+        .replace("일", "")
         .replace(".", "-")
         .strip()
     )
@@ -765,11 +765,11 @@ def save_own_media_relations(article_rows: list[dict]) -> None:
                 continue
             row = {
                 "name": source,
-                "status": "??",
+                "status": "중립",
                 "grade": "B",
                 "owner": "",
                 "contact_date": None,
-                "memo": "?? ?? ?? ???? ?? ??? ?? ??",
+                "memo": "당사 기사 게재 이력으로 자동 등록된 관리 대상",
                 "hidden": False,
             }
             request("POST", "media_relations", data=json.dumps([row], ensure_ascii=False))

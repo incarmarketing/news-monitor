@@ -26,8 +26,8 @@ KST = timezone(timedelta(hours=9))
 
 def refresh_access_token() -> str:
     refresh_token = os.environ["KAKAO_REFRESH_TOKEN"].strip()
-    if len(refresh_token) < 40 or "???" in refresh_token:
-        raise RuntimeError("KAKAO_REFRESH_TOKEN? ?? ??? ???? ????.")
+    if len(refresh_token) < 40 or "여기에" in refresh_token:
+        raise RuntimeError("KAKAO_REFRESH_TOKEN에 실제 토큰이 들어있지 않습니다.")
 
     data = {
         "grant_type": "refresh_token",
@@ -140,7 +140,7 @@ def forced_resend_enabled() -> bool:
 def notification_log_title(title: str) -> str:
     if not forced_resend_enabled():
         return title
-    return f"{title} ??? {datetime.now(KST):%Y%m%d%H%M%S}"
+    return f"{title} 재발송 {datetime.now(KST):%Y%m%d%H%M%S}"
 
 
 def forced_resend_dedupe_key(message_type: str, title: str) -> str | None:
@@ -160,17 +160,17 @@ def build_message(report: dict) -> str:
     sent_at = datetime.now(KST).strftime("%H:%M")
 
     header = [
-        f"?? ?? {short_report_date(report.get('date', ''))} {window_label['name']}".strip(),
-        f"???? {window_label['range']} ? ?? {sent_at} ? ??? {risk}",
+        f"언론 동향 {short_report_date(report.get('date', ''))} {window_label['name']}".strip(),
+        f"분석대상 {window_label['range']} · 발송 {sent_at} · 리스크 {risk}",
         (
-            f"?? {own_total} ? ?? "
-            f"{own_tone.get('negative', metrics.get('own_negative', 0))} ? "
-            f"?? {own_tone.get('positive', 0)} ? ?? {own_tone.get('neutral', 0)}"
+            f"당사 {own_total} · 부정 "
+            f"{own_tone.get('negative', metrics.get('own_negative', 0))} · "
+            f"긍정 {own_tone.get('positive', 0)} · 중립 {own_tone.get('neutral', 0)}"
         ),
     ]
-    lines = header + ["", "?? ??", compact(sections["conclusion"], 46, ellipsis=False)]
+    lines = header + ["", "동향 분석", compact(sections["conclusion"], 46, ellipsis=False)]
     if sections["issues"]:
-        lines += ["", "?? ??"]
+        lines += ["", "핵심 이슈"]
         lines += [f"- {compact_issue(issue, 32)}" for issue in sections["issues"][:2]]
 
     return "\n".join(lines)[:300]
@@ -179,7 +179,7 @@ def build_message(report: dict) -> str:
 def notification_title(report: dict) -> str:
     window = report.get("window", {})
     slot = window.get("slot") or os.getenv("REPORT_SLOT", "").strip() or "auto"
-    return f"?? ?? ?? {report.get('date', '')} {slot}"
+    return f"일일 언론 동향 {report.get('date', '')} {slot}"
 
 
 def short_report_date(value: str) -> str:
@@ -193,7 +193,7 @@ def short_report_date(value: str) -> str:
 
 def kakao_window_label(window: dict) -> dict[str, str]:
     slot = str(window.get("slot") or os.getenv("REPORT_SLOT", "")).zfill(2)
-    name_by_slot = {"08": "??", "13": "??", "18": "??"}
+    name_by_slot = {"08": "아침", "13": "점심", "18": "마감"}
     fallback_name = window.get("report_label") or ""
     start = parse_iso_datetime(window.get("start", ""))
     end = parse_iso_datetime(window.get("end", ""))
@@ -201,13 +201,13 @@ def kakao_window_label(window: dict) -> dict[str, str]:
         start = start.astimezone(KST)
         end = end.astimezone(KST)
         if slot == "08" and start.date() != end.date():
-            range_label = f"?? {start:%H}?~{end:%H}?"
+            range_label = f"전일 {start:%H}시~{end:%H}시"
         elif start.date() == end.date():
-            range_label = f"{start:%H}?~{end:%H}?"
+            range_label = f"{start:%H}시~{end:%H}시"
         else:
-            range_label = f"{start:%m/%d %H?}~{end:%m/%d %H?}"
+            range_label = f"{start:%m/%d %H시}~{end:%m/%d %H시}"
     else:
-        range_label = window.get("short_label") or window.get("label") or "??"
+        range_label = window.get("short_label") or window.get("label") or "현재"
     return {"name": name_by_slot.get(slot, fallback_name).strip(), "range": range_label}
 
 
@@ -235,25 +235,25 @@ def parse_iso_datetime(value: str) -> datetime | None:
 def compact(text: str, limit: int, *, ellipsis: bool = True) -> str:
     cleaned = re.sub(r"\[[\d,\s]+\]\s*", "", text or "")
     cleaned = re.sub(r"\s+", " ", cleaned)
-    cleaned = cleaned.replace("?? ??", "").strip()
+    cleaned = cleaned.replace("핵심 이슈", "").strip()
     if len(cleaned) <= limit:
         return cleaned
     if ellipsis and limit > 1:
-        return cleaned[: limit - 1].rstrip() + "?"
+        return cleaned[: limit - 1].rstrip() + "…"
     return cleaned[:limit].rstrip()
 
 
 def compact_issue(text: str, limit: int) -> str:
     cleaned = compact(text, 120, ellipsis=False).lstrip("- ").strip()
-    head = re.split(r"[:?]", cleaned, 1)[0].strip() or cleaned
-    head = re.split(r"[.!??]", head, 1)[0].strip() or head
+    head = re.split(r"[:：]", cleaned, 1)[0].strip() or cleaned
+    head = re.split(r"[.!?。]", head, 1)[0].strip() or head
     return compact(head, limit, ellipsis=False)
 
 
 def parse_briefing(briefing: str) -> dict:
     cleaned = briefing.replace("**", "").strip()
     section_map: dict[str, list[str]] = {}
-    current = "??"
+    current = "본문"
 
     for raw_line in cleaned.splitlines():
         line = raw_line.strip()
@@ -267,10 +267,10 @@ def parse_briefing(briefing: str) -> dict:
             continue
         section_map.setdefault(current, []).append(line.strip("- ").strip())
 
-    conclusion = first_text(section_map, ["?? ??", "?? ??", "??? ??", "??"])
-    issues = section_map.get("?? ??", [])
+    conclusion = first_text(section_map, ["최종 결론", "동향 분석", "오늘의 판단", "본문"])
+    issues = section_map.get("핵심 이슈", [])
     if not conclusion:
-        conclusion = "?? ??? ??. ?? ????? ?? ??? ??? ?????."
+        conclusion = "특이 리스크 없음. 전체 보고서에서 근거 기사와 지표를 확인하세요."
     return {
         "conclusion": conclusion,
         "issues": [item for item in issues if item],
@@ -285,7 +285,7 @@ def first_text(section_map: dict[str, list[str]], names: list[str]) -> str:
     return ""
 
 
-def send_text_to_me(access_token: str, text: str, link_url: str, button_title: str = "??? ??") -> dict:
+def send_text_to_me(access_token: str, text: str, link_url: str, button_title: str = "보고서 보기") -> dict:
     template = {
         "object_type": "text",
         "text": text,
@@ -308,19 +308,19 @@ def needs_ai_usage_alert(report: dict) -> bool:
 
 
 def ai_usage_alert_title(report: dict) -> str:
-    return f"AI ?? ??? ?? {report.get('date', '')}"
+    return f"AI 요약 사용량 확인 {report.get('date', '')}"
 
 
 def build_ai_usage_alert(report: dict) -> str:
     metrics = report.get("metrics", {})
     window = kakao_window_label(report.get("window", {}))
-    reason = "???/??? ?? ?? ??" if metrics.get("ai_quota_exhausted") else "?? ?? ?? ??"
+    reason = "사용량/크레딧 한도 확인 필요" if metrics.get("ai_quota_exhausted") else "기본 모델 응답 실패"
     return "\n".join(
         [
-            "AI ?? ??? ?? ??",
-            f"{short_report_date(report.get('date', ''))} {window['name']} ? {reason}",
-            "?? AI ?? ?? ?? ??? ??????.",
-            "AI Studio ???/?? ??? ?????.",
+            "AI 요약 사용량 확인 필요",
+            f"{short_report_date(report.get('date', ''))} {window['name']} · {reason}",
+            "기본 AI 대신 백업 요약 경로를 사용했습니다.",
+            "AI Studio 사용량/결제 상태를 확인하세요.",
         ]
     )[:300]
 
@@ -335,7 +335,7 @@ def maybe_send_ai_usage_alert(access_token: str, report: dict) -> None:
     link = os.getenv("GEMINI_USAGE_URL", "").strip() or config.GEMINI_USAGE_URL
     text = build_ai_usage_alert(report)
     try:
-        result = send_text_to_me(access_token, text, link, button_title="??? ??")
+        result = send_text_to_me(access_token, text, link, button_title="사용량 확인")
         save_notification_send(
             message_type="ai_usage_alert",
             title=title,

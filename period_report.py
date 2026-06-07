@@ -66,79 +66,79 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
         return groq_or_rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_circuit_open")
 
     top_text = "\n".join(
-        f"- {a.get('_date', '')} | {a.get('_tone', 'neutral')} | ?? {a.get('_score', 0)} | "
+        f"- {a.get('_date', '')} | {a.get('_tone', 'neutral')} | 점수 {a.get('_score', 0)} | "
         f"{a.get('title', '')[:90]}"
         for a in top_articles[:14]
     )
     volume_text = "\n".join(
-        f"- {d['date']}: ?? {d['total']}?, ?? {d['analyzed']}?, ?? {d['own']}?, "
-        f"?? ?? {d['own_negative']}?, ??? {d['risk']}"
+        f"- {d['date']}: 수집 {d['total']}건, 분석 {d['analyzed']}건, 당사 {d['own']}건, "
+        f"당사 부정 {d['own_negative']}건, 리스크 {d['risk']}"
         for d in aggregate.get("daily_volume", [])
     )
     own_negative_text = "\n".join(
-        f"- {d['date']}: {d['value']}?"
+        f"- {d['date']}: {d['value']}건"
         for d in aggregate.get("daily_own_negative", [])
     )
 
     prompt = f"""
-??? {config.COMPANY_NAME} {config.TEAM_NAME}? ?? ???? ??????.
-?? ?? ???? ???? {period_label} ??? ??? ?????.
+당신은 {config.COMPANY_NAME} {config.TEAM_NAME}의 언론 모니터링 분석가입니다.
+아래 누적 데이터를 바탕으로 {period_label} 보고서 본문을 작성하세요.
 
-?? ??:
-- ?? ????? ?? ??? ?? ??, ?? ??? ??? ?? ??? ?????.
-- ?? ????? ?????, ?????? ?? ??? ??? ? ?? ???? ???? ???.
-- ??, ?? ??, ?? ???? ?? ??, ?? ??, ???? ? ??? ?????.
-- ??? ?? ???? ?? ?? ??? ?? ????? ???, ?? ?? ???? ???? ????.
+분석 목적:
+- 일일 보고서처럼 기사 나열을 하지 말고, 기간 전체의 변화와 반복 패턴을 해석합니다.
+- 사내 보고용으로 간결하지만, 의사결정자가 바로 상황을 파악할 수 있는 전문적인 문장으로 씁니다.
+- 제언, 실행 지시, 활용 방안보다 관찰 사실, 변동 방향, 추적해야 할 신호를 우선합니다.
+- 당사가 직접 언급되지 않은 부정 이슈는 업계 리스크로만 다루고, 당사 부정 이슈처럼 표현하지 않습니다.
 
-?? ??:
-- ?? ??: {aggregate['period_days']}?
-- ???? ??: {aggregate.get('period_windows', aggregate['period_days'])}?
-- ?? ??: {aggregate['total_collected']}?
-- ?? ??: {aggregate['total_after_cluster']}?
-- ?? ??: {aggregate['by_category']['own']}?
-- ??/??: {aggregate['by_category']['regulation']}?
-- ??/??: {aggregate['by_category']['competitor'] + aggregate['by_category']['industry']}?
-- ?? ?: {aggregate['by_tone']['neutral']}?
-- ?? ?: {aggregate['by_tone']['negative']}?
-- HIGH ??: {aggregate['risk_distribution']['HIGH']}?
-- MEDIUM ??: {aggregate['risk_distribution']['MEDIUM']}?
-- LOW ??: {aggregate['risk_distribution']['LOW']}?
+누적 지표:
+- 분석 일수: {aggregate['period_days']}일
+- 모니터링 구간: {aggregate.get('period_windows', aggregate['period_days'])}회
+- 전체 수집: {aggregate['total_collected']}건
+- 분석 기사: {aggregate['total_after_cluster']}건
+- 당사 언급: {aggregate['by_category']['own']}건
+- 규제/제도: {aggregate['by_category']['regulation']}건
+- 경쟁/업계: {aggregate['by_category']['competitor'] + aggregate['by_category']['industry']}건
+- 중립 톤: {aggregate['by_tone']['neutral']}건
+- 부정 톤: {aggregate['by_tone']['negative']}건
+- HIGH 일수: {aggregate['risk_distribution']['HIGH']}일
+- MEDIUM 일수: {aggregate['risk_distribution']['MEDIUM']}일
+- LOW 일수: {aggregate['risk_distribution']['LOW']}일
 
-??? ??:
+일자별 추이:
 {volume_text}
 
-?? ?? ?? ??:
+당사 부정 이슈 추이:
 {own_negative_text}
 
-?? ?? ??:
+주요 기사 후보:
 {top_text}
 
-?? ??:
-## ?? ???
-3??. ?? ???? ???? ??? ?? ??? ? ??? ?? ? ?? ?? ??? ???.
+작성 형식:
+## 핵심 브리핑
+3문장. 기간 전체에서 보고받는 사람이 먼저 알아야 할 사실과 가장 큰 변화 축을 압축해 씁니다.
 
-## ?? ??
-4??. ?? ???? ?? ?? ? ?? ?? ?? ?? ??, ?? ?? ??, ??/?? ??, ?? ?? ??? ?????.
+## 기간 해석
+4문장. 원문 수집량과 중복 정리 후 분석 기사 수가 다른 이유, 당사 노출 비중, 업계/정책 흐름, 특정 일자 변동을 해석합니다.
 
-## ??? ??
-4? bullet. ?? ?? ??, ?? ?? ??, ??/??, GA/??? ??? ?? ?????. ?? ??? ??? ???? ?? ??? ?????.
+## 리스크 판독
+4개 bullet. 당사 직접 부정, 일반 부정 논조, 정책/감독, GA/보험사 동향을 각각 해석합니다. 화면 숫자를 그대로 반복하지 말고 의미를 설명합니다.
 
-## ?? ???
-3? bullet. ?? ???? ???? ? ?? ??? ???.
+## 관찰 포인트
+3개 bullet. 다음 기간에도 비교해야 할 반복 신호를 씁니다.
 
-?? ??:
-- ?? 1,150? ??.
-- ???? ?? ??(**)? ?? ???.
-- ###, #### ??? ?? ???.
-- ?? ?? ??? ?? ???.
-- ? ???? ?? ??? ??? ??? ?????.
-- "??", "??", "??", "?????", "?????"?? ?? ???? ??? ??? ????.
+작성 제한:
+- 전체 1,150자 이내.
+- 마크다운 굵게 표시(**)를 쓰지 마세요.
+- ###, #### 제목을 쓰지 마세요.
+- 근거 없는 추측을 쓰지 마세요.
+- 긴 문장보다 짧고 판단이 분명한 문장을 우선하세요.
+- "공유", "활용", "선별", "대응하세요", "확인합니다"처럼 실행 제안으로 읽히는 표현을 피하세요.
 """
 
     failures: list[dict] = []
     for model_name in gemini_helper.model_candidates():
         try:
-            with console.status(f"[cyan]Gemini AI {model_name} {period_label} ??? ?? ?...[/]", spinner="dots"):
+            with console.status(f"[cyan]Gemini AI {model_name} {period_label} 보고서 작성 중...[/]", spinner="dots"):
                 model = genai.GenerativeModel(model_name)
                 response = model.generate_content(
                     prompt,
@@ -148,7 +148,7 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
             text = getattr(response, "text", "") or ""
             if text.strip():
                 if failures:
-                    console.print(f"[yellow]Gemini ?? ?? ?? ? {model_name}? ???? ??????.[/]")
+                    console.print(f"[yellow]Gemini 기본 모델 실패 후 {model_name}로 보고서를 작성했습니다.[/]")
                 gemini_helper.record_response(response, model=model_name, purpose=f"period_report:{period_label}")
                 gemini_helper.reset_circuit()
                 return text
@@ -164,12 +164,12 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
                     "quota": quota,
                 }
             )
-            console.print(f"[yellow]Gemini {model_name} {period_label} ??? ?? ??: {exc}[/]")
+            console.print(f"[yellow]Gemini {model_name} {period_label} 보고서 생성 실패: {exc}[/]")
             if quota:
                 state = gemini_helper.trip_circuit(exc, model=model_name)
                 console.print(f"[yellow]{gemini_helper.circuit_message(state)}[/]")
                 break
-    console.print("[yellow]Gemini ?? ??: ?? ???? Groq/?? ?? ???? ?????.[/]")
+    console.print("[yellow]Gemini 사용 불가: 기간 보고서를 Groq/규칙 기반 요약으로 작성합니다.[/]")
     return groq_or_rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_failed")
 
 
@@ -221,23 +221,23 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
         for row in daily_volume
         if row.get("risk") in {"HIGH", "MEDIUM"}
     ]
-    risk_date_text = ", ".join(risk_dates) if risk_dates else "??"
-    return f"""## ?? ???
-{period_label} ?? ?? ??? {total_collected}?, ?? ?? ? ?? ??? {total_after_cluster}????. ?? ??? {own}???, ?? ?? ??? {own_negative_total}??? ?? ?? ?????. ?? ??? {top_keyword} ???? GA/??? ??? ????, ?? ?? ??? {risk_days}?? ??????.
+    risk_date_text = ", ".join(risk_dates) if risk_dates else "없음"
+    return f"""## 핵심 브리핑
+{period_label} 기준 원문 수집은 {total_collected}건, 중복 정리 후 분석 기사는 {total_after_cluster}건입니다. 당사 언급은 {own}건이며, 당사 직접 부정은 {own_negative_total}건으로 별도 추적 대상입니다. 전체 흐름은 {top_keyword} 키워드와 GA/보험사 동향이 주도했고, 주의 이상 일자는 {risk_days}일로 제한적입니다.
 
-## ?? ??
-?? ?? ??? ??? ???? ??? ???, ?? ??? ?? ??? ?? ??? ??? ?? ?? ?????. ?? ???? {conversion}%?, ?? ??? ?? ??? ?? ???? ?? ??? ??? ?? ?????. ?? ?? ???? GA/??? ? ??? ??? ??? ? ? ??? ??????. ????? {peak_day.get('date', '-')}? {peak_day.get('total', 0)}??? ??? ?? ??, ?? ??? {latest_day.get('date', '-')}? {latest_day.get('total', 0)}??? ??????.
+## 기간 해석
+원문 수집 건수는 슬롯별 검색량을 합산한 값이고, 분석 기사는 중복 링크와 유사 기사를 정리한 실제 검토 기준입니다. 분석 전환율은 {conversion}%로, 같은 이슈가 여러 매체와 포털 경로에서 반복 노출된 비중을 함께 보여줍니다. 당사 직접 보도보다 GA/보험사 및 정책성 보도의 흐름이 더 큰 비중을 차지했습니다. 일자별로는 {peak_day.get('date', '-')}에 {peak_day.get('total', 0)}건으로 노출이 가장 컸고, 최근 기준일 {latest_day.get('date', '-')}은 {latest_day.get('total', 0)}건으로 마감됐습니다.
 
-## ??? ??
-- ?? ?? ??: {own_negative_total}???, ?? ?? ?? ??? ??? ???? ?? ?? ?????.
-- ?? ?? ??: {negative}???, ??? ?? ?? ???? ???????? ??? ?? ???? ????.
-- ??/??: {regulation}???, ?? ??? ?? ???? ?????? ???? ????.
-- GA/??? ??: {market}???, ?? ?? ???? ?? ?? ??? ?? ?????.
+## 리스크 판독
+- 당사 직접 부정: {own_negative_total}건으로, 일반 업계 부정 기사와 분리해 관리해야 하는 평판 신호입니다.
+- 일반 부정 논조: {negative}건으로, 대부분 당사 직접 이슈보다 업계·상품·제도 환경의 부정 흐름으로 읽힙니다.
+- 정책/감독: {regulation}건으로, 제도 변화가 업계 보도량을 끌어올리는지 확인하는 축입니다.
+- GA/보험사 동향: {market}건으로, 당사 직접 이슈보다 시장 환경 신호가 강한 구간입니다.
 
-## ?? ???
-- {top_keyword}: {top_keyword_count}? ???? ?? ???? ?? ?? ??? ???? ???.
-- {top_source}: {top_source_count}??? ?? ?? ??? ?? ??/??? ?? ??? ?? ?? ???.
-- ?? ???: {risk_date_text} ??? ??? ?????, ?? ??? ????? ?? ???? ??? ?? ???."""
+## 관찰 포인트
+- {top_keyword}: {top_keyword_count}건 관찰되어 다음 기간에도 반복 노출 여부를 비교해야 합니다.
+- {top_source}: {top_source_count}건으로 영향 매체 상위에 있어 포털/원매체 보정 여부를 함께 봐야 합니다.
+- 주의 관찰일: {risk_date_text} 구간이 리스크 판정일이며, 동일 이슈의 재확산인지 신규 이슈인지 분리해 봐야 합니다."""
 
 
 def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
@@ -268,7 +268,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
             article.get("source") or article.get("press") or "-",
             article.get("keyword") or "-",
         ]
-        return " ? ".join(str(part) for part in parts if part)
+        return " · ".join(str(part) for part in parts if part)
 
     def article_brief(article: dict) -> dict:
         return {
@@ -313,55 +313,55 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     total_collected = max(aggregate.get("total_collected", 0), 1)
     tone_total = max(sum(tones.values()), total_collected, 1)
     if risk_level == "HIGH":
-        headline = f"?? ?? ?? {own_negative}?? ?? ?? {watch_days}?? ??? ??? ?? ?????."
+        headline = f"당사 직접 부정 {own_negative}건과 주의 이상 {watch_days}일이 확인된 고위험 관찰 구간입니다."
     elif own_negative:
-        headline = f"?? ?? ?? {own_negative}?? ???? ?? ??? ?? ??? ?? ???? ?????."
+        headline = f"당사 직접 부정 {own_negative}건이 포착되어 부정 논조의 확산 여부를 별도 추적하는 구간입니다."
     elif own:
-        headline = f"?? ?? {own}?? ????, ?? ?? ???? ?? ???? ??????."
+        headline = f"당사 언급 {own}건이 관찰됐고, 직접 부정 리스크는 낮은 수준으로 유지됐습니다."
     elif regulation >= max(3, market):
-        headline = "????? ?? ??? ?? ?? ??? ?? ??? ?? ?? ??? ??????."
+        headline = "정책·감독 이슈 비중이 높아 제도 변화와 업계 반응이 주요 관찰 축으로 나타났습니다."
     else:
-        headline = f"GA/?? ?? {market}?? ???? ?? ?? ??? ???? ?????."
+        headline = f"GA/보험 동향 {market}건을 중심으로 시장 노출 흐름을 추적하는 구간입니다."
 
     tracking_points = [
         {
-            "title": "?? ??",
-            "value": f"{own_negative}?",
-            "body": "?? ?? ?? ??? ?? ?? ?? ??? ??? ?????." if own_negative else "?? ?? ?? ??? ?? ?? ?? ??? ?????.",
+            "title": "당사 부정",
+            "value": f"{own_negative}건",
+            "body": "직접 언급 부정 기사와 후속 보도 발생 여부를 분리해 추적합니다." if own_negative else "직접 언급 부정 기사는 없고 신규 발생 여부만 추적합니다.",
         },
         {
-            "title": "?? ??",
-            "value": f"{watch_days}?",
-            "body": "HIGH/MEDIUM?? ??? ?? ????. ?? ? ??? ??? ???? ?????.",
+            "title": "주의 구간",
+            "value": f"{watch_days}일",
+            "body": "HIGH/MEDIUM으로 분류된 날짜 수입니다. 기간 내 리스크 밀도를 판단하는 기준입니다.",
         },
         {
-            "title": "?? ?",
+            "title": "주요 축",
             "value": top_keyword,
-            "body": "?? ??? ???? ?? ?? ?? ??? ?? ?? ?????.",
+            "body": "반복 노출된 키워드와 관련 매체 확산 여부가 기간 비교 기준입니다.",
         },
     ]
 
     category_items = [
-        ("own", "??", own, pct(own, total_collected), "??????? ?? ?? ?????. ??????????? ?? ??? ??? ???."),
-        ("regulation", "??", regulation, pct(regulation, total_collected), "????????? ?????. ?? ???? ?? ??? ?????."),
-        ("market", "GA/??", market, pct(market, total_collected), "GA????????? ?? ?????. ?? ?? ??? ?? ?? ????."),
-        ("other", "??", cats.get("other", 0), pct(cats.get("other", 0), total_collected), "?? ??? ?? ???? ?? ?? ?????."),
+        ("own", "당사", own, pct(own, total_collected), "인카금융서비스 직접 언급 보도입니다. 브랜드평판·실적·당사 이슈 노출을 별도로 봅니다."),
+        ("regulation", "정책", regulation, pct(regulation, total_collected), "법안·감독·제도성 기사입니다. 업계 리스크의 배경 신호로 해석합니다."),
+        ("market", "GA/보험", market, pct(market, total_collected), "GA·보험사·보험상품 관련 보도입니다. 시장 환경 변화의 주된 관찰 축입니다."),
+        ("other", "기타", cats.get("other", 0), pct(cats.get("other", 0), total_collected), "핵심 분류와 직접 연결되지 않는 잔여 기사입니다."),
     ]
     categories = [
-        {"key": key, "label": label, "value": f"{value:,}?", "share": share, "bar_share": bar_share(share), "note": note}
+        {"key": key, "label": label, "value": f"{value:,}건", "share": share, "bar_share": bar_share(share), "note": note}
         for key, label, value, share, note in category_items
     ]
     risk_items = [
-        ("negative", "?? ??", tones.get("negative", 0), pct(tones.get("negative", 0), tone_total), "?? ?? ?? ? ?? ??? ??? ?????."),
-        ("own-negative", "?? ??", own_negative, pct(own_negative, tone_total), "??? ?? ??? ?? ?????. ?? ?? ??? ??? ???."),
-        ("watch-days", "?? ???", watch_days, pct(watch_days, period_days), "HIGH ?? MEDIUM?? ??? ?? ????. ?? ??? ??? ?? ?????."),
-        ("neutral", "?? ??", tones.get("neutral", 0), pct(tones.get("neutral", 0), tone_total), "?? ??? ?? ?????. ?? ???? ?? ?????."),
+        ("negative", "부정 논조", tones.get("negative", 0), pct(tones.get("negative", 0), tone_total), "전체 수집 기사 중 부정 톤으로 분류된 기사입니다."),
+        ("own-negative", "당사 부정", own_negative, pct(own_negative, tone_total), "당사가 직접 언급된 부정 기사입니다. 일반 부정 기사와 분리해 봅니다."),
+        ("watch-days", "주의 관찰일", watch_days, pct(watch_days, period_days), "HIGH 또는 MEDIUM으로 판정된 일자 수입니다. 기사 건수가 아니라 날짜 기준입니다."),
+        ("neutral", "중립 논조", tones.get("neutral", 0), pct(tones.get("neutral", 0), tone_total), "사실 전달형 기사 비중입니다. 기본 노출량의 바탕 흐름입니다."),
     ]
     risk_mix = [
         {
             "key": key,
             "label": label,
-            "value": f"{value:,}?" if key == "watch-days" else f"{value:,}?",
+            "value": f"{value:,}일" if key == "watch-days" else f"{value:,}건",
             "share": share,
             "bar_share": bar_share(share),
             "note": note,
@@ -369,10 +369,10 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         for key, label, value, share, note in risk_items
     ]
     density_rows = [
-        {"label": "??/??", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"?? ?? ? {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
-        {"label": "???? ??", "value": f"{aggregate.get('period_days', 0)}? ? {aggregate.get('period_windows', 0)}?", "note": f"??? {aggregate.get('avg_daily_collected', 0)}?"},
-        {"label": "?? ???", "value": f"{aggregate.get('max_daily_total', 0):,}?", "note": "? ?? ?? ???"},
-        {"label": "?? ???", "value": top_keyword, "note": "?? ?? ?? ???"},
+        {"label": "원문/분석", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"중복 정리 후 {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
+        {"label": "모니터링 구간", "value": f"{aggregate.get('period_days', 0)}일 · {aggregate.get('period_windows', 0)}회", "note": f"일평균 {aggregate.get('avg_daily_collected', 0)}건"},
+        {"label": "최대 기사량", "value": f"{aggregate.get('max_daily_total', 0):,}건", "note": "일 단위 최고 수집량"},
+        {"label": "핵심 키워드", "value": top_keyword, "note": "반복 노출 상위 키워드"},
     ]
     keyword_rows = [
         {
@@ -399,53 +399,53 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         for row in daily_volume
         if row.get("risk") in {"HIGH", "MEDIUM"}
     ]
-    risk_date_text = ", ".join(risk_dates) if risk_dates else "??"
+    risk_date_text = ", ".join(risk_dates) if risk_dates else "없음"
     top_source = top_sources[0].get("source", "-") if top_sources else "-"
     top_source_count = top_sources[0].get("count", 0) if top_sources else 0
     negative_count = tones.get("negative", 0)
     interpretation_notes = [
         {
-            "title": "?? ??",
-            "body": f"{top_keyword} ???? ?? ?? ???, GA/?? ?? {market:,}?? ?? ??? ?????. ?? ??? {own:,}??? ?? ????? ??? ?? ?? ?????.",
+            "title": "노출 구조",
+            "body": f"{top_keyword} 키워드가 상위 반복 축이며, GA/보험 동향 {market:,}건이 전체 흐름을 주도합니다. 당사 언급은 {own:,}건으로 별도 성과·평판 축에서 보는 것이 적절합니다.",
         },
         {
-            "title": "??? ??",
-            "body": f"?? ?? {negative_count:,}? ? ?? ?? ??? {own_negative:,}????. ???? ???????? ?? ???? ??? ?? ??? ?? ? ????.",
+            "title": "리스크 구조",
+            "body": f"부정 논조 {negative_count:,}건 중 당사 직접 부정은 {own_negative:,}건입니다. 나머지는 업계·상품·제도 환경 리스크로 읽어야 과잉 대응을 줄일 수 있습니다.",
         },
         {
-            "title": "?? ??",
-            "body": f"?? ???? {peak_day.get('date', '-')} {peak_day.get('total', 0):,}?, ?? ???? {latest_day.get('date', '-')} {latest_day.get('total', 0):,}????. ?? ???? {risk_date_text}???.",
+            "title": "일자 신호",
+            "body": f"최대 노출일은 {peak_day.get('date', '-')} {peak_day.get('total', 0):,}건, 최근 기준일은 {latest_day.get('date', '-')} {latest_day.get('total', 0):,}건입니다. 주의 관찰일은 {risk_date_text}입니다.",
         },
         {
-            "title": "?? ??",
-            "body": f"?? ??? {top_source} {top_source_count:,}????. ?? ?? ??? ????? ??? ?? ?? ??? ????? ??? ?? ??? ?? ?? ???.",
+            "title": "매체 기준",
+            "body": f"상위 매체는 {top_source} {top_source_count:,}건입니다. 포털 경유 기사와 원매체명이 섞이면 영향 매체 해석이 흔들리므로 매체명 보정 상태를 함께 봐야 합니다.",
         },
     ]
     evidence_groups = [
         {
-            "title": "?? ?? ??",
+            "title": "당사 기사 판단",
             "count": own,
             "judgment": (
-                f"?? ?? {own:,}? ? ?? ??? {own_negative:,}????. "
-                "????? ??? ?? ??? ??? ??? ?? ??? ?? ???? ?? ???."
+                f"당사 언급 {own:,}건 중 직접 부정은 {own_negative:,}건입니다. "
+                "긍정·중립 보도와 부정 보도를 분리해 브랜드 노출 성과와 평판 리스크를 함께 봅니다."
             ),
             "articles": pick_articles(lambda article: article_category(article) == "own", 3),
         },
         {
-            "title": "??/?? ??",
+            "title": "정책/감독 판단",
             "count": regulation,
             "judgment": (
-                f"??/?? ??? {regulation:,}????. "
-                "?? ?? ??? ????? GA??? ?? ??? ??? ? ? ?? ?? ?? ?????."
+                f"정책/감독 보도는 {regulation:,}건입니다. "
+                "당사 직접 이슈가 아니더라도 GA·보험 영업 환경에 영향을 줄 수 있는 제도 변화 신호입니다."
             ),
             "articles": pick_articles(lambda article: article_category(article) == "regulation", 3),
         },
         {
-            "title": "?? ?? ??",
+            "title": "부정 논조 판단",
             "count": negative_count,
             "judgment": (
-                f"?? ?? {negative_count:,}? ? ?? ?? ??? {own_negative:,}????. "
-                "???? ????????? ?? ??? ??? ?? ??? ??? ???? ???."
+                f"부정 논조 {negative_count:,}건 중 당사 직접 부정은 {own_negative:,}건입니다. "
+                "나머지는 업계·상품·제도성 부정 이슈로 구분해 과잉 대응을 줄이는 기준으로 봅니다."
             ),
             "articles": pick_articles(lambda article: article_tone(article) == "negative", 3),
         },
@@ -514,7 +514,7 @@ def markdown_to_html(md: str) -> str:
 def month_bounds(month_value: str) -> tuple[date, date]:
     match = re.fullmatch(r"(20\d{2})-(0[1-9]|1[0-2])", str(month_value or "").strip())
     if not match:
-        raise ValueError("?? ??? ?? YYYY-MM ???? ???? ???.")
+        raise ValueError("월간 보고서 월은 YYYY-MM 형식으로 입력해야 합니다.")
     year = int(match.group(1))
     month = int(match.group(2))
     start = date(year, month, 1)
@@ -530,36 +530,36 @@ def get_period(period: str, custom_arg: str | int | None = None) -> tuple[date, 
     today = today_kst()
     if period == "weekly":
         start = today - timedelta(days=today.weekday())
-        return start, today, "??", "WEEKLY REPORT", "weekly"
+        return start, today, "주간", "WEEKLY REPORT", "weekly"
     if period == "weekly_previous":
         start = today - timedelta(days=today.weekday() + 7)
-        return start, start + timedelta(days=6), "?? ??", "WEEKLY REPORT", "weekly"
+        return start, start + timedelta(days=6), "전주 주간", "WEEKLY REPORT", "weekly"
     if period == "monthly":
         if custom_arg and re.fullmatch(r"20\d{2}-(0[1-9]|1[0-2])", str(custom_arg).strip()):
             start, end = month_bounds(str(custom_arg).strip())
-            return start, end, f"{start.year}? {start.month}? ??", "MONTHLY REPORT", month_slug(start)
-        return today.replace(day=1), today, "??", "MONTHLY REPORT", "monthly"
+            return start, end, f"{start.year}년 {start.month}월 월간", "MONTHLY REPORT", month_slug(start)
+        return today.replace(day=1), today, "월간", "MONTHLY REPORT", "monthly"
     if period == "monthly_previous":
         end = today.replace(day=1) - timedelta(days=1)
-        return end.replace(day=1), end, "?? ??", "MONTHLY REPORT", "monthly"
+        return end.replace(day=1), end, "전월 월간", "MONTHLY REPORT", "monthly"
 
     days = int(custom_arg) if custom_arg else 7
     start = today - timedelta(days=days - 1)
-    return start, today, f"?? {days}?", f"{days}-DAY REPORT", "custom"
+    return start, today, f"최근 {days}일", f"{days}-DAY REPORT", "custom"
 
 
 def run(period: str, custom_arg: str | int | None = None) -> Path | None:
     start, end, label, badge, output_slug = get_period(period, custom_arg)
 
     console.print(Panel.fit(
-        f"[bold cyan]{label} ???? ??? ??[/]\n{start.isoformat()} ~ {end.isoformat()}",
+        f"[bold cyan]{label} 모니터링 보고서 생성[/]\n{start.isoformat()} ~ {end.isoformat()}",
         border_style="cyan",
     ))
 
     daily_data = archiver.load_between(start, end)
     if not daily_data:
-        console.print("[red]??? ?? ???? ????.[/]")
-        console.print("[dim]?? run_once.py? ??? ?? ???? ?????.[/]")
+        console.print("[red]누적된 일일 데이터가 없습니다.[/]")
+        console.print("[dim]먼저 run_once.py를 실행해 일일 데이터를 쌓아주세요.[/]")
         return None
 
     aggregate = archiver.aggregate_metrics(daily_data)
@@ -570,18 +570,18 @@ def run(period: str, custom_arg: str | int | None = None) -> Path | None:
     max_own_trend_total = max((d.get("own", 0) for d in trend_days), default=0)
 
     console.print(
-        f"[green]OK[/] {aggregate['period_days']}?/{aggregate.get('period_windows', len(daily_data))}?? ??? ?? | "
-        f"?? {_fmt_count(aggregate['total_collected'])}? | "
-        f"?? {_fmt_count(aggregate['total_after_cluster'])}? | "
-        f"?? {aggregate['by_category']['own']}? | "
-        f"?? {aggregate['by_tone']['negative']}?"
+        f"[green]OK[/] {aggregate['period_days']}일/{aggregate.get('period_windows', len(daily_data))}구간 데이터 로드 | "
+        f"원문 {_fmt_count(aggregate['total_collected'])}건 | "
+        f"분석 {_fmt_count(aggregate['total_after_cluster'])}건 | "
+        f"당사 {aggregate['by_category']['own']}건 | "
+        f"부정 {aggregate['by_tone']['negative']}건"
     )
 
     ai_report = generate_ai_report(aggregate, top_articles, label)
     report_context = build_report_context(aggregate, top_articles)
     console.print(Panel(
         Markdown(ai_report),
-        title=f"[bold cyan]{label} ?? ??[/]",
+        title=f"[bold cyan]{label} 종합 분석[/]",
         border_style="cyan",
         padding=(1, 2),
     ))
@@ -611,7 +611,7 @@ def run(period: str, custom_arg: str | int | None = None) -> Path | None:
 
     out_path = LOG_DIR / f"{output_slug}_report_{now_kst().strftime('%Y%m%d_%H%M')}.html"
     out_path.write_text(html, encoding="utf-8")
-    console.print(f"[green]HTML ?? ??:[/] {out_path}")
+    console.print(f"[green]HTML 저장 완료:[/] {out_path}")
 
     latest_path = LOG_DIR / f"{output_slug}_report.html"
     latest_path.write_text(html, encoding="utf-8")
@@ -624,7 +624,7 @@ def run(period: str, custom_arg: str | int | None = None) -> Path | None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        console.print("???: python period_report.py weekly|weekly_previous|monthly|monthly_previous|custom [days|YYYY-MM]")
+        console.print("사용법: python period_report.py weekly|weekly_previous|monthly|monthly_previous|custom [days|YYYY-MM]")
         sys.exit(1)
 
     arg = sys.argv[1]

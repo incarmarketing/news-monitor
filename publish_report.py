@@ -110,11 +110,11 @@ def publish() -> Path:
         index_target.write_text(
             """<!DOCTYPE html>
 <html lang="ko">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>?? ?? ???</title></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>언론 동향 보고서</title></head>
 <body style="font-family:Malgun Gothic,Arial,sans-serif; padding:32px;">
-<h1>?? ?? ???</h1>
-<p>?? ??? ?? ???? ????. ??/?? ???? ?? ???? ?????.</p>
-<ul><li><a href="./weekly.html">?? ???</a></li><li><a href="./monthly.html">?? ???</a></li></ul>
+<h1>언론 동향 보고서</h1>
+<p>현재 배포된 일일 보고서가 없습니다. 주간/월간 보고서는 아래 링크에서 확인하세요.</p>
+<ul><li><a href="./weekly.html">주간 보고서</a></li><li><a href="./monthly.html">월간 보고서</a></li></ul>
 </body></html>
 """,
             encoding="utf-8",

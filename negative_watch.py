@@ -190,7 +190,7 @@ def merge_negative_candidates(*groups: list[dict]) -> list[dict]:
 
 def compact(text: str, limit: int) -> str:
     cleaned = re.sub(r"\s+", " ", text or "").strip()
-    return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "?"
+    return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
 
 
 def dashboard_base_url() -> str:
@@ -219,21 +219,21 @@ def build_alert_link(article: dict) -> str:
 
 def build_alert_message(articles: list[dict], metrics: dict, minutes_back: int, db_count: int = 0) -> str:
     current = now_kst().strftime("%Y-%m-%d %H:%M")
-    scope = f"?? {minutes_back}?"
+    scope = f"최근 {minutes_back}분"
     if db_count:
-        scope += f" ? DB ?? {db_count}? ??"
+        scope += f" · DB 신규 {db_count}건 포함"
     lines = [
-        "[???? ??]",
-        f"{current} ?? ? {scope}",
-        f"?? ?? {len(articles)}? / ?? ?? {metrics.get('own_total', 0)}?",
+        "[부정기사 감지]",
+        f"{current} 기준 · {scope}",
+        f"당사 부정 {len(articles)}건 / 당사 언급 {metrics.get('own_total', 0)}건",
         "",
-        "?? ?? ??",
+        "확인 필요 기사",
     ]
     for idx, article in enumerate(articles[:3], 1):
         source = (article.get("source") or "").upper()
         lines.append(f"{idx}. {compact(article.get('title', ''), 46)}")
         if source:
-            lines.append(f"   ?? {source} ? ??? {article.get('keyword', '')}")
+            lines.append(f"   출처 {source} · 키워드 {article.get('keyword', '')}")
     return "\n".join(lines)[:900]
 
 
@@ -242,7 +242,7 @@ def send_kakao_alert(access_token: str, text: str, link_url: str) -> dict:
         "object_type": "text",
         "text": text,
         "link": {"web_url": link_url, "mobile_web_url": link_url},
-        "button_title": "?? ??",
+        "button_title": "기사 확인",
     }
     response = requests.post(
         f"{KAKAO_API}/v2/api/talk/memo/default/send",
@@ -371,7 +371,7 @@ def main() -> None:
 
     link = build_alert_link(new_negatives[0])
     message = build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives))
-    alert_title = f"???? ?? {article_key(new_negatives[0])}"
+    alert_title = f"부정기사 감지 {article_key(new_negatives[0])}"
     if notification_already_sent("negative_alert", alert_title):
         print(f"Negative alert already sent: {alert_title}")
         for article in new_negatives:

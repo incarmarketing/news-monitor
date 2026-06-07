@@ -98,19 +98,19 @@ class DashboardQualityTests(unittest.TestCase):
         notifications = [
             {
                 "message_type": "daily_report",
-                "title": "?? ?? ?? 2026-06-05 08",
+                "title": "일일 언론 동향 2026-06-05 08",
                 "status": "success",
                 "sent_at": "2026-06-05T08:01:00+09:00",
             },
             {
                 "message_type": "daily_report",
-                "title": "?? ?? ?? 2026-06-05 08",
+                "title": "일일 언론 동향 2026-06-05 08",
                 "status": "success",
                 "sent_at": "2026-06-05T08:03:00+09:00",
             },
             {
                 "message_type": "daily_report",
-                "title": "?? ?? ?? 2026-06-06 08",
+                "title": "일일 언론 동향 2026-06-06 08",
                 "status": "success",
                 "sent_at": "2026-06-06T08:01:00+09:00",
             },
@@ -122,13 +122,13 @@ class DashboardQualityTests(unittest.TestCase):
         notifications = [
             {
                 "message_type": "daily_report",
-                "title": "?? ?? ?? 2026-06-06 08",
+                "title": "일일 언론 동향 2026-06-06 08",
                 "status": "success",
                 "sent_at": "2026-06-06T08:01:00+09:00",
             },
             {
                 "message_type": "daily_report",
-                "title": "?? ?? ?? 2026-06-06 08",
+                "title": "일일 언론 동향 2026-06-06 08",
                 "status": "success",
                 "sent_at": "2026-06-06T08:03:00+09:00",
             },
@@ -143,14 +143,14 @@ class DashboardQualityTests(unittest.TestCase):
         notifications = [
             {
                 "message_type": "daily_report",
-                "title": "?? ?? ?? 2026-06-06 08",
+                "title": "일일 언론 동향 2026-06-06 08",
                 "status": "success",
                 "sent_at": "2026-06-06T08:01:00+09:00",
             },
             {
                 "message_type": "daily_report",
-                "title": "?? ?? ?? 2026-06-06 08 ??? 20260606080300",
-                "dedupe_key": "daily_report:?? ?? ?? 2026-06-06 08:resend:20260606080300",
+                "title": "일일 언론 동향 2026-06-06 08 재발송 20260606080300",
+                "dedupe_key": "daily_report:일일 언론 동향 2026-06-06 08:resend:20260606080300",
                 "status": "success",
                 "sent_at": "2026-06-06T08:03:00+09:00",
             },
