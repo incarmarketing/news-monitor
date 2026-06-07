@@ -255,6 +255,48 @@ def load_classification_feedback_index(limit: int = 5000) -> dict[str, dict]:
         return {}
 
 
+def load_classification_feedback_rows(limit: int = 500) -> list[dict]:
+    """Return recent manual classification corrections for the operations ledger."""
+    if not is_enabled():
+        return []
+    query = (
+        "classification_feedback?"
+        "select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at"
+        "&order=created_at.desc"
+        f"&limit={limit}"
+    )
+    try:
+        rows = request("GET", query).json()
+    except Exception as error:
+        print(f"Supabase classification feedback rows skipped: {error}")
+        return []
+    if not isinstance(rows, list):
+        return []
+    sanitized: list[dict] = []
+    for row in rows:
+        title = str(row.get("title") or "").strip()
+        article_hash_value = str(row.get("article_hash") or "").strip()
+        link = str(row.get("link") or "").strip()
+        if not title and not article_hash_value and not link:
+            continue
+        sanitized.append(
+            {
+                "id": row.get("id"),
+                "article_hash": article_hash_value,
+                "title": title,
+                "link": link,
+                "previous_category": row.get("previous_category") or "",
+                "previous_tone": row.get("previous_tone") or "",
+                "corrected_category": row.get("corrected_category") or "",
+                "corrected_tone": row.get("corrected_tone") or "",
+                "reason": row.get("reason") or "",
+                "created_by": "운영자" if row.get("created_by") else "",
+                "created_at": row.get("created_at") or "",
+            }
+        )
+    return sanitized
+
+
 def classification_feedback_keys_for_article(article: dict) -> list[str]:
     keys = []
     existing_hash = str(article.get("article_hash") or article.get("id") or "").strip()

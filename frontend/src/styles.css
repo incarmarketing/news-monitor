@@ -3761,7 +3761,7 @@ button.kpi-card {
 .management-summary,
 .ad-summary-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -3972,7 +3972,7 @@ button.kpi-card {
 
 .management-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   min-width: 0;
   margin-bottom: 14px;
@@ -4116,6 +4116,51 @@ button.kpi-card {
   gap: 8px;
 }
 
+.feedback-login-note span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.feedback-login-note > div {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.feedback-ledger {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.feedback-ledger article {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff 0, #f8fbff 100%);
+}
+
+.feedback-ledger span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.feedback-ledger b {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
 .feedback-candidate-list {
   display: grid;
   gap: 8px;
@@ -4167,6 +4212,10 @@ button.kpi-card {
 .feedback-table td:nth-child(3),
 .feedback-table td:nth-child(4) {
   white-space: nowrap;
+}
+
+.feedback-empty {
+  min-height: 160px;
 }
 
 .data-table-wrap {
@@ -4302,6 +4351,7 @@ button.kpi-card {
   .management-summary,
   .ad-summary-row,
   .ad-chart-grid,
+  .feedback-ledger,
   .reporter-form {
     grid-template-columns: 1fr;
   }

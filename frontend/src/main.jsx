@@ -2031,7 +2031,7 @@ function AdSpendChart({ rows, color = "#2855d9", compact = false }) {
   );
 }
 
-function Management({ management, operations }) {
+function Management({ management, operations, onRefreshOperations, isWorking }) {
   const [tab, setTab] = useState("media");
   return (
     <main className="workspace">
@@ -2039,9 +2039,21 @@ function Management({ management, operations }) {
         eyebrow="Operations"
         title="운영 관리"
         description="언론사, 기자, 광고비 관리가 축소되지 않도록 기존 운영 메뉴 단위를 살려서 보여줍니다."
-        right={<DataSourcePill operations={operations} />}
+        right={(
+          <div className="page-actions">
+            <DataSourcePill operations={operations} />
+            <button
+              type="button"
+              className="ghost-button compact-button"
+              onClick={() => onRefreshOperations?.({ label: "운영 데이터 갱신" })}
+              disabled={operations?.status === "loading" || isWorking}
+            >
+              <RefreshCw />갱신
+            </button>
+          </div>
+        )}
       />
-      <ManagementSummary management={management} />
+      <ManagementSummary management={management} operations={operations} />
       <div className="management-tabs">
         {[
           ["media", "언론사 관리", Building2],
@@ -2059,12 +2071,19 @@ function Management({ management, operations }) {
       {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
       {tab === "ads" && <AdManagement rows={management.ads} />}
       {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} />}
-      {tab === "feedback" && <FeedbackManagement feedback={operations.feedback || []} operations={operations} />}
+      {tab === "feedback" && (
+        <FeedbackManagement
+          feedback={operations.feedback || []}
+          operations={operations}
+          onRefreshOperations={onRefreshOperations}
+          isWorking={isWorking}
+        />
+      )}
     </main>
   );
 }
 
-function ManagementSummary({ management }) {
+function ManagementSummary({ management, operations }) {
   const totalAd = management.ads.reduce((sum, row) => sum + Number(row.amount || 0), 0);
   return (
     <section className="management-summary">
@@ -2072,6 +2091,7 @@ function ManagementSummary({ management }) {
       <StatCard icon={Users} label="기자 프로필" value={`${management.reporters.length.toLocaleString("ko-KR")}명`} />
       <StatCard icon={WalletCards} label="광고비 누적" value={formatMoney(totalAd)} />
       <StatCard icon={Megaphone} label="문맥 규칙" value={`${keywordGroups.length}개 그룹`} />
+      <StatCard icon={FilePenLine} label="분류 피드백" value={`${(operations?.feedback || []).length.toLocaleString("ko-KR")}건`} />
     </section>
   );
 }
@@ -2679,7 +2699,7 @@ function KeywordManagement({ keywords = [] }) {
   );
 }
 
-function FeedbackManagement({ feedback = [], operations }) {
+function FeedbackManagement({ feedback = [], operations, onRefreshOperations, isWorking }) {
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [status, setStatus] = useState("");
@@ -2694,6 +2714,13 @@ function FeedbackManagement({ feedback = [], operations }) {
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
   const candidates = useMemo(() => buildFeedbackRuleCandidates(rows), [rows]);
   const needsLogin = !operations?.session?.session_token;
+  const todayCount = useMemo(() => {
+    const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
+    return rows.filter((row) => String(row.createdAt || "").slice(0, 10) === today || row.date === today).length;
+  }, [rows]);
+  const latestFeedback = rows[0];
+  const sourceLabel = operations?.source === "supabase" ? "운영 DB 직접 조회" : "정적 배포 이력";
+  const feedbackStamp = operations?.feedbackGeneratedAt || latestFeedback?.createdAt || "";
 
   const openLogin = () => window.dispatchEvent(new CustomEvent("news-monitor:login-required"));
   const approveCandidate = async (candidate) => {
@@ -2714,12 +2741,38 @@ function FeedbackManagement({ feedback = [], operations }) {
   return (
     <section className="content-grid two">
       <Panel title="자동 규칙 후보" icon={ShieldCheck} meta={`${candidates.length.toLocaleString("ko-KR")}개`}>
-        {needsLogin && (
-          <div className="status-note feedback-login-note">
-            피드백 상세 이력은 운영 DB 세션으로 확인합니다.
-            <button className="ghost-button compact-button" onClick={openLogin}>운영 DB 연결</button>
+        <div className="feedback-ledger">
+          <article>
+            <span>이력 원장</span>
+            <b>{sourceLabel}</b>
+          </article>
+          <article>
+            <span>오늘 수정</span>
+            <b>{todayCount.toLocaleString("ko-KR")}건</b>
+          </article>
+          <article>
+            <span>최근 수정</span>
+            <b>{latestFeedback ? [latestFeedback.date, latestFeedback.time].filter(Boolean).join(" ") : "-"}</b>
+          </article>
+        </div>
+        <div className="status-note feedback-login-note">
+          <span>
+            {needsLogin
+              ? "로그인 없이 보는 화면은 배포된 최근 피드백 이력입니다. 저장 직후 원장을 보려면 운영 DB 연결이 필요합니다."
+              : "운영 DB 세션으로 최근 분류 피드백을 직접 확인 중입니다."}
+            {feedbackStamp ? ` · 기준 ${formatFeedbackStamp(feedbackStamp)}` : ""}
+          </span>
+          <div>
+            <button
+              className="ghost-button compact-button"
+              onClick={() => onRefreshOperations?.({ label: "운영 데이터 갱신" })}
+              disabled={isWorking}
+            >
+              갱신
+            </button>
+            {needsLogin && <button className="ghost-button compact-button" onClick={openLogin}>운영 DB 연결</button>}
           </div>
-        )}
+        </div>
         <div className="feedback-candidate-list">
           {candidates.length ? candidates.slice(0, 8).map((candidate) => (
             <article key={candidate.key} className="feedback-candidate">
@@ -2743,43 +2796,51 @@ function FeedbackManagement({ feedback = [], operations }) {
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="기사명, 이전/수정 분류, 사유 검색" />
           <button className="ghost-button compact-button" onClick={() => setQuery("")}>초기화</button>
         </div>
-        <div className="data-table-wrap">
-          <table className="data-table feedback-table">
-            <thead>
-              <tr>
-                <th>수정일</th>
-                <th>기사</th>
-                <th>이전</th>
-                <th>수정</th>
-                <th>사유</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.map((row) => (
-                <tr key={row.id}>
-                  <td>{[row.date, row.time].filter(Boolean).join(" ") || "-"}</td>
-                  <td>
-                    <b>{row.title || row.link || row.articleHash || "-"}</b>
-                    {row.link && row.link !== "#" && (
-                      <a href={row.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, row.link)}>
-                        기사 열기
-                      </a>
-                    )}
-                  </td>
-                  <td>
-                    <Chip>{row.previousCategory || "-"}</Chip>
-                    <Chip tone={row.previousTone}>{row.previousTone || "-"}</Chip>
-                  </td>
-                  <td>
-                    <Chip>{row.correctedCategory || "-"}</Chip>
-                    <Chip tone={row.correctedTone}>{row.correctedTone || "-"}</Chip>
-                  </td>
-                  <td>{row.reason || row.createdBy || "-"}</td>
+        {visibleRows.length ? (
+          <div className="data-table-wrap">
+            <table className="data-table feedback-table">
+              <thead>
+                <tr>
+                  <th>수정일</th>
+                  <th>기사</th>
+                  <th>이전</th>
+                  <th>수정</th>
+                  <th>사유</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {visibleRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{[row.date, row.time].filter(Boolean).join(" ") || "-"}</td>
+                    <td>
+                      <b>{row.title || row.link || row.articleHash || "-"}</b>
+                      {row.link && row.link !== "#" && (
+                        <a href={row.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, row.link)}>
+                          기사 열기
+                        </a>
+                      )}
+                    </td>
+                    <td>
+                      <Chip>{row.previousCategory || "-"}</Chip>
+                      <Chip tone={row.previousTone}>{row.previousTone || "-"}</Chip>
+                    </td>
+                    <td>
+                      <Chip>{row.correctedCategory || "-"}</Chip>
+                      <Chip tone={row.correctedTone}>{row.correctedTone || "-"}</Chip>
+                    </td>
+                    <td>{row.reason || row.createdBy || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="empty-state feedback-empty">
+            {query.trim()
+              ? "검색 조건에 맞는 분류 수정 이력이 없습니다."
+              : "분류 수정 이력이 아직 표시되지 않습니다. 운영 DB 연결 또는 대시보드 갱신 후 다시 확인해 주세요."}
+          </div>
+        )}
         {filteredRows.length > 15 && (
           <button className="ghost-button full" onClick={() => setShowAll((value) => !value)}>
             {showAll ? "접기" : "더보기"}
@@ -2788,6 +2849,19 @@ function FeedbackManagement({ feedback = [], operations }) {
       </Panel>
     </section>
   );
+}
+
+function formatFeedbackStamp(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 16);
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date).replace(/\s/g, "");
 }
 
 function PageTitle({ eyebrow, title, description, right }) {

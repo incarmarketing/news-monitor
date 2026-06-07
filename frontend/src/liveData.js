@@ -322,6 +322,7 @@ export async function loadOperationalData() {
     aliases: [],
     keywords: [],
     feedback: [],
+    feedbackGeneratedAt: "",
     aiStatus: null,
     qualityChecks: null,
     session: null,
@@ -365,6 +366,7 @@ async function loadStaticOperationalData() {
         aliases: Array.isArray(payload?.aliases) ? payload.aliases : [],
         keywords: Array.isArray(payload?.keywords) ? payload.keywords.map(normalizeKeyword).filter(Boolean) : [],
         feedback: Array.isArray(payload?.classification_feedback) ? payload.classification_feedback.map(normalizeFeedback).filter(Boolean) : [],
+        feedbackGeneratedAt: payload?.classification_feedback_generated_at || "",
         aiStatus: payload?.ai_status || null,
         qualityChecks: payload?.quality_checks || null,
         session: null,
@@ -392,6 +394,7 @@ async function loadOperationalDataFromSupabaseSession() {
     aliases: [],
     keywords: [],
     feedback: [],
+    feedbackGeneratedAt: "",
     aiStatus: null,
     qualityChecks: null,
     session: getStoredSession(),
@@ -407,50 +410,77 @@ async function loadOperationalDataFromSupabaseSession() {
       return { ...base, message: "운영 로그인 필요" };
     }
 
-    const [articles, notifications, watchRuns, reportRuns, scraps, mediaRelations, reporters, ads, aliases, keywords, feedback] = await Promise.all([
-      fetchTable(
-        config,
-        session,
-        "news_articles",
-        [
-          "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
-          "order=report_date.desc,score.desc",
-        ].join("&"),
-        1000,
-        50000,
-      ),
-      rest(
+    const articles = await fetchTable(
+      config,
+      session,
+      "news_articles",
+      [
+        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
+        "order=report_date.desc,score.desc",
+      ].join("&"),
+      1000,
+      50000,
+    );
+    const optionalRequests = {
+      notifications: rest(
         config,
         session,
         "notification_sends?select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=80",
       ),
-      rest(
+      watchRuns: rest(
         config,
         session,
         "negative_watch_runs?select=run_key,scanned_at,minutes_back,scanned_count,negative_count,new_negative_count,status,message&order=scanned_at.desc&limit=20",
       ),
-      rest(
+      reportRuns: rest(
         config,
         session,
         "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
       ),
-      rest(
+      scraps: rest(
         config,
         session,
         "article_scraps?select=article_hash,article_snapshot,created_at&order=created_at.desc&limit=100",
       ),
-      rest(config, session, "media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
-      rest(config, session, "reporters?select=id,name,media,status,contact_date,memo,updated_at&order=updated_at.desc&limit=500"),
-      rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
-      rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
-      rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
-      rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500"),
-    ]);
+      mediaRelations: rest(config, session, "media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
+      reporters: rest(config, session, "reporters?select=id,name,media,status,contact_date,memo,updated_at&order=updated_at.desc&limit=500"),
+      ads: rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
+      aliases: rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
+      keywords: rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
+      feedback: rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500"),
+    };
+    const optionalEntries = await Promise.allSettled(
+      Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
+    );
+    const optionalData = {};
+    const optionalErrors = [];
+    optionalEntries.forEach((entry) => {
+      if (entry.status === "fulfilled") {
+        optionalData[entry.value[0]] = entry.value[1];
+      } else {
+        optionalErrors.push(entry.reason?.message || "optional_load_failed");
+      }
+    });
+    const {
+      notifications = [],
+      watchRuns = [],
+      reportRuns = [],
+      scraps = [],
+      mediaRelations = [],
+      reporters = [],
+      ads = [],
+      aliases = [],
+      keywords = [],
+      feedback = [],
+    } = optionalData;
+    const message = optionalErrors.length
+      ? `운영 DB 연결 · 일부 원장 확인 필요 ${optionalErrors.length}건`
+      : "운영 DB 연결";
 
     return {
       source: "supabase",
       status: "live",
-      message: "운영 DB 연결",
+      message,
       articles: Array.isArray(articles) ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean)) : [],
       notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
@@ -462,6 +492,8 @@ async function loadOperationalDataFromSupabaseSession() {
       aliases: Array.isArray(aliases) ? aliases : [],
       keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
       feedback: Array.isArray(feedback) ? feedback.map(normalizeFeedback).filter(Boolean) : [],
+      feedbackGeneratedAt: new Date().toISOString(),
+      dataLoadWarnings: optionalErrors,
       aiStatus: null,
       qualityChecks: null,
       session,
@@ -492,12 +524,20 @@ function normalizeFeedback(row) {
     previousTone: row.previous_tone || "",
     correctedCategory: row.corrected_category || "",
     correctedTone: row.corrected_tone || "",
-    reason: row.reason || "",
+    reason: feedbackReasonLabel(row.reason),
     createdBy: row.created_by || "",
     createdAt: row.created_at || "",
     date: formatArticleDate(row.created_at) || String(row.created_at || "").slice(0, 10),
     time: formatTime(row.created_at),
   };
+}
+
+function feedbackReasonLabel(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return {
+    dashboard_manual_correction: "수동 분류 수정",
+  }[text] || text;
 }
 
 function normalizeScrap(row) {

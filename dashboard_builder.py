@@ -616,6 +616,14 @@ def load_dashboard_aliases() -> list[dict]:
     return []
 
 
+def load_dashboard_classification_feedback() -> list[dict]:
+    try:
+        return supabase_store.load_classification_feedback_rows()
+    except Exception as exc:
+        print(f"Supabase classification feedback ledger skipped: {exc}")
+    return []
+
+
 def publish_dashboard() -> Path:
     archives = load_daily_archives()
     articles = build_articles(archives)
@@ -626,6 +634,7 @@ def publish_dashboard() -> Path:
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
+    classification_feedback = load_dashboard_classification_feedback()
     ai_status = build_ai_status(report_runs)
     quality_checks = build_quality_checks(articles, report_runs, notifications)
 
@@ -644,6 +653,8 @@ def publish_dashboard() -> Path:
                 "notifications": notifications,
                 "watch_runs": watch_runs,
                 "scraps": scraps,
+                "classification_feedback": classification_feedback,
+                "classification_feedback_generated_at": datetime.now(KST).isoformat(),
                 "ai_status": ai_status,
                 "quality_checks": quality_checks,
             },
