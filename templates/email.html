@@ -3,33 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>언론 동향 한장 보고서 {{ date_str }}</title>
+<title>일일 언론 동향 보고서 {{ date_str }}</title>
 <style>
   :root {
     --ink:#101828;
+    --ink-2:#344054;
     --muted:#667085;
-    --line:#d7deea;
-    --paper:#fff;
-    --bg:#f3f6fb;
-    --navy:#182b63;
-    --blue:#2765d9;
-    --cyan:#0e7490;
-    --green:#14864a;
-    --green-soft:#e8f7ef;
-    --amber:#b86b00;
-    --amber-soft:#fff4d6;
-    --red:#c81e3a;
+    --line:#d9e2ef;
+    --soft:#f7f9fc;
+    --paper:#ffffff;
+    --navy:#14204a;
+    --blue:#2855d9;
+    --green:#14805f;
+    --amber:#b45309;
+    --red:#c92337;
+    --green-soft:#e9f8f1;
+    --amber-soft:#fff5dd;
     --red-soft:#fff0f2;
+    --blue-soft:#edf3ff;
+    --shadow:0 16px 42px rgba(16,24,40,.12);
   }
   * { box-sizing:border-box; }
-  html { max-width:100%; overflow-x:hidden; }
+  html, body { max-width:100%; overflow-x:hidden; }
   body {
     margin:0;
-    background:var(--bg);
+    background:#edf1f6;
     color:var(--ink);
     font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;
-    font-size:13px;
-    line-height:1.45;
+    font-size:14px;
+    line-height:1.48;
+    letter-spacing:0;
   }
   a { color:inherit; text-decoration:none; }
   a:hover { color:var(--blue); text-decoration:underline; }
@@ -40,358 +43,319 @@
     display:flex;
     justify-content:center;
     gap:8px;
-    padding:10px;
-    background:rgba(243,246,251,.94);
+    padding:9px;
     border-bottom:1px solid rgba(152,162,179,.28);
+    background:rgba(237,241,246,.94);
     backdrop-filter:blur(10px);
   }
   .toolbar button,
-  .toolbar a {
+  .toolbar a,
+  .article-open {
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    min-height:34px;
-    padding:0 13px;
-    border:1px solid #c7d3e5;
-    border-radius:7px;
+    min-height:36px;
+    padding:0 12px;
+    border:1px solid #c8d6ea;
+    border-radius:8px;
     background:#fff;
     color:var(--navy);
     font-size:12px;
     font-weight:900;
-    line-height:1.15;
-    text-align:center;
     white-space:nowrap;
-    word-break:keep-all;
     cursor:pointer;
-    min-width:0;
+  }
+  .toolbar a:first-of-type,
+  .article-open {
+    border-color:#b9caff;
+    background:var(--blue-soft);
+    color:var(--blue);
   }
   .page {
-    width:min(1120px, calc(100% - 28px));
+    width:min(980px, calc(100% - 28px));
     margin:18px auto 34px;
-    background:var(--paper);
-    border:1px solid rgba(152,162,179,.36);
-    border-radius:8px;
-    box-shadow:0 18px 52px rgba(16,24,40,.13);
     overflow:hidden;
+    border:1px solid rgba(152,162,179,.34);
+    border-radius:10px;
+    background:var(--paper);
+    box-shadow:var(--shadow);
   }
-  .report-head {
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    gap:22px;
-    align-items:end;
-    padding:24px 26px 20px;
-    background:#fff;
-    border-bottom:3px solid var(--navy);
+  .hero {
+    position:relative;
+    padding:22px 24px 18px;
+    border-bottom:1px solid #cdd7e6;
+    background:
+      radial-gradient(circle at 96% 0, rgba(40,85,217,.13), transparent 30%),
+      linear-gradient(135deg,#fff 0,#f8fbff 72%,#eef5ff 100%);
   }
-  .brand {
-    display:flex;
-    align-items:center;
-    gap:12px;
-    margin-bottom:10px;
-  }
-  .brand img { width:98px; height:auto; display:block; }
-  .report-kicker {
+  .hero-top {
     display:flex;
     flex-wrap:wrap;
-    align-items:center;
     gap:7px;
-    margin-bottom:11px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:13px;
   }
-  .report-chip {
+  .chip-row {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    min-width:0;
+  }
+  .chip {
     display:inline-flex;
     align-items:center;
     min-height:24px;
     padding:0 9px;
-    border:1px solid #cbd7ea;
+    border:1px solid #ced9e9;
     border-radius:999px;
-    background:#f8fbff;
-    color:var(--navy);
+    background:#fff;
+    color:var(--ink-2);
     font-size:11px;
     font-weight:900;
+    line-height:1;
     max-width:100%;
-    overflow:hidden;
-    text-overflow:ellipsis;
   }
-  .eyebrow {
-    color:var(--blue);
-    font-size:11px;
-    font-weight:900;
-  }
-  h1 {
-    margin:0;
-    color:var(--navy);
-    font-size:25px;
-    line-height:1.15;
-    letter-spacing:0;
-  }
-  .meta {
-    margin-top:8px;
-    color:var(--muted);
-    font-size:12px;
-    font-weight:800;
-  }
-  .risk-box {
-    display:grid;
-    grid-template-columns:auto minmax(0,1fr);
-    gap:13px;
-    align-items:center;
-    min-width:304px;
-  }
-  .risk-pill {
+  .risk-badge {
     display:inline-flex;
     align-items:center;
-    justify-content:center;
-    min-width:76px;
-    min-height:46px;
-    padding:0 15px;
-    border-radius:8px;
+    gap:7px;
+    min-height:28px;
+    padding:0 10px;
+    border-radius:999px;
     color:#fff;
-    font-size:18px;
-    font-weight:900;
-    letter-spacing:.02em;
-  }
-  .risk-pill.LOW { background:var(--green); }
-  .risk-pill.MEDIUM { background:var(--amber); }
-  .risk-pill.HIGH { background:var(--red); }
-  .risk-label {
-    color:var(--muted);
-    font-size:10px;
-    font-weight:900;
-  }
-  .risk-message {
-    margin-top:3px;
-    color:var(--ink);
-    font-size:14px;
-    font-weight:900;
-    line-height:1.35;
-  }
-  .risk-sub {
-    margin-top:4px;
-    color:var(--muted);
     font-size:11px;
-    font-weight:800;
+    font-weight:900;
   }
-  .risk-copy {
-    padding-left:13px;
-    border-left:1px solid var(--line);
-  }
-  .kpi-strip {
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:0;
-    border-bottom:1px solid var(--line);
-  }
-  .kpi {
-    min-height:74px;
-    padding:12px 14px;
-    border-right:1px solid var(--line);
+  .risk-badge::before {
+    content:"";
+    width:7px;
+    height:7px;
+    border-radius:50%;
     background:#fff;
+    opacity:.86;
   }
-  .kpi:last-child { border-right:0; }
-  .kpi b {
-    display:inline-flex;
-    align-items:baseline;
-    gap:2px;
-    color:var(--navy);
-    font-size:25px;
-    line-height:1;
-  }
-  .kpi b::after {
-    content:"건";
-    color:var(--muted);
-    font-size:11px;
-    font-weight:900;
-  }
-  .kpi span {
-    display:block;
-    margin-top:7px;
-    color:var(--muted);
-    font-size:11px;
-    font-weight:900;
-  }
-  .kpi small {
-    display:block;
-    margin-top:3px;
-    color:#98a2b3;
-    font-size:10px;
-    font-weight:800;
-  }
-  .report-grid {
-    display:grid;
-    grid-template-columns:minmax(0,1fr) minmax(390px,.72fr);
-    gap:14px;
-    padding:16px;
-    background:#f8fafc;
-  }
-  .stack { display:grid; gap:12px; align-content:start; }
-  .panel {
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:14px;
-    min-width:0;
-  }
-  .panel-title {
-    margin:0 0 9px;
-    color:var(--navy);
-    font-size:14px;
-    font-weight:900;
-  }
-  .analysis-main {
-    border-left:5px solid var(--blue);
-    background:linear-gradient(90deg,#f7fbff 0%,#fff 54%);
-  }
-  .analysis-main p,
-  .analysis-copy p {
+  .risk-badge.LOW { background:var(--green); }
+  .risk-badge.MEDIUM { background:var(--amber); }
+  .risk-badge.HIGH { background:var(--red); }
+  .hero h1 {
     margin:0;
-    color:#344054;
-    font-size:13px;
-    font-weight:800;
-    line-height:1.55;
+    color:var(--navy);
+    font-size:28px;
+    line-height:1.16;
+    font-weight:900;
+    word-break:keep-all;
   }
-  .analysis-copy h2,
-  .actions h2 { display:none; }
-  .issue-grid {
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:10px;
+  .hero-meta {
+    margin-top:8px;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:850;
+    word-break:keep-all;
   }
-  .issue {
-    min-height:94px;
-    padding:12px;
-    border:1px solid #d9e3f2;
-    border-radius:8px;
-    background:#fff;
+  .brief-box {
+    margin-top:15px;
+    padding:13px 14px;
+    border:1px solid #c9d8ec;
+    border-left:5px solid var(--blue);
+    border-radius:9px;
+    background:rgba(255,255,255,.88);
   }
-  .issue-num {
-    display:inline-flex;
+  .brief-title {
+    display:flex;
     align-items:center;
-    justify-content:center;
-    min-width:26px;
-    height:22px;
-    border-radius:6px;
-    background:#edf4ff;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:9px;
     color:var(--blue);
     font-size:11px;
     font-weight:900;
+    text-transform:uppercase;
   }
-  .issue-title {
-    margin-top:8px;
-    color:var(--ink);
-    font-size:13px;
-    font-weight:900;
-  }
-  .issue-detail {
-    margin-top:5px;
+  .brief-title span:last-child {
     color:var(--muted);
-    font-size:12px;
-    font-weight:800;
+    font-size:10px;
   }
-  .actions {
-    border-left:5px solid var(--red);
-  }
-  .actions p,
-  .actions li {
-    color:#344054;
-    font-size:12.5px;
-    font-weight:800;
-  }
-  .actions ul { margin:0; padding-left:17px; }
-  .summary-grid {
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:10px;
-  }
-  .summary-card {
-    min-height:86px;
-    padding:12px;
-    border:1px solid #dbe4f2;
-    border-radius:8px;
-    background:#fff;
-  }
-  .summary-card span {
-    display:block;
-    color:var(--muted);
-    font-size:11px;
-    font-weight:900;
-  }
-  .summary-card strong {
-    display:block;
-    margin-top:7px;
-    color:var(--navy);
-    font-size:20px;
-    line-height:1;
-  }
-  .summary-card small {
-    display:block;
-    margin-top:8px;
-    color:#475467;
-    font-size:11px;
-    font-weight:800;
-    line-height:1.35;
-  }
-  .brief-note {
+  .brief-lines {
     display:grid;
     gap:7px;
-  }
-  .brief-note div {
-    display:flex;
-    justify-content:space-between;
-    gap:14px;
-    padding:8px 0;
-    border-bottom:1px solid #e5ebf4;
-    color:#344054;
-    font-size:12px;
-    font-weight:900;
-  }
-  .brief-note div:last-child { border-bottom:0; }
-  .brief-note span { color:var(--muted); font-weight:900; }
-  .keywords {
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px;
-  }
-  .keyword {
-    padding:5px 8px;
-    border-radius:6px;
-    background:#eef4ff;
-    color:#1f4fb5;
-    font-size:11px;
-    font-weight:900;
-  }
-  .evidence-list {
     margin:0;
     padding:0;
     list-style:none;
+  }
+  .brief-lines li {
+    position:relative;
+    padding-left:13px;
+    color:var(--ink);
+    font-size:13px;
+    font-weight:850;
+    line-height:1.45;
+    word-break:keep-all;
+  }
+  .brief-lines li::before {
+    content:"";
+    position:absolute;
+    left:0;
+    top:.62em;
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:var(--blue);
+  }
+  .metric-strip {
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:8px;
+    padding:12px;
+    border-bottom:1px solid var(--line);
+    background:#fff;
+  }
+  .metric {
+    min-width:0;
+    padding:11px;
+    border:1px solid #dce5f2;
+    border-radius:9px;
+    background:linear-gradient(180deg,#fff,#f9fbff);
+  }
+  .metric span {
+    display:block;
+    color:var(--muted);
+    font-size:10px;
+    font-weight:900;
+  }
+  .metric b {
+    display:flex;
+    align-items:baseline;
+    gap:2px;
+    margin-top:6px;
+    color:var(--navy);
+    font-size:24px;
+    line-height:1;
+    font-weight:900;
+  }
+  .metric b small {
+    color:var(--muted);
+    font-size:10px;
+    font-weight:900;
+  }
+  .metric em {
+    display:block;
+    margin-top:7px;
+    color:var(--ink-2);
+    font-size:10.5px;
+    line-height:1.32;
+    font-style:normal;
+    font-weight:800;
+    word-break:keep-all;
+  }
+  .content {
+    display:grid;
+    grid-template-columns:minmax(0,1.05fr) minmax(300px,.72fr);
+    gap:14px;
+    padding:14px;
+    background:var(--soft);
+  }
+  .stack {
+    display:grid;
+    gap:12px;
+    align-content:start;
+    min-width:0;
+  }
+  .panel {
+    min-width:0;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:#fff;
+  }
+  .panel-head {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .panel-head h2 {
+    margin:0;
+    color:var(--navy);
+    font-size:14px;
+    font-weight:900;
+  }
+  .panel-head span {
+    color:var(--muted);
+    font-size:10px;
+    font-weight:900;
+    white-space:nowrap;
+  }
+  .issue-list,
+  .article-list,
+  .mini-list {
+    display:grid;
+    gap:9px;
+  }
+  .issue-card {
+    min-width:0;
+    padding:12px;
+    border:1px solid #dbe5f3;
+    border-radius:9px;
+    background:linear-gradient(180deg,#fff,#fbfdff);
+  }
+  .issue-number {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:28px;
+    height:22px;
+    border-radius:6px;
+    background:var(--blue-soft);
+    color:var(--blue);
+    font-size:11px;
+    font-weight:900;
+  }
+  .issue-card h3 {
+    margin:8px 0 5px;
+    color:var(--ink);
+    font-size:14px;
+    line-height:1.35;
+    font-weight:900;
+    word-break:keep-all;
+  }
+  .issue-card p,
+  .note-text {
+    margin:0;
+    color:var(--ink-2);
+    font-size:12px;
+    line-height:1.5;
+    font-weight:800;
+    word-break:keep-all;
+  }
+  .article-card {
     display:grid;
     gap:8px;
+    min-width:0;
+    padding:12px;
+    border:1px solid #dce5f2;
+    border-radius:9px;
+    background:#fff;
   }
-  .evidence-list li {
-    display:grid;
-    grid-template-columns:76px minmax(0,1fr) 44px;
-    gap:9px;
-    align-items:start;
-    padding-bottom:8px;
-    border-bottom:1px dashed #dbe3ef;
-  }
-  .evidence-list li:last-child { border-bottom:0; padding-bottom:0; }
   .article-tags {
     display:flex;
     flex-wrap:wrap;
-    gap:4px;
+    gap:5px;
+    min-width:0;
   }
-  .article-id,
-  .tag {
+  .tag,
+  .article-id {
     display:inline-flex;
     align-items:center;
-    min-height:18px;
-    padding:0 6px;
-    border-radius:5px;
-    font-size:9.5px;
-    font-weight:900;
+    min-height:20px;
+    padding:0 7px;
+    border-radius:999px;
+    font-size:10px;
     line-height:1;
+    font-weight:900;
   }
-  .article-id { background:#101828; color:#fff; }
+  .article-id { background:#111827; color:#fff; }
   .cat-own { background:#dbeafe; color:#1d4ed8; }
   .cat-regulation { background:#f3e8ff; color:#7e22ce; }
   .cat-competitor { background:#fce7f3; color:#be185d; }
@@ -403,177 +367,136 @@
   .tone-neutral { background:#eff6ff; color:#1d4ed8; }
   .article-title {
     color:var(--ink);
-    font-size:12.5px;
+    font-size:14px;
+    line-height:1.36;
     font-weight:900;
-    line-height:1.35;
-    overflow-wrap:anywhere;
     word-break:keep-all;
+    overflow-wrap:anywhere;
   }
   .article-summary {
-    margin-top:4px;
-    color:#344054;
-    font-size:11px;
+    color:var(--ink-2);
+    font-size:12px;
+    line-height:1.48;
     font-weight:800;
-    line-height:1.45;
-    overflow-wrap:anywhere;
     word-break:keep-all;
+    overflow-wrap:anywhere;
   }
-  .source {
-    margin-top:4px;
+  .article-meta {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
     color:var(--muted);
     font-size:10.5px;
+    font-weight:850;
+  }
+  .article-open {
+    width:max-content;
+    min-height:30px;
+    padding:0 10px;
+  }
+  .side-card {
+    display:grid;
+    gap:8px;
+    padding:11px;
+    border:1px solid #dce5f2;
+    border-radius:9px;
+    background:#fff;
+  }
+  .side-card b {
+    color:var(--ink);
+    font-size:12.5px;
+    line-height:1.35;
+    font-weight:900;
+    word-break:keep-all;
+  }
+  .side-card span {
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:850;
+  }
+  .analysis-note {
+    border-left:5px solid var(--blue);
+  }
+  .actions-note {
+    border-left:5px solid var(--red);
+  }
+  .analysis-note h2,
+  .actions-note h2 { display:none; }
+  .analysis-note p,
+  .analysis-note li,
+  .actions-note p,
+  .actions-note li {
+    color:var(--ink-2);
+    font-size:12px;
+    line-height:1.48;
     font-weight:800;
   }
-  .impact {
-    justify-self:end;
-    padding:4px 6px;
-    border:1px solid #d9e3f2;
-    border-radius:6px;
-    background:#f8fafc;
-    color:#344054;
-    font-size:10px;
+  .analysis-note ul,
+  .actions-note ul { margin:0; padding-left:17px; }
+  .keyword-row {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .keyword {
+    display:inline-flex;
+    align-items:center;
+    min-height:24px;
+    padding:0 8px;
+    border:1px solid #cfe0ff;
+    border-radius:999px;
+    background:var(--blue-soft);
+    color:var(--blue);
+    font-size:10.5px;
     font-weight:900;
   }
-  .method-grid {
+  .basis-grid {
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px;
+    gap:7px;
   }
-  .method {
-    padding:9px;
-    border:1px solid #e4e9f2;
-    border-radius:7px;
-    background:#fbfcff;
+  .basis-grid div {
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    padding-bottom:7px;
+    border-bottom:1px solid #e8edf5;
+    color:var(--ink-2);
+    font-size:11px;
+    font-weight:850;
   }
-  .method span {
-    display:block;
+  .basis-grid div:last-child {
+    border-bottom:0;
+    padding-bottom:0;
+  }
+  .basis-grid span {
     color:var(--muted);
-    font-size:10px;
     font-weight:900;
   }
-  .method b {
-    display:block;
-    margin-top:5px;
-    color:var(--navy);
-    font-size:12px;
-  }
-  .empty-list {
+  .empty {
     margin:0;
-    padding:13px;
+    padding:12px;
     border:1px dashed var(--line);
-    border-radius:7px;
-    color:var(--muted);
+    border-radius:8px;
     background:#f8fafc;
+    color:var(--muted);
     font-size:12px;
     font-weight:800;
   }
   .footer {
-    padding:11px 16px;
+    padding:12px 16px;
     border-top:1px solid var(--line);
-    color:var(--muted);
     background:#fff;
+    color:var(--muted);
     font-size:11px;
     font-weight:800;
+    word-break:keep-all;
   }
-  @page { size:A4 landscape; margin:7mm; }
-  @media print {
-    body { background:#fff; font-size:8.4px; line-height:1.28; }
-    .toolbar { display:none; }
-    .page {
-      width:100%;
-      margin:0;
-      border:0;
-      border-radius:0;
-      box-shadow:none;
-      overflow:visible;
-    }
-    .report-head {
-      grid-template-columns:minmax(0,1fr) auto;
-      padding:0 0 7px;
-      gap:9px;
-      border-bottom-width:2px;
-    }
-    .report-kicker { gap:4px; margin-bottom:4px; }
-    .report-chip { min-height:16px; padding:0 5px; font-size:6.8px; }
-    .brand { display:none; }
-    .eyebrow { font-size:7.8px; }
-    h1 { font-size:15px; }
-    .meta { margin-top:3px; font-size:7.8px; }
-    .risk-box { grid-template-columns:auto minmax(0,1fr); gap:6px; min-width:190px; }
-    .risk-copy { padding-left:7px; }
-    .risk-pill { min-width:46px; min-height:30px; padding:0 7px; border-radius:5px; font-size:10px; }
-    .risk-label { font-size:7px; }
-    .risk-message { margin-top:1px; font-size:8.2px; }
-    .risk-sub { margin-top:1px; font-size:7.4px; }
-    .kpi-strip { grid-template-columns:repeat(4,minmax(0,1fr)); }
-    .kpi { min-height:34px; padding:5px 7px; }
-    .kpi b { font-size:13px; }
-    .kpi b::after { font-size:7px; }
-    .kpi span { margin-top:3px; font-size:7px; }
-    .kpi small { display:none; }
-    .report-grid {
-      grid-template-columns:minmax(0,1.22fr) minmax(0,.86fr);
-      gap:6px;
-      padding:6px 0 0;
-      background:#fff;
-    }
-    .stack { gap:5px; }
-    .panel { padding:6px; border-radius:5px; }
-    .panel-title { margin-bottom:4px; font-size:8.2px; }
-    .analysis-main { border-left-width:3px; }
-    .analysis-main p,
-    .analysis-copy p,
-    .actions p,
-    .actions li {
-      font-size:7.6px;
-      line-height:1.23;
-    }
-    .issue-grid { gap:5px; }
-    .issue { min-height:48px; padding:5px; border-radius:5px; }
-    .issue-num { min-width:18px; height:15px; font-size:6.8px; border-radius:4px; }
-    .issue-title { margin-top:3px; font-size:7.8px; }
-    .issue-detail { margin-top:2px; font-size:7px; }
-    .actions { border-left-width:3px; }
-    .actions ul { padding-left:10px; }
-    .summary-grid { gap:5px; }
-    .summary-card { min-height:44px; padding:5px; border-radius:5px; }
-    .summary-card span { font-size:6.7px; }
-    .summary-card strong { margin-top:3px; font-size:11px; }
-    .summary-card small { margin-top:3px; font-size:6.7px; }
-    .brief-note { gap:2px; }
-    .brief-note div { padding:3px 0; gap:6px; font-size:7px; }
-    .keywords { gap:3px; }
-    .keyword { padding:2px 4px; border-radius:4px; font-size:6.8px; }
-    .evidence-list { gap:3px; }
-    .evidence-list li {
-      grid-template-columns:50px minmax(0,1fr) 32px;
-      gap:5px;
-      padding-bottom:3px;
-    }
-    .evidence-list li:nth-child(n+7) { display:none; }
-    .article-id,
-    .tag {
-      min-height:13px;
-      padding:0 3px;
-      border-radius:3px;
-      font-size:6.5px;
-    }
-    .article-title { font-size:7.3px; line-height:1.22; }
-    .article-summary { margin-top:1px; font-size:6.6px; line-height:1.18; }
-    .source { margin-top:1px; font-size:6.5px; }
-    .impact { padding:2px 3px; border-radius:4px; font-size:6.5px; }
-    .method-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
-    .method { padding:4px; border-radius:4px; }
-    .method span { font-size:6.3px; }
-    .method b { margin-top:2px; font-size:7px; }
-    .footer { padding:5px 0 0; font-size:6.8px; }
-  }
-  @media screen and (max-width:760px) {
-    body { background:#fff; font-size:14px; }
+  @media screen and (max-width:860px) {
+    body { background:#fff; }
     .toolbar {
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
-      justify-content:stretch;
       gap:7px;
       padding:8px;
     }
@@ -581,114 +504,335 @@
     .toolbar a {
       width:100%;
       min-height:42px;
-      padding:0 8px;
       font-size:13px;
-      letter-spacing:0;
     }
-    .page { width:100%; margin:0; border:0; border-radius:0; box-shadow:none; }
-    .report-head,
-    .report-grid { grid-template-columns:1fr; }
-    .report-head { padding:20px 16px 16px; }
-    .report-kicker { margin-bottom:9px; }
-    .brand { display:none; }
-    h1 { font-size:22px; }
-    .risk-box { min-width:0; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:10px; }
-    .risk-pill { width:max-content; min-width:68px; }
-    .risk-copy { padding-left:0; border-left:0; }
-    .kpi-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .kpi { min-height:62px; padding:10px 12px; }
-    .kpi:nth-child(2n) { border-right:0; }
-    .kpi:last-child { grid-column:auto; }
-    .report-grid { padding:12px; }
-    .issue-grid { grid-template-columns:1fr; }
-    .summary-grid { grid-template-columns:1fr; }
-    .evidence-list li { grid-template-columns:1fr; }
-    .article-tags { min-width:0; }
-    .article-id,
-    .tag { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
-    .impact { justify-self:start; }
-    .method-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .page {
+      width:100%;
+      margin:0;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+    }
+    .hero {
+      padding:18px 14px 14px;
+    }
+    .hero-top {
+      display:grid;
+      grid-template-columns:1fr;
+      align-items:flex-start;
+      justify-content:start;
+      margin-bottom:11px;
+    }
+    .risk-badge {
+      justify-self:start;
+      max-width:100%;
+      height:auto;
+      min-height:28px;
+      padding:6px 10px;
+      line-height:1.25;
+      white-space:normal;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+    }
+    .hero h1 {
+      font-size:23px;
+    }
+    .hero-meta {
+      overflow-wrap:anywhere;
+    }
+    .brief-box {
+      padding:12px;
+    }
+    .brief-title {
+      align-items:flex-start;
+      flex-direction:column;
+      gap:3px;
+    }
+    .metric-strip {
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      padding:10px;
+    }
+    .metric:nth-child(5) {
+      grid-column:1 / -1;
+    }
+    .metric {
+      padding:10px;
+    }
+    .metric b {
+      font-size:22px;
+    }
+    .content {
+      grid-template-columns:1fr;
+      padding:10px;
+      gap:10px;
+    }
+    .panel {
+      padding:12px;
+    }
+    .panel-head {
+      align-items:flex-start;
+    }
+    .article-title {
+      font-size:13.5px;
+    }
+    .article-summary {
+      font-size:12px;
+    }
+    .basis-grid div {
+      display:grid;
+      gap:3px;
+    }
   }
   @media screen and (max-width:380px) {
     .toolbar { grid-template-columns:1fr; }
-    .report-head { padding:18px 12px 14px; }
-    .kpi-strip { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .method-grid { grid-template-columns:1fr; }
-    .kpi { min-height:58px; padding:9px 10px; border-bottom:1px solid var(--line); }
-    .kpi:nth-child(2n) { border-right:0; }
-    .kpi:nth-last-child(-n+2) { border-bottom:0; }
-    .report-grid { padding:10px; }
+    .metric-strip { grid-template-columns:1fr; }
+    .chip-row { width:100%; }
+    .risk-badge { margin-top:2px; }
+  }
+  @page { size:A4 portrait; margin:8mm; }
+  @media print {
+    body { background:#fff; font-size:8px; line-height:1.25; }
+    .toolbar { display:none; }
+    .page {
+      width:100%;
+      margin:0;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+    }
+    .hero {
+      padding:0 0 7px;
+      border-bottom:2px solid var(--navy);
+      background:#fff;
+    }
+    .hero-top { margin-bottom:5px; }
+    .chip { min-height:15px; padding:0 5px; font-size:6.5px; }
+    .risk-badge { min-height:16px; padding:0 6px; font-size:6.8px; }
+    .risk-badge::before { width:4px; height:4px; }
+    .hero h1 { font-size:16px; }
+    .hero-meta { margin-top:3px; font-size:7px; }
+    .brief-box { margin-top:6px; padding:6px; border-left-width:3px; border-radius:5px; }
+    .brief-title { margin-bottom:4px; font-size:6.8px; }
+    .brief-title span:last-child { font-size:6.2px; }
+    .brief-lines { gap:3px; }
+    .brief-lines li { padding-left:8px; font-size:7.2px; line-height:1.25; }
+    .brief-lines li::before { width:3px; height:3px; }
+    .metric-strip { grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:5px 0; }
+    .metric { padding:5px; border-radius:5px; }
+    .metric span { font-size:6.4px; }
+    .metric b { margin-top:2px; font-size:12px; }
+    .metric b small { font-size:6px; }
+    .metric em { display:none; }
+    .content {
+      grid-template-columns:minmax(0,1fr) minmax(0,.72fr);
+      gap:6px;
+      padding:6px 0 0;
+      background:#fff;
+    }
+    .stack { gap:5px; }
+    .panel { padding:6px; border-radius:5px; }
+    .panel-head { margin-bottom:4px; }
+    .panel-head h2 { font-size:8px; }
+    .panel-head span { font-size:6.5px; }
+    .issue-list,
+    .article-list,
+    .mini-list { gap:4px; }
+    .issue-card,
+    .article-card,
+    .side-card { gap:4px; padding:5px; border-radius:5px; }
+    .issue-number,
+    .tag,
+    .article-id { min-height:13px; padding:0 4px; font-size:6.2px; }
+    .issue-card h3,
+    .article-title,
+    .side-card b { margin:3px 0 1px; font-size:7.4px; line-height:1.22; }
+    .issue-card p,
+    .article-summary,
+    .note-text,
+    .analysis-note p,
+    .analysis-note li,
+    .actions-note p,
+    .actions-note li { font-size:6.7px; line-height:1.18; }
+    .article-meta,
+    .side-card span { font-size:6.2px; }
+    .article-open { display:none; }
+    .article-list .article-card:nth-child(n+6),
+    .mini-list .side-card:nth-child(n+4) { display:none; }
+    .keyword { min-height:14px; padding:0 4px; font-size:6.2px; }
+    .basis-grid { gap:2px; }
+    .basis-grid div { padding-bottom:2px; font-size:6.5px; }
+    .footer { padding:5px 0 0; font-size:6.4px; }
   }
 </style>
 </head>
 <body>
+  {% set evidence_tab = article_tabs[0] %}
+  {% set own_tab = article_tabs[1] %}
+  {% set risk_tab = article_tabs[2] %}
+  {% set market_tab = article_tabs[3] %}
+
   <div class="toolbar">
-    <button onclick="window.print()">인쇄 / PDF 저장</button>
     <a href="{{ dashboard_url }}">통합 대시보드</a>
+    <button onclick="window.print()">인쇄/PDF 저장</button>
   </div>
 
   <main class="page">
-    <header class="report-head">
-      <div>
-        <div class="report-kicker">
-          <span class="report-chip">{{ subject_prefix }}</span>
-          <span class="report-chip">분석 대상 {{ window.label }}</span>
+    <header class="hero">
+      <div class="hero-top">
+        <div class="chip-row">
+          <span class="chip">{{ subject_prefix }}</span>
+          <span class="chip">{{ window.label }}</span>
         </div>
-        <h1>일일 언론 동향 보고서</h1>
-        <div class="meta">{{ company }} {{ team }} · 당일 모니터링 브리핑</div>
+        <span class="risk-badge {{ metrics.risk_level }}">{{ metrics.risk_level }} · {{ risk_message }}</span>
       </div>
-      <aside class="risk-box">
-        <div class="risk-pill {{ metrics.risk_level }}">{{ metrics.risk_level }}</div>
-        <div class="risk-copy">
-          <div class="risk-label">리스크 레벨</div>
-          <div class="risk-message">{{ risk_message }}</div>
-          <div class="risk-sub">{{ window.short_label }} 수집분 분석</div>
+      <h1>일일 언론 동향 보고서</h1>
+      <div class="hero-meta">{{ company }} {{ team }} · {{ date_str }} 생성 · {{ window.short_label }} 수집분</div>
+      <section class="brief-box">
+        <div class="brief-title">
+          <span>오늘의 브리프</span>
+          <span>모바일 요약 · 3줄 기준</span>
         </div>
-      </aside>
+        <ul class="brief-lines">
+          {% for line in daily_brief %}
+          <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+      </section>
     </header>
 
-    <section class="kpi-strip">
-      <div class="kpi"><b>{{ metrics.total_after_cluster }}</b><span>분석기사</span><small>중복 정리 후</small></div>
-      <div class="kpi"><b>{{ metrics.by_category.own }}</b><span>당사언급</span><small>부정 {{ metrics.own_negative }} · 주의 {{ metrics.own_by_tone.caution }} · 긍정 {{ metrics.own_by_tone.positive }}</small></div>
-      <div class="kpi"><b>{{ metrics.by_category.regulation }}</b><span>정책/감독</span><small>감독, 법안, 수수료, 설계사</small></div>
-      <div class="kpi"><b>{{ market_count }}</b><span>GA/보험사</span><small>경쟁사와 업계 동향</small></div>
+    <section class="metric-strip">
+      {% for item in daily_metrics %}
+      <article class="metric">
+        <span>{{ item.label }}</span>
+        <b>{{ item.value }}<small>건</small></b>
+        <em>{{ item.note }}</em>
+      </article>
+      {% endfor %}
     </section>
 
-    <section class="report-grid">
+    <section class="content">
       <div class="stack">
-        <section class="panel analysis-main">
-          <h2 class="panel-title">동향 분석</h2>
-          <p>{{ sections.conclusion }}</p>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>핵심 이슈</h2>
+            <span>{{ sections.issues|length }}건</span>
+          </div>
+          <div class="issue-list">
+            {% if sections.issues %}
+              {% for issue in sections.issues %}
+              <article class="issue-card">
+                <span class="issue-number">{{ "%02d"|format(loop.index) }}</span>
+                <h3>{{ issue.title }}</h3>
+                <p>{{ issue.detail }}</p>
+              </article>
+              {% endfor %}
+            {% else %}
+              <p class="empty">분석 구간 내 별도 핵심 이슈가 없습니다.</p>
+            {% endif %}
+          </div>
         </section>
 
+        <section class="panel">
+          <div class="panel-head">
+            <h2>분석 근거 기사</h2>
+            <span>{{ evidence_tab.articles|length }}건</span>
+          </div>
+          <div class="article-list">
+            {% if evidence_tab.articles %}
+              {% for a in evidence_tab.articles[:6] %}
+              <article class="article-card">
+                <div class="article-tags">
+                  <span class="article-id">#{{ a._evidence_id }}</span>
+                  <span class="tag cat-{{ a._category }}">{{ a._category_label }}</span>
+                  <span class="tag tone-{{ a._tone }}">{{ a._tone_label }}</span>
+                </div>
+                <a class="article-title" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
+                {% if a._summary %}
+                <div class="article-summary">{{ a._summary }}</div>
+                {% endif %}
+                <div class="article-meta">
+                  <span>{{ a.source }}</span>
+                  <span>{{ a.keyword }}</span>
+                  {% if a._cluster_size > 1 %}<span>관련 {{ a._cluster_size }}건</span>{% endif %}
+                  <span>영향도 {{ a._impact }}</span>
+                </div>
+                <a class="article-open" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">기사 열기</a>
+              </article>
+              {% endfor %}
+            {% else %}
+              <p class="empty">분석 근거 기사가 없습니다.</p>
+            {% endif %}
+          </div>
+        </section>
+      </div>
+
+      <aside class="stack">
         {% if sections.interpretation_html %}
-        <section class="panel analysis-copy">
-          <h2 class="panel-title">지표 해석</h2>
+        <section class="panel analysis-note">
+          <div class="panel-head">
+            <h2>지표 해석</h2>
+            <span>요약</span>
+          </div>
           {{ sections.interpretation_html | safe }}
         </section>
         {% endif %}
 
-        <section class="issue-grid">
-          {% for issue in sections.issues %}
-          <article class="issue">
-            <span class="issue-num">{{ "%02d"|format(loop.index) }}</span>
-            <div class="issue-title">{{ issue.title }}</div>
-            <div class="issue-detail">{{ issue.detail }}</div>
-          </article>
-          {% endfor %}
-        </section>
-
         {% if sections.action_html %}
-        <section class="panel actions">
-          <h2 class="panel-title">대응 필요 사항</h2>
+        <section class="panel actions-note">
+          <div class="panel-head">
+            <h2>확인 필요 사항</h2>
+            <span>대응</span>
+          </div>
           {{ sections.action_html | safe }}
         </section>
         {% endif %}
 
+        <section class="panel">
+          <div class="panel-head">
+            <h2>당사 언급</h2>
+            <span>{{ own_tab.articles|length }}건</span>
+          </div>
+          <div class="mini-list">
+            {% if own_tab.articles %}
+              {% for a in own_tab.articles[:3] %}
+              <article class="side-card">
+                <b>{{ a.title }}</b>
+                <span>{{ a.source }} · {{ a._tone_label }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</span>
+              </article>
+              {% endfor %}
+            {% else %}
+              <p class="empty">당사 직접 언급 기사가 없습니다.</p>
+            {% endif %}
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>정책/업계 흐름</h2>
+            <span>분리 관찰</span>
+          </div>
+          <div class="mini-list">
+            {% set mixed_articles = risk_tab.articles[:2] + market_tab.articles[:2] %}
+            {% if mixed_articles %}
+              {% for a in mixed_articles[:4] %}
+              <article class="side-card">
+                <b>{{ a.title }}</b>
+                <span>{{ a.source }} · {{ a._category_label }} · {{ a._tone_label }}</span>
+              </article>
+              {% endfor %}
+            {% else %}
+              <p class="empty">정책/업계 관찰 기사가 없습니다.</p>
+            {% endif %}
+          </div>
+        </section>
+
         {% if sections.keywords %}
         <section class="panel">
-          <h2 class="panel-title">분석 키워드</h2>
-          <div class="keywords">
+          <div class="panel-head">
+            <h2>분석 키워드</h2>
+            <span>{{ sections.keywords|length }}개</span>
+          </div>
+          <div class="keyword-row">
             {% for keyword in sections.keywords %}
             <span class="keyword">{{ keyword }}</span>
             {% endfor %}
@@ -697,51 +841,22 @@
         {% endif %}
 
         <section class="panel">
-          <h2 class="panel-title">보고 기준</h2>
-          <div class="brief-note">
-            <div><span>분석 대상 구간</span><b>{{ window.label }}</b></div>
+          <div class="panel-head">
+            <h2>보고 기준</h2>
+            <span>운영 로그</span>
+          </div>
+          <div class="basis-grid">
+            <div><span>분석 구간</span><b>{{ window.label }}</b></div>
             <div><span>수집/분석</span><b>{{ metrics.total_collected }}건 / {{ metrics.total_after_cluster }}건</b></div>
-            <div><span>보고서 생성(KST)</span><b>{{ date_str }}</b></div>
             <div><span>데이터 출처</span><b>{{ methodology.sources }}</b></div>
             <div><span>검색 키워드</span><b>{{ methodology.keywords }}개</b></div>
           </div>
         </section>
-      </div>
-
-      <aside class="stack">
-        {% set evidence_tab = article_tabs[0] %}
-        <section class="panel">
-          <h2 class="panel-title">분석 근거 기사</h2>
-          {% if evidence_tab.articles %}
-          <ol class="evidence-list">
-            {% for a in evidence_tab.articles %}
-            <li>
-              <div class="article-tags">
-                <span class="article-id">#{{ a._evidence_id }}</span>
-                <span class="tag cat-{{ a._category }}">{{ a._category_label }}</span>
-                <span class="tag tone-{{ a._tone }}">{{ a._tone_label }}</span>
-              </div>
-              <div>
-                <a class="article-title" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
-                {% if a._summary %}
-                <div class="article-summary">{{ a._summary }}</div>
-                {% endif %}
-                <div class="source">{{ a.source|upper }} · {{ a.keyword }}{% if a._cluster_size > 1 %} · 유사 {{ a._cluster_size }}건{% endif %}</div>
-              </div>
-              <div class="impact">{{ a._impact }}</div>
-            </li>
-            {% endfor %}
-          </ol>
-          {% else %}
-          <p class="empty-list">분석 근거 기사가 없습니다.</p>
-          {% endif %}
-        </section>
-
       </aside>
     </section>
 
     <footer class="footer">
-      긍정/부정은 당사 직접 언급 기사 기준입니다. 대외 대응 전 원문과 사실관계를 확인하세요.
+      본 보고서는 수집 기사와 원문 기준의 모니터링 요약입니다. 대외 대응 전 원문, 사실관계, 이해관계자 영향을 별도로 확인하세요.
     </footer>
   </main>
 </body>

@@ -577,6 +577,8 @@ def build_html_report(
         article_tabs=build_article_tabs(clustered, sections),
         risk_message=risk_message(metrics),
         market_count=market_count,
+        daily_brief=build_daily_brief(sections, metrics, market_count, window),
+        daily_metrics=build_daily_metrics(metrics, market_count),
         methodology=build_methodology(metrics),
         window=window,
         dashboard_url=public_urls.dashboard_url(),
@@ -817,6 +819,75 @@ def risk_message(metrics: dict) -> str:
     if metrics["risk_level"] == "MEDIUM":
         return "주의 이슈 모니터링 필요"
     return "직접 리스크 낮음"
+
+
+def build_daily_brief(sections: dict, metrics: dict, market_count: int, window: dict) -> list[str]:
+    own_count = metrics["by_category"].get("own", 0)
+    own_negative = metrics.get("own_negative", 0)
+    own_caution = metrics.get("own_by_tone", {}).get("caution", 0)
+    regulation_count = metrics["by_category"].get("regulation", 0)
+    conclusion = compact_text(clean_summary_phrase(sections.get("conclusion", "")), 86)
+    lead_issue = next((issue for issue in sections.get("issues", []) if issue.get("title")), None)
+
+    if own_negative:
+        risk_line = f"당사 부정 {own_negative}건은 원문과 사실관계 확인이 필요한 우선 검토 대상입니다."
+    elif own_count:
+        risk_line = f"당사 언급 {own_count}건은 직접 부정보다 주의 {own_caution}건과 중립·긍정 흐름을 나눠 확인합니다."
+    else:
+        risk_line = "당사 직접 언급은 제한적이며, 업계·정책성 이슈 중심으로 관찰합니다."
+
+    if lead_issue:
+        issue_line = f"대표 이슈는 {lead_issue['title']}이며, {lead_issue.get('detail') or '본문 근거를 기준으로 확인합니다.'}"
+    elif conclusion:
+        issue_line = conclusion
+    else:
+        issue_line = f"{window.get('short_label') or window.get('label') or '해당 구간'} 기준 주요 관찰 이슈를 요약했습니다."
+
+    if regulation_count or market_count:
+        market_line = f"정책·감독 {regulation_count}건, GA/보험사 동향 {market_count}건은 별도 흐름으로 분리해 추적합니다."
+    else:
+        market_line = "정책·감독 및 GA/보험사 동향은 특이 신호 없이 낮은 수준으로 관찰됩니다."
+
+    lines = [risk_line, compact_text(issue_line, 96), market_line]
+    return [line for line in lines if line]
+
+
+def clean_summary_phrase(value: object) -> str:
+    text = clean_markdown(str(value or ""))
+    text = strip_ref_marks(text)
+    text = re.sub(r"^[-*]\s*", "", text).strip()
+    return " ".join(text.split())
+
+
+def build_daily_metrics(metrics: dict, market_count: int) -> list[dict]:
+    own_by_tone = metrics.get("own_by_tone", {})
+    return [
+        {
+            "label": "분석기사",
+            "value": metrics.get("total_after_cluster", 0),
+            "note": f"수집 {metrics.get('total_collected', 0)}건 중 중복 정리",
+        },
+        {
+            "label": "당사언급",
+            "value": metrics["by_category"].get("own", 0),
+            "note": f"부정 {metrics.get('own_negative', 0)} · 주의 {own_by_tone.get('caution', 0)} · 긍정 {own_by_tone.get('positive', 0)}",
+        },
+        {
+            "label": "주의/부정",
+            "value": metrics.get("own_negative", 0) + own_by_tone.get("caution", 0),
+            "note": "당사 기준 우선 확인",
+        },
+        {
+            "label": "정책/감독",
+            "value": metrics["by_category"].get("regulation", 0),
+            "note": "감독·제도·수수료",
+        },
+        {
+            "label": "GA/보험사",
+            "value": market_count,
+            "note": "경쟁사와 업계 동향",
+        },
+    ]
 
 
 def markdown_to_html(markdown: str) -> str:
