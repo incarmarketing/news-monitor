@@ -1693,8 +1693,37 @@ function buildRiskResponseDraft(type, article = {}, facts = {}) {
   ].join("\n");
 }
 
-function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }) {
-  const edition = publicationMeta(period, data);
+function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, onOpenMonitoring, operations }) {
+  const reportSourceArticles = allArticles.length ? allArticles : articles || [];
+  const monthOptions = useMemo(() => availableReportMonths(reportSourceArticles), [reportSourceArticles]);
+  const [reportMonth, setReportMonth] = useState("");
+  useEffect(() => {
+    if (period !== "monthly") return;
+    if (!monthOptions.length) {
+      setReportMonth("");
+      return;
+    }
+    if (!reportMonth || !monthOptions.includes(reportMonth)) {
+      setReportMonth(monthOptions[0]);
+    }
+  }, [period, monthOptions, reportMonth]);
+  const selectedMonth = period === "monthly" ? reportMonth || monthOptions[0] || "" : "";
+  const reportArticles = useMemo(() => (
+    period === "monthly" && selectedMonth
+      ? filterRowsByMonth(reportSourceArticles, selectedMonth)
+      : articles || []
+  ), [period, selectedMonth, reportSourceArticles, articles]);
+  const reportRuns = useMemo(() => (
+    period === "monthly" && selectedMonth
+      ? filterRowsByMonth(operations?.reportRuns || [], selectedMonth)
+      : filterRowsByPeriod(operations?.reportRuns || [], period)
+  ), [period, selectedMonth, operations?.reportRuns]);
+  const reportData = useMemo(() => (
+    period === "monthly" && selectedMonth
+      ? composePeriodData(periodData.monthly, reportArticles, reportRuns, true, "monthly")
+      : data
+  ), [period, selectedMonth, reportArticles, reportRuns, data]);
+  const edition = publicationMeta(period, reportData);
   return (
     <main className="workspace report-workspace">
       <PageTitle
@@ -1704,20 +1733,41 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
-            <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${data.scope || ""}`)}>
+            {period === "monthly" && (
+              <MonthSelect
+                months={monthOptions}
+                value={selectedMonth}
+                onChange={setReportMonth}
+              />
+            )}
+            <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${reportData.scope || ""}`)}>
               <Download />인쇄/PDF 저장
             </button>
           </div>
         )}
       />
       <A4ReportStage
-        data={data}
+        data={reportData}
         period={period}
-        articles={articles || []}
+        articles={reportArticles || []}
         scraps={scraps}
         onOpenMonitoring={onOpenMonitoring}
       />
     </main>
+  );
+}
+
+function MonthSelect({ months = [], value = "", onChange }) {
+  return (
+    <label className="month-select no-print">
+      <span>기준월</span>
+      <select value={value} onChange={(event) => onChange?.(event.target.value)} disabled={!months.length}>
+        {!months.length && <option value="">월간 데이터 없음</option>}
+        {months.map((month) => (
+          <option key={month} value={month}>{formatReportMonthOption(month)}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -5969,6 +6019,26 @@ function latestArticleDate(articles = []) {
     .map((article) => rowDateKey(article))
     .filter(Boolean)
     .sort()) || "";
+}
+
+function availableReportMonths(rows = []) {
+  return unique(rows
+    .map(rowDateKey)
+    .filter(Boolean)
+    .map((date) => date.slice(0, 7)))
+    .sort()
+    .reverse();
+}
+
+function filterRowsByMonth(rows = [], month = "") {
+  if (!month) return [];
+  return rows.filter((row) => rowDateKey(row).startsWith(month));
+}
+
+function formatReportMonthOption(month = "") {
+  const match = month.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return month || "월 선택";
+  return `${match[1]}년 ${Number(match[2])}월`;
 }
 
 function rowDateKey(row = {}) {

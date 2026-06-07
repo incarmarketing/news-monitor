@@ -150,6 +150,36 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   box-shadow: 0 1px 4px rgba(16, 24, 40, .1);
 }
 
+.month-select {
+  display: inline-grid;
+  grid-template-columns: auto minmax(108px, 1fr);
+  gap: 7px;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.month-select span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.month-select select {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .ghost-button, .primary-button {
   min-height: 34px;
   padding: 6px 10px;
@@ -5359,6 +5389,7 @@ button.kpi-card {
   }
 
   .page-actions .period-control,
+  .page-actions .month-select,
   .page-actions button {
     flex: 1 1 100%;
     width: 100%;
