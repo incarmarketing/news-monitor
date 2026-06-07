@@ -1014,6 +1014,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
     [analysisArticles, period],
   );
   const observations = buildPeriodObservations(data, issueRows, period);
+  const reportBrief = buildPeriodReportBrief(period, data, issueRows, analysisArticles);
   return (
     <main className="workspace">
       <PageTitle
@@ -1030,6 +1031,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
         )}
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
+      <PeriodReportBrief brief={reportBrief} />
       <section className="media-analysis-layout">
         <div className="media-analysis-column">
           <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
@@ -1047,8 +1049,8 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
           <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
             <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
           </Panel>
-          <Panel title="핵심 이슈" icon={Newspaper} meta={`${issueRows.length}건`}>
-            <MonthlyIssueDigest issues={issueRows} />
+          <Panel title="핵심 이슈" icon={Newspaper} meta={periodIssueMeta(period, issueRows)}>
+            <MonthlyIssueDigest issues={issueRows} period={period} />
           </Panel>
         </div>
       </section>
@@ -1073,6 +1075,73 @@ function AnalysisDrillCards({ data, onOpenMonitoring }) {
           <em>{card.detail}</em>
         </button>
       ))}
+    </section>
+  );
+}
+
+function buildPeriodReportBrief(period, data, issues = [], articles = []) {
+  const summary = data.summary || {};
+  const ownIssues = issues.filter(isOwnArticle);
+  const riskIssues = issues.filter((issue) => ["부정", "주의"].includes(issue.tone));
+  const repeatedIssues = issues.filter((issue) => Number(issue.relatedCount || 1) >= 3);
+  const topIssue = issues[0];
+  const meta = {
+    daily: {
+      kicker: "Daily Desk",
+      title: "오늘 확인할 이슈를 당사 언급과 즉시 리스크 중심으로 압축합니다.",
+      focus: "당일 기사",
+      priority: "신규 당사 언급",
+      detail: "오늘 보고서와 모니터링 화면이 같은 날짜 기준으로 움직이는지 확인합니다.",
+    },
+    weekly: {
+      kicker: "Weekly Desk",
+      title: "한 주의 반복 노출, 당사 언급, 정책성 주의 신호를 묶어 봅니다.",
+      focus: "7일 흐름",
+      priority: "반복 노출",
+      detail: "같은 이슈가 여러 매체에서 반복됐는지와 논조 이동을 우선 확인합니다.",
+    },
+    monthly: {
+      kicker: "Monthly Desk",
+      title: "월간 누적 데이터를 기준으로 리스크, 매체 영향도, 키워드 변화를 관리합니다.",
+      focus: "월간 누적",
+      priority: "누적 관리",
+      detail: "월간 보고서는 개별 기사보다 누적 신호와 관리 대상 매체를 중심으로 봅니다.",
+    },
+  }[period] || {};
+  const topText = topIssue?.title
+    ? `대표 이슈는 "${topIssue.title}"입니다.`
+    : "대표 이슈는 기간 내 기사량과 논조를 기준으로 선정합니다.";
+  return {
+    kicker: meta.kicker,
+    title: meta.title,
+    summary: `${topText} ${meta.detail}`,
+    items: [
+      { label: "보고 기준", value: meta.focus, detail: data.scope || data.generatedAt || "-", tone: "neutral" },
+      { label: "우선순위", value: meta.priority, detail: `당사 ${summary.ownMentions || 0}건 · 리스크 ${riskIssues.length}건`, tone: riskIssues.length ? "caution" : "positive" },
+      { label: "대표 이슈", value: `${issues.length}건`, detail: `당사 ${ownIssues.length}건 · 반복 ${repeatedIssues.length}건`, tone: "default" },
+      { label: "분석 기사", value: `${articles.length.toLocaleString("ko-KR")}건`, detail: "기간 필터 적용", tone: "default" },
+    ],
+  };
+}
+
+function PeriodReportBrief({ brief }) {
+  if (!brief?.items?.length) return null;
+  return (
+    <section className="period-report-brief">
+      <article className="period-brief-lead">
+        <span>{brief.kicker}</span>
+        <b>{brief.title}</b>
+        <p>{brief.summary}</p>
+      </article>
+      <div className="period-brief-grid">
+        {brief.items.map((item) => (
+          <article key={item.label} className={item.tone || ""}>
+            <span>{item.label}</span>
+            <b>{item.value}</b>
+            <em>{item.detail}</em>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
@@ -1986,7 +2055,7 @@ function Management({ management, operations }) {
           </button>
         ))}
       </div>
-      {tab === "media" && <MediaManagement rows={management.media} aliases={operations.aliases || []} />}
+      {tab === "media" && <MediaManagement rows={management.media} reporters={management.reporters} aliases={operations.aliases || []} />}
       {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
       {tab === "ads" && <AdManagement rows={management.ads} />}
       {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} />}
@@ -2007,7 +2076,87 @@ function ManagementSummary({ management }) {
   );
 }
 
-function MediaManagement({ rows, aliases = [] }) {
+function CrmSignalGrid({ signals = [] }) {
+  return (
+    <div className="crm-signal-grid">
+      {signals.map((signal) => (
+        <article key={signal.label} className={signal.tone || ""}>
+          <span>{signal.label}</span>
+          <b>{signal.value}</b>
+          <em>{signal.detail}</em>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function buildMediaCrmSignals(rows = [], reporters = []) {
+  const ownMedia = rows.filter((row) => Number(row.own || 0) > 0);
+  const needsContact = ownMedia.filter((row) => !row.contactDate && !row.owner);
+  const riskMedia = rows.filter((row) => Number(row.negative || 0) > 0);
+  const reporterMapped = new Set(reporters.map((row) => row.media || row.outlet).filter(Boolean));
+  return [
+    {
+      label: "당사 보도 매체",
+      value: `${ownMedia.length.toLocaleString("ko-KR")}곳`,
+      detail: "자동 등록/관리 대상",
+      tone: "positive",
+    },
+    {
+      label: "접촉 정보 공백",
+      value: `${needsContact.length.toLocaleString("ko-KR")}곳`,
+      detail: "담당자·최근 접촉일 필요",
+      tone: needsContact.length ? "caution" : "positive",
+    },
+    {
+      label: "부정 보도 이력",
+      value: `${riskMedia.length.toLocaleString("ko-KR")}곳`,
+      detail: "관계 상태 점검 대상",
+      tone: riskMedia.length ? "negative" : "positive",
+    },
+    {
+      label: "기자 매핑",
+      value: `${reporterMapped.size.toLocaleString("ko-KR")}곳`,
+      detail: "기자 프로필 연결 매체",
+      tone: "neutral",
+    },
+  ];
+}
+
+function buildReporterCrmSignals(rows = []) {
+  const active = rows.filter((row) => row.name && (row.media || row.outlet));
+  const missingContact = active.filter((row) => !row.contactDate && !row.email && !row.phone);
+  const riskMapped = active.filter((row) => Number(row.mediaNegativeCount || 0) > 0);
+  const ownMapped = active.filter((row) => Number(row.mediaOwnCount || 0) > 0);
+  return [
+    {
+      label: "등록 기자",
+      value: `${active.length.toLocaleString("ko-KR")}명`,
+      detail: "관리 가능한 프로필",
+      tone: "neutral",
+    },
+    {
+      label: "연락처 공백",
+      value: `${missingContact.length.toLocaleString("ko-KR")}명`,
+      detail: "이메일·전화·접촉일 보강",
+      tone: missingContact.length ? "caution" : "positive",
+    },
+    {
+      label: "당사 매체 연결",
+      value: `${ownMapped.length.toLocaleString("ko-KR")}명`,
+      detail: "당사 보도 이력 매체 소속",
+      tone: "positive",
+    },
+    {
+      label: "리스크 매체 연결",
+      value: `${riskMapped.length.toLocaleString("ko-KR")}명`,
+      detail: "부정 보도 이력 매체 소속",
+      tone: riskMapped.length ? "negative" : "positive",
+    },
+  ];
+}
+
+function MediaManagement({ rows, reporters = [], aliases = [] }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
   const [mediaStatus, setMediaStatus] = useState("");
@@ -2017,6 +2166,7 @@ function MediaManagement({ rows, aliases = [] }) {
   const [localMediaRows, setLocalMediaRows] = useState(() => readLocalRows("news_monitor_media_relation_drafts_v1"));
   const aliasRows = useMemo(() => mergeAliasRows(aliases, localAliases), [aliases, localAliases]);
   const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows, localMediaRows), [rows, aliasRows, localMediaRows]);
+  const crmSignals = useMemo(() => buildMediaCrmSignals(managedRows, reporters), [managedRows, reporters]);
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return managedRows;
@@ -2076,6 +2226,7 @@ function MediaManagement({ rows, aliases = [] }) {
 
   return (
     <Panel title="언론사 관리" icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}곳`}>
+      <CrmSignalGrid signals={crmSignals} />
       <div className="management-toolbar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="언론사명, 도메인, 메모 검색" />
         <button className="ghost-button">등급 정리</button>
@@ -2148,7 +2299,7 @@ function MediaManagement({ rows, aliases = [] }) {
               <th>관계</th>
               <th>담당</th>
               <th>최근 접촉</th>
-              <th>기사량</th>
+              <th>보도 이력</th>
               <th>메모</th>
               <th>관리</th>
             </tr>
@@ -2167,7 +2318,12 @@ function MediaManagement({ rows, aliases = [] }) {
                 <td><Chip tone={row.status}>{row.status || "중립"}</Chip></td>
                 <td>{row.owner || "-"}</td>
                 <td>{row.contactDate || "-"}</td>
-                <td>{Number(row.total || 0).toLocaleString("ko-KR")}건</td>
+                <td>
+                  <div className="press-history-stack">
+                    <b>{Number(row.total || 0).toLocaleString("ko-KR")}건</b>
+                    <span>당사 {Number(row.own || 0).toLocaleString("ko-KR")} · 부정 {Number(row.negative || 0).toLocaleString("ko-KR")}</span>
+                  </div>
+                </td>
                 <td>{row.memo || "-"}</td>
                 <td>
                   <button className="ghost-button compact-button" onClick={() => handleManageMedia(row)}>관리</button>
@@ -2193,6 +2349,7 @@ function ReporterManagement({ rows }) {
   const [form, setForm] = useState(emptyReporterForm);
   const [localState, setLocalState] = useState(() => readLocalReporterState());
   const managedRows = useMemo(() => mergeReporterRows(rows, localState), [rows, localState]);
+  const reporterSignals = useMemo(() => buildReporterCrmSignals(managedRows), [managedRows]);
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return managedRows;
@@ -2263,6 +2420,7 @@ function ReporterManagement({ rows }) {
 
   return (
     <Panel title="기자 관리" icon={Users} meta={`${managedRows.length.toLocaleString("ko-KR")}명`}>
+      <CrmSignalGrid signals={reporterSignals} />
       <div className="operation-form reporter-form">
         <label>
           <span>기자명</span>
@@ -2322,7 +2480,7 @@ function ReporterManagement({ rows }) {
               <th>담당</th>
               <th>관계</th>
               <th>최근 접촉</th>
-              <th>최근 기사</th>
+              <th>소속 매체 이력</th>
               <th>메모</th>
               <th>관리</th>
             </tr>
@@ -2335,7 +2493,12 @@ function ReporterManagement({ rows }) {
                 <td>{row.beat || "-"}</td>
                 <td><Chip tone={row.status}>{row.status || "중립"}</Chip></td>
                 <td>{row.contactDate || row.date || "-"}</td>
-                <td>{row.recent}</td>
+                <td>
+                  <div className="press-history-stack">
+                    <b>{row.recent}</b>
+                    <span>당사 {Number(row.mediaOwnCount || 0).toLocaleString("ko-KR")} · 부정 {Number(row.mediaNegativeCount || 0).toLocaleString("ko-KR")}</span>
+                  </div>
+                </td>
                 <td>{row.memo || "-"}</td>
                 <td>
                   <div className="row-actions">
@@ -2681,10 +2844,11 @@ function Panel({ title, icon: Icon = FileText, meta, children }) {
   );
 }
 
-function MonthlyIssueDigest({ issues }) {
+function MonthlyIssueDigest({ issues, period = "monthly" }) {
   const [lead, ...rest] = issues;
+  const meta = mediaDigestMeta(period);
   if (!lead) {
-    return <div className="monthly-issue-empty">최근 1개월 기준으로 표시할 핵심 이슈가 없습니다.</div>;
+    return <div className="monthly-issue-empty">{meta.empty}</div>;
   }
   return (
     <div className="monthly-issue-digest">
@@ -2694,7 +2858,7 @@ function MonthlyIssueDigest({ issues }) {
           <Chip>{lead.category}</Chip>
           <span>{formatIssueMeta(lead)}</span>
         </div>
-        <span className="monthly-issue-kicker">Headline</span>
+        <span className="monthly-issue-kicker">{meta.kicker}</span>
         <h3>{lead.title}</h3>
         <ArticleSummaryBlock item={lead} />
         {lead.link && lead.link !== "#" && (
@@ -2724,6 +2888,26 @@ function MonthlyIssueDigest({ issues }) {
       </div>
     </div>
   );
+}
+
+function mediaDigestMeta(period) {
+  return {
+    daily: {
+      kicker: "Daily Lead",
+      empty: "당일 기준으로 표시할 핵심 이슈가 없습니다.",
+    },
+    weekly: {
+      kicker: "Weekly Flow",
+      empty: "주간 기준으로 표시할 반복 이슈가 없습니다.",
+    },
+    monthly: {
+      kicker: "Monthly Desk",
+      empty: "월간 기준으로 표시할 누적 핵심 이슈가 없습니다.",
+    },
+  }[period] || {
+    kicker: "Media Desk",
+    empty: "선택 기간 기준으로 표시할 핵심 이슈가 없습니다.",
+  };
 }
 
 function IssueList({ issues, compact = false }) {
@@ -3932,11 +4116,66 @@ function buildMediaAnalysisIssues(articles = [], period = "monthly") {
     .filter((article) => article?.title && article.tone !== "제외")
     .filter((article) => !isPortalSource(article.source));
   const grouped = buildRelatedArticleGroups(scoped);
-  return grouped
+  const issues = grouped
     .map((group) => normalizeMediaIssueGroup(group, period))
     .filter((issue) => issue.title)
-    .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a))
-    .slice(0, 12);
+    .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a));
+  return selectBalancedMediaIssues(issues, period, 12);
+}
+
+function selectBalancedMediaIssues(issues = [], period = "monthly", limit = 12) {
+  const selected = [];
+  const seen = new Set();
+  const addBucket = (predicate, quota) => {
+    let count = 0;
+    for (const issue of issues.filter(predicate)) {
+      if (count >= quota || selected.length >= limit) break;
+      if (addIssueIfFresh(selected, seen, issue)) count += 1;
+    }
+  };
+
+  if (period === "daily") {
+    addBucket((issue) => isOwnArticle(issue), 3);
+    addBucket((issue) => ["부정", "주의"].includes(issue.tone), 3);
+    addBucket((issue) => issue.category === "정책/규제", 2);
+    addBucket((issue) => ["GA", "보험사"].includes(issue.category), 2);
+    addBucket(() => true, limit);
+    return selected.slice(0, limit);
+  }
+
+  addBucket((issue) => isOwnArticle(issue) && issue.tone === "긍정", 3);
+  addBucket((issue) => isOwnArticle(issue) && ["부정", "주의", "중립"].includes(issue.tone), 4);
+  addBucket((issue) => issue.category === "정책/규제", 4);
+  addBucket((issue) => ["GA", "보험사"].includes(issue.category), 4);
+  addBucket((issue) => Number(issue.relatedCount || 1) >= 3, 3);
+  addBucket(() => true, limit);
+  return selected.slice(0, limit);
+}
+
+function addIssueIfFresh(selected, seen, issue) {
+  const keys = [
+    normalizeGroupTitle(issue.title || ""),
+    issueSemanticKey(issue),
+  ].filter(Boolean);
+  if (!keys.length || keys.some((key) => seen.has(key))) return false;
+  selected.push(issue);
+  keys.forEach((key) => seen.add(key));
+  return true;
+}
+
+function issueSemanticKey(issue = {}) {
+  const topic = articlePrimarySummaryTopic(issue);
+  const tokens = articleTokens(normalizeGroupTitle(issue.title || ""))
+    .filter((token) => token.length >= 3)
+    .slice(0, 5)
+    .join("-");
+  return [topic, issue.category, tokens].filter(Boolean).join(":").slice(0, 120);
+}
+
+function periodIssueMeta(period, issues = []) {
+  const related = issues.reduce((sum, issue) => sum + Math.max(0, Number(issue.relatedCount || 1) - 1), 0);
+  const label = period === "daily" ? "당일" : period === "weekly" ? "주간" : "월간";
+  return related ? `${label} 대표 ${issues.length}건 · 관련 ${related}건` : `${label} 대표 ${issues.length}건`;
 }
 
 function normalizeMediaIssueGroup(group = {}, period = "monthly") {
@@ -4357,7 +4596,13 @@ function buildPeriodObservations(data, issues = [], period = "monthly") {
   const lead = issues[0];
   const topPress = data.pressInfluence?.[0];
   const scope = periodScopeLabel(period);
+  const periodIntent = {
+    daily: "일간 보고서는 신규 당사 언급과 즉시 확인할 리스크를 우선 배치합니다.",
+    weekly: "주간 보고서는 반복 노출과 논조 변화가 있는 이슈를 우선 묶어 봅니다.",
+    monthly: "월간 보고서는 누적 관리 대상, 매체 영향도, 키워드 흐름을 함께 봅니다.",
+  }[period] || "선택 기간의 보도 흐름을 기준으로 핵심 이슈를 정리합니다.";
   const observations = [];
+  observations.push(periodIntent);
   if (summary.ownNegative > 0) {
     observations.push(`당사 부정 이슈 ${summary.ownNegative}건이 확인돼 ${scope} 리스크 점검 대상으로 우선 배치했습니다.`);
   } else if (summary.ownMentions > 0) {
@@ -4369,7 +4614,8 @@ function buildPeriodObservations(data, issues = [], period = "monthly") {
     observations.push(`주의 이슈 ${summary.caution}건은 투자 의견, 수수료, 규제, GA 운영 이슈처럼 의사결정자가 확인할 만한 신호로 분리했습니다.`);
   }
   if (lead?.title) {
-    observations.push(`대표 헤드라인은 "${lead.title}"이며, ${scope} 핵심 이슈 영역에서 기사 원문까지 바로 확인할 수 있습니다.`);
+    const leadLine = buildArticleSummaryLines(lead)[0] || `${scope} 대표 이슈로 확인된 보도입니다.`;
+    observations.push(`대표 이슈 "${lead.title}"은 ${leadLine.replace(/[.。!?]+$/g, "")}.`);
   }
   if (topPress?.source) {
     observations.push(`${topPress.source} 보도가 가장 많이 관찰돼 해당 매체의 반복 보도 흐름을 우선 확인하는 구성이 적절합니다.`);
@@ -4505,7 +4751,7 @@ function expandReportIssues(issues, articles, period) {
     .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a));
   const fallbackRows = rows.length ? [] : issues;
   const seen = new Set();
-  return [...rows, ...fallbackRows].filter((item) => {
+  return selectBalancedMediaIssues([...rows, ...fallbackRows], period, max).filter((item) => {
     const key = normalizeGroupTitle(item.title || "");
     if (!key || seen.has(key)) return false;
     seen.add(key);
@@ -4754,6 +5000,9 @@ function normalizeReporterDraft(row = {}) {
     phone: String(row.phone || "").trim(),
     request: String(row.request || "").trim(),
     memo: String(row.memo || "").trim(),
+    mediaArticleCount: Number(row.mediaArticleCount || 0),
+    mediaOwnCount: Number(row.mediaOwnCount || 0),
+    mediaNegativeCount: Number(row.mediaNegativeCount || 0),
   };
 }
 
@@ -5181,9 +5430,28 @@ function composeManagementData(operations, articles) {
         ...(pressStats.get(name) || { total: 0, own: 0, negative: 0 }),
       }));
   const media = mergeRequiredOwnPressRows(baseMedia, ownPressRows);
-  const reporters = operations.reporters?.length ? operations.reporters : journalistRows;
+  const reporterSource = operations.reporters?.length ? operations.reporters : journalistRows;
+  const reporters = reporterSource.map((row) => enrichReporterWithMediaStats(row, pressStats));
   const ads = operations.ads?.length ? operations.ads : adRows;
   return { media, reporters, ads };
+}
+
+function enrichReporterWithMediaStats(row = {}, pressStats = new Map()) {
+  const mediaName = row.media || row.outlet || "";
+  const stats = pressStats.get(mediaName) || {};
+  const recent = row.recent && row.recent !== "-"
+    ? row.recent
+    : Number(stats.total || 0) > 0
+      ? `매체 기사 ${Number(stats.total || 0).toLocaleString("ko-KR")}건`
+      : row.recent || "-";
+  return {
+    ...row,
+    outlet: row.outlet || row.media || "",
+    mediaArticleCount: Number(stats.total || 0),
+    mediaOwnCount: Number(stats.own || 0),
+    mediaNegativeCount: Number(stats.negative || 0),
+    recent,
+  };
 }
 
 function buildPressStatsForManagement(articles = []) {
