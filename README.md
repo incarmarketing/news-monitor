@@ -45,6 +45,10 @@
 - 주간 보고서: `https://incarmarketing.github.io/news-monitor/weekly.html`
 - 월간 보고서: `https://incarmarketing.github.io/news-monitor/monthly.html`
 
+## 결과보고서
+
+- [AI 뉴스 모니터링 자동화 프로젝트 결과보고서](docs/PROJECT_RESULT_REPORT.md)
+
 ## 처음 사용하는 사람을 위한 사용 순서
 
 개발자가 아니어도 아래 순서로 보면 됩니다.
