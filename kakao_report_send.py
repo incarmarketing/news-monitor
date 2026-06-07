@@ -129,9 +129,6 @@ def build_message(report: dict) -> str:
             f"긍정 {own_tone.get('positive', 0)} · 중립 {own_tone.get('neutral', 0)}"
         ),
     ]
-    if metrics.get("ai_primary_failed") or metrics.get("ai_fallback_used"):
-        header.append(f"AI 요약 {metrics.get('ai_model_used', '백업')} 사용")
-
     lines = header + ["", "동향 분석", compact(sections["conclusion"], 46, ellipsis=False)]
     if sections["issues"]:
         lines += ["", "핵심 이슈"]
@@ -277,15 +274,13 @@ def ai_usage_alert_title(report: dict) -> str:
 
 def build_ai_usage_alert(report: dict) -> str:
     metrics = report.get("metrics", {})
-    used_model = metrics.get("ai_model_used", "백업")
-    primary = config.GEMINI_MODEL
     window = kakao_window_label(report.get("window", {}))
     reason = "사용량/크레딧 한도 확인 필요" if metrics.get("ai_quota_exhausted") else "기본 모델 응답 실패"
     return "\n".join(
         [
             "AI 요약 사용량 확인 필요",
             f"{short_report_date(report.get('date', ''))} {window['name']} · {reason}",
-            f"{primary} 대신 {used_model} 경로를 사용했습니다.",
+            "기본 AI 대신 백업 요약 경로를 사용했습니다.",
             "AI Studio 사용량/결제 상태를 확인하세요.",
         ]
     )[:300]

@@ -3297,11 +3297,6 @@ function AiUsagePanel({ status }) {
     ? Math.round(reserveValues.reduce((sum, value) => sum + value, 0) / reserveValues.length)
     : null;
   const meterFill = Number.isFinite(groqReserve) ? groqReserve : 0;
-  const reserveLabel = !groqHasKey
-    ? "키 미설정"
-    : !groqHasRate
-      ? "호출 전"
-      : groqReserve >= 70 ? "넉넉" : groqReserve >= 35 ? "주의" : "부족";
   const unknownLabel = groqHasKey ? "호출 전" : "키 없음";
   const unknownValue = groqHasKey ? "요약 호출 후 표시" : "GitHub Secret 확인";
   const geminiReport = gemini.latest_report || {};
@@ -3321,9 +3316,8 @@ function AiUsagePanel({ status }) {
           </div>
         </div>
         <div className="ai-power-copy">
-          <span>Groq 토큰 여유</span>
-          <b>{reserveLabel}</b>
-          <em>{groq.model || "-"}</em>
+          <span>AI</span>
+          <b>{groq.model || "-"}</b>
         </div>
       </div>
       <div className="ai-meter-bars">
