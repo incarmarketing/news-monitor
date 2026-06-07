@@ -1014,13 +1014,12 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
     [analysisArticles, period],
   );
   const observations = buildPeriodObservations(data, issueRows, period);
-  const reportBrief = buildPeriodReportBrief(period, data, issueRows, analysisArticles);
   return (
     <main className="workspace">
       <PageTitle
         eyebrow={`${scopeLabel} 분석`}
         title="미디어 분석 리포트"
-        description="일별 긍정·부정·주의 추이, 언론사 영향도, 키워드별 기사량, 핵심 이슈를 함께 봅니다."
+        description="화면 분석과 A4 세로 출력용 일간·주간·월간 보고서를 같은 데이터 기준으로 함께 봅니다."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
@@ -1030,8 +1029,17 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
           </div>
         )}
       />
+      <A4ReportStage
+        data={data}
+        period={period}
+        articles={analysisArticles}
+        scraps={scraps}
+        onOpenMonitoring={onOpenMonitoring}
+        keywordRows={keywordRows}
+        trendRows={dailyTrend}
+        embedded
+      />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
-      <PeriodReportBrief brief={reportBrief} />
       <section className="media-analysis-layout">
         <div className="media-analysis-column">
           <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
@@ -1699,21 +1707,13 @@ function buildRiskResponseDraft(type, article = {}, facts = {}) {
 }
 
 function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }) {
-  const { summary } = data;
   const edition = publicationMeta(period, data);
-  const reportArticles = articles || [];
-  const expandedIssues = expandReportIssues(data.issues, reportArticles, period);
-  const lead = buildReportLead(period, data, reportArticles, expandedIssues);
-  const secondary = expandedIssues
-    .filter((issue) => !sameIssue(issue, lead))
-    .slice(0, period === "daily" ? 3 : 7);
-  const reportTrend = buildDailyToneTrend(reportArticles, period === "weekly" ? 7 : 31, data.toneTrend);
   return (
     <main className="workspace report-workspace">
       <PageTitle
         eyebrow={edition.kicker}
         title="일간/주간/월간 보고서"
-        description="매일, 매주, 매월 받아보는 언론 동향지처럼 읽히도록 지면형 보고서로 구성합니다."
+        description="미디어 분석 리포트 안에 담기는 동일한 A4 세로 지면을 단독으로 확인합니다."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
@@ -1723,88 +1723,390 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
           </div>
         )}
       />
-      <section className={`report-sheet publication-sheet ${period}`}>
-        <header className="publication-masthead">
-          <div className="publication-topline">
-            <span>{edition.issue}</span>
-            <span>{data.scope}</span>
-            <span>INCAR MEDIA DESK</span>
-          </div>
-          <div className="masthead-main">
-            <div>
-              <h1>{edition.title}</h1>
-              <p>{edition.subtitle}</p>
-            </div>
-          </div>
-        </header>
-
-        <div className="publication-body">
-          <article className="lead-story">
-            <span className="section-label">Front Page</span>
-            <h2>{lead?.title || summary.headline}</h2>
-            <ArticleSummaryBlock item={lead || { title: summary.headline, summary: summary.headline, category: data.label, tone: summary.risk === "LOW" ? "중립" : "주의" }} />
-            <div className="story-meta">
-              {lead?.tone && <Chip tone={lead.tone}>{lead.tone}</Chip>}
-              {lead?.category && <Chip>{lead.category}</Chip>}
-              <span>{lead?.source || data.label} · {lead?.publishedAt || data.scope}</span>
-            </div>
-          </article>
-
-          <aside className="front-rail">
-            <ReportMetricBoard
-              summary={summary}
-              articles={reportArticles}
-              period={period}
-              onOpenMonitoring={onOpenMonitoring}
-            />
-          </aside>
-
-          <section className="paper-section story-grid">
-            <div className="paper-section-head">
-              <span>Inside Pages</span>
-              <b>주요 기사</b>
-            </div>
-            {secondary.map((issue) => <ReportStory key={`${issue.source}-${issue.title}`} issue={issue} />)}
-          </section>
-
-          <section className="paper-section analysis-page">
-            <div className="paper-section-head">
-              <span>Media Map</span>
-              <b>언론사 영향도</b>
-            </div>
-            <PressInfluence rows={data.pressInfluence} compact onOpenMonitoring={onOpenMonitoring} />
-          </section>
-
-          <section className="paper-section chart-page">
-            <div className="paper-section-head">
-              <span>Data Page</span>
-              <b>분류별 흐름</b>
-            </div>
-            <CategoryChart rows={data.categoryFlow} mini />
-          </section>
-
-          {period !== "daily" && (
-            <>
-              <section className="paper-section trend-page">
-                <div className="paper-section-head">
-                  <span>Trend Page</span>
-                  <b>일별 논조</b>
-                </div>
-                <ToneTrend rows={reportTrend} compact />
-              </section>
-              <section className="paper-section scrap-page">
-                <div className="paper-section-head">
-                  <span>Scrap File</span>
-                  <b>스크랩 기사</b>
-                </div>
-                <ScrapDigest scraps={scraps} />
-              </section>
-            </>
-          )}
-        </div>
-      </section>
+      <A4ReportStage
+        data={data}
+        period={period}
+        articles={articles || []}
+        scraps={scraps}
+        onOpenMonitoring={onOpenMonitoring}
+      />
     </main>
   );
+}
+
+function A4ReportStage({
+  data,
+  period,
+  articles = [],
+  scraps = [],
+  onOpenMonitoring,
+  keywordRows,
+  trendRows,
+  embedded = false,
+}) {
+  const reportArticles = articles || [];
+  const edition = publicationMeta(period, data);
+  const expandedIssues = expandReportIssues(data.issues, reportArticles, period);
+  const lead = buildReportLead(period, data, reportArticles, expandedIssues);
+  const secondary = expandedIssues
+    .filter((issue) => !sameIssue(issue, lead))
+    .slice(0, period === "daily" ? 4 : 6);
+  const reportTrend = trendRows?.length
+    ? trendRows.slice(-(period === "daily" ? 10 : 31))
+    : buildDailyToneTrend(reportArticles, period === "daily" ? 10 : 31, data.toneTrend);
+  const reportKeywords = keywordRows?.length
+    ? keywordRows
+    : buildKeywordFlow(reportArticles, selectDashboardKeywords()).slice(0, 10);
+
+  return (
+    <section className={`a4-report-stage ${embedded ? "embedded" : "standalone"}`}>
+      <div className="a4-report-stage-head no-print">
+        <span>A4 세로 출력 미리보기</span>
+        <b>{periodScopeLabel(period)} 보고서</b>
+        <em>인쇄/PDF 저장 시 이 지면만 출력됩니다.</em>
+      </div>
+      <A4ReportSheet
+        data={data}
+        period={period}
+        edition={edition}
+        lead={lead}
+        issues={secondary}
+        articles={reportArticles}
+        trendRows={reportTrend}
+        keywordRows={reportKeywords}
+        scraps={scraps}
+        onOpenMonitoring={onOpenMonitoring}
+      />
+    </section>
+  );
+}
+
+function A4ReportSheet({
+  data,
+  period,
+  edition,
+  lead,
+  issues = [],
+  articles = [],
+  trendRows = [],
+  keywordRows = [],
+  scraps = [],
+  onOpenMonitoring,
+}) {
+  const summary = data.summary || {};
+  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles);
+  const stats = buildA4ReportStats(summary, articles);
+  const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, 5);
+  const scrapRows = period === "daily" ? [] : scraps.slice(0, 3);
+  const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows);
+  const toneRows = buildA4ToneLedger(articles);
+  return (
+    <article className={`a4-report-sheet ${period}`}>
+      <header className="a4-masthead">
+        <div className="a4-topline">
+          <span>{edition.issue}</span>
+          <span>{data.scope || data.generatedAt || "-"}</span>
+          <span>INCAR MEDIA DESK</span>
+        </div>
+        <div className="a4-title-row">
+          <div>
+            <p>{edition.kicker}</p>
+            <h2>{edition.title}</h2>
+            <em>{edition.subtitle}</em>
+          </div>
+          <div className={`a4-risk-badge ${String(summary.risk || "LOW").toLowerCase()}`}>
+            <span>Risk</span>
+            <b>{summary.risk || "LOW"}</b>
+          </div>
+        </div>
+        <A4MetricStrip stats={stats} onOpenMonitoring={onOpenMonitoring} />
+      </header>
+
+      <section className="a4-front">
+        <article className="a4-lead">
+          <span>Front Page</span>
+          <h3>{lead?.title || summary.headline || "기간 대표 이슈"}</h3>
+          <ArticleSummaryBlock
+            item={lead || { title: summary.headline, summary: summary.headline, category: data.label, tone: summary.risk === "LOW" ? "중립" : "주의" }}
+            dense
+          />
+          <div className="a4-article-meta">
+            {lead?.tone && <Chip tone={lead.tone}>{lead.tone}</Chip>}
+            {lead?.category && <Chip>{lead.category}</Chip>}
+            <span>{formatA4ArticleMeta(lead, data.scope)}</span>
+            {lead?.link && lead.link !== "#" && (
+              <a href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
+                기사 열기
+              </a>
+            )}
+          </div>
+        </article>
+        <aside className="a4-insight">
+          <span>Brief</span>
+          {insightLines.map((line) => <p key={line}>{line}</p>)}
+        </aside>
+      </section>
+
+      <section className="a4-report-body">
+        <div className="a4-report-main-column">
+          <A4Panel title="핵심 기사" meta={`${issues.length.toLocaleString("ko-KR")}건`}>
+            <div className="a4-issue-list">
+              {issues.slice(0, period === "daily" ? 4 : 5).map((issue) => (
+                <A4IssueRow key={`${issue.source}-${issue.title}-${issue.time || issue.date}`} issue={issue} />
+              ))}
+              {!issues.length && <p className="a4-empty">기간 내 핵심 기사 데이터가 없습니다.</p>}
+            </div>
+          </A4Panel>
+        </div>
+
+        <div className="a4-report-side-column">
+          <A4Panel title="일별 논조 추이" meta={period === "daily" ? "최근 10일" : "최근 31일"}>
+            <A4ToneMini rows={trendRows} />
+          </A4Panel>
+
+          <A4Panel title="키워드별 기사량" meta="선정 10개">
+            <A4BarList rows={keywordRows.slice(0, 10)} />
+          </A4Panel>
+
+          <A4Panel title="언론사 영향도" meta="상위 매체">
+            <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
+          </A4Panel>
+
+          {scrapRows.length > 0 && (
+            <A4Panel title="스크랩 확인" meta={`${scrapRows.length}건`}>
+              <div className="a4-scrap-list">
+                {scrapRows.map((item) => (
+                  <span key={`${item.source}-${item.title}`}>{item.title}</span>
+                ))}
+              </div>
+            </A4Panel>
+          )}
+        </div>
+
+        <div className="a4-report-bottom-row">
+          <A4Panel title="관찰 코멘트" meta="요약">
+            <div className="a4-comment-list">
+              {observationRows.map((row) => (
+                <article key={row.label}>
+                  <span>{row.label}</span>
+                  <b>{row.body}</b>
+                </article>
+              ))}
+            </div>
+          </A4Panel>
+          <A4Panel title="논조 분포" meta="분류">
+            <div className="a4-tone-ledger">
+              {toneRows.map((row) => (
+                <span key={row.label} className={row.tone}>
+                  <b>{row.value}</b>
+                  <em>{row.label}</em>
+                </span>
+              ))}
+            </div>
+          </A4Panel>
+        </div>
+      </section>
+
+      <footer className="a4-footer">
+        <span>보고 기준: {periodScopeLabel(period)} · {data.scope || data.generatedAt || "-"}</span>
+        <span>데이터: 수집 기사와 수동 분류 보정 반영</span>
+      </footer>
+    </article>
+  );
+}
+
+function A4MetricStrip({ stats = [], onOpenMonitoring }) {
+  return (
+    <div className="a4-metric-strip">
+      {stats.map((item) => (
+        <button key={item.label} type="button" className={item.tone || ""} onClick={() => onOpenMonitoring?.(item.preset || {})}>
+          <span>{item.label}</span>
+          <b>{item.value}</b>
+          <em>{item.detail}</em>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function A4Panel({ title, meta, children }) {
+  return (
+    <section className="a4-panel">
+      <div className="a4-panel-head">
+        <b>{title}</b>
+        <span>{meta}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function A4IssueRow({ issue }) {
+  return (
+    <article className="a4-issue-row">
+      <div>
+        <Chip tone={issue.tone}>{issue.tone}</Chip>
+        <Chip>{issue.category || "분류"}</Chip>
+        <span>{formatA4ArticleMeta(issue)}</span>
+      </div>
+      <h4>{issue.title}</h4>
+      <ArticleSummaryBlock item={issue} dense />
+    </article>
+  );
+}
+
+function A4ToneMini({ rows = [] }) {
+  const visibleRows = rows.slice(-8);
+  const max = Math.max(1, ...visibleRows.map((row) => Number(row.positive || 0) + Number(row.caution || 0) + Number(row.negative || 0)));
+  if (!visibleRows.length) return <p className="a4-empty">논조 추이 데이터가 없습니다.</p>;
+  return (
+    <div className="a4-tone-mini">
+      {visibleRows.map((row) => {
+        const positive = Number(row.positive || 0);
+        const caution = Number(row.caution || 0);
+        const negative = Number(row.negative || 0);
+        return (
+          <div key={row.date}>
+            <span>{row.date}</span>
+            <b>
+              <i className="positive" style={{ width: `${Math.max(positive ? 8 : 0, (positive / max) * 100)}%` }} />
+              <i className="caution" style={{ width: `${Math.max(caution ? 8 : 0, (caution / max) * 100)}%` }} />
+              <i className="negative" style={{ width: `${Math.max(negative ? 8 : 0, (negative / max) * 100)}%` }} />
+            </b>
+            <em>{positive + caution + negative}건</em>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function A4BarList({ rows = [] }) {
+  const visibleRows = rows.filter((row) => Number(row.value || 0) > 0).slice(0, 8);
+  const max = Math.max(1, ...visibleRows.map((row) => Number(row.value || 0)));
+  if (!visibleRows.length) return <p className="a4-empty">선정 키워드 기준 기사량이 없습니다.</p>;
+  return (
+    <div className="a4-bar-list">
+      {visibleRows.map((row, index) => (
+        <div key={row.keyword || row.name}>
+          <span>{row.name}</span>
+          <b><i style={{ width: `${Math.max(5, (Number(row.value || 0) / max) * 100)}%`, background: chartColors[index % chartColors.length] }} /></b>
+          <em>{Number(row.value || 0).toLocaleString("ko-KR")}건</em>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function A4PressRows({ rows = [], onOpenMonitoring }) {
+  const max = Math.max(1, ...rows.map((row) => Number(row.total || 0)));
+  if (!rows.length) return <p className="a4-empty">언론사 영향도 데이터가 없습니다.</p>;
+  return (
+    <div className="a4-press-rows">
+      {rows.map((row) => (
+        <button key={row.source} type="button" onClick={() => onOpenMonitoring?.({ source: row.source })}>
+          <span>{row.source}</span>
+          <b><i style={{ width: `${Math.max(8, (Number(row.total || 0) / max) * 100)}%` }} /></b>
+          <em>{Number(row.total || 0).toLocaleString("ko-KR")}건</em>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function buildA4ReportStats(summary = {}, articles = []) {
+  return [
+    { label: "분석", value: Number(summary.analyzed || articles.length || 0).toLocaleString("ko-KR"), detail: "기간 기사", preset: {} },
+    { label: "당사 언급", value: Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0).toLocaleString("ko-KR"), detail: "필수 확인", preset: { category: "당사" } },
+    { label: "주의", value: Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0).toLocaleString("ko-KR"), detail: "관찰 신호", tone: "caution", preset: { tone: "주의" } },
+    { label: "부정", value: Number(summary.ownNegative || articles.filter((item) => item.tone === "부정" && isOwnArticle(item)).length || 0).toLocaleString("ko-KR"), detail: "즉시 확인", tone: "negative", preset: { tone: "부정" } },
+    { label: "GA/보험사", value: Number(summary.gaInsurance || articles.filter((item) => ["GA", "보험사"].includes(item.category)).length || 0).toLocaleString("ko-KR"), detail: "업계 흐름", tone: "positive", preset: { category: "GA" } },
+  ];
+}
+
+function buildA4ReportInsights(period, data, lead, issues = [], articles = []) {
+  const summary = data.summary || {};
+  const periodLabel = periodScopeLabel(period);
+  const ownCount = Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0);
+  const negativeCount = Number(summary.ownNegative || articles.filter((item) => item.tone === "부정" && isOwnArticle(item)).length || 0);
+  const cautionCount = Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0);
+  const policyCount = articles.filter((item) => item.category === "정책/규제").length;
+  const topic = lead ? a4TopicLabel(lead) : "기간 대표 이슈";
+  const lines = [
+    lead?.title ? `${periodLabel} 대표 흐름은 ${topic}입니다.` : `${periodLabel} 기사 흐름을 기간 기준으로 정리합니다.`,
+    negativeCount > 0
+      ? `당사 부정 ${negativeCount}건은 즉시 확인 대상으로 분리합니다.`
+      : `당사 언급 ${ownCount}건은 직접 부정보다 관찰·성과·시장성 이슈로 나눠 봅니다.`,
+    cautionCount > 0
+      ? `주의 ${cautionCount}건은 시장 평가, 규제, 영업환경 신호를 별도로 추적합니다.`
+      : "주의 신호는 낮고 일반 동향 확인 비중이 높습니다.",
+    policyCount > 0
+      ? `정책/규제 기사 ${policyCount.toLocaleString("ko-KR")}건은 영업 환경 변화 관점에서 확인합니다.`
+      : issues[0]?.title
+        ? `핵심 기사 "${issues[0].title}"의 후속 보도 여부를 확인합니다.`
+        : "반복 노출 매체와 키워드 변화는 다음 보고 주기에 이어서 확인합니다.",
+  ];
+  return dedupeSummaryLines(lines).slice(0, 4);
+}
+
+function buildA4ObservationRows(period, data, lead, issues = [], articles = [], keywordRows = [], pressRows = []) {
+  const summary = data.summary || {};
+  const ownCount = Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0);
+  const riskCount = Number(summary.ownNegative || 0) + Number(summary.caution || 0);
+  const topKeyword = keywordRows.find((row) => Number(row.value || 0) > 0);
+  const topPress = pressRows[0];
+  const periodLabel = periodScopeLabel(period);
+  const leadTopic = lead ? a4TopicLabel(lead) : "대표 이슈";
+  return [
+    {
+      label: "대표 흐름",
+      body: `${periodLabel} 핵심은 ${leadTopic}이며, 대표 헤드라인을 기준으로 보도 확산 여부를 확인합니다.`,
+    },
+    {
+      label: "당사/리스크",
+      body: `당사 언급 ${ownCount.toLocaleString("ko-KR")}건과 주의·부정 ${riskCount.toLocaleString("ko-KR")}건을 분리해 과잉 경보를 줄입니다.`,
+    },
+    {
+      label: "매체/키워드",
+      body: `${topPress?.source || "상위 매체"}와 ${topKeyword?.name || "선정 키워드"} 흐름을 함께 보며 반복 노출을 추적합니다.`,
+    },
+    {
+      label: "후속 관찰",
+      body: issues[0]?.title ? `"${issues[0].title}" 관련 후속 보도와 같은 이슈 묶음을 이어서 확인합니다.` : "반복 노출 이슈는 다음 보고 주기에 계속 누적합니다.",
+    },
+  ];
+}
+
+function buildA4ToneLedger(articles = []) {
+  const count = (tone) => articles.filter((item) => item.tone === tone).length;
+  return [
+    { label: "긍정", value: count("긍정").toLocaleString("ko-KR"), tone: "positive" },
+    { label: "중립", value: count("중립").toLocaleString("ko-KR"), tone: "neutral" },
+    { label: "주의", value: count("주의").toLocaleString("ko-KR"), tone: "caution" },
+    { label: "부정", value: count("부정").toLocaleString("ko-KR"), tone: "negative" },
+  ];
+}
+
+function a4TopicLabel(article = {}) {
+  const topic = articlePrimarySummaryTopic(article);
+  if (topic === "own-performance") return "당사 성과성 보도";
+  if (topic === "investment") return "시장 평가 변화";
+  if (topic === "settlement-support") return "GA 정착지원금·조직력 경쟁";
+  if (topic === "security") return "금융보안·예방 체계";
+  if (topic === "insurance-loss") return "실손보험 손해율·민원 지표";
+  if (topic === "insurance-fraud") return "보험사기 대응 이슈";
+  if (article.tone === "부정") return "부정 리스크";
+  if (article.tone === "주의") return "주의 관찰 이슈";
+  if (article.tone === "긍정") return "우호 활용 후보";
+  return article.category || "주요 보도";
+}
+
+function formatA4ArticleMeta(item = {}, fallback = "-") {
+  if (!item) return fallback;
+  const source = item.source || "INCAR Media Desk";
+  const dateTime = [item.date, item.time].filter(Boolean).join(" ") || item.publishedAt || fallback;
+  const related = Number(item.relatedCount || item.clusterSize || 1) > 1 ? ` · 관련 ${Number(item.relatedCount || item.clusterSize).toLocaleString("ko-KR")}건` : "";
+  return `${source} · ${dateTime}${related}`;
 }
 
 function publicationMeta(period, data) {
