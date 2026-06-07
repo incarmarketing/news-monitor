@@ -3288,6 +3288,8 @@ function AiUsagePanel({ status }) {
   const gemini = status?.gemini || {};
   const groq = status?.groq || {};
   const rate = groq.rate_limit || {};
+  const groqHasKey = groq.has_key !== false;
+  const groqHasRate = Boolean(rate.limit_requests || rate.remaining_requests || rate.limit_tokens || rate.remaining_tokens);
   const requestPercent = percentRemaining(rate.remaining_requests, rate.limit_requests);
   const tokenPercent = percentRemaining(rate.remaining_tokens, rate.limit_tokens);
   const reserveValues = [requestPercent, tokenPercent].filter(Number.isFinite);
@@ -3295,7 +3297,13 @@ function AiUsagePanel({ status }) {
     ? Math.round(reserveValues.reduce((sum, value) => sum + value, 0) / reserveValues.length)
     : null;
   const meterFill = Number.isFinite(groqReserve) ? groqReserve : 0;
-  const reserveLabel = groqReserve === null ? "측정 대기" : groqReserve >= 70 ? "넉넉" : groqReserve >= 35 ? "주의" : "부족";
+  const reserveLabel = !groqHasKey
+    ? "키 미설정"
+    : !groqHasRate
+      ? "호출 전"
+      : groqReserve >= 70 ? "넉넉" : groqReserve >= 35 ? "주의" : "부족";
+  const unknownLabel = groqHasKey ? "호출 전" : "키 없음";
+  const unknownValue = groqHasKey ? "요약 호출 후 표시" : "GitHub Secret 확인";
   const geminiReport = gemini.latest_report || {};
   const geminiState = formatGeminiState(gemini, geminiReport);
   const geminiDetail = formatGeminiDetail(gemini, geminiReport);
@@ -3309,7 +3317,7 @@ function AiUsagePanel({ status }) {
         <div className="ai-power-meter" style={{ "--meter-fill": `${meterFill}%` }}>
           <div className="ai-power-core">
             <strong>{groqReserve === null ? "--" : groqReserve}</strong>
-            <span>{groqReserve === null ? "대기" : "% 잔량"}</span>
+            <span>{groqReserve === null ? unknownLabel : "% 잔량"}</span>
           </div>
         </div>
         <div className="ai-power-copy">
@@ -3319,8 +3327,8 @@ function AiUsagePanel({ status }) {
         </div>
       </div>
       <div className="ai-meter-bars">
-        <AiMeterRow label="일 요청" percent={requestPercent} value={formatLimitPair(rate.remaining_requests, rate.limit_requests)} />
-        <AiMeterRow label="분당 토큰" percent={tokenPercent} value={formatLimitPair(rate.remaining_tokens, rate.limit_tokens)} />
+        <AiMeterRow label="일 요청" percent={requestPercent} value={formatLimitPair(rate.remaining_requests, rate.limit_requests, unknownValue)} emptyStatus={unknownLabel} />
+        <AiMeterRow label="분당 토큰" percent={tokenPercent} value={formatLimitPair(rate.remaining_tokens, rate.limit_tokens, unknownValue)} emptyStatus={unknownLabel} />
       </div>
       <div className="ai-backup-strip">
         <span>Gemini 상태</span>
@@ -3333,10 +3341,10 @@ function AiUsagePanel({ status }) {
   );
 }
 
-function AiMeterRow({ label, percent, value, mode = "remaining" }) {
+function AiMeterRow({ label, percent, value, mode = "remaining", emptyStatus = "대기" }) {
   const fill = Number.isFinite(percent) ? percent : 0;
   const status = percent === null || percent === undefined
-    ? "대기"
+    ? emptyStatus
     : percent >= 70 ? "정상"
     : percent >= 35 ? "주의"
     : "낮음";
@@ -3372,8 +3380,8 @@ function clampPercent(value) {
   return Math.max(0, Math.min(100, value));
 }
 
-function formatLimitPair(remaining, limit) {
-  if (remaining === undefined && limit === undefined) return "다음 호출 후 표시";
+function formatLimitPair(remaining, limit, fallback = "다음 호출 후 표시") {
+  if (remaining === undefined && limit === undefined) return fallback;
   const left = remaining === undefined ? "-" : formatCompactNumber(remaining);
   const right = limit === undefined ? "-" : formatCompactNumber(limit);
   return `${left} / ${right}`;
