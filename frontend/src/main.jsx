@@ -1636,7 +1636,7 @@ function makeManualRiskArticle(articleUrl = "") {
 }
 
 function buildRiskCenterFacts(article = {}, articleUrl = "") {
-  const summaryLines = buildArticleSummaryLines(article);
+  const summaryLines = buildRiskDraftSummaryLines(article);
   const claim = summaryLines[0]
     || compactArticleSummary(article)
     || cleanSummaryText(article.title)
@@ -1653,6 +1653,8 @@ function buildRiskCenterFacts(article = {}, articleUrl = "") {
     relevance: buildRiskRelevance(article),
     tone,
     intensity: buildRiskIntensity(article, tone),
+    issueType: buildRiskIssueType(article),
+    summaryLines,
   };
 }
 
@@ -1674,23 +1676,211 @@ function buildRiskIntensity(article = {}, tone = "") {
 
 function buildRiskResponseDraft(type, article = {}, facts = {}) {
   const title = cleanSummaryText(article.title || "확인 대상 기사");
-  const source = article.source ? `${article.source} 보도` : "해당 보도";
-  const claim = facts.claim || "핵심 주장 확인이 필요합니다.";
+  const source = cleanSummaryText(article.source || "언론");
+  const tone = facts.tone || "확인 필요";
   const relevance = facts.relevance || "관련성 확인 필요";
+  const issueType = facts.issueType || buildRiskIssueType(article);
+  const related = Array.isArray(article.relatedArticles) ? article.relatedArticles : [];
+  const relatedCount = Math.max(Number(article.relatedCount || 1), related.length || 1);
+  const sourceCount = Math.max(Number(article.relatedSourceCount || 1), unique(related.map((item) => item.source).filter(Boolean)).length || 1);
+  const summaryLines = buildRiskDraftSummaryLines(article).slice(0, 3);
+  const evidenceLines = buildRiskDraftEvidenceLines(article, summaryLines);
+  const checkItems = buildRiskCheckItems(article, facts);
+  const actionItems = buildRiskActionItems(article, facts);
+  const stanceLines = buildRiskStanceLines(article, facts, type);
+  const meta = [
+    source,
+    article.date || "",
+    article.time || "",
+    relatedCount > 1 ? `관련 ${relatedCount}건` : "",
+    sourceCount > 1 ? `매체 ${sourceCount}곳` : "",
+  ].filter(Boolean).join(" · ");
+
   if (type === "internal") {
-    return [
-      `공유 대상은 ${source} "${title}"입니다.`,
-      `현재 분류는 ${facts.tone || "확인 필요"}이며, 당사 관련성은 ${relevance}로 확인됩니다.`,
-      `핵심 쟁점은 ${claim}`,
-      `사실관계, 이해관계자 영향, 추가 보도 가능성을 확인한 뒤 필요 시 대외 메시지를 별도로 정리하겠습니다.`,
-    ].join("\n");
+    return formatRiskDraft([
+      ["이슈 요약", [
+        `${title}`,
+        meta ? `출처: ${meta}` : "",
+        `분류: ${tone} · ${relevance} · ${issueType}`,
+      ]],
+      ["핵심 내용", evidenceLines],
+      ["리스크 판단", buildRiskJudgementLines(article, facts, relatedCount, sourceCount)],
+      ["확인 필요", checkItems],
+      ["즉시 조치", actionItems],
+      ["공유 메시지", stanceLines],
+    ]);
   }
+  return formatRiskDraft([
+    ["입장 요지", buildPressPositionLead(article, facts)],
+    ["확인 중인 사항", checkItems.slice(0, 4)],
+    ["당사 대응 방향", stanceLines],
+    ["문의 응대 문구", buildPressReplyLines(article, facts)],
+  ]);
+}
+
+function buildRiskDraftSummaryLines(article = {}) {
+  const related = Array.isArray(article.relatedArticles) && article.relatedArticles.length
+    ? article.relatedArticles
+    : [article];
+  const lines = [
+    ...(Array.isArray(article.summaryLines) ? article.summaryLines : []),
+    ...related.flatMap((item) => buildArticleSummaryLines(item)),
+    compactArticleSummary(article),
+  ];
+  const seen = new Set();
+  return lines
+    .map((line) => normalizeRiskDraftLine(line, article.title))
+    .filter((line) => {
+      const key = normalizeSummaryCompareKey(line);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 4);
+}
+
+function normalizeRiskDraftLine(line, title = "") {
+  const clean = cleanSummaryText(line);
+  if (!clean) return "";
+  const titleKey = normalizeSummaryCompareKey(title);
+  const lineKey = normalizeSummaryCompareKey(clean);
+  if (lineKey && titleKey && (lineKey === titleKey || titleKey.includes(lineKey))) return "";
+  if (/기준으로 분류된 기사입니다|관련 기사로.*확인해야 합니다/.test(clean)) return "";
+  return clean.endsWith(".") ? clean : `${clean}.`;
+}
+
+function buildRiskDraftEvidenceLines(article = {}, summaryLines = []) {
+  const lines = summaryLines.length ? summaryLines : [factsFallbackClaim(article)];
+  const relatedCount = Number(article.relatedCount || 1);
+  if (relatedCount > 1) {
+    lines.push(`동일 쟁점으로 묶인 기사 ${relatedCount.toLocaleString("ko-KR")}건이 있어 확산 여부를 함께 봅니다.`);
+  }
+  return lines.slice(0, 4);
+}
+
+function factsFallbackClaim(article = {}) {
+  const topic = summarizeRiskTitleTopic(article.title || "");
+  return `${topic} 관련 보도로, 기사 원문 기준의 사실관계 확인이 필요합니다.`;
+}
+
+function buildRiskIssueType(article = {}) {
+  const text = summaryHaystack(article);
+  if (/사칭|고객\s*db|db\s*수집|디비\s*수집|개인정보|정보유출|해킹/i.test(text)) return "소비자보호/정보보안";
+  if (/보험\s*꺾기|불법\s*사채|수수료|정착지원금|리베이트|불완전판매|민원/i.test(text)) return "영업관리/판매채널";
+  if (/투자의견|목표가|목표주가|주가|실적|손해율|자본|건전성/i.test(text)) return "시장평가/재무";
+  if (/금감원|금융위|감독|제재|검사|제도|시행령|규제/i.test(text)) return "정책/규제";
+  if (/사회공헌|후원|수상|우수인증|인증설계사/i.test(text)) return "평판/성과";
+  return isOwnArticle(article) ? "당사 평판" : "업계 이슈";
+}
+
+function buildRiskJudgementLines(article = {}, facts = {}, relatedCount = 1, sourceCount = 1) {
+  const lines = [];
+  const own = isOwnArticle(article);
+  const tone = facts.tone || article.tone || "확인 필요";
+  if (tone === "부정" && own) {
+    lines.push("당사명이 직접 포함된 부정성 보도라 사실관계와 책임 범위를 우선 분리해야 합니다.");
+  } else if (tone === "부정") {
+    lines.push("업계 부정 이슈지만 당사 직접 책임으로 보도된 것인지 별도 확인이 필요합니다.");
+  } else if (tone === "주의") {
+    lines.push("직접 부정보다는 시장성, 규제성, 영업환경 변화 신호로 관리하는 편이 적절합니다.");
+  } else {
+    lines.push("현 단계에서는 즉시 해명보다 모니터링과 근거 확보가 우선입니다.");
+  }
+  if (relatedCount > 1 || sourceCount > 1) {
+    lines.push(`관련 보도가 ${relatedCount.toLocaleString("ko-KR")}건, 매체 ${sourceCount.toLocaleString("ko-KR")}곳으로 묶여 노출 강도 변화를 확인해야 합니다.`);
+  }
+  if (facts.issueType) lines.push(`주요 리스크 유형은 ${facts.issueType}입니다.`);
+  return lines;
+}
+
+function buildRiskCheckItems(article = {}, facts = {}) {
+  const text = summaryHaystack(article);
+  const items = [
+    "기사 제목과 본문에서 당사명, 계열/지점/설계사 등 직접 연결 표현이 있는지 확인",
+    "보도 근거가 공시, 당국 자료, 제보, 업계 관계자 발언 중 무엇인지 분리",
+  ];
+  if (/피해|민원|소비자|고객|사칭|개인정보|해킹/i.test(text)) {
+    items.push("소비자 피해 주장, 접수 민원, 고객 정보 관련 사실관계와 현재 조치 여부 확인");
+  }
+  if (/수수료|정착지원금|설계사|대리점|GA|보험대리점/i.test(text)) {
+    items.push("GA/설계사/수수료 문맥이 당사 영업관리 기준과 직접 연결되는지 확인");
+  }
+  if (/투자의견|목표가|주가|실적|손해율|건전성|자본/i.test(text)) {
+    items.push("시장평가성 표현인지, 실제 부정 사실 주장인지 구분");
+  }
+  if (/금감원|금융위|제재|검사|감독|규제/i.test(text)) {
+    items.push("당국 발표 원문과 기사 해석 사이에 차이가 있는지 확인");
+  }
+  if (facts.relevance === "간접 이슈") {
+    items.push("당사 직접 대응이 필요한 사안인지, 업계 모니터링으로 충분한 사안인지 판단");
+  }
+  return unique(items).slice(0, 5);
+}
+
+function buildRiskActionItems(article = {}, facts = {}) {
+  const own = isOwnArticle(article);
+  const tone = facts.tone || article.tone || "";
+  const items = [];
+  if (tone === "부정" && own) {
+    items.push("원문 캡처와 URL을 보존하고, 기사 내 사실 주장별 담당 부서 확인 요청");
+    items.push("정정 요청 가능성, 추가 설명자료 필요 여부, 기자 문의 대응 문구를 동시에 준비");
+  } else if (tone === "부정") {
+    items.push("당사 직접 언급 여부를 먼저 확정하고, 업계 부정 이슈로만 관리할지 판단");
+  } else {
+    items.push("추가 보도 확산 여부를 모니터링하고, 당사 관련 질문이 들어올 경우 사용할 핵심 문장만 준비");
+  }
+  items.push("확인되지 않은 내용은 인정·부인하지 않고, 확인 중이라는 표현으로 통일");
+  return items.slice(0, 4);
+}
+
+function buildRiskStanceLines(article = {}, facts = {}, type = "press") {
+  const issueType = facts.issueType || buildRiskIssueType(article);
+  const own = isOwnArticle(article);
+  const lines = [];
+  if (type === "press") {
+    lines.push("현재 보도 내용을 확인 중이며, 사실관계가 확인된 범위 안에서 설명드리겠습니다.");
+    if (own) {
+      lines.push("당사와 직접 관련된 부분은 내부 기준과 절차에 따라 확인하고 필요한 조치를 검토하겠습니다.");
+    } else {
+      lines.push("당사 직접 사안으로 단정하기 어려운 부분은 업계 동향 차원에서 확인하고 있습니다.");
+    }
+    lines.push(`${issueType} 관련 문의는 확인된 사실과 향후 조치 중심으로 답변합니다.`);
+  } else {
+    lines.push("내부 공유 시에는 기사 주장, 확인된 사실, 미확인 사항을 분리해 전달합니다.");
+    lines.push("대외 답변은 확인 중인 사안을 단정하지 않고, 고객/이해관계자 영향 최소화 기준으로 정리합니다.");
+  }
+  return lines;
+}
+
+function buildPressPositionLead(article = {}, facts = {}) {
+  const title = cleanSummaryText(article.title || "해당 보도");
+  const claim = facts.claim || factsFallbackClaim(article);
   return [
-    `해당 보도와 관련해 현재 확인 가능한 핵심 쟁점은 ${claim}`,
-    `당사는 보도 내용 중 사실관계가 필요한 부분을 확인하고 있으며, 확인되지 않은 내용에 대해서는 단정적인 입장을 내지 않겠습니다.`,
-    `소비자와 이해관계자에게 영향을 줄 수 있는 사안은 관련 기준과 절차에 따라 신속히 점검하겠습니다.`,
-    `추가 확인이 완료되는 대로 필요한 범위에서 설명드리겠습니다.`,
-  ].join("\n");
+    `"${title}" 보도와 관련해 현재 확인 가능한 핵심 쟁점은 다음과 같습니다.`,
+    claim,
+  ];
+}
+
+function buildPressReplyLines(article = {}, facts = {}) {
+  const issueType = facts.issueType || buildRiskIssueType(article);
+  return [
+    `해당 사안은 ${issueType} 관점에서 사실관계를 확인 중입니다.`,
+    "확인되지 않은 내용에 대해서는 단정적으로 말씀드리기 어렵습니다.",
+    "필요한 경우 확인된 범위 안에서 추가 설명을 드리겠습니다.",
+  ];
+}
+
+function formatRiskDraft(sections = []) {
+  return sections
+    .map(([title, lines]) => {
+      const cleanLines = unique((Array.isArray(lines) ? lines : [lines])
+        .map((line) => cleanSummaryText(line))
+        .filter(Boolean));
+      if (!cleanLines.length) return "";
+      return [`[${title}]`, ...cleanLines.map((line) => `- ${line}`)].join("\n");
+    })
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, onOpenMonitoring, operations }) {
