@@ -1018,26 +1018,13 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
     <main className="workspace">
       <PageTitle
         eyebrow={`${scopeLabel} 분석`}
-        title="미디어 분석 리포트"
-        description="화면 분석과 A4 세로 출력용 일간·주간·월간 보고서를 같은 데이터 기준으로 함께 봅니다."
+        title="언론 동향 분석"
+        description="일별 논조 추이, 언론사 영향도, 키워드별 기사량, 핵심 이슈를 분석 화면에서 확인합니다."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
-            <button className="primary-button" onClick={() => printCurrentView("미디어 분석 리포트")}>
-              <FileText />인쇄/PDF 저장
-            </button>
           </div>
         )}
-      />
-      <A4ReportStage
-        data={data}
-        period={period}
-        articles={analysisArticles}
-        scraps={scraps}
-        onOpenMonitoring={onOpenMonitoring}
-        keywordRows={keywordRows}
-        trendRows={dailyTrend}
-        embedded
       />
       <AnalysisDrillCards data={data} onOpenMonitoring={onOpenMonitoring} />
       <section className="media-analysis-layout">
@@ -1713,7 +1700,7 @@ function Reports({ data, period, setPeriod, articles, scraps, onOpenMonitoring }
       <PageTitle
         eyebrow={edition.kicker}
         title="일간/주간/월간 보고서"
-        description="미디어 분석 리포트 안에 담기는 동일한 A4 세로 지면을 단독으로 확인합니다."
+        description="일간, 주간, 월간 보고서를 A4 세로 지면 기준으로 미리 보고 인쇄/PDF로 저장합니다."
         right={(
           <div className="page-actions">
             <PeriodControl period={period} setPeriod={setPeriod} compact />
