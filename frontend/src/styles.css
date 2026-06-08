@@ -2852,9 +2852,187 @@ button.kpi-card {
   cursor: not-allowed;
 }
 
+.press-quote-editor {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 13px;
+  border: 1px solid #d8e1ef;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.press-quote-editor > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.press-quote-editor b {
+  color: var(--blue-deep);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.press-quote-editor span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.press-quote-editor textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.58;
+  outline: none;
+}
+
+.press-quote-editor textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(40, 85, 217, .11);
+}
+
+.press-quote-editor textarea:disabled {
+  background: #eef2f7;
+  color: #9aa8bd;
+}
+
+.press-quote-actions,
+.press-recipient-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.press-quote-actions button,
+.press-recipient-actions button,
+.press-send-disabled {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue-deep);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.press-quote-actions button:hover,
+.press-recipient-actions button:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.press-quote-actions button:disabled,
+.press-recipient-actions button:disabled,
+.press-send-disabled:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+}
+
 .press-generate-button {
   width: 100%;
   margin-top: 14px;
+}
+
+.press-mail-api-note {
+  display: grid;
+  gap: 5px;
+  padding: 12px 13px;
+  border: 1px solid #d7e2fa;
+  border-radius: 8px;
+  background: #f7faff;
+}
+
+.press-mail-api-note b {
+  color: var(--blue-deep);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.press-mail-api-note span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.press-recipient-list {
+  display: grid;
+  gap: 7px;
+  max-height: 290px;
+  margin-top: 12px;
+  overflow: auto;
+}
+
+.press-recipient-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.press-recipient-row.disabled {
+  opacity: .58;
+}
+
+.press-recipient-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+}
+
+.press-recipient-row span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.press-recipient-row b {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.press-recipient-row em {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.press-recipient-empty {
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.press-send-disabled {
+  width: 100%;
+  margin-top: 12px;
+  background: #eef2f7;
 }
 
 .press-empty-preview {

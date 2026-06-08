@@ -1174,7 +1174,9 @@ const PRESS_CORE_FIELDS = [
   { id: "difference", label: "3. 인카금융서비스만의 차별화 포인트는 무엇인가요?", placeholder: "예: 업계 최대 수준의 설계사 네트워크와 체계적인 교육 시스템을 갖추고 있습니다." },
 ];
 
-function PressReleaseStudio() {
+const PRESS_QUOTE_STORE_PREFIX = "news_monitor_press_quote_template_v1";
+
+function PressReleaseStudio({ operations }) {
   const [selectedTypeId, setSelectedTypeId] = useState("");
   const [answers, setAnswers] = useState({
     announcement: "",
@@ -1183,11 +1185,48 @@ function PressReleaseStudio() {
     facts: "",
   });
   const [quoteSpeaker, setQuoteSpeaker] = useState("");
+  const [editableQuote, setEditableQuote] = useState("");
+  const [quoteSaved, setQuoteSaved] = useState(false);
+  const [selectedReporterKeys, setSelectedReporterKeys] = useState([]);
   const [draft, setDraft] = useState(null);
   const [copied, setCopied] = useState("");
   const selectedType = PRESS_RELEASE_TYPES.find((item) => item.id === selectedTypeId);
   const coreReady = selectedType && PRESS_CORE_FIELDS.every((field) => answers[field.id].trim().length >= 4);
   const quoteReady = coreReady && quoteSpeaker;
+  const reporterSource = operations?.reporters?.length ? operations.reporters : journalistRows;
+  const reporterCandidates = useMemo(
+    () => reporterSource.map(normalizeReporterDraft).filter((row) => row.name || row.media || row.email),
+    [reporterSource],
+  );
+  const reportersWithEmail = reporterCandidates.filter((row) => row.email);
+  const selectedReporters = reporterCandidates.filter((row) => row.email && selectedReporterKeys.includes(reporterKey(row)));
+  const defaultQuote = quoteReady ? buildPressQuote(selectedType, answers, quoteSpeaker) : "";
+
+  useEffect(() => {
+    if (!quoteReady) {
+      setEditableQuote("");
+      setQuoteSaved(false);
+      return;
+    }
+    const key = quoteStorageKey(selectedType.id, quoteSpeaker);
+    let stored = "";
+    try {
+      stored = window.localStorage.getItem(key) || "";
+    } catch {
+      stored = "";
+    }
+    setEditableQuote(stored || defaultQuote);
+    setQuoteSaved(Boolean(stored));
+  }, [selectedTypeId, quoteSpeaker, answers.announcement, answers.value, answers.difference, answers.facts]);
+
+  useEffect(() => {
+    if (!reportersWithEmail.length) return;
+    setSelectedReporterKeys((current) => {
+      const valid = new Set(reportersWithEmail.map(reporterKey));
+      const retained = current.filter((key) => valid.has(key));
+      return retained.length ? retained : Array.from(valid);
+    });
+  }, [reportersWithEmail.map(reporterKey).join("|")]);
 
   const updateAnswer = (key, value) => {
     setAnswers((current) => ({ ...current, [key]: value }));
@@ -1196,7 +1235,40 @@ function PressReleaseStudio() {
 
   const generateDraft = () => {
     if (!quoteReady) return;
-    setDraft(buildPressReleasePackage(selectedType, answers, quoteSpeaker));
+    setDraft(buildPressReleasePackage(selectedType, answers, quoteSpeaker, editableQuote, selectedReporters));
+  };
+
+  const toggleReporter = (row) => {
+    if (!row.email) return;
+    const key = reporterKey(row);
+    setSelectedReporterKeys((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
+    setDraft(null);
+  };
+
+  const selectAllReporters = () => {
+    setSelectedReporterKeys(reportersWithEmail.map(reporterKey));
+    setDraft(null);
+  };
+
+  const clearReporters = () => {
+    setSelectedReporterKeys([]);
+    setDraft(null);
+  };
+
+  const saveQuoteTemplate = () => {
+    if (!quoteReady || !editableQuote.trim()) return;
+    try {
+      window.localStorage.setItem(quoteStorageKey(selectedType.id, quoteSpeaker), editableQuote.trim());
+      setQuoteSaved(true);
+    } catch {
+      setQuoteSaved(false);
+    }
+  };
+
+  const resetQuoteTemplate = () => {
+    setEditableQuote(defaultQuote);
+    setQuoteSaved(false);
+    setDraft(null);
   };
 
   const copySection = async (key, text) => {
@@ -1298,8 +1370,61 @@ function PressReleaseStudio() {
                 </button>
               </div>
             </div>
+            <div className="press-quote-editor">
+              <div>
+                <b>인용문 기본값</b>
+                <span>{quoteSaved ? "저장된 기본값 사용 중" : quoteReady ? "자동 생성 기본값" : "작성자 선택 후 활성화"}</span>
+              </div>
+              <textarea
+                value={editableQuote}
+                onChange={(event) => {
+                  setEditableQuote(event.target.value);
+                  setQuoteSaved(false);
+                  setDraft(null);
+                }}
+                disabled={!quoteReady}
+                placeholder="핵심 질문과 인용문 작성자를 선택하면 기본 인용문이 생성됩니다."
+              />
+              <div className="press-quote-actions">
+                <button type="button" disabled={!quoteReady} onClick={resetQuoteTemplate}>기본값 다시 생성</button>
+                <button type="button" disabled={!quoteReady || !editableQuote.trim()} onClick={saveQuoteTemplate}>수정 저장</button>
+              </div>
+            </div>
             <button type="button" className="confirm-button press-generate-button" disabled={!quoteReady} onClick={generateDraft}>
               알겠습니다. 지금 바로 작성하겠습니다.
+            </button>
+          </Panel>
+
+          <Panel title="4단계 · 기자 발송 대상" icon={Megaphone} meta={`${selectedReporters.length}/${reportersWithEmail.length}명 선택`}>
+            <div className="press-mail-api-note">
+              <b>메일 API 연동 가능</b>
+              <span>실제 일괄 발송은 Supabase Edge Function에 메일 API 키를 넣은 뒤 활성화합니다. 브라우저에는 API 키를 저장하지 않습니다.</span>
+            </div>
+            <div className="press-recipient-actions">
+              <button type="button" onClick={selectAllReporters} disabled={!reportersWithEmail.length}>이메일 기자 전체 선택</button>
+              <button type="button" onClick={clearReporters} disabled={!selectedReporterKeys.length}>선택 해제</button>
+              <button type="button" onClick={() => copySection("bcc", selectedReporters.map((row) => row.email).join("; "))} disabled={!selectedReporters.length}>
+                {copied === "bcc" ? "주소 복사 완료" : "BCC 주소 복사"}
+              </button>
+            </div>
+            <div className="press-recipient-list">
+              {reporterCandidates.slice(0, 80).map((row) => {
+                const key = reporterKey(row);
+                const checked = selectedReporterKeys.includes(key);
+                return (
+                  <label key={key} className={row.email ? "press-recipient-row" : "press-recipient-row disabled"}>
+                    <input type="checkbox" checked={checked} disabled={!row.email} onChange={() => toggleReporter(row)} />
+                    <span>
+                      <b>{row.name || "기자명 미입력"}</b>
+                      <em>{row.media || row.outlet || "-"} · {row.email || "이메일 미입력"}</em>
+                    </span>
+                  </label>
+                );
+              })}
+              {!reporterCandidates.length && <div className="press-recipient-empty">기자 관리 화면에 기자를 먼저 등록해 주세요.</div>}
+            </div>
+            <button type="button" className="press-send-disabled" disabled>
+              메일 API 연결 후 일괄 발송 활성화
             </button>
           </Panel>
         </div>
@@ -1322,6 +1447,7 @@ function PressReleaseStudio() {
                   <span>{draft.notice}</span>
                   <button type="button" onClick={() => copySection("all", draft.fullText)}>{copied === "all" ? "복사 완료" : "전체 복사"}</button>
                 </div>
+                <PressOutputBlock title="발송 대상" text={draft.recipients || "선택된 이메일 수신자가 없습니다."} onCopy={() => copySection("recipients", draft.recipients)} copied={copied === "recipients"} />
                 <PressOutputBlock title="보도자료" text={draft.pressRelease} onCopy={() => copySection("release", draft.pressRelease)} copied={copied === "release"} />
                 <PressOutputBlock title="기자 발송 이메일" text={draft.email} onCopy={() => copySection("email", draft.email)} copied={copied === "email"} />
                 <div className="press-finish-message">보도자료 작성이 완료되었습니다.</div>
@@ -1346,7 +1472,7 @@ function PressOutputBlock({ title, text, onCopy, copied }) {
   );
 }
 
-function buildPressReleasePackage(type, answers, quoteSpeaker) {
+function buildPressReleasePackage(type, answers, quoteSpeaker, customQuote = "", recipients = []) {
   const cleanAnswers = {
     announcement: cleanPressLine(answers.announcement),
     value: cleanPressLine(answers.value),
@@ -1357,8 +1483,9 @@ function buildPressReleasePackage(type, answers, quoteSpeaker) {
   const subtitle = buildPressSubtitle(type, cleanAnswers);
   const lead = buildPressLead(type, cleanAnswers);
   const body = buildPressBody(type, cleanAnswers);
-  const quote = buildPressQuote(type, cleanAnswers, quoteSpeaker);
+  const quote = cleanPressLine(customQuote) || buildPressQuote(type, cleanAnswers, quoteSpeaker);
   const emailSummary = buildEmailSummary(cleanAnswers, type);
+  const recipientText = buildRecipientText(recipients);
   const pressRelease = [
     headline,
     subtitle,
@@ -1394,10 +1521,21 @@ function buildPressReleasePackage(type, answers, quoteSpeaker) {
   ].join("\n");
   return {
     notice: "그리고나서 기자들에게 보낼 이메일 본문 작성을 시작하겠습니다.",
+    recipients: recipientText,
     pressRelease,
     email,
-    fullText: `${pressRelease}\n\n---\n\n${email}\n\n보도자료 작성이 완료되었습니다.`,
+    fullText: `${recipientText}\n\n---\n\n${pressRelease}\n\n---\n\n${email}\n\n보도자료 작성이 완료되었습니다.`,
   };
+}
+
+function buildRecipientText(recipients = []) {
+  if (!recipients.length) return "수신 대상: 선택된 이메일 기자 없음";
+  const lines = recipients.map((row, index) => `${index + 1}. ${row.name || "기자명 미입력"} · ${row.media || row.outlet || "-"} · ${row.email}`);
+  return [`수신 대상: ${recipients.length.toLocaleString("ko-KR")}명`, ...lines].join("\n");
+}
+
+function quoteStorageKey(typeId, speaker) {
+  return `${PRESS_QUOTE_STORE_PREFIX}_${typeId || "none"}_${speaker || "none"}`;
 }
 
 function buildPressHeadline(type, answers) {
