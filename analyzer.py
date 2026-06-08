@@ -100,7 +100,8 @@ CAUTION_WORDS = [
 POSITIVE_WORDS = [
     "성장", "증가", "수상", "최고", "1위", "흑자", "강세", "신기록",
     "상승", "혁신", "급증", "호조", "개선", "안정", "개척", "돌파",
-    "사회공헌", "기부", "후원", "지원", "협약",
+    "사회공헌", "기부", "후원", "지원", "협약", "최다", "우수", "인증",
+    "배출", "완전판매", "전문성", "성과", "선도", "기록",
 ]
 
 CSR_CONTEXT_WORDS = ["사회공헌", "기부", "후원", "봉사", "지원", "캠페인", "협약"]
@@ -149,7 +150,7 @@ STOCK_LISTING_NOISE_TITLE_WORDS = [
     "강세 토픽", "약세 토픽", "특징주", "오전 이슈 [보험]",
 ]
 
-POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두"]
+POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고", "선두", "최다"]
 
 PHOTO_SPORTS_NOISE_WORDS = [
     "포토", "화보", "갤러리", "골프", "여자오픈", "오픈", "라운드", "최종라운드",
@@ -342,13 +343,18 @@ def analyze_tone(article: dict) -> str:
     positive_score += sum(1 for word in POSITIVE_WORDS if word in title)
     positive_score += sum(1 for word in CSR_CONTEXT_WORDS if word in text)
 
-    if is_zero_misconduct_positive_article(article):
+    if is_zero_misconduct_positive_article(article) and is_own_positive_focus_article(article):
         return "positive"
 
     # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
     if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
         return "negative"
-    if positive_score >= 2 and severe_score == 0 and caution_score <= 1:
+    if (
+        positive_score >= 2
+        and severe_score == 0
+        and caution_score <= 1
+        and is_own_positive_focus_article(article)
+    ):
         return "positive"
     if should_mark_caution(article, category, severe_score, caution_score):
         return "caution"
@@ -377,6 +383,25 @@ def should_mark_caution(article: dict, category: str, severe_score: int, caution
 def is_zero_misconduct_positive_article(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     return "불완전판매" in text and any(word in text for word in ("0건", "제로", "우수", "인증", "선정"))
+
+
+def is_own_positive_focus_article(article: dict) -> bool:
+    """Only direct company-favorable coverage can be counted as positive."""
+    if not is_own_article(article):
+        return False
+
+    title = article.get("title", "")
+    text = title + " " + article.get("description", "")
+    positive_signals = set(POSITIVE_WORDS + POSITIVE_RANKING_WORDS + CSR_CONTEXT_WORDS + REPUTATION_WORDS)
+
+    if any(name in title for name in OWN_NAMES):
+        return any(word in text for word in positive_signals)
+
+    sentence_parts = re.split(r"[.!?。！？\n]|(?<=[가-힣])\s{2,}", text)
+    for sentence in sentence_parts:
+        if any(name in sentence for name in OWN_NAMES) and any(word in sentence for word in positive_signals):
+            return True
+    return False
 
 
 def is_own_article(article: dict) -> bool:

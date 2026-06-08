@@ -135,6 +135,62 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertTrue(analyzer.contains_unambiguous_competitor_word("글로벌금융판매 GA 동향"))
         self.assertTrue(analyzer.contains_unambiguous_competitor_word("메가금융서비스 설계사 동향"))
 
+    def test_non_own_competitor_ranking_is_not_positive(self) -> None:
+        article = {
+            "title": "지에티코리아, 월 매출 1위 수성",
+            "description": "GA 업계 매출 순위에서 경쟁사가 선두권을 유지했다.",
+            "keyword": "지에티코리아",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "competitor")
+        self.assertFalse(analyzer.is_own_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "neutral")
+
+    def test_non_own_zero_misconduct_article_is_not_positive(self) -> None:
+        article = {
+            "title": "보험업계, 불완전판매 0건 우수설계사 대거 선정",
+            "description": "생명보험협회와 손해보험협회가 우수인증설계사를 선정했다.",
+            "keyword": "보험설계사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertNotEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_zero_misconduct_positive_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "neutral")
+
+    def test_own_favorable_coverage_can_be_positive(self) -> None:
+        article = {
+            "title": "인카금융서비스, 우수인증설계사 2262명 배출…GA업계 최다 기록",
+            "description": "영업조직의 전문성과 완전판매 역량을 부각한 보도다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_own_positive_focus_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "positive")
+
+    def test_own_name_in_competitor_list_does_not_make_positive(self) -> None:
+        article = {
+            "title": "KDB생명, GA 생보실적 1위 수성",
+            "description": "인카금융서비스는 일부 지표에서 2위를 유지했다.",
+            "keyword": "KDB생명",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertFalse(analyzer.is_own_positive_focus_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "neutral")
+
 
 if __name__ == "__main__":
     unittest.main()

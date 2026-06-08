@@ -559,6 +559,8 @@ function normalizeArticle(row) {
   const publicationSource = row.pub_date || row.pub_date_raw || row.published_at || row.published_date || "";
   const dateSource = publicationSource || row.date || row.report_date || "";
   const showTime = shouldShowArticleTime(row, publicationSource || row.date || row.report_date);
+  const category = normalizeCategory(row.category_label || row.category);
+  const tone = normalizeArticleTone(row, category);
   return {
     id: row.article_hash || row.id || row.link || row.title,
     date: formatArticleDate(dateSource) || String(row.report_date || row.date || "").slice(0, 10),
@@ -571,13 +573,18 @@ function normalizeArticle(row) {
     keyword: row.keyword || "",
     summary: row.summary || "",
     issueSummary: row.issue_summary || row.issueSummary || "",
-    category: normalizeCategory(row.category_label || row.category),
-    tone: normalizeTone(row.tone || row.risk_level || row.risk || row.status),
+    category,
+    tone,
     riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),
     score: Number(row.score || 0),
     status: row.status || "분석 완료",
     clusterSize: Number(row.cluster_size || row.clusterSize || 1),
   };
+}
+
+function normalizeArticleTone(row, category) {
+  const tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
+  return category !== "당사" && tone === "긍정" ? "중립" : tone;
 }
 
 function isStockListingNoise(row = {}) {
