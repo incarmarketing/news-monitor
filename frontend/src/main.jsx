@@ -371,6 +371,19 @@ function App() {
     setActiveSection("monitoring");
   };
 
+  const handleClassificationFeedbackSaved = async (result, article, correction) => {
+    const immediateFeedback = buildImmediateFeedbackRow(result, article, correction);
+    setOperations((current) => ({
+      ...current,
+      articles: patchCorrectedArticles(current.articles || [], article, correction),
+      feedback: immediateFeedback
+        ? upsertFeedbackRows(current.feedback || [], immediateFeedback)
+        : current.feedback || [],
+      feedbackGeneratedAt: new Date().toISOString(),
+    }));
+    await refreshOperations({ label: "분류 수정 반영 확인" });
+  };
+
   const View = {
     overview: Overview,
     monitoring: Monitoring,
@@ -425,6 +438,7 @@ function App() {
         workflowHealth={workflowHealth}
         isWorking={working}
         onRefreshOperations={refreshOperations}
+        onFeedbackSaved={handleClassificationFeedbackSaved}
         setActiveSection={setActiveSection}
         monitoringPreset={monitoringPreset}
         onOpenMonitoring={openMonitoring}
@@ -606,7 +620,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   );
 }
 
-function Monitoring({ data, articles, monitoringPreset, operations, isWorking, onRefreshOperations }) {
+function Monitoring({ data, articles, monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved }) {
   const regularArticles = useMemo(
     () => articles.filter((article) => !isOfficialRegulatorSource(article.source)),
     [articles],
@@ -682,6 +696,11 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
     ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
     : `${filtered.length.toLocaleString("ko-KR")}건`;
   const isLoading = operations?.status === "loading" || isWorking;
+  const applyFilters = () => {
+    applyDateFilter();
+    setQuery(queryInput);
+    setVisible(30);
+  };
 
   return (
     <main className="workspace">
@@ -712,9 +731,6 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
           <span>종료 기준일</span>
           <input type="date" value={endDateInput} onChange={(event) => setEndDateInput(event.target.value)} />
         </label>
-        <button className="primary-button filter-action" onClick={applyDateFilter}>
-          조회
-        </button>
         <label className="tone-filter">
           <span>논조</span>
           <select value={tone} onChange={(event) => setTone(event.target.value)}>
@@ -757,8 +773,8 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
             placeholder="제목, 언론사, 키워드 검색"
           />
         </label>
-        <button className="primary-button" onClick={() => { setQuery(queryInput); setVisible(30); }}>
-          검색
+        <button className="primary-button filter-action" onClick={applyFilters}>
+          조회/검색
         </button>
         <button className="ghost-button compact-button" onClick={() => {
           setQuery("");
@@ -778,7 +794,7 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
       </section>
       <section className="monitoring-layout">
         <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
-          <ArticleFeed rows={visibleRows.slice(0, visible)} onFeedbackSaved={() => onRefreshOperations?.()} />
+          <ArticleFeed rows={visibleRows.slice(0, visible)} onFeedbackSaved={onFeedbackSaved} />
           {visibleRows.length > visible && (
             <button className="ghost-button full" onClick={() => setVisible((count) => count + 30)}>
               더보기
@@ -1174,8 +1190,6 @@ const PRESS_CORE_FIELDS = [
   { id: "difference", label: "3. 인카금융서비스만의 차별화 포인트는 무엇인가요?", placeholder: "예: 업계 최대 수준의 설계사 네트워크와 체계적인 교육 시스템을 갖추고 있습니다." },
 ];
 
-const PRESS_QUOTE_STORE_PREFIX = "news_monitor_press_quote_template_v1";
-
 function PressReleaseStudio({ operations }) {
   const [selectedTypeId, setSelectedTypeId] = useState("");
   const [answers, setAnswers] = useState({
@@ -1208,15 +1222,8 @@ function PressReleaseStudio({ operations }) {
       setQuoteSaved(false);
       return;
     }
-    const key = quoteStorageKey(selectedType.id, quoteSpeaker);
-    let stored = "";
-    try {
-      stored = window.localStorage.getItem(key) || "";
-    } catch {
-      stored = "";
-    }
-    setEditableQuote(stored || defaultQuote);
-    setQuoteSaved(Boolean(stored));
+    setEditableQuote(defaultQuote);
+    setQuoteSaved(false);
   }, [selectedTypeId, quoteSpeaker, answers.announcement, answers.value, answers.difference, answers.facts]);
 
   useEffect(() => {
@@ -1257,12 +1264,8 @@ function PressReleaseStudio({ operations }) {
 
   const saveQuoteTemplate = () => {
     if (!quoteReady || !editableQuote.trim()) return;
-    try {
-      window.localStorage.setItem(quoteStorageKey(selectedType.id, quoteSpeaker), editableQuote.trim());
-      setQuoteSaved(true);
-    } catch {
-      setQuoteSaved(false);
-    }
+    setQuoteSaved(true);
+    setDraft(null);
   };
 
   const resetQuoteTemplate = () => {
@@ -1373,7 +1376,7 @@ function PressReleaseStudio({ operations }) {
             <div className="press-quote-editor">
               <div>
                 <b>인용문 기본값</b>
-                <span>{quoteSaved ? "저장된 기본값 사용 중" : quoteReady ? "자동 생성 기본값" : "작성자 선택 후 활성화"}</span>
+                <span>{quoteSaved ? "현재 초안에 반영됨" : quoteReady ? "자동 생성 기본값" : "작성자 선택 후 활성화"}</span>
               </div>
               <textarea
                 value={editableQuote}
@@ -1387,7 +1390,7 @@ function PressReleaseStudio({ operations }) {
               />
               <div className="press-quote-actions">
                 <button type="button" disabled={!quoteReady} onClick={resetQuoteTemplate}>기본값 다시 생성</button>
-                <button type="button" disabled={!quoteReady || !editableQuote.trim()} onClick={saveQuoteTemplate}>수정 저장</button>
+                <button type="button" disabled={!quoteReady || !editableQuote.trim()} onClick={saveQuoteTemplate}>수정 반영</button>
               </div>
             </div>
             <button type="button" className="confirm-button press-generate-button" disabled={!quoteReady} onClick={generateDraft}>
@@ -1532,10 +1535,6 @@ function buildRecipientText(recipients = []) {
   if (!recipients.length) return "수신 대상: 선택된 이메일 기자 없음";
   const lines = recipients.map((row, index) => `${index + 1}. ${row.name || "기자명 미입력"} · ${row.media || row.outlet || "-"} · ${row.email}`);
   return [`수신 대상: ${recipients.length.toLocaleString("ko-KR")}명`, ...lines].join("\n");
-}
-
-function quoteStorageKey(typeId, speaker) {
-  return `${PRESS_QUOTE_STORE_PREFIX}_${typeId || "none"}_${speaker || "none"}`;
 }
 
 function buildPressHeadline(type, answers) {
@@ -3444,10 +3443,10 @@ function MediaManagement({ rows, reporters = [], aliases = [] }) {
   const [mediaStatus, setMediaStatus] = useState("");
   const [mediaForm, setMediaForm] = useState(emptyMediaForm);
   const [managingMedia, setManagingMedia] = useState(false);
-  const [localAliases, setLocalAliases] = useState(() => readLocalRows(PRESS_ALIAS_DRAFT_KEY));
-  const [localMediaRows, setLocalMediaRows] = useState(() => readLocalRows("news_monitor_media_relation_drafts_v1"));
-  const aliasRows = useMemo(() => mergeAliasRows(aliases, localAliases), [aliases, localAliases]);
-  const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows, localMediaRows), [rows, aliasRows, localMediaRows]);
+  const [draftAliases, setDraftAliases] = useState([]);
+  const [draftMediaRows, setDraftMediaRows] = useState([]);
+  const aliasRows = useMemo(() => mergeAliasRows(aliases, draftAliases), [aliases, draftAliases]);
+  const managedRows = useMemo(() => mergeMediaRows(rows, aliasRows, draftMediaRows), [rows, aliasRows, draftMediaRows]);
   const crmSignals = useMemo(() => buildMediaCrmSignals(managedRows, reporters), [managedRows, reporters]);
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -3459,11 +3458,6 @@ function MediaManagement({ rows, reporters = [], aliases = [] }) {
   }, [managedRows, query, aliasRows]);
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
   const updateMediaForm = (field, value) => setMediaForm((current) => ({ ...current, [field]: value }));
-  const persistLocalMediaRows = (nextRows) => {
-    setLocalMediaRows(nextRows);
-    writeLocalRows("news_monitor_media_relation_drafts_v1", nextRows);
-  };
-
   const handleManageMedia = (row = {}) => {
     const domains = domainsForPressName(row.name, aliasRows);
     setMediaForm({
@@ -3490,19 +3484,21 @@ function MediaManagement({ rows, reporters = [], aliases = [] }) {
       return;
     }
     const host = canonicalHost(item.url);
-    const nextMediaRows = upsertMediaLocal(localMediaRows, item);
-    persistLocalMediaRows(nextMediaRows);
-    if (host) {
-      const nextAliases = upsertAliasRow(localAliases, { host, press_name: item.name });
-      setLocalAliases(nextAliases);
-      writeLocalRows(PRESS_ALIAS_DRAFT_KEY, nextAliases);
-    }
     try {
-      await saveMediaRelation({ ...item, memo: buildMediaMemo(item) });
-      if (host) await savePressAlias(host, item.name);
-      setMediaStatus("Supabase 저장 완료");
-    } catch {
-      setMediaStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      const saved = await saveMediaRelation(item);
+      const savedRow = Array.isArray(saved) && saved[0] ? normalizeMediaDraft(saved[0]) : item;
+      setDraftMediaRows((current) => upsertMediaLocal(current, savedRow));
+      if (host) {
+        await savePressAlias(host, item.name);
+        setDraftAliases((current) => upsertAliasRow(current, { host, press_name: item.name }));
+      }
+      setMediaForm(emptyMediaForm);
+      setManagingMedia(false);
+      setMediaStatus("운영 DB 저장 완료");
+    } catch (error) {
+      setMediaStatus(error?.message?.includes("missing_dashboard_session") || error?.message?.includes("invalid_session")
+        ? "운영 DB 세션이 필요합니다. 로그인 후 다시 저장하세요."
+        : "운영 DB 저장 실패 · 연결과 권한을 확인하세요.");
     }
   };
 
@@ -3598,7 +3594,12 @@ function MediaManagement({ rows, reporters = [], aliases = [] }) {
                 </td>
                 <td><Chip>{row.grade || "B"}</Chip></td>
                 <td><Chip tone={row.status}>{row.status || "중립"}</Chip></td>
-                <td>{row.owner || "-"}</td>
+                <td>
+                  <div className="press-history-stack">
+                    <b>{row.owner || row.leadReporter || "-"}</b>
+                    <span>{[row.beat, row.email || row.phone].filter(Boolean).join(" · ") || "담당 정보 없음"}</span>
+                  </div>
+                </td>
                 <td>{row.contactDate || "-"}</td>
                 <td>
                   <div className="press-history-stack">
@@ -3629,24 +3630,19 @@ function ReporterManagement({ rows }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const [form, setForm] = useState(emptyReporterForm);
-  const [localState, setLocalState] = useState(() => readLocalReporterState());
-  const managedRows = useMemo(() => mergeReporterRows(rows, localState), [rows, localState]);
+  const [draftState, setDraftState] = useState({ rows: [], hidden: [] });
+  const managedRows = useMemo(() => mergeReporterRows(rows, draftState), [rows, draftState]);
   const reporterSignals = useMemo(() => buildReporterCrmSignals(managedRows), [managedRows]);
   const filteredRows = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return managedRows;
     return managedRows.filter((row) =>
-      `${row.name} ${row.outlet || row.media} ${row.beat} ${row.status} ${row.contactDate} ${row.memo}`.toLowerCase().includes(term),
+      `${row.name} ${row.outlet || row.media} ${row.beat} ${row.status} ${row.contactDate} ${row.email} ${row.phone} ${row.request} ${row.memo}`.toLowerCase().includes(term),
     );
   }, [managedRows, query]);
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
 
   const updateForm = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-  const persistLocalState = (nextState) => {
-    setLocalState(nextState);
-    writeLocalReporterState(nextState);
-  };
-
   const handleEditReporter = (row) => {
     setForm({
       id: row.id || "",
@@ -3669,34 +3665,33 @@ function ReporterManagement({ rows }) {
       setStatus("기자명과 언론사를 입력해야 합니다.");
       return;
     }
-    const optimistic = { ...item, id: item.id || `local-${Date.now()}` };
-    const localFirst = upsertReporterLocal(localState, optimistic);
-    persistLocalState(localFirst);
-    setForm(emptyReporterForm);
     try {
-      const saved = await saveReporterProfile({ ...item, memo: buildReporterMemo(item) });
-      const savedRow = Array.isArray(saved) && saved[0] ? reporterDraftFromRemote(saved[0]) : optimistic;
-      persistLocalState(upsertReporterLocal(localFirst, savedRow, optimistic.id));
-      setStatus("Supabase 저장 완료");
-    } catch {
-      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      const saved = await saveReporterProfile(item);
+      const savedRow = Array.isArray(saved) && saved[0] ? reporterDraftFromRemote(saved[0]) : item;
+      setDraftState((current) => upsertReporterLocal(current, savedRow, item.id));
+      setForm(emptyReporterForm);
+      setStatus("운영 DB 저장 완료");
+    } catch (error) {
+      setStatus(error?.message?.includes("missing_dashboard_session") || error?.message?.includes("invalid_session")
+        ? "운영 DB 세션이 필요합니다. 로그인 후 다시 저장하세요."
+        : "운영 DB 저장 실패 · 연결과 권한을 확인하세요.");
     }
   };
 
   const handleDeleteReporter = async (row) => {
-    const key = reporterKey(row);
-    const nextState = hideReporterLocal(localState, row);
-    persistLocalState(nextState);
     try {
       if (/^\d+$/.test(String(row.id || ""))) {
         await deleteReporterProfile(row.id);
-        setStatus("Supabase 삭제 완료");
+        setDraftState((current) => hideReporterLocal(current, row));
+        setStatus("운영 DB 삭제 완료");
       } else {
+        setDraftState((current) => hideReporterLocal(current, row));
         setStatus("현재 화면에서 제외했습니다.");
       }
-    } catch {
-      persistLocalState({ ...nextState, hidden: unique([...nextState.hidden, key]) });
-      setStatus("현재 화면에서 제외했습니다. 운영 세션 연결 시 DB 삭제 가능");
+    } catch (error) {
+      setStatus(error?.message?.includes("missing_dashboard_session") || error?.message?.includes("invalid_session")
+        ? "운영 DB 세션이 필요합니다. 로그인 후 다시 삭제하세요."
+        : "운영 DB 삭제 실패 · 연결과 권한을 확인하세요.");
     }
   };
 
@@ -3761,8 +3756,10 @@ function ReporterManagement({ rows }) {
               <th>언론사</th>
               <th>담당</th>
               <th>관계</th>
+              <th>연락처</th>
               <th>최근 접촉</th>
               <th>소속 매체 이력</th>
+              <th>요청/선호</th>
               <th>메모</th>
               <th>관리</th>
             </tr>
@@ -3774,6 +3771,12 @@ function ReporterManagement({ rows }) {
                 <td>{row.outlet || row.media}</td>
                 <td>{row.beat || "-"}</td>
                 <td><Chip tone={row.status}>{row.status || "중립"}</Chip></td>
+                <td>
+                  <div className="press-history-stack">
+                    <b>{row.email || "-"}</b>
+                    <span>{row.phone || "-"}</span>
+                  </div>
+                </td>
                 <td>{row.contactDate || row.date || "-"}</td>
                 <td>
                   <div className="press-history-stack">
@@ -3781,6 +3784,7 @@ function ReporterManagement({ rows }) {
                     <span>당사 {Number(row.mediaOwnCount || 0).toLocaleString("ko-KR")} · 부정 {Number(row.mediaNegativeCount || 0).toLocaleString("ko-KR")}</span>
                   </div>
                 </td>
+                <td>{row.request || "-"}</td>
                 <td>{row.memo || "-"}</td>
                 <td>
                   <div className="row-actions">
@@ -3885,10 +3889,10 @@ function KeywordManagement({ keywords = [] }) {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("own");
   const [status, setStatus] = useState("");
-  const [localKeywords, setLocalKeywords] = useState(() => readLocalRows(KEYWORD_DRAFT_KEY));
+  const [draftKeywords, setDraftKeywords] = useState([]);
   const rows = useMemo(
-    () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), localKeywords),
-    [keywords, localKeywords],
+    () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), draftKeywords),
+    [keywords, draftKeywords],
   );
   const grouped = useMemo(() => groupKeywordRows(rows), [rows]);
 
@@ -3899,15 +3903,15 @@ function KeywordManagement({ keywords = [] }) {
       return;
     }
     const nextKeyword = { keyword: cleanKeyword, category, enabled: true };
-    const nextLocal = upsertKeywordRow(localKeywords, nextKeyword);
-    setLocalKeywords(nextLocal);
-    writeLocalRows(KEYWORD_DRAFT_KEY, nextLocal);
-    setKeyword("");
     try {
       await saveMonitorKeyword(cleanKeyword, category);
-      setStatus("Supabase 저장 완료");
-    } catch {
-      setStatus("현재 화면 반영 완료 · 운영 세션 연결 시 DB 저장");
+      setDraftKeywords((current) => upsertKeywordRow(current, nextKeyword));
+      setKeyword("");
+      setStatus("운영 DB 저장 완료");
+    } catch (error) {
+      setStatus(error?.message?.includes("missing_dashboard_session") || error?.message?.includes("invalid_session")
+        ? "운영 DB 세션이 필요합니다. 로그인 후 다시 저장하세요."
+        : "운영 DB 저장 실패 · 연결과 권한을 확인하세요.");
     }
   };
 
@@ -4377,6 +4381,63 @@ function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved 
   );
 }
 
+function buildImmediateFeedbackRow(result = {}, article = {}, correction = {}) {
+  const row = Array.isArray(result?.feedback) ? result.feedback[0] : result?.feedback;
+  const createdAt = row?.created_at || new Date().toISOString();
+  const createdDate = new Date(createdAt);
+  const articleHash = row?.article_hash || article.article_hash || article.articleHash || article.id || "";
+  return {
+    id: row?.id || `immediate-${articleHash || article.link || Date.now()}`,
+    articleHash,
+    title: row?.title || article.title || "",
+    link: row?.link || article.link || "",
+    previousCategory: row?.previous_category || article.category || article.category_label || "",
+    previousTone: row?.previous_tone || article.tone || article.tone_label || "",
+    correctedCategory: row?.corrected_category || correction.category || "",
+    correctedTone: row?.corrected_tone || correction.tone || "",
+    reason: feedbackReasonDisplay(row?.reason || correction.reason),
+    createdBy: row?.created_by || correction.createdBy || "dashboard",
+    createdAt,
+    date: Number.isNaN(createdDate.getTime()) ? String(createdAt).slice(0, 10) : formatKstDateKey(createdDate),
+    time: formatFeedbackStamp(createdAt).slice(-5),
+  };
+}
+
+function feedbackReasonDisplay(value) {
+  return {
+    dashboard_manual_correction: "수동 분류 수정",
+  }[String(value || "").trim()] || String(value || "").trim();
+}
+
+function upsertFeedbackRows(rows = [], row = null) {
+  if (!row) return rows;
+  const map = new Map(rows.map((item) => [String(item.id || `${item.articleHash}-${item.createdAt}`), item]));
+  map.set(String(row.id || `${row.articleHash}-${row.createdAt}`), row);
+  return Array.from(map.values()).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+function patchCorrectedArticles(rows = [], article = {}, correction = {}) {
+  const targetKey = articleSelectionKey(article);
+  const link = normalizeRiskUrl(article.link || "");
+  return rows.map((row) => {
+    const sameKey = articleSelectionKey(row) === targetKey;
+    const sameLink = link && normalizeRiskUrl(row.link || "") === link;
+    if (!sameKey && !sameLink) return row;
+    return {
+      ...row,
+      category: correction.category || row.category,
+      tone: correction.tone || row.tone,
+      riskLevel: riskLevelFromTone(correction.tone || row.tone),
+    };
+  });
+}
+
+function riskLevelFromTone(tone = "") {
+  if (tone === "부정") return "HIGH";
+  if (tone === "주의") return "MEDIUM";
+  return "LOW";
+}
+
 const FEEDBACK_CATEGORY_OPTIONS = ["당사", "GA", "보험사", "정책/규제", "업계동향", "기타", "제외"];
 const FEEDBACK_TONE_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 
@@ -4390,17 +4451,18 @@ function ArticleCorrectionControl({ article, onSaved }) {
   const save = async () => {
     setSaving(true);
     setStatus("저장 중");
+    const correction = {
+      category,
+      tone,
+      reason: "dashboard_manual_correction",
+      createdBy: "dashboard",
+    };
     try {
-      const result = await saveClassificationFeedback(article, {
-        category,
-        tone,
-        reason: "dashboard_manual_correction",
-        createdBy: "dashboard",
-      });
+      const result = await saveClassificationFeedback(article, correction);
       const patchNote = result?.patchError ? " · 원문 패치는 권한 확인 필요" : "";
       setStatus(`저장 완료${patchNote}`);
       window.setTimeout(() => setOpen(false), 900);
-      await onSaved?.();
+      await onSaved?.(result, article, correction);
     } catch (error) {
       setStatus(feedbackErrorMessage(error));
     } finally {
@@ -6176,10 +6238,6 @@ function isPortalSource(source) {
   return /^(google|naver|daum|bing)$/i.test(String(source || "").trim()) || /google\./i.test(String(source || ""));
 }
 
-const PRESS_ALIAS_DRAFT_KEY = "news_monitor_press_alias_drafts_v1";
-const KEYWORD_DRAFT_KEY = "news_monitor_keyword_drafts_v1";
-const REPORTER_DRAFT_KEY = "news_monitor_reporter_drafts_v1";
-
 const emptyReporterForm = {
   id: "",
   name: "",
@@ -6215,47 +6273,6 @@ const keywordCategories = [
   { id: "other", label: "기타", rule: "일반 관심 키워드나 별도 문맥 분석 대상입니다." },
   { id: "exclude", label: "제외 후보", rule: "브랜드평판, 스포츠, 상품명 오탐처럼 수집 제외 후보로 관리합니다." },
 ];
-
-function readLocalRows(key) {
-  try {
-    const rows = JSON.parse(window.localStorage.getItem(key) || "[]");
-    return Array.isArray(rows) ? rows : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocalRows(key, rows) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(rows));
-  } catch {
-    // Supabase is the source of truth; local storage only keeps the public page responsive.
-  }
-}
-
-function readLocalReporterState() {
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(REPORTER_DRAFT_KEY) || "{}");
-    if (Array.isArray(stored)) return { rows: stored, hidden: [] };
-    return {
-      rows: Array.isArray(stored.rows) ? stored.rows : [],
-      hidden: Array.isArray(stored.hidden) ? stored.hidden : [],
-    };
-  } catch {
-    return { rows: [], hidden: [] };
-  }
-}
-
-function writeLocalReporterState(state) {
-  try {
-    window.localStorage.setItem(REPORTER_DRAFT_KEY, JSON.stringify({
-      rows: Array.isArray(state.rows) ? state.rows : [],
-      hidden: Array.isArray(state.hidden) ? state.hidden : [],
-    }));
-  } catch {
-    // Local persistence is best-effort; DB persistence is attempted separately.
-  }
-}
 
 function canonicalHost(value) {
   const raw = String(value || "").trim();
@@ -6321,18 +6338,6 @@ function upsertMediaLocal(rows = [], row = {}) {
   return Array.from(map.values());
 }
 
-function buildMediaMemo(row = {}) {
-  const lines = [
-    row.beat ? `주요 분야: ${row.beat}` : "",
-    row.leadReporter ? `대표 기자: ${row.leadReporter}` : "",
-    row.email ? `이메일: ${row.email}` : "",
-    row.phone ? `전화: ${row.phone}` : "",
-    row.url ? `대표 URL: ${row.url}` : "",
-    row.memo ? `메모: ${row.memo}` : "",
-  ].filter(Boolean);
-  return lines.join("\n");
-}
-
 function upsertAliasRow(rows, row) {
   const normalized = normalizeAliasRow(row);
   if (!normalized) return rows;
@@ -6387,7 +6392,7 @@ function normalizeReporterDraft(row = {}) {
     name: String(row.name || "").trim(),
     media: String(row.media || row.outlet || "").trim(),
     outlet: String(row.outlet || row.media || "").trim(),
-    beat: row.beat || row.memo || "-",
+    beat: String(row.beat || "").trim(),
     recent: row.recent || "-",
     status: String(row.status || "중립").trim() || "중립",
     contactDate: row.contactDate || row.contact_date || row.date || "",
@@ -6401,24 +6406,17 @@ function normalizeReporterDraft(row = {}) {
   };
 }
 
-function buildReporterMemo(row = {}) {
-  const lines = [
-    row.beat ? `담당 분야: ${row.beat}` : "",
-    row.email ? `이메일: ${row.email}` : "",
-    row.phone ? `전화: ${row.phone}` : "",
-    row.request ? `요청/선호: ${row.request}` : "",
-    row.memo ? `메모: ${row.memo}` : "",
-  ].filter(Boolean);
-  return lines.join("\n");
-}
-
 function reporterDraftFromRemote(row = {}) {
   return normalizeReporterDraft({
     id: row.id,
     name: row.name,
     media: row.media,
+    beat: row.beat,
     status: row.status,
     contactDate: row.contact_date,
+    email: row.email,
+    phone: row.phone,
+    request: row.request,
     memo: row.memo,
   });
 }

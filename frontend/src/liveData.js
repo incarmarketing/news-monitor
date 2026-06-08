@@ -135,10 +135,15 @@ export async function saveMediaRelation(media = {}) {
   if (!name) throw new Error("media_name_required");
   const body = {
     name,
+    url: String(media.url || "").trim(),
     status: String(media.status || "중립").trim() || "중립",
     grade: String(media.grade || "B").trim() || "B",
     owner: String(media.owner || "").trim(),
     contact_date: media.contactDate || media.contact_date || null,
+    beat: String(media.beat || "").trim(),
+    lead_reporter: String(media.leadReporter || media.lead_reporter || "").trim(),
+    email: String(media.email || "").trim(),
+    phone: String(media.phone || "").trim(),
     memo: String(media.memo || "").trim(),
     hidden: media.hidden === true,
   };
@@ -252,8 +257,12 @@ export async function saveReporterProfile(reporter = {}) {
   const body = {
     name,
     media,
+    beat: String(reporter.beat || "").trim(),
     status: String(reporter.status || "중립").trim() || "중립",
     contact_date: reporter.contactDate || reporter.contact_date || null,
+    email: String(reporter.email || "").trim(),
+    phone: String(reporter.phone || "").trim(),
+    request: String(reporter.request || "").trim(),
     memo: String(reporter.memo || "").trim(),
   };
   const id = reporter.id && /^\d+$/.test(String(reporter.id)) ? String(reporter.id) : "";
@@ -473,8 +482,8 @@ async function loadOperationalDataFromSupabaseSession() {
         session,
         "article_scraps?select=article_hash,article_snapshot,created_at&order=created_at.desc&limit=100",
       ),
-      mediaRelations: rest(config, session, "media_relations?select=name,status,grade,owner,contact_date,memo,hidden&order=name.asc"),
-      reporters: rest(config, session, "reporters?select=id,name,media,status,contact_date,memo,updated_at&order=updated_at.desc&limit=500"),
+      mediaRelations: rest(config, session, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc"),
+      reporters: rest(config, session, "reporters?select=id,name,media,beat,status,contact_date,email,phone,request,memo,updated_at&order=updated_at.desc&limit=500"),
       ads: rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
       aliases: rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
       keywords: rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
@@ -825,10 +834,15 @@ function normalizeReportRun(row) {
 function normalizeMedia(row) {
   return {
     name: row.name || "미확인",
+    url: row.url || "",
     status: row.status || "중립",
     grade: row.grade || "B",
     owner: row.owner || "",
     contactDate: row.contact_date || "",
+    beat: row.beat || "",
+    leadReporter: row.lead_reporter || "",
+    email: row.email || "",
+    phone: row.phone || "",
     memo: row.memo || "",
   };
 }
@@ -839,10 +853,13 @@ function normalizeReporter(row) {
     name: row.name || "미확인",
     media: row.media || "미확인",
     outlet: row.media || "미확인",
-    beat: row.memo || "-",
+    beat: row.beat || "",
     recent: "-",
     status: row.status || "중립",
     contactDate: row.contact_date || "",
+    email: row.email || "",
+    phone: row.phone || "",
+    request: row.request || "",
     memo: row.memo || "",
   };
 }
