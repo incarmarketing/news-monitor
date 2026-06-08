@@ -1689,19 +1689,27 @@ function buildPressHeadline(type, answers) {
 function buildPressSubtitle(type, answers) {
   const value = stripTrailingPunctuation(answers.value);
   const difference = stripTrailingPunctuation(answers.difference);
-  return `- ${value}\n- ${difference}`;
+  const lines = [
+    isMeaningfulPressInput(value) ? `- ${value}` : "",
+    isMeaningfulPressInput(difference) ? `- ${difference}` : "",
+  ].filter(Boolean);
+  return lines.length ? lines.join("\n") : null;
 }
 
 function buildPressLead(type, answers) {
+  const announcement = sentenceObject(answers.announcement);
+  if (type.id === "award" && /배출$/.test(announcement)) {
+    return `인카금융서비스(대표이사 최병채, 천대권)는 ${normalizePressAchievementObject(announcement)}했다고 밝혔다.`;
+  }
   const verb = {
     plan: "추진한다고 밝혔다",
     csr: "진행했다고 밝혔다",
-    award: "인정받았다고 밝혔다",
+    award: "성과를 거뒀다고 밝혔다",
     performance: "기록했다고 밝혔다",
     partnership: "협력한다고 밝혔다",
     event: "개최했다고 밝혔다",
   }[type.id] || "밝혔다";
-  return `인카금융서비스(대표이사 최병채,천대권)는 ${sentenceObject(answers.announcement)} ${verb}.`;
+  return `인카금융서비스(대표이사 최병채, 천대권)는 ${pressObjectPhrase(answers.announcement)} ${verb}.`;
 }
 
 function buildPressBody(type, answers) {
@@ -1713,19 +1721,27 @@ function buildPressBody(type, answers) {
     partnership: "이번 제휴는 양사의 강점을 결합해 고객과 영업현장에 실질적인 혜택을 제공하는 데 초점을 맞췄다.",
     event: "이번 행사는 주요 관계자와 현장 구성원이 함께 회사의 방향성과 실행 과제를 공유하기 위해 마련됐다.",
   }[type.id];
-  const paragraphs = [
-    `${typeLead} ${sentence(answers.value)}`,
-    `인카금융서비스는 ${sentence(answers.difference)} 이를 바탕으로 고객 신뢰와 현장 경쟁력을 동시에 높인다는 계획이다.`,
-  ];
-  if (answers.facts) {
-    paragraphs.splice(1, 0, `주요 세부 내용은 ${sentenceObject(answers.facts)} 등이다. 회사는 관련 수치와 실행 계획을 기반으로 발표 내용의 신뢰도를 높였다.`);
+  const paragraphs = [];
+  const value = sentenceObject(answers.value);
+  const difference = sentenceObject(answers.difference);
+  const facts = sentenceObject(answers.facts);
+
+  paragraphs.push(isMeaningfulPressInput(value)
+    ? `${typeLead} ${sentence(value)}`
+    : `${typeLead} 회사는 이번 발표가 영업현장 전문성, 고객 신뢰, 완전판매 역량을 함께 보여주는 사례라고 설명했다.`);
+  if (isMeaningfulPressInput(facts)) {
+    paragraphs.push(`회사 측은 ${facts}를 주요 근거로 제시하며 발표 내용의 객관성과 실행 가능성을 강조했다.`);
   }
+  paragraphs.push(isMeaningfulPressInput(difference)
+    ? `인카금융서비스는 ${difference}를 차별화 포인트로 삼아 고객 신뢰와 현장 경쟁력을 동시에 높인다는 계획이다.`
+    : "인카금융서비스는 체계적인 교육, 내부 관리, 현장 지원 역량을 바탕으로 고객 신뢰와 영업 경쟁력을 높인다는 계획이다.");
   paragraphs.push("인카금융서비스는 앞으로도 보험 소비자 보호와 영업현장 전문성 강화를 중심으로 지속 가능한 성장 체계를 고도화할 방침이다.");
   return paragraphs;
 }
 
 function buildPressQuote(type, answers, quoteSpeaker) {
   const speaker = quoteSpeaker === "chairman" ? "최병채 인카금융서비스 회장" : "인카금융서비스 관계자";
+  const speakerJosa = quoteSpeaker === "chairman" ? "은" : "는";
   const quoteFocus = quoteSpeaker === "chairman"
     ? "회사의 지속 성장은 고객 신뢰와 현장 전문성이 함께 높아질 때 가능하다"
     : "이번 발표는 고객과 영업현장에 실질적인 가치를 제공하기 위한 실행의 일환";
@@ -1737,15 +1753,20 @@ function buildPressQuote(type, answers, quoteSpeaker) {
     partnership: "협력의 성과가 고객 혜택으로 이어지도록 하겠다",
     event: "현장과의 소통을 바탕으로 실행력을 높이겠다",
   }[type.id] || "고객 신뢰를 높여가겠다";
-  return `${speaker}은 “${quoteFocus}”며 “${sentenceObject(answers.difference)}라는 강점을 바탕으로 ${action}”고 말했다.`;
+  const difference = sentenceObject(answers.difference);
+  const strength = isMeaningfulPressInput(difference)
+    ? `${difference}라는 강점을 바탕으로 `
+    : "";
+  return `${speaker}${speakerJosa} “${quoteFocus}”라며 “${strength}${action}”고 말했다.`;
 }
 
 function buildEmailSummary(answers, type) {
-  return [
-    `1. ${sentence(answers.announcement)}`,
-    `2. ${sentence(answers.value)}`,
-    `3. ${type.title.replace(" 보도자료", "")}의 핵심은 ${sentenceObject(answers.difference)}입니다.`,
-  ];
+  const rows = [
+    sentence(answers.announcement),
+    isMeaningfulPressInput(answers.value) ? sentence(answers.value) : "",
+    isMeaningfulPressInput(answers.difference) ? `${type.title.replace(" 보도자료", "")}의 핵심은 ${sentenceObject(answers.difference)}입니다.` : "",
+  ].filter(Boolean);
+  return rows.slice(0, 3).map((line, index) => `${index + 1}. ${line}`);
 }
 
 function cleanPressLine(value) {
@@ -1762,6 +1783,27 @@ function sentence(value) {
 
 function sentenceObject(value) {
   return stripTrailingPunctuation(cleanPressLine(value));
+}
+
+function isMeaningfulPressInput(value) {
+  const text = sentenceObject(value).trim();
+  if (!text) return false;
+  return !/^(없음|없다|없습니다|따로\s*없음|미정|해당\s*없음|n\/?a|null|none)$/i.test(text);
+}
+
+function pressObjectPhrase(value) {
+  const text = sentenceObject(value);
+  if (!text) return "주요 경영 성과를";
+  if (/[을를]$/.test(text)) return text;
+  if (/(명|건|개|곳|억|억원|위|회|년|월|일|%|퍼센트|포인트)$/.test(text)) return `${text}을`;
+  return `${text}을`;
+}
+
+function normalizePressAchievementObject(value) {
+  const text = sentenceObject(value);
+  const countMatch = text.match(/^(.+?)([0-9,천만억]+(?:여)?명)\s*배출$/);
+  if (countMatch) return `${countMatch[1]}${countMatch[2]}을 배출`;
+  return pressObjectPhrase(text);
 }
 
 function stripTrailingPunctuation(value) {
@@ -4482,12 +4524,15 @@ function buildDailyReportHealth(notifications = [], reportRuns = []) {
   const totalSlots = slots.length;
   const progress = dueCount
     ? [`도래 ${dueCount}회 중 확인 ${completedDueCount}회`, syncingCount ? `반영중 ${syncingCount}회` : ""].filter(Boolean).join(" · ")
-    : "첫 발송 전";
+    : confirmedCount
+      ? `오늘 발송 확인 ${confirmedCount}회`
+      : "첫 발송 전";
+  const statusLabel = dueCount ? status : confirmedCount ? "ok" : "pending";
   return {
     title: "일일보고서",
     icon: CalendarDays,
-    status: dueCount ? status : "pending",
-    label: dueCount ? healthStatusLabel(status) : "대기",
+    status: statusLabel,
+    label: dueCount ? healthStatusLabel(status) : confirmedCount ? "정상" : "대기",
     detail: `오늘 ${totalSlots}회 중 확인 ${confirmedCount}회`,
     progress,
     slots,

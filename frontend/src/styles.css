@@ -180,6 +180,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ghost-button, .primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 34px;
   padding: 6px 10px;
   border-color: var(--line);
@@ -3086,14 +3090,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .filter-card.monitoring-filter-card .primary-button,
 .filter-card.monitoring-filter-card .ghost-button {
-  width: auto;
+  width: 82px;
   min-height: 38px;
   padding: 0 12px;
   white-space: nowrap;
 }
 
 .filter-card.monitoring-filter-card .filter-action {
-  min-width: 72px;
+  min-width: 82px;
+}
+
+.page-actions > .ghost-button,
+.page-actions > .primary-button {
+  min-width: 92px;
 }
 
 .rule-stack article, .keyword-groups article {

@@ -565,7 +565,7 @@ def build_html_report(
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]
     window = window_override or report_window.current_window()
     report_md = normalize_window_phrasing(report_md, window)
-    sections = parse_report_sections(report_md, metrics)
+    sections = validate_report_sections(parse_report_sections(report_md, metrics), clustered, metrics)
 
     return template.render(
         subject_prefix=config.EMAIL_SUBJECT_PREFIX,
