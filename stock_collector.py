@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import statistics
 from datetime import datetime, timezone
 from pathlib import Path
@@ -47,7 +48,9 @@ def fetch_chart(symbol: str, count: int = 90) -> list[dict]:
         timeout=20,
     )
     response.raise_for_status()
-    root = ElementTree.fromstring(response.content)
+    xml_text = response.content.decode(response.encoding or "euc-kr", errors="replace")
+    xml_text = re.sub(r"^\s*<\?xml[^>]*\?>", "", xml_text).strip()
+    root = ElementTree.fromstring(xml_text)
     rows: list[dict] = []
     for node in root.findall(".//item"):
         raw = str(node.attrib.get("data", ""))
