@@ -208,11 +208,63 @@ export async function saveClassificationFeedback(article = {}, correction = {}) 
   return { feedback, patched, patchError };
 }
 
+export async function saveArticleScrap(article = {}) {
+  const articleHash = stableArticleHash(article) || stableArticleKey(article);
+  const title = String(article.title || "").trim();
+  if (!articleHash || !title) throw new Error("scrap_article_required");
+  const snapshot = articleSnapshotForScrap(article, articleHash);
+  return writeRest(
+    "article_scraps?on_conflict=article_hash",
+    "POST",
+    [{
+      article_hash: articleHash,
+      article_snapshot: snapshot,
+      created_by: "dashboard",
+    }],
+    { Prefer: "resolution=merge-duplicates,return=representation" },
+  );
+}
+
 function stableArticleHash(article = {}) {
   const candidates = [article.article_hash, article.articleHash, article.id]
     .map((value) => String(value || "").trim())
     .filter(Boolean);
   return candidates.find((value) => /^[a-f0-9]{32,64}$/i.test(value)) || "";
+}
+
+function stableArticleKey(article = {}) {
+  const raw = [
+    article.link,
+    article.title,
+    article.source,
+    article.date || article.report_date || article.pubDate,
+  ].map((value) => String(value || "").trim()).filter(Boolean).join("|");
+  if (!raw) return "";
+  let hash = 2166136261;
+  for (let i = 0; i < raw.length; i += 1) {
+    hash ^= raw.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `scrap_${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function articleSnapshotForScrap(article = {}, articleHash = "") {
+  return {
+    article_hash: articleHash,
+    title: article.title || "",
+    link: article.link || "",
+    source: article.source || "",
+    keyword: article.keyword || "",
+    summary: article.summary || "",
+    pub_date: article.pubDate || article.pub_date || article.date || "",
+    report_date: article.date || article.report_date || "",
+    report_slot: article.slot || article.report_slot || "",
+    score: article.score || 0,
+    category: article.category || article.category_label || "",
+    tone: article.tone || article.tone_label || "",
+    risk_level: article.riskLevel || article.risk_level || "",
+    cluster_size: article.relatedCount || article.cluster_size || article.clusterSize || 1,
+  };
 }
 
 function articlePatchFromCorrection(correction = {}) {

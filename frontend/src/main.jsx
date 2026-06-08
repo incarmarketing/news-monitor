@@ -56,6 +56,7 @@ import {
 import {
   deleteReporterProfile,
   loadOperationalData,
+  saveArticleScrap,
   saveClassificationFeedback,
   saveMediaRelation,
   saveMonitorKeyword,
@@ -384,6 +385,17 @@ function App() {
     await refreshOperations({ label: "분류 수정 반영 확인" });
   };
 
+  const handleArticleScrapSaved = async (article) => {
+    const saved = await saveArticleScrap(article);
+    const rows = Array.isArray(saved) ? saved : [];
+    const normalized = rows.map(normalizeSavedScrapRow).filter(Boolean);
+    if (!normalized.length) return;
+    setOperations((current) => ({
+      ...current,
+      scraps: upsertScrapRows(current.scraps || [], normalized),
+    }));
+  };
+
   const View = {
     overview: Overview,
     monitoring: Monitoring,
@@ -439,6 +451,7 @@ function App() {
         isWorking={working}
         onRefreshOperations={refreshOperations}
         onFeedbackSaved={handleClassificationFeedbackSaved}
+        onScrapSaved={handleArticleScrapSaved}
         setActiveSection={setActiveSection}
         monitoringPreset={monitoringPreset}
         onOpenMonitoring={openMonitoring}
@@ -756,7 +769,7 @@ function OpsStatusRail({
   );
 }
 
-function Monitoring({ data, articles, monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved }) {
+function Monitoring({ data, articles, scraps = [], monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved, onScrapSaved }) {
   const regularArticles = useMemo(
     () => articles.filter((article) => !isOfficialRegulatorSource(article.source)),
     [articles],
@@ -930,7 +943,12 @@ function Monitoring({ data, articles, monitoringPreset, operations, isWorking, o
       </section>
       <section className="monitoring-layout">
         <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
-          <ArticleFeed rows={visibleRows.slice(0, visible)} onFeedbackSaved={onFeedbackSaved} />
+          <ArticleFeed
+            rows={visibleRows.slice(0, visible)}
+            scraps={scraps}
+            onFeedbackSaved={onFeedbackSaved}
+            onScrapSaved={onScrapSaved}
+          />
           {visibleRows.length > visible && (
             <button className="ghost-button full" onClick={() => setVisible((count) => count + 30)}>
               더보기
@@ -1878,7 +1896,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
   );
 }
 
-function Scraps({ scraps, onOpenMonitoring }) {
+function Scraps({ scraps, onOpenMonitoring, onScrapSaved }) {
   const [prompt, setPrompt] = useState("홍보 대응 관점에서 부정 이슈와 우호적으로 활용할 수 있는 기사 흐름을 나눠 분석해줘.");
   const grouped = groupArticles(scraps, "category").slice(0, 5).map(([name, value]) => ({ name, value }));
   return (
@@ -1914,7 +1932,7 @@ function Scraps({ scraps, onOpenMonitoring }) {
             <CategoryChart rows={grouped.length ? grouped : [{ name: "스크랩", value: scraps.length }]} mini onOpenMonitoring={onOpenMonitoring} />
           </Panel>
           <Panel title="스크랩 기사 목록" icon={Newspaper} meta={`${scraps.length}건`}>
-            <ArticleFeed rows={scraps} />
+            <ArticleFeed rows={scraps} scraps={scraps} onScrapSaved={onScrapSaved} />
           </Panel>
         </div>
       </section>
@@ -4221,12 +4239,13 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved }) {
+function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onFeedbackSaved, onScrapSaved }) {
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
       {rows.map((row) => {
         const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
         const hasRelated = related.length > 1;
+        const scrapped = isArticleScrapped(row, scraps);
         return (
           <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
             <div className="feed-main">
@@ -4260,6 +4279,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved 
             </div>
             {!compact && (
               <div className="feed-actions">
+                <ArticleScrapButton article={row} scrapped={scrapped} onScrapSaved={onScrapSaved} />
                 {row.link && row.link !== "#" && (
                   <a
                     href={row.link}
@@ -4277,6 +4297,49 @@ function ArticleFeed({ rows, compact = false, showTime = false, onFeedbackSaved 
         );
       })}
     </div>
+  );
+}
+
+function ArticleScrapButton({ article, scrapped = false, onScrapSaved }) {
+  const [saved, setSaved] = useState(scrapped);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setSaved(scrapped);
+  }, [scrapped]);
+
+  if (!onScrapSaved) return null;
+
+  const handleClick = async () => {
+    if (saved || saving) return;
+    setSaving(true);
+    try {
+      await onScrapSaved(article);
+      setSaved(true);
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (message.includes("missing_dashboard_session") || message.includes("invalid_session")) {
+        window.dispatchEvent(new CustomEvent("news-monitor:login-required"));
+      }
+      window.alert(message.includes("missing_dashboard_session")
+        ? "운영 DB 세션이 필요합니다. 로그인 후 다시 스크랩해 주세요."
+        : "스크랩 저장에 실패했습니다. 운영 DB 연결을 확인해 주세요.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      className={saved ? "scrap-action saved" : "scrap-action"}
+      title={saved ? "스크랩됨" : "스크랩"}
+      aria-label={saved ? "스크랩됨" : "기사 스크랩"}
+      onClick={handleClick}
+      disabled={saving || saved}
+    >
+      <Bookmark />
+    </button>
   );
 }
 
@@ -4313,6 +4376,79 @@ function upsertFeedbackRows(rows = [], row = null) {
   const map = new Map(rows.map((item) => [String(item.id || `${item.articleHash}-${item.createdAt}`), item]));
   map.set(String(row.id || `${row.articleHash}-${row.createdAt}`), row);
   return Array.from(map.values()).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+function normalizeSavedScrapRow(row = {}) {
+  const snapshot = row.article_snapshot || row.articleSnapshot || {};
+  const id = row.article_hash || snapshot.article_hash || snapshot.id || snapshot.link || snapshot.title;
+  if (!id || !snapshot.title) return null;
+  return {
+    id,
+    articleHash: row.article_hash || snapshot.article_hash || "",
+    title: snapshot.title || "",
+    link: snapshot.link || "",
+    source: snapshot.source || "",
+    keyword: snapshot.keyword || "",
+    summary: snapshot.summary || "",
+    date: String(snapshot.report_date || snapshot.pub_date || snapshot.date || row.created_at || "").slice(0, 10),
+    time: "",
+    pubDate: snapshot.pub_date || "",
+    slot: snapshot.report_slot || "",
+    score: Number(snapshot.score || 0),
+    category: displayCategory(snapshot.category || snapshot.category_label || ""),
+    tone: displayTone(snapshot.tone || snapshot.tone_label || ""),
+    riskLevel: String(snapshot.risk_level || snapshot.riskLevel || "").toUpperCase(),
+    relatedCount: Number(snapshot.cluster_size || snapshot.clusterSize || 1),
+    scrapedAt: row.created_at ? String(row.created_at).slice(0, 10) : "",
+  };
+}
+
+function upsertScrapRows(rows = [], newRows = []) {
+  const map = new Map(rows.map((row) => [articlePrimaryIdentity(row), row]));
+  newRows.forEach((row) => {
+    const key = articlePrimaryIdentity(row);
+    if (key) map.set(key, row);
+  });
+  return Array.from(map.values()).sort((a, b) => String(b.scrapedAt || b.date || "").localeCompare(String(a.scrapedAt || a.date || "")));
+}
+
+function isArticleScrapped(article = {}, scraps = []) {
+  const targets = new Set(articleIdentityCandidates(article));
+  return scraps.some((scrap) => articleIdentityCandidates(scrap).some((key) => targets.has(key)));
+}
+
+function articlePrimaryIdentity(article = {}) {
+  return articleIdentityCandidates(article)[0] || "";
+}
+
+function articleIdentityCandidates(article = {}) {
+  return [
+    article.articleHash,
+    article.article_hash,
+    article.id,
+    article.link && `link:${article.link}`,
+    article.title && `${article.source || ""}:${article.title}`,
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+}
+
+function displayCategory(value) {
+  const text = String(value || "").trim();
+  const canonical = text.toLowerCase();
+  if (canonical === "own" || /당사/.test(text)) return "당사";
+  if (canonical === "regulation" || /정책|규제/.test(text)) return "정책/규제";
+  if (canonical === "competitor" || /경쟁|GA|보험사/.test(text)) return "경쟁사";
+  if (canonical === "industry" || /업계/.test(text)) return "업계동향";
+  return text || "기타";
+}
+
+function displayTone(value) {
+  const text = String(value || "").trim();
+  const canonical = text.toLowerCase();
+  if (canonical === "negative" || /부정/.test(text)) return "부정";
+  if (canonical === "caution" || /주의/.test(text)) return "주의";
+  if (canonical === "positive" || /긍정/.test(text)) return "긍정";
+  if (canonical === "exclude" || /제외/.test(text)) return "제외";
+  return text || "중립";
 }
 
 function patchCorrectedArticles(rows = [], article = {}, correction = {}) {
