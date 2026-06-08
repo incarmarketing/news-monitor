@@ -9,6 +9,7 @@ export const navItems = [
   { id: "monitoring", label: "실시간 모니터링" },
   { id: "regulators", label: "금융당국 보도자료" },
   { id: "media", label: "언론 동향 분석" },
+  { id: "pressRelease", label: "보도자료 작성" },
   { id: "stocks", label: "주가/시장" },
   { id: "scraps", label: "주요 기사 스크랩" },
   { id: "risk", label: "리스크 대응센터" },

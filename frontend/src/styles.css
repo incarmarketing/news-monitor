@@ -2654,6 +2654,309 @@ button.kpi-card {
   font-weight: 800;
 }
 
+.press-release-workspace {
+  gap: 18px;
+}
+
+.press-guide-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid #c7d4f4;
+  border-radius: 8px;
+  background: #f6f8ff;
+  color: var(--blue-deep);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.press-release-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(420px, .96fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.press-release-editor,
+.press-release-preview,
+.press-output-stack,
+.press-field-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.press-release-preview {
+  position: sticky;
+  top: 18px;
+}
+
+.press-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.press-type-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px 10px;
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.press-type-card:hover,
+.press-type-card.active {
+  border-color: var(--blue);
+  box-shadow: 0 10px 24px rgba(36, 76, 160, .12);
+  transform: translateY(-1px);
+}
+
+.press-type-card span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #edf3ff;
+  color: var(--blue);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.press-type-card b {
+  align-self: center;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.press-type-card em {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.press-assistant-note {
+  display: grid;
+  gap: 6px;
+  padding: 13px 14px;
+  border: 1px solid #d7e2fa;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.press-assistant-note b {
+  color: var(--blue-deep);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.press-assistant-note span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.press-input-field {
+  display: grid;
+  gap: 8px;
+}
+
+.press-input-field span {
+  color: var(--blue-deep);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.press-input-field textarea {
+  width: 100%;
+  min-height: 86px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 13px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  outline: none;
+}
+
+.press-input-field.optional textarea {
+  min-height: 70px;
+}
+
+.press-input-field textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(40, 85, 217, .11);
+}
+
+.press-input-field textarea:disabled {
+  background: #f3f6fb;
+  color: #9aa8bd;
+}
+
+.press-quote-choice {
+  display: grid;
+  gap: 12px;
+}
+
+.press-quote-choice p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.press-quote-choice div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.press-quote-choice button,
+.press-output-toolbar button,
+.press-output-block button {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue-deep);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.press-quote-choice button.active,
+.press-output-toolbar button:hover,
+.press-output-block button:hover {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.press-quote-choice button:disabled,
+.press-generate-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.press-generate-button {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.press-empty-preview {
+  display: grid;
+  gap: 12px;
+  min-height: 360px;
+  align-content: center;
+  padding: 22px;
+  border: 1px dashed #c7d4e8;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.press-empty-preview b {
+  color: var(--blue-deep);
+  font-size: 18px;
+}
+
+.press-empty-preview p,
+.press-empty-preview li {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.press-empty-preview ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.press-output-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #d7e2fa;
+  border-radius: 8px;
+  background: #f7faff;
+}
+
+.press-output-toolbar span {
+  color: var(--blue-deep);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.press-output-toolbar button,
+.press-output-block button {
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.press-output-block {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.press-output-block > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  background: #f8fafc;
+}
+
+.press-output-block > div b {
+  color: var(--blue-deep);
+  font-size: 14px;
+}
+
+.press-output-block pre {
+  max-height: 560px;
+  overflow: auto;
+  margin: 0;
+  padding: 16px;
+  color: #132142;
+  font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.68;
+  white-space: pre-wrap;
+}
+
+.press-finish-message {
+  padding: 13px 14px;
+  border-radius: 8px;
+  background: #eefaf4;
+  color: #0f6a4c;
+  font-size: 14px;
+  font-weight: 950;
+  text-align: center;
+}
+
 .keyword-brief {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5273,8 +5576,13 @@ button.kpi-card {
   .stock-hero,
   .stock-dashboard-grid,
   .stock-peer-section,
+  .press-release-layout,
   .reporter-form {
     grid-template-columns: 1fr;
+  }
+
+  .press-release-preview {
+    position: static;
   }
 
   .period-brief-grid,
@@ -5344,6 +5652,44 @@ button.kpi-card {
 
   .period-brief-lead b {
     font-size: 15px;
+  }
+
+  .press-guide-badge {
+    width: 100%;
+    justify-content: center;
+    min-height: 34px;
+    font-size: 12px;
+  }
+
+  .press-type-grid,
+  .press-quote-choice div {
+    grid-template-columns: 1fr;
+  }
+
+  .press-type-card {
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .press-type-card em {
+    grid-column: 1 / -1;
+  }
+
+  .press-output-toolbar,
+  .press-output-block > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .press-output-toolbar button,
+  .press-output-block button {
+    width: 100%;
+  }
+
+  .press-output-block pre {
+    max-height: none;
+    padding: 13px;
+    font-size: 12px;
   }
 
   .press-history-stack b,

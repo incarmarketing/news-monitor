@@ -71,6 +71,7 @@ const navIcons = {
   monitoring: Search,
   regulators: FileText,
   media: LineChart,
+  pressRelease: Megaphone,
   stocks: WalletCards,
   scraps: Bookmark,
   risk: ShieldCheck,
@@ -375,6 +376,7 @@ function App() {
     monitoring: Monitoring,
     regulators: Regulators,
     media: MediaAnalysis,
+    pressRelease: PressReleaseStudio,
     stocks: StockMarketDashboard,
     scraps: Scraps,
     risk: RiskCenterV2,
@@ -1153,6 +1155,349 @@ function StockPeerTable({ rows = [] }) {
       </table>
     </div>
   );
+}
+
+const PRESS_COMPANY_OVERVIEW = "인카금융서비스는 2007년 설립된 국내 최초의 코스닥 상장 GA로, 전속 설계사 2만 명 이상을 보유하고 있으며 2022년 코스닥 이전 상장에 이어 종합자산관리회사로의 도약을 단계적으로 추진하고 있다";
+
+const PRESS_RELEASE_TYPES = [
+  { id: "plan", number: 1, title: "사업계획 보도자료", focus: "신규 전략, 사업 방향, 중장기 성장 계획을 발표합니다." },
+  { id: "csr", number: 2, title: "사회공헌 보도자료", focus: "나눔 활동, 지역사회 기여, ESG 성격의 활동을 알립니다." },
+  { id: "award", number: 3, title: "수상 보도자료", focus: "수상 사실, 평가 기준, 성과의 의미를 객관적으로 전달합니다." },
+  { id: "performance", number: 4, title: "실적 보도자료", focus: "매출, 영업성과, 설계사 수 등 수치 기반 성과를 설명합니다." },
+  { id: "partnership", number: 5, title: "제휴 보도자료", focus: "제휴 배경, 협력 범위, 고객·영업현장 기대효과를 알립니다." },
+  { id: "event", number: 6, title: "행사 보도자료", focus: "행사 목적, 참석자, 주요 프로그램과 후속 계획을 정리합니다." },
+];
+
+const PRESS_CORE_FIELDS = [
+  { id: "announcement", label: "1. 주요 발표 내용은 무엇인가요?", placeholder: "예: 인카금융서비스가 우수인증설계사 2,262명을 배출했습니다." },
+  { id: "value", label: "2. 이 소식이 왜 중요하고 가치 있는지 설명해 주세요.", placeholder: "예: 영업조직의 전문성과 완전판매 역량을 객관적으로 보여주는 지표입니다." },
+  { id: "difference", label: "3. 인카금융서비스만의 차별화 포인트는 무엇인가요?", placeholder: "예: 업계 최대 수준의 설계사 네트워크와 체계적인 교육 시스템을 갖추고 있습니다." },
+];
+
+function PressReleaseStudio() {
+  const [selectedTypeId, setSelectedTypeId] = useState("");
+  const [answers, setAnswers] = useState({
+    announcement: "",
+    value: "",
+    difference: "",
+    facts: "",
+  });
+  const [quoteSpeaker, setQuoteSpeaker] = useState("");
+  const [draft, setDraft] = useState(null);
+  const [copied, setCopied] = useState("");
+  const selectedType = PRESS_RELEASE_TYPES.find((item) => item.id === selectedTypeId);
+  const coreReady = selectedType && PRESS_CORE_FIELDS.every((field) => answers[field.id].trim().length >= 4);
+  const quoteReady = coreReady && quoteSpeaker;
+
+  const updateAnswer = (key, value) => {
+    setAnswers((current) => ({ ...current, [key]: value }));
+    setDraft(null);
+  };
+
+  const generateDraft = () => {
+    if (!quoteReady) return;
+    setDraft(buildPressReleasePackage(selectedType, answers, quoteSpeaker));
+  };
+
+  const copySection = async (key, text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      window.setTimeout(() => setCopied(""), 1800);
+    } catch {
+      setCopied("failed");
+      window.setTimeout(() => setCopied(""), 1800);
+    }
+  };
+
+  return (
+    <main className="workspace press-release-workspace">
+      <PageTitle
+        eyebrow="Press Release Studio"
+        title="보도자료 작성"
+        description="뉴스 가치, 리드, 객관적 문장, 인용문, 기자 발송 이메일까지 한 번에 정리합니다."
+        right={<span className="press-guide-badge">뉴스와이어 작성 원칙 반영</span>}
+      />
+
+      <section className="press-release-layout">
+        <div className="press-release-editor">
+          <Panel title="1단계 · 유형 선택" icon={Megaphone} meta="먼저 보도자료 유형을 선택합니다.">
+            <div className="press-type-grid">
+              {PRESS_RELEASE_TYPES.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={selectedTypeId === item.id ? "press-type-card active" : "press-type-card"}
+                  onClick={() => {
+                    setSelectedTypeId(item.id);
+                    setDraft(null);
+                  }}
+                >
+                  <span>{item.number}</span>
+                  <b>{item.title}</b>
+                  <em>{item.focus}</em>
+                </button>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel title="2단계 · 핵심 질문" icon={FilePenLine} meta={selectedType ? selectedType.title : "유형 선택 후 입력"}>
+            <div className="press-assistant-note">
+              <b>{selectedType ? "네 알겠습니다. 그럼 보도자료 작성에 필요한 내용을 알려주세요." : "1, 2, 3, 4, 5, 6번 중 하나를 먼저 선택해 주세요."}</b>
+              <span>내용은 짧게 적어도 됩니다. 수치, 기관명, 일정, 성과가 있으면 아래 선택 입력란에 함께 넣어주세요.</span>
+            </div>
+            <div className="press-field-stack">
+              {PRESS_CORE_FIELDS.map((field) => (
+                <label key={field.id} className="press-input-field">
+                  <span>{field.label}</span>
+                  <textarea
+                    value={answers[field.id]}
+                    onChange={(event) => updateAnswer(field.id, event.target.value)}
+                    placeholder={field.placeholder}
+                    disabled={!selectedType}
+                  />
+                </label>
+              ))}
+              <label className="press-input-field optional">
+                <span>추가 참고자료 · 수치 · 일정 · 상대기관 · 행사 장소</span>
+                <textarea
+                  value={answers.facts}
+                  onChange={(event) => updateAnswer("facts", event.target.value)}
+                  placeholder="예: 2026년 6월, 서울 본사, 참여 설계사 수, 제휴 기관명, 전년 대비 성장률 등"
+                  disabled={!selectedType}
+                />
+              </label>
+            </div>
+          </Panel>
+
+          <Panel title="3단계 · 인용문 작성자" icon={Users} meta={coreReady ? "인용문 작성자 선택" : "핵심 질문 입력 후 선택"}>
+            <div className="press-quote-choice">
+              <p>인용문은 최병채 회장님과 관계자 중 어느 분으로 작성할까요?</p>
+              <div>
+                <button
+                  type="button"
+                  className={quoteSpeaker === "chairman" ? "active" : ""}
+                  disabled={!coreReady}
+                  onClick={() => {
+                    setQuoteSpeaker("chairman");
+                    setDraft(null);
+                  }}
+                >
+                  최병채 회장
+                </button>
+                <button
+                  type="button"
+                  className={quoteSpeaker === "official" ? "active" : ""}
+                  disabled={!coreReady}
+                  onClick={() => {
+                    setQuoteSpeaker("official");
+                    setDraft(null);
+                  }}
+                >
+                  인카금융서비스 관계자
+                </button>
+              </div>
+            </div>
+            <button type="button" className="confirm-button press-generate-button" disabled={!quoteReady} onClick={generateDraft}>
+              알겠습니다. 지금 바로 작성하겠습니다.
+            </button>
+          </Panel>
+        </div>
+
+        <aside className="press-release-preview">
+          <Panel title="작성 결과" icon={Newspaper} meta={draft ? "배포 초안 생성 완료" : "입력 완료 후 생성"}>
+            {!draft ? (
+              <div className="press-empty-preview">
+                <b>보도자료 작성 대기</b>
+                <p>유형 선택, 핵심 질문 3개, 인용문 작성자를 입력하면 언론사 배포용 보도자료와 이메일 본문을 생성합니다.</p>
+                <ul>
+                  <li>도입부에는 날짜와 지역을 넣지 않습니다.</li>
+                  <li>회사명은 인카금융서비스 또는 코스닥상장사 인카금융서비스로 표기합니다.</li>
+                  <li>회사 개요는 지정된 문장만 사용합니다.</li>
+                </ul>
+              </div>
+            ) : (
+              <div className="press-output-stack">
+                <div className="press-output-toolbar">
+                  <span>{draft.notice}</span>
+                  <button type="button" onClick={() => copySection("all", draft.fullText)}>{copied === "all" ? "복사 완료" : "전체 복사"}</button>
+                </div>
+                <PressOutputBlock title="보도자료" text={draft.pressRelease} onCopy={() => copySection("release", draft.pressRelease)} copied={copied === "release"} />
+                <PressOutputBlock title="기자 발송 이메일" text={draft.email} onCopy={() => copySection("email", draft.email)} copied={copied === "email"} />
+                <div className="press-finish-message">보도자료 작성이 완료되었습니다.</div>
+              </div>
+            )}
+          </Panel>
+        </aside>
+      </section>
+    </main>
+  );
+}
+
+function PressOutputBlock({ title, text, onCopy, copied }) {
+  return (
+    <section className="press-output-block">
+      <div>
+        <b>{title}</b>
+        <button type="button" onClick={onCopy}>{copied ? "복사 완료" : "복사"}</button>
+      </div>
+      <pre>{text}</pre>
+    </section>
+  );
+}
+
+function buildPressReleasePackage(type, answers, quoteSpeaker) {
+  const cleanAnswers = {
+    announcement: cleanPressLine(answers.announcement),
+    value: cleanPressLine(answers.value),
+    difference: cleanPressLine(answers.difference),
+    facts: cleanPressLine(answers.facts),
+  };
+  const headline = buildPressHeadline(type, cleanAnswers);
+  const subtitle = buildPressSubtitle(type, cleanAnswers);
+  const lead = buildPressLead(type, cleanAnswers);
+  const body = buildPressBody(type, cleanAnswers);
+  const quote = buildPressQuote(type, cleanAnswers, quoteSpeaker);
+  const emailSummary = buildEmailSummary(cleanAnswers, type);
+  const pressRelease = [
+    headline,
+    subtitle,
+    "",
+    lead,
+    "",
+    ...body,
+    "",
+    quote,
+    "",
+    PRESS_COMPANY_OVERVIEW,
+  ].filter((line) => line !== null).join("\n");
+  const email = [
+    `제목: [보도자료] ${headline}`,
+    "",
+    "[본문]",
+    "",
+    "안녕하세요, 인카금융서비스 마케팅부입니다.",
+    "",
+    "언론 발전을 위해 항상 애쓰시는 기자님의 노고에 진심으로 감사드립니다.",
+    "",
+    ...emailSummary,
+    "",
+    "바쁘시겠지만 긍정적인 검토를 부탁드립니다.",
+    "",
+    "늘 건강하시고 좋은 하루 보내시길 바랍니다. 감사합니다.",
+    "",
+    "인카금융서비스 마케팅부",
+    "",
+    "담당자: 최진우 과장",
+    "이메일: enul459@incar.co.kr",
+    "전화: 02-6212-4650",
+  ].join("\n");
+  return {
+    notice: "그리고나서 기자들에게 보낼 이메일 본문 작성을 시작하겠습니다.",
+    pressRelease,
+    email,
+    fullText: `${pressRelease}\n\n---\n\n${email}\n\n보도자료 작성이 완료되었습니다.`,
+  };
+}
+
+function buildPressHeadline(type, answers) {
+  const subject = stripTrailingPunctuation(answers.announcement);
+  const fragments = {
+    plan: `${subject}, 미래 성장 전략 본격화`,
+    csr: `${subject}, 지역사회와 상생 가치 확산`,
+    award: `${subject}, 전문성과 신뢰도 입증`,
+    performance: `${subject}, 지속 성장 기반 강화`,
+    partnership: `${subject}, 고객 가치 확대 나선다`,
+    event: `${subject}, 현장 소통과 성장 방향 공유`,
+  };
+  return trimPressHeadline(fragments[type.id] || subject);
+}
+
+function buildPressSubtitle(type, answers) {
+  const value = stripTrailingPunctuation(answers.value);
+  const difference = stripTrailingPunctuation(answers.difference);
+  return `- ${value}\n- ${difference}`;
+}
+
+function buildPressLead(type, answers) {
+  const verb = {
+    plan: "추진한다고 밝혔다",
+    csr: "진행했다고 밝혔다",
+    award: "인정받았다고 밝혔다",
+    performance: "기록했다고 밝혔다",
+    partnership: "협력한다고 밝혔다",
+    event: "개최했다고 밝혔다",
+  }[type.id] || "밝혔다";
+  return `인카금융서비스(대표이사 최병채,천대권)는 ${sentenceObject(answers.announcement)} ${verb}.`;
+}
+
+function buildPressBody(type, answers) {
+  const typeLead = {
+    plan: "이번 계획은 회사의 중장기 성장 기반을 강화하고 고객 접점의 서비스 품질을 높이기 위해 마련됐다.",
+    csr: "이번 활동은 회사가 보유한 인적·조직적 역량을 지역사회와 나누고 지속 가능한 상생 가치를 실천하기 위해 추진됐다.",
+    award: "이번 수상은 회사의 영업 경쟁력과 고객 중심 운영 체계가 대외적으로 평가받은 결과라는 점에서 의미가 있다.",
+    performance: "이번 성과는 영업조직의 질적 성장과 안정적인 사업 기반이 함께 반영된 결과로 풀이된다.",
+    partnership: "이번 제휴는 양사의 강점을 결합해 고객과 영업현장에 실질적인 혜택을 제공하는 데 초점을 맞췄다.",
+    event: "이번 행사는 주요 관계자와 현장 구성원이 함께 회사의 방향성과 실행 과제를 공유하기 위해 마련됐다.",
+  }[type.id];
+  const paragraphs = [
+    `${typeLead} ${sentence(answers.value)}`,
+    `인카금융서비스는 ${sentence(answers.difference)} 이를 바탕으로 고객 신뢰와 현장 경쟁력을 동시에 높인다는 계획이다.`,
+  ];
+  if (answers.facts) {
+    paragraphs.splice(1, 0, `주요 세부 내용은 ${sentenceObject(answers.facts)} 등이다. 회사는 관련 수치와 실행 계획을 기반으로 발표 내용의 신뢰도를 높였다.`);
+  }
+  paragraphs.push("인카금융서비스는 앞으로도 보험 소비자 보호와 영업현장 전문성 강화를 중심으로 지속 가능한 성장 체계를 고도화할 방침이다.");
+  return paragraphs;
+}
+
+function buildPressQuote(type, answers, quoteSpeaker) {
+  const speaker = quoteSpeaker === "chairman" ? "최병채 인카금융서비스 회장" : "인카금융서비스 관계자";
+  const quoteFocus = quoteSpeaker === "chairman"
+    ? "회사의 지속 성장은 고객 신뢰와 현장 전문성이 함께 높아질 때 가능하다"
+    : "이번 발표는 고객과 영업현장에 실질적인 가치를 제공하기 위한 실행의 일환";
+  const action = {
+    plan: "미래 성장 기반을 차근차근 강화하겠다",
+    csr: "사회적 책임을 꾸준히 실천하겠다",
+    award: "신뢰받는 금융서비스 회사로서 기준을 높여가겠다",
+    performance: "질적 성장과 안정적 성과를 함께 만들어가겠다",
+    partnership: "협력의 성과가 고객 혜택으로 이어지도록 하겠다",
+    event: "현장과의 소통을 바탕으로 실행력을 높이겠다",
+  }[type.id] || "고객 신뢰를 높여가겠다";
+  return `${speaker}은 “${quoteFocus}”며 “${sentenceObject(answers.difference)}라는 강점을 바탕으로 ${action}”고 말했다.`;
+}
+
+function buildEmailSummary(answers, type) {
+  return [
+    `1. ${sentence(answers.announcement)}`,
+    `2. ${sentence(answers.value)}`,
+    `3. ${type.title.replace(" 보도자료", "")}의 핵심은 ${sentenceObject(answers.difference)}입니다.`,
+  ];
+}
+
+function cleanPressLine(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/기업형\s*GA\s*/g, "")
+    .trim();
+}
+
+function sentence(value) {
+  const text = stripTrailingPunctuation(cleanPressLine(value));
+  return text ? `${text}.` : "";
+}
+
+function sentenceObject(value) {
+  return stripTrailingPunctuation(cleanPressLine(value));
+}
+
+function stripTrailingPunctuation(value) {
+  return cleanPressLine(value).replace(/[.。!！?？]+$/g, "");
+}
+
+function trimPressHeadline(value) {
+  const text = stripTrailingPunctuation(value);
+  return text.length > 58 ? `${text.slice(0, 56)}…` : text;
 }
 
 function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, scraps, onOpenMonitoring, operations }) {
