@@ -345,6 +345,8 @@ def analyze_tone(article: dict) -> str:
 
     if is_zero_misconduct_positive_article(article) and is_own_positive_focus_article(article):
         return "positive"
+    if is_zero_misconduct_positive_article(article) and not is_own_positive_focus_article(article):
+        return "neutral"
 
     # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
     if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
@@ -396,6 +398,10 @@ def is_own_positive_focus_article(article: dict) -> bool:
 
     if any(name in title for name in OWN_NAMES):
         return any(word in text for word in positive_signals)
+
+    preferred = normalize_keyword_category(article.get("keyword_category"))
+    if preferred == "competitor" and contains_competitor_word(title):
+        return False
 
     sentence_parts = re.split(r"[.!?。！？\n]|(?<=[가-힣])\s{2,}", text)
     for sentence in sentence_parts:
