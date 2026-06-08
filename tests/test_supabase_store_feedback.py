@@ -9,7 +9,7 @@ import supabase_store
 class ClassificationFeedbackTests(unittest.TestCase):
     def test_feedback_matches_article_by_normalized_link(self) -> None:
         article = {
-            "title": "인카금융서비스 기사",
+            "title": "샘플회사 기사",
             "link": "https://example.com/news/1?utm_source=portal",
             "_category": "own",
             "_tone": "negative",

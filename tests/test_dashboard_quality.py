@@ -47,7 +47,7 @@ class DashboardQualityTests(unittest.TestCase):
                 "id": 1,
                 "message_type": "daily_report",
                 "title": "daily report 2026-06-06 13",
-                "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-06-06-08.html",
+                "link_url": "https://your-github-id.github.io/your-repo/reports/daily/2026-06-06-08.html",
                 "status": "success",
             }
         ]
@@ -85,7 +85,7 @@ class DashboardQualityTests(unittest.TestCase):
                 "id": 1,
                 "message_type": "daily_report",
                 "title": "daily report 2026-06-06 13",
-                "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-06-06-13.html?v=1",
+                "link_url": "https://your-github-id.github.io/your-repo/reports/daily/2026-06-06-13.html?v=1",
                 "status": "success",
             }
         ]

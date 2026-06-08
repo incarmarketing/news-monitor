@@ -6,7 +6,7 @@ on:
       url:
         description: "Dashboard URL to inspect"
         required: false
-        default: "https://incarmarketing.github.io/news-monitor/dashboard.html"
+        default: "https://your-github-id.github.io/your-repo/dashboard.html"
   workflow_run:
     workflows:
       - Publish Dashboard
@@ -44,7 +44,7 @@ jobs:
 
       - name: Inspect deployed dashboard
         env:
-          DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
+          DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://your-github-id.github.io/your-repo/dashboard.html' }}
           PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
           PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
         run: node frontend/scripts/design-qa.mjs

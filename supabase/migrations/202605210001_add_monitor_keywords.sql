@@ -34,15 +34,15 @@ with check (true);
 
 insert into public.monitor_keywords (keyword, enabled)
 values
-  ('인카금융', true),
-  ('인카금융서비스', true),
-  ('보험 마케팅', true),
-  ('생명보험', true),
-  ('손해보험', true),
-  ('보험 프로모션', true),
-  ('GA 보험', true),
-  ('보험설계사', true),
-  ('보험대리점 브랜드평판', true),
-  ('GA 브랜드평판', true),
-  ('인카금융서비스 브랜드평판', true)
+  ('샘플회사', true),
+  ('샘플서비스', true),
+  ('샘플회사 브랜드평판', true),
+  ('경쟁사명', true),
+  ('경쟁사 서비스명', true),
+  ('업계 키워드', true),
+  ('시장 동향', true),
+  ('고객 리뷰', true),
+  ('정책 규제 키워드', true),
+  ('감독기관', true),
+  ('무관 스포츠', true)
 on conflict (keyword) do nothing;

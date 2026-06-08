@@ -81,7 +81,7 @@ CATEGORY_FEEDBACK_MAP = {
     "company": "own",
     "당사": "own",
     "당사 보도": "own",
-    "인카": "own",
+    "샘플": "own",
     "regulation": "regulation",
     "policy": "regulation",
     "정책/규제": "regulation",
@@ -565,7 +565,7 @@ def notification_already_sent(message_type: str, title: str, status: str = "succ
         return False
 
 
-def repair_daily_notification_links(base_url: str = "https://incarmarketing.github.io/news-monitor/") -> int:
+def repair_daily_notification_links(base_url: str = "https://your-github-id.github.io/your-repo/") -> int:
     """Point legacy daily notification rows at their stable report HTML files."""
     if not is_enabled():
         return 0
@@ -636,7 +636,7 @@ def infer_notification_slot(row: dict, link: str) -> str:
 
 
 def stable_daily_report_url(base_url: str, date_value: str, slot: str) -> str:
-    clean = (base_url or "https://incarmarketing.github.io/news-monitor/").split("?", 1)[0]
+    clean = (base_url or "https://your-github-id.github.io/your-repo/").split("?", 1)[0]
     if clean.endswith(".html"):
         clean = clean.rsplit("/", 1)[0] + "/"
     if not clean.endswith("/"):

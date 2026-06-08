@@ -79,7 +79,7 @@ const navIcons = {
 const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
 const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
-const GITHUB_REPO = "incarmarketing/news-monitor";
+const GITHUB_REPO = "your-github-id/your-repo";
 const WORKFLOW_HEALTH_TARGETS = [
   { id: "negative-watch.yml", label: "부정기사 감시" },
   { id: "news-briefing.yml", label: "보고서 생성·발송" },
@@ -436,14 +436,14 @@ function App() {
 }
 
 function Header({ working = false, workLabel = "" }) {
-  const userText = "최진우 1611499 관리자";
+  const userText = "샘플관리자 1000001 관리자";
 
   return (
     <header className="app-header">
       <div className="brand">
         <div className="brand-mark">IN</div>
         <div>
-          <strong>인카 언론 모니터링</strong>
+          <strong>샘플 언론 모니터링</strong>
           <span>실시간 기사 · 보고서 · 운영 관리</span>
         </div>
       </div>
@@ -1502,8 +1502,8 @@ function riskIssueSignature(article = {}) {
   const text = normalizeKeywordText(`${article.title || ""} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`);
   if (/전세사기/.test(text) && /청년/.test(text) && /지원|상환|학자금/.test(text)) return "risk:jeonse-youth-support";
   if (/보험설계사/.test(text) && /개인정보|처리자|판매 주체|판매주체/.test(text)) return "risk:planner-privacy-controller";
-  if (/인카금융스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) return "risk:incar-scandal-illegal-sales";
-  if (/인카금융/.test(text) && /관리 부실|관리부실|대리점|가로챈/.test(text)) return "risk:incar-agency-control";
+  if (/샘플회사스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) return "risk:sample-scandal-illegal-sales";
+  if (/샘플회사/.test(text) && /관리 부실|관리부실|대리점|가로챈/.test(text)) return "risk:sample-agency-control";
   if (/사칭|고객 db|고객db|db 수집|디비 수집/.test(text) && /금융|저축은행|보험/.test(text)) return "risk:impersonation-customer-db";
   if (/개인정보|고객정보|정보유출|해킹/.test(text) && /보험|ga|설계사|대리점/.test(text)) return "risk:insurance-privacy-security";
   return "";
@@ -1519,7 +1519,7 @@ function areRiskRelatedArticleSeeds(a, b) {
 }
 
 function isRiskGroupingToken(token = "") {
-  return /전세사기|피해|청년|지원|학자금|상환|개인정보|처리자|보험설계사|판매주체|인카금융|스캔들|보험꺾기|사채|사칭|고객db|대리점|관리부실|해킹|정보유출/.test(token);
+  return /전세사기|피해|청년|지원|학자금|상환|개인정보|처리자|보험설계사|판매주체|샘플회사|스캔들|보험꺾기|사채|사칭|고객db|대리점|관리부실|해킹|정보유출/.test(token);
 }
 
 function buildRiskGroupSummaryLines(articles = []) {
@@ -1555,13 +1555,13 @@ function buildRiskFallbackSummaryLines(articles = []) {
   } else if (/보험설계사/.test(text) && /개인정보|처리자|판매 주체|판매주체/.test(text)) {
     lines.push("보험설계사의 개인정보 처리 책임과 판매 주체별 법적 지위가 핵심 쟁점입니다.");
     lines.push("GA와 판매채널 운영 기준에 영향을 줄 수 있어 내부 기준 확인이 필요합니다.");
-  } else if (/인카금융스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) {
+  } else if (/샘플회사스캔들|보험 꺾기|보험꺾기|불법 사채|불법사채/.test(text)) {
     lines.push("GA 영업 관행과 불법 사채 의혹을 다룬 고위험 평판 이슈입니다.");
     lines.push("당사명 노출 여부와 사실관계, 추가 보도 확산 가능성을 우선 확인해야 합니다.");
   } else if (/사칭|고객 DB|고객DB|DB 수집|디비 수집/i.test(text)) {
     lines.push("금융사 사칭과 고객 DB 수집 의혹이 핵심인 소비자보호 리스크 기사입니다.");
     lines.push("당사 관련성, 피해 범위, 후속 보도 가능성을 분리해 확인해야 합니다.");
-  } else if (/관리 부실|관리부실|대리점|가로챈/.test(text) && /인카금융/.test(text)) {
+  } else if (/관리 부실|관리부실|대리점|가로챈/.test(text) && /샘플회사/.test(text)) {
     lines.push("보험대리점 관리와 당사 언급이 함께 나온 평판 리스크 기사입니다.");
     lines.push("관리 책임, 피해 주장, 보도 근거를 나눠 사실관계를 확인해야 합니다.");
   } else {
@@ -1664,7 +1664,7 @@ function buildRiskCenterFacts(article = {}, articleUrl = "") {
 function buildRiskRelevance(article = {}) {
   if (!article?.title || article.title === "기사 선택 필요") return "확인 필요";
   if (isOwnArticle(article)) return "당사 직접 언급";
-  if (article.category === "GA" || /GA|보험대리점|설계사|인카금융/i.test(`${article.title} ${article.summary} ${article.keyword}`)) {
+  if (article.category === "GA" || /GA|보험대리점|설계사|샘플회사/i.test(`${article.title} ${article.summary} ${article.keyword}`)) {
     return "업계/GA 문맥";
   }
   return "간접 이슈";
@@ -2413,7 +2413,7 @@ function a4TopicLabel(article = {}) {
 
 function formatA4ArticleMeta(item = {}, fallback = "-") {
   if (!item) return fallback;
-  const source = item.source || "INCAR Media Desk";
+  const source = item.source || "Monitoring Desk";
   const dateTime = [item.date, item.time].filter(Boolean).join(" ") || item.publishedAt || fallback;
   const related = Number(item.relatedCount || item.clusterSize || 1) > 1 ? ` · 관련 ${Number(item.relatedCount || item.clusterSize).toLocaleString("ko-KR")}건` : "";
   return `${source} · ${dateTime}${related}`;
@@ -2469,7 +2469,7 @@ function buildReportLead(period, data, articles, issues) {
     return {
       ...frontArticle,
       category: frontArticle.category || "당사",
-      source: frontArticle.source || "INCAR Media Desk",
+      source: frontArticle.source || "Monitoring Desk",
       summary: compactArticleSummary(frontArticle),
       summaryLines: unique([
         ownPositive
@@ -2487,7 +2487,7 @@ function buildReportLead(period, data, articles, issues) {
   return {
     tone: data.summary.risk === "LOW" ? "중립" : "주의",
     category: period === "weekly" ? "주간 종합" : "월간 종합",
-    source: "INCAR Media Desk",
+    source: "Monitoring Desk",
     title: leadIssue?.title || `${cadence} 언론 흐름은 ${topCategories} 중심으로 형성`,
     summary: `${riskText}, 직접 부정과 시장성 주의 이슈를 분리해 추적합니다. ${topCategories} 보도량이 기간 흐름을 만들었고, 당사 언급 ${data.summary.ownMentions}건은 보고서 근거로 우선 확인합니다.`,
     summaryLines: [
@@ -5081,7 +5081,7 @@ function summarySemanticTopicKey(value = "") {
   const text = cleanSummaryText(value);
   if (!text) return "";
   if (/제목과 본문 근거|세부 내용을 확인|핵심 내용을 확인/.test(text)) return "generic-fallback";
-  if (/우수인증|인증설계사|최다|배출/.test(text) && /인카금융|당사|GA업계/.test(text)) return "own-performance";
+  if (/우수인증|인증설계사|최다|배출/.test(text) && /샘플회사|당사|GA업계/.test(text)) return "own-performance";
   if (/정착지원금|수수료|지급 규모|순위|공시/.test(text) && /GA|보험대리점|설계사/.test(text)) return "settlement-support";
   if (/GA 리포트|리포트성|조직 현황|운영 지표/.test(text)) return "ga-report";
   if (/투자의견|목표가|목표주가|주가|시장 평가|증권가/.test(text)) return "investment";
@@ -5192,8 +5192,8 @@ function headlineBasedSummary(item = {}) {
   const text = summaryHaystack(item);
   if (topic === "own-performance") {
     return /2,?262|2262/.test(text)
-      ? "인카금융서비스가 우수인증설계사 2,262명 배출로 GA업계 최다 기록을 알린 성과성 보도입니다."
-      : "인카금융서비스의 우수인증설계사 배출 성과를 다룬 당사 성과성 보도입니다.";
+      ? "샘플회사가 우수인증설계사 2,262명 배출로 GA업계 최다 기록을 알린 성과성 보도입니다."
+      : "샘플회사의 우수인증설계사 배출 성과를 다룬 당사 성과성 보도입니다.";
   }
   if (topic === "security") {
     return "보도 초점은 해킹 사고 발생이 아니라 금융보안원 가입 확대와 보안 예방 체계 강화입니다.";
@@ -5216,11 +5216,11 @@ function buildContextualSummaryLines(item = {}) {
   const topic = articlePrimarySummaryTopic(item);
   if (topic === "own-performance") {
     lines.push(/2,?262|2262/.test(text)
-      ? "인카금융서비스가 우수인증설계사 2,262명을 배출해 GA업계 최다 기록을 낸 성과성 기사입니다."
-      : "인카금융서비스의 우수인증설계사 배출 성과를 다룬 당사 성과성 기사입니다.");
+      ? "샘플회사가 우수인증설계사 2,262명을 배출해 GA업계 최다 기록을 낸 성과성 기사입니다."
+      : "샘플회사의 우수인증설계사 배출 성과를 다룬 당사 성과성 기사입니다.");
   } else if (topic === "security") {
     if (isOwnArticle(item)) {
-      lines.push("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
+      lines.push("샘플회사가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
     }
     lines.push("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다.");
   } else if (topic === "investment") {
@@ -5232,7 +5232,7 @@ function buildContextualSummaryLines(item = {}) {
   }
   if (/한눈에보는GA리포트|GA리포트/i.test(text)) {
     if (isOwnArticle(item)) {
-      lines.push("인카금융서비스의 GA 리포트성 보도로, 조직 현황과 운영 지표 확인에 쓰이는 자료성 기사입니다.");
+      lines.push("샘플회사의 GA 리포트성 보도로, 조직 현황과 운영 지표 확인에 쓰이는 자료성 기사입니다.");
     } else {
       lines.push("GA 리포트성 보도로, 해당 대리점의 조직 현황과 운영 지표를 확인할 수 있는 자료성 기사입니다.");
     }
@@ -5980,7 +5980,7 @@ function compactFeedbackKeyword(title = "") {
 
 function categoryIdFromFeedbackLabel(value = "") {
   const text = String(value || "").toLowerCase();
-  if (/당사|own|인카/.test(value)) return "own";
+  if (/당사|own|샘플/.test(value)) return "own";
   if (/ga|보험사|경쟁|competitor/.test(text)) return "competitor";
   if (/정책|규제|당국|regulation|policy/.test(value)) return "regulation";
   if (/업계|동향|industry|market/.test(value)) return "industry";
@@ -6763,7 +6763,7 @@ function isUsableArticle(article) {
 
 function isOwnArticle(article) {
   if (isStockListingNoiseArticle(article)) return false;
-  return article.category === "당사" || /인카금융|인카금융서비스/i.test(`${article.title} ${article.keyword} ${article.summary}`);
+  return article.category === "당사" || /샘플회사|샘플회사/i.test(`${article.title} ${article.keyword} ${article.summary}`);
 }
 
 function isStockListingNoiseArticle(article = {}) {
@@ -6775,7 +6775,7 @@ function isStockListingNoiseArticle(article = {}) {
   if (!stockListingTitle && !isItoozaListing) {
     return false;
   }
-  if (/인카금융서비스|인카금융/.test(title) && /투자의견|목표주가|목표가|증권가|리포트|애널리스트/.test(text)) {
+  if (/샘플회사|샘플회사/.test(title) && /투자의견|목표주가|목표가|증권가|리포트|애널리스트/.test(text)) {
     return false;
   }
   return true;
@@ -6784,7 +6784,7 @@ function isStockListingNoiseArticle(article = {}) {
 function categoryPresetFor(value) {
   if (/GA/i.test(value)) return "GA";
   if (/보험사|보험/i.test(value)) return "보험사";
-  if (/당사|인카/i.test(value)) return "당사";
+  if (/당사|샘플/i.test(value)) return "당사";
   if (/정책|규제/i.test(value)) return "정책/규제";
   if (/제외|노이즈/i.test(value)) return "제외";
   return value;

@@ -7,12 +7,12 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="dashboard-version" content="dashboard-20260529-scrap-ai">
-  <title>인카금융서비스 언론관리</title>
+  <title>샘플회사 언론관리</title>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --incar:#27398c;
-      --incar-dark:#111c52;
+      --brand:#27398c;
+      --brand-dark:#111c52;
       --bg:#f4f6f9;
       --panel:#fff;
       --ink:#101828;
@@ -61,14 +61,14 @@
       border-radius:8px;
       display:grid;
       place-items:center;
-      background:var(--incar);
+      background:var(--brand);
       color:#fff;
       font-weight:900;
       margin-bottom:16px;
     }
     .login-card h1 {
       margin:0;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:24px;
       line-height:1.24;
     }
@@ -212,13 +212,13 @@
       padding:22px 24px 30px;
     }
     .eyebrow { color:var(--muted); font-size:12px; font-weight:900; }
-    h1 { margin:3px 0 0; font-size:23px; color:var(--incar-dark); line-height:1.22; }
+    h1 { margin:3px 0 0; font-size:23px; color:var(--brand-dark); line-height:1.22; }
     .actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
     .btn {
       min-height:38px;
       border:1px solid var(--line);
       background:#fff;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       border-radius:8px;
       padding:8px 12px;
       display:inline-flex;
@@ -232,7 +232,7 @@
       transition:background .16s,border-color .16s,transform .16s,box-shadow .16s;
     }
     .btn:hover { border-color:#b9c7dc; background:#f8fafc; }
-    .btn.primary { background:var(--incar); border-color:var(--incar); color:#fff; }
+    .btn.primary { background:var(--brand); border-color:var(--brand); color:#fff; }
     .btn.danger { color:var(--red); border-color:#fecdd3; }
     .btn:disabled {
       opacity:.45;
@@ -254,8 +254,8 @@
     }
     .btn.scrap-toggle.is-scraped {
       color:#fff;
-      border-color:var(--incar);
-      background:var(--incar);
+      border-color:var(--brand);
+      background:var(--brand);
       box-shadow:0 5px 12px rgba(39,57,140,.16);
     }
     .btn.scrap-toggle.is-scraped:hover {
@@ -291,7 +291,7 @@
       padding:11px 13px;
       border-radius:8px;
       border:1px solid #dbe7ff;
-      border-left:4px solid var(--incar);
+      border-left:4px solid var(--brand);
       background:#f8fbff;
       font-size:14px;
       color:#182230;
@@ -321,7 +321,7 @@
       top:0;
       bottom:0;
       width:4px;
-      background:var(--incar);
+      background:var(--brand);
     }
     .metric.negative::before { background:var(--red); }
     .metric.market::before { background:var(--green); }
@@ -332,7 +332,7 @@
       border-radius:8px;
       display:grid;
       place-items:center;
-      color:var(--incar);
+      color:var(--brand);
       background:#f5f8ff;
       border:1px solid #dbe7ff;
       flex:0 0 auto;
@@ -347,7 +347,7 @@
       gap:7px;
       text-align:right;
     }
-    .metric strong { color:var(--incar-dark); font-size:23px; line-height:1; }
+    .metric strong { color:var(--brand-dark); font-size:23px; line-height:1; }
     .metric strong::after {
       content:"건";
       margin-left:2px;
@@ -389,7 +389,7 @@
     }
     .panel-title {
       margin:0 0 14px;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:16px;
       font-weight:900;
       display:flex;
@@ -445,7 +445,7 @@
       font-size:15px;
       line-height:1.48;
     }
-    .article-title:hover { color:var(--incar); text-decoration:underline; }
+    .article-title:hover { color:var(--brand); text-decoration:underline; }
     .summary { color:#475569; font-size:13px; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .meta {
       display:grid;
@@ -491,7 +491,7 @@
     .chip.caution,.chip.neutral { background:#fff7ed; color:#b45309; border-color:#fed7aa; }
     .chip.negative { background:#fff1f2; color:var(--red); border-color:#fecdd3; }
     .chip.regulation { background:#fff7ed; color:var(--amber); border-color:#fed7aa; }
-    .chip.competitor,.chip.industry { background:#e9eefc; color:var(--incar); border-color:#c8d5fb; }
+    .chip.competitor,.chip.industry { background:#e9eefc; color:var(--brand); border-color:#c8d5fb; }
     .toolbar {
       display:grid;
       grid-template-columns:1.5fr repeat(4,minmax(118px,1fr));
@@ -588,7 +588,7 @@
     .legend-dot { width:9px; height:9px; border-radius:99px; display:inline-block; margin-right:5px; }
     .insight-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .insight-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; }
-    .insight-card b { display:block; color:var(--incar-dark); font-size:20px; margin-bottom:4px; }
+    .insight-card b { display:block; color:var(--brand-dark); font-size:20px; margin-bottom:4px; }
     .insight-card span { color:#475467; font-size:12px; font-weight:900; }
     .ops-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
     .ops-card {
@@ -602,7 +602,7 @@
       align-content:start;
       box-shadow:0 1px 2px rgba(16,24,40,.035);
     }
-    .ops-card b { display:block; color:var(--incar-dark); font-size:16px; margin-bottom:0; }
+    .ops-card b { display:block; color:var(--brand-dark); font-size:16px; margin-bottom:0; }
     .ops-card span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.45; }
     .tone-board { display:grid; gap:10px; }
     .tone-buttons { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
@@ -614,7 +614,7 @@
       display:grid;
       gap:5px;
     }
-    .tone-button b { color:var(--incar-dark); font-size:20px; }
+    .tone-button b { color:var(--brand-dark); font-size:20px; }
     .tone-button span { color:var(--muted); font-size:12px; font-weight:900; }
     .media-flow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .flow-card {
@@ -628,7 +628,7 @@
       transition:border-color .16s, background .16s, box-shadow .16s;
     }
     .flow-card:hover { border-color:#9eb1dc; background:#f8fbff; box-shadow:0 5px 12px rgba(15,23,42,.05); }
-    .flow-card strong { display:flex; justify-content:space-between; gap:8px; color:var(--incar-dark); font-size:13px; }
+    .flow-card strong { display:flex; justify-content:space-between; gap:8px; color:var(--brand-dark); font-size:13px; }
     .flow-card strong span { min-width:0; }
     .flow-card strong span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .flow-card strong span:last-child { flex:0 0 auto; }
@@ -645,7 +645,7 @@
       border:1px solid #cfe0ff;
       border-radius:8px;
       background:#f8fbff;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:12px;
       font-weight:900;
     }
@@ -679,7 +679,7 @@
     }
     .ad-kpi b {
       display:block;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:22px;
       line-height:1.12;
       word-break:keep-all;
@@ -702,7 +702,7 @@
       text-decoration:underline;
       text-underline-offset:3px;
     }
-    .media-count-button:hover { color:var(--incar-dark); }
+    .media-count-button:hover { color:var(--brand-dark); }
     .media-article-title { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .media-article-title .chip { font-size:12px; }
     .media-head-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
@@ -750,7 +750,7 @@
       min-width:0;
       box-shadow:0 1px 2px rgba(16,24,40,.035);
     }
-    .ad-chart-title { color:var(--incar-dark); font-size:14px; font-weight:900; margin:0 0 12px; }
+    .ad-chart-title { color:var(--brand-dark); font-size:14px; font-weight:900; margin:0 0 12px; }
     .ad-month-chart { display:grid; gap:10px; }
     .ad-month-row { display:grid; grid-template-columns:72px 1fr 92px; gap:10px; align-items:center; font-size:12px; font-weight:900; color:var(--muted); }
     .ad-month-row > :last-child { text-align:right; }
@@ -761,7 +761,7 @@
       background:#f5f8ff;
       border-radius:8px;
       padding:14px;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-weight:900;
       line-height:1.45;
     }
@@ -1033,7 +1033,7 @@
       border:1px solid #cbd7ec;
       border-radius:8px;
       background:#fff;
-      color:var(--incar);
+      color:var(--brand);
       display:flex;
       align-items:center;
       justify-content:center;
@@ -1073,7 +1073,7 @@
       padding:16px;
       border-bottom:1px solid var(--line);
     }
-    .modal-head h2 { margin:0; font-size:17px; color:var(--incar-dark); }
+    .modal-head h2 { margin:0; font-size:17px; color:var(--brand-dark); }
     .modal-body { padding:16px; display:grid; gap:12px; }
     .modal-message {
       white-space:pre-wrap;
@@ -1107,7 +1107,7 @@
       touch-action:manipulation;
     }
     .article.risk-draggable:active { cursor:grabbing; }
-    #issueUrl.drop-active { border-color:var(--incar); box-shadow:0 0 0 3px rgba(39,57,140,.12); }
+    #issueUrl.drop-active { border-color:var(--brand); box-shadow:0 0 0 3px rgba(39,57,140,.12); }
     .settings-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; }
     .settings-head .panel-title { margin:0; }
     .status-pill {
@@ -1118,7 +1118,7 @@
       border:1px solid #b8c7e9;
       border-radius:999px;
       background:#f5f8ff;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:11px;
       font-weight:900;
       white-space:nowrap;
@@ -1271,7 +1271,7 @@
     .keyword-meta-button:hover {
       border-color:#9eb1dc;
       background:#eef4ff;
-      color:var(--incar);
+      color:var(--brand);
     }
     .keyword-meta-button.negative {
       border-color:#fecdd3;
@@ -1409,7 +1409,7 @@
       white-space:nowrap;
     }
     .keyword-mobile-count {
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:13px;
       font-weight:900;
       white-space:nowrap;
@@ -1553,7 +1553,7 @@
     .keyword-name { color:#182230; font-weight:900; line-height:1.3; }
     .keyword-track { height:10px; border-radius:999px; background:#eef2f7; overflow:hidden; }
     .keyword-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,#27398c,#5b7cfa); }
-    .keyword-count { color:var(--incar-dark); font-size:13px; font-weight:900; text-align:right; }
+    .keyword-count { color:var(--brand-dark); font-size:13px; font-weight:900; text-align:right; }
     .press-influence { display:grid; gap:10px; }
     .press-influence-summary {
       display:grid;
@@ -1571,7 +1571,7 @@
       background:#f8fafc;
     }
     .press-influence-stat b {
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:18px;
       line-height:1.05;
       white-space:nowrap;
@@ -1603,7 +1603,7 @@
     }
     .press-influence-row:hover { border-color:#9eb1dc; background:#f8fbff; }
     .press-name {
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:13px;
       font-weight:900;
       line-height:1.25;
@@ -1639,8 +1639,8 @@
       white-space:nowrap;
     }
     .press-meta .risk { border-color:#fecdd3; background:#fff1f2; color:#b91c1c; }
-    .press-meta .own { border-color:#c7d7fe; background:#eef4ff; color:var(--incar); }
-    .press-count { color:var(--incar-dark); font-size:13px; font-weight:900; white-space:nowrap; }
+    .press-meta .own { border-color:#c7d7fe; background:#eef4ff; color:var(--brand); }
+    .press-count { color:var(--brand-dark); font-size:13px; font-weight:900; white-space:nowrap; }
     .insight-feed { display:grid; gap:12px; }
     .insight-item {
       border:1px solid var(--line);
@@ -1681,7 +1681,7 @@
       overflow-wrap:anywhere;
     }
     .focus-box { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fbfdff; color:var(--muted); font-size:13px; font-weight:800; min-height:62px; }
-    .focus-box strong { display:block; color:var(--incar-dark); font-size:15px; margin-bottom:4px; }
+    .focus-box strong { display:block; color:var(--brand-dark); font-size:15px; margin-bottom:4px; }
     .response-output {
       margin-top:12px;
       white-space:pre-wrap;
@@ -1702,8 +1702,8 @@
     }
     .response-mode .btn.active,
     .response-mode .btn.primary {
-      background:var(--incar);
-      border-color:var(--incar);
+      background:var(--brand);
+      border-color:var(--brand);
       color:#fff;
     }
     .scrap-workspace {
@@ -1743,7 +1743,7 @@
       border:1px solid #c7d7fe;
       border-radius:999px;
       background:#eef4ff;
-      color:var(--incar);
+      color:var(--brand);
       font-size:12px;
       font-weight:900;
       white-space:nowrap;
@@ -1891,7 +1891,7 @@
     }
     .scrap-report-summary {
       border:1px solid #dbe7ff;
-      border-left:4px solid var(--incar);
+      border-left:4px solid var(--brand);
       border-radius:8px;
       padding:14px;
       background:#f8fbff;
@@ -1913,7 +1913,7 @@
     }
     .scrap-report-section h2 {
       margin:0 0 10px;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:15px;
       line-height:1.2;
     }
@@ -1970,7 +1970,7 @@
       place-items:center;
       border-radius:8px;
       background:#eef4ff;
-      color:var(--incar);
+      color:var(--brand);
       font-size:11px;
       font-weight:900;
     }
@@ -2030,7 +2030,7 @@
     }
     .release-quick b {
       display:block;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:17px;
       line-height:1;
       margin-bottom:5px;
@@ -2059,7 +2059,7 @@
     }
     .keyword-group-title {
       margin:0 0 9px;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:13px;
       font-weight:900;
       display:flex;
@@ -2164,7 +2164,7 @@
       flex-wrap:wrap;
       align-items:center;
     }
-    .segmented .btn.active { background:var(--incar); border-color:var(--incar); color:#fff; }
+    .segmented .btn.active { background:var(--brand); border-color:var(--brand); color:#fff; }
     .report-body { padding:18px; display:grid; gap:14px; }
     .report-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
     .report-kpi {
@@ -2188,7 +2188,7 @@
       top:0;
       bottom:0;
       width:4px;
-      background:var(--incar);
+      background:var(--brand);
     }
     .report-kpi.own::before { background:var(--blue); }
     .report-kpi.negative::before { background:var(--red); }
@@ -2202,7 +2202,7 @@
       border-radius:8px;
       display:grid;
       place-items:center;
-      color:var(--incar);
+      color:var(--brand);
       background:#f5f8ff;
       border:1px solid #dbe7ff;
       flex:0 0 auto;
@@ -2230,7 +2230,7 @@
       min-width:0;
     }
     .report-kpi-main span { color:var(--muted); font-size:12px; font-weight:900; line-height:1.2; word-break:keep-all; }
-    .report-kpi .num { color:var(--incar-dark); font-size:24px; font-weight:900; line-height:1; max-width:100%; overflow-wrap:anywhere; }
+    .report-kpi .num { color:var(--brand-dark); font-size:24px; font-weight:900; line-height:1; max-width:100%; overflow-wrap:anywhere; }
     .report-kpi:not(#analysisRiskCard) .num::after {
       content:"건";
       margin-left:2px;
@@ -2268,7 +2268,7 @@
     }
     .report-message {
       border:1px solid #c7d7fe;
-      border-left:4px solid var(--incar);
+      border-left:4px solid var(--brand);
       border-radius:8px;
       padding:14px 15px;
       background:#f8fbff;
@@ -2280,7 +2280,7 @@
     .executive-summary {
       background:#fff;
       border-color:#d7e0f3;
-      border-left-color:var(--incar);
+      border-left-color:var(--brand);
       font-size:16px;
     }
     .report-insight-grid { align-items:stretch; }
@@ -2288,7 +2288,7 @@
     .report-evidence-panel { border-color:#cfd8ea; }
     .report-section-title {
       margin:0 0 12px;
-      color:var(--incar-dark);
+      color:var(--brand-dark);
       font-size:17px;
       font-weight:900;
       display:flex;
@@ -2390,7 +2390,7 @@
         padding:8px 4px;
         border-radius:10px;
       }
-      .mobile-tabs button.active { color:var(--incar); background:#eef2ff; }
+      .mobile-tabs button.active { color:var(--brand); background:#eef2ff; }
       .page-wrap { padding:16px 12px 88px; }
       .topbar { padding:12px; align-items:flex-start; flex-wrap:wrap; }
       .topbar > div:first-child { min-width:0; flex:1 1 auto; }
@@ -2849,11 +2849,11 @@
     <form class="login-card" id="loginForm">
       <div class="login-mark">PR</div>
       <h1>언론관리 대시보드</h1>
-      <p>인카금융서비스 사번과 비밀번호로 접속하세요. 등록된 사용자만 대시보드를 열 수 있습니다.</p>
+      <p>샘플회사 사번과 비밀번호로 접속하세요. 등록된 사용자만 대시보드를 열 수 있습니다.</p>
       <div class="login-form">
         <div class="field">
           <label>사번</label>
-          <input id="loginEmployeeNo" inputmode="numeric" autocomplete="username" placeholder="예: 1611499">
+          <input id="loginEmployeeNo" inputmode="numeric" autocomplete="username" placeholder="예: 1000001">
         </div>
         <div class="field">
           <label>비밀번호</label>
@@ -2871,8 +2871,8 @@
         <div class="brand-row">
           <div class="brand-mark">PR</div>
           <div>
-            <div class="brand-title">인카금융서비스</div>
-            <div class="brand-sub">마케팅부</div>
+            <div class="brand-title">샘플회사</div>
+            <div class="brand-sub">모니터링팀</div>
           </div>
         </div>
       </div>
@@ -3198,16 +3198,16 @@
                   </select>
                 </div>
                 <div class="field"><label>배포 예정일</label><input id="releaseDate" type="date"></div>
-                <div class="field"><label>담당 부서</label><input id="releaseTeam" placeholder="예: 마케팅부"></div>
-                <div class="field form-span-2"><label>핵심 주제</label><input id="releaseTopic" placeholder="예: 인카금융서비스, GA 업계 디지털 영업지원 강화"></div>
+                <div class="field"><label>담당 부서</label><input id="releaseTeam" placeholder="예: 모니터링팀"></div>
+                <div class="field form-span-2"><label>핵심 주제</label><input id="releaseTopic" placeholder="예: 샘플회사, GA 업계 디지털 영업지원 강화"></div>
                 <div class="field form-span-2"><label>희망 제목</label><input id="releaseHeadline" placeholder="비워두면 자동으로 제목을 구성합니다."></div>
                 <div class="field form-span-2"><label>리드문 핵심</label><textarea id="releaseLead" rows="3" placeholder="누가, 무엇을, 왜 발표하는지 한두 문장으로 입력하세요."></textarea></div>
                 <div class="field form-span-2"><label>본문 주요 내용</label><textarea id="releaseBody" rows="7" placeholder="주요 내용, 배경, 기대 효과를 줄바꿈으로 입력하세요."></textarea></div>
                 <div class="field form-span-2"><label>근거 수치 / 팩트</label><textarea id="releaseProof" rows="4" placeholder="실적, 일정, 참여 규모, 수상명, 수치 등 확인된 사실을 입력하세요."></textarea></div>
                 <div class="field"><label>인용자</label><input id="releaseQuoteName" placeholder="예: 홍길동"></div>
-                <div class="field"><label>직함</label><input id="releaseQuoteTitle" placeholder="예: 마케팅부장"></div>
+                <div class="field"><label>직함</label><input id="releaseQuoteTitle" placeholder="예: 모니터링팀장"></div>
                 <div class="field form-span-2"><label>인용문 핵심</label><textarea id="releaseQuotePoint" rows="3" placeholder="강조하고 싶은 메시지를 입력하세요."></textarea></div>
-                <div class="field"><label>문의처</label><input id="releaseContact" placeholder="예: 마케팅부 02-0000-0000"></div>
+                <div class="field"><label>문의처</label><input id="releaseContact" placeholder="예: 모니터링팀 02-0000-0000"></div>
                 <div class="field"><label>참고 URL</label><input id="releaseSourceUrl" type="url" inputmode="url" placeholder="관련 기사/자료 링크"></div>
               </div>
               <div class="actions" style="justify-content:flex-start;margin-top:12px">
@@ -3387,7 +3387,7 @@
                     <option value="other">기타</option>
                   </select>
                 </div>
-                <div class="field"><label>키워드 추가</label><input id="keywordInput" placeholder="예: 인카금융서비스, GA, 브랜드평판"></div>
+                <div class="field"><label>키워드 추가</label><input id="keywordInput" placeholder="예: 샘플회사, GA, 브랜드평판"></div>
               </div>
               <div class="keyword-actions">
                 <button class="btn primary" id="keywordAddButton" onclick="addKeyword()">추가</button>
@@ -3400,7 +3400,7 @@
               <h2 class="panel-title"><i data-lucide="database"></i> 시스템 상태</h2>
               <table class="table">
                 <tr><th>데이터 소스</th><td>Supabase 기사 DB + GitHub Pages 백업 JSON</td></tr>
-                <tr><th>화면 버전</th><td>인카금융서비스 언론관리</td></tr>
+                <tr><th>화면 버전</th><td>샘플회사 언론관리</td></tr>
                 <tr><th>키워드 원본</th><td id="keywordSourceText">Supabase monitor_keywords</td></tr>
                 <tr><th>키워드 수</th><td id="keywordCountText">-</td></tr>
                 <tr><th>관리 데이터</th><td>키워드·언론사·기자·광고비·스크랩은 Supabase 공유 저장만 사용</td></tr>
@@ -3516,14 +3516,14 @@
     const TEMP_LOGIN_BYPASS_UNTIL = "2026-06-08T23:59:59+09:00";
     const TEMP_LOGIN_BYPASS_SESSION = {
       ok: true,
-      employee_no: "1611499",
-      display_name: "최진우",
+      employee_no: "1000001",
+      display_name: "샘플관리자",
       role: "admin",
       session_token: "86090727ba1b0f6e7cd756952d221c2f2c0648a76894019087bb6488cb0b3fce",
       session_expires_at: TEMP_LOGIN_BYPASS_UNTIL,
       temporary: true
     };
-    const dashboardDisplayNames = { "1611499": "최진우" };
+    const dashboardDisplayNames = { "1000001": "샘플관리자" };
     let appBound = false;
     let loginBound = false;
 
@@ -3544,7 +3544,7 @@
     const categoryFallback = { own:"당사", industry:"GA", competitor:"보험사", regulation:"정책", other:"기타" };
     const toneFallback = { negative:"부정", caution:"주의", neutral:"주의", positive:"긍정" };
     const keywordCategoryOrder = ["own","industry","competitor","regulation","other"];
-    const companyMentionTerms = ["인카금융서비스", "인카금융"];
+    const companyMentionTerms = ["샘플회사", "샘플회사"];
     const legacyLocalKeys = ["pr_scraps","pr_keywords","pr_media_relations","pr_hidden_media","pr_reporters","pr_ads","marketing_pr_session_v1"];
     const portalPressNames = new Set([
       "google", "google.com", "news.google.com", "news.google.co.kr",
@@ -3707,7 +3707,7 @@
     }
     const broadReputationKeywords = new Set(["브랜드평판", "브랜드 평판", "평판"]);
     const monitoringContextTerms = [
-      "인카금융", "인카금융서비스", "보험", "보험사", "생명보험", "손해보험",
+      "샘플회사", "샘플회사", "보험", "보험사", "생명보험", "손해보험",
       "보험대리점", "법인보험대리점", "GA", "보험GA", "보험설계사", "설계사",
       "금융서비스", "금감원", "금융감독원", "금융위", "금융위원회", "손보", "생보"
     ];
@@ -5285,7 +5285,7 @@
       const topPress = Object.entries(byPress).sort((a,b) => b[1]-a[1]).slice(0,3);
       const topCategories = Object.entries(byCategory).sort((a,b) => b[1]-a[1]).slice(0,3);
       const negative = articles.filter(article => /부정|risk|negative/i.test(`${article.tone_label} ${article.risk}`));
-      const own = articles.filter(article => /당사|인카/.test(`${article.category_label} ${article.title} ${article.summary}`));
+      const own = articles.filter(article => /당사|샘플/.test(`${article.category_label} ${article.title} ${article.summary}`));
       const topTitles = articles.slice(0,5).map((article, index) => `- [${index + 1}] ${article.press || "언론사 미확인"}: ${article.title || "제목 없음"}`).join("\n");
       return [
         "스크랩 기본 분석",
@@ -5317,7 +5317,7 @@
 
     function normalizeClientScrapReport(report, prompt, articles, analysisText = "") {
       const negative = articles.filter(article => /부정|negative|risk/i.test(`${article.tone_label} ${article.risk}`));
-      const own = articles.filter(article => /당사|인카/.test(`${article.category_label} ${article.title} ${article.summary}`));
+      const own = articles.filter(article => /당사|샘플/.test(`${article.category_label} ${article.title} ${article.summary}`));
       const riskLevel = report?.riskLevel || (negative.length >= 2 ? "MEDIUM" : negative.length ? "LOW" : "LOW");
       const evidenceArticles = Array.isArray(report?.evidenceArticles) && report.evidenceArticles.length
         ? report.evidenceArticles
@@ -6228,7 +6228,7 @@
                 <div class="ad-print-meta">
                   <b>${escapeHtml(adReportFilterLabel())}</b>
                   <span>생성 ${escapeHtml(generatedAt)}</span>
-                  <span>인카금융서비스 마케팅부</span>
+                  <span>샘플회사 모니터링팀</span>
                 </div>
               </header>
 
@@ -6901,7 +6901,7 @@
                 <div class="report-meta-box">
                   <b>${escapeHtml(period)}</b>
                   <span>생성 ${escapeHtml(generatedAt)}</span>
-                  <span>인카금융서비스 마케팅부</span>
+                  <span>샘플회사 모니터링팀</span>
                 </div>
               </header>
 
@@ -7527,7 +7527,7 @@
     function preparePressReleaseDefaults() {
       const date = document.getElementById("releaseDate");
       if (date && !date.value) date.value = new Date().toISOString().slice(0, 10);
-      setReleaseValue("releaseTeam", "마케팅부");
+      setReleaseValue("releaseTeam", "모니터링팀");
       renderPressReleaseStats();
     }
 
@@ -7554,7 +7554,7 @@
         "수상/인증": "대외 평가에서 의미 있는 성과를 인정받았다",
         "안내/입장": "관련 사안에 대한 공식 입장과 향후 대응 방향을 밝혔다",
       }[data.type] || "주요 내용을 공식 발표했다";
-      return `인카금융서비스는 ${releaseDateLabel(data.date)} ${data.topic}와 관련해 ${typeMessage}.`;
+      return `샘플회사는 ${releaseDateLabel(data.date)} ${data.topic}와 관련해 ${typeMessage}.`;
     }
 
     function releaseHeadline(data) {
@@ -7567,7 +7567,7 @@
         "수상/인증": "대외 성과 인정",
         "안내/입장": "공식 입장 발표",
       }[data.type] || "소식 발표";
-      return `인카금융서비스, ${data.topic || suffix} ${suffix}`;
+      return `샘플회사, ${data.topic || suffix} ${suffix}`;
     }
 
     function releaseSubTitle(data) {
@@ -7583,7 +7583,7 @@
         type: releaseValue("releaseType"),
         tone: releaseValue("releaseTone"),
         date: releaseValue("releaseDate"),
-        team: releaseValue("releaseTeam") || "마케팅부",
+        team: releaseValue("releaseTeam") || "모니터링팀",
         topic: releaseValue("releaseTopic"),
         headline: releaseValue("releaseHeadline"),
         lead: releaseValue("releaseLead"),
@@ -7600,12 +7600,12 @@
       const headline = releaseHeadline(data);
       const lead = releaseLeadSentence(data);
       const firstParagraph = data.lead
-        ? `인카금융서비스는 ${releaseDateLabel(data.date)} ${data.topic || "주요 현안"}과 관련해 다음 내용을 발표했다. ${lead}`
+        ? `샘플회사는 ${releaseDateLabel(data.date)} ${data.topic || "주요 현안"}과 관련해 다음 내용을 발표했다. ${lead}`
         : lead;
       const subtitle = releaseSubTitle(data);
       const paragraphs = bodyLines.length ? bodyLines : [
         "이번 발표는 고객 신뢰와 영업 현장 지원 역량을 높이기 위한 실행 과제의 하나로 마련됐다.",
-        "인카금융서비스는 관련 부서와 협업해 실행 계획을 구체화하고, 향후 진행 상황을 단계적으로 공유할 예정이다.",
+        "샘플회사는 관련 부서와 협업해 실행 계획을 구체화하고, 향후 진행 상황을 단계적으로 공유할 예정이다.",
       ];
       const quote = data.quotePoint
         ? `"${data.quotePoint}"${data.quoteName ? `라고 ${data.quoteName}${data.quoteTitle ? ` ${data.quoteTitle}` : ""}은 말했다.` : "라고 회사 관계자는 말했다."}`
@@ -7633,7 +7633,7 @@
         proofBlock,
         "",
         "[회사 소개]",
-        "인카금융서비스는 보험 판매 전문성과 영업 지원 역량을 바탕으로 고객에게 적합한 금융·보험 서비스를 제공하는 GA 기업입니다. 회사는 현장 중심의 서비스 경쟁력과 책임 있는 커뮤니케이션을 강화하고 있습니다.",
+        "샘플회사는 보험 판매 전문성과 영업 지원 역량을 바탕으로 고객에게 적합한 금융·보험 서비스를 제공하는 GA 기업입니다. 회사는 현장 중심의 서비스 경쟁력과 책임 있는 커뮤니케이션을 강화하고 있습니다.",
         "",
         `[문의] ${contact}`,
         data.sourceUrl ? `[참고] ${data.sourceUrl}` : "",

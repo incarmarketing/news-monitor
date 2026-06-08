@@ -260,7 +260,7 @@ def supabase_select(table: str, query: str) -> list[dict]:
     url = (
         os.getenv("SUPABASE_URL")
         or os.getenv("PUBLIC_SUPABASE_URL")
-        or "https://moszekksbhprhevxdynb.supabase.co"
+        or ""
     ).rstrip("/")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
     if not url or not key:

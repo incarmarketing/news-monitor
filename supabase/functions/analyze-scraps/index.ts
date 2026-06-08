@@ -216,7 +216,7 @@ function parseJsonObject(text: string): ScrapReport | null {
 
 function normalizeReport(input: ScrapReport | null, prompt: string, articles: ReturnType<typeof compactArticle>[]): Required<ScrapReport> {
   const negativeCount = articles.filter((article) => /부정|negative|risk/i.test(`${article.tone} ${article.risk}`)).length;
-  const ownCount = articles.filter((article) => /당사|인카/.test(`${article.category} ${article.title} ${article.summary}`)).length;
+  const ownCount = articles.filter((article) => /당사|샘플/.test(`${article.category} ${article.title} ${article.summary}`)).length;
   const fallbackRisk = negativeCount >= 2 ? "MEDIUM" : negativeCount ? "LOW" : "LOW";
   const report = input || {};
   const evidenceArticles = normalizeEvidence(report.evidenceArticles, articles);

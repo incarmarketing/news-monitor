@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-DEFAULT_PUBLIC_BASE_URL = "https://incarmarketing.github.io/news-monitor/"
+DEFAULT_PUBLIC_BASE_URL = "https://your-github-id.github.io/your-repo/"
 
 
 def public_base_url() -> str:

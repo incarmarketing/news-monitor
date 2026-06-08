@@ -49,15 +49,15 @@ class BriefingEvidenceTests(unittest.TestCase):
                 "_tone": "neutral",
                 "_score": 18,
                 "_summary": "당사 직접 언급 기사입니다.",
-                "title": "인카금융서비스, 브랜드평판 1위",
-                "description": "인카금융서비스가 독립 보험대리점 브랜드평판에서 1위를 기록했다.",
+                "title": "샘플회사, 브랜드평판 1위",
+                "description": "샘플회사가 독립 보험대리점 브랜드평판에서 1위를 기록했다.",
                 "source": "테스트신문",
-                "keyword": "인카금융서비스",
+                "keyword": "샘플회사",
                 "link": "https://example.com/own",
             }
         ]
         sections = {
-            "conclusion": "인카금융서비스 브랜드평판 보도 관찰",
+            "conclusion": "샘플회사 브랜드평판 보도 관찰",
             "issues": [{"title": "브랜드평판 1위", "detail": "당사 직접 언급", "refs": [4]}],
             "keywords": [],
         }
@@ -65,7 +65,7 @@ class BriefingEvidenceTests(unittest.TestCase):
         result = ai_briefing.validate_report_sections(sections, clustered, {"own_negative": 0, "risk_level": "LOW"})
         evidence = ai_briefing.select_evidence_articles(clustered, result, limit=3)
 
-        self.assertEqual(evidence[0]["title"], "인카금융서비스, 브랜드평판 1위")
+        self.assertEqual(evidence[0]["title"], "샘플회사, 브랜드평판 1위")
 
     def test_issue_with_unsupported_company_name_is_rewritten_from_ref_article(self) -> None:
         clustered = [

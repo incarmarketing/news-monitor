@@ -18,8 +18,9 @@ from dataclasses import dataclass
 import requests
 from dotenv import load_dotenv
 
-OWNER = "incarmarketing"
-REPO = "news-monitor"
+OWNER = os.getenv("GITHUB_OWNER", "your-github-id")
+REPO = os.getenv("GITHUB_REPO", "your-repo")
+JOB_PREFIX = os.getenv("CRONJOB_TITLE_PREFIX", REPO if REPO != "your-repo" else "monitoring-template")
 CRON_ENDPOINT = "https://api.cron-job.org"
 GITHUB_API_VERSION = "2022-11-28"
 TIMEZONE = "Asia/Seoul"
@@ -93,7 +94,7 @@ def specs() -> list[CronSpec]:
     primary_minute = [0]
     return [
         CronSpec(
-            title="news-monitor negative watch",
+            title=f"{JOB_PREFIX} negative watch",
             workflow="negative-watch.yml",
             body={"ref": "main", "inputs": {"mode": "single"}},
             minutes=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55],
@@ -103,7 +104,7 @@ def specs() -> list[CronSpec]:
             months=all_months,
         ),
         CronSpec(
-            title="news-monitor daily 08",
+            title=f"{JOB_PREFIX} daily 08",
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
@@ -116,7 +117,7 @@ def specs() -> list[CronSpec]:
             months=all_months,
         ),
         CronSpec(
-            title="news-monitor daily 13",
+            title=f"{JOB_PREFIX} daily 13",
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
@@ -129,7 +130,7 @@ def specs() -> list[CronSpec]:
             months=all_months,
         ),
         CronSpec(
-            title="news-monitor daily 18",
+            title=f"{JOB_PREFIX} daily 18",
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
@@ -142,7 +143,7 @@ def specs() -> list[CronSpec]:
             months=all_months,
         ),
         CronSpec(
-            title="news-monitor weekly report",
+            title=f"{JOB_PREFIX} weekly report",
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
@@ -155,7 +156,7 @@ def specs() -> list[CronSpec]:
             months=all_months,
         ),
         CronSpec(
-            title="news-monitor monthly report",
+            title=f"{JOB_PREFIX} monthly report",
             workflow="news-briefing.yml",
             body={
                 "ref": "main",

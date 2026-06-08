@@ -5,7 +5,7 @@
 ## 1. 저장소 만들기
 
 1. GitHub에서 새 저장소를 만듭니다.
-2. `C:\Users\User\Desktop\COWORK\news-monitor` 폴더 안의 파일들을 저장소 루트로 올립니다.
+2. 이 템플릿을 복제한 폴더의 파일들을 저장소 루트로 올립니다.
 3. `.env`, `logs`, `data`, `out`, `__pycache__`는 올리지 않습니다.
 
 ## 2. GitHub Secrets 등록

@@ -162,7 +162,7 @@ BROAD_REPUTATION_KEYWORDS = {"브랜드평판", "브랜드 평판", "평판"}
 CONTEXTUAL_REPUTATION_QUERIES = [
     "보험대리점 브랜드평판",
     "GA 브랜드평판",
-    "인카금융서비스 브랜드평판",
+    "샘플회사 브랜드평판",
 ]
 CONTEXTUAL_COMPETITOR_QUERIES = {
     "메가": ["메가금융서비스"],
@@ -171,7 +171,7 @@ CONTEXTUAL_COMPETITOR_QUERIES = {
 STALE_GOOGLE_REEXPOSURE_DAYS = int(os.getenv("STALE_GOOGLE_REEXPOSURE_DAYS", "14"))
 
 COLLECTION_CONTEXT_WORDS = [
-    "인카금융", "인카금융서비스",
+    "샘플회사", "샘플회사",
     "보험", "보험사", "생명보험", "손해보험", "보험대리점", "법인보험대리점",
     "보험설계사", "설계사", "전속설계사", "전속 설계사", "GA설계사",
     "GA 설계사", "보험모집인", "보험 모집인", "모집인", "보험GA",

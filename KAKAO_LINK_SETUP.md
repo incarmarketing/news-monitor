@@ -10,7 +10,7 @@
 4. `웹 도메인`에 아래 도메인 추가
 
 ```text
-https://incarmarketing.github.io
+https://your-github-id.github.io
 ```
 
 `/news-monitor/`까지 넣지 말고 도메인까지만 등록합니다.

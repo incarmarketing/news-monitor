@@ -39,7 +39,7 @@ supabase functions deploy generate-risk-response --no-verify-jwt
 
 ```powershell
 supabase secrets set GITHUB_DISPATCH_TOKEN="GitHub fine-grained token"
-supabase secrets set GITHUB_OWNER="incarmarketing"
+supabase secrets set GITHUB_OWNER="your-github-id"
 supabase secrets set GITHUB_REPO="news-monitor"
 supabase secrets set GITHUB_WORKFLOW_FILE="news-briefing.yml"
 supabase secrets set GITHUB_REF="main"
@@ -49,7 +49,7 @@ supabase secrets set GEMINI_MODEL="gemini-2.5-flash"
 
 `GITHUB_DISPATCH_TOKEN` 권한:
 
-- Repository: `incarmarketing/news-monitor`
+- Repository: `your-github-id/your-repo`
 - Actions: Read and write
 - Contents: Read
 

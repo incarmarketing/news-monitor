@@ -1,7 +1,8 @@
 @echo off
-cd /d C:\Users\User\Desktop\COWORK\news-monitor
+cd /d "%~dp0"
 chcp 65001 >nul
 set PYTHONIOENCODING=utf-8
+if not exist logs mkdir logs
 echo.>> logs\scheduler.log
 echo ==================================================>> logs\scheduler.log
 echo START %date% %time%>> logs\scheduler.log

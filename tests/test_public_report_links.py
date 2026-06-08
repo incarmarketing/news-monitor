@@ -17,7 +17,7 @@ class PublicReportLinkTests(unittest.TestCase):
         try:
             self.assertEqual(
                 public_urls.dashboard_url(),
-                "https://incarmarketing.github.io/news-monitor/dashboard.html",
+                "https://your-github-id.github.io/your-repo/dashboard.html",
             )
         finally:
             if previous_dashboard is not None:
@@ -29,11 +29,11 @@ class PublicReportLinkTests(unittest.TestCase):
         previous_dashboard = os.environ.get("DASHBOARD_PUBLIC_URL")
         previous_report = os.environ.get("REPORT_PUBLIC_URL")
         os.environ.pop("DASHBOARD_PUBLIC_URL", None)
-        os.environ["REPORT_PUBLIC_URL"] = "https://incarmarketing.github.io/news-monitor/reports/daily/2026-06-06-13.html"
+        os.environ["REPORT_PUBLIC_URL"] = "https://your-github-id.github.io/your-repo/reports/daily/2026-06-06-13.html"
         try:
             self.assertEqual(
                 public_urls.dashboard_url(),
-                "https://incarmarketing.github.io/news-monitor/dashboard.html",
+                "https://your-github-id.github.io/your-repo/dashboard.html",
             )
         finally:
             if previous_dashboard is not None:

@@ -11,8 +11,8 @@ type RequestBody = {
   source?: string;
 };
 
-const owner = Deno.env.get("GITHUB_OWNER") || "incarmarketing";
-const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
+const owner = Deno.env.get("GITHUB_OWNER") || "your-github-id";
+const repo = Deno.env.get("GITHUB_REPO") || "your-repo";
 const ref = Deno.env.get("GITHUB_REF") || "main";
 const githubApiVersion = "2022-11-28";
 const kstOffsetMs = 9 * 60 * 60 * 1000;

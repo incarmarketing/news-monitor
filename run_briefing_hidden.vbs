@@ -1,2 +1,4 @@
 Set shell = CreateObject("WScript.Shell")
-shell.Run """C:\Users\User\Desktop\COWORK\news-monitor\run_briefing.bat""", 0, True
+Set fso = CreateObject("Scripting.FileSystemObject")
+baseDir = fso.GetParentFolderName(WScript.ScriptFullName)
+shell.Run """" & baseDir & "\run_briefing.bat""", 0, True

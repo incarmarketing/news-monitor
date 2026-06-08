@@ -10,10 +10,10 @@ class AnalyzerToneTests(unittest.TestCase):
         article = {
             "title": "코스피 사상 최고 와중에 너무 올랐다...증권가가 매수 접은 종목들",
             "description": (
-                "코스닥 시장에서는 주성엔지니어링, 인카금융서비스, 네오위즈 등에서 "
+                "코스닥 시장에서는 주성엔지니어링, 샘플회사, 네오위즈 등에서 "
                 "투자의견이 낮아졌다. 기존 매수에서 중립으로 낮추는 사례가 이어졌다."
             ),
-            "keyword": "인카금융서비스",
+            "keyword": "샘플회사",
             "keyword_category": "own",
         }
 
@@ -25,7 +25,7 @@ class AnalyzerToneTests(unittest.TestCase):
 
     def test_market_high_word_does_not_override_own_downgrade(self) -> None:
         article = {
-            "title": "사상 최고 코스피 속 인카금융서비스 목표가 하향",
+            "title": "사상 최고 코스피 속 샘플회사 목표가 하향",
             "description": "증권가가 밸류에이션 부담으로 보수적인 시각을 제시했다.",
         }
 
@@ -36,10 +36,10 @@ class AnalyzerToneTests(unittest.TestCase):
             "title": "[공시돋보기] '1200% 룰' 7월 도입 앞두고 GA들 정착지원금 '펑펑'",
             "description": (
                 "한화생명금융서비스가 178억원으로 지급 규모 1위를 기록했다. "
-                "이어 에이플러스에셋, 스카이블루에셋, 인카금융서비스(65억원), "
+                "이어 에이플러스에셋, 스카이블루에셋, 샘플회사(65억원), "
                 "밸류마크 순이다. 설계사 잦은 이직이 줄어들 전망이다."
             ),
-            "keyword": "인카금융",
+            "keyword": "샘플회사",
             "keyword_category": "own",
         }
 
@@ -53,10 +53,10 @@ class AnalyzerToneTests(unittest.TestCase):
         article = {
             "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
             "description": (
-                "초대형GA 14개사에 한화생명금융서비스, 인카금융서비스 등이 포함됐다. "
+                "초대형GA 14개사에 한화생명금융서비스, 샘플회사 등이 포함됐다. "
                 "GA 업계가 금융보안원 가입을 통해 정보보안 미비점을 점검하고 보안 체계를 강화한다."
             ),
-            "keyword": "인카금융",
+            "keyword": "샘플회사",
             "keyword_category": "own",
         }
 
@@ -68,7 +68,7 @@ class AnalyzerToneTests(unittest.TestCase):
 
     def test_settlement_support_with_direct_violation_stays_negative(self) -> None:
         article = {
-            "title": "인카금융서비스 정착지원금 관련 불완전판매 조사 착수",
+            "title": "샘플회사 정착지원금 관련 불완전판매 조사 착수",
             "description": "금융당국이 내부통제 위반 여부를 검사한다.",
         }
 
@@ -94,11 +94,11 @@ class AnalyzerToneTests(unittest.TestCase):
         article = {
             "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
             "description": (
-                "앞서 지난해 11월 초대형GA 14개사에 인카금융서비스가 포함됐다. "
+                "앞서 지난해 11월 초대형GA 14개사에 샘플회사가 포함됐다. "
                 "당사 직접 언급 기사로 보고서와 리스크 점검 근거에 우선 포함합니다. "
                 "직접 부정은 아니지만 시장 평가, 투자 의견, 규제성 신호로 따로 추적합니다."
             ),
-            "keyword": "인카금융서비스",
+            "keyword": "샘플회사",
             "keyword_category": "own",
         }
 
@@ -115,10 +115,10 @@ class AnalyzerToneTests(unittest.TestCase):
             {
                 "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
                 "description": (
-                    "앞서 초대형GA 14개사에 인카금융서비스가 포함됐다. "
+                    "앞서 초대형GA 14개사에 샘플회사가 포함됐다. "
                     "대형 GA까지 금융보안원 가입 대상이 확대된다."
                 ),
-                "keyword": "인카금융서비스",
+                "keyword": "샘플회사",
                 "keyword_category": "own",
             }
         ]

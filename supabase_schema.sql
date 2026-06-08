@@ -350,15 +350,15 @@ drop policy if exists "public dashboard manage press aliases" on public.press_al
 
 insert into public.monitor_keywords (keyword, category, enabled)
 values
-  ('인카금융', 'own', true),
-  ('인카금융서비스', 'own', true),
-  ('보험 마케팅', 'industry', true),
-  ('생명보험', 'competitor', true),
-  ('손해보험', 'competitor', true),
-  ('보험 프로모션', 'industry', true),
-  ('GA 보험', 'industry', true),
-  ('보험설계사', 'industry', true),
-  ('보험대리점 브랜드평판', 'industry', true),
-  ('GA 브랜드평판', 'industry', true),
-  ('인카금융서비스 브랜드평판', 'own', true)
+  ('샘플회사', 'own', true),
+  ('샘플서비스', 'own', true),
+  ('샘플회사 브랜드평판', 'own', true),
+  ('경쟁사명', 'competitor', true),
+  ('경쟁사 서비스명', 'competitor', true),
+  ('업계 키워드', 'industry', true),
+  ('시장 동향', 'industry', true),
+  ('고객 리뷰', 'industry', true),
+  ('정책 규제 키워드', 'regulation', true),
+  ('감독기관', 'regulation', true),
+  ('무관 스포츠', 'exclude', true)
 on conflict (keyword, category) do nothing;

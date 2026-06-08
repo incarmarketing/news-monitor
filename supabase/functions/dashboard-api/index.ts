@@ -127,8 +127,8 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
   }
 
   const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
-  const owner = Deno.env.get("GITHUB_OWNER") || "incarmarketing";
-  const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
+  const owner = Deno.env.get("GITHUB_OWNER") || "your-github-id";
+  const repo = Deno.env.get("GITHUB_REPO") || "your-repo";
   const workflow = sanitizeWorkflow(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml");
   const ref = Deno.env.get("GITHUB_REF") || "main";
   const periodReports = authenticated

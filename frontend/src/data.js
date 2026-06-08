@@ -20,7 +20,7 @@ const dailyIssues = [
     tone: "주의",
     category: "당사",
     source: "매일경제",
-    title: "인카금융서비스 투자의견 조정 관련 증권 리포트 노출",
+    title: "샘플회사 투자의견 조정 관련 증권 리포트 노출",
     summary:
       "목표가와 투자의견 하향은 직접 부정 이슈가 아니라 시장 평가 리스크입니다. 부정 알림과 분리해 주의 이슈로 추적합니다.",
     publishedAt: "09:18",
@@ -222,10 +222,10 @@ export const monitoringFeed = [
     time: "09:18",
     date: "2026-05-31",
     source: "매일경제",
-    title: "인카금융서비스 투자의견 조정 관련 증권 리포트 노출",
+    title: "샘플회사 투자의견 조정 관련 증권 리포트 노출",
     category: "당사",
     tone: "주의",
-    keyword: "인카금융서비스",
+    keyword: "샘플회사",
     status: "주의 관찰",
     link: "https://www.mk.co.kr/news/stock/12034143",
   },
@@ -236,7 +236,7 @@ export const monitoringFeed = [
     title: "초대형 GA 정착지원금 공시 보도에 당사 순위 언급",
     category: "당사",
     tone: "주의",
-    keyword: "인카금융서비스",
+    keyword: "샘플회사",
     status: "주의 관찰",
     link: "https://www.joongangenews.com/news/articleView.html?idxno=517653",
   },
@@ -368,7 +368,7 @@ export const pressInfluence = [
 ];
 
 export const keywordGroups = [
-  { group: "당사", keywords: ["인카금융서비스", "인카금융", "에인카"], rule: "직접 언급 최우선" },
+  { group: "당사", keywords: ["샘플회사", "샘플회사", "에샘플"], rule: "직접 언급 최우선" },
   { group: "GA", keywords: ["글로벌금융판매", "메가금융서비스", "GA 정착지원금"], rule: "보험/설계사 문맥 필수" },
   { group: "보험사", keywords: ["생명보험", "손해보험", "보험상품"], rule: "시장 동향 집계" },
   { group: "정책/규제", keywords: ["1200% 룰", "금융당국", "수수료 규제"], rule: "주의 관찰" },
@@ -442,11 +442,11 @@ export const contextRules = [
 ];
 
 export const customizationProfile = {
-  companyName: "인카금융서비스",
-  teamName: "마케팅부",
+  companyName: "샘플회사",
+  teamName: "모니터링팀",
   serviceName: "관심키워드 및 모니터링 자동화",
   purpose: "정해진 키워드와 문맥 기준으로 기사, 보도자료, 스크랩 자료를 수집·분류·보고서화합니다.",
-  ownKeywords: ["인카금융서비스", "인카금융", "에인카"],
+  ownKeywords: ["샘플회사", "샘플회사", "에샘플"],
   industryContext: ["보험", "GA", "보험대리점", "설계사", "수수료", "금융당국", "금융감독원", "금융위원회"],
   excludeContext: ["스포츠 경기", "선수 이적", "농구", "배구", "야구", "지역 행사", "무관 브랜드명"],
   reportTone: "임원에게 바로 전달 가능한 짧은 판단 문장과 근거 기사 중심",

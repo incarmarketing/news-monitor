@@ -8,9 +8,9 @@ import dashboard_builder
 class DashboardSummaryTests(unittest.TestCase):
     def test_dashboard_summary_does_not_append_classification_boilerplate(self) -> None:
         article = {
-            "title": "인카금융서비스, 우수인증설계사 2262명 배출",
-            "description": "인카금융서비스가 우수인증설계사 배출 규모를 크게 늘리며 영업 조직의 질적 성장을 이어가고 있다.",
-            "keyword": "인카금융서비스",
+            "title": "샘플회사, 우수인증설계사 2262명 배출",
+            "description": "샘플회사가 우수인증설계사 배출 규모를 크게 늘리며 영업 조직의 질적 성장을 이어가고 있다.",
+            "keyword": "샘플회사",
             "keyword_category": "own",
         }
 

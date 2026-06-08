@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const DEFAULT_BASE_URL = "https://incarmarketing.github.io/news-monitor/";
+const DEFAULT_BASE_URL = "https://your-github-id.github.io/your-repo/";
 const rawBaseUrl = process.env.LINK_QA_BASE_URL || DEFAULT_BASE_URL;
 const outDir = process.env.LINK_QA_OUT || ".qa/links";
 const requireNotifications = /^true|1|yes|on$/i.test(process.env.LINK_QA_REQUIRE_NOTIFICATIONS || "");

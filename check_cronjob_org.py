@@ -9,15 +9,16 @@ import requests
 from dotenv import load_dotenv
 
 CRON_ENDPOINT = "https://api.cron-job.org"
+JOB_PREFIX = os.getenv("CRONJOB_TITLE_PREFIX", os.getenv("GITHUB_REPO", "monitoring-template"))
 TARGET_TITLES = {
-    "news-monitor negative watch",
-    "news-monitor daily 08",
-    "news-monitor daily 13",
-    "news-monitor daily 18",
-    "news-monitor weekly report",
-    "news-monitor monthly report",
+    f"{JOB_PREFIX} negative watch",
+    f"{JOB_PREFIX} daily 08",
+    f"{JOB_PREFIX} daily 13",
+    f"{JOB_PREFIX} daily 18",
+    f"{JOB_PREFIX} weekly report",
+    f"{JOB_PREFIX} monthly report",
 }
-NEGATIVE_WATCH_TITLE = "news-monitor negative watch"
+NEGATIVE_WATCH_TITLE = f"{JOB_PREFIX} negative watch"
 EXPECTED_NEGATIVE_MINUTES = list(range(0, 60, 5))
 EXPECTED_NEGATIVE_HOURS = list(range(24))
 

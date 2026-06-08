@@ -20,7 +20,7 @@ LOG_DIR = BASE_DIR / "logs"
 
 KAKAO_OAUTH = "https://kauth.kakao.com/oauth/token"
 KAKAO_API = "https://kapi.kakao.com"
-DEFAULT_REPORT_URL = "https://incarmarketing.github.io/news-monitor/"
+DEFAULT_REPORT_URL = "https://your-github-id.github.io/your-repo/"
 KST = timezone(timedelta(hours=9))
 
 

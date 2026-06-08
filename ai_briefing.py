@@ -400,7 +400,7 @@ def fallback_priority(article: dict) -> tuple[int, int]:
         term in text
         for term in ("우수인증설계사", "GA업계 최다", "최다", "수상", "선정", "배출", "성장", "성과")
     )
-    own_list_only = category == "own" and not own_in_title and re.search(r"[△,·]\s*인카금융서비스|인카금융", text)
+    own_list_only = category == "own" and not own_in_title and re.search(r"[△,·]\s*샘플회사|샘플회사", text)
 
     if category == "own" and tone == "negative":
         rank = 0
@@ -431,7 +431,7 @@ def contains_own_name(value: object) -> bool:
 
 def dedupe_key(article: dict) -> str:
     title = re.sub(r"\[[^\]]+\]|\([^)]+\)|[^\w가-힣]", "", article.get("title", ""))
-    title = re.sub(r"(인카금융서비스|인카금융|GA업계최다|기록|배출|우수인증설계사)", "", title)
+    title = re.sub(r"(샘플회사|샘플회사|GA업계최다|기록|배출|우수인증설계사)", "", title)
     return title[:36] or article.get("link") or article.get("title", "")
 
 
@@ -488,7 +488,7 @@ def build_fallback_keywords(clustered: list[dict]) -> str:
         if keyword and keyword not in keywords:
             keywords.append(keyword)
     if not keywords:
-        keywords = ["인카금융서비스", "GA", "보험업계"]
+        keywords = ["샘플회사", "GA", "보험업계"]
     return ", ".join(keywords[:5])
 
 
@@ -708,7 +708,7 @@ def build_article_tabs(clustered: list[dict], sections: dict) -> list[dict]:
         {
             "id": "own",
             "label": "당사 언급",
-            "description": "인카금융서비스가 직접 언급된 기사입니다.",
+            "description": "샘플회사가 직접 언급된 기사입니다.",
             "articles": enrich_articles(select_articles_by_category(clustered, {"own"}, limit=10)),
         },
         {

@@ -16,7 +16,7 @@ class CollectionWindowFilterTests(unittest.TestCase):
             "end": datetime(2026, 6, 5, 13, 0, tzinfo=KST),
         }
         article = {
-            "title": "인카금융서비스 관련 기사",
+            "title": "샘플회사 관련 기사",
             "description": "발행일이 확인되지 않은 기사입니다.",
             "pub_date": "",
         }
@@ -32,7 +32,7 @@ class CollectionWindowFilterTests(unittest.TestCase):
             "end": datetime(2026, 6, 5, 13, 0, tzinfo=KST),
         }
         article = {
-            "title": "인카금융서비스 관련 기사",
+            "title": "샘플회사 관련 기사",
             "description": "전날 기사입니다.",
             "pub_date": "Thu, 04 Jun 2026 10:00:00 +0900",
         }
@@ -48,7 +48,7 @@ class CollectionWindowFilterTests(unittest.TestCase):
             "end": datetime(2026, 6, 5, 13, 0, tzinfo=KST),
         }
         article = {
-            "title": "인카금융서비스 관련 기사",
+            "title": "샘플회사 관련 기사",
             "description": "보고 구간 안에 있는 기사입니다.",
             "pub_date": "Fri, 05 Jun 2026 09:30:00 +0900",
             "portal": "naver",

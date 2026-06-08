@@ -197,7 +197,7 @@ def dashboard_base_url() -> str:
     return (
         os.getenv("NEGATIVE_ALERT_DASHBOARD_URL")
         or os.getenv("DASHBOARD_URL")
-        or "https://incarmarketing.github.io/news-monitor/dashboard.html"
+        or "https://your-github-id.github.io/your-repo/dashboard.html"
     )
 
 

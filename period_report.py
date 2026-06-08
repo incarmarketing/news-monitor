@@ -342,7 +342,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     ]
 
     category_items = [
-        ("own", "당사", own, pct(own, total_collected), "인카금융서비스 직접 언급 보도입니다. 브랜드평판·실적·당사 이슈 노출을 별도로 봅니다."),
+        ("own", "당사", own, pct(own, total_collected), "샘플회사 직접 언급 보도입니다. 브랜드평판·실적·당사 이슈 노출을 별도로 봅니다."),
         ("regulation", "정책", regulation, pct(regulation, total_collected), "법안·감독·제도성 기사입니다. 업계 리스크의 배경 신호로 해석합니다."),
         ("market", "GA/보험", market, pct(market, total_collected), "GA·보험사·보험상품 관련 보도입니다. 시장 환경 변화의 주된 관찰 축입니다."),
         ("other", "기타", cats.get("other", 0), pct(cats.get("other", 0), total_collected), "핵심 분류와 직접 연결되지 않는 잔여 기사입니다."),

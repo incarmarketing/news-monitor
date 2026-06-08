@@ -7,7 +7,7 @@ GitHub Actions의 `schedule`은 지연될 수 있으므로, 안정성이 더 필
 1. GitHub 우측 상단 프로필 > Settings
 2. Developer settings > Personal access tokens > Fine-grained tokens
 3. Generate new token
-4. Repository access: `incarmarketing/news-monitor`만 선택
+4. Repository access: `your-github-id/your-repo`만 선택
 5. Permissions
    - Actions: Read and write
    - Contents: Read-only
@@ -51,7 +51,7 @@ cron-job.org API key는 cron-job.org Console > Settings에서 생성합니다. c
 - URL:
 
 ```text
-https://api.github.com/repos/incarmarketing/news-monitor/actions/workflows/negative-watch.yml/dispatches
+https://api.github.com/repos/your-github-id/your-repo/actions/workflows/negative-watch.yml/dispatches
 ```
 
 - Headers:
@@ -119,7 +119,7 @@ limit 5;
 - URL:
 
 ```text
-https://api.github.com/repos/incarmarketing/news-monitor/actions/workflows/news-briefing.yml/dispatches
+https://api.github.com/repos/your-github-id/your-repo/actions/workflows/news-briefing.yml/dispatches
 ```
 
 - Headers는 위와 동일합니다.

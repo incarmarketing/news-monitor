@@ -21,13 +21,13 @@ insert into public.monitor_profiles (profile_key, profile, updated_by)
 values (
   'default',
   '{
-    "companyName": "인카금융서비스",
-    "teamName": "마케팅부",
+    "companyName": "샘플회사",
+    "teamName": "모니터링팀",
     "serviceName": "관심키워드 및 모니터링 자동화",
-    "purpose": "정해둔 관심 키워드를 자동으로 검색하고, 기사와 보도자료를 모아 분석한 뒤 보고서와 알림으로 업무 흐름을 줄입니다.",
-    "ownKeywords": ["인카금융서비스", "인카금융", "인카금융서비스 브랜드평판"],
-    "industryContext": ["보험", "GA", "보험대리점", "보험설계사", "판매수수료", "내부통제"],
-    "excludeContext": ["스포츠 경기", "무관 업종", "단순 포토", "지역 선거"],
+    "purpose": "정해둔 관심 키워드를 자동으로 검색하고, 자료를 모아 분석한 뒤 보고서와 알림으로 업무 흐름을 줄입니다.",
+    "ownKeywords": ["샘플회사", "샘플서비스", "샘플회사 브랜드평판"],
+    "industryContext": ["업종 문맥", "고객", "상품", "서비스", "정책", "규제", "시장 동향"],
+    "excludeContext": ["무관 스포츠", "무관 업종", "단순 포토", "지역 선거", "채용"],
     "reportTone": "짧고 명확하게, 근거 기사와 판단을 분리하고 임원 보고에 바로 쓸 수 있게 작성합니다."
   }'::jsonb,
   'system'

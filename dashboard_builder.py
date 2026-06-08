@@ -25,7 +25,7 @@ PUBLIC_DIR = BASE_DIR / "public"
 PUBLIC_DATA_DIR = PUBLIC_DIR / "data"
 TEMPLATE_DIR = BASE_DIR / "templates"
 FRONTEND_DIST_DIR = BASE_DIR / "frontend" / "dist"
-DEFAULT_SUPABASE_PROJECT_REF = "moszekksbhprhevxdynb"
+DEFAULT_SUPABASE_PROJECT_REF = "your-project-ref"
 KST = timezone(timedelta(hours=9))
 
 CATEGORY_LABELS = {
@@ -55,7 +55,7 @@ STOCK_LISTING_NOISE_TITLE_RE = re.compile(
     r"오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선"
 )
 INVESTMENT_REPORT_RE = re.compile(r"투자의견|목표주가|목표가|증권가|리포트|애널리스트")
-OWN_NAME_RE = re.compile(r"인카금융서비스|인카금융")
+OWN_NAME_RE = re.compile(r"샘플회사|샘플회사")
 
 
 def load_daily_archives() -> list[dict]:
@@ -184,7 +184,7 @@ def contextual_summary_lines(article: dict, category: str, tone: str) -> list[st
     lines: list[str] = []
     if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
         if category == "own" or OWN_NAME_RE.search(text):
-            lines.append("인카금융서비스의 GA 리포트성 보도로 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
+            lines.append("샘플회사의 GA 리포트성 보도로 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
         else:
             lines.append("GA 리포트성 보도로 해당 대리점의 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
     if re.search(r"보험사기|진단서|데이터\s*전쟁|AI로\s*진단서", text, re.I):
@@ -838,13 +838,13 @@ def invalid_notification_action_links(notifications: list[dict]) -> list[dict]:
                 continue
             date, slot = match.group(1), match.group(2)
             expected_path = f"/news-monitor/reports/daily/{date}-{slot}.html"
-            if host != "incarmarketing.github.io" or path != expected_path:
+            if host != "your-github-id.github.io" or path != expected_path:
                 failures.append(notification_link_failure(row, "daily_action_link_mismatch", expected=expected_path, actual=link))
             continue
 
         if "negative" in message_type:
             query = parse_qs(parsed.query)
-            if host != "incarmarketing.github.io" or path != "/news-monitor/dashboard.html":
+            if host != "your-github-id.github.io" or path != "/news-monitor/dashboard.html":
                 failures.append(notification_link_failure(row, "negative_action_link_must_open_dashboard", actual=link))
             elif query.get("section", [""])[0] != "monitoring":
                 failures.append(notification_link_failure(row, "negative_action_link_missing_monitoring_section", actual=link))
@@ -856,7 +856,7 @@ def invalid_notification_action_links(notifications: list[dict]) -> list[dict]:
                 failures.append(notification_link_failure(row, "ai_usage_link_unexpected_host", actual=link))
             continue
 
-        if host == "incarmarketing.github.io":
+        if host == "your-github-id.github.io":
             if not path.startswith("/news-monitor/"):
                 failures.append(notification_link_failure(row, "internal_link_outside_project", actual=link))
             if "/reports/daily/dashboard.html" in path or path.endswith("/reports/dashboard.html"):
@@ -1153,12 +1153,12 @@ def article_topic_signature(row: dict) -> str:
         return "금감원-소비자보호-금융현장"
     if includes_all(["롯데손해보험", "경영개선계획"]):
         return "롯데손해보험-경영개선계획"
-    if includes_all(["인카금융서비스", "우수인증설계사"]):
-        return "인카금융서비스-우수인증설계사"
-    if includes_all(["정착지원금", "인카금융서비스"]):
-        return "ga-정착지원금-인카"
-    if "투자의견" in text and ("하향" in text or "낮아" in text) and ("인카" in text or ("코스피" in text and "증권가" in text)):
-        return "인카금융서비스-투자의견-하향"
+    if includes_all(["샘플회사", "우수인증설계사"]):
+        return "샘플회사-우수인증설계사"
+    if includes_all(["정착지원금", "샘플회사"]):
+        return "ga-정착지원금-샘플"
+    if "투자의견" in text and ("하향" in text or "낮아" in text) and ("샘플" in text or ("코스피" in text and "증권가" in text)):
+        return "샘플회사-투자의견-하향"
     return ""
 
 

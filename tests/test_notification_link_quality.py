@@ -14,7 +14,7 @@ class NotificationLinkQualityTests(unittest.TestCase):
                 "sent_at": "2026-06-06T04:02:00+00:00",
                 "message_type": "daily_report",
                 "title": "?쇱씪 ?몃줎 ?숉뼢 2026-06-06 13",
-                "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/dashboard.html",
+                "link_url": "https://your-github-id.github.io/your-repo/reports/daily/dashboard.html",
                 "status": "success",
             }
         ]
@@ -30,7 +30,7 @@ class NotificationLinkQualityTests(unittest.TestCase):
                 "sent_at": "2026-06-06T04:05:00+00:00",
                 "message_type": "negative_alert",
                 "title": "negative alert",
-                "link_url": "https://incarmarketing.github.io/news-monitor/dashboard.html?query=test",
+                "link_url": "https://your-github-id.github.io/your-repo/dashboard.html?query=test",
                 "status": "success",
             }
         ]
@@ -60,7 +60,7 @@ class NotificationLinkQualityTests(unittest.TestCase):
                 "sent_at": "2026-06-06T00:02:00+00:00",
                 "message_type": "daily_report",
                 "title": "?쇱씪 ?몃줎 ?숉뼢 2026-06-06 08",
-                "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-06-06-08.html",
+                "link_url": "https://your-github-id.github.io/your-repo/reports/daily/2026-06-06-08.html",
                 "status": "success",
             }
         ]
@@ -77,7 +77,7 @@ class NotificationLinkQualityTests(unittest.TestCase):
                 "sent_at": "2026-06-06T00:02:00+00:00",
                 "message_type": "daily_report",
                 "title": "?쇱씪 ?몃줎 ?숉뼢 2026-06-06 08",
-                "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-06-06-08.html?v=1",
+                "link_url": "https://your-github-id.github.io/your-repo/reports/daily/2026-06-06-08.html?v=1",
                 "status": "success",
             },
             {
@@ -85,7 +85,7 @@ class NotificationLinkQualityTests(unittest.TestCase):
                 "sent_at": "2026-06-06T00:05:00+00:00",
                 "message_type": "negative_alert",
                 "title": "negative alert",
-                "link_url": "https://incarmarketing.github.io/news-monitor/dashboard.html?section=monitoring&query=test",
+                "link_url": "https://your-github-id.github.io/your-repo/dashboard.html?section=monitoring&query=test",
                 "status": "success",
             },
             {
@@ -103,7 +103,7 @@ class NotificationLinkQualityTests(unittest.TestCase):
     def test_infers_legacy_daily_notification_slot_from_cache_buster(self) -> None:
         row = {
             "title": "daily report 2026-05-29",
-            "link_url": "https://incarmarketing.github.io/news-monitor/?v=20260529130222",
+            "link_url": "https://your-github-id.github.io/your-repo/?v=20260529130222",
             "message_type": "daily_report",
             "status": "success",
         }
@@ -111,11 +111,11 @@ class NotificationLinkQualityTests(unittest.TestCase):
         self.assertEqual(supabase_store.daily_notification_date_slot(row), ("2026-05-29", "13"))
         self.assertEqual(
             supabase_store.stable_daily_report_url(
-                "https://incarmarketing.github.io/news-monitor/",
+                "https://your-github-id.github.io/your-repo/",
                 "2026-05-29",
                 "13",
             ),
-            "https://incarmarketing.github.io/news-monitor/reports/daily/2026-05-29-13.html",
+            "https://your-github-id.github.io/your-repo/reports/daily/2026-05-29-13.html",
         )
 
 

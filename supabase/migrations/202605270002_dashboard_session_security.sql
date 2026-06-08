@@ -54,7 +54,7 @@ revoke all on private.dashboard_login_events from public;
 update public.dashboard_users
    set role = 'admin',
        enabled = true
- where employee_no = '1611499';
+ where employee_no = '1000001';
 
 create or replace function private.dashboard_token_hash(p_token text)
 returns text

@@ -113,8 +113,8 @@ function buildPrompt(input: { type: "internal" | "press"; issue: string; url: st
 
   return [
     `목적: ${purpose}`,
-    "회사: 인카금융서비스",
-    "부서: 마케팅부",
+    "회사: 샘플회사",
+    "부서: 모니터링팀",
     `작성일: ${todayKst()}`,
     input.url ? `기사 URL: ${input.url}` : "기사 URL: 미입력",
     "",

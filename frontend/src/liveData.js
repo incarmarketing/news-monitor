@@ -15,7 +15,7 @@ const STATIC_DATA_PATHS = [
 
 const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/;
 const INVESTMENT_REPORT_RE = /투자의견|목표주가|목표가|증권가|리포트|애널리스트/;
-const OWN_NAME_RE = /인카금융서비스|인카금융/;
+const OWN_NAME_RE = /샘플회사|샘플회사/;
 
 function isExpired(session) {
   return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
@@ -218,7 +218,7 @@ function backendCategory(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
   if (!text) return "";
-  if (["own", "company"].includes(canonical) || /당사|인카/.test(text)) return "own";
+  if (["own", "company"].includes(canonical) || /당사|샘플/.test(text)) return "own";
   if (["regulation", "policy"].includes(canonical) || /정책|규제|당국|수수료/.test(text)) return "regulation";
   if (["competitor"].includes(canonical) || /ga|보험사|경쟁사|글로벌금융|메가|설계사/i.test(text)) return "competitor";
   if (["industry", "market"].includes(canonical) || /업계|동향|시장/.test(text)) return "industry";
@@ -843,7 +843,7 @@ function normalizeCategory(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
   if (!text) return "미분류";
-  if (["own", "company"].includes(canonical) || /당사|인카/.test(text)) return "당사";
+  if (["own", "company"].includes(canonical) || /당사|샘플/.test(text)) return "당사";
   if (["regulation", "policy"].includes(canonical) || /정책|규제|당국|수수료/.test(text)) return "정책/규제";
   if (["competitor"].includes(canonical)) return "보험사";
   if (["industry", "market"].includes(canonical) || /업계|동향|시장/.test(text)) return "업계동향";
@@ -857,7 +857,7 @@ function normalizeCategory(value) {
 function normalizeCategoryLegacy(value) {
   const text = String(value || "").trim();
   if (!text) return "미분류";
-  if (/own|company|당사|인카/i.test(text)) return "당사";
+  if (/own|company|당사|샘플/i.test(text)) return "당사";
   if (/ga|글로벌금융|메가금융|설계사/i.test(text)) return "GA";
   if (/보험사|생명|손해/i.test(text)) return "보험사";
   if (/정책|규제|당국|수수료|룰/i.test(text)) return "정책/규제";

@@ -6,8 +6,9 @@ import difflib
 import re
 from collections import Counter
 
+import config
 
-OWN_NAMES = ["인카금융", "인카금융서비스"]
+OWN_NAMES = config.OWN_NAMES
 
 REGULATION_WORDS = [
     "금감원", "금융위", "금융감독원", "금융소비자보호", "규제", "법안", "1200%",
@@ -421,7 +422,7 @@ def is_settlement_support_caution_article(article: dict) -> bool:
 
     title = article.get("title", "")
     own_in_title = any(name in title for name in OWN_NAMES)
-    own_list_mention = bool(re.search(r"[△,·]\s*인카금융서비스|\b인카금융서비스\(\d+억", text))
+    own_list_mention = bool(re.search(r"[△,·]\s*샘플회사|\b샘플회사\(\d+억", text))
     industry_title = any(word in title for word in ("GA들", "초대형 GA", "GA ", "1200% 룰", "정착지원금"))
     return (not own_in_title and (own_list_mention or industry_title)) or (
         own_in_title and any(word in text for word in ("공시", "지급 규모", "순이다", "전년 동기"))
@@ -620,7 +621,7 @@ def build_contextual_summary_sentences(article: dict) -> list[str]:
     lines: list[str] = []
     if is_preventive_security_article(article):
         if is_own_article(article):
-            lines.append("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다")
+            lines.append("샘플회사가 포함된 GA의 금융보안원 가입 확대 내용입니다")
         lines.append("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다")
     elif is_investment_downgrade_article(article):
         lines.append("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다")

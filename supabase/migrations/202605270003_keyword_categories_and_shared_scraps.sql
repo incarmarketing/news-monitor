@@ -17,9 +17,11 @@ end $$;
 
 update public.monitor_keywords
    set category = case
-     when keyword in ('인카금융', '인카금융서비스', '인카금융서비스 브랜드평판') then 'own'
-     when keyword like '%브랜드평판%' or keyword in ('보험 마케팅', '보험 프로모션', 'GA 보험', '보험설계사') then 'industry'
-     when keyword in ('생명보험', '손해보험') then 'competitor'
+     when keyword in ('샘플회사', '샘플서비스', '샘플회사 브랜드평판') then 'own'
+     when keyword in ('경쟁사명', '경쟁사 서비스명') then 'competitor'
+     when keyword in ('업계 키워드', '시장 동향', '고객 리뷰') then 'industry'
+     when keyword in ('정책 규제 키워드', '감독기관') then 'regulation'
+     when keyword in ('무관 스포츠') then 'other'
      else category
    end
  where category = 'other';

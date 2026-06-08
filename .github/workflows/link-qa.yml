@@ -6,7 +6,7 @@ on:
       url:
         description: "Public site root or dashboard URL"
         required: false
-        default: "https://incarmarketing.github.io/news-monitor/"
+        default: "https://your-github-id.github.io/your-repo/"
   workflow_run:
     workflows:
       - Publish Dashboard
@@ -37,7 +37,7 @@ jobs:
 
       - name: Inspect deployed report and notification links
         env:
-          LINK_QA_BASE_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/' }}
+          LINK_QA_BASE_URL: ${{ github.event.inputs.url || 'https://your-github-id.github.io/your-repo/' }}
           LINK_QA_REQUIRE_NOTIFICATIONS: "true"
         run: node frontend/scripts/link-qa.mjs
 
