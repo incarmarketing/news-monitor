@@ -11,6 +11,7 @@ from pathlib import Path
 import archiver
 import ai_briefing
 import dashboard_builder
+import stock_collector
 import supabase_store
 
 BASE_DIR = Path(__file__).parent
@@ -126,9 +127,17 @@ def publish() -> Path:
     publish_period_report("weekly")
     publish_period_report("monthly")
     publish_monthly_archives()
+    publish_stock_market_data()
     repair_daily_notification_history()
     dashboard_builder.publish_dashboard()
     return index_target
+
+
+def publish_stock_market_data() -> None:
+    try:
+        stock_collector.publish_stock_market_data()
+    except Exception as exc:
+        print(f"Stock market data publish skipped: {exc}")
 
 
 def publish_all_daily_slots() -> None:

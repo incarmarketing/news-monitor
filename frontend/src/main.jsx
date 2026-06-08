@@ -23,6 +23,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  TrendingDown,
   Users,
   WalletCards,
   X,
@@ -70,6 +71,7 @@ const navIcons = {
   monitoring: Search,
   regulators: FileText,
   media: LineChart,
+  stocks: WalletCards,
   scraps: Bookmark,
   risk: ShieldCheck,
   reports: FileText,
@@ -373,6 +375,7 @@ function App() {
     monitoring: Monitoring,
     regulators: Regulators,
     media: MediaAnalysis,
+    stocks: StockMarketDashboard,
     scraps: Scraps,
     risk: RiskCenterV2,
     reports: Reports,
@@ -416,6 +419,7 @@ function App() {
         notifications={notifications}
         management={management}
         operations={operations}
+        stockMarket={operations.stockMarket}
         workflowHealth={workflowHealth}
         isWorking={working}
         onRefreshOperations={refreshOperations}
@@ -985,6 +989,168 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
           </article>
         );
       })}
+    </div>
+  );
+}
+
+function StockMarketDashboard({ stockMarket }) {
+  const company = stockMarket?.company || {};
+  const summary = stockMarket?.summary || {};
+  const indices = stockMarket?.indices || [];
+  const peerGroups = stockMarket?.peerGroups || [];
+  const relativeTrend = stockMarket?.relativeTrend || [];
+  const hasData = company?.status === "ok";
+  const companyLink = company?.code ? `https://finance.naver.com/item/main.naver?code=${company.code}` : "#";
+
+  return (
+    <main className="workspace">
+      <PageTitle
+        eyebrow="Market Watch"
+        title="주가/시장 대시보드"
+        description="당사 주가, 동종업계, 보험·금융지주, 시장지수를 함께 보며 주가성 기사와 실제 시장 흐름을 분리합니다."
+        right={(
+          <a className="ghost-button" href={companyLink} target="_blank" rel="noopener noreferrer">
+            <ExternalLink />네이버 금융
+          </a>
+        )}
+      />
+
+      {!hasData ? (
+        <section className="panel empty-state-panel">
+          <h2><WalletCards />주가 데이터 수집 대기</h2>
+          <p>다음 대시보드 배포 시 네이버 금융 차트 데이터를 수집해 표시합니다.</p>
+        </section>
+      ) : (
+        <>
+          <section className="stock-hero">
+            <div className="stock-hero-main">
+              <span className="live-label"><span /> STOCK MARKET BRIEFING</span>
+              <h2>{summary.headline || "당사 주가와 업종 흐름을 함께 관찰합니다."}</h2>
+              <p>{stockMarket?.as_of || company.latest?.date || "-"} 기준 · 출처 {stockMarket?.source || "Naver Finance"}</p>
+              <div className="stock-commentary">
+                {(summary.commentary || []).slice(0, 4).map((line) => <span key={line}>{line}</span>)}
+              </div>
+            </div>
+            <div className={`stock-price-card ${stockToneClass(company.latest?.change_rate)}`}>
+              <span>{company.name}</span>
+              <b>{formatStockPrice(company.latest?.price)}</b>
+              <em>{formatSignedNumber(company.latest?.change)} · {formatStockPercent(company.latest?.change_rate)}</em>
+              <small>거래량 {formatStockVolume(company.latest?.volume)}</small>
+            </div>
+          </section>
+
+          <section className="stock-kpi-grid">
+            <StockMetricCard icon={WalletCards} label="현재가" value={formatStockPrice(company.latest?.price)} detail={`${company.latest?.date || "-"} 종가`} />
+            <StockMetricCard icon={TrendingDown} label="20거래일" value={formatStockPercent(company.returns?.["20d"])} detail="당사 수익률" toneValue={company.returns?.["20d"]} />
+            <StockMetricCard icon={TrendingDown} label="60일 고점대비" value={formatStockPercent(company.range?.drawdown_from_60d_high)} detail={`고점 ${formatStockPrice(company.range?.high_60d)}`} toneValue={company.range?.drawdown_from_60d_high} />
+            <StockMetricCard icon={LineChart} label="동종 대비" value={formatStockPercent(summary.relative_to_peers)} detail={`동종 평균 ${formatStockPercent(summary.peer_20d_return)}`} toneValue={summary.relative_to_peers} />
+            <StockMetricCard icon={LineChart} label="KOSPI 대비" value={formatStockPercent(summary.relative_to_kospi)} detail={`KOSPI ${formatStockPercent(summary.kospi_20d_return)}`} toneValue={summary.relative_to_kospi} />
+          </section>
+
+          <section className="stock-dashboard-grid">
+            <Panel title="60거래일 상대 흐름" icon={LineChart} meta="첫날 100 기준">
+              <StockTrendChart rows={relativeTrend} />
+            </Panel>
+            <Panel title="시장 지수" icon={Activity} meta="KOSPI · KOSDAQ">
+              <MarketIndexCards rows={indices} />
+            </Panel>
+          </section>
+
+          <section className="stock-peer-section">
+            {peerGroups.map((group) => (
+              <Panel
+                key={group.name}
+                title={group.name}
+                icon={Building2}
+                meta={`20일 평균 ${formatStockPercent(group.average_20d_return)}`}
+              >
+                <StockPeerTable rows={group.stocks || []} />
+              </Panel>
+            ))}
+          </section>
+        </>
+      )}
+    </main>
+  );
+}
+
+function StockMetricCard({ icon: Icon, label, value, detail, toneValue }) {
+  return (
+    <article className={`stock-metric-card ${stockToneClass(toneValue)}`}>
+      <Icon />
+      <span>{label}</span>
+      <b>{value}</b>
+      <em>{detail}</em>
+    </article>
+  );
+}
+
+function StockTrendChart({ rows = [] }) {
+  const visibleRows = rows.filter((row) => row.company || row.kospi || row.peer);
+  if (!visibleRows.length) return <p className="a4-empty">상대 흐름 데이터가 없습니다.</p>;
+  return (
+    <div className="chart-box stock-trend-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsLineChart data={visibleRows} margin={{ left: 0, right: 14, top: 12, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="date" tickLine={false} axisLine={false} />
+          <YAxis domain={["auto", "auto"]} tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value))}`} />
+          <Tooltip formatter={(value, name) => [formatIndexPoint(value), stockSeriesLabel(name)]} />
+          <Line type="monotone" dataKey="company" name="company" stroke="#2855d9" strokeWidth={3} dot={false} connectNulls />
+          <Line type="monotone" dataKey="peer" name="peer" stroke="#14805f" strokeWidth={2.5} dot={false} connectNulls />
+          <Line type="monotone" dataKey="kospi" name="kospi" stroke="#b45309" strokeWidth={2.2} dot={false} strokeDasharray="5 4" connectNulls />
+        </RechartsLineChart>
+      </ResponsiveContainer>
+      <div className="stock-chart-legend">
+        <span className="company">인카금융서비스</span>
+        <span className="peer">동종 평균</span>
+        <span className="kospi">KOSPI</span>
+      </div>
+    </div>
+  );
+}
+
+function MarketIndexCards({ rows = [] }) {
+  return (
+    <div className="market-index-grid">
+      {rows.map((row) => (
+        <article key={row.code} className={`market-index-card ${stockToneClass(row.latest?.change_rate)}`}>
+          <span>{row.name}</span>
+          <b>{formatStockPrice(row.latest?.price, 2)}</b>
+          <em>{formatStockPercent(row.latest?.change_rate)}</em>
+          <small>20일 {formatStockPercent(row.returns?.["20d"])} · 60일 {formatStockPercent(row.returns?.["60d"])}</small>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function StockPeerTable({ rows = [] }) {
+  if (!rows.length) return <p className="a4-empty">비교 종목 데이터가 없습니다.</p>;
+  return (
+    <div className="stock-table-wrap">
+      <table className="stock-table">
+        <thead>
+          <tr>
+            <th>종목</th>
+            <th>현재가</th>
+            <th>1일</th>
+            <th>20일</th>
+            <th>고점대비</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.code}>
+              <td><b>{row.name}</b><span>{row.code}</span></td>
+              <td>{formatStockPrice(row.latest?.price)}</td>
+              <td className={stockToneClass(row.returns?.["1d"])}>{formatStockPercent(row.returns?.["1d"])}</td>
+              <td className={stockToneClass(row.returns?.["20d"])}>{formatStockPercent(row.returns?.["20d"])}</td>
+              <td className={stockToneClass(row.range?.drawdown_from_60d_high)}>{formatStockPercent(row.range?.drawdown_from_60d_high)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -6792,6 +6958,55 @@ function categoryPresetFor(value) {
 
 function unique(values) {
   return Array.from(new Set(values.filter(Boolean)));
+}
+
+function stockToneClass(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number === 0) return "flat";
+  return number > 0 ? "up" : "down";
+}
+
+function formatStockPrice(value, digits = 0) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number === 0) return "-";
+  return `${number.toLocaleString("ko-KR", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })}`;
+}
+
+function formatStockPercent(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return `${number > 0 ? "+" : ""}${number.toFixed(2)}%`;
+}
+
+function formatSignedNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return `${number > 0 ? "+" : ""}${number.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}`;
+}
+
+function formatStockVolume(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  if (number >= 1000000) return `${(number / 1000000).toFixed(1)}백만`;
+  if (number >= 10000) return `${Math.round(number / 10000).toLocaleString("ko-KR")}만`;
+  return number.toLocaleString("ko-KR");
+}
+
+function formatIndexPoint(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return `${number.toFixed(2)}pt`;
+}
+
+function stockSeriesLabel(name) {
+  return {
+    company: "인카금융서비스",
+    peer: "동종 평균",
+    kospi: "KOSPI",
+  }[name] || name;
 }
 
 function formatMoney(value) {

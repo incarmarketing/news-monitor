@@ -2367,6 +2367,293 @@ button.kpi-card {
   white-space: nowrap;
 }
 
+.stock-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 310px);
+  gap: 14px;
+  align-items: stretch;
+  padding: 16px;
+  border: 1px solid #c9d4ea;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .98), rgba(248, 250, 252, .94)),
+    radial-gradient(circle at 84% 12%, rgba(40, 85, 217, .12), transparent 34%);
+  box-shadow: var(--surface-glow), var(--shadow-soft);
+}
+
+.stock-hero-main {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.stock-hero-main h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.25;
+  font-weight: 900;
+  word-break: keep-all;
+}
+
+.stock-hero-main p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.stock-commentary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.stock-commentary span {
+  padding: 6px 9px;
+  border: 1px solid #d7e0ee;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.stock-price-card {
+  --stock-tone: #64748b;
+  --stock-soft: #f8fafc;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  min-height: 160px;
+  padding: 18px;
+  border: 1px solid #d8e1ef;
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--stock-soft), #fff);
+}
+
+.stock-price-card.up,
+.stock-metric-card.up,
+.market-index-card.up,
+.stock-table td.up {
+  --stock-tone: #dc2626;
+  --stock-soft: #fff1f2;
+  color: #b91c1c;
+}
+
+.stock-price-card.down,
+.stock-metric-card.down,
+.market-index-card.down,
+.stock-table td.down {
+  --stock-tone: #2563eb;
+  --stock-soft: #eff6ff;
+  color: #1d4ed8;
+}
+
+.stock-price-card.flat,
+.stock-metric-card.flat,
+.market-index-card.flat,
+.stock-table td.flat {
+  --stock-tone: #64748b;
+  --stock-soft: #f8fafc;
+  color: var(--ink-2);
+}
+
+.stock-price-card span,
+.stock-metric-card span,
+.market-index-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.stock-price-card b {
+  color: var(--ink);
+  font-size: 36px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.stock-price-card em,
+.stock-price-card small,
+.market-index-card em,
+.market-index-card small {
+  color: var(--stock-tone);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.stock-price-card small,
+.market-index-card small {
+  font-size: 11px;
+}
+
+.stock-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.stock-metric-card {
+  --stock-tone: #64748b;
+  --stock-soft: #f8fafc;
+  display: grid;
+  gap: 7px;
+  min-height: 118px;
+  padding: 13px;
+  border: 1px solid #d6dfed;
+  border-left: 4px solid var(--stock-tone);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--stock-soft), #fff);
+  box-shadow: 0 1px 0 rgba(16, 24, 40, .04);
+}
+
+.stock-metric-card svg {
+  width: 18px;
+  height: 18px;
+  color: var(--stock-tone);
+}
+
+.stock-metric-card b {
+  color: var(--ink);
+  font-size: 23px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.stock-metric-card em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.stock-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.38fr) minmax(300px, .62fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.chart-box.stock-trend-chart {
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 316px;
+  padding-bottom: 8px;
+}
+
+.stock-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.stock-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.stock-chart-legend span::before {
+  content: "";
+  width: 20px;
+  height: 4px;
+  border-radius: 999px;
+  background: #64748b;
+}
+
+.stock-chart-legend .company::before { background: #2855d9; }
+.stock-chart-legend .peer::before { background: #14805f; }
+.stock-chart-legend .kospi::before { background: #b45309; }
+
+.market-index-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.market-index-card {
+  --stock-tone: #64748b;
+  --stock-soft: #f8fafc;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: var(--stock-soft);
+}
+
+.market-index-card b {
+  color: var(--ink);
+  font-size: 25px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.stock-peer-section {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stock-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.stock-table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+.stock-table th,
+.stock-table td {
+  padding: 8px 7px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 850;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.stock-table th {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.stock-table th:first-child,
+.stock-table td:first-child {
+  text-align: left;
+}
+
+.stock-table td b {
+  display: block;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 950;
+}
+
+.stock-table td span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .keyword-brief {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4983,6 +5270,9 @@ button.kpi-card {
   .ad-summary-row,
   .ad-chart-grid,
   .feedback-ledger,
+  .stock-hero,
+  .stock-dashboard-grid,
+  .stock-peer-section,
   .reporter-form {
     grid-template-columns: 1fr;
   }
@@ -5150,6 +5440,18 @@ button.kpi-card {
 
   .report-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-price-card {
+    min-height: 132px;
+  }
+
+  .chart-box.stock-trend-chart {
+    height: 270px;
   }
 
   .lead-story h2 {

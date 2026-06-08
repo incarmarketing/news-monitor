@@ -13,6 +13,12 @@ const STATIC_DATA_PATHS = [
   `${import.meta.env.BASE_URL || "/"}data/articles.json`,
 ];
 
+const STOCK_MARKET_DATA_PATHS = [
+  "/data/stock-market.json",
+  "/public/data/stock-market.json",
+  `${import.meta.env.BASE_URL || "/"}data/stock-market.json`,
+];
+
 const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/;
 const INVESTMENT_REPORT_RE = /투자의견|목표주가|목표가|증권가|리포트|애널리스트/;
 const OWN_NAME_RE = /인카금융서비스|인카금융/;
@@ -325,21 +331,45 @@ export async function loadOperationalData() {
     feedbackGeneratedAt: "",
     aiStatus: null,
     qualityChecks: null,
+    stockMarket: null,
     session: null,
   };
 
   try {
+    const stockMarket = await loadStockMarketData();
     const session = getStoredSession();
     if (session?.session_token) {
       const remoteData = await loadOperationalDataFromSupabaseSession();
-      if (remoteData?.status === "live") return remoteData;
+      if (remoteData?.status === "live") return { ...remoteData, stockMarket };
     }
     const staticData = await loadStaticOperationalData();
-    if (staticData) return staticData;
-    return { ...base, status: "empty", message: "누적 데이터 없음" };
+    if (staticData) return { ...staticData, stockMarket: staticData.stockMarket || stockMarket };
+    return { ...base, stockMarket, status: "empty", message: "누적 데이터 없음" };
   } catch (error) {
     return { ...base, status: "error", message: error?.message || "누적 데이터 연결 실패" };
   }
+}
+
+export async function loadStockMarketData() {
+  for (const path of STOCK_MARKET_DATA_PATHS) {
+    try {
+      const payload = await fetchJson(path);
+      if (payload?.company || payload?.indices?.length) return normalizeStockMarket(payload);
+    } catch {
+      // Try the next path.
+    }
+  }
+  return null;
+}
+
+function normalizeStockMarket(payload) {
+  return {
+    ...payload,
+    indices: Array.isArray(payload?.indices) ? payload.indices : [],
+    peerGroups: Array.isArray(payload?.peer_groups) ? payload.peer_groups : [],
+    relativeTrend: Array.isArray(payload?.relative_trend) ? payload.relative_trend : [],
+    summary: payload?.summary || {},
+  };
 }
 
 async function loadStaticOperationalData() {
@@ -369,6 +399,7 @@ async function loadStaticOperationalData() {
         feedbackGeneratedAt: payload?.classification_feedback_generated_at || "",
         aiStatus: payload?.ai_status || null,
         qualityChecks: payload?.quality_checks || null,
+        stockMarket: payload?.stock_market ? normalizeStockMarket(payload.stock_market) : null,
         session: null,
       };
     } catch {
