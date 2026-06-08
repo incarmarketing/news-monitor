@@ -22,8 +22,8 @@ def main() -> None:
     load_dotenv()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--days", type=int, default=3650, help="Official release archive lookback window.")
-    parser.add_argument("--pages", type=int, default=500, help="Maximum list pages per regulator.")
+    parser.add_argument("--days", type=int, default=45, help="Official release archive lookback window.")
+    parser.add_argument("--pages", type=int, default=10, help="Maximum list pages per regulator.")
     args = parser.parse_args()
 
     current = datetime.now(KST)

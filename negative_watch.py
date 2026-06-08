@@ -36,7 +36,16 @@ KST = timezone(timedelta(hours=9))
 BASE_DIR = Path(__file__).parent
 STATE_DIR = BASE_DIR / ".watch-state"
 STATE_PATH = STATE_DIR / "negative_alerts.json"
+DASHBOARD_REFRESH_STATE_PATH = STATE_DIR / "dashboard_refresh.json"
 MAX_SENT_KEYS = 500
+
+
+def github_output(name: str, value: str) -> None:
+    output_path = os.getenv("GITHUB_OUTPUT")
+    if output_path:
+        with open(output_path, "a", encoding="utf-8") as file:
+            file.write(f"{name}={value}\n")
+    print(f"{name}={value}")
 
 
 def now_kst() -> datetime:
@@ -107,6 +116,53 @@ def save_state(state: dict) -> None:
     sent_keys = state.get("sent_keys", [])
     state["sent_keys"] = sent_keys[-MAX_SENT_KEYS:]
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_dashboard_refresh_state() -> dict:
+    STATE_DIR.mkdir(exist_ok=True)
+    if not DASHBOARD_REFRESH_STATE_PATH.exists():
+        return {}
+    try:
+        return json.loads(DASHBOARD_REFRESH_STATE_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def save_dashboard_refresh_state(state: dict) -> None:
+    DASHBOARD_REFRESH_STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def dashboard_refresh_interval_minutes() -> int:
+    value = os.getenv("NEGATIVE_WATCH_DASHBOARD_REFRESH_MINUTES", "15").strip()
+    try:
+        return max(0, int(value))
+    except ValueError:
+        return 15
+
+
+def dashboard_refresh_due(scanned_at: str, *, new_negative_count: int, status: str) -> bool:
+    mode = os.getenv("NEGATIVE_WATCH_DASHBOARD_REFRESH", "throttled").strip().lower()
+    if mode in {"0", "false", "no", "never", "off"} or status in {"skipped", "dry_run"}:
+        return False
+
+    interval = dashboard_refresh_interval_minutes()
+    state = load_dashboard_refresh_state()
+    last_refresh = parse_datetime(str(state.get("last_refresh_at", "")))
+    current = parse_datetime(scanned_at) or datetime.now(timezone.utc)
+
+    should_refresh = mode == "always" or new_negative_count > 0 or status in {"alert_sent", "alert_failed"}
+    if not should_refresh and interval > 0:
+        should_refresh = not last_refresh or (current - last_refresh).total_seconds() >= interval * 60
+
+    if should_refresh:
+        save_dashboard_refresh_state(
+            {
+                "last_refresh_at": scanned_at,
+                "status": status,
+                "new_negative_count": new_negative_count,
+            }
+        )
+    return should_refresh
 
 
 def article_key(article: dict) -> str:
@@ -299,6 +355,37 @@ def record_watch_run(
             raise
 
 
+def finish_watch_run(
+    *,
+    scanned_at: str,
+    minutes_back: int,
+    scanned_count: int,
+    negative_count: int,
+    new_negative_count: int,
+    status: str,
+    message: str = "",
+) -> None:
+    record_watch_run(
+        scanned_at=scanned_at,
+        minutes_back=minutes_back,
+        scanned_count=scanned_count,
+        negative_count=negative_count,
+        new_negative_count=new_negative_count,
+        status=status,
+        message=message,
+    )
+    should_refresh = dashboard_refresh_due(
+        scanned_at,
+        new_negative_count=new_negative_count,
+        status=status,
+    )
+    github_output("scanned_count", str(scanned_count))
+    github_output("negative_count", str(negative_count))
+    github_output("new_negative_count", str(new_negative_count))
+    github_output("watch_status", status)
+    github_output("should_refresh_dashboard", "true" if should_refresh else "false")
+
+
 def main() -> None:
     load_dotenv()
     base_minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "5"))
@@ -308,7 +395,7 @@ def main() -> None:
         print(f"Negative watcher catch-up window expanded to {minutes_back} minutes.")
 
     if not is_active_time():
-        record_watch_run(
+        finish_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
             scanned_count=0,
@@ -343,7 +430,7 @@ def main() -> None:
     )
 
     if not new_negatives:
-        record_watch_run(
+        finish_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
             scanned_count=len(articles) + len(db_negatives),
@@ -356,7 +443,7 @@ def main() -> None:
         return
 
     if os.getenv("NEGATIVE_WATCH_DRY_RUN", "").lower() in {"1", "true", "yes", "y"}:
-        record_watch_run(
+        finish_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
             scanned_count=len(articles) + len(db_negatives),
@@ -378,7 +465,7 @@ def main() -> None:
             sent.add(article_key(article))
         state["sent_keys"] = list(sent)
         save_state(state)
-        record_watch_run(
+        finish_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
             scanned_count=len(articles) + len(db_negatives),
@@ -403,7 +490,7 @@ def main() -> None:
             status="success",
             provider_response=result,
         )
-        record_watch_run(
+        finish_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
             scanned_count=len(articles) + len(db_negatives),
@@ -422,7 +509,7 @@ def main() -> None:
             status="failed",
             error=str(error),
         )
-        record_watch_run(
+        finish_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,
             scanned_count=len(articles) + len(db_negatives),

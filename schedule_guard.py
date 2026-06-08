@@ -69,7 +69,7 @@ def begin_daily_schedule(now: datetime, cron: str) -> None:
             print(f"Already completed scheduled slot: {marker_path}")
             continue
         if slot_recently_failed(today, slot, now):
-            print(f"Recent failed run is cooling down for {today} {slot}.")
+            print(f"Recent report run cooldown is active for {today} {slot}.")
             continue
 
         github_output("should_run", "true")
@@ -213,6 +213,7 @@ def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:
             "job_runs",
             "select=status,last_seen_at,finished_at,error"
             f"&run_key=eq.{quote(run_key)}"
+            "&order=last_seen_at.desc"
             "&limit=1",
         )
     except RuntimeError as error:
@@ -222,12 +223,21 @@ def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:
         return False
     row = rows[0]
     status = str(row.get("status", ""))
-    if status not in {"failed", "cancelled"}:
-        return False
     last_seen = parse_supabase_time(row.get("last_seen_at") or row.get("finished_at"))
     if not last_seen:
         return False
     age_minutes = (now - last_seen.astimezone(KST)).total_seconds() / 60
+
+    active_cooldown = in_progress_cooldown_minutes()
+    if status in {"started", "dispatched", "watchdog_dispatched"} and age_minutes <= active_cooldown:
+        print(
+            "Recent report run is still in progress: "
+            f"{run_key}, status={status}, age={age_minutes:.1f}m, cooldown={active_cooldown}m"
+        )
+        return True
+
+    if status not in {"failed", "cancelled"}:
+        return False
     if age_minutes <= cooldown:
         print(
             "Recent report failure cooldown active: "
@@ -243,6 +253,14 @@ def failure_cooldown_minutes() -> int:
         return max(0, int(value))
     except ValueError:
         return 30
+
+
+def in_progress_cooldown_minutes() -> int:
+    value = os.getenv("REPORT_IN_PROGRESS_COOLDOWN_MINUTES", "20").strip()
+    try:
+        return max(1, int(value))
+    except ValueError:
+        return 20
 
 
 def parse_supabase_time(value: object) -> datetime | None:

@@ -58,6 +58,7 @@ jobs:
           JOB_PROVIDER: github_actions
 
       - name: Watch negative articles
+        id: watch
         run: python negative_watch.py
         env:
           WATCH_MODE: ${{ github.event.inputs.mode || 'single' }}
@@ -75,6 +76,8 @@ jobs:
           NEGATIVE_WATCH_END_HOUR: "23"
           NEGATIVE_WATCH_MAX_CATCHUP_MINUTES: "1440"
           NEGATIVE_WATCH_REQUIRE_DB_LOG: "true"
+          NEGATIVE_WATCH_DASHBOARD_REFRESH: "throttled"
+          NEGATIVE_WATCH_DASHBOARD_REFRESH_MINUTES: "15"
 
       - name: Persist sent alert state
         if: always()
@@ -100,3 +103,9 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           JOB_PROVIDER: github_actions
           JOB_STATUS: ${{ job.status }}
+
+      - name: Refresh dashboard snapshot
+        if: always() && steps.watch.outputs.should_refresh_dashboard == 'true'
+        run: gh workflow run pages-dashboard.yml --ref main || echo "::warning::Dashboard refresh dispatch failed."
+        env:
+          GH_TOKEN: ${{ github.token }}

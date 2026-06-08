@@ -6,6 +6,7 @@ Required environment variables:
 
 Optional:
   CRONJOB_ENABLED          true/false, default true
+  CRONJOB_DISABLE_STALE    true/false, default true
 """
 
 from __future__ import annotations
@@ -210,18 +211,64 @@ def upsert_job(api_key: str, spec: CronSpec, github_token: str, enabled: bool, e
     return job_id
 
 
+def disable_stale_jobs(api_key: str, jobs: list[dict], managed_job_ids: dict[str, int], expected_titles: set[str]) -> list[int]:
+    """Disable old news-monitor cron jobs that are no longer in the managed spec.
+
+    Repeated 08:00 dispatches usually mean an older cron-job.org entry is still
+    alive. We disable unknown news-monitor jobs instead of deleting them so the
+    history stays inspectable from cron-job.org.
+    """
+    enabled = os.getenv("CRONJOB_DISABLE_STALE", "true").lower() in {"1", "true", "yes", "y"}
+    if not enabled:
+        return []
+
+    disabled: list[int] = []
+    for job in jobs:
+        title = str(job.get("title", ""))
+        if not title.startswith("news-monitor"):
+            continue
+        job_id = int(job["jobId"])
+        is_duplicate_managed_title = title in expected_titles and job_id != managed_job_ids.get(title)
+        is_unknown_title = title not in expected_titles
+        if not is_duplicate_managed_title and not is_unknown_title:
+            continue
+        response = requests.patch(
+            f"{CRON_ENDPOINT}/jobs/{job_id}",
+            headers=cron_headers(api_key),
+            data=json.dumps({"job": {"enabled": False}}),
+            timeout=20,
+        )
+        if response.ok:
+            reason = "duplicate" if is_duplicate_managed_title else "stale"
+            print(f"disabled {reason} job: {title} ({job_id})")
+            disabled.append(job_id)
+            time.sleep(1.1)
+        else:
+            print(f"warning: stale job disable failed: {title} ({job_id}) {response.status_code} {response.text[:200]}")
+    return disabled
+
+
 def main() -> None:
     load_dotenv()
     cron_api_key = require_env("CRONJOB_API_KEY")
     github_token = require_env("CRON_DISPATCH_TOKEN")
     enabled = os.getenv("CRONJOB_ENABLED", "true").lower() in {"1", "true", "yes", "y"}
 
-    existing = {job.get("title", ""): int(job["jobId"]) for job in list_jobs(cron_api_key)}
-    created_or_updated = [
-        upsert_job(cron_api_key, spec, github_token, enabled, existing)
-        for spec in specs()
-    ]
-    print("done:", created_or_updated)
+    job_specs = specs()
+    jobs = list_jobs(cron_api_key)
+    existing = {job.get("title", ""): int(job["jobId"]) for job in jobs}
+    managed_job_ids: dict[str, int] = {}
+    for spec in job_specs:
+        managed_job_ids[spec.title] = upsert_job(cron_api_key, spec, github_token, enabled, existing)
+    created_or_updated = list(managed_job_ids.values())
+    refreshed_jobs = list_jobs(cron_api_key)
+    stale_disabled = disable_stale_jobs(
+        cron_api_key,
+        refreshed_jobs,
+        managed_job_ids,
+        {spec.title for spec in job_specs},
+    )
+    print("done:", created_or_updated, "stale_disabled:", stale_disabled)
 
 
 if __name__ == "__main__":
