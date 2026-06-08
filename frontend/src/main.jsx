@@ -668,11 +668,11 @@ function TerminalCommandBar({ data, summary, operationsHealth, notificationHealt
       </div>
       <div className="terminal-ops-summary">
         <div>
-          <span>Report</span>
+          <span>보고서 자동화</span>
           <b>{reportText}</b>
         </div>
         <div>
-          <span>Alert</span>
+          <span>알림톡 발송</span>
           <b>{notificationText}</b>
         </div>
       </div>
@@ -682,9 +682,9 @@ function TerminalCommandBar({ data, summary, operationsHealth, notificationHealt
 
 function compactHealthText(item, fallback) {
   if (!item) return fallback;
-  const status = item.statusLabel || item.status || "확인";
+  const status = item.label || healthStatusLabel(item.status) || "확인";
   const detail = item.value || item.detail || "";
-  return detail ? `${status} ? ${detail}` : status;
+  return detail ? `${status} · ${detail}` : status;
 }
 
 function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
