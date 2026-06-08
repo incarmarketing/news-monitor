@@ -1,23 +1,9 @@
 name: Publish Dashboard
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "data/daily/**"
-      - "period_reports/**"
-      - "templates/dashboard.html"
-      - "templates/email.html"
-      - "templates/period_report.html"
-      - "frontend/**"
-      - "dashboard_builder.py"
-      - "publish_report.py"
-      - "regulator_collector.py"
-      - "refresh_regulator_releases.py"
-      - "supabase_store.py"
-      - ".github/workflows/pages-dashboard.yml"
   workflow_dispatch:
+  # Template note:
+  # Re-enable push triggers after Pages/Supabase secrets are configured.
 
 permissions:
   contents: read

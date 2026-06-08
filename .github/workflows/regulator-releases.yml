@@ -2,15 +2,8 @@ name: Regulator Releases Backfill
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "regulator_collector.py"
-      - "refresh_regulator_releases.py"
-      - ".github/workflows/regulator-releases.yml"
-  schedule:
-    - cron: "30 22 * * *" # 07:30 KST
+  # Template note:
+  # Add push or schedule triggers after FSS/Supabase settings are configured.
 
 permissions:
   contents: read

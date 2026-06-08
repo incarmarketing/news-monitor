@@ -2,14 +2,8 @@ name: Sync External Cron
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "setup_cronjob_org.py"
-      - ".github/workflows/sync-external-cron.yml"
-  schedule:
-    - cron: "10 18 * * *"
+  # Template note:
+  # Run manually after CRONJOB_API_KEY and GITHUB_DISPATCH_TOKEN are configured.
 
 permissions:
   contents: read
