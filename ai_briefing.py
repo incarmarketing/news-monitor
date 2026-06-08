@@ -642,6 +642,129 @@ def parse_report_sections(markdown: str, metrics: dict | None = None) -> dict:
     }
 
 
+ENTITY_SUFFIXES = (
+    "생명", "손보", "손해보험", "화재", "보험", "금융서비스", "금융", "증권", "은행",
+    "카드", "캐피탈", "에셋", "자산", "저축은행",
+)
+GENERIC_ENTITY_TERMS = {
+    "보험사", "보험업계", "금융권", "금융사", "금융지주", "손보사", "생보사",
+    "GA", "M&A", "S&P",
+}
+
+
+def validate_report_sections(sections: dict, clustered: list[dict], metrics: dict | None = None) -> dict:
+    """Keep AI report sections grounded in the provided evidence articles."""
+    ensure_report_ids(clustered)
+    validated = dict(sections or {})
+    issues = [dict(issue or {}) for issue in validated.get("issues", [])]
+    by_id = {article.get("_report_id"): article for article in clustered if isinstance(article.get("_report_id"), int)}
+    fallback_article = clustered[0] if clustered else None
+
+    normalized_issues: list[dict] = []
+    selected_articles: list[dict] = []
+
+    for issue in issues:
+        refs = [ref for ref in issue.get("refs", []) if ref in by_id]
+        ref_articles = [by_id[ref] for ref in refs]
+        if not ref_articles and fallback_article:
+            ref_articles = [fallback_article]
+            refs = [fallback_article.get("_report_id")]
+            issue = issue_from_article(fallback_article)
+        else:
+            issue["title"] = sanitize_grounded_text(issue.get("title", ""), ref_articles)
+            issue["detail"] = sanitize_grounded_text(issue.get("detail", ""), ref_articles)
+            if not issue.get("title") and ref_articles:
+                issue["title"] = compact_text(ref_articles[0].get("title", ""), 46)
+            if not issue.get("detail") and ref_articles:
+                issue["detail"] = compact_text(article_summary_for_validation(ref_articles[0]), 70)
+
+        issue["refs"] = [ref for ref in refs if isinstance(ref, int)]
+        normalized_issues.append(issue)
+        selected_articles.extend(ref_articles)
+
+    if not normalized_issues and fallback_article:
+        normalized_issues = [issue_from_article(fallback_article)]
+        selected_articles = [fallback_article]
+
+    support_articles = selected_articles or clustered[:1]
+    validated["issues"] = normalized_issues[:2]
+    validated["conclusion"] = sanitize_or_replace_conclusion(validated.get("conclusion", ""), support_articles)
+    validated["interpretation_html"] = sanitize_grounded_text(validated.get("interpretation_html", ""), support_articles)
+    validated["keywords"] = [
+        keyword for keyword in validated.get("keywords", [])
+        if not extract_unsupported_entities(keyword, support_articles)
+    ]
+    return validated
+
+
+def issue_from_article(article: dict) -> dict:
+    return {
+        "title": compact_text(article.get("title", ""), 46),
+        "detail": compact_text(article_summary_for_validation(article), 70),
+        "refs": [article.get("_report_id")] if isinstance(article.get("_report_id"), int) else [],
+    }
+
+
+def article_summary_for_validation(article: dict) -> str:
+    return article.get("_summary") or article.get("description") or article.get("title") or ""
+
+
+def sanitize_or_replace_conclusion(text: str, support_articles: list[dict]) -> str:
+    if not text:
+        return text
+    cleaned = sanitize_grounded_text(text, support_articles)
+    if cleaned.strip():
+        return cleaned
+    if not support_articles:
+        return ""
+    article = support_articles[0]
+    return f"{article.get('title', '').strip()} 보도가 확인됐습니다."
+
+
+def sanitize_grounded_text(text: str, support_articles: list[dict]) -> str:
+    cleaned = str(text or "")
+    for token in extract_unsupported_entities(cleaned, support_articles):
+        cleaned = re.sub(rf"\s*,?\s*{re.escape(token)}", "", cleaned)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    cleaned = re.sub(r"(<p>\s*)[,·\s]+", r"\1", cleaned)
+    cleaned = re.sub(r"[,·\s]+(</p>)", r"\1", cleaned)
+    return cleaned.strip(" ,·")
+
+
+def extract_unsupported_entities(text: str, support_articles: list[dict]) -> set[str]:
+    support = " ".join(
+        f"{article.get('title', '')} {article.get('description', '')} {article.get('_summary', '')} {article.get('keyword', '')}"
+        for article in support_articles
+    )
+    unsupported: set[str] = set()
+    for token in extract_entity_tokens(text):
+        if token in GENERIC_ENTITY_TERMS:
+            continue
+        if token and token not in support:
+            unsupported.add(token)
+    return unsupported
+
+
+def extract_entity_tokens(text: str) -> set[str]:
+    tokens = set(re.findall(r"[A-Z]{2,}[가-힣A-Za-z0-9&+·.-]*|[가-힣A-Za-z0-9&+·.-]{2,}", str(text or "")))
+    normalized = {normalize_entity_token(token) for token in tokens}
+    return {
+        token
+        for token in normalized
+        if token and (
+            re.match(r"^[A-Z]{2,}", token)
+            or any(token.endswith(suffix) or suffix in token for suffix in ENTITY_SUFFIXES)
+        )
+    }
+
+
+def normalize_entity_token(token: str) -> str:
+    cleaned = str(token or "").strip(" ,·.")
+    while len(cleaned) > 2 and cleaned[-1:] in {"와", "과", "은", "는", "이", "가", "을", "를", "의", "도", "에"}:
+        cleaned = cleaned[:-1]
+    return cleaned
+
+
 def parse_keywords(raw: dict) -> list[str]:
     text = raw.get("분석 키워드", "") or raw.get("추적 키워드", "")
     return [item.strip() for item in text.replace("\n", ",").split(",") if item.strip()]
