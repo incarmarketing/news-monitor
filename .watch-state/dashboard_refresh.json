@@ -1,5 +1,5 @@
 {
-  "last_refresh_at": "2026-06-09T13:10:31.921430+09:00",
-  "status": "scanned",
-  "new_negative_count": 0
+  "last_refresh_at": "2026-06-09T13:25:28.366993+09:00",
+  "status": "alert_sent",
+  "new_negative_count": 1
 }

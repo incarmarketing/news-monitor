@@ -1,7 +1,8 @@
 {
   "sent_keys": [
-    "dcddb055ee2118ddee5004e2",
-    "de3d686fdc512d1adf75550a"
+    "1ece7632325bc88b1c4dfb8e",
+    "de3d686fdc512d1adf75550a",
+    "dcddb055ee2118ddee5004e2"
   ],
   "alerts": [
     {
@@ -18,6 +19,14 @@
       "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
       "link": "https://www.etnews.com/20260602000349",
       "source": "etnews.com",
+      "keyword": "인카금융"
+    },
+    {
+      "sent_at": "2026-06-09T13:25:28.366993+09:00",
+      "key": "1ece7632325bc88b1c4dfb8e",
+      "title": "\"설계사 쟁탈전에 소비자 피해 불똥\"…'1200%룰' 앞두고 보험업계 긴장",
+      "link": "https://www.newsis.com/view/NISX20260609_0003661863",
+      "source": "뉴시스",
       "keyword": "인카금융"
     }
   ]
