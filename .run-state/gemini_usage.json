@@ -2,12 +2,12 @@
   "status": "success",
   "model": "gemini-2.5-pro",
   "purpose": "daily_report",
-  "captured_at": "2026-06-09T04:02:56.668456+00:00",
+  "captured_at": "2026-06-09T04:29:34.123497+00:00",
   "model_version": "",
   "response_id": "",
   "usage": {
-    "prompt_token_count": 4864,
-    "candidates_token_count": 165,
-    "total_token_count": 7950
+    "prompt_token_count": 4868,
+    "candidates_token_count": 178,
+    "total_token_count": 7124
   }
 }
