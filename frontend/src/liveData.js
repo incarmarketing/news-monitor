@@ -536,8 +536,8 @@ function normalizeGaIntelFromTables({ companies = [], disclosureMetrics = [], re
     return String(a.short).localeCompare(String(b.short), "ko");
   });
   const revenueTracker = (Array.isArray(revenueMetrics) ? revenueMetrics : [])
-    .filter((row) => /인카금융서비스|인카금융/.test(String(row.company_name || "")))
     .map((row) => ({
+      companyName: row.company_name || "",
       period: row.period_key || row.period_label || "",
       label: row.period_label || row.period_key || "",
       amount: row.amount_krw_100m,
@@ -558,7 +558,7 @@ function normalizeGaIntelFromTables({ companies = [], disclosureMetrics = [], re
   }));
   return {
     source: {
-      title: "Supabase GA 경쟁사 원장",
+      title: "Supabase GA 업계 동향 원장",
       updatedAt: new Date().toISOString().slice(0, 10),
       note: "운영 DB에서 읽은 통합공시·매출 추적 데이터입니다.",
     },
