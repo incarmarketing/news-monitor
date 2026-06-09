@@ -821,6 +821,7 @@ function normalizeArticle(row) {
   const tone = normalizeArticleTone(row, category);
   return {
     id: row.article_hash || row.id || row.link || row.title,
+    articleHash: row.article_hash || row.articleHash || "",
     date: formatArticleDate(dateSource) || String(row.report_date || row.date || "").slice(0, 10),
     time: showTime ? formatTime(publicationSource || row.date || row.report_date) : "",
     pubDate: publicationSource || "",

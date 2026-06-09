@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import os
 import unittest
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 import dashboard_builder
+import negative_watch
 import supabase_store
 
 
@@ -99,6 +103,31 @@ class NotificationLinkQualityTests(unittest.TestCase):
         ]
 
         self.assertEqual(dashboard_builder.invalid_notification_action_links(notifications), [])
+
+    def test_negative_alert_link_targets_article_without_query_summary(self) -> None:
+        article = {
+            "article_hash": "a" * 64,
+            "title": "인카금융서비스 관련 부정 기사 제목 - 테스트신문",
+            "summary": "이 문장이 검색어에 들어가면 대시보드에서 아무것도 조회되지 않는 긴 요약문입니다.",
+            "link": "https://example.com/news/123?from=rss",
+            "source": "테스트신문",
+        }
+
+        with patch.dict(os.environ, {"NEGATIVE_ALERT_DASHBOARD_URL": "https://incarmarketing.github.io/news-monitor/dashboard.html"}):
+            link = negative_watch.build_alert_link(article)
+
+        parsed = urlparse(link)
+        query = parse_qs(parsed.query)
+        self.assertEqual(parsed.netloc, "incarmarketing.github.io")
+        self.assertEqual(parsed.path, "/news-monitor/dashboard.html")
+        self.assertEqual(query.get("section"), ["monitoring"])
+        self.assertEqual(query.get("tone"), ["negative"])
+        self.assertEqual(query.get("category"), ["own"])
+        self.assertEqual(query.get("article"), ["a" * 64])
+        self.assertIn("article_link", query)
+        self.assertIn("title", query)
+        self.assertNotIn("query", query)
+        self.assertNotIn("summary", query)
 
     def test_infers_legacy_daily_notification_slot_from_cache_buster(self) -> None:
         row = {

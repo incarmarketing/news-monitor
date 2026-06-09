@@ -164,18 +164,57 @@ function readInitialRoute() {
 }
 
 function buildMonitoringPresetFromParams(params) {
-  const query = (params.get("query") || params.get("q") || "").trim();
+  const articleHash = (params.get("article") || params.get("article_hash") || "").trim();
+  const articleLink = (params.get("article_link") || params.get("link") || params.get("url") || "").trim();
+  const query = normalizeDeepLinkQuery(params.get("query") || params.get("q") || params.get("title") || params.get("headline") || "");
   const tone = normalizeDeepLinkTone(params.get("tone"));
   const category = normalizeDeepLinkCategory(params.get("category"));
   const source = (params.get("source") || "").trim();
-  if (!query && !tone && !category && !source) return null;
+  if (!query && !tone && !category && !source && !articleHash && !articleLink) return null;
   return {
     query,
+    articleHash,
+    articleLink,
     tone: tone || "all",
     category: category || "all",
     source: source || "all",
     stamp: Date.now(),
   };
+}
+
+function normalizeDeepLinkQuery(value) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  if (looksLikeSummaryQuery(text)) return "";
+  return text.length <= 80 ? text : `${text.slice(0, 79).trim()}…`;
+}
+
+function looksLikeSummaryQuery(text) {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (text.length > 100 || words.length >= 12) return true;
+  const sentenceMarks = (text.match(/[.!?。]|다\.|요\.|니다\.|입니다/g) || []).length;
+  if (sentenceMarks >= 2) return true;
+  return /확인해야 합니다|별도 추적|평판 영향|소비자 보호|영업 환경|기사입니다/.test(text);
+}
+
+function normalizeDeepLinkArticleLink(value) {
+  return String(value || "").trim().split("#", 1)[0].replace(/\/$/, "").toLowerCase();
+}
+
+function articleMatchesDeepLink(article = {}, articleHash = "", articleLink = "") {
+  const hash = String(articleHash || "").trim().toLowerCase();
+  const link = normalizeDeepLinkArticleLink(articleLink);
+  const articleHashes = [article.articleHash, article.article_hash, article.id]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .filter(Boolean);
+  if (hash && articleHashes.includes(hash)) return true;
+  if (link) {
+    const articleLinks = [article.link, article.url]
+      .map(normalizeDeepLinkArticleLink)
+      .filter(Boolean);
+    if (articleLinks.includes(link)) return true;
+  }
+  return false;
 }
 
 function normalizeDeepLinkTone(value) {
@@ -837,11 +876,18 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   }, [monitoringPreset, regularArticles]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
+    const focusArticleHash = String(monitoringPreset?.articleHash || "").trim();
+    const focusArticleLink = String(monitoringPreset?.articleLink || "").trim();
+    const hasFocusTarget = Boolean(focusArticleHash || focusArticleLink);
+    const focusTargetAvailable = hasFocusTarget
+      && regularArticles.some((article) => articleMatchesDeepLink(article, focusArticleHash, focusArticleLink));
     return regularArticles.filter((article) => {
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
       const articleDate = article.date || "";
+      const focusMatched = !focusTargetAvailable || articleMatchesDeepLink(article, focusArticleHash, focusArticleLink);
       return (
-        (!needle || text.includes(needle)) &&
+        focusMatched &&
+        (!needle || focusTargetAvailable || text.includes(needle)) &&
         (!startDate || !articleDate || articleDate >= startDate) &&
         (!endDate || !articleDate || articleDate <= endDate) &&
         (tone === "all" || article.tone === tone) &&
@@ -849,7 +895,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
         (source === "all" || article.source === source)
       );
     });
-  }, [regularArticles, category, endDate, query, source, startDate, tone]);
+  }, [regularArticles, category, endDate, monitoringPreset, query, source, startDate, tone]);
   const applyDateFilter = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
@@ -7755,6 +7801,11 @@ function resolveMonitoringDateRange(articles = [], preset = {}) {
       start: preset.startDate || preset.endDate || "",
       end: preset.endDate || preset.startDate || "",
     };
+  }
+  if (preset.articleHash || preset.articleLink) {
+    const focused = articles.find((article) => articleMatchesDeepLink(article, preset.articleHash, preset.articleLink));
+    const focusedDate = rowDateKey(focused);
+    if (focusedDate) return { start: focusedDate, end: focusedDate };
   }
   const dated = articles.map(rowDateKey).filter(Boolean).sort();
   const latest = dated[dated.length - 1] || "";

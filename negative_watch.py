@@ -257,19 +257,40 @@ def dashboard_base_url() -> str:
     )
 
 
+def clean_alert_title(value: object, limit: int = 80) -> str:
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+-\s+[^-]{2,24}$", "", text).strip()
+    if not text:
+        return ""
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
 def build_alert_link(article: dict) -> str:
-    """Open the shared dashboard instead of an article domain that Kakao may block."""
+    """Open the shared dashboard and target the exact article when possible."""
     base = dashboard_base_url()
     split = urlsplit(base)
     params = dict(parse_qsl(split.query, keep_blank_values=True))
     params.update(
         {
             "section": "monitoring",
-            "query": compact(article.get("title", "") or article.get("source", ""), 90),
+            "tone": "negative",
+            "category": "own",
         }
     )
+
+    title = clean_alert_title(article.get("title", "") or article.get("source", ""))
+    if title:
+        params["title"] = title
     if article.get("article_hash"):
-        params["article"] = article["article_hash"]
+        params["article"] = str(article["article_hash"]).strip()
+    if article.get("link") and article.get("link") != "#":
+        params["article_link"] = str(article["link"]).strip()
+
+    # Legacy alerts used query=. Keep future alert links from putting article
+    # summaries into the dashboard search box.
+    params.pop("query", None)
+    params.pop("q", None)
     return urlunsplit((split.scheme, split.netloc, split.path, urlencode(params), split.fragment))
 
 
