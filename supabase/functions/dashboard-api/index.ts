@@ -30,6 +30,12 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   notification_sends: { read: true, writeRoles: [] },
   negative_watch_runs: { read: true, writeRoles: [] },
   classification_feedback: { read: true, writeRoles: ["admin", "editor", "reporter"] },
+  ga_companies: { read: true, writeRoles: ["admin", "editor"] },
+  ga_disclosure_metrics: { read: true, writeRoles: ["admin", "editor"] },
+  ga_revenue_metrics: { read: true, writeRoles: ["admin", "editor"] },
+  ga_market_metrics: { read: true, writeRoles: ["admin", "editor"] },
+  ga_collect_runs: { read: true, writeRoles: ["admin", "editor"] },
+  ga_metric_sources: { read: true, writeRoles: ["admin", "editor"] },
 };
 
 Deno.serve(async (req) => {

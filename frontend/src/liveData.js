@@ -419,6 +419,7 @@ export async function loadOperationalData() {
     aiStatus: null,
     qualityChecks: null,
     stockMarket: null,
+    gaIntel: null,
     session: null,
   };
 
@@ -459,6 +460,117 @@ function normalizeStockMarket(payload) {
   };
 }
 
+function normalizeGaIntel(payload = {}) {
+  return {
+    ...payload,
+    labels: Array.isArray(payload.labels) ? payload.labels : [],
+    companies: Array.isArray(payload.companies) ? payload.companies : [],
+    market: Array.isArray(payload.market) ? payload.market : [],
+    revenueTracker: Array.isArray(payload.revenueTracker || payload.revenue_tracker)
+      ? (payload.revenueTracker || payload.revenue_tracker)
+      : [],
+  };
+}
+
+function normalizeGaIntelFromTables({ companies = [], disclosureMetrics = [], revenueMetrics = [], marketMetrics = [] }) {
+  if (!Array.isArray(companies) || !companies.length || !Array.isArray(disclosureMetrics) || !disclosureMetrics.length) {
+    return null;
+  }
+  const periods = Array.from(new Set(disclosureMetrics.map((row) => row.period_label || standMmLabel(row.stand_mm)).filter(Boolean)));
+  const order = new Map(periods.map((label, index) => [label, index]));
+  const byCompany = new Map();
+  companies.forEach((row) => {
+    const name = String(row.name || "").trim();
+    if (!name) return;
+    byCompany.set(name, {
+      name,
+      short: row.short_name || name,
+      displayOrder: Number(row.display_order || 999),
+      plannerTrend: Array(periods.length).fill(null),
+      stayTrend: Array(periods.length).fill(null),
+      retention13LifeTrend: Array(periods.length).fill(null),
+      retention25LifeTrend: Array(periods.length).fill(null),
+      poorSalesLifeTrend: Array(periods.length).fill(null),
+    });
+  });
+  disclosureMetrics.forEach((row) => {
+    const name = String(row.company_name || "").trim();
+    const label = row.period_label || standMmLabel(row.stand_mm);
+    const index = order.get(label);
+    if (!name || index === undefined) return;
+    if (!byCompany.has(name)) {
+      byCompany.set(name, {
+        name,
+        short: name,
+        displayOrder: 999,
+        plannerTrend: Array(periods.length).fill(null),
+        stayTrend: Array(periods.length).fill(null),
+        retention13LifeTrend: Array(periods.length).fill(null),
+        retention25LifeTrend: Array(periods.length).fill(null),
+        poorSalesLifeTrend: Array(periods.length).fill(null),
+      });
+    }
+    const target = byCompany.get(name);
+    target.plannerTrend[index] = numberOrNull(row.planners);
+    target.stayTrend[index] = numberOrNull(row.stay_rate);
+    target.retention13LifeTrend[index] = numberOrNull(row.retention_13_life);
+    target.retention25LifeTrend[index] = numberOrNull(row.retention_25_life);
+    target.poorSalesLifeTrend[index] = numberOrNull(row.poor_sales_life);
+  });
+  const companyRows = Array.from(byCompany.values()).sort((a, b) => {
+    const left = Number(a.displayOrder || 999);
+    const right = Number(b.displayOrder || 999);
+    if (left !== right) return left - right;
+    return String(a.short).localeCompare(String(b.short), "ko");
+  });
+  const revenueTracker = (Array.isArray(revenueMetrics) ? revenueMetrics : [])
+    .filter((row) => /인카금융서비스|인카금융/.test(String(row.company_name || "")))
+    .map((row) => ({
+      period: row.period_key || row.period_label || "",
+      label: row.period_label || row.period_key || "",
+      amount: row.amount_krw_100m,
+      status: row.status || "",
+      sourceLabel: row.source_label || "",
+      sourceUrl: row.source_url || "",
+      note: row.note || "",
+    }));
+  const market = (Array.isArray(marketMetrics) ? marketMetrics : []).map((row) => ({
+    period: row.period_label || standMmLabel(row.stand_mm),
+    standMm: row.stand_mm || "",
+    companies: numberOrNull(row.companies_count),
+    planners: numberOrNull(row.total_planners),
+    stay: numberOrNull(row.stay_rate),
+    retention13Life: numberOrNull(row.retention_13_life),
+    retention25Life: numberOrNull(row.retention_25_life),
+    poorSalesLife: numberOrNull(row.poor_sales_life),
+  }));
+  return {
+    source: {
+      title: "Supabase GA 경쟁사 원장",
+      updatedAt: new Date().toISOString().slice(0, 10),
+      note: "운영 DB에서 읽은 통합공시·매출 추적 데이터입니다.",
+    },
+    labels: periods,
+    companyKey: "인카금융서비스",
+    companies: companyRows,
+    revenueTracker,
+    market,
+  };
+}
+
+function standMmLabel(value) {
+  const text = String(value || "").trim();
+  if (!/^\d{6}$/.test(text)) return text;
+  const year = text.slice(0, 4);
+  const month = text.slice(4, 6);
+  return month === "06" ? `${year}.6` : year;
+}
+
+function numberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 async function loadStaticOperationalData() {
   for (const path of STATIC_DATA_PATHS) {
     try {
@@ -487,6 +599,7 @@ async function loadStaticOperationalData() {
         aiStatus: payload?.ai_status || null,
         qualityChecks: payload?.quality_checks || null,
         stockMarket: payload?.stock_market ? normalizeStockMarket(payload.stock_market) : null,
+        gaIntel: payload?.ga_competitor ? normalizeGaIntel(payload.ga_competitor) : null,
         session: null,
       };
     } catch {
@@ -515,6 +628,7 @@ async function loadOperationalDataFromSupabaseSession() {
     feedbackGeneratedAt: "",
     aiStatus: null,
     qualityChecks: null,
+    gaIntel: null,
     session: getStoredSession(),
   };
 
@@ -566,6 +680,10 @@ async function loadOperationalDataFromSupabaseSession() {
       aliases: rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
       keywords: rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
       feedback: rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500"),
+      gaCompanies: rest(config, session, "ga_companies?select=name,short_name,display_order,active&active=eq.true&order=display_order.asc,name.asc&limit=200"),
+      gaDisclosureMetrics: rest(config, session, "ga_disclosure_metrics?select=company_name,stand_mm,period_label,planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,source_url,collected_at&order=stand_mm.asc,company_name.asc&limit=5000"),
+      gaRevenueMetrics: rest(config, session, "ga_revenue_metrics?select=company_name,period_key,period_label,amount_krw_100m,status,source_label,source_url,note,confirmed_at&order=period_key.asc&limit=500"),
+      gaMarketMetrics: rest(config, session, "ga_market_metrics?select=stand_mm,period_label,companies_count,total_planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,collected_at&order=stand_mm.asc&limit=500"),
     };
     const optionalEntries = await Promise.allSettled(
       Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
@@ -590,6 +708,10 @@ async function loadOperationalDataFromSupabaseSession() {
       aliases = [],
       keywords = [],
       feedback = [],
+      gaCompanies = [],
+      gaDisclosureMetrics = [],
+      gaRevenueMetrics = [],
+      gaMarketMetrics = [],
     } = optionalData;
     const message = optionalErrors.length
       ? `운영 DB 연결 · 일부 원장 확인 필요 ${optionalErrors.length}건`
@@ -614,6 +736,12 @@ async function loadOperationalDataFromSupabaseSession() {
       dataLoadWarnings: optionalErrors,
       aiStatus: null,
       qualityChecks: null,
+      gaIntel: normalizeGaIntelFromTables({
+        companies: gaCompanies,
+        disclosureMetrics: gaDisclosureMetrics,
+        revenueMetrics: gaRevenueMetrics,
+        marketMetrics: gaMarketMetrics,
+      }),
       session,
     };
   } catch (error) {

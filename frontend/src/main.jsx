@@ -44,6 +44,7 @@ import {
 import {
   adRows,
   contextRules,
+  gaCompetitorSeed,
   journalistRows,
   keywordGroups,
   navItems,
@@ -75,6 +76,7 @@ const navIcons = {
   media: LineChart,
   pressRelease: Megaphone,
   stocks: WalletCards,
+  gaIntel: Building2,
   scraps: Bookmark,
   risk: ShieldCheck,
   reports: FileText,
@@ -404,6 +406,7 @@ function App() {
     media: MediaAnalysis,
     pressRelease: PressReleaseStudio,
     stocks: StockMarketDashboard,
+    gaIntel: GACompetitorIntel,
     scraps: Scraps,
     risk: RiskCenterV2,
     reports: Reports,
@@ -448,6 +451,7 @@ function App() {
         management={management}
         operations={operations}
         stockMarket={operations.stockMarket}
+        gaIntel={operations.gaIntel || gaCompetitorSeed}
         workflowHealth={workflowHealth}
         isWorking={working}
         onRefreshOperations={refreshOperations}
@@ -1476,6 +1480,364 @@ function StockPeerTable({ rows = [] }) {
       </table>
     </div>
   );
+}
+
+function GACompetitorIntel({ gaIntel }) {
+  const data = gaIntel || gaCompetitorSeed;
+  const labels = Array.isArray(data?.labels) ? data.labels : gaCompetitorSeed.labels;
+  const companies = Array.isArray(data?.companies) && data.companies.length ? data.companies : gaCompetitorSeed.companies;
+  const market = Array.isArray(data?.market) && data.market.length ? data.market : gaCompetitorSeed.market;
+  const revenueTracker = Array.isArray(data?.revenueTracker) && data.revenueTracker.length
+    ? data.revenueTracker
+    : gaCompetitorSeed.revenueTracker;
+  const companyKey = data?.companyKey || "인카금융서비스";
+  const ownCompany = companies.find((row) => String(row.short || row.name || "").includes(companyKey))
+    || companies.find((row) => String(row.name || "").includes("인카"))
+    || companies[0]
+    || {};
+  const rows = buildGaCompanyRows(companies, labels);
+  const ownRow = rows.find((row) => row.short === ownCompany.short) || rows[0] || {};
+  const marketLatest = market[market.length - 1] || {};
+  const marketIndex = buildGaMarketIndex(ownRow, marketLatest);
+  const trendRows = buildGaTrendRows(labels, ownCompany, market);
+  const plannerRows = rows.slice(0, 10);
+  const revenueRows = normalizeRevenueTracker(revenueTracker);
+  const annual2025 = revenueRows.find((row) => row.period === "2025") || {};
+  const q12026 = revenueRows.find((row) => row.period === "2026Q1") || {};
+  const h12026 = revenueRows.find((row) => row.period === "2026H1") || {};
+
+  return (
+    <main className="workspace ga-intel-workspace">
+      <PageTitle
+        eyebrow="GA Competitive Intelligence"
+        title="GA 경쟁사 인텔"
+        description="상단 콘솔은 인카금융서비스 기준으로 고정하고, 경쟁사와 시장 평균은 비교 맥락으로만 표시합니다."
+        right={(
+          <div className="page-actions">
+            <a className="ghost-button" href="https://gapub.insure.or.kr/gongsimain/mainSearch.do" target="_blank" rel="noopener noreferrer">
+              <ExternalLink />통합공시
+            </a>
+            <a className="ghost-button" href="https://dart.fss.or.kr/" target="_blank" rel="noopener noreferrer">
+              <ExternalLink />DART
+            </a>
+          </div>
+        )}
+      />
+
+      <section className="ga-hero">
+        <div className="ga-hero-main">
+          <span className="live-label"><span /> INCAR CONSOLE</span>
+          <h2>인카금융서비스 기준 경쟁 포지션</h2>
+          <p>{data?.source?.title || gaCompetitorSeed.source.title}</p>
+          <div className="ga-hero-callout">
+            <b>{buildGaConsoleJudgement(ownRow, marketLatest)}</b>
+            <span>경쟁사 수치는 비교군이며, 상단 판단은 설계사 규모·유지율·불완전판매율·매출 추적 모두 당사 기준으로 계산합니다.</span>
+          </div>
+        </div>
+        <div className="ga-hero-revenue">
+          <span>매출 추적</span>
+          <b>{formatGaRevenue(annual2025.amount)}</b>
+          <em>2025 연간 · {annual2025.status || "확인"}</em>
+          <small>2026 1Q {formatGaRevenue(q12026.amount)} · 상반기 {h12026.status || "공시 대기"}</small>
+        </div>
+      </section>
+
+      <section className="ga-console-grid">
+        <GAMetricCard icon={Users} label="설계사수" value={`${formatGaInteger(ownRow.planners)}명`} detail={`${ownRow.rank}위 · 2025년 말`} />
+        <GAMetricCard icon={Gauge} label="정착률" value={formatGaPercentPlain(ownRow.stay)} detail={`시장 평균 ${formatGaPercentPlain(marketLatest.stay)}`} />
+        <GAMetricCard icon={ShieldCheck} label="13회 유지율" value={formatGaPercentPlain(ownRow.retention13Life)} detail={`생보 기준 · 시장 대비 ${formatGaPointGap(ownRow.retention13Life, marketLatest.retention13Life)}`} />
+        <GAMetricCard icon={AlertTriangle} label="불완전판매율" value={formatGaPercentPlain(ownRow.poorSalesLife, 2)} detail="생보 기준 · 0% 유지 추적" tone={Number(ownRow.poorSalesLife) <= 0 ? "good" : "watch"} />
+      </section>
+
+      <section className="ga-revenue-board">
+        <div className="ga-section-title">
+          <h2><WalletCards />매출 공시 추적</h2>
+          <span>억 원 기준 · 확인값만 표시</span>
+        </div>
+        <div className="ga-revenue-grid">
+          {revenueRows.map((row) => (
+            <article key={row.period} className={`ga-revenue-card ${row.amount ? "confirmed" : "pending"}`}>
+              <span>{row.label}</span>
+              <b>{row.amount ? formatGaRevenue(row.amount) : row.status}</b>
+              <em>{row.sourceLabel}</em>
+              <p>{row.note}</p>
+              {row.sourceUrl ? (
+                <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  근거 확인 <ExternalLink />
+                </a>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="ga-dashboard-grid">
+        <Panel title="설계사 규모 비교" icon={Building2} meta="2025년 말 · 상위 10개사">
+          <GAPlannerBarChart rows={plannerRows} ownShort={ownRow.short} />
+        </Panel>
+        <Panel title="당사 품질 지표 추이" icon={LineChart} meta="인카 vs 시장 평균">
+          <GATrendChart rows={trendRows} />
+        </Panel>
+      </section>
+
+      <section className="ga-dashboard-grid secondary">
+        <Panel title="당사 핵심 지표" icon={Activity} meta="시장 평균 대비">
+          <div className="ga-index-list">
+            {marketIndex.map((item) => (
+              <article key={item.label}>
+                <div>
+                  <span>{item.label}</span>
+                  <b>{item.value}</b>
+                </div>
+                <em className={item.gapClass}>{item.gap}</em>
+              </article>
+            ))}
+          </div>
+        </Panel>
+        <Panel title="데이터 파이프라인" icon={RefreshCw} meta={data?.source?.updatedAt || gaCompetitorSeed.source.updatedAt}>
+          <div className="ga-pipeline">
+            <div><b>1</b><span>통합공시 반기 결산 수집</span></div>
+            <div><b>2</b><span>동일 회사명 기준 중복 제거</span></div>
+            <div><b>3</b><span>DART·실적 보도 매출 보강</span></div>
+            <div><b>4</b><span>Supabase 원장 누적 후 비교</span></div>
+          </div>
+        </Panel>
+      </section>
+
+      <Panel title="경쟁사 비교표" icon={FileText} meta="인카금융서비스 행 강조">
+        <GACompetitorTable rows={rows} ownShort={ownRow.short} />
+      </Panel>
+    </main>
+  );
+}
+
+function GAMetricCard({ icon: Icon, label, value, detail, tone = "default" }) {
+  return (
+    <article className={`ga-metric-card ${tone}`}>
+      <Icon />
+      <span>{label}</span>
+      <b>{value}</b>
+      <em>{detail}</em>
+    </article>
+  );
+}
+
+function GAPlannerBarChart({ rows = [], ownShort = "" }) {
+  if (!rows.length) return <p className="a4-empty">경쟁사 비교 데이터가 없습니다.</p>;
+  return (
+    <div className="chart-box ga-bar-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }}>
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+          <XAxis type="number" hide />
+          <YAxis type="category" dataKey="short" tickLine={false} axisLine={false} width={116} tick={{ fontSize: 11, fontWeight: 800 }} />
+          <Tooltip formatter={(value) => [`${formatGaInteger(value)}명`, "설계사수"]} />
+          <Bar dataKey="planners" radius={[0, 7, 7, 0]} barSize={18}>
+            {rows.map((row) => (
+              <Cell key={row.short} fill={row.short === ownShort ? "#e8a33d" : "#2855d9"} />
+            ))}
+            <LabelList dataKey="planners" position="right" formatter={(value) => formatGaInteger(value)} fill="#0f1f3d" fontSize={11} fontWeight={900} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function GATrendChart({ rows = [] }) {
+  if (!rows.length) return <p className="a4-empty">추이 데이터가 없습니다.</p>;
+  return (
+    <div className="chart-box ga-trend-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsLineChart data={rows} margin={{ left: 0, right: 12, top: 14, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="period" tickLine={false} axisLine={false} />
+          <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Number(value).toFixed(0)}%`} />
+          <Tooltip formatter={(value, name) => [formatGaPercentPlain(value), gaTrendLabel(name)]} />
+          <Line type="monotone" dataKey="incaRetention13" stroke="#2855d9" strokeWidth={3} dot={{ r: 3 }} connectNulls />
+          <Line type="monotone" dataKey="marketRetention13" stroke="#14805f" strokeWidth={2.4} dot={false} strokeDasharray="5 4" connectNulls />
+          <Line type="monotone" dataKey="incaStay" stroke="#b45309" strokeWidth={2.2} dot={false} connectNulls />
+        </RechartsLineChart>
+      </ResponsiveContainer>
+      <div className="stock-chart-legend">
+        <span className="company">인카 13회 유지율</span>
+        <span className="peer">시장 13회 유지율</span>
+        <span className="kospi">인카 정착률</span>
+      </div>
+    </div>
+  );
+}
+
+function GACompetitorTable({ rows = [], ownShort = "" }) {
+  if (!rows.length) return <p className="a4-empty">경쟁사 표 데이터가 없습니다.</p>;
+  return (
+    <div className="ga-table-wrap">
+      <table className="ga-table">
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>회사</th>
+            <th>설계사수</th>
+            <th>2024 매출</th>
+            <th>정착률</th>
+            <th>13회 유지율</th>
+            <th>25회 유지율</th>
+            <th>불판율</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.short} className={row.short === ownShort ? "own" : ""}>
+              <td>{row.rank}</td>
+              <td><b>{row.short}</b><span>{row.name}</span></td>
+              <td>{formatGaInteger(row.planners)}명</td>
+              <td>{row.revenue2024 ? formatGaRevenue(row.revenue2024) : "-"}</td>
+              <td>{formatGaPercentPlain(row.stay)}</td>
+              <td>{formatGaPercentPlain(row.retention13Life)}</td>
+              <td>{formatGaPercentPlain(row.retention25Life)}</td>
+              <td>{formatGaPercentPlain(row.poorSalesLife, 2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function buildGaCompanyRows(companies = [], labels = []) {
+  const index2024 = labels.findIndex((label) => label === "2024");
+  const lastIndex = labels.length ? labels.length - 1 : 0;
+  return companies
+    .map((company) => {
+      const planners = latestArrayValue(company.plannerTrend, lastIndex);
+      const planners2024 = index2024 >= 0 ? latestArrayValue(company.plannerTrend, index2024) : null;
+      return {
+        ...company,
+        planners,
+        plannersDeltaFrom2024: Number.isFinite(planners) && Number.isFinite(planners2024) ? planners - planners2024 : null,
+        stay: latestArrayValue(company.stayTrend, lastIndex),
+        retention13Life: latestArrayValue(company.retention13LifeTrend, lastIndex),
+        retention25Life: latestArrayValue(company.retention25LifeTrend, lastIndex),
+        poorSalesLife: latestArrayValue(company.poorSalesLifeTrend, lastIndex),
+      };
+    })
+    .filter((row) => Number.isFinite(row.planners))
+    .sort((a, b) => Number(b.planners || 0) - Number(a.planners || 0))
+    .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+function buildGaTrendRows(labels = [], company = {}, market = []) {
+  return labels.map((period, index) => {
+    const marketRow = market[index] || {};
+    return {
+      period,
+      incaRetention13: latestArrayValue(company.retention13LifeTrend, index),
+      marketRetention13: Number(marketRow.retention13Life),
+      incaStay: latestArrayValue(company.stayTrend, index),
+    };
+  }).filter((row) => row.incaRetention13 !== null || row.marketRetention13 !== null || row.incaStay !== null);
+}
+
+function buildGaMarketIndex(ownRow = {}, marketLatest = {}) {
+  return [
+    {
+      label: "설계사 규모",
+      value: `${formatGaInteger(ownRow.planners)}명`,
+      gap: `시장 전체 ${formatGaInteger(marketLatest.planners)}명 중 ${formatGaPercentPlain((Number(ownRow.planners) / Number(marketLatest.planners)) * 100, 1)}`,
+      gapClass: "flat",
+    },
+    {
+      label: "13회 유지율",
+      value: formatGaPercentPlain(ownRow.retention13Life),
+      gap: `시장 대비 ${formatGaPointGap(ownRow.retention13Life, marketLatest.retention13Life)}`,
+      gapClass: gaGapClass(ownRow.retention13Life, marketLatest.retention13Life),
+    },
+    {
+      label: "정착률",
+      value: formatGaPercentPlain(ownRow.stay),
+      gap: `시장 대비 ${formatGaPointGap(ownRow.stay, marketLatest.stay)}`,
+      gapClass: gaGapClass(ownRow.stay, marketLatest.stay),
+    },
+    {
+      label: "불완전판매율",
+      value: formatGaPercentPlain(ownRow.poorSalesLife, 2),
+      gap: `시장 대비 ${formatGaPointGap(ownRow.poorSalesLife, marketLatest.poorSalesLife, 2)}`,
+      gapClass: Number(ownRow.poorSalesLife) <= Number(marketLatest.poorSalesLife) ? "up" : "down",
+    },
+  ];
+}
+
+function normalizeRevenueTracker(rows = []) {
+  return rows
+    .map((row) => ({
+      ...row,
+      amount: row.amount === null || row.amount === undefined ? null : Number(row.amount),
+    }))
+    .sort((a, b) => gaRevenueSortKey(a.period || a.label) - gaRevenueSortKey(b.period || b.label));
+}
+
+function gaRevenueSortKey(value) {
+  const text = String(value || "");
+  const year = Number(text.match(/20\d{2}/)?.[0] || 9999);
+  const quarter = /Q1|1분기/i.test(text) ? 1
+    : /Q2|2분기/i.test(text) ? 2
+      : /H1|상반기/i.test(text) ? 2.5
+        : /Q3|3분기/i.test(text) ? 3
+          : /Q4|4분기/i.test(text) ? 4
+            : 9;
+  return year * 10 + quarter;
+}
+
+function buildGaConsoleJudgement(ownRow = {}, marketLatest = {}) {
+  const rank = ownRow.rank ? `설계사수 ${ownRow.rank}위` : "설계사수 확인";
+  const retentionGap = formatGaPointGap(ownRow.retention13Life, marketLatest.retention13Life);
+  const poorSales = Number(ownRow.poorSalesLife) <= 0 ? "불완전판매율 0%" : `불완전판매율 ${formatGaPercentPlain(ownRow.poorSalesLife, 2)}`;
+  return `${rank}, 생보 13회 유지율 시장 대비 ${retentionGap}, ${poorSales}`;
+}
+
+function latestArrayValue(values = [], index) {
+  if (!Array.isArray(values)) return null;
+  const value = values[index];
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function formatGaInteger(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return number.toLocaleString("ko-KR");
+}
+
+function formatGaRevenue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return `${number.toLocaleString("ko-KR")}억원`;
+}
+
+function formatGaPercentPlain(value, digits = 2) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return `${number.toFixed(digits)}%`;
+}
+
+function formatGaPointGap(left, right, digits = 2) {
+  const diff = safeNumberDiff(left, right);
+  if (!Number.isFinite(diff)) return "-";
+  return `${diff > 0 ? "+" : ""}${diff.toFixed(digits)}p`;
+}
+
+function gaGapClass(left, right) {
+  const diff = safeNumberDiff(left, right);
+  if (!Number.isFinite(diff) || diff === 0) return "flat";
+  return diff > 0 ? "up" : "down";
+}
+
+function gaTrendLabel(name) {
+  return {
+    incaRetention13: "인카 13회 유지율",
+    marketRetention13: "시장 13회 유지율",
+    incaStay: "인카 정착률",
+  }[name] || name;
 }
 
 const PRESS_COMPANY_OVERVIEW = "인카금융서비스는 2007년 설립된 국내 최초의 코스닥 상장 GA로, 전속 설계사 2만 명 이상을 보유하고 있으며 2022년 코스닥 이전 상장에 이어 종합자산관리회사로의 도약을 단계적으로 추진하고 있다";
