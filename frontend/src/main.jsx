@@ -1178,6 +1178,7 @@ function StockMarketDashboard({ stockMarket }) {
   const indices = stockMarket?.indices || [];
   const peerGroups = stockMarket?.peerGroups || [];
   const relativeTrend = stockMarket?.relativeTrend || [];
+  const dartDisclosures = stockMarket?.dartDisclosures || stockMarket?.dart_disclosures || {};
   const hasData = company?.status === "ok";
   const companyLink = company?.code ? `https://finance.naver.com/item/main.naver?code=${company.code}` : "#";
   const regularMarket = company.regular_market || {};
@@ -1281,6 +1282,8 @@ function StockMarketDashboard({ stockMarket }) {
               detail={`거래량 ${formatStockVolume(integratedMarket.volume || company.latest?.volume)}`}
             />
           </section>
+
+          <StockDisclosureBoard disclosures={dartDisclosures} companyName={company.name || "인카금융서비스"} />
 
           <section className="stock-range-board">
             <div className="stock-range-head">
@@ -1398,6 +1401,62 @@ function StockRangeCard({ label, value, detail, toneValue }) {
       <em>{detail}</em>
     </article>
   );
+}
+
+function StockDisclosureBoard({ disclosures = {}, companyName = "인카금융서비스" }) {
+  const items = Array.isArray(disclosures) ? disclosures : (disclosures.items || []);
+  const visibleItems = items.slice(0, 4);
+  const status = disclosures.status || (visibleItems.length ? "ok" : "empty");
+  const dartSearchUrl = `https://dart.fss.or.kr/dsab007/main.do?textCrpNM=${encodeURIComponent(companyName)}`;
+  return (
+    <section className="stock-disclosure-board">
+      <div className="stock-disclosure-head">
+        <div>
+          <span>DART / IR CHECK</span>
+          <h3>최근 공시·IR 체크</h3>
+          <p>기업설명회, 실적 공시, 정기보고서처럼 주가 판단에 영향을 줄 수 있는 자료를 함께 봅니다.</p>
+        </div>
+        <div className="stock-disclosure-actions">
+          <em>{dartDisclosureStatusLabel(status)}</em>
+          <a className="ghost-button" href={dartSearchUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink />DART 검색
+          </a>
+        </div>
+      </div>
+      {visibleItems.length ? (
+        <div className="stock-disclosure-list">
+          {visibleItems.map((item, index) => (
+            <article key={`${item.receipt_no || item.title || "dart"}-${index}`} className="stock-disclosure-card">
+              <div>
+                <span>{item.type || "공시"}</span>
+                <em>{formatStockDate(item.date || item.raw_date)}</em>
+              </div>
+              <b>{item.title || "공시 제목 확인 필요"}</b>
+              <p>{item.summary || "주가 판단에 영향을 줄 수 있는 공시성 이벤트로 별도 확인합니다."}</p>
+              <a href={item.link || dartSearchUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, item.link || dartSearchUrl)}>
+                공시 열기 <ExternalLink />
+              </a>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="stock-disclosure-empty">
+          <FileText />
+          <div>
+            <b>OpenDART 연결 대기</b>
+            <p>DART API 키와 기업 고유번호를 연결하면 기업설명회, 실적, 사업보고서 공시가 이 영역에 자동 표시됩니다.</p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function dartDisclosureStatusLabel(status) {
+  if (status === "ok") return "자동 수집";
+  if (status === "error") return "연결 확인";
+  if (status === "not_configured") return "키 설정 필요";
+  return "공시 대기";
 }
 
 function StockTrendChart({ rows = [] }) {

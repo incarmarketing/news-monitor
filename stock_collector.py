@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import statistics
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -17,10 +18,26 @@ BASE_DIR = Path(__file__).parent
 PUBLIC_DATA_DIR = BASE_DIR / "public" / "data"
 NAVER_CHART_URL = "https://fchart.stock.naver.com/sise.nhn"
 NAVER_REALTIME_URL = "https://polling.finance.naver.com/api/realtime/domestic"
+OPENDART_LIST_URL = "https://opendart.fss.or.kr/api/list.json"
 REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept": "application/json,text/plain,*/*",
 }
+DART_DISCLOSURE_KEYWORDS = (
+    "기업설명회",
+    "IR",
+    "실적",
+    "잠정",
+    "분기보고서",
+    "반기보고서",
+    "사업보고서",
+    "주주총회",
+    "배당",
+    "합병",
+    "자기주식",
+    "주식소각",
+    "주요사항보고서",
+)
 
 MARKET_INDICES = [
     {"code": "KOSPI", "name": "KOSPI", "kind": "index"},
@@ -360,8 +377,131 @@ def build_market_payload() -> dict:
         "peer_groups": group_securities(peer_rows),
         "summary": build_summary(company, peer_rows, kospi, kosdaq),
         "relative_trend": build_relative_trend(company, peer_rows, kospi),
+        "dart_disclosures": fetch_dart_disclosures(),
     }
     return payload
+
+
+def fetch_dart_disclosures(days: int = 365, limit: int = 8) -> dict:
+    """Fetch recent OpenDART disclosures when API credentials are configured."""
+    api_key = os.getenv("DART_API_KEY") or os.getenv("OPENDART_API_KEY")
+    corp_code = os.getenv("DART_CORP_CODE") or os.getenv("INCAR_DART_CORP_CODE")
+    now = datetime.now(timezone.utc)
+    if not api_key or not corp_code:
+        return {
+            "status": "not_configured",
+            "source": "OpenDART",
+            "updated_at": now.isoformat(),
+            "items": [],
+            "message": "DART_API_KEY and DART_CORP_CODE are required for automatic disclosure collection.",
+        }
+
+    end_date = now.date()
+    begin_date = end_date - timedelta(days=days)
+    try:
+        response = requests.get(
+            OPENDART_LIST_URL,
+            params={
+                "crtfc_key": api_key,
+                "corp_code": corp_code,
+                "bgn_de": begin_date.strftime("%Y%m%d"),
+                "end_de": end_date.strftime("%Y%m%d"),
+                "page_no": 1,
+                "page_count": 100,
+                "sort": "date",
+                "sort_mth": "desc",
+            },
+            headers=REQUEST_HEADERS,
+            timeout=15,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception as exc:
+        return {
+            "status": "error",
+            "source": "OpenDART",
+            "updated_at": now.isoformat(),
+            "items": [],
+            "message": str(exc),
+        }
+
+    if str(payload.get("status")) != "000":
+        return {
+            "status": "error",
+            "source": "OpenDART",
+            "updated_at": now.isoformat(),
+            "items": [],
+            "message": payload.get("message") or "OpenDART returned an error.",
+        }
+
+    rows = payload.get("list") or []
+    filtered = [row for row in rows if is_relevant_dart_disclosure(row.get("report_nm"))]
+    if not filtered:
+        filtered = rows[:limit]
+
+    return {
+        "status": "ok",
+        "source": "OpenDART",
+        "updated_at": now.isoformat(),
+        "items": [normalize_dart_disclosure(row) for row in filtered[:limit]],
+    }
+
+
+def is_relevant_dart_disclosure(title: object) -> bool:
+    text = str(title or "")
+    return any(keyword.lower() in text.lower() for keyword in DART_DISCLOSURE_KEYWORDS)
+
+
+def normalize_dart_disclosure(row: dict) -> dict:
+    title = str(row.get("report_nm") or "공시 제목 확인 필요").strip()
+    receipt_no = str(row.get("rcept_no") or "").strip()
+    report_date = str(row.get("rcept_dt") or "").strip()
+    return {
+        "date": format_dart_date(report_date),
+        "raw_date": report_date,
+        "title": title,
+        "type": classify_dart_disclosure(title),
+        "summary": build_dart_disclosure_summary(title),
+        "receipt_no": receipt_no,
+        "link": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={receipt_no}" if receipt_no else "https://dart.fss.or.kr/dsab007/main.do",
+        "source": "DART",
+    }
+
+
+def format_dart_date(value: str) -> str:
+    if len(value) == 8 and value.isdigit():
+        return f"{value[:4]}-{value[4:6]}-{value[6:8]}"
+    return value
+
+
+def classify_dart_disclosure(title: str) -> str:
+    if "기업설명회" in title or "IR" in title.upper():
+        return "IR"
+    if "실적" in title or "잠정" in title:
+        return "실적"
+    if "분기보고서" in title or "반기보고서" in title or "사업보고서" in title:
+        return "정기공시"
+    if "배당" in title:
+        return "주주환원"
+    if "합병" in title:
+        return "구조변화"
+    if "주주총회" in title:
+        return "주총"
+    return "공시"
+
+
+def build_dart_disclosure_summary(title: str) -> str:
+    if "분기보고서" in title or "반기보고서" in title or "사업보고서" in title:
+        return "매출, 이익, 비용 구조, 주요 위험 요인을 주가 흐름과 함께 확인합니다."
+    if "실적" in title or "잠정" in title:
+        return "실적 발표 내용이 시장 기대와 언론 보도 톤에 미치는 영향을 확인합니다."
+    if "기업설명회" in title or "IR" in title.upper():
+        return "투자자 커뮤니케이션 메시지와 주가성 기사 연결 가능성을 점검합니다."
+    if "배당" in title:
+        return "배당, 주주환원, 투자자 기대 변화와 연결해 확인합니다."
+    if "합병" in title:
+        return "사업 구조 변화와 재무 영향, 언론 노출 가능성을 함께 점검합니다."
+    return "주가 판단에 영향을 줄 수 있는 공시성 이벤트로 별도 확인합니다."
 
 
 def group_securities(securities: list[dict]) -> list[dict]:

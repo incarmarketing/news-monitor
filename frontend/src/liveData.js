@@ -456,7 +456,19 @@ function normalizeStockMarket(payload) {
     indices: Array.isArray(payload?.indices) ? payload.indices : [],
     peerGroups: Array.isArray(payload?.peer_groups) ? payload.peer_groups : [],
     relativeTrend: Array.isArray(payload?.relative_trend) ? payload.relative_trend : [],
+    dartDisclosures: normalizeDartDisclosures(payload?.dart_disclosures || payload?.dartDisclosures),
     summary: payload?.summary || {},
+  };
+}
+
+function normalizeDartDisclosures(payload) {
+  if (Array.isArray(payload)) {
+    return { status: payload.length ? "ok" : "empty", items: payload };
+  }
+  return {
+    ...(payload || {}),
+    status: payload?.status || (Array.isArray(payload?.items) && payload.items.length ? "ok" : "empty"),
+    items: Array.isArray(payload?.items) ? payload.items : [],
   };
 }
 

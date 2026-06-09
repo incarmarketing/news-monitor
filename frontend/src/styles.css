@@ -2841,6 +2841,185 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   line-height: 1.35;
 }
 
+.stock-disclosure-board {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid #d6dfed;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(248, 251, 255, .96)),
+    radial-gradient(circle at 94% 0%, rgba(40, 85, 217, .08), transparent 26%);
+  box-shadow: var(--surface-glow), var(--shadow-soft);
+}
+
+.stock-disclosure-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.stock-disclosure-head > div:first-child {
+  min-width: 0;
+}
+
+.stock-disclosure-head span {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+
+.stock-disclosure-head h3 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 950;
+}
+
+.stock-disclosure-head p {
+  margin: 6px 0 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.stock-disclosure-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.stock-disclosure-actions em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid #cfe0ff;
+  border-radius: 999px;
+  background: #f5f8ff;
+  color: var(--blue);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.stock-disclosure-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stock-disclosure-card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 154px;
+  padding: 12px;
+  border: 1px solid #d7e0ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.stock-disclosure-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stock-disclosure-card span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.stock-disclosure-card em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.stock-disclosure-card b {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 950;
+  word-break: keep-all;
+}
+
+.stock-disclosure-card p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.stock-disclosure-card a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  margin-top: auto;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.stock-disclosure-card a svg {
+  width: 14px;
+  height: 14px;
+}
+
+.stock-disclosure-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 86px;
+  padding: 14px;
+  border: 1px dashed #cbd8ec;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.stock-disclosure-empty svg {
+  width: 28px;
+  height: 28px;
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+
+.stock-disclosure-empty b {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.stock-disclosure-empty p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
 .stock-insight-board {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -6190,6 +6369,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  .stock-disclosure-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 1fr;
@@ -6258,6 +6441,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .stock-hero,
   .stock-command-center,
   .stock-source-grid,
+  .stock-disclosure-list,
   .stock-insight-board,
   .stock-dashboard-grid,
   .stock-peer-section,
@@ -6396,8 +6580,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   }
 
   .stock-source-grid,
+  .stock-disclosure-list,
   .stock-kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stock-disclosure-head,
+  .stock-disclosure-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stock-disclosure-actions .ghost-button {
+    width: 100%;
   }
 
   .stock-range-head {
