@@ -6559,12 +6559,24 @@ function articlePrimarySummaryTopic(item = {}) {
   const own = isOwnArticle(item);
 
   if (own && isOwnPerformanceSummaryText(title)) return "own-performance";
+  if (isStockVolatilitySummaryText(title)) return "stock-volatility";
+  if (isInsuranceSalesConductSummaryText(title)) return "sales-conduct";
+  if (isOwnConsultingProfileSummaryText(title)) return "own-consulting";
+  if (isStockDisclosureSummaryText(title)) return "stock-disclosure";
+  if (isCompetitorProductPerformanceSummaryText(title)) return "product-performance";
+  if (isBrandReputationSummaryText(title)) return "brand-reputation";
   if (isInvestmentSummaryText(title)) return "investment";
   if (isSettlementSupportSummaryText(title)) return "settlement-support";
   if (isInsuranceLossSummaryText(title)) return "insurance-loss";
   if (isPreventiveSecuritySummaryText(title)) return "security";
 
   if (own && isOwnPerformanceSummaryText(text)) return "own-performance";
+  if (isStockVolatilitySummaryText(text)) return "stock-volatility";
+  if (isInsuranceSalesConductSummaryText(text)) return "sales-conduct";
+  if (isOwnConsultingProfileSummaryText(text)) return "own-consulting";
+  if (isStockDisclosureSummaryText(text)) return "stock-disclosure";
+  if (isCompetitorProductPerformanceSummaryText(text)) return "product-performance";
+  if (isBrandReputationSummaryText(text)) return "brand-reputation";
   if (isInvestmentSummaryText(text)) return "investment";
   if (isSettlementSupportSummaryText(text)) return "settlement-support";
   if (isInsuranceLossSummaryText(text)) return "insurance-loss";
@@ -6584,7 +6596,44 @@ function isInvestmentSummaryText(value = "") {
 
 function isSettlementSupportSummaryText(value = "") {
   const text = cleanSummaryText(value);
+  if (isInsuranceSalesConductSummaryText(text)) return false;
   return /정착지원금|1200%|수수료/.test(text) && /GA|보험대리점|설계사|공시/.test(text);
+}
+
+function isInsuranceSalesConductSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /불완전판매|소비자 피해|소비자보호|생보협회|손보협회|종신보험|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건/.test(text)
+    && /GA|보험|설계사|생보|손보|협회|대리점/.test(text);
+}
+
+function isStockVolatilitySummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /VI 발동|변동성완화장치|주가 급등|주가 급락|\+\d+(?:\.\d+)?%|-\d+(?:\.\d+)?%/.test(text)
+    && /인카금융|주가|조선비즈|Chosunbiz|증시|코스닥/.test(text);
+}
+
+function isOwnConsultingProfileSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /Having사업단|이화정|맞춤형 온라인 금융 컨설팅|온라인 금융 컨설팅|노후/.test(text)
+    && /인카금융|금융 컨설팅|사업단/.test(text);
+}
+
+function isStockDisclosureSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /주식시장 주요공시|주요공시|자사주|현금배당|중간배당|공시/.test(text)
+    && /인카금융|주식시장|공시|자사주|배당/.test(text);
+}
+
+function isCompetitorProductPerformanceSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /누적 가입|가입\s*\d|돌파|특약|출시|판매/.test(text)
+    && /DB손해보험|KB손해보험|삼성화재|현대해상|한화생명|교보생명|보험/.test(text);
+}
+
+function isBrandReputationSummaryText(value = "") {
+  const text = cleanSummaryText(value);
+  return /브랜드평판|평판 판도|소비자 평판|브랜드 경쟁/.test(text)
+    && /보험|손해보험|생명보험|금융/.test(text);
 }
 
 function isInsuranceLossSummaryText(value = "") {
@@ -6710,6 +6759,12 @@ function summarySemanticTopicKey(value = "") {
   if (!text) return "";
   if (/제목과 본문 근거|세부 내용을 확인|핵심 내용을 확인/.test(text)) return "generic-fallback";
   if (/우수인증|인증설계사|최다|배출/.test(text) && /인카금융|당사|GA업계/.test(text)) return "own-performance";
+  if (/VI 발동|변동성완화장치|주가 급등|주가 급락/.test(text)) return "stock-volatility";
+  if (/1200%|불완전판매|소비자 피해|소비자보호|생보협회|손보협회|종신보험|판매채널/.test(text)) return "sales-conduct";
+  if (/Having사업단|맞춤형 온라인 금융 컨설팅|이화정|노후/.test(text)) return "own-consulting";
+  if (/주식시장 주요공시|주요공시|자사주|현금배당|중간배당/.test(text)) return "stock-disclosure";
+  if (/누적 가입|특약|출시|돌파/.test(text) && /보험/.test(text)) return "product-performance";
+  if (/브랜드평판|평판 판도|브랜드 경쟁/.test(text)) return "brand-reputation";
   if (/정착지원금|수수료|지급 규모|순위|공시/.test(text) && /GA|보험대리점|설계사/.test(text)) return "settlement-support";
   if (/GA 리포트|리포트성|조직 현황|운영 지표/.test(text)) return "ga-report";
   if (/투자의견|목표가|목표주가|주가|시장 평가|증권가/.test(text)) return "investment";
@@ -6826,6 +6881,24 @@ function headlineBasedSummary(item = {}) {
   if (topic === "security") {
     return "보도 초점은 해킹 사고 발생이 아니라 금융보안원 가입 확대와 보안 예방 체계 강화입니다.";
   }
+  if (topic === "stock-volatility") {
+    return "인카금융서비스 주가가 장중 변동성완화장치 발동 기준에 닿은 단기 주가 변동성 기사입니다.";
+  }
+  if (topic === "sales-conduct") {
+    return "1200%룰 시행을 앞두고 설계사 영입 경쟁, 불완전판매, 소비자 피해 가능성이 함께 거론된 판매채널 규제 이슈입니다.";
+  }
+  if (topic === "own-consulting") {
+    return "인카금융서비스 Having사업단의 맞춤형 온라인 금융 컨설팅 사례를 소개한 사업단 인터뷰성 보도입니다.";
+  }
+  if (topic === "stock-disclosure") {
+    return "인카금융서비스의 자사주·배당 등 공시성 항목이 주식시장 주요공시 목록에 포함된 기사입니다.";
+  }
+  if (topic === "product-performance") {
+    return "경쟁 보험사의 특약 출시 이후 누적 가입 성과와 상품 반응을 다룬 보도입니다.";
+  }
+  if (topic === "brand-reputation") {
+    return "손해보험사 브랜드평판 순위 변화를 통해 보험사별 소비자 인식과 브랜드 경쟁 흐름을 다룬 기사입니다.";
+  }
   if (topic === "investment") {
     return "투자의견, 목표가, 주가 흐름처럼 시장 평가 변화가 핵심입니다.";
   }
@@ -6851,6 +6924,24 @@ function buildContextualSummaryLines(item = {}) {
       lines.push("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
     }
     lines.push("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다.");
+  } else if (topic === "stock-volatility") {
+    lines.push("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다.");
+    lines.push("직접 경영 이슈보다 거래량과 주가 변동성 관찰이 필요한 주가성 기사입니다.");
+  } else if (topic === "sales-conduct") {
+    lines.push("1200%룰 시행을 앞두고 설계사 영입 경쟁과 판매수수료 운영 부담이 함께 거론됐습니다.");
+    lines.push("소비자 피해, 불완전판매, 종신보험 판매 관행처럼 판매채널 관리 리스크를 확인해야 하는 기사입니다.");
+  } else if (topic === "own-consulting") {
+    lines.push("인카금융서비스 Having사업단의 맞춤형 온라인 금융 컨설팅 사례를 소개한 인터뷰성 보도입니다.");
+    lines.push("보장성 보험을 노후 준비와 연결한 영업·컨설팅 메시지가 중심입니다.");
+  } else if (topic === "stock-disclosure") {
+    lines.push("인카금융서비스의 자사주, 배당 등 공시성 항목이 주식시장 주요공시 목록에 포함됐습니다.");
+    lines.push("주가 판단용으로는 공시 내용과 기준일, 규모를 별도 확인해야 하는 기사입니다.");
+  } else if (topic === "product-performance") {
+    lines.push("경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다.");
+    lines.push("상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다.");
+  } else if (topic === "brand-reputation") {
+    lines.push("손해보험사 브랜드평판 순위 변화와 소비자 인식 흐름을 다룬 기사입니다.");
+    lines.push("직접 리스크보다 경쟁사 브랜드 노출과 평판 추이를 관찰하는 자료로 봅니다.");
   } else if (topic === "investment") {
     lines.push("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.");
   } else if (topic === "settlement-support") {
@@ -6879,9 +6970,28 @@ function buildContextualSummaryLines(item = {}) {
 
 function buildLastResortSummaryLines(item = {}, titleKeys = new Set()) {
   const text = summaryHaystack(item);
-  const topic = summarizeRiskTitleTopic(item.title || text);
-  const line = normalizeSummaryLine(`${topic} 이슈가 핵심입니다.`);
+  const line = normalizeSummaryLine(composeHeadlineSummary(item));
   return dedupeSummaryLines([line, headlineBasedSummary(item), text], titleKeys).slice(0, 1);
+}
+
+function composeHeadlineSummary(item = {}) {
+  const title = cleanSummaryText(item.title || "");
+  const source = cleanSummaryText(item.source || "");
+  const stripped = title
+    .replace(/\s*-\s*[^-]{2,24}(?:\.com|\.co\.kr|\.kr)?$/i, "")
+    .replace(/\s*-\s*(?:Chosunbiz|조선비즈|한국공공정책신문|뉴스|신문|일보)$/i, "")
+    .replace(/\[[^\]]+\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!stripped) return "";
+  if (/^(포토|영상|인사|부고)\b/.test(stripped)) return `${source || "해당 매체"}의 단신성 기사로, 본문 근거 확인 후 모니터링 우선순위를 낮춰 봅니다.`;
+  if (stripped.length <= 38) return `${stripped} 내용을 다룬 기사입니다.`;
+  const compact = stripped
+    .replace(/…/g, " ")
+    .split(/[.!?。]/)[0]
+    .slice(0, 72)
+    .trim();
+  return `${compact} 내용을 다룬 기사입니다.`;
 }
 
 function summaryHaystack(item = {}) {

@@ -203,6 +203,35 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertEqual(analyzer.analyze_tone(article), "neutral")
 
 
+    def test_quality_summary_handles_stock_vi_article(self) -> None:
+        article = {
+            "title": "인카금융서비스, +7.46% VI 발동 - 조선비즈 - Chosunbiz",
+            "description": "인카금융서비스 주가가 장중 급등하며 변동성완화장치가 발동됐다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("변동성완화장치", summary)
+        self.assertIn("주가", summary)
+        self.assertNotIn("이슈가 핵심입니다", summary)
+
+    def test_quality_summary_separates_sales_conduct_from_settlement_ranking(self) -> None:
+        article = {
+            "title": '"설계사 쟁탈전에 소비자 피해 불똥"…\'1200%룰\' 앞두고 보험업계 긴장',
+            "description": "1200%룰 시행을 앞두고 GA 설계사 영입 경쟁과 판매수수료 부담, 소비자 피해 우려가 함께 제기됐다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("1200%룰", summary)
+        self.assertIn("소비자 피해", summary)
+        self.assertNotIn("지급 규모와 순위", summary)
+
+
 class AnalyzerAiContextGuardrailTests(unittest.TestCase):
     def test_ai_context_non_own_positive_is_downgraded_to_neutral(self) -> None:
         article = {
