@@ -2687,29 +2687,38 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .stock-table-wrap {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .stock-table {
   width: 100%;
-  min-width: 700px;
+  min-width: 0;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
+.stock-table .stock-col-name { width: 25%; }
+.stock-table .stock-col-price { width: 13%; }
+.stock-table .stock-col-gap { width: 14%; }
+.stock-table .stock-col-return { width: 11%; }
+.stock-table .stock-col-drawdown { width: 18%; }
+
 .stock-table th,
 .stock-table td {
-  padding: 8px 7px;
+  overflow: hidden;
+  padding: 8px 5px;
   border-bottom: 1px solid var(--line-soft);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 850;
   text-align: right;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .stock-table th {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 950;
 }
 
@@ -2720,10 +2729,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .stock-table td b {
   display: block;
+  overflow: hidden;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1.2;
   font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stock-table td span {
@@ -6058,6 +6070,29 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .chart-box.stock-trend-chart {
     height: 270px;
+  }
+
+  .stock-table th:nth-child(4),
+  .stock-table td:nth-child(4),
+  .stock-table th:nth-child(7),
+  .stock-table td:nth-child(7),
+  .stock-table col:nth-child(4),
+  .stock-table col:nth-child(7) {
+    display: none;
+  }
+
+  .stock-table .stock-col-name { width: 34%; }
+  .stock-table .stock-col-price { width: 19%; }
+  .stock-table .stock-col-return { width: 19%; }
+
+  .stock-table th,
+  .stock-table td {
+    padding: 7px 4px;
+    font-size: 10.5px;
+  }
+
+  .stock-table td b {
+    font-size: 10.8px;
   }
 
   .a4-metric-strip,

@@ -1383,6 +1383,15 @@ function StockPeerTable({ rows = [] }) {
   return (
     <div className="stock-table-wrap">
       <table className="stock-table">
+        <colgroup>
+          <col className="stock-col-name" />
+          <col className="stock-col-price" />
+          <col className="stock-col-price" />
+          <col className="stock-col-gap" />
+          <col className="stock-col-return" />
+          <col className="stock-col-return" />
+          <col className="stock-col-drawdown" />
+        </colgroup>
         <thead>
           <tr>
             <th>종목</th>
