@@ -745,6 +745,8 @@ def is_settlement_support_caution_article(article: dict) -> bool:
     if not is_own_article(article):
         return False
     text = article.get("title", "") + " " + article.get("description", "")
+    if is_sales_conduct_article(article):
+        return False
     has_context = any(word in text for word in SETTLEMENT_SUPPORT_CONTEXT_WORDS)
     has_severe_signal = any(word in text for word in SETTLEMENT_SUPPORT_SEVERE_WORDS)
     if not has_context or has_severe_signal:
@@ -949,7 +951,25 @@ def is_broken_quality_sentence(value: object) -> bool:
 
 def build_contextual_summary_sentences(article: dict) -> list[str]:
     lines: list[str] = []
-    if is_preventive_security_article(article):
+    if is_stock_volatility_article(article):
+        lines.append("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다")
+        lines.append("직접 경영 이슈보다 거래량과 주가 변동성 관찰이 필요한 주가성 기사입니다")
+    elif is_sales_conduct_article(article):
+        lines.append("1200%룰 시행을 앞두고 설계사 영입 경쟁과 판매수수료 운영 부담이 함께 거론됐습니다")
+        lines.append("소비자 피해, 불완전판매, 종신보험 판매 관행처럼 판매채널 관리 리스크를 확인해야 하는 기사입니다")
+    elif is_own_consulting_profile_article(article):
+        lines.append("인카금융서비스 Having사업단의 맞춤형 온라인 금융 컨설팅 사례를 소개한 인터뷰성 보도입니다")
+        lines.append("보장성 보험을 노후 준비와 연결한 영업·컨설팅 메시지가 중심입니다")
+    elif is_stock_disclosure_article(article):
+        lines.append("인카금융서비스의 자사주, 배당 등 공시성 항목이 주식시장 주요공시 목록에 포함됐습니다")
+        lines.append("주가 판단용으로는 공시 내용과 기준일, 규모를 별도 확인해야 하는 기사입니다")
+    elif is_competitor_product_performance_article(article):
+        lines.append("경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다")
+        lines.append("상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다")
+    elif is_brand_reputation_article(article):
+        lines.append("손해보험사 브랜드평판 순위 변화와 소비자 인식 흐름을 다룬 기사입니다")
+        lines.append("직접 리스크보다 경쟁사 브랜드 노출과 평판 추이를 관찰하는 자료로 봅니다")
+    elif is_preventive_security_article(article):
         if is_own_article(article):
             lines.append("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다")
         lines.append("핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다")
@@ -960,6 +980,52 @@ def build_contextual_summary_sentences(article: dict) -> list[str]:
     elif is_insurance_loss_context_article(article):
         lines.append("실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다")
     return lines
+
+
+def article_summary_text(article: dict) -> str:
+    return f"{article.get('title', '')} {article.get('description', '')} {article.get('summary', '')} {article.get('keyword', '')}"
+
+
+def is_sales_conduct_article(article: dict) -> bool:
+    text = article_summary_text(article)
+    return bool(re.search(r"불완전판매|소비자 피해|소비자보호|생보협회|손보협회|종신보험|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건", text, re.I)) and bool(
+        re.search(r"GA|보험|설계사|생보|손보|협회|대리점", text, re.I)
+    )
+
+
+def is_stock_volatility_article(article: dict) -> bool:
+    text = article_summary_text(article)
+    return bool(re.search(r"VI 발동|변동성완화장치|주가 급등|주가 급락|\+\d+(?:\.\d+)?%|-\d+(?:\.\d+)?%", text, re.I)) and bool(
+        re.search(r"인카금융|주가|조선비즈|Chosunbiz|증시|코스닥", text, re.I)
+    )
+
+
+def is_own_consulting_profile_article(article: dict) -> bool:
+    text = article_summary_text(article)
+    return bool(re.search(r"Having사업단|이화정|맞춤형 온라인 금융 컨설팅|온라인 금융 컨설팅|노후", text, re.I)) and bool(
+        re.search(r"인카금융|금융 컨설팅|사업단", text, re.I)
+    )
+
+
+def is_stock_disclosure_article(article: dict) -> bool:
+    text = article_summary_text(article)
+    return bool(re.search(r"주식시장 주요공시|주요공시|자사주|현금배당|중간배당|공시", text, re.I)) and bool(
+        re.search(r"인카금융|주식시장|공시|자사주|배당", text, re.I)
+    )
+
+
+def is_competitor_product_performance_article(article: dict) -> bool:
+    text = article_summary_text(article)
+    return bool(re.search(r"누적 가입|가입\s*\d|돌파|특약|출시|판매", text, re.I)) and bool(
+        re.search(r"DB손해보험|KB손해보험|삼성화재|현대해상|한화생명|교보생명|보험", text, re.I)
+    )
+
+
+def is_brand_reputation_article(article: dict) -> bool:
+    text = article_summary_text(article)
+    return bool(re.search(r"브랜드평판|평판 판도|소비자 평판|브랜드 경쟁", text, re.I)) and bool(
+        re.search(r"보험|손해보험|생명보험|금융", text, re.I)
+    )
 
 
 def is_insurance_loss_context_article(article: dict) -> bool:

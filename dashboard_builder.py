@@ -175,13 +175,70 @@ def is_generic_summary_line(value: object) -> bool:
             "홍보 활용 가능성을 검토",
             "정책·규제 변화가 영업 환경",
             "보험사·GA 시장 흐름",
+            "이슈가 핵심입니다",
+            "제목과 본문 근거를 기준으로",
+            "핵심 내용을 확인합니다",
         )
+    )
+
+
+def is_sales_conduct_text(text: str) -> bool:
+    return bool(re.search(r"불완전판매|소비자 피해|소비자보호|생보협회|손보협회|종신보험|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건", text, re.I)) and bool(
+        re.search(r"GA|보험|설계사|생보|손보|협회|대리점", text, re.I)
+    )
+
+
+def is_stock_volatility_text(text: str) -> bool:
+    return bool(re.search(r"VI 발동|변동성완화장치|주가 급등|주가 급락|\+\d+(?:\.\d+)?%|-\d+(?:\.\d+)?%", text, re.I)) and bool(
+        re.search(r"인카금융|주가|조선비즈|Chosunbiz|증시|코스닥", text, re.I)
+    )
+
+
+def is_own_consulting_profile_text(text: str) -> bool:
+    return bool(re.search(r"Having사업단|이화정|맞춤형 온라인 금융 컨설팅|온라인 금융 컨설팅|노후", text, re.I)) and bool(
+        re.search(r"인카금융|금융 컨설팅|사업단", text, re.I)
+    )
+
+
+def is_stock_disclosure_text(text: str) -> bool:
+    return bool(re.search(r"주식시장 주요공시|주요공시|자사주|현금배당|중간배당|공시", text, re.I)) and bool(
+        re.search(r"인카금융|주식시장|공시|자사주|배당", text, re.I)
+    )
+
+
+def is_competitor_product_performance_text(text: str) -> bool:
+    return bool(re.search(r"누적 가입|가입\s*\d|돌파|특약|출시|판매", text, re.I)) and bool(
+        re.search(r"DB손해보험|KB손해보험|삼성화재|현대해상|한화생명|교보생명|보험", text, re.I)
+    )
+
+
+def is_brand_reputation_text(text: str) -> bool:
+    return bool(re.search(r"브랜드평판|평판 판도|소비자 평판|브랜드 경쟁", text, re.I)) and bool(
+        re.search(r"보험|손해보험|생명보험|금융", text, re.I)
     )
 
 
 def contextual_summary_lines(article: dict, category: str, tone: str) -> list[str]:
     text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
     lines: list[str] = []
+    if is_stock_volatility_text(text):
+        lines.append("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다.")
+        lines.append("직접 경영 이슈보다 거래량과 주가 변동성 관찰이 필요한 주가성 기사입니다.")
+    if is_sales_conduct_text(text):
+        lines.append("1200%룰 시행을 앞두고 설계사 영입 경쟁과 판매수수료 운영 부담이 함께 거론됐습니다.")
+        lines.append("소비자 피해, 불완전판매, 종신보험 판매 관행처럼 판매채널 관리 리스크를 확인해야 하는 기사입니다.")
+    if is_own_consulting_profile_text(text):
+        lines.append("인카금융서비스 Having사업단의 맞춤형 온라인 금융 컨설팅 사례를 소개한 인터뷰성 보도입니다.")
+        lines.append("보장성 보험을 노후 준비와 연결한 영업·컨설팅 메시지가 중심입니다.")
+    if is_stock_disclosure_text(text):
+        lines.append("인카금융서비스의 자사주, 배당 등 공시성 항목이 주식시장 주요공시 목록에 포함됐습니다.")
+        lines.append("주가 판단용으로는 공시 내용과 기준일, 규모를 별도 확인해야 하는 기사입니다.")
+    if is_competitor_product_performance_text(text):
+        lines.append("경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다.")
+        lines.append("상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다.")
+    if is_brand_reputation_text(text):
+        lines.append("손해보험사 브랜드평판 순위 변화와 소비자 인식 흐름을 다룬 기사입니다.")
+        lines.append("직접 리스크보다 경쟁사 브랜드 노출과 평판 추이를 관찰하는 자료로 봅니다.")
     if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
         if category == "own" or OWN_NAME_RE.search(text):
             lines.append("인카금융서비스의 GA 리포트성 보도로 조직 현황과 운영 지표를 확인하는 자료성 기사입니다.")
@@ -193,7 +250,7 @@ def contextual_summary_lines(article: dict, category: str, tone: str) -> list[st
         lines.append("실손24 전산화 이후에도 팩스 청구가 병행되는 현장 불편과 제도 안착 과제를 다룬 기사입니다.")
     if re.search(r"금융취약계층|사회공헌|포용금융|금융안심지원", text, re.I):
         lines.append("금융취약계층 보호와 사회공헌 활동을 다룬 소비자보호·ESG 보도입니다.")
-    if re.search(r"정착지원금|수수료|1200%|조직력", text, re.I):
+    if re.search(r"정착지원금|수수료|1200%|조직력", text, re.I) and not is_sales_conduct_text(text):
         lines.append("GA 정착지원금과 설계사 조직 경쟁 흐름을 다룬 판매채널 관찰 기사입니다.")
     if re.search(r"투자의견|목표가|목표주가|증권가|애널리스트", text, re.I):
         lines.append("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.")
@@ -208,13 +265,20 @@ def headline_fallback_summary(article: dict, category: str, tone: str) -> str:
     text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
     if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
         return contextual_summary_lines(article, category, tone)[0]
-    if re.search(r"보험사기|실손24|금융취약계층|사회공헌|정착지원금|투자의견|금융보안원", text, re.I):
+    if re.search(r"VI 발동|변동성완화장치|1200%|불완전판매|소비자 피해|생보협회|종신보험|Having사업단|맞춤형 온라인 금융 컨설팅|주식시장 주요공시|자사주|누적 가입|브랜드평판|보험사기|실손24|금융취약계층|사회공헌|정착지원금|투자의견|금융보안원", text, re.I):
         lines = contextual_summary_lines(article, category, tone)
         if lines:
             return lines[0]
-    label = CATEGORY_LABELS.get(category, category or "기타")
-    tone_label = TONE_LABELS.get(tone, tone or "중립")
-    return f"{label} {tone_label} 기사로 제목과 본문 근거를 기준으로 핵심 내용을 확인합니다."
+    title = clean_summary_text(article.get("title", ""))
+    source = clean_summary_text(article.get("source", ""))
+    title = re.sub(r"\s*-\s*[^-]{2,24}(?:\.com|\.co\.kr|\.kr)?$", "", title, flags=re.I)
+    title = re.sub(r"\[[^\]]+\]", "", title).strip()
+    if not title:
+        return ""
+    if re.match(r"^(포토|영상|인사|부고)\b", title):
+        return f"{source or '해당 매체'}의 단신성 기사로, 원문 근거 확인 후 모니터링 우선순위를 낮춰 봅니다."
+    compact = re.split(r"[.!?。]", title.replace("…", " "))[0].strip()[:72]
+    return f"{compact} 내용을 다룬 기사입니다."
 
 
 def is_usable_summary_line(line: object, title: object = "") -> bool:
