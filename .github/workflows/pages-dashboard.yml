@@ -92,7 +92,7 @@ jobs:
           GROQ_ISSUE_MODEL: ${{ secrets.GROQ_ISSUE_MODEL || 'llama-3.1-8b-instant' }}
           GROQ_MAX_ISSUE_SUMMARIES: ${{ secrets.GROQ_MAX_ISSUE_SUMMARIES || '20' }}
           AI_MAX_ISSUE_SUMMARIES: ${{ secrets.AI_MAX_ISSUE_SUMMARIES || '5' }}
-          AI_ISSUE_SUMMARY_PROVIDER: groq
+          AI_ISSUE_SUMMARY_PROVIDER: gemini
           REQUIRE_DASHBOARD_HISTORY: "true"
           REQUIRE_DASHBOARD_QUALITY: "false"
 

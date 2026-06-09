@@ -2,8 +2,8 @@
 
 The application decides which articles matter before calling this module.
 This module only chooses the text-generation provider for the same input.
-Dashboard issue summaries default to Groq/rules so routine page builds do not
-burn the primary report model quota.
+Dashboard issue summaries default to Gemini for higher-quality summaries, with
+Groq/rules retained only as fallback providers.
 """
 
 from __future__ import annotations
@@ -86,7 +86,7 @@ def summarize_issue_groups_with_provider(groups: list[dict], *, retries: int = 0
 
 
 def issue_summary_provider_mode() -> str:
-    value = os.getenv("AI_ISSUE_SUMMARY_PROVIDER", "groq").strip().lower()
+    value = os.getenv("AI_ISSUE_SUMMARY_PROVIDER", "gemini").strip().lower()
     return value if value in {"auto", "gemini", "groq", "rules"} else "auto"
 
 
