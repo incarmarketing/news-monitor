@@ -1420,6 +1420,10 @@ function StockDisclosureBoard({ disclosures = {}, companyName = "인카금융서
   const items = Array.isArray(disclosures) ? disclosures : (disclosures.items || []);
   const visibleItems = items.slice(0, 4);
   const status = disclosures.status || (visibleItems.length ? "ok" : "empty");
+  const emptyTitle = status === "error" ? "OpenDART 인증 확인 필요" : "OpenDART 연결 대기";
+  const emptyMessage = status === "error"
+    ? (disclosures.message || "OpenDART 호출 중 오류가 발생했습니다. GitHub Secret의 API 키 값을 확인하세요.")
+    : "DART API 키와 기업 고유번호를 연결하면 기업설명회, 실적, 사업보고서 공시가 이 영역에 자동 표시됩니다.";
   const dartSearchUrl = `https://dart.fss.or.kr/dsab007/main.do?textCrpNM=${encodeURIComponent(companyName)}`;
   return (
     <section className="stock-disclosure-board">
@@ -1456,8 +1460,8 @@ function StockDisclosureBoard({ disclosures = {}, companyName = "인카금융서
         <div className="stock-disclosure-empty">
           <FileText />
           <div>
-            <b>OpenDART 연결 대기</b>
-            <p>DART API 키와 기업 고유번호를 연결하면 기업설명회, 실적, 사업보고서 공시가 이 영역에 자동 표시됩니다.</p>
+            <b>{emptyTitle}</b>
+            <p>{emptyMessage}</p>
           </div>
         </div>
       )}

@@ -384,8 +384,8 @@ def build_market_payload() -> dict:
 
 def fetch_dart_disclosures(days: int = 365, limit: int = 8) -> dict:
     """Fetch recent OpenDART disclosures when API credentials are configured."""
-    api_key = os.getenv("DART_API_KEY") or os.getenv("OPENDART_API_KEY")
-    corp_code = os.getenv("DART_CORP_CODE") or os.getenv("INCAR_DART_CORP_CODE")
+    api_key = clean_secret_value(os.getenv("DART_API_KEY") or os.getenv("OPENDART_API_KEY"))
+    corp_code = clean_secret_value(os.getenv("DART_CORP_CODE") or os.getenv("INCAR_DART_CORP_CODE"))
     now = datetime.now(timezone.utc)
     if not api_key or not corp_code:
         return {
@@ -445,6 +445,19 @@ def fetch_dart_disclosures(days: int = 365, limit: int = 8) -> dict:
         "updated_at": now.isoformat(),
         "items": [normalize_dart_disclosure(row) for row in filtered[:limit]],
     }
+
+
+def clean_secret_value(value: object) -> str:
+    text = str(value or "").strip().strip("\"'")
+    if "=" in text and text.split("=", 1)[0].strip().upper() in {
+        "DART",
+        "DART_API_KEY",
+        "OPENDART_API_KEY",
+        "DART_CORP_CODE",
+        "INCAR_DART_CORP_CODE",
+    }:
+        text = text.split("=", 1)[1]
+    return re.sub(r"\s+", "", text.strip().strip("\"'"))
 
 
 def is_relevant_dart_disclosure(title: object) -> bool:
