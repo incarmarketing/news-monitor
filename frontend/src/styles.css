@@ -283,14 +283,6 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   overflow-y: auto;
 }
 
-.side-title {
-  padding: 0 10px 12px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
 .side-group + .side-group {
   margin-top: 14px;
   padding-top: 10px;
@@ -6268,7 +6260,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .terminal-command-bar {
   display: grid;
-  grid-template-columns: minmax(360px, 1.25fr) minmax(520px, 1.6fr) minmax(220px, .72fr);
+  grid-template-columns: minmax(360px, 1.05fr) minmax(560px, 1.65fr);
   gap: 10px;
   align-items: stretch;
   min-width: 0;
@@ -6326,8 +6318,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-width: 0;
 }
 
-.terminal-metrics button,
-.terminal-ops-summary > div {
+.terminal-metrics button {
   display: grid;
   gap: 3px;
   min-width: 0;
@@ -6341,8 +6332,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
 }
 
-.terminal-metrics button span,
-.terminal-ops-summary span {
+.terminal-metrics button span {
   color: #93a4bc;
   font-size: 10px;
   font-weight: 950;
@@ -6357,24 +6347,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-weight: 950;
 }
 
-.terminal-metrics button em,
-.terminal-ops-summary b {
+.terminal-metrics button em {
   color: #c7d2e4;
   font-size: 11px;
   line-height: 1.35;
   font-style: normal;
   font-weight: 850;
   overflow-wrap: anywhere;
-}
-
-.terminal-ops-summary {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-
-.terminal-ops-summary > div {
-  min-height: 0;
 }
 
 .terminal-command-bar.risk-high .terminal-brief { border-left-color: #fb7185; }
@@ -6690,8 +6669,6 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .side-group-title {
     display: none;
   }
-
-  .side-title { display: none; }
 
   .side-nav button {
     width: 100%;

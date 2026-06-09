@@ -496,7 +496,6 @@ function App() {
     <div className="app-shell">
       <Header working={working} workLabel={workLabel} />
       <aside className="side-nav" aria-label="주요 메뉴">
-        <div className="side-title">PR Intelligence</div>
         {navSections.map((section) => (
           <div className="side-group" key={section.title}>
             <div className="side-group-title">{section.title}</div>
@@ -722,14 +721,12 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 }
 
 
-function TerminalCommandBar({ data, summary, operationsHealth, notificationHealth, reportHealth, onOpenMonitoring }) {
+function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring }) {
   const risk = summary?.risk || operationsHealth?.statusLabel || "LOW";
   const negative = Number(summary?.ownNegative || 0);
   const caution = Number(summary?.caution || 0);
   const ownMentions = Number(summary?.ownMentions || 0);
   const latest = data?.generatedAt || summary?.watchTime || "-";
-  const reportText = compactHealthText(reportHealth, "보고서 확인");
-  const notificationText = compactHealthText(notificationHealth, "알림 확인");
   return (
     <section className={`terminal-command-bar risk-${String(risk).toLowerCase()}`}>
       <div className="terminal-brief">
@@ -759,25 +756,8 @@ function TerminalCommandBar({ data, summary, operationsHealth, notificationHealt
           <em>당사 언급</em>
         </button>
       </div>
-      <div className="terminal-ops-summary">
-        <div>
-          <span>보고서 자동화</span>
-          <b>{reportText}</b>
-        </div>
-        <div>
-          <span>알림톡 발송</span>
-          <b>{notificationText}</b>
-        </div>
-      </div>
     </section>
   );
-}
-
-function compactHealthText(item, fallback) {
-  if (!item) return fallback;
-  const status = item.label || healthStatusLabel(item.status) || "확인";
-  const detail = item.value || item.detail || "";
-  return detail ? `${status} · ${detail}` : status;
 }
 
 function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
