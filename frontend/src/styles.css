@@ -4752,6 +4752,54 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   gap: 7px;
 }
 
+.a4-report-sheet.daily {
+  gap: 6px;
+  padding: 8mm;
+}
+
+.a4-report-sheet.daily .a4-masthead {
+  gap: 6px;
+  padding-bottom: 6px;
+}
+
+.a4-report-sheet.daily .a4-front {
+  min-height: 112px;
+}
+
+.a4-report-sheet.daily .a4-lead {
+  padding: 9px 11px;
+}
+
+.a4-report-sheet.daily .a4-lead h3 {
+  margin: 5px 0;
+  font-size: 16px;
+  line-height: 1.14;
+}
+
+.a4-report-sheet.daily .a4-report-main-column,
+.a4-report-sheet.daily .a4-report-side-column {
+  gap: 6px;
+}
+
+.a4-report-sheet.daily .a4-panel {
+  gap: 5px;
+  padding: 6px 7px;
+}
+
+.a4-report-sheet.daily .a4-issue-list {
+  gap: 5px;
+}
+
+.a4-report-sheet.daily .a4-issue-row {
+  gap: 3px;
+  padding: 5px 6px;
+}
+
+.a4-report-sheet.daily .a4-issue-row h4 {
+  font-size: 10px;
+  line-height: 1.18;
+}
+
 .a4-masthead {
   display: grid;
   gap: 8px;
@@ -7791,6 +7839,71 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .a4-report-bottom-row {
     gap: 6px;
     grid-template-columns: minmax(0, 1.35fr) minmax(145px, .65fr);
+  }
+  .a4-report-sheet.daily {
+    gap: 4px;
+    padding: 5mm;
+  }
+  .a4-report-sheet.daily .a4-masthead {
+    gap: 4px;
+    padding-bottom: 4px;
+  }
+  .a4-report-sheet.daily .a4-topline {
+    font-size: 6.5px;
+  }
+  .a4-report-sheet.daily .a4-title-row h2 {
+    font-size: 16px;
+  }
+  .a4-report-sheet.daily .a4-title-row em {
+    margin-top: 2px;
+    font-size: 7.2px;
+  }
+  .a4-report-sheet.daily .a4-risk-badge {
+    min-width: 50px;
+    min-height: 36px;
+    padding: 4px 6px;
+  }
+  .a4-report-sheet.daily .a4-risk-badge b {
+    font-size: 13px;
+  }
+  .a4-report-sheet.daily .a4-front {
+    min-height: 72px;
+  }
+  .a4-report-sheet.daily .a4-lead {
+    padding: 6px 7px;
+  }
+  .a4-report-sheet.daily .a4-lead h3 {
+    margin: 3px 0;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+  .a4-report-sheet.daily .a4-report-body {
+    gap: 5px;
+  }
+  .a4-report-sheet.daily .a4-report-main-column,
+  .a4-report-sheet.daily .a4-report-side-column {
+    gap: 5px;
+  }
+  .a4-report-sheet.daily .a4-panel {
+    gap: 4px;
+    padding: 5px;
+  }
+  .a4-report-sheet.daily .a4-issue-list {
+    gap: 3px;
+  }
+  .a4-report-sheet.daily .a4-issue-row {
+    gap: 2px;
+    padding: 4px;
+  }
+  .a4-report-sheet.daily .a4-issue-row h4 {
+    font-size: 7.2px;
+    line-height: 1.13;
+  }
+  .a4-report-sheet.daily .summary-lines.dense li:nth-child(n+2) {
+    display: none;
+  }
+  .a4-report-sheet.daily .a4-report-bottom-row {
+    gap: 5px;
   }
   .a4-report-sheet.monthly {
     gap: 4px;

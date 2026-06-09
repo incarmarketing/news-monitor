@@ -3578,12 +3578,13 @@ function A4ReportSheet({
   const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
   const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope);
   const stats = buildA4ReportStats(summary, articles);
-  const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, period === "monthly" ? 4 : 5);
+  const pressLimit = period === "daily" ? 4 : period === "monthly" ? 4 : 5;
+  const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, pressLimit);
   const scrapRows = period === "daily" || period === "monthly" ? [] : scraps.slice(0, 2);
   const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows, scope);
   const toneRows = buildA4ToneLedger(articles);
-  const keywordLimit = period === "monthly" ? 6 : 10;
-  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, period === "daily" ? 5 : period === "monthly" ? 4 : 5);
+  const keywordLimit = period === "daily" ? 6 : period === "monthly" ? 6 : 10;
+  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, period === "daily" ? 4 : period === "monthly" ? 4 : 5);
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
@@ -3648,7 +3649,7 @@ function A4ReportSheet({
           <A4Panel title="핵심 이슈와 요약" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
             <div className="a4-issue-list">
               {reportIssues.map((issue) => (
-                <A4IssueRow key={`${issue.source}-${issue.title}-${issue.time || issue.date}`} issue={issue} />
+                <A4IssueRow key={`${issue.source}-${issue.title}-${issue.time || issue.date}`} issue={issue} compact={period === "daily"} />
               ))}
               {!reportIssues.length && <p className="a4-empty">기간 내 핵심 기사 데이터가 없습니다.</p>}
             </div>
@@ -3737,10 +3738,10 @@ function A4Panel({ title, meta, children }) {
   );
 }
 
-function A4IssueRow({ issue }) {
-  const lines = buildArticleSummaryLines(issue).slice(0, 2);
+function A4IssueRow({ issue, compact = false }) {
+  const lines = buildArticleSummaryLines(issue).slice(0, compact ? 1 : 2);
   return (
-    <article className="a4-issue-row">
+    <article className={compact ? "a4-issue-row compact" : "a4-issue-row"}>
       <div>
         <Chip tone={issue.tone}>{issue.tone}</Chip>
         <Chip>{issue.category || "분류"}</Chip>
