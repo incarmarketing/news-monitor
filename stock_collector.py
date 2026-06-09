@@ -520,7 +520,7 @@ def build_dart_disclosure_summary(title: str) -> str:
 def group_securities(securities: list[dict]) -> list[dict]:
     groups: dict[str, list[dict]] = {}
     for item in securities:
-        groups.setdefault(str(item.get("group") or "기타"), []).append(strip_history(item))
+        groups.setdefault(str(item.get("group") or "기타"), []).append(item)
     return [
         {
             "name": name,
@@ -538,11 +538,6 @@ def group_securities(securities: list[dict]) -> list[dict]:
         }
         for name, rows in groups.items()
     ]
-
-
-def strip_history(item: dict) -> dict:
-    return {key: value for key, value in item.items() if key != "history"}
-
 
 def build_relative_trend(company: dict, peers: list[dict], index: dict) -> list[dict]:
     company_history = company.get("history") or []

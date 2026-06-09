@@ -1269,8 +1269,8 @@ function StockMarketDashboard({ stockMarket }) {
   const company = stockMarket?.company || {};
   const summary = stockMarket?.summary || {};
   const indices = stockMarket?.indices || [];
-  const peerGroups = stockMarket?.peerGroups || [];
-  const relativeTrend = stockMarket?.relativeTrend || [];
+  const peerGroups = stockMarket?.peerGroups || stockMarket?.peer_groups || [];
+  const relativeTrend = stockMarket?.relativeTrend || stockMarket?.relative_trend || [];
   const dartDisclosures = stockMarket?.dartDisclosures || stockMarket?.dart_disclosures || {};
   const hasData = company?.status === "ok";
   const companyLink = company?.code ? `https://finance.naver.com/item/main.naver?code=${company.code}` : "#";
@@ -1302,8 +1302,15 @@ function StockMarketDashboard({ stockMarket }) {
   const activeRange = activeRangeSelection.range;
   const activeRangeReturn = activeRange.return ?? company.returns?.[activeRangeSelection.returnKey] ?? company.returns?.[activeRangeKey];
   const activeTrend = sliceStockTrend(relativeTrend, activeRangeSelection.count || activeRangeKey);
-  const activePeerReturn = averagePeerReturnByPeriod(peerGroups, activeRangeSelection.returnKey, activeRangeSelection.count);
-  const activeKospiReturn = indexReturnByPeriod(indices, "KOSPI", activeRangeSelection.returnKey, activeRangeSelection.count);
+  const activePeerReturn = averagePeerReturnByPeriod(
+    peerGroups,
+    activeRangeKey,
+    activeRangeSelection.count,
+    activeRange.start_date,
+    activeRange.end_date,
+    activeRangeSelection.returnKey,
+  );
+  const activeKospiReturn = indexReturnByPeriod(indices, "KOSPI", activeRangeKey, activeRangeSelection.count, activeRangeSelection.returnKey);
 
   return (
     <main className="workspace">
@@ -1514,7 +1521,14 @@ function StockMarketDashboard({ stockMarket }) {
 
           <section className="stock-peer-section">
             {peerGroups.map((group) => {
-              const groupReturn = averagePeerReturnByPeriod([{ stocks: group.stocks || [] }], activeRangeSelection.returnKey, activeRangeSelection.count);
+              const groupReturn = averagePeerReturnByPeriod(
+                [{ stocks: group.stocks || [] }],
+                activeRangeKey,
+                activeRangeSelection.count,
+                activeRange.start_date,
+                activeRange.end_date,
+                activeRangeSelection.returnKey,
+              );
               return (
                 <Panel
                   key={group.name}
@@ -1524,9 +1538,12 @@ function StockMarketDashboard({ stockMarket }) {
                 >
                   <StockPeerTable
                     rows={group.stocks || []}
-                    rangeKey={activeRangeSelection.returnKey}
+                    rangeKey={activeRangeKey}
                     rangeLabel={activeRangeLabel}
                     rangeCount={activeRangeSelection.count}
+                    rangeStart={activeRange.start_date}
+                    rangeEnd={activeRange.end_date}
+                    fallbackKey={activeRangeSelection.returnKey}
                   />
                 </Panel>
               );
@@ -1674,7 +1691,15 @@ function MarketIndexCards({ rows = [] }) {
   );
 }
 
-function StockPeerTable({ rows = [], rangeKey = "20d", rangeLabel = "20거래일", rangeCount = 20 }) {
+function StockPeerTable({
+  rows = [],
+  rangeKey = "20d",
+  rangeLabel = "20거래일",
+  rangeCount = 20,
+  rangeStart = "",
+  rangeEnd = "",
+  fallbackKey = "20d",
+}) {
   if (!rows.length) return <p className="a4-empty">비교 종목 데이터가 없습니다.</p>;
   return (
     <div className="stock-table-wrap">
@@ -1701,7 +1726,7 @@ function StockPeerTable({ rows = [], rangeKey = "20d", rangeLabel = "20거래일
         </thead>
         <tbody>
           {rows.map((row) => {
-            const selectedReturn = stockReturnForPeriod(row, rangeKey, rangeCount);
+            const selectedReturn = stockReturnForPeriod(row, rangeKey, rangeCount, rangeStart, rangeEnd, fallbackKey);
             return (
               <tr key={row.code}>
                 <td><b>{row.name}</b><span>{row.code}</span></td>
@@ -8408,11 +8433,19 @@ function nearestStockReturnKey(count = 20) {
   return "120d";
 }
 
-function stockReturnForPeriod(stock = {}, key = "20d", count = 20) {
+function stockReturnForPeriod(stock = {}, key = "20d", count = 20, start = "", end = "", fallbackKey = "") {
+  const history = normalizeStockHistory(stock.history || []);
+  const shouldCalculateFromHistory = key === "date-range" || String(key).startsWith("custom-") || !Number.isFinite(Number(stock.returns?.[key]));
+  if (history.length && shouldCalculateFromHistory) {
+    const range = key === "date-range"
+      ? calculateStockRangeFromHistory(history, { start, end })
+      : calculateStockRangeFromHistory(history, { count });
+    if (Number.isFinite(Number(range.return))) return range.return;
+  }
   const exact = Number(stock.returns?.[key]);
   if (Number.isFinite(exact)) return exact;
-  const fallbackKey = nearestStockReturnKey(count);
-  const fallback = Number(stock.returns?.[fallbackKey]);
+  const periodKey = fallbackKey || nearestStockReturnKey(count);
+  const fallback = Number(stock.returns?.[periodKey]);
   return Number.isFinite(fallback) ? fallback : null;
 }
 
@@ -8500,20 +8533,20 @@ function buildStockRangeSelection({ stockRange, customRangeDays, dateRangeDraft,
   };
 }
 
-function averagePeerReturnByPeriod(peerGroups = [], key = "20d", count = 20) {
+function averagePeerReturnByPeriod(peerGroups = [], key = "20d", count = 20, start = "", end = "", fallbackKey = "") {
   const values = peerGroups
     .flatMap((group) => group.stocks || [])
-    .map((stock) => stockReturnForPeriod(stock, key, count))
+    .map((stock) => stockReturnForPeriod(stock, key, count, start, end, fallbackKey))
     .filter((value) => Number.isFinite(value));
   if (!values.length) return null;
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
 }
 
-function indexReturnByPeriod(indices = [], code = "KOSPI", key = "20d", count = 20) {
+function indexReturnByPeriod(indices = [], code = "KOSPI", key = "20d", count = 20, fallbackKey = "") {
   const row = indices.find((item) => String(item.code || "").toUpperCase() === code);
   const value = Number(row?.returns?.[key]);
   if (Number.isFinite(value)) return value;
-  const fallback = Number(row?.returns?.[nearestStockReturnKey(count)]);
+  const fallback = Number(row?.returns?.[fallbackKey || nearestStockReturnKey(count)]);
   return Number.isFinite(fallback) ? fallback : null;
 }
 
