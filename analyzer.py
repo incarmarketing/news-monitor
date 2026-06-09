@@ -711,8 +711,33 @@ def is_own_positive_focus_article(article: dict) -> bool:
 
 
 def is_own_article(article: dict) -> bool:
-    text = article.get("title", "") + " " + article.get("description", "")
+    return has_own_evidence(article)
+
+
+def has_own_evidence(article: dict) -> bool:
+    """Use only original article fields as own-company evidence, not generated summaries."""
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title", ""),
+            article.get("description", ""),
+            raw.get("title", ""),
+            raw.get("description", ""),
+            raw.get("content", ""),
+            raw.get("body", ""),
+        )
+    )
     return any(name in text for name in OWN_NAMES)
+
+
+def contains_own_reference(value: object) -> bool:
+    text = str(value or "")
+    return any(name in text for name in OWN_NAMES) or "당사" in text
+
+
+def is_unsupported_own_reference(article: dict, value: object) -> bool:
+    return contains_own_reference(value) and not has_own_evidence(article)
 
 
 def is_preventive_security_article(article: dict) -> bool:
@@ -865,13 +890,22 @@ def build_quality_summary(article: dict) -> str:
     """Build a concise, non-generic summary for dashboard/report cards."""
     title = clean_summary_fragment(article.get("title", ""))
     body = clean_summary_fragment(article.get("description", "") or article.get("summary", ""))
-    contextual = build_contextual_summary_sentences(article)
+    contextual = [
+        sentence
+        for sentence in build_contextual_summary_sentences(article)
+        if not is_unsupported_own_reference(article, sentence)
+    ]
     sentences = [
         sentence
         for sentence in split_quality_sentences(body)
-        if sentence != title and not is_generic_quality_sentence(sentence) and not is_broken_quality_sentence(sentence)
+        if (
+            sentence != title
+            and not is_generic_quality_sentence(sentence)
+            and not is_broken_quality_sentence(sentence)
+            and not is_unsupported_own_reference(article, sentence)
+        )
     ]
-    fallback = headline_based_summary(title)
+    fallback = "" if is_unsupported_own_reference(article, title) else headline_based_summary(title)
     candidates = [*contextual, *sentences] if len(contextual) >= 2 else [*contextual, *sentences, fallback]
     lines = unique_quality_sentences(candidates)
     return " ".join(ensure_summary_sentence(sentence) for sentence in lines[:3])

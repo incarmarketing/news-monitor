@@ -110,6 +110,24 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotIn("리스크 점검 근거", summary)
         self.assertNotIn("시장 평가, 투자 의견", summary)
 
+    def test_quality_summary_drops_own_reference_without_original_evidence(self) -> None:
+        article = {
+            "title": "금감원, 찾아가는 기업공시 설명회 개최…개정 상법·공시제도 집중 안내",
+            "description": (
+                "금융감독원이 기업 공시 담당자를 대상으로 개정 상법과 공시제도 변경 사항을 "
+                "안내하는 설명회를 개최한다."
+            ),
+            "summary": "인카금융서비스의 자사주, 배당 등 공시성 항목이 주식시장 주요공시 목록에 포함됐습니다.",
+            "keyword": "공시",
+            "keyword_category": "regulation",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertFalse(analyzer.is_own_article(article))
+        self.assertNotIn("인카금융서비스", summary)
+        self.assertNotIn("당사", summary)
+
     def test_analyze_stores_quality_summary_for_persistence(self) -> None:
         articles = [
             {

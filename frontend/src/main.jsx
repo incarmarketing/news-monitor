@@ -6782,7 +6782,10 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
 function buildArticleSummaryLines(item = {}) {
   const titleKeys = summaryTitleKeys(item);
   if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
-    const explicitLines = dedupeSummaryLines(item.summaryLines.map(normalizeSummaryLine).filter(Boolean), titleKeys)
+    const explicitLines = dedupeSummaryLines(
+      removeUnsupportedOwnReferences(item, item.summaryLines.map(normalizeSummaryLine).filter(Boolean)),
+      titleKeys,
+    )
       .slice(0, 4);
     if (explicitLines.length) return explicitLines;
   }
@@ -6792,17 +6795,20 @@ function buildArticleSummaryLines(item = {}) {
     .map(normalizeSummaryLine)
     .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence) && !isSummaryDuplicateOfTitle(sentence, titleKeys));
   const primaryTopic = articlePrimarySummaryTopic(item);
-  const contextLines = buildContextualSummaryLines(item);
+  const contextLines = removeUnsupportedOwnReferences(item, buildContextualSummaryLines(item));
   const titleLine = normalizeSummaryLine(headlineBasedSummary(item));
   if (primaryTopic && contextLines.length) {
-    const topicLines = dedupeSummaryLines([...contextLines, titleLine].filter((line) => line && summaryLineMatchesTopic(line, primaryTopic)), titleKeys)
+    const topicLines = dedupeSummaryLines(
+      removeUnsupportedOwnReferences(item, [...contextLines, titleLine].filter((line) => line && summaryLineMatchesTopic(line, primaryTopic))),
+      titleKeys,
+    )
       .slice(0, primaryTopic === "own-performance" ? 2 : 3);
     if (topicLines.length) return topicLines;
   }
   const candidates = contextLines.length >= 2
     ? [...contextLines, ...sentences]
     : [...contextLines, ...sentences, titleLine];
-  const lines = dedupeSummaryLines(candidates.filter(Boolean), titleKeys)
+  const lines = dedupeSummaryLines(removeUnsupportedOwnReferences(item, candidates.filter(Boolean)), titleKeys)
     .slice(0, 3);
   if (lines.length) return lines;
   return buildLastResortSummaryLines(item, titleKeys);
@@ -7076,7 +7082,7 @@ function buildContextualSummaryLines(item = {}) {
 function buildLastResortSummaryLines(item = {}, titleKeys = new Set()) {
   const text = summaryHaystack(item);
   const line = normalizeSummaryLine(composeHeadlineSummary(item));
-  return dedupeSummaryLines([line, headlineBasedSummary(item), text], titleKeys).slice(0, 1);
+  return dedupeSummaryLines(removeUnsupportedOwnReferences(item, [line, headlineBasedSummary(item), text]), titleKeys).slice(0, 1);
 }
 
 function composeHeadlineSummary(item = {}) {
@@ -8518,7 +8524,29 @@ function isUsableArticle(article) {
 
 function isOwnArticle(article) {
   if (isStockListingNoiseArticle(article)) return false;
-  return article.category === "당사" || /인카금융|인카금융서비스/i.test(`${article.title} ${article.keyword} ${article.summary}`);
+  return hasOwnArticleEvidence(article);
+}
+
+function hasOwnArticleEvidence(article = {}) {
+  const raw = article.raw && typeof article.raw === "object" ? article.raw : {};
+  const text = [
+    article.title,
+    article.description,
+    raw.title,
+    raw.description,
+    raw.content,
+    raw.body,
+  ].map((value) => String(value || "")).join(" ");
+  return /인카금융서비스|인카금융/i.test(text);
+}
+
+function hasOwnReference(value = "") {
+  return /인카금융서비스|인카금융|당사/i.test(String(value || ""));
+}
+
+function removeUnsupportedOwnReferences(item = {}, lines = []) {
+  if (hasOwnArticleEvidence(item)) return lines;
+  return lines.filter((line) => !hasOwnReference(line));
 }
 
 function isStockListingNoiseArticle(article = {}) {
