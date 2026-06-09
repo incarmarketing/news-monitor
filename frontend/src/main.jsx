@@ -3518,9 +3518,10 @@ function A4ReportStage({
   const edition = publicationMeta(period, { ...data, periodScope: reportScope });
   const expandedIssues = expandReportIssues(data.issues, reportArticles, period);
   const lead = buildReportLead(period, data, reportArticles, expandedIssues);
+  const secondaryLimit = period === "daily" ? 4 : period === "monthly" ? 3 : 4;
   const secondary = expandedIssues
     .filter((issue) => !sameIssue(issue, lead))
-    .slice(0, period === "daily" ? 4 : 5);
+    .slice(0, secondaryLimit);
   const reportTrend = trendRows?.length
     ? trendRows
     : buildReportToneTrend(reportArticles, period, data.toneTrend);
@@ -3569,11 +3570,12 @@ function A4ReportSheet({
   const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
   const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope);
   const stats = buildA4ReportStats(summary, articles);
-  const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, 5);
-  const scrapRows = period === "daily" ? [] : scraps.slice(0, 3);
+  const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, period === "monthly" ? 4 : 5);
+  const scrapRows = period === "daily" || period === "monthly" ? [] : scraps.slice(0, 2);
   const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows, scope);
   const toneRows = buildA4ToneLedger(articles);
-  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, period === "daily" ? 5 : 6);
+  const keywordLimit = period === "monthly" ? 6 : 10;
+  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, period === "daily" ? 5 : period === "monthly" ? 4 : 5);
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
@@ -3651,7 +3653,7 @@ function A4ReportSheet({
           </A4Panel>
 
           <A4Panel title="키워드별 기사량" meta="선정 키워드">
-            <A4BarList rows={keywordRows.slice(0, 10)} />
+            <A4BarList rows={keywordRows.slice(0, keywordLimit)} />
           </A4Panel>
 
           <A4Panel title="언론사 영향도" meta="상위 매체">

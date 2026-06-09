@@ -4614,6 +4614,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   overflow: hidden;
 }
 
+.a4-report-sheet.monthly {
+  gap: 7px;
+}
+
 .a4-masthead {
   display: grid;
   gap: 8px;
@@ -4762,6 +4766,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-height: 138px;
 }
 
+.a4-report-sheet.monthly .a4-front {
+  min-height: 116px;
+}
+
 .a4-lead,
 .a4-insight,
 .a4-panel {
@@ -4899,6 +4907,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
   gap: 8px;
   align-items: start;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .a4-report-main-column,
@@ -4906,7 +4916,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   gap: 8px;
   min-width: 0;
+  min-height: 0;
   align-content: start;
+  overflow: hidden;
 }
 
 .a4-report-bottom-row {
@@ -4921,6 +4933,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   gap: 7px;
   padding: 8px 9px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .a4-panel-head {
@@ -4947,6 +4961,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .a4-issue-list {
   display: grid;
   gap: 6px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .a4-issue-row {
@@ -4957,6 +4973,38 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   border: 1px solid var(--line-soft);
   border-radius: 7px;
   background: #fff;
+}
+
+.a4-report-sheet.monthly .a4-title-row h2 {
+  font-size: 25px;
+}
+
+.a4-report-sheet.monthly .a4-lead {
+  padding: 9px 11px;
+}
+
+.a4-report-sheet.monthly .a4-lead h3 {
+  margin: 5px 0;
+  font-size: 16px;
+  line-height: 1.16;
+}
+
+.a4-report-sheet.monthly .a4-executive-lines {
+  gap: 2px;
+}
+
+.a4-report-sheet.monthly .a4-issue-list {
+  gap: 5px;
+}
+
+.a4-report-sheet.monthly .a4-issue-row {
+  gap: 3px;
+  padding: 6px;
+}
+
+.a4-report-sheet.monthly .a4-issue-row h4 {
+  font-size: 10.5px;
+  line-height: 1.2;
 }
 
 .a4-issue-row > div:first-child {
@@ -7369,7 +7417,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 @page {
   size: A4 portrait;
-  margin: 8mm;
+  margin: 6mm;
 }
 
 @media print {
@@ -7399,14 +7447,18 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     background: #fff;
   }
   .a4-report-sheet {
-    width: 194mm;
-    min-height: 281mm;
+    width: 198mm;
+    height: 285mm;
+    min-height: 0;
+    max-height: 285mm;
     margin: 0 auto;
-    padding: 8mm;
+    padding: 6mm;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    page-break-after: always;
+    break-after: avoid-page;
+    page-break-after: auto;
+    overflow: hidden;
   }
   .a4-masthead {
     gap: 6px;
@@ -7569,6 +7621,59 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .a4-report-bottom-row {
     gap: 6px;
     grid-template-columns: minmax(0, 1.35fr) minmax(145px, .65fr);
+  }
+  .a4-report-sheet.monthly {
+    gap: 4px;
+  }
+  .a4-report-sheet.monthly .a4-masthead {
+    gap: 4px;
+    padding-bottom: 4px;
+  }
+  .a4-report-sheet.monthly .a4-topline {
+    display: none;
+  }
+  .a4-report-sheet.monthly .a4-title-row h2 {
+    font-size: 16px;
+  }
+  .a4-report-sheet.monthly .a4-title-row em {
+    margin-top: 2px;
+    font-size: 7.2px;
+  }
+  .a4-report-sheet.monthly .a4-front {
+    min-height: 74px;
+  }
+  .a4-report-sheet.monthly .a4-lead {
+    padding: 6px 7px;
+  }
+  .a4-report-sheet.monthly .a4-lead h3 {
+    margin: 3px 0;
+    font-size: 10.2px;
+    line-height: 1.1;
+  }
+  .a4-report-sheet.monthly .a4-report-body {
+    gap: 5px;
+  }
+  .a4-report-sheet.monthly .a4-report-main-column,
+  .a4-report-sheet.monthly .a4-report-side-column {
+    gap: 5px;
+  }
+  .a4-report-sheet.monthly .a4-panel {
+    gap: 4px;
+    padding: 5px;
+  }
+  .a4-report-sheet.monthly .a4-issue-row {
+    gap: 2px;
+    padding: 4px;
+  }
+  .a4-report-sheet.monthly .a4-issue-row h4 {
+    font-size: 7.2px;
+    line-height: 1.14;
+  }
+  .a4-report-sheet.monthly .summary-lines.dense {
+    display: none;
+  }
+  .a4-report-sheet.monthly .a4-report-bottom-row {
+    gap: 5px;
   }
   .a4-comment-list,
   .a4-tone-ledger {
