@@ -1264,6 +1264,8 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
 
 function StockMarketDashboard({ stockMarket }) {
   const [stockRange, setStockRange] = useState("60d");
+  const [customRangeDays, setCustomRangeDays] = useState("45");
+  const [dateRangeDraft, setDateRangeDraft] = useState({ start: "", end: "" });
   const company = stockMarket?.company || {};
   const summary = stockMarket?.summary || {};
   const indices = stockMarket?.indices || [];
@@ -1279,17 +1281,29 @@ function StockMarketDashboard({ stockMarket }) {
   const activeMarketLabel = company.latest?.source_market === "nxt" ? "NXT 관찰가" : "KRX 관찰가";
   const tradedAt = company.latest?.traded_at || regularMarket.traded_at || nxtMarket.traded_at || "";
   const rangeWindows = company.range_windows || {};
+  const stockHistory = normalizeStockHistory(company.history || []);
+  const historyBounds = getStockHistoryBounds(stockHistory);
   const stockRangeOptions = [
-    { id: "20d", label: "20거래일" },
-    { id: "60d", label: "60거래일" },
-    { id: "120d", label: "120거래일" },
-  ].filter((item) => rangeWindows[item.id]?.high || company.returns?.[item.id] !== undefined);
-  const activeRangeKey = stockRangeOptions.some((item) => item.id === stockRange) ? stockRange : (stockRangeOptions[0]?.id || "60d");
-  const activeRangeLabel = stockRangeOptions.find((item) => item.id === activeRangeKey)?.label || "선택 기간";
-  const activeRange = rangeWindows[activeRangeKey] || rangeWindows["60d"] || {};
-  const activeTrend = sliceStockTrend(relativeTrend, activeRangeKey);
-  const activePeerReturn = averagePeerReturnByPeriod(peerGroups, activeRangeKey);
-  const activeKospiReturn = indexReturnByPeriod(indices, "KOSPI", activeRangeKey);
+    { id: "5d", label: "5거래일", days: 5 },
+    { id: "20d", label: "20거래일", days: 20 },
+    { id: "60d", label: "60거래일", days: 60 },
+    { id: "120d", label: "120거래일", days: 120 },
+  ].filter((item) => historyBounds.count >= Math.min(item.days, 5) || rangeWindows[item.id]?.high || company.returns?.[item.id] !== undefined);
+  const activeRangeSelection = buildStockRangeSelection({
+    stockRange,
+    customRangeDays,
+    dateRangeDraft,
+    company,
+    rangeWindows,
+    history: stockHistory,
+  });
+  const activeRangeKey = activeRangeSelection.key;
+  const activeRangeLabel = activeRangeSelection.label;
+  const activeRange = activeRangeSelection.range;
+  const activeRangeReturn = activeRange.return ?? company.returns?.[activeRangeSelection.returnKey] ?? company.returns?.[activeRangeKey];
+  const activeTrend = sliceStockTrend(relativeTrend, activeRangeSelection.count || activeRangeKey);
+  const activePeerReturn = averagePeerReturnByPeriod(peerGroups, activeRangeSelection.returnKey, activeRangeSelection.count);
+  const activeKospiReturn = indexReturnByPeriod(indices, "KOSPI", activeRangeSelection.returnKey, activeRangeSelection.count);
 
   return (
     <main className="workspace">
@@ -1381,26 +1395,84 @@ function StockMarketDashboard({ stockMarket }) {
               <div>
                 <span>기간별 판단</span>
                 <h3>{activeRangeLabel} 주가 위치</h3>
+                <small className="stock-range-coverage">
+                  {historyBounds.count ? `수집 범위 ${historyBounds.start}~${historyBounds.end} · ${historyBounds.count}거래일` : "히스토리 수집 대기"}
+                </small>
               </div>
-              <div className="stock-range-tabs">
-                {stockRangeOptions.map((item) => (
+              <div className="stock-range-controls">
+                <div className="stock-range-tabs" aria-label="빠른 기간 선택">
+                  {stockRangeOptions.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={stockRange === item.id ? "active" : ""}
+                      onClick={() => setStockRange(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <label className={`stock-range-input ${stockRange === "custom" ? "active" : ""}`}>
+                  <span>직접</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={historyBounds.count || 120}
+                    value={customRangeDays}
+                    onFocus={() => setStockRange("custom")}
+                    onChange={(event) => {
+                      setCustomRangeDays(event.target.value);
+                      setStockRange("custom");
+                    }}
+                  />
+                  <em>거래일</em>
+                </label>
+                <div className={`stock-date-range ${stockRange === "dates" ? "active" : ""}`}>
+                  <label>
+                    <span>시작</span>
+                    <input
+                      type="date"
+                      min={historyBounds.start || undefined}
+                      max={historyBounds.end || undefined}
+                      value={dateRangeDraft.start}
+                      onChange={(event) => {
+                        setDateRangeDraft((current) => ({ ...current, start: event.target.value }));
+                        setStockRange("dates");
+                      }}
+                    />
+                  </label>
+                  <label>
+                    <span>종료</span>
+                    <input
+                      type="date"
+                      min={historyBounds.start || undefined}
+                      max={historyBounds.end || undefined}
+                      value={dateRangeDraft.end}
+                      onChange={(event) => {
+                        setDateRangeDraft((current) => ({ ...current, end: event.target.value }));
+                        setStockRange("dates");
+                      }}
+                    />
+                  </label>
                   <button
                     type="button"
-                    key={item.id}
-                    className={activeRangeKey === item.id ? "active" : ""}
-                    onClick={() => setStockRange(item.id)}
+                    className="stock-range-reset"
+                    onClick={() => {
+                      setStockRange("60d");
+                      setDateRangeDraft({ start: "", end: "" });
+                    }}
                   >
-                    {item.label}
+                    기본
                   </button>
-                ))}
+                </div>
               </div>
             </div>
             <div className="stock-range-cards">
               <StockRangeCard
                 label="선택기간 수익률"
-                value={formatStockPercent(activeRange.return ?? company.returns?.[activeRangeKey])}
+                value={formatStockPercent(activeRangeReturn)}
                 detail={`${formatStockDate(activeRange.start_date)}~${formatStockDate(activeRange.end_date || company.latest?.date)}`}
-                toneValue={activeRange.return ?? company.returns?.[activeRangeKey]}
+                toneValue={activeRangeReturn}
               />
               <StockRangeCard
                 label="기간 고점"
@@ -1416,9 +1488,9 @@ function StockMarketDashboard({ stockMarket }) {
               />
               <StockRangeCard
                 label="비교군 대비"
-                value={formatStockPercent(safeNumberDiff(activeRange.return ?? company.returns?.[activeRangeKey], activePeerReturn))}
+                value={formatStockPercent(safeNumberDiff(activeRangeReturn, activePeerReturn))}
                 detail={`동종 ${formatStockPercent(activePeerReturn)} · KOSPI ${formatStockPercent(activeKospiReturn)}`}
-                toneValue={safeNumberDiff(activeRange.return ?? company.returns?.[activeRangeKey], activePeerReturn)}
+                toneValue={safeNumberDiff(activeRangeReturn, activePeerReturn)}
               />
             </div>
           </section>
@@ -1441,16 +1513,24 @@ function StockMarketDashboard({ stockMarket }) {
           </section>
 
           <section className="stock-peer-section">
-            {peerGroups.map((group) => (
-              <Panel
-                key={group.name}
-                title={group.name}
-                icon={Building2}
-                meta={`20일 평균 ${formatStockPercent(group.average_20d_return)}`}
-              >
-                <StockPeerTable rows={group.stocks || []} />
-              </Panel>
-            ))}
+            {peerGroups.map((group) => {
+              const groupReturn = averagePeerReturnByPeriod([{ stocks: group.stocks || [] }], activeRangeSelection.returnKey, activeRangeSelection.count);
+              return (
+                <Panel
+                  key={group.name}
+                  title={group.name}
+                  icon={Building2}
+                  meta={`${activeRangeLabel} 평균 ${formatStockPercent(groupReturn)}`}
+                >
+                  <StockPeerTable
+                    rows={group.stocks || []}
+                    rangeKey={activeRangeSelection.returnKey}
+                    rangeLabel={activeRangeLabel}
+                    rangeCount={activeRangeSelection.count}
+                  />
+                </Panel>
+              );
+            })}
           </section>
         </>
       )}
@@ -1594,7 +1674,7 @@ function MarketIndexCards({ rows = [] }) {
   );
 }
 
-function StockPeerTable({ rows = [] }) {
+function StockPeerTable({ rows = [], rangeKey = "20d", rangeLabel = "20거래일", rangeCount = 20 }) {
   if (!rows.length) return <p className="a4-empty">비교 종목 데이터가 없습니다.</p>;
   return (
     <div className="stock-table-wrap">
@@ -1615,22 +1695,25 @@ function StockPeerTable({ rows = [] }) {
             <th>NXT</th>
             <th>NXT 차이</th>
             <th>1일</th>
-            <th>20일</th>
+            <th>{rangeLabel}</th>
             <th>고점대비</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.code}>
-              <td><b>{row.name}</b><span>{row.code}</span></td>
-              <td>{formatStockPrice(row.regular_market?.price || row.latest?.price)}</td>
-              <td>{row.nxt_market?.available ? formatStockPrice(row.nxt_market?.price) : "-"}</td>
-              <td className={stockToneClass(row.price_gap?.price)}>{row.price_gap?.available ? `${formatSignedNumber(row.price_gap?.price)}원` : "-"}</td>
-              <td className={stockToneClass(row.returns?.["1d"])}>{formatStockPercent(row.returns?.["1d"])}</td>
-              <td className={stockToneClass(row.returns?.["20d"])}>{formatStockPercent(row.returns?.["20d"])}</td>
-              <td className={stockToneClass(row.range?.drawdown_from_60d_high)}>{formatStockPercent(row.range?.drawdown_from_60d_high)}</td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const selectedReturn = stockReturnForPeriod(row, rangeKey, rangeCount);
+            return (
+              <tr key={row.code}>
+                <td><b>{row.name}</b><span>{row.code}</span></td>
+                <td>{formatStockPrice(row.regular_market?.price || row.latest?.price)}</td>
+                <td>{row.nxt_market?.available ? formatStockPrice(row.nxt_market?.price) : "-"}</td>
+                <td className={stockToneClass(row.price_gap?.price)}>{row.price_gap?.available ? `${formatSignedNumber(row.price_gap?.price)}원` : "-"}</td>
+                <td className={stockToneClass(row.returns?.["1d"])}>{formatStockPercent(row.returns?.["1d"])}</td>
+                <td className={stockToneClass(selectedReturn)}>{formatStockPercent(selectedReturn)}</td>
+                <td className={stockToneClass(row.range?.drawdown_from_60d_high)}>{formatStockPercent(row.range?.drawdown_from_60d_high)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -8281,23 +8364,161 @@ function safeNumberDiff(left, right) {
   return Number((leftNumber - rightNumber).toFixed(2));
 }
 
-function averagePeerReturnByPeriod(peerGroups = [], key = "20d") {
+function normalizeStockHistory(rows = []) {
+  return rows
+    .map((row) => {
+      const date = String(row.date || row.trading_date || row.base_date || "").slice(0, 10);
+      const close = Number(row.close ?? row.price);
+      const high = Number(row.high ?? row.close ?? row.price);
+      const low = Number(row.low ?? row.close ?? row.price);
+      return {
+        ...row,
+        date,
+        close,
+        high: Number.isFinite(high) ? high : close,
+        low: Number.isFinite(low) ? low : close,
+      };
+    })
+    .filter((row) => row.date && Number.isFinite(row.close) && row.close > 0)
+    .sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function getStockHistoryBounds(history = []) {
+  if (!history.length) return { count: 0, start: "", end: "" };
+  return {
+    count: history.length,
+    start: history[0].date,
+    end: history[history.length - 1].date,
+  };
+}
+
+function percentDiff(current, base) {
+  const currentNumber = Number(current);
+  const baseNumber = Number(base);
+  if (!Number.isFinite(currentNumber) || !Number.isFinite(baseNumber) || baseNumber === 0) return null;
+  return Number((((currentNumber - baseNumber) / baseNumber) * 100).toFixed(2));
+}
+
+function nearestStockReturnKey(count = 20) {
+  const days = Number(count);
+  if (!Number.isFinite(days)) return "20d";
+  if (days <= 5) return "5d";
+  if (days <= 20) return "20d";
+  if (days <= 60) return "60d";
+  return "120d";
+}
+
+function stockReturnForPeriod(stock = {}, key = "20d", count = 20) {
+  const exact = Number(stock.returns?.[key]);
+  if (Number.isFinite(exact)) return exact;
+  const fallbackKey = nearestStockReturnKey(count);
+  const fallback = Number(stock.returns?.[fallbackKey]);
+  return Number.isFinite(fallback) ? fallback : null;
+}
+
+function calculateStockRangeFromHistory(history = [], { count, start, end } = {}) {
+  const rows = normalizeStockHistory(history);
+  if (!rows.length) return {};
+  let selectedRows = rows;
+  if (start || end) {
+    selectedRows = rows.filter((row) => (!start || row.date >= start) && (!end || row.date <= end));
+  } else if (count) {
+    selectedRows = rows.slice(-Math.max(1, Number(count)));
+  }
+  if (!selectedRows.length) selectedRows = rows.slice(-Math.max(1, Number(count) || rows.length));
+  const first = selectedRows[0];
+  const last = selectedRows[selectedRows.length - 1];
+  const highRow = selectedRows.reduce((winner, row) => (Number(row.high) > Number(winner.high) ? row : winner), selectedRows[0]);
+  const lowRow = selectedRows.reduce((winner, row) => (Number(row.low) < Number(winner.low) ? row : winner), selectedRows[0]);
+  return {
+    count: selectedRows.length,
+    start_date: first.date,
+    end_date: last.date,
+    start_price: first.close,
+    end_price: last.close,
+    return: percentDiff(last.close, first.close),
+    high: highRow.high,
+    high_date: highRow.date,
+    low: lowRow.low,
+    low_date: lowRow.date,
+    drawdown_from_high: percentDiff(last.close, highRow.high),
+    rebound_from_low: percentDiff(last.close, lowRow.low),
+  };
+}
+
+function buildStockRangeSelection({ stockRange, customRangeDays, dateRangeDraft, company = {}, rangeWindows = {}, history = [] }) {
+  const presetDays = {
+    "5d": 5,
+    "20d": 20,
+    "60d": 60,
+    "120d": 120,
+  };
+  if (stockRange === "custom") {
+    const count = Math.max(1, Math.min(Number(customRangeDays) || 1, history.length || 240));
+    const range = calculateStockRangeFromHistory(history, { count });
+    const returnKey = nearestStockReturnKey(count);
+    return {
+      key: `custom-${count}d`,
+      returnKey,
+      label: `${count}거래일`,
+      count,
+      range,
+    };
+  }
+  if (stockRange === "dates") {
+    const start = dateRangeDraft?.start || "";
+    const end = dateRangeDraft?.end || "";
+    const range = calculateStockRangeFromHistory(history, { start, end });
+    const count = range.count || history.length || 60;
+    const rangeLabel = start || end
+      ? `${formatStockDate(range.start_date || start)}~${formatStockDate(range.end_date || end)}`
+      : "전체 수집기간";
+    return {
+      key: "date-range",
+      returnKey: nearestStockReturnKey(count),
+      label: rangeLabel,
+      count,
+      range,
+    };
+  }
+  const count = presetDays[stockRange] || 60;
+  const returnKey = stockRange || nearestStockReturnKey(count);
+  const calculated = calculateStockRangeFromHistory(history, { count });
+  const range = {
+    ...calculated,
+    ...(rangeWindows[returnKey] || {}),
+  };
+  if (range.return === undefined && company.returns?.[returnKey] !== undefined) {
+    range.return = company.returns[returnKey];
+  }
+  return {
+    key: returnKey,
+    returnKey,
+    label: `${count}거래일`,
+    count,
+    range,
+  };
+}
+
+function averagePeerReturnByPeriod(peerGroups = [], key = "20d", count = 20) {
   const values = peerGroups
     .flatMap((group) => group.stocks || [])
-    .map((stock) => Number(stock.returns?.[key]))
+    .map((stock) => stockReturnForPeriod(stock, key, count))
     .filter((value) => Number.isFinite(value));
   if (!values.length) return null;
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
 }
 
-function indexReturnByPeriod(indices = [], code = "KOSPI", key = "20d") {
+function indexReturnByPeriod(indices = [], code = "KOSPI", key = "20d", count = 20) {
   const row = indices.find((item) => String(item.code || "").toUpperCase() === code);
   const value = Number(row?.returns?.[key]);
-  return Number.isFinite(value) ? value : null;
+  if (Number.isFinite(value)) return value;
+  const fallback = Number(row?.returns?.[nearestStockReturnKey(count)]);
+  return Number.isFinite(fallback) ? fallback : null;
 }
 
 function sliceStockTrend(rows = [], rangeKey = "60d") {
-  const count = Number(String(rangeKey).replace(/[^\d]/g, ""));
+  const count = typeof rangeKey === "number" ? rangeKey : Number(String(rangeKey).replace(/[^\d]/g, ""));
   if (!count || rows.length <= count) return rows;
   return rows.slice(-count);
 }
