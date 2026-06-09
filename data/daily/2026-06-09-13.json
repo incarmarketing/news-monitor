@@ -1,6 +1,6 @@
 {
   "date": "2026-06-09",
-  "timestamp": "2026-06-09T13:29:34.153255+09:00",
+  "timestamp": "2026-06-09T13:35:06.795468+09:00",
   "window": {
     "slot": "13",
     "label": "당일 08:00~13:00",
@@ -9,12 +9,12 @@
     "end": "2026-06-09T13:00:00+09:00"
   },
   "metrics": {
-    "total_collected": 42,
-    "total_after_cluster": 34,
+    "total_collected": 41,
+    "total_after_cluster": 33,
     "by_category": {
       "own": 3,
       "regulation": 0,
-      "competitor": 34,
+      "competitor": 33,
       "industry": 5,
       "other": 0
     },
@@ -22,7 +22,7 @@
       "negative": 0,
       "caution": 0,
       "positive": 0,
-      "neutral": 42
+      "neutral": 41
     },
     "own_negative": 0,
     "own_total": 3,
@@ -34,9 +34,9 @@
     },
     "risk_level": "LOW",
     "ai_usage_metadata": {
-      "prompt_token_count": 4868,
-      "candidates_token_count": 178,
-      "total_token_count": 7124
+      "prompt_token_count": 4886,
+      "candidates_token_count": 172,
+      "total_token_count": 7335
     },
     "ai_response_model_version": "",
     "ai_model_used": "gemini-2.5-pro",
@@ -44,7 +44,7 @@
     "ai_fallback_used": false,
     "ai_quota_exhausted": false
   },
-  "briefing": "## 최종 결론\n당사 직접 부정 이슈 없이 중립 보도 3건이 확인되었습니다.\n\n## 핵심 이슈\n- [1] 당사 주가 VI 발동: 주가 변동성에 따른 사실 보도.\n- [6] 70억 원 규모 자사주 취득: 주주가치 제고 목적의 공시성 보도.\n\n## 지표 해석\n금일 수집된 기사 중 당사 관련 보도는 3건이며, 모두 주가 변동 및 자사주 취득 관련 중립 기사입니다. 부정 이슈는 없었으며, 손해보험사 브랜드 평판 및 신상품 출시 등 업계 동향이 다수 보도되었습니다.\n\n## 분석 키워드\n인카금융서비스, 손해보험, 생명보험, 현대해상 브랜드평판",
+  "briefing": "## 최종 결론\n당사 직접 부정 이슈 없이 중립 보도 3건이 확인되었습니다.\n\n## 핵심 이슈\n- [1] 당사 주가 VI 발동: 주가 변동성에 따른 사실 보도.\n- [6] 70억 원 자사주 취득 계약: 주주가치 제고 관련 중립 보도.\n\n## 지표 해석\n전체 41건 중 33건을 분석했으며, 당사 관련 보도는 주가 변동 및 자사주 취득 관련 중립 기사 3건입니다. 경쟁 및 업계 동향 관련 기사가 다수 발생했으나, 당사 리스크는 없습니다.\n\n## 분석 키워드\n인카금융서비스, 손해보험, 생명보험, 현대해상 브랜드평판",
   "articles": [
     {
       "title": "인카금융서비스, +7.46% VI 발동 - 조선비즈 - Chosunbiz",
@@ -467,20 +467,6 @@
       "_cluster_size": 1
     },
     {
-      "title": "교보생명, 문화·예술 융합형 '시네 라이프' 개최",
-      "link": "https://www.cnbnews.com/news/articleView.html?idxno=1003975",
-      "source": "CNB뉴스",
-      "keyword": "생명보험",
-      "description": "대형 생명보험사인 교보생명이 영화와 클래식을 결합한 문화 콘텐츠를 매개로 전국 단위의 고객 접점을 넓히는 것은 보험업의 본질을 인간 존중과 문화적 가치로 확장해 장기 고객층과의 정서적 유대를 공고히 하기...",
-      "_summary": "대형 생명보험사인 교보생명이 영화와 클래식을 결합한 문화 콘텐츠를 매개로 전국 단위의 고객 접점을 넓히는 것은 보험업의 본질을 인간 존중과 문화적 가치로 확장해 장기 고객층과의 정서적 유대를 공고히 하기. 교보생명, 문화·예술 융합형 '시네 라이프' 개최.",
-      "pub_date": "Tue, 09 Jun 2026 10:36:00 +0900",
-      "_report_id": 31,
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
-      "_cluster_size": 1
-    },
-    {
       "title": "에이플러스에셋, 'GA 명장' 40% 증가…인증률 업계 최고",
       "link": "https://www.fetv.co.kr/news/articleView.html?idxno=303921",
       "source": "fetv.co.kr",
@@ -488,7 +474,7 @@
       "description": "초대형 법인보험대리점(GA) 에이플러스에셋의 'GA 명장' 수가 최근 1년 새 40% 이상 증가한 것으로 나타났다. 9일 한국보험대리점협회(보험GA협회)와 에이플러스에셋에 따르면 에이플러스에셋의 올해 GA 명장 수는...",
       "_summary": "초대형 법인보험대리점(GA) 에이플러스에셋의 'GA 명장' 수가 최근 1년 새 40% 이상 증가한 것으로 나타났다 9일 한국보험대리점협회(보험GA협회)와 에이플러스에셋에 따르면 에이플러스에셋의 올해 GA 명장 수는. 에이플러스에셋, 'GA 명장' 40% 증가…인증률 업계 최고.",
       "pub_date": "Tue, 09 Jun 2026 10:52:00 +0900",
-      "_report_id": 32,
+      "_report_id": 31,
       "_score": 8,
       "_category": "industry",
       "_tone": "neutral",
@@ -502,7 +488,7 @@
       "description": "그 결과 한화생명금융서비스에서 활동하는 외국인 설계사는 지난해 말 1451명에서 현재 1681명으로 약 16% 늘었고, 외국인 보험 가입 건수도 2023년 약 2만 8000건에서 지난해 7만 3000건으로 매년 50% 이상 증가하고 있다....",
       "_summary": "그 결과 한화생명금융서비스에서 활동하는 외국인 설계사는 지난해 말 1451명에서 현재 1681명으로 약 16% 늘었고, 외국인 보험 가입 건수도 2023년 약 2만 8000건에서 지난해 7만 3000건으로 매년 50% 이상 증가하고 있다 AI 사용한 FP, 판매실적 40% 이상 높아.",
       "pub_date": "Tue, 09 Jun 2026 12:52:00 +0900",
-      "_report_id": 33,
+      "_report_id": 32,
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
@@ -516,7 +502,7 @@
       "description": "캐시 우드는 오는 10일 한화생명, 한화생명금융서비스, 한화손해보험, 한화투자증권, 한화자산운용 등 한화 금융계열사 공동 브랜드 채널인 'PLUS TV'에 출연해 한국 증시와 미래 투자 트렌드를 주제로 대담을 진행할...",
       "_summary": "캐시 우드는 오는 10일 한화생명, 한화생명금융서비스, 한화손해보험, 한화투자증권, 한화자산운용 등 한화 금융계열사 공동 브랜드 채널인 'PLUS TV'에 출연해 한국 증시와 미래 투자 트렌드를 주제로 대담을 진행할. '돈나무 누나' 캐시우드 방한…한화금융 계열사와 한국 증시 미래 논한.",
       "pub_date": "Tue, 09 Jun 2026 10:48:00 +0900",
-      "_report_id": 34,
+      "_report_id": 33,
       "_score": 4,
       "_category": "industry",
       "_tone": "neutral",
