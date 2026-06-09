@@ -1278,8 +1278,6 @@ function StockMarketDashboard({ stockMarket }) {
   const nxtMarket = company.nxt_market || {};
   const integratedMarket = company.integrated_market || {};
   const priceGap = company.price_gap || {};
-  const activeMarketLabel = company.latest?.source_market === "nxt" ? "NXT 관찰가" : "KRX 관찰가";
-  const tradedAt = company.latest?.traded_at || regularMarket.traded_at || nxtMarket.traded_at || "";
   const rangeWindows = company.range_windows || {};
   const stockHistory = normalizeStockHistory(company.history || []);
   const historyBounds = getStockHistoryBounds(stockHistory);
@@ -1310,7 +1308,15 @@ function StockMarketDashboard({ stockMarket }) {
     activeRange.end_date,
     activeRangeSelection.returnKey,
   );
-  const activeKospiReturn = indexReturnByPeriod(indices, "KOSPI", activeRangeKey, activeRangeSelection.count, activeRangeSelection.returnKey);
+  const activeKospiReturn = indexReturnByPeriod(
+    indices,
+    "KOSPI",
+    activeRangeKey,
+    activeRangeSelection.count,
+    activeRange.start_date,
+    activeRange.end_date,
+    activeRangeSelection.returnKey,
+  );
 
   return (
     <main className="workspace">
@@ -1337,29 +1343,6 @@ function StockMarketDashboard({ stockMarket }) {
         </section>
       ) : (
         <>
-          <section className="stock-command-center">
-            <div className="stock-command-main">
-              <span className="live-label"><span /> STOCK MARKET BRIEFING</span>
-              <h2>{buildStockRangeHeadline(company, summary, activeRange, activeRangeLabel)}</h2>
-              <p>
-                {formatStockTimestamp(tradedAt, stockMarket?.as_of || company.latest?.date)} 기준 ·
-                {stockMarket?.source || "Naver Finance realtime/chart data"}
-              </p>
-              <div className="stock-commentary">
-                {buildStockRangeFacts(company, summary, activeRange, activeRangeLabel, activePeerReturn, activeKospiReturn).map((line) => <span key={line}>{line}</span>)}
-              </div>
-            </div>
-            <div className={`stock-price-board ${stockToneClass(company.latest?.change_rate)}`}>
-              <div className="stock-price-board-top">
-                <span>{activeMarketLabel}</span>
-                <em>{formatMarketStatus(company.latest?.market_status || regularMarket.status || nxtMarket.status)}</em>
-              </div>
-              <b>{formatStockPrice(company.latest?.price)}</b>
-              <strong>{formatSignedNumber(company.latest?.change)} · {formatStockPercent(company.latest?.change_rate)}</strong>
-              <small>통합 거래량 {formatStockVolume(integratedMarket.volume || company.latest?.volume)}</small>
-            </div>
-          </section>
-
           <section className="stock-source-grid">
             <StockSourceTile
               label="KRX 정규장"
@@ -1716,9 +1699,9 @@ function StockPeerTable({
         <thead>
           <tr>
             <th>종목</th>
-            <th>KRX</th>
-            <th>NXT</th>
-            <th>NXT 차이</th>
+            <th>시작가</th>
+            <th>종료가</th>
+            <th>기간등락</th>
             <th>1일</th>
             <th>{rangeLabel}</th>
             <th>고점대비</th>
@@ -1726,16 +1709,18 @@ function StockPeerTable({
         </thead>
         <tbody>
           {rows.map((row) => {
-            const selectedReturn = stockReturnForPeriod(row, rangeKey, rangeCount, rangeStart, rangeEnd, fallbackKey);
+            const selectedRange = stockRangeForPeriod(row, rangeKey, rangeCount, rangeStart, rangeEnd, fallbackKey);
+            const selectedReturn = selectedRange.return;
+            const periodChange = safeNumberDiff(selectedRange.end_price, selectedRange.start_price);
             return (
               <tr key={row.code}>
                 <td><b>{row.name}</b><span>{row.code}</span></td>
-                <td>{formatStockPrice(row.regular_market?.price || row.latest?.price)}</td>
-                <td>{row.nxt_market?.available ? formatStockPrice(row.nxt_market?.price) : "-"}</td>
-                <td className={stockToneClass(row.price_gap?.price)}>{row.price_gap?.available ? `${formatSignedNumber(row.price_gap?.price)}원` : "-"}</td>
+                <td>{formatStockPrice(selectedRange.start_price)}</td>
+                <td>{formatStockPrice(selectedRange.end_price)}</td>
+                <td className={stockToneClass(periodChange)}>{Number.isFinite(periodChange) ? `${formatSignedNumber(periodChange)}원` : "-"}</td>
                 <td className={stockToneClass(row.returns?.["1d"])}>{formatStockPercent(row.returns?.["1d"])}</td>
                 <td className={stockToneClass(selectedReturn)}>{formatStockPercent(selectedReturn)}</td>
-                <td className={stockToneClass(row.range?.drawdown_from_60d_high)}>{formatStockPercent(row.range?.drawdown_from_60d_high)}</td>
+                <td className={stockToneClass(selectedRange.drawdown_from_high)}>{formatStockPercent(selectedRange.drawdown_from_high)}</td>
               </tr>
             );
           })}
@@ -2770,27 +2755,6 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
       </section>
     </main>
   );
-}
-
-function buildStockRangeHeadline(company = {}, summary = {}, range = {}, rangeLabel = "선택 기간") {
-  const selectedReturn = Number(range.return);
-  const drawdown = Number(range.drawdown_from_high);
-  if (Number.isFinite(drawdown) && drawdown <= -25) return `${rangeLabel} 고점 대비 낙폭이 큰 구간입니다.`;
-  if (Number.isFinite(selectedReturn) && selectedReturn <= -10) return `${rangeLabel} 기준 당사 주가 약세가 두드러집니다.`;
-  if (Number.isFinite(selectedReturn) && selectedReturn >= 5) return `${rangeLabel} 기준 반등 흐름이 관찰됩니다.`;
-  return summary.headline || "당사 주가와 업종 흐름을 함께 관찰합니다.";
-}
-
-function buildStockRangeFacts(company = {}, summary = {}, range = {}, rangeLabel = "선택 기간", peerReturn = null, kospiReturn = null) {
-  const selectedReturn = range.return ?? company.returns?.["20d"];
-  const peerGap = safeNumberDiff(selectedReturn, peerReturn);
-  const kospiGap = safeNumberDiff(selectedReturn, kospiReturn);
-  return [
-    `${rangeLabel} 수익률은 ${formatStockPercent(selectedReturn)}입니다.`,
-    `기간 고점은 ${formatStockDate(range.high_date)} ${formatStockPrice(range.high)}원이며, 현재 고점 대비 ${formatStockPercent(range.drawdown_from_high)}입니다.`,
-    `기간 저점은 ${formatStockDate(range.low_date)} ${formatStockPrice(range.low)}원이며, 저점 대비 ${formatStockPercent(range.rebound_from_low)}입니다.`,
-    `동종 평균 대비 ${formatStockPercent(peerGap)}, KOSPI 대비 ${formatStockPercent(kospiGap)} 차이입니다.`,
-  ];
 }
 
 function buildStockMarketJudgement(company = {}, summary = {}, range = {}) {
@@ -8559,6 +8523,30 @@ function stockReturnForPeriod(stock = {}, key = "20d", count = 20, start = "", e
   return Number.isFinite(fallback) ? fallback : null;
 }
 
+function stockRangeForPeriod(stock = {}, key = "20d", count = 20, start = "", end = "", fallbackKey = "") {
+  const history = normalizeStockHistory(stock.history || []);
+  if (history.length) {
+    const range = key === "date-range"
+      ? calculateStockRangeFromHistory(history, { start, end })
+      : calculateStockRangeFromHistory(history, { count });
+    if (Number.isFinite(Number(range.end_price))) {
+      return range;
+    }
+  }
+
+  const endPrice = Number(stock.regular_market?.price ?? stock.latest?.price ?? stock.nxt_market?.price);
+  const selectedReturn = stockReturnForPeriod(stock, key, count, start, end, fallbackKey);
+  const startPrice = Number.isFinite(endPrice) && Number.isFinite(Number(selectedReturn))
+    ? Number((endPrice / (1 + (Number(selectedReturn) / 100))).toFixed(2))
+    : null;
+  return {
+    start_price: startPrice,
+    end_price: Number.isFinite(endPrice) ? endPrice : null,
+    return: selectedReturn,
+    drawdown_from_high: stock.range?.drawdown_from_60d_high ?? null,
+  };
+}
+
 function calculateStockRangeFromHistory(history = [], { count, start, end } = {}) {
   const rows = normalizeStockHistory(history);
   if (!rows.length) return {};
@@ -8652,8 +8640,15 @@ function averagePeerReturnByPeriod(peerGroups = [], key = "20d", count = 20, sta
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
 }
 
-function indexReturnByPeriod(indices = [], code = "KOSPI", key = "20d", count = 20, fallbackKey = "") {
+function indexReturnByPeriod(indices = [], code = "KOSPI", key = "20d", count = 20, start = "", end = "", fallbackKey = "") {
   const row = indices.find((item) => String(item.code || "").toUpperCase() === code);
+  const history = normalizeStockHistory(row?.history || []);
+  if (history.length) {
+    const range = key === "date-range"
+      ? calculateStockRangeFromHistory(history, { start, end })
+      : calculateStockRangeFromHistory(history, { count });
+    if (Number.isFinite(Number(range.return))) return range.return;
+  }
   const value = Number(row?.returns?.[key]);
   if (Number.isFinite(value)) return value;
   const fallback = Number(row?.returns?.[fallbackKey || nearestStockReturnKey(count)]);
