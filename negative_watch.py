@@ -203,8 +203,7 @@ def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
     negatives = [
         article
         for article in analyzed
-        if article.get("_category") == "own" and article.get("_tone") == "negative"
-        and not analyzer.is_relief_support_article(article)
+        if analyzer.is_direct_own_negative_article(article)
     ]
     negatives.sort(key=lambda item: item.get("_score", 0), reverse=True)
     return negatives, metrics
@@ -231,6 +230,7 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
                 "_score": row.get("score", 0),
                 "_cluster_size": row.get("cluster_size", 1),
                 "_watch_source": "db",
+                "_ai_context": (row.get("raw") or {}).get("_ai_context") or (row.get("raw") or {}).get("ai_context") or {},
             }
         )
     return articles
@@ -503,8 +503,10 @@ def main() -> None:
         db_negatives = [
             article
             for article in db_negatives
-            if article.get("_category") == "own" and article.get("_tone") == "negative"
+            if analyzer.is_direct_own_negative_article(article)
         ]
+    else:
+        db_negatives = [article for article in db_negatives if analyzer.is_direct_own_negative_article(article)]
     if db_negatives:
         metrics["own_total"] = max(metrics.get("own_total", 0), len(db_negatives))
 

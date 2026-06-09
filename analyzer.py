@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import difflib
+import json
 import re
 from collections import Counter
 
@@ -177,11 +178,38 @@ CATEGORIES = {
 }
 KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
 
+AI_CONTEXT_CATEGORIES = {"own", "regulation", "competitor", "industry", "other", "exclude"}
+AI_CONTEXT_TONES = {"positive", "neutral", "caution", "negative", "exclude"}
+AI_NEGATIVE_TARGETS = {"own", "industry", "competitor", "policy", "none"}
+
+
+def ai_context_budget() -> int:
+    """Limit per-run AI classification calls so scheduled jobs stay predictable."""
+    try:
+        return max(0, int(__import__("os").getenv("AI_CONTEXT_MAX_ARTICLES", "35")))
+    except ValueError:
+        return 35
+
+
+def ai_context_enabled() -> bool:
+    value = __import__("os").getenv("AI_CONTEXT_CLASSIFICATION", "auto").strip().lower()
+    if value in {"0", "false", "no", "off", "rules"}:
+        return False
+    if value in {"1", "true", "yes", "on", "auto", "gemini"}:
+        return bool(__import__("os").getenv("GEMINI_API_KEY", "").strip())
+    return False
+
 
 def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
+    remaining_ai_reviews = ai_context_budget() if ai_context_enabled() else 0
     for article in articles:
         article["_category"] = categorize(article)
         article["_tone"] = analyze_tone(article)
+        if remaining_ai_reviews and should_ai_context_review(article):
+            remaining_ai_reviews -= 1
+            apply_ai_context_classification(article)
+        else:
+            apply_context_safety_guardrails(article)
         article["_score"] = score_article(article)
         article["_summary"] = build_quality_summary(article)
 
@@ -189,6 +217,254 @@ def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
     clustered = cluster_articles(articles[:top_n])
     clustered.sort(key=lambda x: x.get("_score", 0), reverse=True)
     return clustered, build_metrics(articles, clustered)
+
+
+def article_context_text(article: dict, limit: int = 1800) -> str:
+    parts = [
+        article.get("title", ""),
+        article.get("description", ""),
+        article.get("summary", ""),
+        article.get("_summary", ""),
+        article.get("keyword", ""),
+        article.get("source", ""),
+    ]
+    text = re.sub(r"\s+", " ", " ".join(str(part or "") for part in parts)).strip()
+    return text[:limit]
+
+
+def should_ai_context_review(article: dict) -> bool:
+    """Send only decision-sensitive articles to Gemini.
+
+    Rule-based collection still gathers candidates, but final tone/category for
+    company-sensitive items should come from contextual analysis.
+    """
+    if article.get("_feedback_applied"):
+        return False
+    if is_non_business_noise(article):
+        return False
+    category = article.get("_category") or categorize(article)
+    tone = article.get("_tone") or analyze_tone(article)
+    text = article_context_text(article)
+    if is_own_article(article):
+        return True
+    if category in {"regulation", "competitor", "industry"} and tone in {"negative", "caution", "positive"}:
+        return True
+    if any(word in text for word in SEVERE_NEGATIVE_WORDS + CAUTION_WORDS + RISK_CONTEXT_WORDS):
+        return has_material_business_context(text)
+    return False
+
+
+def build_ai_context_prompt(article: dict) -> str:
+    title = str(article.get("title", "") or "").strip()
+    source = str(article.get("source", "") or "").strip()
+    keyword = str(article.get("keyword", "") or "").strip()
+    category = article.get("_category") or categorize(article)
+    tone = article.get("_tone") or analyze_tone(article)
+    body = article_context_text(article)
+    return f"""
+당신은 인카금융서비스 언론 모니터링의 기사 문맥 분류 담당자입니다.
+아래 기사 1건을 읽고, 반드시 JSON 하나만 반환하세요.
+
+중요 원칙:
+- 인카금융서비스가 직접 언급되지 않은 기사는 당사 긍정 또는 당사 부정으로 분류하지 않습니다.
+- 부정 키워드가 있어도 기사에서 비판, 의혹, 제재, 피해, 위반의 대상이 인카금융서비스가 아니면 당사 부정이 아닙니다.
+- 업계 규제, 보험사기, 소비자 피해, 법안, 감독 동향은 당사 직접 언급이 없으면 보통 주의 또는 중립입니다.
+- 전세사기 피해 지원, 기부, 사회공헌, 보호, ESG 지원은 부정이 아닙니다.
+- 당사 주가 하락, 목표가 하향, 정착지원금 증가, 업계 과열 속 명단 언급은 부정이 아니라 주의입니다.
+- 당사 성과, 수상, 우수인증설계사, 브랜드평판, 실적 개선처럼 당사에 우호적인 보도만 긍정입니다.
+- 당사 부정은 인카금융서비스가 기사에서 직접 비판/조사/제재/불완전판매/소비자 피해/불법 의혹의 대상으로 지목된 경우만 가능합니다.
+- 근거 문장이 없으면 negative로 판정하지 마세요.
+
+허용값:
+category: own | regulation | competitor | industry | other | exclude
+tone: positive | neutral | caution | negative | exclude
+negative_target: own | industry | competitor | policy | none
+
+반환 JSON 형식:
+{{
+  "category": "own",
+  "tone": "caution",
+  "own_mentioned": true,
+  "negative_target": "none",
+  "evidence": "기사에서 판정 근거가 되는 짧은 원문 문장",
+  "reason": "짧은 판단 사유",
+  "confidence": 0.82
+}}
+
+기사:
+- 제목: {title}
+- 출처: {source}
+- 검색 키워드: {keyword}
+- 기존 룰 분류: {category}/{tone}
+- 본문/요약: {body}
+""".strip()
+
+
+def apply_ai_context_classification(article: dict) -> bool:
+    prompt = build_ai_context_prompt(article)
+    try:
+        from ai_fallback import generate_gemini_text
+    except Exception:
+        apply_context_safety_guardrails(article)
+        return False
+
+    text, provider = generate_gemini_text(
+        prompt,
+        max_tokens=900,
+        temperature=0.0,
+        purpose="article_context_classification",
+    )
+    context = parse_ai_context_response(text)
+    if not context:
+        apply_context_safety_guardrails(article)
+        return False
+    context["provider"] = provider
+    article["_ai_context"] = apply_context_safety_guardrails(article, context)
+    return True
+
+
+def parse_ai_context_response(text: object) -> dict:
+    raw = str(text or "").strip()
+    if not raw:
+        return {}
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.I | re.S).strip()
+    match = re.search(r"\{.*\}", raw, flags=re.S)
+    if match:
+        raw = match.group(0)
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def normalize_ai_context_category(value: object) -> str:
+    text = str(value or "").strip().lower()
+    mapped = {
+        "company": "own",
+        "incar": "own",
+        "policy": "regulation",
+        "ga": "competitor",
+        "market": "industry",
+        "noise": "exclude",
+    }.get(text, text)
+    return mapped if mapped in AI_CONTEXT_CATEGORIES else ""
+
+
+def normalize_ai_context_tone(value: object) -> str:
+    text = str(value or "").strip().lower()
+    mapped = {
+        "warning": "caution",
+        "risk": "caution",
+        "high": "negative",
+        "noise": "exclude",
+    }.get(text, text)
+    return mapped if mapped in AI_CONTEXT_TONES else ""
+
+
+def normalize_ai_negative_target(value: object) -> str:
+    text = str(value or "").strip().lower()
+    mapped = {
+        "company": "own",
+        "incar": "own",
+        "regulation": "policy",
+        "policy/regulation": "policy",
+        "ga": "industry",
+        "market": "industry",
+        "": "none",
+    }.get(text, text)
+    return mapped if mapped in AI_NEGATIVE_TARGETS else "none"
+
+
+def normalized_ai_context(article: dict, context: dict | None = None) -> dict:
+    context = context if isinstance(context, dict) else article.get("_ai_context")
+    context = context if isinstance(context, dict) else article.get("ai_context")
+    context = context if isinstance(context, dict) else {}
+    category = normalize_ai_context_category(context.get("category")) or article.get("_category") or categorize(article)
+    tone = normalize_ai_context_tone(context.get("tone")) or article.get("_tone") or analyze_tone(article)
+    own_mentioned = bool(context.get("own_mentioned")) or is_own_article(article)
+    negative_target = normalize_ai_negative_target(context.get("negative_target"))
+    evidence = str(context.get("evidence") or "").strip()
+    reason = str(context.get("reason") or "").strip()
+    try:
+        confidence = float(context.get("confidence", 0) or 0)
+    except (TypeError, ValueError):
+        confidence = 0
+    return {
+        "category": category,
+        "tone": tone,
+        "own_mentioned": own_mentioned,
+        "negative_target": negative_target,
+        "evidence": evidence,
+        "reason": reason,
+        "confidence": round(max(0.0, min(confidence, 1.0)), 3),
+        "provider": context.get("provider", ""),
+    }
+
+
+def apply_context_safety_guardrails(article: dict, context: dict | None = None) -> dict:
+    """Apply non-negotiable company-risk rules after rules or AI classification."""
+    result = normalized_ai_context(article, context)
+    rule_category = article.get("_category") or categorize(article)
+    rule_tone = article.get("_tone") or analyze_tone(article)
+
+    if is_own_article(article):
+        result["own_mentioned"] = True
+        if result["category"] in {"other", "exclude"}:
+            result["category"] = "own"
+
+    if is_non_business_noise(article):
+        result["category"] = "other"
+        result["tone"] = "neutral"
+        result["negative_target"] = "none"
+
+    if is_relief_support_article(article):
+        result["tone"] = "positive" if is_own_positive_focus_article(article) else "neutral"
+        result["negative_target"] = "none"
+
+    if is_investment_downgrade_article(article) or is_stock_decline_article(article) or is_settlement_support_caution_article(article):
+        result["tone"] = "caution"
+        if result["negative_target"] == "own":
+            result["negative_target"] = "none"
+
+    if result["tone"] == "positive" and result["category"] != "own":
+        result["tone"] = "neutral"
+    if result["tone"] == "positive" and result["category"] == "own" and not is_own_positive_focus_article(article):
+        result["tone"] = "neutral" if rule_tone != "caution" else "caution"
+
+    direct_own_negative = (
+        result["category"] == "own"
+        and result["tone"] == "negative"
+        and result["own_mentioned"]
+        and result["negative_target"] == "own"
+        and bool(result["evidence"])
+    )
+    if result["tone"] == "negative" and not direct_own_negative:
+        if result["category"] in {"regulation", "competitor", "industry", "own"} or result["negative_target"] in {"industry", "competitor", "policy"}:
+            result["tone"] = "caution"
+        else:
+            result["tone"] = "neutral"
+
+    if result["category"] == "own" and not result["own_mentioned"]:
+        result["category"] = rule_category if rule_category != "own" else "industry"
+
+    article["_category"] = result["category"]
+    article["_tone"] = result["tone"]
+    article["category"] = result["category"]
+    article["tone"] = result["tone"]
+    article["_ai_context"] = result
+    return result
+
+
+def is_direct_own_negative_article(article: dict) -> bool:
+    context = apply_context_safety_guardrails(article, article.get("_ai_context"))
+    return (
+        context.get("category") == "own"
+        and context.get("tone") == "negative"
+        and context.get("own_mentioned") is True
+        and context.get("negative_target") == "own"
+        and bool(context.get("evidence"))
+    )
 
 
 def score_article(article: dict) -> int:

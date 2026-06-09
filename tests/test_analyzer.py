@@ -203,5 +203,99 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertEqual(analyzer.analyze_tone(article), "neutral")
 
 
+class AnalyzerAiContextGuardrailTests(unittest.TestCase):
+    def test_ai_context_non_own_positive_is_downgraded_to_neutral(self) -> None:
+        article = {
+            "title": "경쟁 GA 월 매출 1위 수성",
+            "description": "지에이코리아가 GA 시장에서 매출 1위를 유지했다는 보도입니다.",
+            "keyword_category": "competitor",
+        }
+        article["_category"] = "competitor"
+        article["_tone"] = "positive"
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "competitor",
+                "tone": "positive",
+                "own_mentioned": False,
+                "negative_target": "none",
+                "evidence": "지에이코리아가 매출 1위를 유지했다.",
+            },
+        )
+
+        self.assertEqual(context["category"], "competitor")
+        self.assertEqual(context["tone"], "neutral")
+
+    def test_ai_context_industry_negative_is_caution_not_company_negative(self) -> None:
+        article = {
+            "title": "보험사기 적발 증가, 업계 내부통제 강화 필요",
+            "description": "금융당국은 보험업계 전반의 보험사기 관리 강화를 주문했다.",
+            "keyword_category": "industry",
+        }
+        article["_category"] = "industry"
+        article["_tone"] = "negative"
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "industry",
+                "tone": "negative",
+                "own_mentioned": False,
+                "negative_target": "industry",
+                "evidence": "보험업계 전반의 관리 강화가 필요하다.",
+            },
+        )
+
+        self.assertEqual(context["tone"], "caution")
+        self.assertFalse(analyzer.is_direct_own_negative_article(article))
+
+    def test_ai_context_company_negative_requires_evidence(self) -> None:
+        article = {
+            "title": "인카금융서비스 관련 의혹 제기",
+            "description": "기사 본문에는 구체적 근거가 확인되지 않았다.",
+            "keyword_category": "own",
+        }
+        article["_category"] = "own"
+        article["_tone"] = "negative"
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "",
+            },
+        )
+
+        self.assertEqual(context["tone"], "caution")
+        self.assertFalse(analyzer.is_direct_own_negative_article(article))
+
+    def test_ai_context_direct_company_negative_is_kept(self) -> None:
+        article = {
+            "title": "인카금융서비스 불완전판매 의혹 조사",
+            "description": "금융당국이 인카금융서비스의 불완전판매 의혹을 조사한다는 보도입니다.",
+            "keyword_category": "own",
+        }
+        article["_category"] = "own"
+        article["_tone"] = "negative"
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "금융당국이 인카금융서비스의 불완전판매 의혹을 조사한다.",
+            },
+        )
+
+        self.assertEqual(context["tone"], "negative")
+        self.assertTrue(analyzer.is_direct_own_negative_article(article))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -659,7 +659,7 @@ async function loadOperationalDataFromSupabaseSession() {
       session,
       "news_articles",
       [
-        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
+        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size,raw",
         "order=report_date.desc,score.desc",
       ].join("&"),
       1000,
@@ -817,8 +817,9 @@ function normalizeArticle(row) {
   const publicationSource = row.pub_date || row.pub_date_raw || row.published_at || row.published_date || "";
   const dateSource = publicationSource || row.date || row.report_date || "";
   const showTime = shouldShowArticleTime(row, publicationSource || row.date || row.report_date);
-  const category = normalizeCategory(row.category_label || row.category);
-  const tone = normalizeArticleTone(row, category);
+  const aiContext = normalizeAiContext(row);
+  const category = normalizeCategory(aiContext.category || row.category_label || row.category);
+  const tone = normalizeArticleTone(row, category, aiContext);
   return {
     id: row.article_hash || row.id || row.link || row.title,
     articleHash: row.article_hash || row.articleHash || "",
@@ -834,6 +835,7 @@ function normalizeArticle(row) {
     issueSummary: row.issue_summary || row.issueSummary || "",
     category,
     tone,
+    aiContext,
     riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),
     score: Number(row.score || 0),
     status: row.status || "분석 완료",
@@ -841,10 +843,72 @@ function normalizeArticle(row) {
   };
 }
 
-function normalizeArticleTone(row, category) {
-  const tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
+function normalizeArticleTone(row, category, aiContext = {}) {
+  let tone = normalizeTone(aiContext.tone || row.tone || row.risk_level || row.risk || row.status);
   if (isReliefSupportArticle(row)) return category === "당사" ? "긍정" : "중립";
-  return category !== "당사" && tone === "긍정" ? "중립" : tone;
+  if (category !== "당사" && tone === "긍정") return "중립";
+  if (
+    tone === "부정"
+    && (
+      category !== "당사"
+      || aiContext.negativeTarget && aiContext.negativeTarget !== "own"
+      || aiContext.ownMentioned === false
+      || aiContext.tone && !aiContext.evidence
+    )
+  ) {
+    return category === "당사" ? "주의" : "주의";
+  }
+  return tone;
+}
+
+function normalizeAiContext(row = {}) {
+  const raw = row.raw && typeof row.raw === "object" ? row.raw : {};
+  const context = row.ai_context || row.aiContext || raw._ai_context || raw.ai_context || {};
+  if (!context || typeof context !== "object") return {};
+  return {
+    category: normalizeBackendCategory(context.category),
+    tone: normalizeBackendTone(context.tone),
+    ownMentioned: typeof context.own_mentioned === "boolean" ? context.own_mentioned : undefined,
+    negativeTarget: normalizeNegativeTarget(context.negative_target),
+    evidence: String(context.evidence || "").trim(),
+    reason: String(context.reason || "").trim(),
+    confidence: Number(context.confidence || 0) || 0,
+    provider: context.provider || "",
+  };
+}
+
+function normalizeBackendCategory(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  if (["own", "company", "incar"].includes(text)) return "own";
+  if (["regulation", "policy"].includes(text)) return "regulation";
+  if (["competitor", "ga"].includes(text)) return "competitor";
+  if (["industry", "market"].includes(text)) return "industry";
+  if (["exclude", "noise"].includes(text)) return "other";
+  if (text === "other") return "other";
+  return value;
+}
+
+function normalizeBackendTone(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  if (["negative", "high"].includes(text)) return "negative";
+  if (["caution", "warning", "risk", "medium"].includes(text)) return "caution";
+  if (text === "positive") return "positive";
+  if (text === "neutral") return "neutral";
+  if (["exclude", "noise"].includes(text)) return "exclude";
+  return value;
+}
+
+function normalizeNegativeTarget(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return "";
+  if (["own", "company", "incar"].includes(text)) return "own";
+  if (["industry", "market"].includes(text)) return "industry";
+  if (["competitor", "ga"].includes(text)) return "competitor";
+  if (["policy", "regulation"].includes(text)) return "policy";
+  if (["none", "no", "없음"].includes(text)) return "none";
+  return text;
 }
 
 function isReliefSupportArticle(row = {}) {

@@ -697,7 +697,7 @@ def load_recent_negative_articles(minutes_back: int, limit: int = 20) -> list[di
     query = (
         "news_articles?"
         "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
-        "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status,created_at"
+        "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status,created_at,raw"
         "&category=eq.own"
         "&tone=eq.negative"
         f"&created_at=gte.{quote(since, safe='')}"
