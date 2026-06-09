@@ -191,6 +191,17 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertFalse(analyzer.is_own_positive_focus_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "neutral")
 
+    def test_relief_support_for_fraud_victims_is_not_negative(self) -> None:
+        article = {
+            "title": "생명보험사회공헌위, 전세사기 피해 청년 위해 1억원 지원",
+            "description": "금융취약계층 보호와 사회공헌 활동을 다룬 ESG·소비자보호 보도입니다.",
+            "keyword": "생명보험",
+            "keyword_category": "industry",
+        }
+
+        self.assertTrue(analyzer.is_relief_support_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "neutral")
+
 
 if __name__ == "__main__":
     unittest.main()

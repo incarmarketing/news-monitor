@@ -321,6 +321,8 @@ def analyze_tone(article: dict) -> str:
         return "neutral"
     if is_preventive_security_article(article):
         return "neutral"
+    if is_relief_support_article(article):
+        return "positive" if is_own_article(article) and is_own_positive_focus_article(article) else "neutral"
 
     severe_score = 0
     caution_score = 0
@@ -367,6 +369,8 @@ def should_mark_caution(article: dict, category: str, severe_score: int, caution
     text = article.get("title", "") + " " + article.get("description", "")
     if is_preventive_security_article(article):
         return False
+    if is_relief_support_article(article):
+        return False
     if is_investment_downgrade_article(article) or is_stock_decline_article(article):
         return True
     if is_settlement_support_caution_article(article):
@@ -380,6 +384,26 @@ def should_mark_caution(article: dict, category: str, severe_score: int, caution
     if category in {"competitor", "industry"}:
         return caution_score >= 5 and any(word in text for word in MATERIAL_CAUTION_CONTEXT_WORDS)
     return False
+
+
+def is_relief_support_article(article: dict) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "")
+    relief_target = re.search(
+        r"전세사기|사기\s*피해|피해\s*(?:청년|가구|계층|자|지원|복구)|금융취약계층|취약계층|재난|재해|수해|화재\s*피해|구호|구제",
+        text,
+        re.I,
+    )
+    support_action = re.search(
+        r"지원|후원|기부|성금|사회공헌|구호|구제|보호|돕|나눔|캠페인|협약|ESG",
+        text,
+        re.I,
+    )
+    accusation = re.search(
+        r"혐의|연루|가해|횡령|배임|고발|수사|제재|처분|논란|불법|사칭|피의|압수수색|기관주의|과태료|과징금",
+        text,
+        re.I,
+    )
+    return bool(relief_target and support_action and not accusation)
 
 
 def is_zero_misconduct_positive_article(article: dict) -> bool:

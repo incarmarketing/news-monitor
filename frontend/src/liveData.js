@@ -843,7 +843,16 @@ function normalizeArticle(row) {
 
 function normalizeArticleTone(row, category) {
   const tone = normalizeTone(row.tone || row.risk_level || row.risk || row.status);
+  if (isReliefSupportArticle(row)) return category === "당사" ? "긍정" : "중립";
   return category !== "당사" && tone === "긍정" ? "중립" : tone;
+}
+
+function isReliefSupportArticle(row = {}) {
+  const text = `${row.title || ""} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""}`;
+  const reliefTarget = /전세사기|사기\s*피해|피해\s*(?:청년|가구|계층|자|지원|복구)|금융취약계층|취약계층|재난|재해|수해|화재\s*피해|구호|구제/i.test(text);
+  const supportAction = /지원|후원|기부|성금|사회공헌|구호|구제|보호|돕|나눔|캠페인|협약|ESG/i.test(text);
+  const accusation = /혐의|연루|가해|횡령|배임|고발|수사|제재|처분|논란|불법|사칭|피의|압수수색|기관주의|과태료|과징금/i.test(text);
+  return reliefTarget && supportAction && !accusation;
 }
 
 function isStockListingNoise(row = {}) {

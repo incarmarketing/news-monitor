@@ -204,6 +204,7 @@ def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
         article
         for article in analyzed
         if article.get("_category") == "own" and article.get("_tone") == "negative"
+        and not analyzer.is_relief_support_article(article)
     ]
     negatives.sort(key=lambda item: item.get("_score", 0), reverse=True)
     return negatives, metrics
@@ -240,6 +241,8 @@ def merge_negative_candidates(*groups: list[dict]) -> list[dict]:
     merged: list[dict] = []
     for group in groups:
         for article in group:
+            if analyzer.is_relief_support_article(article):
+                continue
             key = article_key(article)
             if key in seen:
                 continue
