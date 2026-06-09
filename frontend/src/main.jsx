@@ -479,11 +479,12 @@ function Header({ working = false, workLabel = "" }) {
   return (
     <header className="app-header">
       <div className="brand">
-        <div className="brand-mark">IN</div>
-        <div>
-          <strong>인카 언론 모니터링</strong>
-          <span>실시간 기사 · 보고서 · 운영 관리</span>
-        </div>
+        <img
+          className="brand-logo"
+          src={`${import.meta.env.BASE_URL || "./"}assets/incar-signature-blue-ko.png`}
+          alt="인카금융서비스"
+        />
+        <strong>인카 언론 모니터링</strong>
       </div>
       <div className="header-user-area">
         {working && <span className="work-status">작업 중{workLabel ? ` · ${workLabel}` : ""}</span>}

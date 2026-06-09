@@ -76,27 +76,23 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .brand, .user-chip, .header-user-area {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
+.brand-logo {
+  display: block;
+  width: 132px;
+  height: auto;
+  max-height: 38px;
   flex: 0 0 auto;
-  border-radius: 8px;
-  background: var(--slate);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 900;
+  object-fit: contain;
 }
 
 .brand strong, .user-chip b {
   display: block;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.15;
   font-weight: 900;
 }
@@ -6304,7 +6300,18 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     padding: 10px 12px;
   }
 
-  .brand span { white-space: normal; }
+  .brand {
+    gap: 9px;
+  }
+
+  .brand-logo {
+    width: 104px;
+    max-height: 31px;
+  }
+
+  .brand strong {
+    font-size: 14px;
+  }
 
   .side-nav {
     grid-template-columns: repeat(3, minmax(0, 1fr));
