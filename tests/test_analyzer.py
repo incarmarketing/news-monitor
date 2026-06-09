@@ -66,6 +66,36 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertTrue(analyzer.is_preventive_security_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "neutral")
 
+    def test_financial_security_membership_with_past_industry_incident_is_neutral(self) -> None:
+        article = {
+            "title": "금융보안원 가입 GA 대폭 확대된다…'해킹 피해' 예방",
+            "description": (
+                "앞서 지난해 11월 초대형GA 14개사에 한화생명금융서비스, 인카금융서비스, "
+                "지에이코리아 등이 금융보안원에 가입했다. "
+                "이는 지난해부터 이어진 개인정보 유출 사고를 사전에 방지하기 위한 조치다. "
+                "과거 IT업체 해킹 공격으로 일부 GA 개인정보가 유출된 바 있다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "개인정보 유출 사고를 사전에 방지하기 위한 조치다.",
+            },
+        )
+
+        self.assertTrue(analyzer.is_preventive_security_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "neutral")
+        self.assertEqual(context["tone"], "neutral")
+        self.assertEqual(context["negative_target"], "none")
+
     def test_settlement_support_with_direct_violation_stays_negative(self) -> None:
         article = {
             "title": "인카금융서비스 정착지원금 관련 불완전판매 조사 착수",

@@ -422,6 +422,10 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["tone"] = "positive" if is_own_positive_focus_article(article) else "neutral"
         result["negative_target"] = "none"
 
+    if is_preventive_security_article(article):
+        result["tone"] = "neutral"
+        result["negative_target"] = "none"
+
     if is_investment_downgrade_article(article) or is_stock_decline_article(article) or is_settlement_support_caution_article(article):
         result["tone"] = "caution"
         if result["negative_target"] == "own":
@@ -745,6 +749,23 @@ def is_preventive_security_article(article: dict) -> bool:
     has_security_context = any(word in text for word in SECURITY_RISK_WORDS)
     has_preventive_context = any(word in text for word in PREVENTIVE_SECURITY_WORDS)
     has_direct_incident = any(word in text for word in DIRECT_SECURITY_INCIDENT_WORDS)
+    has_financial_security_membership = (
+        "금융보안원" in text
+        and any(word in text for word in ("가입", "회원사", "설명회", "대상 확대", "대폭 확대", "보안 체계", "취약점 점검", "예방"))
+    )
+    own_direct_incident = any(name in text for name in OWN_NAMES) and any(
+        phrase in text
+        for phrase in (
+            "인카금융서비스 개인정보 유출",
+            "인카금융 개인정보 유출",
+            "인카금융서비스 해킹",
+            "인카금융 해킹",
+            "인카금융서비스 침해사고",
+            "인카금융 침해사고",
+        )
+    )
+    if has_financial_security_membership and not own_direct_incident:
+        return True
     return has_security_context and has_preventive_context and not has_direct_incident
 
 
