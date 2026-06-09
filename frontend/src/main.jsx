@@ -8479,7 +8479,9 @@ function selectDashboardKeywords(rows = []) {
     .map((row) => String(row.keyword).trim())
     .filter(Boolean);
   const fallback = keywordGroups.flatMap((group) => group.keywords);
-  return unique(fromData.length ? fromData : fallback).slice(0, 10);
+  const sourceKeywords = unique(fromData.length ? fromData : fallback);
+  const peerKeywords = sourceKeywords.filter((keyword) => !isOwnDashboardKeyword(keyword));
+  return [OWN_DASHBOARD_KEYWORD, ...peerKeywords].slice(0, 10);
 }
 
 function buildKeywordFlow(articles = [], keywords = []) {
@@ -8494,11 +8496,23 @@ function articleMatchesKeyword(article, keyword) {
   const normalizedKeyword = normalizeKeywordText(keyword);
   const articleKeyword = normalizeKeywordText(article.keyword || "");
   if (!normalizedKeyword) return false;
+  if (isOwnDashboardKeyword(keyword)) {
+    const haystack = normalizeKeywordText(`${article.title || ""} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`);
+    return isOwnArticle(article) || OWN_DASHBOARD_KEYWORD_ALIASES.some((alias) => haystack.includes(normalizeKeywordText(alias)));
+  }
   if (articleKeyword === normalizedKeyword) return true;
   const haystack = normalizeKeywordText(`${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`);
   if (haystack.includes(normalizedKeyword)) return true;
   const tokens = normalizedKeyword.split(" ").filter((token) => token.length > 1);
   return tokens.length > 1 && tokens.every((token) => haystack.includes(token));
+}
+
+const OWN_DASHBOARD_KEYWORD = "인카금융서비스";
+const OWN_DASHBOARD_KEYWORD_ALIASES = ["인카금융서비스", "인카금융", "에인카"];
+
+function isOwnDashboardKeyword(keyword = "") {
+  const normalized = normalizeKeywordText(keyword);
+  return OWN_DASHBOARD_KEYWORD_ALIASES.some((alias) => normalized.includes(normalizeKeywordText(alias)));
 }
 
 function normalizeKeywordText(value) {
