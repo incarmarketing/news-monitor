@@ -84,10 +84,10 @@ const navIcons = {
 };
 
 const navSections = [
-  { title: "언론 / PR", ids: ["overview", "monitoring", "media", "regulators", "pressRelease", "scraps", "risk", "reports"] },
-  { title: "공시 · 주가", ids: ["stocks"] },
-  { title: "GA/채널 인텔", ids: ["gaIntel"] },
-  { title: "운영", ids: ["management"] },
+  { title: "언론·PR", ids: ["overview", "monitoring", "media", "regulators", "pressRelease", "scraps", "risk", "reports"] },
+  { title: "시장·공시", ids: ["stocks"] },
+  { title: "GA·채널", ids: ["gaIntel"] },
+  { title: "운영관리", ids: ["management"] },
 ];
 
 const navItemMap = new Map(navItems.map((item) => [item.id, item]));
