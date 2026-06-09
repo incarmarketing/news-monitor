@@ -278,6 +278,36 @@ def persist_negative_articles(articles: list[dict], metrics: dict, scanned_at: s
             raise
 
 
+def alert_state_articles(state: dict, limit: int = 30) -> list[dict]:
+    """Rehydrate already-sent alert rows so legacy alerts also appear in the dashboard."""
+    alerts = state.get("alerts", [])
+    if not isinstance(alerts, list):
+        return []
+    rows: list[dict] = []
+    for alert in alerts[-limit:]:
+        title = str(alert.get("title") or "").strip()
+        link = str(alert.get("link") or "").strip()
+        if not title and not link:
+            continue
+        sent_at = str(alert.get("sent_at") or "").strip()
+        rows.append(
+            {
+                "title": title or "부정기사 감시 알림 기사",
+                "link": link,
+                "source": alert.get("source", ""),
+                "keyword": alert.get("keyword", ""),
+                "pub_date": sent_at,
+                "_summary": "부정기사 감시 알림으로 발송된 기사입니다. 원문 기준으로 사실관계를 확인합니다.",
+                "_category": "own",
+                "_tone": "negative",
+                "_score": 950,
+                "_cluster_size": 1,
+                "_watch_source": "alert_state",
+            }
+        )
+    return rows
+
+
 def compact(text: str, limit: int) -> str:
     cleaned = re.sub(r"\s+", " ", text or "").strip()
     return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
@@ -477,7 +507,7 @@ def main() -> None:
 
     state = load_state()
     sent = set(state.get("sent_keys", []))
-    all_negatives = merge_negative_candidates(db_negatives, negatives)
+    all_negatives = merge_negative_candidates(db_negatives, negatives, alert_state_articles(state))
     persist_negative_articles(all_negatives, metrics, scanned_at, minutes_back)
     new_negatives = [article for article in all_negatives if article_key(article) not in sent]
 

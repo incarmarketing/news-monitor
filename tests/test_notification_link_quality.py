@@ -152,6 +152,27 @@ class NotificationLinkQualityTests(unittest.TestCase):
         self.assertEqual(kwargs["window"]["slot"], "watch")
         self.assertIn("부정기사 감시", kwargs["window"]["label"])
 
+    def test_negative_watch_rehydrates_sent_alert_state_for_dashboard_backfill(self) -> None:
+        state = {
+            "alerts": [
+                {
+                    "sent_at": "2026-06-09T13:10:00+09:00",
+                    "title": "기존 알림 부정기사",
+                    "link": "https://example.com/risk",
+                    "source": "테스트신문",
+                    "keyword": "인카금융서비스",
+                }
+            ]
+        }
+
+        rows = negative_watch.alert_state_articles(state)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["title"], "기존 알림 부정기사")
+        self.assertEqual(rows[0]["_category"], "own")
+        self.assertEqual(rows[0]["_tone"], "negative")
+        self.assertEqual(rows[0]["pub_date"], "2026-06-09T13:10:00+09:00")
+
     def test_infers_legacy_daily_notification_slot_from_cache_buster(self) -> None:
         row = {
             "title": "daily report 2026-05-29",
