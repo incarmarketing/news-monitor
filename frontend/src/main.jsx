@@ -83,6 +83,15 @@ const navIcons = {
   management: Settings,
 };
 
+const navSections = [
+  { title: "언론 / PR", ids: ["overview", "monitoring", "media", "regulators", "pressRelease", "scraps", "risk", "reports"] },
+  { title: "공시 · 주가", ids: ["stocks"] },
+  { title: "GA 경쟁", ids: ["gaIntel"] },
+  { title: "운영", ids: ["management"] },
+];
+
+const navItemMap = new Map(navItems.map((item) => [item.id, item]));
+
 const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
 const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
@@ -417,21 +426,26 @@ function App() {
     <div className="app-shell">
       <Header working={working} workLabel={workLabel} />
       <aside className="side-nav" aria-label="주요 메뉴">
-        <div className="side-title">Menu</div>
-        {navItems.map((item) => {
-          const Icon = navIcons[item.id] || FileText;
-          return (
-            <button
-              type="button"
-              key={item.id}
-              className={activeSection === item.id ? "active" : ""}
-              onClick={() => setActiveSection(item.id)}
-            >
-              <Icon />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+        <div className="side-title">PR Intelligence</div>
+        {navSections.map((section) => (
+          <div className="side-group" key={section.title}>
+            <div className="side-group-title">{section.title}</div>
+            {section.ids.map((id) => navItemMap.get(id)).filter(Boolean).map((item) => {
+              const Icon = navIcons[item.id] || FileText;
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={activeSection === item.id ? "active" : ""}
+                  onClick={() => setActiveSection(item.id)}
+                >
+                  <Icon />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </aside>
       <View
         data={activeSection === "overview" ? realtimeData : data}
@@ -484,7 +498,10 @@ function Header({ working = false, workLabel = "" }) {
           src={`${import.meta.env.BASE_URL || "./"}assets/incar-signature-blue-ko.png`}
           alt="인카금융서비스"
         />
-        <strong>인카 언론 모니터링</strong>
+        <div className="brand-copy">
+          <strong>PR 인텔리전스 센터</strong>
+          <span>언론 · 공시 · 시장 관제</span>
+        </div>
       </div>
       <div className="header-user-area">
         {working && <span className="work-status">작업 중{workLabel ? ` · ${workLabel}` : ""}</span>}
@@ -1028,18 +1045,6 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
         eyebrow="Official Releases"
         title="금융당국 보도자료"
         description="금융감독원·금융위원회 보도자료를 중복 제거 기준으로 모아 정책/규제 이슈만 빠르게 확인합니다."
-        right={(
-          <div className="page-actions">
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases", label: "금융당국 보도자료 갱신" })}
-              disabled={operations?.status === "loading" || isWorking}
-            >
-              <RefreshCw />갱신
-            </button>
-          </div>
-        )}
       />
       <section className="filter-card regulator-filter">
         <label className="wide-filter">
@@ -1067,10 +1072,18 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
             {tones.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
+        <button
+          type="button"
+          className="ghost-button filter-action"
+          onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases", label: "금융당국 보도자료 갱신" })}
+          disabled={operations?.status === "loading" || isWorking}
+        >
+          <RefreshCw />갱신
+        </button>
         <button className="primary-button filter-action" onClick={() => setQuery(queryInput)}>
           조회
         </button>
-        <button className="ghost-button compact-button" onClick={resetFilters}>
+        <button className="ghost-button filter-action" onClick={resetFilters}>
           초기화
         </button>
       </section>
@@ -1612,22 +1625,26 @@ function GACompetitorIntel({ gaIntel }) {
       <section className="ga-revenue-board">
         <div className="ga-section-title">
           <h2><WalletCards />매출 공시 추적</h2>
-          <span>억 원 기준 · 확인값만 표시</span>
+          <span>분기 · 반기 · 연간 확인값 기준</span>
         </div>
-        <div className="ga-revenue-grid">
-          {revenueRows.map((row) => (
-            <article key={row.period} className={`ga-revenue-card ${row.amount ? "confirmed" : "pending"}`}>
-              <span>{row.label}</span>
-              <b>{row.amount ? formatGaRevenue(row.amount) : row.status}</b>
-              <em>{row.sourceLabel}</em>
-              <p>{row.note}</p>
-              {row.sourceUrl ? (
-                <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer">
-                  근거 확인 <ExternalLink />
-                </a>
-              ) : null}
-            </article>
-          ))}
+        <div className="ga-revenue-body">
+          <GARevenueTrendChart rows={revenueRows} />
+          <div className="ga-revenue-ledger">
+            {revenueRows.map((row) => (
+              <article key={row.period} className={row.amount ? "confirmed" : "pending"}>
+                <div>
+                  <span>{row.label}</span>
+                  <b>{row.amount ? formatGaRevenue(row.amount) : row.status}</b>
+                </div>
+                <p>{row.note}</p>
+                {row.sourceUrl ? (
+                  <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer">
+                    근거 확인 <ExternalLink />
+                  </a>
+                ) : <em>{row.sourceLabel}</em>}
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -1704,6 +1721,35 @@ function GAPlannerBarChart({ rows = [], ownShort = "" }) {
   );
 }
 
+function GARevenueTrendChart({ rows = [] }) {
+  const chartRows = rows.map((row) => ({
+    ...row,
+    chartLabel: compactRevenuePeriodLabel(row.label || row.period),
+    amount: row.amount === null || row.amount === undefined ? null : Number(row.amount),
+  }));
+  if (!chartRows.some((row) => Number.isFinite(row.amount))) {
+    return <p className="a4-empty">매출 공시 추적 데이터가 없습니다.</p>;
+  }
+  return (
+    <div className="chart-box ga-revenue-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartRows} margin={{ left: 4, right: 18, top: 18, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="chartLabel" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 800 }} />
+          <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}천억`} />
+          <Tooltip formatter={(value, name, item) => [formatGaRevenue(value), item?.payload?.status || "매출"]} />
+          <Bar dataKey="amount" radius={[8, 8, 0, 0]} barSize={42}>
+            {chartRows.map((row) => (
+              <Cell key={row.period || row.label} fill={row.status === "공시 대기" ? "#e8a33d" : "#2855d9"} />
+            ))}
+            <LabelList dataKey="amount" position="top" formatter={(value) => formatGaRevenue(value)} fill="#0f1f3d" fontSize={11} fontWeight={900} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function GATrendChart({ rows = [] }) {
   if (!rows.length) return <p className="a4-empty">추이 데이터가 없습니다.</p>;
   return (
@@ -1717,12 +1763,14 @@ function GATrendChart({ rows = [] }) {
           <Line type="monotone" dataKey="incaRetention13" stroke="#2855d9" strokeWidth={3} dot={{ r: 3 }} connectNulls />
           <Line type="monotone" dataKey="marketRetention13" stroke="#14805f" strokeWidth={2.4} dot={false} strokeDasharray="5 4" connectNulls />
           <Line type="monotone" dataKey="incaStay" stroke="#b45309" strokeWidth={2.2} dot={false} connectNulls />
+          <Line type="monotone" dataKey="marketStay" stroke="#7c3aed" strokeWidth={2} dot={false} strokeDasharray="3 4" connectNulls />
         </RechartsLineChart>
       </ResponsiveContainer>
       <div className="stock-chart-legend">
         <span className="company">인카 13회 유지율</span>
         <span className="peer">시장 13회 유지율</span>
         <span className="kospi">인카 정착률</span>
+        <span className="market-stay">시장 정착률</span>
       </div>
     </div>
   );
@@ -1789,13 +1837,16 @@ function buildGaCompanyRows(companies = [], labels = []) {
 function buildGaTrendRows(labels = [], company = {}, market = []) {
   return labels.map((period, index) => {
     const marketRow = market[index] || {};
+    const marketRetention13 = Number(marketRow.retention13Life);
+    const marketStay = Number(marketRow.stay);
     return {
       period,
       incaRetention13: latestArrayValue(company.retention13LifeTrend, index),
-      marketRetention13: Number(marketRow.retention13Life),
+      marketRetention13: Number.isFinite(marketRetention13) ? marketRetention13 : null,
       incaStay: latestArrayValue(company.stayTrend, index),
+      marketStay: Number.isFinite(marketStay) ? marketStay : null,
     };
-  }).filter((row) => row.incaRetention13 !== null || row.marketRetention13 !== null || row.incaStay !== null);
+  }).filter((row) => row.incaRetention13 !== null || row.marketRetention13 !== null || row.incaStay !== null || row.marketStay !== null);
 }
 
 function buildGaMarketIndex(ownRow = {}, marketLatest = {}) {
@@ -1846,6 +1897,18 @@ function gaRevenueSortKey(value) {
           : /Q4|4분기/i.test(text) ? 4
             : 9;
   return year * 10 + quarter;
+}
+
+function compactRevenuePeriodLabel(value) {
+  const text = String(value || "");
+  const year = text.match(/20\d{2}/)?.[0]?.slice(2) || text.slice(0, 4);
+  if (/1분기|Q1/i.test(text)) return `${year} 1Q`;
+  if (/2분기|Q2/i.test(text)) return `${year} 2Q`;
+  if (/상반기|H1/i.test(text)) return `${year} H1`;
+  if (/3분기|Q3/i.test(text)) return `${year} 3Q`;
+  if (/4분기|Q4/i.test(text)) return `${year} 4Q`;
+  if (/연간|20\d{2}/.test(text)) return `${year} FY`;
+  return text;
 }
 
 function buildGaConsoleJudgement(ownRow = {}, marketLatest = {}) {

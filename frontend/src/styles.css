@@ -82,11 +82,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .brand-logo {
   display: block;
-  width: 132px;
+  width: 116px;
   height: auto;
-  max-height: 38px;
+  max-height: 34px;
   flex: 0 0 auto;
   object-fit: contain;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid #d9e1ee;
 }
 
 .brand strong, .user-chip b {
@@ -99,11 +107,17 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .brand span, .user-chip span {
   display: block;
-  margin-top: 3px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.brand span {
+  color: #4b5e7c;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .02em;
 }
 
 .period-control {
@@ -246,10 +260,25 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .side-title {
-  padding: 0 10px 8px;
+  padding: 0 10px 12px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 900;
+  text-transform: uppercase;
+}
+
+.side-group + .side-group {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.side-group-title {
+  padding: 0 10px 6px;
+  color: #7b8aa4;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
@@ -2281,6 +2310,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  margin: 14px 0;
 }
 
 .ga-metric-card {
@@ -2344,12 +2374,23 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-width: 0;
 }
 
+.ga-revenue-board {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--surface-glow), var(--shadow-soft);
+}
+
 .ga-section-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .ga-section-title h2 {
@@ -2378,6 +2419,91 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.ga-revenue-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(300px, .7fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ga-revenue-chart {
+  height: 284px;
+  padding: 8px 8px 2px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff 0, #f8fbff 100%);
+}
+
+.ga-revenue-ledger {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ga-revenue-ledger article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line-soft);
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ga-revenue-ledger article.pending {
+  border-left-color: #e8a33d;
+  background: #fffaf0;
+}
+
+.ga-revenue-ledger article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ga-revenue-ledger span,
+.ga-revenue-ledger em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.ga-revenue-ledger b {
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.ga-revenue-ledger p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 800;
+}
+
+.ga-revenue-ledger a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.ga-revenue-ledger a svg {
+  width: 14px;
+  height: 14px;
 }
 
 .ga-revenue-card {
@@ -2443,7 +2569,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ga-dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
-  gap: 10px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .ga-dashboard-grid.secondary {
@@ -3362,6 +3489,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .stock-chart-legend .company::before { background: #2855d9; }
 .stock-chart-legend .peer::before { background: #14805f; }
 .stock-chart-legend .kospi::before { background: #b45309; }
+.stock-chart-legend .market-stay::before { background: #7c3aed; }
 
 .market-index-grid {
   display: grid;
@@ -4053,11 +4181,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .filter-card.regulator-filter {
-  grid-template-columns: minmax(260px, 2fr) repeat(2, minmax(120px, 1fr)) auto auto;
+  grid-template-columns: minmax(260px, 2fr) repeat(2, minmax(120px, 1fr)) repeat(3, 92px);
 }
 
 .filter-card.regulator-filter .wide-filter {
   grid-column: auto;
+}
+
+.filter-card.regulator-filter .primary-button,
+.filter-card.regulator-filter .ghost-button {
+  width: 92px;
+  min-width: 92px;
+  min-height: 38px;
+  padding: 0 10px;
 }
 
 .filter-card.monitoring-filter-card {
@@ -6399,6 +6535,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     overflow: visible;
   }
 
+  .side-group {
+    display: contents;
+  }
+
+  .side-group + .side-group {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .side-group-title {
+    display: none;
+  }
+
   .side-title { display: none; }
 
   .side-nav button {
@@ -6446,6 +6596,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .stock-dashboard-grid,
   .stock-peer-section,
   .ga-hero,
+  .ga-revenue-body,
   .ga-dashboard-grid,
   .ga-dashboard-grid.secondary,
   .press-release-layout,
