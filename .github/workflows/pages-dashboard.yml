@@ -12,6 +12,7 @@ on:
       - "templates/period_report.html"
       - "frontend/**"
       - "dashboard_builder.py"
+      - "negative_watch.py"
       - "publish_report.py"
       - "stock_collector.py"
       - "regulator_collector.py"

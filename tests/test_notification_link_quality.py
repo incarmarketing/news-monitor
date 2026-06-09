@@ -129,6 +129,29 @@ class NotificationLinkQualityTests(unittest.TestCase):
         self.assertNotIn("query", query)
         self.assertNotIn("summary", query)
 
+    def test_negative_watch_persists_detected_articles_for_dashboard(self) -> None:
+        article = {
+            "title": "인카금융서비스 부정 이슈 기사",
+            "link": "https://example.com/company-risk",
+            "_category": "own",
+            "_tone": "negative",
+        }
+
+        with patch("negative_watch.save_dashboard_articles") as save:
+            negative_watch.persist_negative_articles(
+                [article],
+                {"risk_level": "MEDIUM"},
+                "2026-06-09T04:00:00+00:00",
+                5,
+            )
+
+        save.assert_called_once()
+        args, kwargs = save.call_args
+        self.assertEqual(args[0], [article])
+        self.assertEqual(kwargs["report_date"], "2026-06-09")
+        self.assertEqual(kwargs["window"]["slot"], "watch")
+        self.assertIn("부정기사 감시", kwargs["window"]["label"])
+
     def test_infers_legacy_daily_notification_slot_from_cache_buster(self) -> None:
         row = {
             "title": "daily report 2026-05-29",

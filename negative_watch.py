@@ -28,6 +28,7 @@ from supabase_store import (
     load_latest_negative_watch_run,
     load_recent_negative_articles,
     notification_already_sent,
+    save_dashboard_articles,
     save_negative_watch_run,
     save_notification_send,
 )
@@ -140,7 +141,7 @@ def dashboard_refresh_interval_minutes() -> int:
         return 15
 
 
-def dashboard_refresh_due(scanned_at: str, *, new_negative_count: int, status: str) -> bool:
+def dashboard_refresh_due(scanned_at: str, *, negative_count: int, new_negative_count: int, status: str) -> bool:
     mode = os.getenv("NEGATIVE_WATCH_DASHBOARD_REFRESH", "throttled").strip().lower()
     if mode in {"0", "false", "no", "never", "off"} or status in {"skipped", "dry_run"}:
         return False
@@ -150,9 +151,12 @@ def dashboard_refresh_due(scanned_at: str, *, new_negative_count: int, status: s
     last_refresh = parse_datetime(str(state.get("last_refresh_at", "")))
     current = parse_datetime(scanned_at) or datetime.now(timezone.utc)
 
+    interval_due = not last_refresh or (interval > 0 and (current - last_refresh).total_seconds() >= interval * 60)
     should_refresh = mode == "always" or new_negative_count > 0 or status in {"alert_sent", "alert_failed"}
     if not should_refresh and interval > 0:
-        should_refresh = not last_refresh or (current - last_refresh).total_seconds() >= interval * 60
+        should_refresh = interval_due
+    if not should_refresh and negative_count > 0:
+        should_refresh = interval_due
 
     if should_refresh:
         save_dashboard_refresh_state(
@@ -242,6 +246,36 @@ def merge_negative_candidates(*groups: list[dict]) -> list[dict]:
             seen.add(key)
             merged.append(article)
     return merged
+
+
+def build_watch_window(scanned_at: str, minutes_back: int) -> dict:
+    current = parse_datetime(scanned_at) or datetime.now(timezone.utc)
+    start = current - timedelta(minutes=max(1, minutes_back))
+    return {
+        "slot": "watch",
+        "label": f"부정기사 감시 최근 {minutes_back}분",
+        "start": start.isoformat(),
+        "end": current.isoformat(),
+    }
+
+
+def persist_negative_articles(articles: list[dict], metrics: dict, scanned_at: str, minutes_back: int) -> None:
+    """Store watch-only detections so the dashboard can show the same articles."""
+    if not articles:
+        return
+    current = parse_datetime(scanned_at) or datetime.now(timezone.utc)
+    try:
+        save_dashboard_articles(
+            articles,
+            report_date=current.astimezone(KST).date().isoformat(),
+            window=build_watch_window(scanned_at, minutes_back),
+            metrics={**(metrics or {}), "risk_level": "MEDIUM"},
+        )
+        print(f"Persisted negative watch articles: {len(articles)}")
+    except Exception as error:
+        print(f"Negative watch article persistence failed: {error}")
+        if os.getenv("NEGATIVE_WATCH_REQUIRE_ARTICLE_PERSIST", "true").lower() in {"1", "true", "yes", "y"}:
+            raise
 
 
 def compact(text: str, limit: int) -> str:
@@ -397,6 +431,7 @@ def finish_watch_run(
     )
     should_refresh = dashboard_refresh_due(
         scanned_at,
+        negative_count=negative_count,
         new_negative_count=new_negative_count,
         status=status,
     )
@@ -443,6 +478,7 @@ def main() -> None:
     state = load_state()
     sent = set(state.get("sent_keys", []))
     all_negatives = merge_negative_candidates(db_negatives, negatives)
+    persist_negative_articles(all_negatives, metrics, scanned_at, minutes_back)
     new_negatives = [article for article in all_negatives if article_key(article) not in sent]
 
     print(
