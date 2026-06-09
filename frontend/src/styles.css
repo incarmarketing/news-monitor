@@ -2434,8 +2434,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .stock-insight-board {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
   margin-bottom: 14px;
 }
 

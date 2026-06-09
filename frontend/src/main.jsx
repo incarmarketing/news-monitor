@@ -1269,20 +1269,6 @@ function StockMarketDashboard({ stockMarket }) {
               <b>{buildStockMarketJudgement(company, summary)}</b>
               <p>{buildStockMarketReason(company, summary)}</p>
             </div>
-            <div className="stock-signal-list">
-              <span>관찰 포인트</span>
-              <ul>
-                {buildStockSignals(company, summary).map((signal) => <li key={signal}>{signal}</li>)}
-              </ul>
-            </div>
-          </section>
-
-          <section className="stock-kpi-grid">
-            <StockMetricCard icon={WalletCards} label="관찰가" value={formatStockPrice(company.latest?.price)} detail={activeMarketLabel} />
-            <StockMetricCard icon={TrendingDown} label="20거래일" value={formatStockPercent(company.returns?.["20d"])} detail="당사 수익률" toneValue={company.returns?.["20d"]} />
-            <StockMetricCard icon={TrendingDown} label="60일 고점대비" value={formatStockPercent(company.range?.drawdown_from_60d_high)} detail={`고점 ${formatStockPrice(company.range?.high_60d)}`} toneValue={company.range?.drawdown_from_60d_high} />
-            <StockMetricCard icon={LineChart} label="동종 대비" value={formatStockPercent(summary.relative_to_peers)} detail={`동종 평균 ${formatStockPercent(summary.peer_20d_return)}`} toneValue={summary.relative_to_peers} />
-            <StockMetricCard icon={LineChart} label="KOSPI 대비" value={formatStockPercent(summary.relative_to_kospi)} detail={`KOSPI ${formatStockPercent(summary.kospi_20d_return)}`} toneValue={summary.relative_to_kospi} />
           </section>
 
           <section className="stock-dashboard-grid">
