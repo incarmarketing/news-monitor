@@ -569,8 +569,7 @@ function Header({ working = false, workLabel = "" }) {
           alt="인카금융서비스"
         />
         <div className="brand-copy">
-          <strong>PR 인텔리전스 센터</strong>
-          <span>언론 · 공시 · 시장 관제</span>
+          <strong>인카 모니터링 시스템</strong>
         </div>
       </div>
       <div className="header-user-area">

@@ -90,19 +90,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .brand-copy {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: center;
   min-width: 0;
-  padding-left: 12px;
-  border-left: 1px solid #d9e1ee;
+  padding-left: 2px;
 }
 
 .brand strong, .user-chip b {
   display: block;
   color: var(--ink);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.15;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .brand span, .user-chip span {
