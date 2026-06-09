@@ -695,8 +695,8 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
     <section className="risk-priority-queue">
       <div className="queue-head">
         <div>
-          <span>PRIORITY QUEUE</span>
-          <h2>주요 이슈 우선순위 큐</h2>
+          <span>핵심 관찰</span>
+          <h2>주요 이슈</h2>
         </div>
         <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.({})}>
           전체 보기
@@ -724,7 +724,7 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
         )) : (
           <article className="queue-empty">
             <b>표시할 주요 이슈가 없습니다.</b>
-            <span>운영 DB 연결 후 오늘 기준 우선순위 이슈가 표시됩니다.</span>
+            <span>운영 DB 연결 후 오늘 기준 주요 이슈가 표시됩니다.</span>
           </article>
         )}
       </div>
@@ -861,13 +861,13 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
           <div className="page-actions">
             <button
               type="button"
-              className="ghost-button"
+              className="ghost-button monitoring-action-button"
               onClick={() => onRefreshOperations?.({ trigger: true, source: "monitoring_feed" })}
               disabled={isLoading}
             >
               <RefreshCw />갱신
             </button>
-            <button className="primary-button"><Download />CSV 출력</button>
+            <button type="button" className="primary-button monitoring-action-button"><Download />CSV 출력</button>
           </div>
         )}
       />

@@ -3362,6 +3362,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-width: 92px;
 }
 
+.page-actions > .monitoring-action-button {
+  width: 104px;
+  min-width: 104px;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
 .rule-stack article, .keyword-groups article {
   display: grid;
   grid-template-columns: auto minmax(78px, 102px) minmax(0, 1fr);
