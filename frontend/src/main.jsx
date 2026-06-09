@@ -568,6 +568,7 @@ function Header({ working = false, workLabel = "" }) {
           src={`${import.meta.env.BASE_URL || "./"}assets/incar-signature-blue-ko.png`}
           alt="인카금융서비스"
         />
+        <span className="brand-separator" aria-hidden="true" />
         <div className="brand-copy">
           <strong>인카 모니터링 시스템</strong>
         </div>

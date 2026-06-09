@@ -89,11 +89,35 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   object-fit: contain;
 }
 
+.brand-separator {
+  position: relative;
+  flex: 0 0 auto;
+  width: 1px;
+  height: 34px;
+  margin: 0 4px 0 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, #b9c6da 18%, #b9c6da 82%, transparent);
+}
+
+.brand-separator::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--blue);
+  box-shadow: 0 0 0 4px rgba(40, 85, 217, .1);
+  transform: translate(-50%, -50%);
+}
+
 .brand-copy {
   display: flex;
   align-items: center;
   min-width: 0;
-  padding-left: 2px;
+  padding-left: 4px;
 }
 
 .brand strong, .user-chip b {
@@ -6800,6 +6824,16 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .brand-logo {
     width: 104px;
     max-height: 31px;
+  }
+
+  .brand-separator {
+    height: 28px;
+    margin: 0 1px;
+  }
+
+  .brand-separator::before {
+    width: 6px;
+    height: 6px;
   }
 
   .brand strong {
