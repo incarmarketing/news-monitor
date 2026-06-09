@@ -31,9 +31,10 @@ Supabase CLI 로그인 후 프로젝트에서 실행합니다.
 ```powershell
 supabase functions deploy trigger-news-collection
 supabase functions deploy generate-risk-response --no-verify-jwt
+supabase functions deploy generate-press-release --no-verify-jwt
 ```
 
-`generate-risk-response`는 GitHub Pages 대시보드의 publishable/anon key로 호출되므로 Supabase 기본 JWT 검증을 끄고, 함수 내부에서 `PUBLIC_SUPABASE_ANON_KEY`로 요청 키를 확인합니다.
+`generate-risk-response`, `generate-press-release`는 GitHub Pages 대시보드의 publishable/anon key로 호출되므로 Supabase 기본 JWT 검증을 끄고, 함수 내부에서 `PUBLIC_SUPABASE_ANON_KEY`로 요청 키를 확인합니다.
 
 ## 4. Edge Function Secret 설정
 
@@ -45,6 +46,13 @@ supabase secrets set GITHUB_WORKFLOW_FILE="news-briefing.yml"
 supabase secrets set GITHUB_REF="main"
 supabase secrets set GEMINI_API_KEY="Gemini API key"
 supabase secrets set GEMINI_MODEL="gemini-2.5-flash"
+supabase secrets set GEMINI_PRESS_RELEASE_MODEL="gemini-2.5-pro"
+```
+
+`generate-press-release`를 로그인 사용자에게만 열고 싶으면 아래 값을 추가합니다.
+
+```powershell
+supabase secrets set REQUIRE_PRESS_RELEASE_LOGIN="true"
 ```
 
 `GITHUB_DISPATCH_TOKEN` 권한:

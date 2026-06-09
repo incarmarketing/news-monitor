@@ -2438,6 +2438,126 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   margin-bottom: 14px;
 }
 
+.stock-range-board {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #d6dfed;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--surface-glow), var(--shadow-soft);
+}
+
+.stock-range-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stock-range-head span {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+.stock-range-head h3 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 950;
+}
+
+.stock-range-tabs {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper-soft);
+}
+
+.stock-range-tabs button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.stock-range-tabs button.active {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(40, 85, 217, .18);
+}
+
+.stock-range-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stock-range-card {
+  --stock-tone: #64748b;
+  --stock-soft: #f8fafc;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  min-height: 96px;
+  padding: 12px;
+  border: 1px solid #d6dfed;
+  border-left: 4px solid var(--stock-tone);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--stock-soft), #fff);
+}
+
+.stock-range-card.up {
+  --stock-tone: #dc2626;
+  --stock-soft: #fff1f2;
+}
+
+.stock-range-card.down {
+  --stock-tone: #2563eb;
+  --stock-soft: #eff6ff;
+}
+
+.stock-range-card.flat {
+  --stock-tone: #64748b;
+  --stock-soft: #f8fafc;
+}
+
+.stock-range-card span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.stock-range-card b {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-range-card em {
+  color: var(--ink-2);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
 .stock-insight-board > div {
   min-width: 0;
   padding: 14px;
@@ -3035,6 +3155,18 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .press-generate-button {
   width: 100%;
   margin-top: 14px;
+}
+
+.press-ai-status {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
 .press-mail-api-note {
@@ -5845,6 +5977,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: 1fr;
   }
 
+  .stock-range-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stock-range-tabs {
+    width: 100%;
+  }
+
+  .stock-range-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .stock-command-main h2 {
     font-size: 21px;
   }
@@ -6053,6 +6198,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .stock-source-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-range-cards {
+    grid-template-columns: 1fr;
   }
 
   .stock-price-card {

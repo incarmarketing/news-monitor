@@ -225,6 +225,32 @@ export async function saveArticleScrap(article = {}) {
   );
 }
 
+export async function generatePressReleaseWithGemini(payload = {}) {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const session = getStoredSession();
+  const headers = {
+    apikey: config.anon_key,
+    Authorization: `Bearer ${config.anon_key}`,
+    "Content-Type": "application/json",
+  };
+  if (session?.session_token) {
+    headers["X-Dashboard-Session"] = session.session_token;
+  }
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/generate-press-release`, {
+    method: "POST",
+    cache: "no-store",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) {
+    throw new Error(data?.error || `generate_press_release_${response.status}`);
+  }
+  return data;
+}
+
 function stableArticleHash(article = {}) {
   const candidates = [article.article_hash, article.articleHash, article.id]
     .map((value) => String(value || "").trim())

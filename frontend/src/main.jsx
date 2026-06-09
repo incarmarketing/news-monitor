@@ -55,6 +55,7 @@ import {
 } from "./data";
 import {
   deleteReporterProfile,
+  generatePressReleaseWithGemini,
   loadOperationalData,
   saveArticleScrap,
   saveClassificationFeedback,
@@ -1166,6 +1167,7 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
 }
 
 function StockMarketDashboard({ stockMarket }) {
+  const [stockRange, setStockRange] = useState("60d");
   const company = stockMarket?.company || {};
   const summary = stockMarket?.summary || {};
   const indices = stockMarket?.indices || [];
@@ -1179,6 +1181,18 @@ function StockMarketDashboard({ stockMarket }) {
   const priceGap = company.price_gap || {};
   const activeMarketLabel = company.latest?.source_market === "nxt" ? "NXT 관찰가" : "KRX 관찰가";
   const tradedAt = company.latest?.traded_at || regularMarket.traded_at || nxtMarket.traded_at || "";
+  const rangeWindows = company.range_windows || {};
+  const stockRangeOptions = [
+    { id: "20d", label: "20거래일" },
+    { id: "60d", label: "60거래일" },
+    { id: "120d", label: "120거래일" },
+  ].filter((item) => rangeWindows[item.id]?.high || company.returns?.[item.id] !== undefined);
+  const activeRangeKey = stockRangeOptions.some((item) => item.id === stockRange) ? stockRange : (stockRangeOptions[0]?.id || "60d");
+  const activeRangeLabel = stockRangeOptions.find((item) => item.id === activeRangeKey)?.label || "선택 기간";
+  const activeRange = rangeWindows[activeRangeKey] || rangeWindows["60d"] || {};
+  const activeTrend = sliceStockTrend(relativeTrend, activeRangeKey);
+  const activePeerReturn = averagePeerReturnByPeriod(peerGroups, activeRangeKey);
+  const activeKospiReturn = indexReturnByPeriod(indices, "KOSPI", activeRangeKey);
 
   return (
     <main className="workspace">
@@ -1208,13 +1222,13 @@ function StockMarketDashboard({ stockMarket }) {
           <section className="stock-command-center">
             <div className="stock-command-main">
               <span className="live-label"><span /> STOCK MARKET BRIEFING</span>
-              <h2>{summary.headline || "당사 주가와 업종 흐름을 함께 관찰합니다."}</h2>
+              <h2>{buildStockRangeHeadline(company, summary, activeRange, activeRangeLabel)}</h2>
               <p>
                 {formatStockTimestamp(tradedAt, stockMarket?.as_of || company.latest?.date)} 기준 ·
                 {stockMarket?.source || "Naver Finance realtime/chart data"}
               </p>
               <div className="stock-commentary">
-                {(summary.commentary || []).slice(0, 4).map((line) => <span key={line}>{line}</span>)}
+                {buildStockRangeFacts(company, summary, activeRange, activeRangeLabel, activePeerReturn, activeKospiReturn).map((line) => <span key={line}>{line}</span>)}
               </div>
             </div>
             <div className={`stock-price-board ${stockToneClass(company.latest?.change_rate)}`}>
@@ -1263,17 +1277,64 @@ function StockMarketDashboard({ stockMarket }) {
             />
           </section>
 
+          <section className="stock-range-board">
+            <div className="stock-range-head">
+              <div>
+                <span>기간별 판단</span>
+                <h3>{activeRangeLabel} 주가 위치</h3>
+              </div>
+              <div className="stock-range-tabs">
+                {stockRangeOptions.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={activeRangeKey === item.id ? "active" : ""}
+                    onClick={() => setStockRange(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="stock-range-cards">
+              <StockRangeCard
+                label="선택기간 수익률"
+                value={formatStockPercent(activeRange.return ?? company.returns?.[activeRangeKey])}
+                detail={`${formatStockDate(activeRange.start_date)}~${formatStockDate(activeRange.end_date || company.latest?.date)}`}
+                toneValue={activeRange.return ?? company.returns?.[activeRangeKey]}
+              />
+              <StockRangeCard
+                label="기간 고점"
+                value={formatStockPrice(activeRange.high)}
+                detail={`${formatStockDate(activeRange.high_date)} 고점 · 현재 ${formatStockPercent(activeRange.drawdown_from_high)}`}
+                toneValue={activeRange.drawdown_from_high}
+              />
+              <StockRangeCard
+                label="기간 저점"
+                value={formatStockPrice(activeRange.low)}
+                detail={`${formatStockDate(activeRange.low_date)} 저점 · 저점 대비 ${formatStockPercent(activeRange.rebound_from_low)}`}
+                toneValue={activeRange.rebound_from_low}
+              />
+              <StockRangeCard
+                label="비교군 대비"
+                value={formatStockPercent(safeNumberDiff(activeRange.return ?? company.returns?.[activeRangeKey], activePeerReturn))}
+                detail={`동종 ${formatStockPercent(activePeerReturn)} · KOSPI ${formatStockPercent(activeKospiReturn)}`}
+                toneValue={safeNumberDiff(activeRange.return ?? company.returns?.[activeRangeKey], activePeerReturn)}
+              />
+            </div>
+          </section>
+
           <section className="stock-insight-board">
             <div>
               <span>시장 판단</span>
-              <b>{buildStockMarketJudgement(company, summary)}</b>
-              <p>{buildStockMarketReason(company, summary)}</p>
+              <b>{buildStockMarketJudgement(company, summary, activeRange)}</b>
+              <p>{buildStockMarketReason(company, summary, activeRange, activeRangeLabel, activePeerReturn, activeKospiReturn)}</p>
             </div>
           </section>
 
           <section className="stock-dashboard-grid">
-            <Panel title="상대 주가 흐름" icon={LineChart} meta="60거래일 · 첫날 100 기준">
-              <StockTrendChart rows={relativeTrend} />
+            <Panel title="상대 주가 흐름" icon={LineChart} meta={`${activeRangeLabel} · 첫날 100 기준`}>
+              <StockTrendChart rows={activeTrend} />
             </Panel>
             <Panel title="시장 지수" icon={Activity} meta="KOSPI · KOSDAQ">
               <MarketIndexCards rows={indices} />
@@ -1317,6 +1378,16 @@ function StockMetricCard({ icon: Icon, label, value, detail, toneValue }) {
   return (
     <article className={`stock-metric-card ${stockToneClass(toneValue)}`}>
       <Icon />
+      <span>{label}</span>
+      <b>{value}</b>
+      <em>{detail}</em>
+    </article>
+  );
+}
+
+function StockRangeCard({ label, value, detail, toneValue }) {
+  return (
+    <article className={`stock-range-card ${stockToneClass(toneValue)}`}>
       <span>{label}</span>
       <b>{value}</b>
       <em>{detail}</em>
@@ -1437,6 +1508,8 @@ function PressReleaseStudio({ operations }) {
   const [quoteSaved, setQuoteSaved] = useState(false);
   const [selectedReporterKeys, setSelectedReporterKeys] = useState([]);
   const [draft, setDraft] = useState(null);
+  const [draftError, setDraftError] = useState("");
+  const [generatingDraft, setGeneratingDraft] = useState(false);
   const [copied, setCopied] = useState("");
   const selectedType = PRESS_RELEASE_TYPES.find((item) => item.id === selectedTypeId);
   const coreReady = selectedType && PRESS_CORE_FIELDS.every((field) => answers[field.id].trim().length >= 4);
@@ -1474,9 +1547,29 @@ function PressReleaseStudio({ operations }) {
     setDraft(null);
   };
 
-  const generateDraft = () => {
+  const generateDraft = async () => {
     if (!quoteReady) return;
-    setDraft(buildPressReleasePackage(selectedType, answers, quoteSpeaker, editableQuote, selectedReporters));
+    const fallback = buildPressReleasePackage(selectedType, answers, quoteSpeaker, editableQuote, selectedReporters);
+    setGeneratingDraft(true);
+    setDraftError("");
+    try {
+      const result = await generatePressReleaseWithGemini({
+        type: selectedType,
+        answers,
+        quoteSpeaker,
+        quote: editableQuote,
+        recipients: selectedReporters,
+      });
+      setDraft(normalizeGeminiPressDraft(result, fallback));
+    } catch (error) {
+      setDraft({
+        ...fallback,
+        notice: "Gemini 생성에 실패해 백업 초안을 표시합니다.",
+      });
+      setDraftError(error?.message || "gemini_press_release_failed");
+    } finally {
+      setGeneratingDraft(false);
+    }
   };
 
   const toggleReporter = (row) => {
@@ -1627,9 +1720,10 @@ function PressReleaseStudio({ operations }) {
                 <button type="button" disabled={!quoteReady || !editableQuote.trim()} onClick={saveQuoteTemplate}>수정 반영</button>
               </div>
             </div>
-            <button type="button" className="confirm-button press-generate-button" disabled={!quoteReady} onClick={generateDraft}>
-              알겠습니다. 지금 바로 작성하겠습니다.
+            <button type="button" className="confirm-button press-generate-button" disabled={!quoteReady || generatingDraft} onClick={generateDraft}>
+              {generatingDraft ? "Gemini가 작성 중입니다." : "알겠습니다. 지금 바로 작성하겠습니다."}
             </button>
+            {draftError && <div className="press-ai-status">Gemini 연결 참고: {draftError}</div>}
           </Panel>
 
           <Panel title="4단계 · 기자 발송 대상" icon={Megaphone} meta={`${selectedReporters.length}/${reportersWithEmail.length}명 선택`}>
@@ -1762,6 +1856,25 @@ function buildPressReleasePackage(type, answers, quoteSpeaker, customQuote = "",
     pressRelease,
     email,
     fullText: `${recipientText}\n\n---\n\n${pressRelease}\n\n---\n\n${email}\n\n보도자료 작성이 완료되었습니다.`,
+  };
+}
+
+function normalizeGeminiPressDraft(result = {}, fallback = {}) {
+  const payload = result.package || result.draft || result;
+  const pressRelease = String(payload.pressRelease || payload.press_release || fallback.pressRelease || "").trim();
+  const email = String(payload.email || fallback.email || "").trim();
+  const recipients = String(payload.recipients || fallback.recipients || "").trim();
+  const notice = String(payload.notice || "Gemini API로 보도자료와 기자 발송 이메일을 작성했습니다.").trim();
+  const fullText = String(payload.fullText || payload.full_text || "").trim()
+    || `${recipients}\n\n---\n\n${pressRelease}\n\n---\n\n${email}\n\n보도자료 작성이 완료되었습니다.`;
+  return {
+    notice,
+    recipients,
+    pressRelease,
+    email,
+    fullText,
+    model: result.model || "",
+    usageMetadata: result.usageMetadata || {},
   };
 }
 
@@ -1976,36 +2089,45 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
   );
 }
 
-function buildStockSignals(company = {}, summary = {}) {
-  const signals = [];
-  const gap = company.price_gap || {};
-  if (gap.available) {
-    signals.push(`NXT는 정규장 대비 ${formatSignedNumber(gap.price)}원, ${formatStockPercent(gap.rate)} 차이입니다.`);
-  } else {
-    signals.push("NXT 가격은 아직 수집되지 않아 정규장 기준으로 판단합니다.");
-  }
-  signals.push(`20거래일 수익률은 ${formatStockPercent(company.returns?.["20d"])}이며, 동종 평균 대비 ${formatStockPercent(summary.relative_to_peers)}입니다.`);
-  signals.push(`60일 고점 대비 ${formatStockPercent(company.range?.drawdown_from_60d_high)} 구간입니다.`);
-  return signals;
+function buildStockRangeHeadline(company = {}, summary = {}, range = {}, rangeLabel = "선택 기간") {
+  const selectedReturn = Number(range.return);
+  const drawdown = Number(range.drawdown_from_high);
+  if (Number.isFinite(drawdown) && drawdown <= -25) return `${rangeLabel} 고점 대비 낙폭이 큰 구간입니다.`;
+  if (Number.isFinite(selectedReturn) && selectedReturn <= -10) return `${rangeLabel} 기준 당사 주가 약세가 두드러집니다.`;
+  if (Number.isFinite(selectedReturn) && selectedReturn >= 5) return `${rangeLabel} 기준 반등 흐름이 관찰됩니다.`;
+  return summary.headline || "당사 주가와 업종 흐름을 함께 관찰합니다.";
 }
 
-function buildStockMarketJudgement(company = {}, summary = {}) {
-  const return20 = Number(company.returns?.["20d"]);
+function buildStockRangeFacts(company = {}, summary = {}, range = {}, rangeLabel = "선택 기간", peerReturn = null, kospiReturn = null) {
+  const selectedReturn = range.return ?? company.returns?.["20d"];
+  const peerGap = safeNumberDiff(selectedReturn, peerReturn);
+  const kospiGap = safeNumberDiff(selectedReturn, kospiReturn);
+  return [
+    `${rangeLabel} 수익률은 ${formatStockPercent(selectedReturn)}입니다.`,
+    `기간 고점은 ${formatStockDate(range.high_date)} ${formatStockPrice(range.high)}원이며, 현재 고점 대비 ${formatStockPercent(range.drawdown_from_high)}입니다.`,
+    `기간 저점은 ${formatStockDate(range.low_date)} ${formatStockPrice(range.low)}원이며, 저점 대비 ${formatStockPercent(range.rebound_from_low)}입니다.`,
+    `동종 평균 대비 ${formatStockPercent(peerGap)}, KOSPI 대비 ${formatStockPercent(kospiGap)} 차이입니다.`,
+  ];
+}
+
+function buildStockMarketJudgement(company = {}, summary = {}, range = {}) {
+  const selectedReturn = Number(range.return ?? company.returns?.["20d"]);
+  const drawdown = Number(range.drawdown_from_high ?? company.range?.drawdown_from_60d_high);
+  if (Number.isFinite(selectedReturn) && selectedReturn <= -10) return "선택 기간 약세";
   const peerGap = Number(summary.relative_to_peers);
-  const drawdown = Number(company.range?.drawdown_from_60d_high);
-  if (Number.isFinite(return20) && return20 <= -10) return "단기 약세 구간";
   if (Number.isFinite(peerGap) && peerGap <= -5) return "동종 대비 부진";
   if (Number.isFinite(drawdown) && drawdown <= -20) return "고점 회복 지연";
-  if (Number.isFinite(return20) && return20 >= 5) return "반등 관찰 구간";
+  if (Number.isFinite(selectedReturn) && selectedReturn >= 5) return "반등 관찰 구간";
   return "중립 관찰 구간";
 }
 
-function buildStockMarketReason(company = {}, summary = {}) {
+function buildStockMarketReason(company = {}, summary = {}, range = {}, rangeLabel = "선택 기간", peerReturn = null, kospiReturn = null) {
+  const selectedReturn = range.return ?? company.returns?.["20d"];
   const pieces = [
-    `당사 20일 ${formatStockPercent(company.returns?.["20d"])}`,
-    `동종 대비 ${formatStockPercent(summary.relative_to_peers)}`,
-    `KOSPI 대비 ${formatStockPercent(summary.relative_to_kospi)}`,
-    `고점 대비 ${formatStockPercent(company.range?.drawdown_from_60d_high)}`,
+    `당사 ${rangeLabel} ${formatStockPercent(selectedReturn)}`,
+    `동종 평균 ${formatStockPercent(peerReturn)}`,
+    `KOSPI ${formatStockPercent(kospiReturn)}`,
+    `고점 ${formatStockDate(range.high_date)} 대비 ${formatStockPercent(range.drawdown_from_high)}`,
   ];
   return `${pieces.join(" · ")} 기준으로 주가성 기사와 실제 가격 흐름을 함께 점검합니다.`;
 }
@@ -7559,6 +7681,42 @@ function formatStockTimestamp(value, fallback = "") {
   const hour = String(date.getHours()).padStart(2, "0");
   const minute = String(date.getMinutes()).padStart(2, "0");
   return `${month}-${day} ${hour}:${minute}`;
+}
+
+function formatStockDate(value) {
+  const text = String(value || "").trim();
+  if (!text) return "-";
+  const date = new Date(`${text}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return text.length >= 10 ? text.slice(5, 10) : text;
+  return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function safeNumberDiff(left, right) {
+  const leftNumber = Number(left);
+  const rightNumber = Number(right);
+  if (!Number.isFinite(leftNumber) || !Number.isFinite(rightNumber)) return null;
+  return Number((leftNumber - rightNumber).toFixed(2));
+}
+
+function averagePeerReturnByPeriod(peerGroups = [], key = "20d") {
+  const values = peerGroups
+    .flatMap((group) => group.stocks || [])
+    .map((stock) => Number(stock.returns?.[key]))
+    .filter((value) => Number.isFinite(value));
+  if (!values.length) return null;
+  return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
+}
+
+function indexReturnByPeriod(indices = [], code = "KOSPI", key = "20d") {
+  const row = indices.find((item) => String(item.code || "").toUpperCase() === code);
+  const value = Number(row?.returns?.[key]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function sliceStockTrend(rows = [], rangeKey = "60d") {
+  const count = Number(String(rangeKey).replace(/[^\d]/g, ""));
+  if (!count || rows.length <= count) return rows;
+  return rows.slice(-count);
 }
 
 function formatMarketStatus(value) {

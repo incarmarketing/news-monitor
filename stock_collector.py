@@ -46,7 +46,7 @@ STOCK_UNIVERSE = [
 ]
 
 
-def fetch_chart(symbol: str, count: int = 90) -> list[dict]:
+def fetch_chart(symbol: str, count: int = 180) -> list[dict]:
     response = requests.get(
         NAVER_CHART_URL,
         params={"symbol": symbol, "timeframe": "day", "count": count, "requestType": 0},
@@ -132,6 +132,44 @@ def value_at(history: list[dict], offset: int) -> float | None:
     return float(history[-1 - offset].get("close") or 0)
 
 
+def build_range_window(history: list[dict], analysis_price: float, quote_date: str, days: int) -> dict:
+    rows = history[-days:] if days else history
+    rows = [row for row in rows if row.get("date")]
+    if not rows:
+        return {}
+
+    high_row = max(rows, key=lambda row: float(row.get("high") or 0))
+    low_row = min(rows, key=lambda row: float(row.get("low") or float("inf")))
+    high_price = float(high_row.get("high") or 0)
+    low_price = float(low_row.get("low") or 0)
+    high_date = high_row.get("date") or ""
+    low_date = low_row.get("date") or ""
+
+    if analysis_price and analysis_price > high_price:
+        high_price = analysis_price
+        high_date = quote_date or rows[-1].get("date") or high_date
+    if analysis_price and (not low_price or analysis_price < low_price):
+        low_price = analysis_price
+        low_date = quote_date or rows[-1].get("date") or low_date
+
+    start_close = float(rows[0].get("close") or 0)
+    return {
+        "days": days,
+        "label": f"{days}거래일",
+        "start_date": rows[0].get("date") or "",
+        "end_date": quote_date or rows[-1].get("date") or "",
+        "start_price": start_close,
+        "current_price": analysis_price,
+        "return": percent(analysis_price, start_close),
+        "high": high_price,
+        "high_date": high_date,
+        "low": low_price,
+        "low_date": low_date,
+        "drawdown_from_high": percent(analysis_price, high_price),
+        "rebound_from_low": percent(analysis_price, low_price),
+    }
+
+
 def build_security(meta: dict) -> dict:
     quote_error = ""
     try:
@@ -208,6 +246,7 @@ def build_security(meta: dict) -> dict:
             "5d": percent(analysis_price, value_at(history, 5)),
             "20d": percent(analysis_price, value_at(history, 20)),
             "60d": percent(analysis_price, value_at(history, 60)),
+            "120d": percent(analysis_price, value_at(history, 120)),
         },
         "range": {
             "high_60d": high_60,
@@ -215,7 +254,12 @@ def build_security(meta: dict) -> dict:
             "drawdown_from_60d_high": percent(analysis_price, high_60),
             "rebound_from_60d_low": percent(analysis_price, low_60),
         },
-        "history": history[-60:],
+        "range_windows": {
+            "20d": build_range_window(history, analysis_price, quote_date, 20),
+            "60d": build_range_window(history, analysis_price, quote_date, 60),
+            "120d": build_range_window(history, analysis_price, quote_date, min(120, len(history))),
+        },
+        "history": history[-120:],
     }
 
 
