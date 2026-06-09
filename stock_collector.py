@@ -309,7 +309,7 @@ def build_market_payload() -> dict:
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source": "Naver Finance chart data",
+        "source": "Naver Finance realtime/chart data",
         "as_of": company.get("latest", {}).get("date", ""),
         "company": company,
         "indices": indices,
