@@ -166,15 +166,22 @@ function readInitialRoute() {
 function buildMonitoringPresetFromParams(params) {
   const articleHash = (params.get("article") || params.get("article_hash") || "").trim();
   const articleLink = (params.get("article_link") || params.get("link") || params.get("url") || "").trim();
-  const query = normalizeDeepLinkQuery(params.get("query") || params.get("q") || params.get("title") || params.get("headline") || "");
+  const rawQuery = params.get("query") || params.get("q") || "";
   const tone = normalizeDeepLinkTone(params.get("tone"));
   const category = normalizeDeepLinkCategory(params.get("category"));
+  let query = normalizeDeepLinkQuery(rawQuery);
+  let articleTitle = normalizeDeepLinkTitle(params.get("article_title") || params.get("title") || params.get("headline") || "");
+  if (!articleTitle && (tone || category || articleHash || articleLink) && looksLikeArticleTitleQuery(query)) {
+    articleTitle = query;
+    query = "";
+  }
   const source = (params.get("source") || "").trim();
-  if (!query && !tone && !category && !source && !articleHash && !articleLink) return null;
+  if (!query && !tone && !category && !source && !articleHash && !articleLink && !articleTitle) return null;
   return {
     query,
     articleHash,
     articleLink,
+    articleTitle,
     tone: tone || "all",
     category: category || "all",
     source: source || "all",
@@ -189,6 +196,16 @@ function normalizeDeepLinkQuery(value) {
   return text.length <= 80 ? text : `${text.slice(0, 79).trim()}…`;
 }
 
+function normalizeDeepLinkTitle(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function looksLikeArticleTitleQuery(text) {
+  if (!text) return false;
+  if (text.length >= 24 && /[\s"'“”‘’·…%]/.test(text)) return true;
+  return /기사|논란|피해|쟁탈|1200%|룰|부정|스캔들|검사|제재|금감원|금융당국/.test(text);
+}
+
 function looksLikeSummaryQuery(text) {
   const words = text.split(/\s+/).filter(Boolean);
   if (text.length > 100 || words.length >= 12) return true;
@@ -201,9 +218,18 @@ function normalizeDeepLinkArticleLink(value) {
   return String(value || "").trim().split("#", 1)[0].replace(/\/$/, "").toLowerCase();
 }
 
-function articleMatchesDeepLink(article = {}, articleHash = "", articleLink = "") {
+function normalizeComparableTitle(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+-\s+[^-]{2,24}$/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function articleMatchesDeepLink(article = {}, articleHash = "", articleLink = "", articleTitle = "") {
   const hash = String(articleHash || "").trim().toLowerCase();
   const link = normalizeDeepLinkArticleLink(articleLink);
+  const title = normalizeComparableTitle(articleTitle);
   const articleHashes = [article.articleHash, article.article_hash, article.id]
     .map((value) => String(value || "").trim().toLowerCase())
     .filter(Boolean);
@@ -213,6 +239,11 @@ function articleMatchesDeepLink(article = {}, articleHash = "", articleLink = ""
       .map(normalizeDeepLinkArticleLink)
       .filter(Boolean);
     if (articleLinks.includes(link)) return true;
+  }
+  if (title) {
+    const candidate = normalizeComparableTitle(article.title || article.headline || "");
+    if (candidate && candidate === title) return true;
+    if (candidate && title.length >= 18 && (candidate.includes(title) || title.includes(candidate))) return true;
   }
   return false;
 }
@@ -878,13 +909,14 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
     const needle = query.trim().toLowerCase();
     const focusArticleHash = String(monitoringPreset?.articleHash || "").trim();
     const focusArticleLink = String(monitoringPreset?.articleLink || "").trim();
-    const hasFocusTarget = Boolean(focusArticleHash || focusArticleLink);
+    const focusArticleTitle = String(monitoringPreset?.articleTitle || "").trim();
+    const hasFocusTarget = Boolean(focusArticleHash || focusArticleLink || focusArticleTitle);
     const focusTargetAvailable = hasFocusTarget
-      && regularArticles.some((article) => articleMatchesDeepLink(article, focusArticleHash, focusArticleLink));
+      && regularArticles.some((article) => articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle));
     return regularArticles.filter((article) => {
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
       const articleDate = article.date || "";
-      const focusMatched = !focusTargetAvailable || articleMatchesDeepLink(article, focusArticleHash, focusArticleLink);
+      const focusMatched = !focusTargetAvailable || articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle);
       return (
         focusMatched &&
         (!needle || focusTargetAvailable || text.includes(needle)) &&
@@ -7802,8 +7834,8 @@ function resolveMonitoringDateRange(articles = [], preset = {}) {
       end: preset.endDate || preset.startDate || "",
     };
   }
-  if (preset.articleHash || preset.articleLink) {
-    const focused = articles.find((article) => articleMatchesDeepLink(article, preset.articleHash, preset.articleLink));
+  if (preset.articleHash || preset.articleLink || preset.articleTitle) {
+    const focused = articles.find((article) => articleMatchesDeepLink(article, preset.articleHash, preset.articleLink, preset.articleTitle));
     const focusedDate = rowDateKey(focused);
     if (focusedDate) return { start: focusedDate, end: focusedDate };
   }

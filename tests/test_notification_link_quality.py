@@ -125,7 +125,8 @@ class NotificationLinkQualityTests(unittest.TestCase):
         self.assertEqual(query.get("category"), ["own"])
         self.assertEqual(query.get("article"), ["a" * 64])
         self.assertIn("article_link", query)
-        self.assertIn("title", query)
+        self.assertIn("article_title", query)
+        self.assertNotIn("title", query)
         self.assertNotIn("query", query)
         self.assertNotIn("summary", query)
 

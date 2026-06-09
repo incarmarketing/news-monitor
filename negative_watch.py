@@ -345,7 +345,7 @@ def build_alert_link(article: dict) -> str:
 
     title = clean_alert_title(article.get("title", "") or article.get("source", ""))
     if title:
-        params["title"] = title
+        params["article_title"] = title
     if article.get("article_hash"):
         params["article"] = str(article["article_hash"]).strip()
     if article.get("link") and article.get("link") != "#":
