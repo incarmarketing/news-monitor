@@ -1258,6 +1258,7 @@ function StockMarketDashboard({ stockMarket }) {
   const nxtMarket = company.nxt_market || {};
   const integratedMarket = company.integrated_market || {};
   const priceGap = company.price_gap || {};
+  const marketCap = company.market_cap || {};
   const rangeWindows = company.range_windows || {};
   const stockHistory = normalizeStockHistory(company.history || []);
   const historyBounds = getStockHistoryBounds(stockHistory);
@@ -1349,6 +1350,12 @@ function StockMarketDashboard({ stockMarket }) {
               value={priceGap.available ? `${formatSignedNumber(priceGap.price)}원` : "미수집"}
               detail={priceGap.available ? `${priceGap.label} · ${formatStockPercent(priceGap.rate)}` : "정규장 대비 비교 대기"}
               toneValue={priceGap.price}
+            />
+            <StockMetricCard
+              icon={Building2}
+              label="시가총액"
+              value={formatStockMarketCap(marketCap.value || company.latest?.market_cap)}
+              detail={marketCap.implied_shares ? `환산 주식수 ${formatStockShares(marketCap.implied_shares)}` : "네이버 금융 기준"}
             />
             <StockMetricCard
               icon={WalletCards}
@@ -1679,8 +1686,8 @@ function StockPeerTable({
         <thead>
           <tr>
             <th>종목</th>
-            <th>시작가</th>
-            <th>종료가</th>
+            <th>시총</th>
+            <th>현재가</th>
             <th>기간등락</th>
             <th>1일</th>
             <th>{rangeLabel}</th>
@@ -1695,7 +1702,7 @@ function StockPeerTable({
             return (
               <tr key={row.code}>
                 <td><b>{row.name}</b><span>{row.code}</span></td>
-                <td>{formatStockPrice(selectedRange.start_price)}</td>
+                <td>{formatStockMarketCap(row.market_cap?.value ?? row.latest?.market_cap)}</td>
                 <td>{formatStockPrice(selectedRange.end_price)}</td>
                 <td className={stockToneClass(periodChange)}>{Number.isFinite(periodChange) ? `${formatSignedNumber(periodChange)}원` : "-"}</td>
                 <td className={stockToneClass(row.returns?.["1d"])}>{formatStockPercent(row.returns?.["1d"])}</td>
@@ -8618,6 +8625,22 @@ function formatStockTradingValue(value) {
   if (number >= 100000000) return `${(number / 100000000).toFixed(1)}억원`;
   if (number >= 1000000) return `${Math.round(number / 1000000).toLocaleString("ko-KR")}백만원`;
   return `${Math.round(number).toLocaleString("ko-KR")}원`;
+}
+
+function formatStockMarketCap(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return "-";
+  if (number >= 1000000000000) return `${(number / 1000000000000).toFixed(2)}조`;
+  if (number >= 100000000) return `${Math.round(number / 100000000).toLocaleString("ko-KR")}억`;
+  return `${Math.round(number).toLocaleString("ko-KR")}원`;
+}
+
+function formatStockShares(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return "-";
+  if (number >= 100000000) return `${(number / 100000000).toFixed(1)}억주`;
+  if (number >= 10000) return `${Math.round(number / 10000).toLocaleString("ko-KR")}만주`;
+  return `${Math.round(number).toLocaleString("ko-KR")}주`;
 }
 
 function formatStockTimestamp(value, fallback = "") {

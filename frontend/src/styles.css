@@ -2844,7 +2844,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .stock-source-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin: 14px 0;
 }
@@ -3570,11 +3570,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   border-collapse: collapse;
 }
 
-.stock-table .stock-col-name { width: 25%; }
+.stock-table .stock-col-name { width: 28%; }
 .stock-table .stock-col-price { width: 13%; }
-.stock-table .stock-col-gap { width: 14%; }
+.stock-table .stock-col-gap { width: 12%; }
 .stock-table .stock-col-return { width: 11%; }
-.stock-table .stock-col-drawdown { width: 18%; }
+.stock-table .stock-col-drawdown { width: 12%; }
 
 .stock-table th,
 .stock-table td {
@@ -7221,9 +7221,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     display: none;
   }
 
-  .stock-table .stock-col-name { width: 34%; }
-  .stock-table .stock-col-price { width: 19%; }
-  .stock-table .stock-col-return { width: 19%; }
+  .stock-table .stock-col-name { width: 32%; }
+  .stock-table .stock-col-price { width: 17%; }
+  .stock-table .stock-col-return { width: 17%; }
 
   .stock-table th,
   .stock-table td {

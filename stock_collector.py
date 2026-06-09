@@ -137,6 +137,40 @@ def parse_won_amount(value: object) -> float | None:
         return None
 
 
+def parse_market_cap_amount(value: object) -> float | None:
+    text = str(value or "").replace(",", "").replace("원", "").strip()
+    if not text or text == "-":
+        return None
+    if text.isdigit():
+        return float(text)
+    total = 0.0
+    matched = False
+    for pattern, multiplier in (
+        (r"([0-9.]+)\s*조", 1_000_000_000_000),
+        (r"([0-9.]+)\s*억", 100_000_000),
+        (r"([0-9.]+)\s*만", 10_000),
+    ):
+        for match in re.finditer(pattern, text):
+            total += float(match.group(1)) * multiplier
+            matched = True
+    if matched:
+        return total
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def format_market_cap_label(value: float | None) -> str:
+    if not value:
+        return ""
+    if value >= 1_000_000_000_000:
+        return f"{value / 1_000_000_000_000:.2f}조원"
+    if value >= 100_000_000:
+        return f"{round(value / 100_000_000):,}억원"
+    return f"{round(value):,}원"
+
+
 def percent(current: float, previous: float | None) -> float | None:
     if previous in (None, 0):
         return None
@@ -237,6 +271,7 @@ def build_security(meta: dict) -> dict:
     active_change = active_market.get("change") if active_market.get("change") is not None else change
     active_change_rate = active_market.get("change_rate") if active_market.get("change_rate") is not None else change_rate
     gap = build_price_gap(regular_market, nxt_market)
+    market_cap = build_market_cap(quote, analysis_price)
 
     return {
         **meta,
@@ -253,11 +288,13 @@ def build_security(meta: dict) -> dict:
             "volume": integrated_market.get("volume") or regular_market.get("volume") or latest["volume"],
             "average_volume_20d": round(average_volume),
             "source_market": active_market.get("id") or "regular",
+            "market_cap": market_cap.get("value"),
         },
         "regular_market": regular_market,
         "nxt_market": nxt_market,
         "integrated_market": integrated_market,
         "price_gap": gap,
+        "market_cap": market_cap,
         "returns": {
             "1d": active_change_rate,
             "5d": percent(analysis_price, value_at(history, 5)),
@@ -357,6 +394,33 @@ def build_price_gap(regular: dict, nxt: dict) -> dict:
         "price": gap,
         "rate": round((gap / float(regular_price)) * 100, 2) if regular_price else None,
         "label": "NXT 높음" if gap > 0 else "NXT 낮음" if gap < 0 else "동일",
+    }
+
+
+def build_market_cap(quote: dict, price: float | None = None) -> dict:
+    raw_value = optional_number(
+        quote.get("marketValueFullRaw")
+        or quote.get("marketValueRaw")
+        or quote.get("marketSumRaw")
+        or quote.get("marketCapitalizationRaw")
+    )
+    display_value = (
+        quote.get("marketValueFull")
+        or quote.get("marketValue")
+        or quote.get("marketSum")
+        or quote.get("marketCapitalization")
+    )
+    value = raw_value or parse_market_cap_amount(display_value)
+    implied_shares = None
+    if value and price:
+        implied_shares = round(value / float(price))
+    return {
+        "value": value,
+        "label": format_market_cap_label(value),
+        "raw_label": str(display_value or ""),
+        "implied_shares": implied_shares,
+        "source": "Naver Finance realtime",
+        "available": bool(value),
     }
 
 
@@ -603,6 +667,7 @@ def build_summary(company: dict, peers: list[dict], kospi: dict, kosdaq: dict) -
         "relative_to_kospi": relative_to_kospi,
         "drawdown_from_60d_high": drawdown,
         "price_gap": company.get("price_gap", {}),
+        "market_cap": company.get("market_cap", {}),
         "market_session": company.get("latest", {}).get("source_market", "regular"),
         "commentary": build_commentary(company, peer_return_20d, kospi_return_20d, relative_to_peers, relative_to_kospi),
     }
