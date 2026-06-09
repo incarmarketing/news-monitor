@@ -1173,17 +1173,28 @@ function StockMarketDashboard({ stockMarket }) {
   const relativeTrend = stockMarket?.relativeTrend || [];
   const hasData = company?.status === "ok";
   const companyLink = company?.code ? `https://finance.naver.com/item/main.naver?code=${company.code}` : "#";
+  const regularMarket = company.regular_market || {};
+  const nxtMarket = company.nxt_market || {};
+  const integratedMarket = company.integrated_market || {};
+  const priceGap = company.price_gap || {};
+  const activeMarketLabel = company.latest?.source_market === "nxt" ? "NXT 관찰가" : "KRX 관찰가";
+  const tradedAt = company.latest?.traded_at || regularMarket.traded_at || nxtMarket.traded_at || "";
 
   return (
     <main className="workspace">
       <PageTitle
-        eyebrow="Market Watch"
-        title="주가/시장 대시보드"
-        description="당사 주가, 동종업계, 보험·금융지주, 시장지수를 함께 보며 주가성 기사와 실제 시장 흐름을 분리합니다."
+        eyebrow="Market Control"
+        title="주가·시장 관제 대시보드"
+        description="정규장, NXT, 동종업계, 시장지수를 한 화면에서 비교해 주가성 기사와 실제 가격 흐름을 분리합니다."
         right={(
-          <a className="ghost-button" href={companyLink} target="_blank" rel="noopener noreferrer">
-            <ExternalLink />네이버 금융
-          </a>
+          <div className="page-actions">
+            <a className="ghost-button" href={companyLink} target="_blank" rel="noopener noreferrer">
+              <ExternalLink />네이버 금융
+            </a>
+            <a className="ghost-button" href="https://www.nextrade.co.kr/" target="_blank" rel="noopener noreferrer">
+              <ExternalLink />NXT
+            </a>
+          </div>
         )}
       />
 
@@ -1194,25 +1205,80 @@ function StockMarketDashboard({ stockMarket }) {
         </section>
       ) : (
         <>
-          <section className="stock-hero">
-            <div className="stock-hero-main">
+          <section className="stock-command-center">
+            <div className="stock-command-main">
               <span className="live-label"><span /> STOCK MARKET BRIEFING</span>
               <h2>{summary.headline || "당사 주가와 업종 흐름을 함께 관찰합니다."}</h2>
-              <p>{stockMarket?.as_of || company.latest?.date || "-"} 기준 · 출처 {stockMarket?.source || "Naver Finance"}</p>
+              <p>
+                {formatStockTimestamp(tradedAt, stockMarket?.as_of || company.latest?.date)} 기준 ·
+                {stockMarket?.source || "Naver Finance realtime/chart data"}
+              </p>
               <div className="stock-commentary">
                 {(summary.commentary || []).slice(0, 4).map((line) => <span key={line}>{line}</span>)}
               </div>
             </div>
-            <div className={`stock-price-card ${stockToneClass(company.latest?.change_rate)}`}>
-              <span>{company.name}</span>
+            <div className={`stock-price-board ${stockToneClass(company.latest?.change_rate)}`}>
+              <div className="stock-price-board-top">
+                <span>{activeMarketLabel}</span>
+                <em>{formatMarketStatus(company.latest?.market_status || regularMarket.status || nxtMarket.status)}</em>
+              </div>
               <b>{formatStockPrice(company.latest?.price)}</b>
-              <em>{formatSignedNumber(company.latest?.change)} · {formatStockPercent(company.latest?.change_rate)}</em>
-              <small>거래량 {formatStockVolume(company.latest?.volume)}</small>
+              <strong>{formatSignedNumber(company.latest?.change)} · {formatStockPercent(company.latest?.change_rate)}</strong>
+              <small>통합 거래량 {formatStockVolume(integratedMarket.volume || company.latest?.volume)}</small>
+            </div>
+          </section>
+
+          <section className="stock-source-grid">
+            <StockSourceTile
+              label="KRX 정규장"
+              status={regularMarket.status}
+              price={regularMarket.price}
+              change={regularMarket.change}
+              changeRate={regularMarket.change_rate}
+              volume={regularMarket.volume}
+              tradedAt={regularMarket.traded_at}
+            />
+            <StockSourceTile
+              label="NXT 마켓"
+              status={nxtMarket.status}
+              price={nxtMarket.price}
+              change={nxtMarket.change}
+              changeRate={nxtMarket.change_rate}
+              volume={nxtMarket.volume}
+              tradedAt={nxtMarket.traded_at}
+              empty={!nxtMarket.available}
+            />
+            <StockMetricCard
+              icon={Activity}
+              label="NXT 가격 차이"
+              value={priceGap.available ? `${formatSignedNumber(priceGap.price)}원` : "미수집"}
+              detail={priceGap.available ? `${priceGap.label} · ${formatStockPercent(priceGap.rate)}` : "정규장 대비 비교 대기"}
+              toneValue={priceGap.price}
+            />
+            <StockMetricCard
+              icon={WalletCards}
+              label="통합 거래대금"
+              value={formatStockTradingValue(integratedMarket.trading_value)}
+              detail={`거래량 ${formatStockVolume(integratedMarket.volume || company.latest?.volume)}`}
+            />
+          </section>
+
+          <section className="stock-insight-board">
+            <div>
+              <span>시장 판단</span>
+              <b>{buildStockMarketJudgement(company, summary)}</b>
+              <p>{buildStockMarketReason(company, summary)}</p>
+            </div>
+            <div className="stock-signal-list">
+              <span>관찰 포인트</span>
+              <ul>
+                {buildStockSignals(company, summary).map((signal) => <li key={signal}>{signal}</li>)}
+              </ul>
             </div>
           </section>
 
           <section className="stock-kpi-grid">
-            <StockMetricCard icon={WalletCards} label="현재가" value={formatStockPrice(company.latest?.price)} detail={`${company.latest?.date || "-"} 종가`} />
+            <StockMetricCard icon={WalletCards} label="관찰가" value={formatStockPrice(company.latest?.price)} detail={activeMarketLabel} />
             <StockMetricCard icon={TrendingDown} label="20거래일" value={formatStockPercent(company.returns?.["20d"])} detail="당사 수익률" toneValue={company.returns?.["20d"]} />
             <StockMetricCard icon={TrendingDown} label="60일 고점대비" value={formatStockPercent(company.range?.drawdown_from_60d_high)} detail={`고점 ${formatStockPrice(company.range?.high_60d)}`} toneValue={company.range?.drawdown_from_60d_high} />
             <StockMetricCard icon={LineChart} label="동종 대비" value={formatStockPercent(summary.relative_to_peers)} detail={`동종 평균 ${formatStockPercent(summary.peer_20d_return)}`} toneValue={summary.relative_to_peers} />
@@ -1220,7 +1286,7 @@ function StockMarketDashboard({ stockMarket }) {
           </section>
 
           <section className="stock-dashboard-grid">
-            <Panel title="60거래일 상대 흐름" icon={LineChart} meta="첫날 100 기준">
+            <Panel title="상대 주가 흐름" icon={LineChart} meta="60거래일 · 첫날 100 기준">
               <StockTrendChart rows={relativeTrend} />
             </Panel>
             <Panel title="시장 지수" icon={Activity} meta="KOSPI · KOSDAQ">
@@ -1243,6 +1309,21 @@ function StockMarketDashboard({ stockMarket }) {
         </>
       )}
     </main>
+  );
+}
+
+function StockSourceTile({ label, status, price, change, changeRate, volume, tradedAt, empty = false }) {
+  const tone = stockToneClass(changeRate);
+  return (
+    <article className={`stock-source-tile ${tone} ${empty ? "empty" : ""}`}>
+      <div>
+        <span>{label}</span>
+        <em>{empty ? "미수집" : formatMarketStatus(status)}</em>
+      </div>
+      <b>{empty ? "-" : formatStockPrice(price)}</b>
+      <strong>{empty ? "NXT 가격 미수집" : `${formatSignedNumber(change)} · ${formatStockPercent(changeRate)}`}</strong>
+      <small>{formatStockTimestamp(tradedAt, "") || "시각 확인 대기"} · 거래량 {formatStockVolume(volume)}</small>
+    </article>
   );
 }
 
@@ -1305,7 +1386,9 @@ function StockPeerTable({ rows = [] }) {
         <thead>
           <tr>
             <th>종목</th>
-            <th>현재가</th>
+            <th>KRX</th>
+            <th>NXT</th>
+            <th>NXT 차이</th>
             <th>1일</th>
             <th>20일</th>
             <th>고점대비</th>
@@ -1315,7 +1398,9 @@ function StockPeerTable({ rows = [] }) {
           {rows.map((row) => (
             <tr key={row.code}>
               <td><b>{row.name}</b><span>{row.code}</span></td>
-              <td>{formatStockPrice(row.latest?.price)}</td>
+              <td>{formatStockPrice(row.regular_market?.price || row.latest?.price)}</td>
+              <td>{row.nxt_market?.available ? formatStockPrice(row.nxt_market?.price) : "-"}</td>
+              <td className={stockToneClass(row.price_gap?.price)}>{row.price_gap?.available ? `${formatSignedNumber(row.price_gap?.price)}원` : "-"}</td>
               <td className={stockToneClass(row.returns?.["1d"])}>{formatStockPercent(row.returns?.["1d"])}</td>
               <td className={stockToneClass(row.returns?.["20d"])}>{formatStockPercent(row.returns?.["20d"])}</td>
               <td className={stockToneClass(row.range?.drawdown_from_60d_high)}>{formatStockPercent(row.range?.drawdown_from_60d_high)}</td>
@@ -1894,6 +1979,40 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
       </section>
     </main>
   );
+}
+
+function buildStockSignals(company = {}, summary = {}) {
+  const signals = [];
+  const gap = company.price_gap || {};
+  if (gap.available) {
+    signals.push(`NXT는 정규장 대비 ${formatSignedNumber(gap.price)}원, ${formatStockPercent(gap.rate)} 차이입니다.`);
+  } else {
+    signals.push("NXT 가격은 아직 수집되지 않아 정규장 기준으로 판단합니다.");
+  }
+  signals.push(`20거래일 수익률은 ${formatStockPercent(company.returns?.["20d"])}이며, 동종 평균 대비 ${formatStockPercent(summary.relative_to_peers)}입니다.`);
+  signals.push(`60일 고점 대비 ${formatStockPercent(company.range?.drawdown_from_60d_high)} 구간입니다.`);
+  return signals;
+}
+
+function buildStockMarketJudgement(company = {}, summary = {}) {
+  const return20 = Number(company.returns?.["20d"]);
+  const peerGap = Number(summary.relative_to_peers);
+  const drawdown = Number(company.range?.drawdown_from_60d_high);
+  if (Number.isFinite(return20) && return20 <= -10) return "단기 약세 구간";
+  if (Number.isFinite(peerGap) && peerGap <= -5) return "동종 대비 부진";
+  if (Number.isFinite(drawdown) && drawdown <= -20) return "고점 회복 지연";
+  if (Number.isFinite(return20) && return20 >= 5) return "반등 관찰 구간";
+  return "중립 관찰 구간";
+}
+
+function buildStockMarketReason(company = {}, summary = {}) {
+  const pieces = [
+    `당사 20일 ${formatStockPercent(company.returns?.["20d"])}`,
+    `동종 대비 ${formatStockPercent(summary.relative_to_peers)}`,
+    `KOSPI 대비 ${formatStockPercent(summary.relative_to_kospi)}`,
+    `고점 대비 ${formatStockPercent(company.range?.drawdown_from_60d_high)}`,
+  ];
+  return `${pieces.join(" · ")} 기준으로 주가성 기사와 실제 가격 흐름을 함께 점검합니다.`;
 }
 
 function Scraps({ scraps, onOpenMonitoring, onScrapSaved }) {
@@ -7426,6 +7545,34 @@ function formatStockVolume(value) {
   if (number >= 1000000) return `${(number / 1000000).toFixed(1)}백만`;
   if (number >= 10000) return `${Math.round(number / 10000).toLocaleString("ko-KR")}만`;
   return number.toLocaleString("ko-KR");
+}
+
+function formatStockTradingValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return "-";
+  if (number >= 100000000) return `${(number / 100000000).toFixed(1)}억원`;
+  if (number >= 1000000) return `${Math.round(number / 1000000).toLocaleString("ko-KR")}백만원`;
+  return `${Math.round(number).toLocaleString("ko-KR")}원`;
+}
+
+function formatStockTimestamp(value, fallback = "") {
+  if (!value) return fallback || "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return fallback || String(value).slice(0, 16);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${month}-${day} ${hour}:${minute}`;
+}
+
+function formatMarketStatus(value) {
+  const text = String(value || "").toUpperCase();
+  if (text === "OPEN") return "장중";
+  if (text === "CLOSE" || text === "CLOSED") return "마감";
+  if (text === "PREOPEN") return "개장 전";
+  if (!text) return "상태 확인";
+  return text;
 }
 
 function formatIndexPoint(value) {

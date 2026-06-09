@@ -1,4 +1,4 @@
-"""Collect Korean market data for the dashboard using public Naver chart data."""
+"""Collect Korean market data for the dashboard using public Naver chart and realtime data."""
 
 from __future__ import annotations
 
@@ -16,6 +16,11 @@ import requests
 BASE_DIR = Path(__file__).parent
 PUBLIC_DATA_DIR = BASE_DIR / "public" / "data"
 NAVER_CHART_URL = "https://fchart.stock.naver.com/sise.nhn"
+NAVER_REALTIME_URL = "https://polling.finance.naver.com/api/realtime/domestic"
+REQUEST_HEADERS = {
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "application/json,text/plain,*/*",
+}
 
 MARKET_INDICES = [
     {"code": "KOSPI", "name": "KOSPI", "kind": "index"},
@@ -45,6 +50,7 @@ def fetch_chart(symbol: str, count: int = 90) -> list[dict]:
     response = requests.get(
         NAVER_CHART_URL,
         params={"symbol": symbol, "timeframe": "day", "count": count, "requestType": 0},
+        headers=REQUEST_HEADERS,
         timeout=20,
     )
     response.raise_for_status()
@@ -70,11 +76,48 @@ def fetch_chart(symbol: str, count: int = 90) -> list[dict]:
     return rows
 
 
+def fetch_realtime_quote(symbol: str, kind: str = "stock") -> dict:
+    endpoint = "index" if kind == "index" else "stock"
+    response = requests.get(
+        f"{NAVER_REALTIME_URL}/{endpoint}/{symbol}",
+        headers=REQUEST_HEADERS,
+        timeout=12,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    rows = payload.get("datas") or []
+    if not rows:
+        return {}
+    return rows[0] or {}
+
+
 def number(value: object) -> float:
     try:
         return float(str(value).replace(",", ""))
     except (TypeError, ValueError):
         return 0.0
+
+
+def optional_number(value: object) -> float | None:
+    parsed = number(value)
+    return parsed if parsed else None
+
+
+def parse_won_amount(value: object) -> float | None:
+    text = str(value or "").replace(",", "").strip()
+    if not text:
+        return None
+    multiplier = 1
+    if text.endswith("백만"):
+        multiplier = 1_000_000
+        text = text[:-2]
+    elif text.endswith("천주"):
+        multiplier = 1_000
+        text = text[:-2]
+    try:
+        return float(text) * multiplier
+    except ValueError:
+        return None
 
 
 def percent(current: float, previous: float | None) -> float | None:
@@ -90,6 +133,7 @@ def value_at(history: list[dict], offset: int) -> float | None:
 
 
 def build_security(meta: dict) -> dict:
+    quote_error = ""
     try:
         history = fetch_chart(meta["code"], 90)
     except Exception as exc:
@@ -101,6 +145,11 @@ def build_security(meta: dict) -> dict:
             "latest": {},
             "returns": {},
         }
+    try:
+        quote = fetch_realtime_quote(meta["code"], "index" if meta.get("kind") == "index" else "stock")
+    except Exception as exc:
+        quote = {}
+        quote_error = str(exc)
     if not history:
         return {
             **meta,
@@ -111,38 +160,142 @@ def build_security(meta: dict) -> dict:
         }
 
     latest = history[-1]
-    current = float(latest["close"])
+    current = optional_number(quote.get("closePriceRaw") or quote.get("closePrice")) or float(latest["close"])
     high_60 = max(float(row["high"]) for row in history[-60:])
     low_60 = min(float(row["low"]) for row in history[-60:])
     average_volume = statistics.mean(float(row["volume"]) for row in history[-20:]) if history[-20:] else 0
     previous = value_at(history, 1)
-    change = round(current - previous, 2) if previous is not None else 0
-    change_rate = percent(current, previous)
+    change = optional_number(quote.get("compareToPreviousClosePriceRaw") or quote.get("compareToPreviousClosePrice"))
+    if change is None:
+        change = round(current - previous, 2) if previous is not None else 0
+    change_rate = optional_number(quote.get("fluctuationsRatioRaw") or quote.get("fluctuationsRatio"))
+    if change_rate is None:
+        change_rate = percent(current, previous)
+    traded_at = str(quote.get("localTradedAt") or "")
+    quote_date = traded_at[:10] if traded_at else latest["date"]
+    market_status = str(quote.get("marketStatus") or "")
+    regular_market = build_regular_market(quote, current, change, change_rate, latest, market_status)
+    nxt_market = build_nxt_market(quote)
+    integrated_market = build_integrated_market(quote, regular_market, nxt_market)
+    active_market = choose_active_market(regular_market, nxt_market)
+    analysis_price = float(active_market.get("price") or current)
+    active_change = active_market.get("change") if active_market.get("change") is not None else change
+    active_change_rate = active_market.get("change_rate") if active_market.get("change_rate") is not None else change_rate
+    gap = build_price_gap(regular_market, nxt_market)
 
     return {
         **meta,
         "status": "ok",
+        "quote_status": "ok" if quote else ("error" if quote_error else "empty"),
+        "quote_error": quote_error,
         "latest": {
-            "date": latest["date"],
-            "price": current,
-            "change": change,
-            "change_rate": change_rate,
-            "volume": latest["volume"],
+            "date": quote_date,
+            "traded_at": traded_at,
+            "market_status": market_status,
+            "price": analysis_price,
+            "change": active_change,
+            "change_rate": active_change_rate,
+            "volume": integrated_market.get("volume") or regular_market.get("volume") or latest["volume"],
             "average_volume_20d": round(average_volume),
+            "source_market": active_market.get("id") or "regular",
         },
+        "regular_market": regular_market,
+        "nxt_market": nxt_market,
+        "integrated_market": integrated_market,
+        "price_gap": gap,
         "returns": {
-            "1d": change_rate,
-            "5d": percent(current, value_at(history, 5)),
-            "20d": percent(current, value_at(history, 20)),
-            "60d": percent(current, value_at(history, 60)),
+            "1d": active_change_rate,
+            "5d": percent(analysis_price, value_at(history, 5)),
+            "20d": percent(analysis_price, value_at(history, 20)),
+            "60d": percent(analysis_price, value_at(history, 60)),
         },
         "range": {
             "high_60d": high_60,
             "low_60d": low_60,
-            "drawdown_from_60d_high": percent(current, high_60),
-            "rebound_from_60d_low": percent(current, low_60),
+            "drawdown_from_60d_high": percent(analysis_price, high_60),
+            "rebound_from_60d_low": percent(analysis_price, low_60),
         },
         "history": history[-60:],
+    }
+
+
+def build_regular_market(quote: dict, current: float, change: float | None, change_rate: float | None, latest: dict, market_status: str) -> dict:
+    return {
+        "id": "regular",
+        "label": (quote.get("stockExchangeType") or {}).get("nameKor") or quote.get("stockExchangeName") or "KRX 정규장",
+        "price": current,
+        "change": change,
+        "change_rate": change_rate,
+        "open": optional_number(quote.get("openPriceRaw") or quote.get("openPrice")) or latest.get("open"),
+        "high": optional_number(quote.get("highPriceRaw") or quote.get("highPrice")) or latest.get("high"),
+        "low": optional_number(quote.get("lowPriceRaw") or quote.get("lowPrice")) or latest.get("low"),
+        "volume": optional_number(quote.get("accumulatedTradingVolumeRaw") or quote.get("accumulatedTradingVolume")) or latest.get("volume"),
+        "trading_value": optional_number(quote.get("accumulatedTradingValueRaw")) or parse_won_amount(quote.get("accumulatedTradingValue")),
+        "trading_value_label": quote.get("accumulatedTradingValue") or "",
+        "status": market_status,
+        "traded_at": quote.get("localTradedAt") or "",
+    }
+
+
+def build_nxt_market(quote: dict) -> dict:
+    over = quote.get("overMarketPriceInfo") or {}
+    price = optional_number(over.get("overPriceRaw") or over.get("overPrice"))
+    change = optional_number(over.get("compareToPreviousClosePriceRaw") or over.get("compareToPreviousClosePrice"))
+    change_rate = optional_number(over.get("fluctuationsRatioRaw") or over.get("fluctuationsRatio"))
+    return {
+        "id": "nxt",
+        "label": "NXT",
+        "session": over.get("tradingSessionType") or "",
+        "status": over.get("overMarketStatus") or "",
+        "price": price,
+        "change": change,
+        "change_rate": change_rate,
+        "open": optional_number(over.get("openPriceRaw") or over.get("openPrice")),
+        "high": optional_number(over.get("highPriceRaw") or over.get("highPrice")),
+        "low": optional_number(over.get("lowPriceRaw") or over.get("lowPrice")),
+        "volume": optional_number(over.get("accumulatedTradingVolumeRaw") or over.get("accumulatedTradingVolume")),
+        "trading_value": optional_number(over.get("accumulatedTradingValueRaw")) or parse_won_amount(over.get("accumulatedTradingValue")),
+        "trading_value_label": over.get("accumulatedTradingValue") or "",
+        "traded_at": over.get("localTradedAt") or "",
+        "available": bool(price),
+    }
+
+
+def build_integrated_market(quote: dict, regular: dict, nxt: dict) -> dict:
+    integrated = quote.get("integratedPriceInfo") or {}
+    volume = optional_number(integrated.get("accumulatedTradingVolumeRaw") or integrated.get("accumulatedTradingVolume"))
+    if volume is None:
+        volume = sum(value for value in [regular.get("volume"), nxt.get("volume")] if value)
+    trading_value = optional_number(integrated.get("accumulatedTradingValueRaw")) or parse_won_amount(integrated.get("accumulatedTradingValue"))
+    if trading_value is None:
+        trading_value = sum(value for value in [regular.get("trading_value"), nxt.get("trading_value")] if value)
+    return {
+        "open": optional_number(integrated.get("openPriceRaw") or integrated.get("openPrice")),
+        "high": optional_number(integrated.get("highPriceRaw") or integrated.get("highPrice")),
+        "low": optional_number(integrated.get("lowPriceRaw") or integrated.get("lowPrice")),
+        "volume": volume,
+        "trading_value": trading_value,
+        "trading_value_label": integrated.get("accumulatedTradingValue") or "",
+    }
+
+
+def choose_active_market(regular: dict, nxt: dict) -> dict:
+    if nxt.get("available") and str(nxt.get("status") or "").upper() == "OPEN":
+        return nxt
+    return regular
+
+
+def build_price_gap(regular: dict, nxt: dict) -> dict:
+    regular_price = regular.get("price")
+    nxt_price = nxt.get("price")
+    if not regular_price or not nxt_price:
+        return {"available": False, "price": None, "rate": None, "label": "NXT 미수집"}
+    gap = round(float(nxt_price) - float(regular_price), 2)
+    return {
+        "available": True,
+        "price": gap,
+        "rate": round((gap / float(regular_price)) * 100, 2) if regular_price else None,
+        "label": "NXT 높음" if gap > 0 else "NXT 낮음" if gap < 0 else "동일",
     }
 
 
@@ -257,6 +410,8 @@ def build_summary(company: dict, peers: list[dict], kospi: dict, kosdaq: dict) -
         "relative_to_peers": relative_to_peers,
         "relative_to_kospi": relative_to_kospi,
         "drawdown_from_60d_high": drawdown,
+        "price_gap": company.get("price_gap", {}),
+        "market_session": company.get("latest", {}).get("source_market", "regular"),
         "commentary": build_commentary(company, peer_return_20d, kospi_return_20d, relative_to_peers, relative_to_kospi),
     }
 
@@ -298,10 +453,13 @@ def build_commentary(
 ) -> list[str]:
     returns = company.get("returns", {})
     range_data = company.get("range", {})
+    gap = company.get("price_gap", {})
     lines = [
         f"당사 20거래일 수익률은 {format_pct(returns.get('20d'))}입니다.",
         f"60거래일 고점 대비 {format_pct(range_data.get('drawdown_from_60d_high'))} 구간에 있습니다.",
     ]
+    if gap.get("available"):
+        lines.append(f"NXT와 정규장 가격 차이는 {format_price_gap(gap.get('price'))}({format_pct(gap.get('rate'))})입니다.")
     if peer_return is not None and relative_to_peers is not None:
         lines.append(f"동종 비교군 평균 20거래일 수익률 {format_pct(peer_return)} 대비 {format_pct(relative_to_peers)} 차이입니다.")
     if kospi_return is not None and relative_to_kospi is not None:
@@ -314,6 +472,12 @@ def format_pct(value: float | None) -> str:
     if value is None:
         return "확인 불가"
     return f"{value:+.2f}%"
+
+
+def format_price_gap(value: float | None) -> str:
+    if value is None:
+        return "확인 불가"
+    return f"{value:+,.0f}원"
 
 
 def publish_stock_market_data(target: Path | None = None) -> Path:
