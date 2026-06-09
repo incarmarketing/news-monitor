@@ -86,7 +86,7 @@ const navIcons = {
 const navSections = [
   { title: "언론 / PR", ids: ["overview", "monitoring", "media", "regulators", "pressRelease", "scraps", "risk", "reports"] },
   { title: "공시 · 주가", ids: ["stocks"] },
-  { title: "GA 경쟁", ids: ["gaIntel"] },
+  { title: "GA/채널 인텔", ids: ["gaIntel"] },
   { title: "운영", ids: ["management"] },
 ];
 
@@ -1664,9 +1664,9 @@ function GACompetitorIntel({ gaIntel }) {
   return (
     <main className="workspace ga-intel-workspace">
       <PageTitle
-        eyebrow="GA Competitive Intelligence"
-        title="GA 경쟁사 인텔"
-        description="상단 콘솔은 인카금융서비스 기준으로 고정하고, 경쟁사와 시장 평균은 비교 맥락으로만 표시합니다."
+        eyebrow="Channel Intelligence"
+        title="GA/채널 인텔리전스"
+        description="인카금융서비스를 기준점으로 두고 GA 비교군, 시장 평균, 매출 공시 흐름을 함께 추적합니다."
         right={(
           <div className="page-actions">
             <a className="ghost-button" href="https://gapub.insure.or.kr/gongsimain/mainSearch.do" target="_blank" rel="noopener noreferrer">
@@ -1682,7 +1682,7 @@ function GACompetitorIntel({ gaIntel }) {
       <section className="ga-hero">
         <div className="ga-hero-main">
           <span className="live-label"><span /> INCAR CONSOLE</span>
-          <h2>인카금융서비스 기준 경쟁 포지션</h2>
+          <h2>인카금융서비스 채널 경쟁력 관제</h2>
           <p>{data?.source?.title || gaCompetitorSeed.source.title}</p>
           <div className="ga-hero-callout">
             <b>{buildGaConsoleJudgement(ownRow, marketLatest)}</b>
@@ -1731,16 +1731,16 @@ function GACompetitorIntel({ gaIntel }) {
       </section>
 
       <section className="ga-dashboard-grid">
-        <Panel title="설계사 규모 비교" icon={Building2} meta="2025년 말 · 상위 10개사">
+        <Panel title="설계사 규모" icon={Building2} meta="2025년 말 · 상위 10개사">
           <GAPlannerBarChart rows={plannerRows} ownShort={ownRow.short} />
         </Panel>
-        <Panel title="당사 품질 지표 추이" icon={LineChart} meta="인카 vs 시장 평균">
+        <Panel title="채널 품질 추이" icon={LineChart} meta="인카 vs 시장 평균">
           <GATrendChart rows={trendRows} />
         </Panel>
       </section>
 
       <section className="ga-dashboard-grid secondary">
-        <Panel title="당사 핵심 지표" icon={Activity} meta="시장 평균 대비">
+        <Panel title="당사 운영 지표" icon={Activity} meta="시장 평균 대비">
           <div className="ga-index-list">
             {marketIndex.map((item) => (
               <article key={item.label}>
@@ -1763,7 +1763,7 @@ function GACompetitorIntel({ gaIntel }) {
         </Panel>
       </section>
 
-      <Panel title="경쟁사 비교표" icon={FileText} meta="인카금융서비스 행 강조">
+      <Panel title="GA 비교군 상세" icon={FileText} meta="인카금융서비스 행 강조">
         <GACompetitorTable rows={rows} ownShort={ownRow.short} />
       </Panel>
     </main>
@@ -1865,27 +1865,35 @@ function GACompetitorTable({ rows = [], ownShort = "" }) {
       <table className="ga-table">
         <thead>
           <tr>
-            <th>순위</th>
-            <th>회사</th>
-            <th>설계사수</th>
-            <th>2024 매출</th>
-            <th>정착률</th>
-            <th>13회 유지율</th>
-            <th>25회 유지율</th>
-            <th>불판율</th>
+            <th>구분</th>
+            <th>GA사</th>
+            <th>영업 규모</th>
+            <th>조직 안정성</th>
+            <th>품질 리스크</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.short} className={row.short === ownShort ? "own" : ""}>
-              <td>{row.rank}</td>
+              <td>
+                <span className="ga-rank-pill">{row.rank}위</span>
+                {row.short === ownShort && <em className="ga-own-mark">당사</em>}
+              </td>
               <td><b>{row.short}</b><span>{row.name}</span></td>
-              <td>{formatGaInteger(row.planners)}명</td>
-              <td>{row.revenue2024 ? formatGaRevenue(row.revenue2024) : "-"}</td>
-              <td>{formatGaPercentPlain(row.stay)}</td>
-              <td>{formatGaPercentPlain(row.retention13Life)}</td>
-              <td>{formatGaPercentPlain(row.retention25Life)}</td>
-              <td>{formatGaPercentPlain(row.poorSalesLife, 2)}</td>
+              <td>
+                <div className="ga-table-metric"><b>{formatGaInteger(row.planners)}명</b><span>설계사</span></div>
+                <small>{row.revenue2024 ? `매출 ${formatGaRevenue(row.revenue2024)}` : "매출 확인 필요"}</small>
+              </td>
+              <td>
+                <div className="ga-table-metric"><b>{formatGaPercentPlain(row.stay)}</b><span>정착률</span></div>
+                <small>13회 {formatGaPercentPlain(row.retention13Life)} · 25회 {formatGaPercentPlain(row.retention25Life)}</small>
+              </td>
+              <td>
+                <div className={`ga-risk-score ${Number(row.poorSalesLife || 0) <= 0 ? "good" : "watch"}`}>
+                  <b>{formatGaPercentPlain(row.poorSalesLife, 2)}</b>
+                  <span>불완전판매율</span>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
