@@ -2323,7 +2323,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   line-height: 1.45;
 }
 
-.ga-hero-revenue {
+.ga-hero-snapshot {
   display: grid;
   align-content: center;
   gap: 8px;
@@ -2334,19 +2334,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   background: rgba(255, 255, 255, .1);
 }
 
-.ga-hero-revenue span,
-.ga-hero-revenue em,
-.ga-hero-revenue small {
+.ga-hero-snapshot span,
+.ga-hero-snapshot em {
   color: rgba(255, 255, 255, .78);
   font-size: 12px;
   font-weight: 900;
   font-style: normal;
+  line-height: 1.45;
 }
 
-.ga-hero-revenue b {
-  font-size: clamp(30px, 4vw, 44px);
-  line-height: 1;
+.ga-hero-snapshot b {
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.12;
   font-weight: 900;
+  word-break: keep-all;
 }
 
 .ga-console-grid {
@@ -2458,156 +2459,145 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-weight: 900;
 }
 
-.ga-revenue-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.ga-revenue-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
+  min-width: 0;
 }
 
-.ga-revenue-body {
+.ga-revenue-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ga-revenue-toolbar label b {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ga-revenue-toolbar select {
+  min-width: 190px;
+  height: 34px;
+  padding: 0 34px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ga-revenue-compare-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(300px, .7fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
   gap: 12px;
   align-items: stretch;
 }
 
 .ga-revenue-chart {
-  height: 284px;
-  padding: 8px 8px 2px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+  height: 326px;
+  padding: 10px 10px 8px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
   background: linear-gradient(180deg, #fff 0, #f8fbff 100%);
 }
 
-.ga-revenue-ledger {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  min-width: 0;
+.ga-revenue-chart .recharts-responsive-container {
+  min-height: 0;
 }
 
-.ga-revenue-ledger article {
-  display: grid;
+.ga-revenue-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0 6px;
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.ga-revenue-legend span {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
+}
+
+.ga-revenue-legend span::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--blue);
+}
+
+.ga-revenue-legend .peer::before {
+  background: var(--green);
+}
+
+.ga-revenue-summary {
+  display: grid;
+  align-content: start;
+  gap: 10px;
   min-width: 0;
-  padding: 11px 12px;
+  padding: 12px;
   border: 1px solid var(--line-soft);
-  border-left: 4px solid var(--blue);
   border-radius: 8px;
   background: #fff;
 }
 
-.ga-revenue-ledger article.pending {
-  border-left-color: #e8a33d;
-  background: #fffaf0;
-}
-
-.ga-revenue-ledger article > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.ga-revenue-ledger span,
-.ga-revenue-ledger em {
-  color: var(--muted);
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 900;
-}
-
-.ga-revenue-ledger b {
+.ga-revenue-summary > b {
   color: var(--ink);
-  font-size: 16px;
-  line-height: 1;
+  font-size: 14px;
+  line-height: 1.4;
   font-weight: 950;
+}
+
+.ga-revenue-table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.ga-revenue-table {
+  width: 100%;
+  min-width: 360px;
+  border-collapse: collapse;
+}
+
+.ga-revenue-table th,
+.ga-revenue-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: right;
   white-space: nowrap;
 }
 
-.ga-revenue-ledger p {
-  margin: 0;
-  color: var(--ink-2);
-  font-size: 12px;
-  line-height: 1.4;
-  font-weight: 800;
-}
-
-.ga-revenue-ledger a {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: fit-content;
-  color: var(--blue);
-  font-size: 12px;
-  font-weight: 900;
-  text-decoration: none;
-}
-
-.ga-revenue-ledger a svg {
-  width: 14px;
-  height: 14px;
-}
-
-.ga-revenue-card {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: var(--shadow-soft);
-}
-
-.ga-revenue-card.confirmed {
-  border-top: 4px solid var(--blue);
-}
-
-.ga-revenue-card.pending {
-  border-top: 4px solid #e8a33d;
-  background: #fffaf0;
-}
-
-.ga-revenue-card span,
-.ga-revenue-card em {
+.ga-revenue-table th {
   color: var(--muted);
   font-size: 11px;
-  font-style: normal;
-  font-weight: 900;
+  background: #f8fafc;
 }
 
-.ga-revenue-card b {
-  color: var(--ink);
-  font-size: 24px;
-  line-height: 1.1;
-  font-weight: 900;
+.ga-revenue-table th:first-child,
+.ga-revenue-table td:first-child {
+  text-align: left;
 }
 
-.ga-revenue-card p {
-  min-height: 34px;
-  margin: 0;
-  color: var(--ink-2);
-  font-size: 12px;
-  line-height: 1.42;
-  font-weight: 800;
-}
-
-.ga-revenue-card a {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: fit-content;
-  color: var(--blue);
-  font-size: 12px;
-  font-weight: 900;
-  text-decoration: none;
-}
-
-.ga-revenue-card a svg {
-  width: 14px;
-  height: 14px;
-}
+.ga-revenue-table .up { color: var(--blue); }
+.ga-revenue-table .down { color: var(--red); }
+.ga-revenue-table .flat { color: var(--ink-2); }
 
 .ga-dashboard-grid {
   display: grid;
@@ -6746,7 +6736,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .stock-dashboard-grid,
   .stock-peer-section,
   .ga-hero,
-  .ga-revenue-body,
+  .ga-revenue-compare-grid,
   .ga-dashboard-grid,
   .ga-dashboard-grid.secondary,
   .press-release-layout,
@@ -7149,8 +7139,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .ga-console-grid,
-  .ga-revenue-grid {
+  .ga-console-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -7163,8 +7152,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     padding: 14px;
   }
 
-  .ga-hero-revenue {
+  .ga-hero-snapshot {
     padding: 14px;
+  }
+
+  .ga-section-title,
+  .ga-revenue-toolbar,
+  .ga-revenue-toolbar label {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ga-revenue-toolbar select {
+    width: 100%;
+    min-width: 0;
   }
 
   .ga-bar-chart,

@@ -11,7 +11,7 @@ export const navItems = [
   { id: "media", label: "언론 동향 분석" },
   { id: "pressRelease", label: "보도자료 작성" },
   { id: "stocks", label: "주가/시장" },
-  { id: "gaIntel", label: "GA 경쟁사 인텔" },
+  { id: "gaIntel", label: "업계 동향" },
   { id: "scraps", label: "주요 기사 스크랩" },
   { id: "risk", label: "리스크 대응센터" },
   { id: "reports", label: "일간/주간/월간 보고서" },
@@ -73,7 +73,7 @@ const dailyIssues = [
 
 export const gaCompetitorSeed = {
   source: {
-    title: "법인보험대리점 통합공시 2025년 말 결산 + 매출 별도 추적",
+    title: "법인보험대리점 통합공시 2025년 말 결산 + 업계 매출 추적",
     updatedAt: "2026-06-09",
     note: "공시 주기는 반기 결산 기준입니다. 매출은 DART/재무요약/보도자료 확인값을 별도 원장으로 추적합니다.",
   },

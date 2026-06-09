@@ -1731,6 +1731,7 @@ function StockPeerTable({
 }
 
 function GACompetitorIntel({ gaIntel }) {
+  const [selectedRevenuePeer, setSelectedRevenuePeer] = useState("지에이코리아");
   const data = gaIntel || gaCompetitorSeed;
   const labels = Array.isArray(data?.labels) ? data.labels : gaCompetitorSeed.labels;
   const companies = Array.isArray(data?.companies) && data.companies.length ? data.companies : gaCompetitorSeed.companies;
@@ -1750,16 +1751,25 @@ function GACompetitorIntel({ gaIntel }) {
   const trendRows = buildGaTrendRows(labels, ownCompany, market);
   const plannerRows = rows.slice(0, 10);
   const revenueRows = normalizeRevenueTracker(revenueTracker);
-  const annual2025 = revenueRows.find((row) => row.period === "2025") || {};
-  const q12026 = revenueRows.find((row) => row.period === "2026Q1") || {};
-  const h12026 = revenueRows.find((row) => row.period === "2026H1") || {};
+  const revenuePeerOptions = buildGaRevenuePeerOptions(companies, revenueRows, ownCompany);
+  const activeRevenuePeer = revenuePeerOptions.find((option) => option.key === selectedRevenuePeer)
+    || revenuePeerOptions.find((option) => option.short === "지에이코리아")
+    || revenuePeerOptions[0]
+    || {};
+  const revenueCompareRows = buildGaRevenueComparisonRows({
+    revenueRows,
+    companies,
+    ownCompany,
+    peerCompany: activeRevenuePeer.company,
+  });
+  const revenueInsight = buildGaRevenueComparisonInsight(revenueCompareRows, activeRevenuePeer.label || "비교 GA");
 
   return (
     <main className="workspace ga-intel-workspace">
       <PageTitle
-        eyebrow="Channel Intelligence"
-        title="GA/채널 인텔리전스"
-        description="인카금융서비스를 기준점으로 두고 GA 비교군, 시장 평균, 매출 공시 흐름을 함께 추적합니다."
+        eyebrow="Industry Trend"
+        title="GA 업계 동향"
+        description="설계사 규모, 유지율, 품질 지표, 매출 흐름을 한 화면에서 비교합니다."
         right={(
           <div className="page-actions">
             <a className="ghost-button" href="https://gapub.insure.or.kr/gongsimain/mainSearch.do" target="_blank" rel="noopener noreferrer">
@@ -1774,19 +1784,18 @@ function GACompetitorIntel({ gaIntel }) {
 
       <section className="ga-hero">
         <div className="ga-hero-main">
-          <span className="live-label"><span /> INCAR CONSOLE</span>
-          <h2>인카금융서비스 채널 경쟁력 관제</h2>
+          <span className="live-label"><span /> GA INDUSTRY BOARD</span>
+          <h2>업계 규모와 채널 품질을 비교합니다.</h2>
           <p>{data?.source?.title || gaCompetitorSeed.source.title}</p>
           <div className="ga-hero-callout">
             <b>{buildGaConsoleJudgement(ownRow, marketLatest)}</b>
-            <span>경쟁사 수치는 비교군이며, 상단 판단은 설계사 규모·유지율·불완전판매율·매출 추적 모두 당사 기준으로 계산합니다.</span>
+            <span>설계사 규모, 유지율, 불완전판매율, 매출 흐름을 업계 평균과 비교해 봅니다.</span>
           </div>
         </div>
-        <div className="ga-hero-revenue">
-          <span>매출 추적</span>
-          <b>{formatGaRevenue(annual2025.amount)}</b>
-          <em>2025 연간 · {annual2025.status || "확인"}</em>
-          <small>2026 1Q {formatGaRevenue(q12026.amount)} · 상반기 {h12026.status || "공시 대기"}</small>
+        <div className="ga-hero-snapshot">
+          <span>비교 기준</span>
+          <b>{activeRevenuePeer.label || "비교 GA"}</b>
+          <em>{revenueInsight}</em>
         </div>
       </section>
 
@@ -1799,26 +1808,24 @@ function GACompetitorIntel({ gaIntel }) {
 
       <section className="ga-revenue-board">
         <div className="ga-section-title">
-          <h2><WalletCards />매출 공시 추적</h2>
-          <span>분기 · 반기 · 연간 확인값 기준</span>
+          <h2><WalletCards />매출 비교</h2>
+          <div className="ga-revenue-toolbar">
+            <span>최근 연간 확인값</span>
+            <label>
+              <b>비교 GA</b>
+              <select value={activeRevenuePeer.key || ""} onChange={(event) => setSelectedRevenuePeer(event.target.value)}>
+                {revenuePeerOptions.map((option) => (
+                  <option key={option.key} value={option.key}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
-        <div className="ga-revenue-body">
-          <GARevenueTrendChart rows={revenueRows} />
-          <div className="ga-revenue-ledger">
-            {revenueRows.map((row) => (
-              <article key={row.period} className={row.amount ? "confirmed" : "pending"}>
-                <div>
-                  <span>{row.label}</span>
-                  <b>{row.amount ? formatGaRevenue(row.amount) : row.status}</b>
-                </div>
-                <p>{row.note}</p>
-                {row.sourceUrl ? (
-                  <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer">
-                    근거 확인 <ExternalLink />
-                  </a>
-                ) : <em>{row.sourceLabel}</em>}
-              </article>
-            ))}
+        <div className="ga-revenue-compare-grid">
+          <GARevenueComparisonChart rows={revenueCompareRows} peerLabel={activeRevenuePeer.label || "비교 GA"} />
+          <div className="ga-revenue-summary">
+            <b>{revenueInsight}</b>
+            <GARevenueComparisonTable rows={revenueCompareRows} peerLabel={activeRevenuePeer.label || "비교 GA"} />
           </div>
         </div>
       </section>
@@ -1896,31 +1903,58 @@ function GAPlannerBarChart({ rows = [], ownShort = "" }) {
   );
 }
 
-function GARevenueTrendChart({ rows = [] }) {
-  const chartRows = rows.map((row) => ({
-    ...row,
-    chartLabel: compactRevenuePeriodLabel(row.label || row.period),
-    amount: row.amount === null || row.amount === undefined ? null : Number(row.amount),
-  }));
-  if (!chartRows.some((row) => Number.isFinite(row.amount))) {
-    return <p className="a4-empty">매출 공시 추적 데이터가 없습니다.</p>;
+function GARevenueComparisonChart({ rows = [], peerLabel = "비교 GA" }) {
+  if (!rows.some((row) => Number.isFinite(row.incaAmount) || Number.isFinite(row.peerAmount))) {
+    return <p className="a4-empty">매출 비교 데이터가 없습니다.</p>;
   }
   return (
-    <div className="chart-box ga-revenue-chart">
+    <div className="chart-box ga-revenue-chart" aria-label="GA 연간 매출 비교 그래프">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartRows} margin={{ left: 4, right: 18, top: 18, bottom: 4 }}>
+        <BarChart data={rows} margin={{ left: 4, right: 18, top: 18, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="chartLabel" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 800 }} />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 800 }} />
           <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}천억`} />
-          <Tooltip formatter={(value, name, item) => [formatGaRevenue(value), item?.payload?.status || "매출"]} />
-          <Bar dataKey="amount" radius={[8, 8, 0, 0]} barSize={42}>
-            {chartRows.map((row) => (
-              <Cell key={row.period || row.label} fill={row.status === "공시 대기" ? "#e8a33d" : "#2855d9"} />
-            ))}
-            <LabelList dataKey="amount" position="top" formatter={(value) => formatGaRevenue(value)} fill="#0f1f3d" fontSize={11} fontWeight={900} />
+          <Tooltip formatter={(value, name) => [formatGaRevenue(value), name === "incaAmount" ? "인카금융서비스" : peerLabel]} />
+          <Bar dataKey="incaAmount" name="인카금융서비스" radius={[7, 7, 0, 0]} fill="#2855d9" barSize={28}>
+            <LabelList dataKey="incaAmount" position="top" formatter={(value) => formatGaRevenueShort(value)} fill="#0f1f3d" fontSize={10} fontWeight={900} />
+          </Bar>
+          <Bar dataKey="peerAmount" name={peerLabel} radius={[7, 7, 0, 0]} fill="#14805f" barSize={28}>
+            <LabelList dataKey="peerAmount" position="top" formatter={(value) => formatGaRevenueShort(value)} fill="#0f1f3d" fontSize={10} fontWeight={900} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      <div className="ga-revenue-legend">
+        <span className="inca">인카금융서비스</span>
+        <span className="peer">{peerLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+function GARevenueComparisonTable({ rows = [], peerLabel = "비교 GA" }) {
+  if (!rows.length) return <p className="a4-empty">매출 비교 표 데이터가 없습니다.</p>;
+  return (
+    <div className="ga-revenue-table-wrap">
+      <table className="ga-revenue-table">
+        <thead>
+          <tr>
+            <th>연도</th>
+            <th>인카</th>
+            <th>{peerLabel}</th>
+            <th>차이</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.period}>
+              <td>{row.label}</td>
+              <td>{formatGaRevenue(row.incaAmount)}</td>
+              <td>{formatGaRevenue(row.peerAmount)}</td>
+              <td className={gaGapTone(row.gap)}>{formatGaRevenueGap(row.gap)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -2065,9 +2099,117 @@ function normalizeRevenueTracker(rows = []) {
   return rows
     .map((row) => ({
       ...row,
+      companyName: row.companyName || row.company_name || row.company || "인카금융서비스",
       amount: row.amount === null || row.amount === undefined ? null : Number(row.amount),
     }))
     .sort((a, b) => gaRevenueSortKey(a.period || a.label) - gaRevenueSortKey(b.period || b.label));
+}
+
+function buildGaRevenuePeerOptions(companies = [], revenueRows = [], ownCompany = {}) {
+  const ownKey = gaCompanyKey(ownCompany);
+  const fallbackByKey = new Map((gaCompetitorSeed.companies || []).map((company) => [gaCompanyKey(company), company]));
+  const rowsByCompany = new Set(revenueRows.map((row) => normalizeGaName(row.companyName)).filter(Boolean));
+  return companies
+    .filter((company) => gaCompanyKey(company) !== ownKey)
+    .map((company) => {
+      const fallback = fallbackByKey.get(gaCompanyKey(company)) || {};
+      const mergedCompany = { ...fallback, ...company };
+      const key = gaCompanyKey(mergedCompany);
+      const hasRevenue = hasCompanyRevenue(mergedCompany)
+        || Array.from(rowsByCompany).some((name) => gaCompanyNameMatches(name, mergedCompany));
+      return {
+        key,
+        label: mergedCompany.short || mergedCompany.name || key,
+        short: mergedCompany.short || "",
+        company: mergedCompany,
+        hasRevenue,
+      };
+    })
+    .filter((option) => option.key && option.hasRevenue)
+    .sort((a, b) => {
+      if (a.short === "지에이코리아") return -1;
+      if (b.short === "지에이코리아") return 1;
+      return a.label.localeCompare(b.label, "ko");
+    });
+}
+
+function buildGaRevenueComparisonRows({ revenueRows = [], companies = [], ownCompany = {}, peerCompany = {} }) {
+  const fallbackByKey = new Map((gaCompetitorSeed.companies || []).map((company) => [gaCompanyKey(company), company]));
+  const ownMerged = { ...(fallbackByKey.get(gaCompanyKey(ownCompany)) || {}), ...ownCompany };
+  const peerMerged = { ...(fallbackByKey.get(gaCompanyKey(peerCompany)) || {}), ...peerCompany };
+  const ownRows = annualRevenueRowsForCompany(revenueRows, ownMerged);
+  const peerRows = annualRevenueRowsForCompany(revenueRows, peerMerged);
+  const periods = Array.from(new Set([...ownRows, ...peerRows].map((row) => row.period)))
+    .filter((period) => /^20\d{2}$/.test(String(period)))
+    .sort()
+    .slice(-5);
+  return periods.map((period) => {
+    const inca = ownRows.find((row) => row.period === period) || {};
+    const peer = peerRows.find((row) => row.period === period) || {};
+    const gap = safeNumberDiff(inca.amount, peer.amount);
+    return {
+      period,
+      label: compactRevenuePeriodLabel(period),
+      incaAmount: Number.isFinite(Number(inca.amount)) ? Number(inca.amount) : null,
+      peerAmount: Number.isFinite(Number(peer.amount)) ? Number(peer.amount) : null,
+      gap,
+    };
+  });
+}
+
+function annualRevenueRowsForCompany(revenueRows = [], company = {}) {
+  const rows = revenueRows
+    .filter((row) => gaCompanyNameMatches(row.companyName, company))
+    .filter((row) => /^20\d{2}$/.test(String(row.period || "")) || /연간/.test(String(row.label || "")))
+    .map((row) => ({
+      period: String(row.period || row.label || "").match(/20\d{2}/)?.[0] || row.period || row.label,
+      label: row.label || row.period,
+      amount: Number.isFinite(Number(row.amount)) ? Number(row.amount) : null,
+      sourceUrl: row.sourceUrl || "",
+    }))
+    .filter((row) => /^20\d{2}$/.test(String(row.period)) && Number.isFinite(Number(row.amount)));
+
+  const fallbackRows = [2019, 2020, 2021, 2022, 2023, 2024, 2025].map((year) => {
+    const amount = Number(company[`revenue${year}`]);
+    return Number.isFinite(amount) ? { period: String(year), label: `${year} 연간`, amount } : null;
+  }).filter(Boolean);
+
+  const byPeriod = new Map();
+  [...fallbackRows, ...rows].forEach((row) => byPeriod.set(row.period, row));
+  return Array.from(byPeriod.values()).sort((a, b) => gaRevenueSortKey(a.period) - gaRevenueSortKey(b.period));
+}
+
+function hasCompanyRevenue(company = {}) {
+  return [2019, 2020, 2021, 2022, 2023, 2024, 2025].some((year) => Number.isFinite(Number(company[`revenue${year}`])));
+}
+
+function gaCompanyKey(company = {}) {
+  return normalizeGaName(company.short || company.short_name || company.name);
+}
+
+function normalizeGaName(value = "") {
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .replace(/주식회사|㈜|\(주\)|보험대리점|법인보험대리점/g, "")
+    .trim();
+}
+
+function gaCompanyNameMatches(value = "", company = {}) {
+  const target = normalizeGaName(value);
+  const aliases = [company.name, company.short, company.short_name].map(normalizeGaName).filter(Boolean);
+  if (!target || !aliases.length) return false;
+  return aliases.some((alias) => target === alias || target.includes(alias) || alias.includes(target));
+}
+
+function buildGaRevenueComparisonInsight(rows = [], peerLabel = "비교 GA") {
+  const latest = rows.slice().reverse().find((row) => Number.isFinite(row.incaAmount) || Number.isFinite(row.peerAmount));
+  if (!latest) return `${peerLabel} 매출 원장 확인이 필요합니다.`;
+  if (!Number.isFinite(latest.incaAmount) || !Number.isFinite(latest.peerAmount)) {
+    return `${latest.period} 기준 확인된 매출만 비교합니다.`;
+  }
+  const gap = safeNumberDiff(latest.incaAmount, latest.peerAmount);
+  const direction = gap >= 0 ? "앞섭니다" : "낮습니다";
+  return `${latest.period} 기준 인카는 ${peerLabel}보다 ${formatGaRevenue(Math.abs(gap))} ${direction}.`;
 }
 
 function gaRevenueSortKey(value) {
@@ -2120,6 +2262,19 @@ function formatGaRevenue(value) {
   return `${number.toLocaleString("ko-KR")}억원`;
 }
 
+function formatGaRevenueShort(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  if (number >= 10000) return `${(number / 10000).toFixed(1)}조`;
+  return `${Math.round(number).toLocaleString("ko-KR")}억`;
+}
+
+function formatGaRevenueGap(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return `${number > 0 ? "+" : ""}${number.toLocaleString("ko-KR")}억원`;
+}
+
 function formatGaPercentPlain(value, digits = 2) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "-";
@@ -2136,6 +2291,12 @@ function gaGapClass(left, right) {
   const diff = safeNumberDiff(left, right);
   if (!Number.isFinite(diff) || diff === 0) return "flat";
   return diff > 0 ? "up" : "down";
+}
+
+function gaGapTone(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number === 0) return "flat";
+  return number > 0 ? "up" : "down";
 }
 
 function gaTrendLabel(name) {
