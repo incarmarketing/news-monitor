@@ -97,6 +97,23 @@ async function rest(config, session, path) {
   return result && Object.prototype.hasOwnProperty.call(result, "data") ? result.data : result;
 }
 
+async function publicRest(config, path) {
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/rest/v1/${path}`, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      apikey: config.anon_key,
+      Authorization: `Bearer ${config.anon_key}`,
+      Accept: "application/json",
+    },
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) throw new Error(data?.message || data?.error || `supabase_public_${response.status}`);
+  return data;
+}
+
 export async function triggerNewsCollection(payload = {}) {
   const config = await loadSupabaseConfig();
   const session = getStoredSession();
@@ -383,6 +400,18 @@ async function fetchTable(config, session, table, query, pageSize = 1000, maxRow
   return rows;
 }
 
+async function fetchPublicTable(config, table, query, pageSize = 1000, maxRows = 50000) {
+  const rows = [];
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const connector = query ? "&" : "";
+    const page = await publicRest(config, `${table}?${query}${connector}limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(page)) return offset === 0 ? [] : rows;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
+}
+
 export async function verifyDashboardLogin(employeeNo, password) {
   const config = await loadSupabaseConfig();
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
@@ -431,6 +460,8 @@ export async function loadOperationalData() {
       const remoteData = await loadOperationalDataFromSupabaseSession();
       if (remoteData?.status === "live") return { ...remoteData, stockMarket };
     }
+    const publicData = await loadOperationalDataFromSupabasePublic();
+    if (publicData?.status === "live") return { ...publicData, stockMarket };
     const staticData = await loadStaticOperationalData();
     if (staticData) return { ...staticData, stockMarket: staticData.stockMarket || stockMarket };
     return { ...base, stockMarket, status: "empty", message: "누적 데이터 없음" };
@@ -762,6 +793,69 @@ async function loadOperationalDataFromSupabaseSession() {
     };
   } catch (error) {
     return { ...base, status: "error", message: error?.message || "운영 데이터 연결 실패" };
+  }
+}
+
+async function loadOperationalDataFromSupabasePublic() {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) return null;
+
+  try {
+    const articles = await fetchPublicTable(
+      config,
+      "news_articles",
+      [
+        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
+        "order=report_date.desc,score.desc",
+      ].join("&"),
+      1000,
+      50000,
+    );
+    const optionalRequests = {
+      reportRuns: publicRest(
+        config,
+        "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
+      ),
+      mediaRelations: publicRest(config, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc"),
+      aliases: publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
+      keywords: publicRest(config, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
+    };
+    const optionalEntries = await Promise.allSettled(
+      Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
+    );
+    const optionalData = {};
+    optionalEntries.forEach((entry) => {
+      if (entry.status === "fulfilled") optionalData[entry.value[0]] = entry.value[1];
+    });
+    const normalizedArticles = Array.isArray(articles)
+      ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean))
+      : [];
+    if (!normalizedArticles.length && !Array.isArray(optionalData.reportRuns)) return null;
+    return {
+      source: "supabase",
+      status: "live",
+      message: `운영 DB 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`,
+      articles: normalizedArticles,
+      notifications: [],
+      watchRuns: [],
+      reportRuns: Array.isArray(optionalData.reportRuns) ? optionalData.reportRuns.map(normalizeReportRun) : [],
+      scraps: [],
+      mediaRelations: Array.isArray(optionalData.mediaRelations)
+        ? optionalData.mediaRelations.filter((row) => !row.hidden).map(normalizeMedia)
+        : [],
+      reporters: [],
+      ads: [],
+      aliases: Array.isArray(optionalData.aliases) ? optionalData.aliases : [],
+      keywords: Array.isArray(optionalData.keywords) ? optionalData.keywords.map(normalizeKeyword).filter(Boolean) : [],
+      feedback: [],
+      feedbackGeneratedAt: "",
+      aiStatus: null,
+      qualityChecks: null,
+      gaIntel: null,
+      session: null,
+    };
+  } catch {
+    return null;
   }
 }
 

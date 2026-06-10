@@ -150,6 +150,31 @@ async function loadGithubWorkflowHealth() {
   };
 }
 
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function operationsFingerprint(data = {}) {
+  const articles = Array.isArray(data.articles) ? data.articles : [];
+  const latest = articles.slice(0, 8).map((article) => [
+    article.articleHash || article.id || article.link || article.title || "",
+    article.date || "",
+    article.time || "",
+    article.score || 0,
+  ].join("|")).join(";");
+  return `${articles.length}:${latest}`;
+}
+
+function workflowFinishedAfter(workflowHealth = {}, workflowId = "news-briefing.yml", startedAt = 0) {
+  const workflow = (workflowHealth.workflows || []).find((item) => item.id === workflowId);
+  const latest = workflow?.latest;
+  if (!latest) return null;
+  const updatedAt = new Date(latest.updatedAt || latest.createdAt || "").getTime();
+  if (!Number.isFinite(updatedAt) || updatedAt < startedAt - 5000) return null;
+  if (latest.status !== "completed") return null;
+  return latest.conclusion || "unknown";
+}
+
 function readInitialRoute() {
   const fallback = { section: "overview", monitoringPreset: null };
   if (typeof window === "undefined") return fallback;
@@ -294,15 +319,16 @@ function App() {
   const [workLabel, setWorkLabel] = useState("");
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
   const workTimers = useRef([]);
+  const refreshGeneration = useRef(0);
 
   const clearWorkTimers = () => {
     workTimers.current.forEach((timer) => window.clearTimeout(timer));
     workTimers.current = [];
   };
 
-  const finishWorkStatus = (label) => {
+  const finishWorkStatus = (label, message = "") => {
     setWorking(true);
-    setWorkLabel(`${label} 완료`);
+    setWorkLabel(message || `${label} 완료`);
     clearWorkTimers();
     workTimers.current.push(window.setTimeout(() => {
       setWorking(false);
@@ -313,6 +339,11 @@ function App() {
   const refreshOperations = async (options = {}) => {
     const trigger = options.trigger === true;
     const label = options.label || (options.workflow === "regulator-releases.yml" ? "금융당국 보도자료 갱신" : "뉴스 수집·분석 갱신");
+    const workflow = options.workflow || "news-briefing.yml";
+    const startedAt = Date.now();
+    const generation = refreshGeneration.current + 1;
+    refreshGeneration.current = generation;
+    const beforeFingerprint = operationsFingerprint(operations);
     clearWorkTimers();
     setWorking(true);
     setWorkLabel(`${label} 작업 중`);
@@ -326,7 +357,7 @@ function App() {
     if (trigger) {
       try {
         await triggerNewsCollection({
-          workflow: options.workflow || "news-briefing.yml",
+          workflow,
           period_reports: "none",
           send_kakao: false,
           report_slot: "auto",
@@ -349,18 +380,37 @@ function App() {
       return;
     }
     if (trigger) {
-      setWorkLabel(`${label} 반영 대기 중`);
-      workTimers.current.push(window.setTimeout(async () => {
-        setWorkLabel(`${label} 반영 확인 중`);
-        const delayed = await loadOperationalData();
-        setOperations({ ...delayed, message: `${label} 반영 확인 중 · ${delayed.message}` });
-      }, 20000));
-      workTimers.current.push(window.setTimeout(async () => {
-        setWorkLabel(`${label} 최종 확인 중`);
-        const delayed = await loadOperationalData();
-        setOperations(delayed);
-        finishWorkStatus(label);
-      }, 60000));
+      const maxAttempts = workflow === "news-briefing.yml" ? 24 : 12;
+      const intervalMs = workflow === "news-briefing.yml" ? 15000 : 10000;
+      let latestData = next;
+      let changed = operationsFingerprint(next) !== beforeFingerprint;
+      let finishedConclusion = "";
+      for (let attempt = 1; attempt <= maxAttempts && refreshGeneration.current === generation; attempt += 1) {
+        if (changed) break;
+        setWorkLabel(`${label} 반영 확인 중 · ${attempt}/${maxAttempts}`);
+        await wait(intervalMs);
+        if (refreshGeneration.current !== generation) return;
+        latestData = await loadOperationalData();
+        setOperations({ ...latestData, message: `${label} 반영 확인 중 · ${latestData.message}` });
+        changed = operationsFingerprint(latestData) !== beforeFingerprint;
+        const nextWorkflowHealth = await loadGithubWorkflowHealth();
+        setWorkflowHealth(nextWorkflowHealth);
+        finishedConclusion = workflowFinishedAfter(nextWorkflowHealth, workflow, startedAt) || "";
+        if (finishedConclusion && finishedConclusion !== "success") break;
+        if (finishedConclusion === "success" && attempt >= 2) break;
+      }
+      if (refreshGeneration.current !== generation) return;
+      const finalData = await loadOperationalData();
+      const finalChanged = operationsFingerprint(finalData) !== beforeFingerprint;
+      const suffix = finalChanged
+        ? "신규 데이터 반영 완료"
+        : finishedConclusion === "success"
+          ? "수집 완료 · 중복 제거 후 추가 기사 없음"
+          : finishedConclusion
+            ? `수집 종료 상태 확인 필요: ${finishedConclusion}`
+            : "수집 요청 완료 · GitHub Actions 지연 가능";
+      setOperations({ ...finalData, message: `${suffix} · ${finalData.message}` });
+      finishWorkStatus(label, `${label} ${suffix}`);
       return;
     }
     finishWorkStatus(label);

@@ -97,6 +97,22 @@ def run_briefing(articles: list[dict]) -> Path:
     json_path = LOG_DIR / f"articles_{timestamp}.json"
     html_path.write_text(html_body, encoding="utf-8")
     json_path.write_text(json.dumps(clustered, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        window = report_window.current_window()
+        supabase_store.save_dashboard_articles(
+            articles,
+            report_date=datetime.now(KST).date().isoformat(),
+            window={
+                "slot": window["slot"],
+                "label": window["label"],
+                "short_label": window["short_label"],
+                "start": window["start"].isoformat(),
+                "end": window["end"].isoformat(),
+            },
+            metrics=metrics,
+        )
+    except Exception as exc:
+        console.print(f"[yellow]Supabase full article archive skipped:[/] {exc}")
     archive_path = archiver.save_daily(clustered, report, metrics)
 
     console.print(f"[dim]저장: {html_path.name} / {json_path.name} / {archive_path.name}[/]")
