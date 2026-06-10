@@ -1933,8 +1933,8 @@ function GARevenueComparisonChart({ rows = [], peerLabel = "비교 GA" }) {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={rows} margin={{ left: 4, right: 18, top: 18, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 800 }} />
-          <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}천억`} />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} minTickGap={0} tick={{ fontSize: 11, fontWeight: 800 }} />
+          <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value)).toLocaleString("ko-KR")}억`} />
           <Tooltip formatter={(value, name) => [formatGaRevenue(value), name === "incaAmount" ? "인카금융서비스" : peerLabel]} />
           <Bar dataKey="incaAmount" name="인카금융서비스" radius={[7, 7, 0, 0]} fill="#2855d9" barSize={28}>
             <LabelList dataKey="incaAmount" position="top" formatter={(value) => formatGaRevenueShort(value)} fill="#0f1f3d" fontSize={10} fontWeight={900} />
@@ -2301,7 +2301,7 @@ function formatGaRevenue(value) {
   if (value === null || value === undefined || value === "") return "-";
   const number = Number(value);
   if (!Number.isFinite(number)) return "-";
-  return `${number.toLocaleString("ko-KR")}억원`;
+  return `${Math.round(number).toLocaleString("ko-KR")}억원`;
 }
 
 function formatGaRevenueCell(value) {
@@ -2315,7 +2315,6 @@ function formatGaRevenueShort(value) {
   if (value === null || value === undefined || value === "") return "";
   const number = Number(value);
   if (!Number.isFinite(number)) return "";
-  if (number >= 10000) return `${(number / 10000).toFixed(1)}조`;
   return `${Math.round(number).toLocaleString("ko-KR")}억`;
 }
 
@@ -2323,7 +2322,7 @@ function formatGaRevenueGap(value) {
   if (value === null || value === undefined || value === "") return "-";
   const number = Number(value);
   if (!Number.isFinite(number)) return "-";
-  return `${number > 0 ? "+" : ""}${number.toLocaleString("ko-KR")}억원`;
+  return `${number > 0 ? "+" : ""}${Math.round(number).toLocaleString("ko-KR")}억원`;
 }
 
 function formatGaPercentPlain(value, digits = 2) {
