@@ -242,6 +242,78 @@ export async function saveArticleScrap(article = {}) {
   );
 }
 
+export async function generateScrapAnalysisWithGemini(payload = {}) {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const session = getStoredSession();
+  const headers = {
+    apikey: config.anon_key,
+    Authorization: `Bearer ${config.anon_key}`,
+    "Content-Type": "application/json",
+  };
+  if (session?.session_token) {
+    headers["X-Dashboard-Session"] = session.session_token;
+  }
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/analyze-scraps`, {
+    method: "POST",
+    cache: "no-store",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) {
+    throw new Error(data?.detail || data?.error || `analyze_scraps_${response.status}`);
+  }
+  return data;
+}
+
+export async function saveScrapAnalysisReport(payload = {}) {
+  const report = payload.report && typeof payload.report === "object" ? payload.report : {};
+  const articles = Array.isArray(payload.articles) ? payload.articles : [];
+  const articleHashes = articles
+    .map((article) => stableArticleHash(article) || stableArticleKey(article))
+    .filter(Boolean);
+  const title = String(report.title || payload.title || "스크랩 기사 분석 보고서").trim();
+  const row = {
+    title,
+    prompt: String(payload.prompt || "").trim(),
+    report,
+    analysis: String(payload.analysis || "").trim(),
+    article_count: Number(payload.articleCount || articles.length || 0),
+    article_hashes: articleHashes,
+    model: String(payload.model || "").trim(),
+    usage: payload.usageMetadata || payload.usage || {},
+    status: "completed",
+    created_by: "dashboard",
+  };
+  try {
+    const saved = await writeRest(
+      "clipping_analysis_reports",
+      "POST",
+      [row],
+      { Prefer: "return=representation" },
+    );
+    return normalizeClippingAnalysisReport(Array.isArray(saved) ? saved[0] : saved);
+  } catch (error) {
+    const fallbackHash = `clip_report_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const fallback = await writeRest(
+      "article_scraps?on_conflict=article_hash",
+      "POST",
+      [{
+        article_hash: fallbackHash,
+        article_snapshot: {
+          type: "analysis_report",
+          ...row,
+        },
+        created_by: "dashboard",
+      }],
+      { Prefer: "resolution=merge-duplicates,return=representation" },
+    );
+    return normalizeClippingAnalysisReportFromScrap(Array.isArray(fallback) ? fallback[0] : fallback);
+  }
+}
+
 export async function generatePressReleaseWithGemini(payload = {}) {
   const config = await loadSupabaseConfig();
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
@@ -441,6 +513,7 @@ export async function loadOperationalData() {
     watchRuns: [],
     reportRuns: [],
     scraps: [],
+    scrapAnalysisReports: [],
     mediaRelations: [],
     reporters: [],
     ads: [],
@@ -625,6 +698,11 @@ async function loadStaticOperationalData() {
       const articles = Array.isArray(payload?.articles) ? deduplicateArticles(payload.articles.map(normalizeArticle).filter(Boolean)) : [];
       const reportRuns = Array.isArray(payload?.report_runs) ? payload.report_runs.map(normalizeReportRun) : [];
       if (!articles.length && !reportRuns.length) continue;
+      const rawScraps = Array.isArray(payload?.scraps) ? payload.scraps : [];
+      const storedScrapReports = rawScraps.map(normalizeClippingAnalysisReportFromScrap).filter(Boolean);
+      const directScrapReports = Array.isArray(payload?.clipping_analysis_reports)
+        ? payload.clipping_analysis_reports.map(normalizeClippingAnalysisReport).filter(Boolean)
+        : [];
       return {
         source: "static",
         status: "live",
@@ -633,7 +711,8 @@ async function loadStaticOperationalData() {
         notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification) : [],
         watchRuns: Array.isArray(payload?.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
         reportRuns,
-        scraps: Array.isArray(payload?.scraps) ? payload.scraps.map(normalizeScrap).filter(Boolean) : [],
+        scraps: rawScraps.map(normalizeScrap).filter(Boolean),
+        scrapAnalysisReports: mergeScrapAnalysisReportRows(directScrapReports, storedScrapReports),
         mediaRelations: Array.isArray(payload?.media_relations)
           ? payload.media_relations.filter((row) => !row.hidden).map(normalizeMedia)
           : [],
@@ -666,6 +745,7 @@ async function loadOperationalDataFromSupabaseSession() {
     watchRuns: [],
     reportRuns: [],
     scraps: [],
+    scrapAnalysisReports: [],
     mediaRelations: [],
     reporters: [],
     ads: [],
@@ -721,6 +801,11 @@ async function loadOperationalDataFromSupabaseSession() {
         session,
         "article_scraps?select=article_hash,article_snapshot,created_at&order=created_at.desc&limit=100",
       ),
+      scrapAnalysisReports: rest(
+        config,
+        session,
+        "clipping_analysis_reports?select=id,title,prompt,report,analysis,article_count,article_hashes,model,usage,status,created_by,created_at,updated_at&order=created_at.desc&limit=50",
+      ),
       mediaRelations: rest(config, session, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc"),
       reporters: rest(config, session, "reporters?select=id,name,media,beat,status,contact_date,email,phone,request,memo,updated_at&order=updated_at.desc&limit=500"),
       ads: rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
@@ -750,6 +835,7 @@ async function loadOperationalDataFromSupabaseSession() {
       watchRuns = [],
       reportRuns = [],
       scraps = [],
+      scrapAnalysisReports = [],
       mediaRelations = [],
       reporters = [],
       ads = [],
@@ -766,6 +852,12 @@ async function loadOperationalDataFromSupabaseSession() {
       ? `운영 DB 연결 · 일부 원장 확인 필요 ${optionalErrors.length}건`
       : "운영 DB 연결";
 
+    const rawScraps = Array.isArray(scraps) ? scraps : [];
+    const storedScrapReports = rawScraps.map(normalizeClippingAnalysisReportFromScrap).filter(Boolean);
+    const directScrapReports = Array.isArray(scrapAnalysisReports)
+      ? scrapAnalysisReports.map(normalizeClippingAnalysisReport).filter(Boolean)
+      : [];
+
     return {
       source: "supabase",
       status: "live",
@@ -774,7 +866,8 @@ async function loadOperationalDataFromSupabaseSession() {
       notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(reportRuns) ? reportRuns.map(normalizeReportRun) : [],
-      scraps: Array.isArray(scraps) ? scraps.map(normalizeScrap).filter(Boolean) : [],
+      scraps: rawScraps.map(normalizeScrap).filter(Boolean),
+      scrapAnalysisReports: mergeScrapAnalysisReportRows(directScrapReports, storedScrapReports),
       mediaRelations: Array.isArray(mediaRelations) ? mediaRelations.filter((row) => !row.hidden).map(normalizeMedia) : [],
       reporters: Array.isArray(reporters) ? reporters.map(normalizeReporter) : [],
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
@@ -843,6 +936,7 @@ async function loadOperationalDataFromSupabasePublic() {
       watchRuns: [],
       reportRuns: Array.isArray(optionalData.reportRuns) ? optionalData.reportRuns.map(normalizeReportRun) : [],
       scraps: [],
+      scrapAnalysisReports: [],
       mediaRelations: Array.isArray(optionalData.mediaRelations)
         ? optionalData.mediaRelations.filter((row) => !row.hidden).map(normalizeMedia)
         : [],
@@ -922,6 +1016,58 @@ function normalizeRiskDraft(row) {
   };
 }
 
+function normalizeClippingAnalysisReport(row) {
+  if (!row?.report && !row?.analysis && !row?.title) return null;
+  const report = row.report && typeof row.report === "object" ? row.report : {};
+  const createdAt = row.created_at || row.createdAt || "";
+  return {
+    id: row.id || `${createdAt}-${row.title || "clipping"}`,
+    title: row.title || report.title || "스크랩 기사 분석 보고서",
+    prompt: row.prompt || "",
+    report,
+    analysis: row.analysis || "",
+    articleCount: Number(row.article_count || row.articleCount || 0),
+    articleHashes: Array.isArray(row.article_hashes) ? row.article_hashes : [],
+    model: row.model || "",
+    usage: row.usage || {},
+    status: row.status || "completed",
+    createdBy: row.created_by || "",
+    createdAt,
+    updatedAt: row.updated_at || "",
+    date: formatArticleDate(createdAt) || String(createdAt || "").slice(0, 10),
+    time: formatTime(createdAt),
+  };
+}
+
+function normalizeClippingAnalysisReportFromScrap(row) {
+  const snapshot = row?.article_snapshot || {};
+  if (snapshot.type !== "analysis_report") return null;
+  return normalizeClippingAnalysisReport({
+    id: row.article_hash || snapshot.id,
+    title: snapshot.title,
+    prompt: snapshot.prompt,
+    report: snapshot.report,
+    analysis: snapshot.analysis,
+    article_count: snapshot.article_count,
+    article_hashes: snapshot.article_hashes,
+    model: snapshot.model,
+    usage: snapshot.usage,
+    status: snapshot.status,
+    created_by: row.created_by || snapshot.created_by,
+    created_at: row.created_at || snapshot.created_at,
+    updated_at: row.updated_at || snapshot.updated_at,
+  });
+}
+
+function mergeScrapAnalysisReportRows(...groups) {
+  const map = new Map();
+  groups.flat().filter(Boolean).forEach((row) => {
+    const key = String(row.id || `${row.createdAt}-${row.title}`).trim();
+    if (key) map.set(key, row);
+  });
+  return Array.from(map.values()).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
 function normalizeFeedback(row) {
   if (!row?.title && !row?.article_hash && !row?.link) return null;
   return {
@@ -951,6 +1097,7 @@ function feedbackReasonLabel(value) {
 
 function normalizeScrap(row) {
   const snapshot = row?.article_snapshot || {};
+  if (snapshot.type === "analysis_report") return null;
   const article = normalizeArticle({
     ...snapshot,
     article_hash: row?.article_hash || snapshot.article_hash || snapshot.id,

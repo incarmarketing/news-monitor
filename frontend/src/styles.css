@@ -4457,12 +4457,41 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .scrap-analysis-preview {
+  display: grid;
+  gap: 7px;
   margin: 10px 0;
   padding: 12px;
   border: 1px solid #c8d6ff;
   border-left: 4px solid var(--blue);
   border-radius: 8px;
   background: #fbfdff;
+}
+
+.scrap-analysis-preview.low {
+  border-color: #b8e5cb;
+  border-left-color: var(--green);
+}
+
+.scrap-analysis-preview.medium {
+  border-color: #fed7aa;
+  border-left-color: var(--amber);
+}
+
+.scrap-analysis-preview.high {
+  border-color: #fecaca;
+  border-left-color: var(--red);
+}
+
+.scrap-analysis-preview > span {
+  justify-self: start;
+  padding: 4px 8px;
+  border: 1px solid #dbe3ee;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
 }
 
 .scrap-analysis-preview b {
@@ -4478,6 +4507,124 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-size: 12px;
   line-height: 1.5;
   font-weight: 800;
+}
+
+.scrap-analysis-status {
+  margin: 8px 0;
+  padding: 9px 10px;
+  border: 1px solid #bcd0ff;
+  border-radius: 8px;
+  background: #f8fbff;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.scrap-analysis-status.warning {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.scrap-report-digest {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.scrap-report-digest section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.scrap-report-digest h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.scrap-report-digest article {
+  display: grid;
+  gap: 5px;
+  padding-top: 8px;
+  border-top: 1px solid #edf2f8;
+}
+
+.scrap-report-digest article:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.scrap-report-digest article b {
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+.scrap-report-digest article p,
+.scrap-report-digest li {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 850;
+}
+
+.scrap-report-digest article em {
+  color: var(--blue);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.scrap-report-digest ul {
+  margin: 0;
+  padding-left: 17px;
+}
+
+.scrap-report-history {
+  display: grid;
+  gap: 8px;
+}
+
+.scrap-report-history button {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scrap-report-history button:hover {
+  border-color: #9db4ff;
+  background: #f8fbff;
+}
+
+.scrap-report-history span,
+.scrap-report-history em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.scrap-report-history b {
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.35;
+  font-weight: 950;
 }
 
 .clip-candidate-list {

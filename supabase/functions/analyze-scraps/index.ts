@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
   }
 
   const compactArticles = articles.slice(0, 40).map(compactArticle);
-  const model = Deno.env.get("GEMINI_EDGE_MODEL") || "gemini-2.5-flash";
+  const model = Deno.env.get("GEMINI_EDGE_MODEL") || "gemini-2.5-pro";
   const maxOutputTokens = Number(Deno.env.get("GEMINI_MAX_OUTPUT_TOKENS") || "6200") || 6200;
 
   const response = await fetch(
@@ -103,6 +103,9 @@ Deno.serve(async (req) => {
               "반드시 사용자가 제공한 스크랩 기사만 근거로 삼고, 추정과 사실을 분리하세요.",
               "모든 핵심 판단에는 기사 번호 근거를 evidence 배열로 남기세요.",
               "제공 기사만으로 판단하기 어려운 내용은 '근거 부족'이라고 쓰세요.",
+              "인카금융서비스가 직접 언급되지 않은 기사는 당사 긍정 또는 당사 부정으로 판단하지 말고 업계/정책/경쟁사 관찰로 분리하세요.",
+              "기사 제목을 반복하거나 '당사 직접 언급 기사입니다' 같은 설명용 문장은 쓰지 말고, 실제 보도 내용과 실무 판단을 요약하세요.",
+              "각 문장은 한국어 완결문으로 끝내고, 말줄임표나 중간에 끊긴 문장을 쓰지 마세요.",
               "반드시 유효한 JSON 객체 하나만 출력하세요. Markdown, 코드블록, 설명 문장을 JSON 밖에 쓰지 마세요.",
             ].join("\n"),
           }],
@@ -199,6 +202,10 @@ function buildPrompt(userPrompt: string, articles: ReturnType<typeof compactArti
     "- evidenceArticles는 가장 중요한 기사 5건 이내",
     "- 모든 판단은 evidence 번호가 있어야 함",
     "- 과장 표현 금지, 근거 부족 시 명시",
+    "- 제목 반복 금지",
+    "- '직접 언급 기사입니다', '확인이 필요합니다' 같은 빈 문장 금지",
+    "- 요약은 기사 본문에 담긴 사건, 수치, 영향 중심으로 작성",
+    "- 당사 직접 언급이 없으면 당사 긍정/부정으로 쓰지 말고 업계 관찰 또는 정책 관찰로 표현",
   ].join("\n");
 }
 
