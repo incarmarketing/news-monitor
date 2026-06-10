@@ -6110,11 +6110,11 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
                   </div>
                 </details>
               )}
-              {!compact && <ArticleCorrectionControl article={row} onSaved={onFeedbackSaved} />}
             </div>
             {!compact && (
               <div className="feed-actions">
-                <ArticleScrapButton article={row} scrapped={scrapped} onScrapSaved={onScrapSaved} />
+                <ArticleCorrectionControl article={row} onSaved={onFeedbackSaved} />
+                <ArticleScrapButton article={row} scrapped={scrapped} onScrapSaved={onScrapSaved} showLabel />
                 {row.link && row.link !== "#" && (
                   <a
                     href={row.link}
@@ -6123,7 +6123,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
                     aria-label="기사 열기"
                     onClick={(event) => openArticleLink(event, row.link)}
                   >
-                    <ExternalLink />
+                    <ExternalLink /> 기사 열기
                   </a>
                 )}
               </div>
@@ -6135,7 +6135,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
   );
 }
 
-function ArticleScrapButton({ article, scrapped = false, onScrapSaved }) {
+function ArticleScrapButton({ article, scrapped = false, onScrapSaved, showLabel = false }) {
   const [saved, setSaved] = useState(scrapped);
   const [saving, setSaving] = useState(false);
 
@@ -6174,6 +6174,7 @@ function ArticleScrapButton({ article, scrapped = false, onScrapSaved }) {
       disabled={saving || saved}
     >
       <Bookmark />
+      {showLabel && <span>{saved ? "스크랩됨" : "스크랩"}</span>}
     </button>
   );
 }

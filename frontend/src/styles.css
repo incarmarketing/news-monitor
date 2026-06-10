@@ -1331,10 +1331,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .feed-row {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
-  align-items: center;
+  align-items: start;
   min-width: 0;
   min-height: 94px;
   padding: 12px 13px;
@@ -5816,6 +5817,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .feed-main {
+  grid-column: 1;
+  grid-row: 1;
   align-self: center;
   min-width: 0;
 }
@@ -5911,28 +5914,54 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .feed-actions {
-  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  align-self: center;
-  justify-items: center;
+  align-self: start;
+  justify-content: flex-end;
+  align-items: flex-start;
+  min-width: max-content;
 }
 
 .feed-actions a,
-.feed-actions .scrap-action {
-  display: grid;
-  place-items: center;
+.feed-actions .scrap-action,
+.feed-actions .correction-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   align-self: center;
   justify-self: center;
-  width: 30px;
-  height: 30px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 5px 8px;
   border: 1px solid #bed0ff;
   border-radius: 8px;
   background: #fff;
   color: var(--blue);
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .feed-actions .scrap-action {
   cursor: pointer;
+}
+
+.feed-actions span {
+  display: inline;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.feed-actions svg {
+  width: 15px;
+  height: 15px;
 }
 
 .feed-actions .scrap-action.saved {
@@ -5950,8 +5979,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   opacity: 1;
 }
 
-.article-correction {
-  margin-top: 8px;
+.feed-actions .article-correction {
+  position: relative;
+  margin: 0;
 }
 
 .correction-toggle {
@@ -5983,6 +6013,15 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   border: 1px solid #d8e2ff;
   border-radius: 8px;
   background: #fff;
+}
+
+.feed-actions .correction-editor {
+  position: absolute;
+  z-index: 12;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(560px, calc(100vw - 48px));
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .14);
 }
 
 .correction-editor label {
@@ -7941,9 +7980,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .feed-actions {
     grid-column: 1;
-    justify-self: start;
-    justify-items: start;
-    margin-top: 6px;
+    grid-row: 1;
+    justify-self: end;
+    justify-content: flex-end;
+    margin: 0 0 6px;
+  }
+
+  .feed-main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .feed-actions .correction-editor {
+    right: 0;
+    width: min(520px, calc(100vw - 30px));
   }
 
   .operations-health-head {
