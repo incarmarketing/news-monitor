@@ -11,6 +11,7 @@ from pathlib import Path
 import archiver
 import ai_briefing
 import dashboard_builder
+import period_report
 import stock_collector
 import supabase_store
 
@@ -124,6 +125,7 @@ def publish() -> Path:
         print("No daily briefing found. Published fallback index.")
 
     publish_assets()
+    refresh_period_reports()
     publish_period_report("weekly")
     publish_period_report("monthly")
     publish_monthly_archives()
@@ -131,6 +133,16 @@ def publish() -> Path:
     repair_daily_notification_history()
     dashboard_builder.publish_dashboard()
     return index_target
+
+
+def refresh_period_reports() -> None:
+    for period in ("weekly", "monthly"):
+        try:
+            generated = period_report.run(period)
+            if generated:
+                print(f"Regenerated {period} report from current template: {generated.name}")
+        except Exception as exc:
+            print(f"{period} report regeneration skipped: {exc}")
 
 
 def publish_stock_market_data() -> None:
