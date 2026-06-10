@@ -288,6 +288,8 @@ negative_target: own | industry | competitor | policy | none
   "negative_target": "none",
   "evidence": "기사에서 판정 근거가 되는 짧은 원문 문장",
   "reason": "짧은 판단 사유",
+  "clipping_recommended": true,
+  "clipping_reason": "임원 클리핑에 넣을지 판단한 짧은 이유",
   "confidence": 0.82
 }}
 
@@ -386,6 +388,8 @@ def normalized_ai_context(article: dict, context: dict | None = None) -> dict:
     negative_target = normalize_ai_negative_target(context.get("negative_target"))
     evidence = str(context.get("evidence") or "").strip()
     reason = str(context.get("reason") or "").strip()
+    clipping_recommended = normalize_ai_bool(context.get("clipping_recommended"))
+    clipping_reason = str(context.get("clipping_reason") or "").strip()
     try:
         confidence = float(context.get("confidence", 0) or 0)
     except (TypeError, ValueError):
@@ -397,9 +401,22 @@ def normalized_ai_context(article: dict, context: dict | None = None) -> dict:
         "negative_target": negative_target,
         "evidence": evidence,
         "reason": reason,
+        "clipping_recommended": clipping_recommended,
+        "clipping_reason": clipping_reason,
         "confidence": round(max(0.0, min(confidence, 1.0)), 3),
         "provider": context.get("provider", ""),
     }
+
+
+def normalize_ai_bool(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    text = str(value or "").strip().lower()
+    if text in {"1", "true", "yes", "y", "recommended", "recommend"}:
+        return True
+    if text in {"0", "false", "no", "n", "none", "not_recommended"}:
+        return False
+    return None
 
 
 def apply_context_safety_guardrails(article: dict, context: dict | None = None) -> dict:
@@ -452,12 +469,52 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     if result["category"] == "own" and not result["own_mentioned"]:
         result["category"] = rule_category if rule_category != "own" else "industry"
 
+    recommended = result.get("clipping_recommended")
+    if recommended is None:
+        recommended = should_recommend_clipping(article, result)
+    result["clipping_recommended"] = bool(recommended)
+    if not result.get("clipping_reason"):
+        result["clipping_reason"] = build_clipping_reason(article, result) if result["clipping_recommended"] else ""
+
     article["_category"] = result["category"]
     article["_tone"] = result["tone"]
     article["category"] = result["category"]
     article["tone"] = result["tone"]
     article["_ai_context"] = result
     return result
+
+
+def should_recommend_clipping(article: dict, context: dict) -> bool:
+    """Recommend only articles that are useful for executive PR clipping."""
+    if context.get("tone") == "exclude" or context.get("category") == "other":
+        return False
+    if is_non_business_noise(article):
+        return False
+    if context.get("category") == "own":
+        return context.get("tone") in {"positive", "caution", "negative", "neutral"}
+    if context.get("tone") in {"negative", "caution"} and context.get("category") in {"regulation", "competitor", "industry"}:
+        return True
+    if context.get("category") == "regulation" and any(word in article_context_text(article) for word in ("수수료", "1200%", "설계사", "GA", "보험대리점", "내부통제", "불완전판매")):
+        return True
+    return False
+
+
+def build_clipping_reason(article: dict, context: dict) -> str:
+    category = context.get("category")
+    tone = context.get("tone")
+    if category == "own" and tone == "positive":
+        return "당사 우호 보도로 홍보 활용 여부를 검토할 기사입니다."
+    if category == "own" and tone == "negative":
+        return "당사 직접 리스크로 사실관계와 대응 필요성을 우선 확인할 기사입니다."
+    if category == "own" and tone == "caution":
+        return "당사 언급이 포함된 주의 이슈로 임원 보고 후보입니다."
+    if category == "own":
+        return "당사 직접 언급 기사로 노출 맥락 확인이 필요합니다."
+    if category == "regulation":
+        return "정책·감독 변화가 영업환경에 미칠 영향을 확인할 기사입니다."
+    if category in {"competitor", "industry"} and tone in {"negative", "caution"}:
+        return "GA·보험업계 리스크 흐름을 보여주는 관찰 기사입니다."
+    return "언론 동향 판단에 참고할 기사입니다."
 
 
 def is_direct_own_negative_article(article: dict) -> bool:

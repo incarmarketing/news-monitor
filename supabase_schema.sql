@@ -36,6 +36,14 @@ create table if not exists public.news_articles (
   score integer default 0,
   category text default 'other',
   tone text default 'neutral',
+  own_mentioned boolean,
+  negative_target text default 'none',
+  classification_evidence text,
+  classification_reason text,
+  classification_confidence numeric default 0,
+  classification_provider text,
+  clipping_recommended boolean not null default false,
+  clipping_reason text,
   cluster_size integer default 1,
   status text not null default 'new',
   owner text,
@@ -192,6 +200,14 @@ create table if not exists public.classification_feedback (
 );
 
 alter table public.news_articles add column if not exists summary text;
+alter table public.news_articles add column if not exists own_mentioned boolean;
+alter table public.news_articles add column if not exists negative_target text default 'none';
+alter table public.news_articles add column if not exists classification_evidence text;
+alter table public.news_articles add column if not exists classification_reason text;
+alter table public.news_articles add column if not exists classification_confidence numeric default 0;
+alter table public.news_articles add column if not exists classification_provider text;
+alter table public.news_articles add column if not exists clipping_recommended boolean not null default false;
+alter table public.news_articles add column if not exists clipping_reason text;
 update public.news_articles
 set summary = coalesce(nullif(summary, ''), raw->>'description', raw->>'summary')
 where summary is null or summary = '';
@@ -201,6 +217,8 @@ create index if not exists idx_news_articles_category on public.news_articles (c
 create index if not exists idx_news_articles_tone on public.news_articles (tone);
 create index if not exists idx_news_articles_status on public.news_articles (status);
 create index if not exists idx_news_articles_keyword on public.news_articles (keyword);
+create index if not exists idx_news_articles_clipping_recommended on public.news_articles (clipping_recommended, report_date desc);
+create index if not exists idx_news_articles_negative_target on public.news_articles (negative_target);
 create index if not exists idx_report_runs_report_date on public.report_runs (report_date desc);
 create index if not exists idx_monitor_keywords_category on public.monitor_keywords (category, created_at);
 create index if not exists idx_media_relations_hidden on public.media_relations (hidden);

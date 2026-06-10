@@ -3036,8 +3036,12 @@ function buildStockMarketReason(company = {}, summary = {}, range = {}, rangeLab
   return `${pieces.join(" · ")} 기준으로 주가성 기사와 실제 가격 흐름을 함께 점검합니다.`;
 }
 
-function Scraps({ scraps, onOpenMonitoring, onScrapSaved }) {
+function Scraps({ scraps, allArticles = [], onOpenMonitoring, onScrapSaved }) {
   const [prompt, setPrompt] = useState("홍보 대응 관점에서 부정 이슈와 우호적으로 활용할 수 있는 기사 흐름을 나눠 분석해줘.");
+  const recommended = useMemo(
+    () => selectClippingRecommendations(allArticles, scraps).slice(0, 12),
+    [allArticles, scraps],
+  );
   const grouped = groupArticles(scraps, "category").slice(0, 5).map(([name, value]) => ({ name, value }));
   return (
     <main className="workspace">
@@ -3068,6 +3072,24 @@ function Scraps({ scraps, onOpenMonitoring, onScrapSaved }) {
           </div>
         </Panel>
         <div className="scrap-side-stack">
+          <Panel title="AI 추천 클리핑" icon={Newspaper} meta={`${recommended.length}건`}>
+            <div className="clip-candidate-list">
+              {recommended.map((article) => (
+                <article key={articleSelectionKey(article)} className="clip-candidate-row">
+                  <div>
+                    <span>
+                      <Chip tone={article.tone}>{article.tone}</Chip>
+                      <em>{article.category} · {article.source || "출처 확인"}</em>
+                    </span>
+                    <b>{article.title}</b>
+                    <p>{article.clippingReason || article.aiContext?.reason || "임원 클리핑 후보로 검토할 기사입니다."}</p>
+                  </div>
+                  <ArticleScrapButton article={article} scrapped={isArticleScrapped(article, scraps)} onScrapSaved={onScrapSaved} />
+                </article>
+              ))}
+              {!recommended.length && <div className="risk-empty compact">추천 클리핑 후보가 아직 없습니다.</div>}
+            </div>
+          </Panel>
           <Panel title="스크랩 분류" icon={LineChart} meta="근거 구성">
             <CategoryChart rows={grouped.length ? grouped : [{ name: "스크랩", value: scraps.length }]} mini onOpenMonitoring={onOpenMonitoring} />
           </Panel>
@@ -3078,6 +3100,21 @@ function Scraps({ scraps, onOpenMonitoring, onScrapSaved }) {
       </section>
     </main>
   );
+}
+
+function selectClippingRecommendations(articles = [], scraps = []) {
+  const scrappedKeys = new Set(scraps.map((article) => articleSelectionKey(article)));
+  return [...(articles || [])]
+    .filter((article) => article?.clippingRecommended)
+    .filter((article) => !scrappedKeys.has(articleSelectionKey(article)))
+    .sort((a, b) => clippingScore(b) - clippingScore(a) || articleTimeValue(b) - articleTimeValue(a));
+}
+
+function clippingScore(article = {}) {
+  const toneScore = { 부정: 80, 주의: 60, 긍정: 45, 중립: 25 }[article.tone] || 10;
+  const categoryScore = article.category === "당사" ? 80 : article.category === "정책/규제" ? 45 : 25;
+  const confidence = Math.round(Number(article.aiContext?.confidence || 0) * 20);
+  return toneScore + categoryScore + confidence + Number(article.score || 0) / 10;
 }
 
 function RiskCenterV2({ articles = [], allArticles = [], operations = {}, onRefreshOperations }) {
@@ -5516,6 +5553,37 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
+function ArticleDecisionNote({ item }) {
+  const context = item?.aiContext || {};
+  const reason = item?.clippingReason || context.reason || "";
+  const evidence = context.evidence || "";
+  const confidence = Number(context.confidence || 0);
+  const chips = [];
+  if (item?.clippingRecommended) chips.push("클리핑 후보");
+  if (context.negativeTarget && context.negativeTarget !== "none") chips.push(`대상 ${negativeTargetLabel(context.negativeTarget)}`);
+  if (confidence > 0) chips.push(`신뢰도 ${Math.round(confidence * 100)}%`);
+  if (!reason && !evidence && !chips.length) return null;
+  return (
+    <div className={item?.clippingRecommended ? "article-decision-note recommended" : "article-decision-note"}>
+      <div>
+        <b>판단 근거</b>
+        {chips.map((chip) => <span key={chip}>{chip}</span>)}
+      </div>
+      {reason && <p>{reason}</p>}
+      {evidence && <em>{evidence}</em>}
+    </div>
+  );
+}
+
+function negativeTargetLabel(value = "") {
+  return {
+    own: "당사",
+    industry: "업계",
+    competitor: "경쟁사",
+    policy: "정책",
+  }[String(value).trim()] || String(value || "").trim();
+}
+
 function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onFeedbackSaved, onScrapSaved }) {
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
@@ -5532,6 +5600,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
               </div>
               <span className="feed-meta">{formatFeedMeta(row, hasRelated)}</span>
               {!compact && <ArticleSummaryBlock item={row} dense />}
+              {!compact && <ArticleDecisionNote item={row} />}
               {!compact && hasRelated && (
                 <details className="related-details">
                   <summary>묶인 기사 보기</summary>

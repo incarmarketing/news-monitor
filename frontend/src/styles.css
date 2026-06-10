@@ -4480,6 +4480,78 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-weight: 800;
 }
 
+.clip-candidate-list {
+  display: grid;
+  gap: 8px;
+}
+
+.clip-candidate-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.clip-candidate-row > div {
+  min-width: 0;
+}
+
+.clip-candidate-row span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.clip-candidate-row em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clip-candidate-row b {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 12.5px;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+.clip-candidate-row p {
+  margin: 5px 0 0;
+  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 1.4;
+  font-weight: 850;
+}
+
+.clip-candidate-row .scrap-action {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #bed0ff;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue);
+}
+
+.clip-candidate-row .scrap-action.saved {
+  border-color: #99b7ff;
+  background: var(--blue);
+  color: #fff;
+}
+
 .risk-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, .8fr);
@@ -5631,6 +5703,64 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-weight: 800;
   word-break: keep-all;
   overflow-wrap: anywhere;
+}
+
+.article-decision-note {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 8px 9px;
+  border: 1px solid #dbe5f3;
+  border-left: 3px solid #8aa0c8;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.article-decision-note.recommended {
+  border-color: #bfd0ff;
+  border-left-color: var(--blue);
+  background: #f5f8ff;
+}
+
+.article-decision-note > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.article-decision-note b {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.article-decision-note span {
+  display: inline-flex;
+  margin: 0;
+  padding: 2px 6px;
+  border: 1px solid #d5def0;
+  border-radius: 999px;
+  background: #fff;
+  color: #37517a;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.article-decision-note p,
+.article-decision-note em {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 11.5px;
+  line-height: 1.45;
+  font-style: normal;
+  font-weight: 850;
+  word-break: keep-all;
+}
+
+.article-decision-note em {
+  color: #637899;
 }
 
 .feed-actions {

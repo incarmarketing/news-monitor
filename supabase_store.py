@@ -37,8 +37,32 @@ ARTICLE_COLUMNS = (
     "score",
     "category",
     "tone",
+    "own_mentioned",
+    "negative_target",
+    "classification_evidence",
+    "classification_reason",
+    "classification_confidence",
+    "classification_provider",
+    "clipping_recommended",
+    "clipping_reason",
     "cluster_size",
     "raw",
+)
+
+LEGACY_ARTICLE_COLUMNS = tuple(
+    column
+    for column in ARTICLE_COLUMNS
+    if column
+    not in {
+        "own_mentioned",
+        "negative_target",
+        "classification_evidence",
+        "classification_reason",
+        "classification_confidence",
+        "classification_provider",
+        "clipping_recommended",
+        "clipping_reason",
+    }
 )
 
 NOTIFICATION_COLUMNS = (
@@ -513,7 +537,7 @@ def save_report_run(archive_payload: dict) -> None:
         for article in articles
     ]
     if rows:
-        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
+        save_news_article_rows(rows)
         save_own_media_relations(rows)
 
 
@@ -529,7 +553,7 @@ def save_dashboard_articles(articles: list[dict], *, report_date: str, window: d
     apply_classification_feedback_to_articles(articles)
     rows = [normalize_article(article, archive_payload) for article in articles]
     if rows:
-        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
+        save_news_article_rows(rows)
         save_own_media_relations(rows)
 
 
@@ -920,6 +944,7 @@ def article_risk_level(article: dict, metrics: dict | None = None) -> str:
 def normalize_article(article: dict, archive_payload: dict) -> dict:
     window = archive_payload.get("window", {})
     metrics = archive_payload.get("metrics", {})
+    context = normalized_article_context(article)
     row = {
         "article_hash": article_hash(article),
         "report_date": archive_payload.get("date"),
@@ -938,10 +963,64 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "score": article.get("_score", 0),
         "category": article.get("_category", "other"),
         "tone": article.get("_tone", "neutral"),
+        "own_mentioned": context.get("own_mentioned"),
+        "negative_target": context.get("negative_target", ""),
+        "classification_evidence": context.get("evidence", ""),
+        "classification_reason": context.get("reason", ""),
+        "classification_confidence": context.get("confidence", 0),
+        "classification_provider": context.get("provider", ""),
+        "clipping_recommended": context.get("clipping_recommended", False),
+        "clipping_reason": context.get("clipping_reason", ""),
         "cluster_size": article.get("_cluster_size", 1),
         "raw": article,
     }
     return {key: row.get(key) for key in ARTICLE_COLUMNS}
+
+
+def normalized_article_context(article: dict) -> dict:
+    context = article.get("_ai_context") if isinstance(article.get("_ai_context"), dict) else {}
+    if not context and isinstance(article.get("ai_context"), dict):
+        context = article.get("ai_context")
+    own_mentioned = context.get("own_mentioned")
+    if own_mentioned is None:
+        own_mentioned = analyzer.is_own_article(article)
+    return {
+        "own_mentioned": bool(own_mentioned),
+        "negative_target": str(context.get("negative_target") or "none").strip() or "none",
+        "evidence": str(context.get("evidence") or "").strip(),
+        "reason": str(context.get("reason") or "").strip(),
+        "confidence": safe_float(context.get("confidence"), 0),
+        "provider": str(context.get("provider") or "").strip(),
+        "clipping_recommended": bool(context.get("clipping_recommended") or False),
+        "clipping_reason": str(context.get("clipping_reason") or "").strip(),
+    }
+
+
+def safe_float(value: object, default: float = 0) -> float:
+    try:
+        number = float(value)
+        return number if number == number else default
+    except (TypeError, ValueError):
+        return default
+
+
+def save_news_article_rows(rows: list[dict]) -> None:
+    """Persist articles with a legacy fallback while migration rolls out."""
+    try:
+        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
+    except requests.HTTPError as error:
+        detail = str(error)
+        missing_column = (
+            "classification_evidence" in detail
+            or "clipping_recommended" in detail
+            or "own_mentioned" in detail
+            or "negative_target" in detail
+        )
+        if not missing_column:
+            raise
+        legacy_rows = [{column: row.get(column) for column in LEGACY_ARTICLE_COLUMNS} for row in rows]
+        print("Supabase news_articles context columns missing; retried with legacy article payload.")
+        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(legacy_rows, ensure_ascii=False))
 
 
 def save_own_media_relations(article_rows: list[dict]) -> None:

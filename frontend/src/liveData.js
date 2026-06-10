@@ -305,6 +305,9 @@ function articleSnapshotForScrap(article = {}, articleHash = "") {
     score: article.score || 0,
     category: article.category || article.category_label || "",
     tone: article.tone || article.tone_label || "",
+    ai_context: article.aiContext || {},
+    clipping_recommended: article.clippingRecommended === true,
+    clipping_reason: article.clippingReason || "",
     risk_level: article.riskLevel || article.risk_level || "",
     cluster_size: article.relatedCount || article.cluster_size || article.clusterSize || 1,
   };
@@ -691,7 +694,7 @@ async function loadOperationalDataFromSupabaseSession() {
       session,
       "news_articles",
       [
-        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size,raw",
+        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size,raw",
         "order=report_date.desc,score.desc",
       ].join("&"),
       1000,
@@ -805,7 +808,7 @@ async function loadOperationalDataFromSupabasePublic() {
       config,
       "news_articles",
       [
-        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,risk_level,status,cluster_size",
+        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
         "order=report_date.desc,score.desc",
       ].join("&"),
       1000,
@@ -984,6 +987,8 @@ function normalizeArticle(row) {
     category,
     tone,
     aiContext,
+    clippingRecommended: Boolean(aiContext.clippingRecommended),
+    clippingReason: aiContext.clippingReason || "",
     riskLevel: String(row.risk_level || row.risk || "").toUpperCase(),
     score: Number(row.score || 0),
     status: row.status || "분석 완료",
@@ -1012,17 +1017,40 @@ function normalizeArticleTone(row, category, aiContext = {}) {
 function normalizeAiContext(row = {}) {
   const raw = row.raw && typeof row.raw === "object" ? row.raw : {};
   const context = row.ai_context || row.aiContext || raw._ai_context || raw.ai_context || {};
-  if (!context || typeof context !== "object") return {};
-  return {
-    category: normalizeBackendCategory(context.category),
-    tone: normalizeBackendTone(context.tone),
-    ownMentioned: typeof context.own_mentioned === "boolean" ? context.own_mentioned : undefined,
-    negativeTarget: normalizeNegativeTarget(context.negative_target),
-    evidence: String(context.evidence || "").trim(),
-    reason: String(context.reason || "").trim(),
-    confidence: Number(context.confidence || 0) || 0,
-    provider: context.provider || "",
+  const source = context && typeof context === "object" ? context : {};
+  const merged = {
+    ...source,
+    category: source.category ?? row.category,
+    tone: source.tone ?? row.tone,
+    own_mentioned: source.own_mentioned ?? row.own_mentioned,
+    negative_target: source.negative_target ?? row.negative_target,
+    evidence: source.evidence ?? row.classification_evidence,
+    reason: source.reason ?? row.classification_reason,
+    confidence: source.confidence ?? row.classification_confidence,
+    provider: source.provider ?? row.classification_provider,
+    clipping_recommended: source.clipping_recommended ?? row.clipping_recommended,
+    clipping_reason: source.clipping_reason ?? row.clipping_reason,
   };
+  return {
+    category: normalizeBackendCategory(merged.category),
+    tone: normalizeBackendTone(merged.tone),
+    ownMentioned: normalizeContextBool(merged.own_mentioned),
+    negativeTarget: normalizeNegativeTarget(merged.negative_target),
+    evidence: String(merged.evidence || "").trim(),
+    reason: String(merged.reason || "").trim(),
+    confidence: Number(merged.confidence || 0) || 0,
+    provider: merged.provider || "",
+    clippingRecommended: normalizeContextBool(merged.clipping_recommended) === true,
+    clippingReason: String(merged.clipping_reason || "").trim(),
+  };
+}
+
+function normalizeContextBool(value) {
+  if (typeof value === "boolean") return value;
+  const text = String(value ?? "").trim().toLowerCase();
+  if (["true", "1", "yes", "y"].includes(text)) return true;
+  if (["false", "0", "no", "n"].includes(text)) return false;
+  return undefined;
 }
 
 function normalizeBackendCategory(value) {
