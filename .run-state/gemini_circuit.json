@@ -1,6 +1,8 @@
 {
-  "status": "credit_depleted",
+  "status": "open",
+  "reason": "credit_depleted",
   "model": "gemini-2.5-pro",
-  "captured_at": "2026-06-10T23:04:42.901695+00:00",
+  "blocked_at": "2026-06-10T23:04:42.901695+00:00",
+  "blocked_until": "2026-06-11T23:04:42.901695+00:00",
   "error": "429 Your project has exceeded its monthly spending cap. Please go to AI Studio at https://ai.studio/spend to manage your project spend cap. Learn more at https://ai.google.dev/gemini-api/docs/billing#project-spend-caps."
 }
