@@ -92,9 +92,14 @@ EXCLUDED_PRESS_NAMES = {
 }
 
 DOMAIN_PRESS_MAP = {
-    "fins.co.kr": "보험저널",
+    "fins.co.kr": "보험매일",
+    "www.fins.co.kr": "보험매일",
     "insjournal.co.kr": "보험저널",
     "www.insjournal.co.kr": "보험저널",
+    "insnews.co.kr": "한국보험신문",
+    "www.insnews.co.kr": "한국보험신문",
+    "insweek.co.kr": "보험신보",
+    "www.insweek.co.kr": "보험신보",
     "news2day.co.kr": "뉴스투데이",
     "econovill.com": "이코노믹리뷰",
     "pinpointnews.co.kr": "핀포인트뉴스",
@@ -107,7 +112,6 @@ DOMAIN_PRESS_MAP = {
     "yna.co.kr": "연합뉴스",
     "newsis.com": "뉴시스",
     "news1.kr": "뉴스1",
-    "insnews.co.kr": "보험매일",
     "mt.co.kr": "머니투데이",
     "biz.heraldcorp.com": "헤럴드경제",
     "heraldcorp.com": "헤럴드경제",
@@ -177,9 +181,58 @@ TRADE_PRESS_SOURCES = [
     {
         "name": "보험저널",
         "base_url": "https://www.insjournal.co.kr/",
+        "rss_urls": [
+            "https://cdn.insjournal.co.kr/rss/gn_rss_allArticle.xml",
+        ],
         "list_urls": [
             "https://www.insjournal.co.kr/",
             "https://www.insjournal.co.kr/news/articleList.html?view_type=sm",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?insjournal\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+    {
+        "name": "보험매일",
+        "base_url": "https://www.fins.co.kr/",
+        "list_urls": [
+            "https://www.fins.co.kr/",
+            "https://www.fins.co.kr/news/articleList.html?view_type=sm",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?fins\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+    {
+        "name": "한국보험신문",
+        "base_url": "https://www.insnews.co.kr/",
+        "rss_urls": [
+            "https://cdn.insnews.co.kr/rss/gn_rss_allArticle.xml",
+        ],
+        "list_urls": [
+            "https://www.insnews.co.kr/",
+            "https://www.insnews.co.kr/news/articleList.html?sc_section_code=S1N1&view_type=sm",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?insnews\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+    {
+        "name": "보험신보",
+        "base_url": "https://www.insweek.co.kr/",
+        "rss_urls": [
+            "https://cdn.insweek.co.kr/rss/gn_rss_allArticle.xml",
+        ],
+        "list_urls": [
+            "https://www.insweek.co.kr/",
+            "https://www.insweek.co.kr/news/articleList.html?sc_section_code=S1N1&view_type=sm",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?insweek\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
         ],
     },
 ]
@@ -422,9 +475,14 @@ def fetch_trade_press_news(limit_per_source: int | None = None) -> list[dict]:
         return []
     limit = limit_per_source or TRADE_PRESS_ARTICLES_PER_SOURCE
     articles: list[dict] = []
+    seen_links: set[str] = set()
     for source in TRADE_PRESS_SOURCES:
         urls = collect_trade_press_article_urls(source, limit)
         for url in urls[:limit]:
+            normalized = normalize_url_for_tracking(url)
+            if normalized in seen_links:
+                continue
+            seen_links.add(normalized)
             article = fetch_trade_press_article(source, url)
             if article:
                 articles.append(article)
@@ -434,26 +492,71 @@ def fetch_trade_press_news(limit_per_source: int | None = None) -> list[dict]:
 def collect_trade_press_article_urls(source: dict, limit: int) -> list[str]:
     seen: set[str] = set()
     urls: list[str] = []
+    for url in collect_trade_press_rss_article_urls(source, limit):
+        normalized = normalize_url_for_tracking(url)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        urls.append(url)
+        if len(urls) >= limit:
+            return urls
     for list_url in source.get("list_urls", []):
         html, final_url = fetch_article_html(list_url, timeout=8)
         if not html:
             continue
         base_url = final_url or list_url or source.get("base_url", "")
-        patterns = [
-            r'https?://(?:www\.)?insjournal\.co\.kr/news/articleView\.html\?idxno=\d+',
-            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
-        ]
-        for pattern in patterns:
+        for pattern in source.get("article_url_patterns", []):
             for match in re.finditer(pattern, html, re.I):
                 raw = match.group(1) if match.groups() else match.group(0)
                 url = urljoin(base_url, raw)
-                if url in seen:
+                normalized = normalize_url_for_tracking(url)
+                if normalized in seen:
                     continue
-                seen.add(url)
+                seen.add(normalized)
                 urls.append(url)
                 if len(urls) >= limit:
                     return urls
     return urls
+
+
+def collect_trade_press_rss_article_urls(source: dict, limit: int) -> list[str]:
+    urls: list[str] = []
+    seen: set[str] = set()
+    for rss_url in source.get("rss_urls", []):
+        try:
+            feed = feedparser.parse(rss_url)
+        except Exception:
+            continue
+        for entry in getattr(feed, "entries", [])[:limit]:
+            link = entry.get("link", "")
+            if not link:
+                continue
+            normalized = normalize_url_for_tracking(link)
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            urls.append(link)
+            if len(urls) >= limit:
+                return urls
+    return urls
+
+
+def normalize_url_for_tracking(url: str) -> str:
+    parsed = urlparse(url or "")
+    if not parsed.netloc:
+        return url
+    query_parts = []
+    for part in parsed.query.split("&"):
+        if not part:
+            continue
+        key = part.split("=", 1)[0].lower()
+        if key.startswith("utm_") or key in {"fbclid", "gclid", "from", "output"}:
+            continue
+        query_parts.append(part)
+    query = "&".join(query_parts)
+    host = parsed.netloc.lower()
+    path = parsed.path.rstrip("/")
+    return f"{parsed.scheme.lower()}://{host}{path}" + (f"?{query}" if query else "")
 
 
 def fetch_trade_press_article(source: dict, url: str) -> dict | None:
@@ -491,7 +594,7 @@ def extract_article_title_from_html(html: str) -> str:
         match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
         title = match.group(1) if match else ""
     title = clean_html(title)
-    title = re.sub(r"\s*[-|]\s*보험저널\s*$", "", title).strip()
+    title = re.sub(r"\s*[-|]\s*(보험저널|보험매일|한국보험신문|보험신보)\s*$", "", title).strip()
     return title
 
 
