@@ -801,22 +801,24 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
           const scrapped = isArticleScrapped(article, scraps);
           return (
             <article className={`dashboard-clipping-card ${toneCssClass(article.tone)}`} key={`${articleSelectionKey(article)}-${index}`}>
-              <div className="clipping-card-meta">
-                <Chip tone={article.tone}>{article.tone}</Chip>
-                <Chip>{article.category}</Chip>
-                <span>{formatIssueMeta(article)}</span>
+              <div className="clipping-card-top">
+                <div className="clipping-card-meta">
+                  <Chip tone={article.tone}>{article.tone}</Chip>
+                  <Chip>{article.category}</Chip>
+                  <span>{formatIssueMeta(article)}</span>
+                </div>
+                <div className="clipping-card-actions">
+                  <ArticleScrapButton article={article} scrapped={scrapped} onScrapSaved={onScrapSaved} />
+                  {article.link && article.link !== "#" && (
+                    <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, article.link)}>
+                      <ExternalLink /> 기사 열기
+                    </a>
+                  )}
+                </div>
               </div>
               <h3>{article.title}</h3>
               <ArticleSummaryBlock item={article} dense />
               <ArticleDecisionNote item={article} />
-              <div className="clipping-card-actions">
-                <ArticleScrapButton article={article} scrapped={scrapped} onScrapSaved={onScrapSaved} />
-                {article.link && article.link !== "#" && (
-                  <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, article.link)}>
-                    <ExternalLink /> 기사
-                  </a>
-                )}
-              </div>
             </article>
           );
         }) : (

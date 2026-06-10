@@ -6888,6 +6888,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .dashboard-clipping-card.positive { border-left-color: var(--green); }
 .dashboard-clipping-card.neutral { border-left-color: var(--blue); }
 
+.clipping-card-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  min-width: 0;
+}
+
 .clipping-card-meta {
   display: flex;
   align-items: center;
@@ -6917,7 +6925,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  margin-top: 2px;
+  min-width: max-content;
 }
 
 .clipping-card-actions .scrap-action,
@@ -7613,12 +7621,16 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .clipping-card-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .clipping-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .clipping-card-actions {
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
   .queue-row {
