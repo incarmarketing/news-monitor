@@ -2590,6 +2590,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ga-revenue-table .up { color: var(--blue); }
 .ga-revenue-table .down { color: var(--red); }
 .ga-revenue-table .flat { color: var(--ink-2); }
+.ga-revenue-table td.missing {
+  color: var(--muted);
+  font-size: 11px;
+}
 
 .ga-dashboard-grid {
   display: grid;
@@ -4734,6 +4738,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .a4-report-sheet.daily {
   gap: 6px;
+  height: 297mm;
+  min-height: 0;
   padding: 8mm;
 }
 
@@ -4743,7 +4749,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .a4-report-sheet.daily .a4-front {
-  min-height: 112px;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: auto;
 }
 
 .a4-report-sheet.daily .a4-lead {
@@ -4759,6 +4766,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .a4-report-sheet.daily .a4-report-main-column,
 .a4-report-sheet.daily .a4-report-side-column {
   gap: 6px;
+}
+
+.a4-report-sheet.daily .a4-topline {
+  display: none;
+}
+
+.a4-report-sheet.daily .a4-report-body {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+}
+
+.a4-report-sheet.daily .a4-report-bottom-row {
+  grid-column: 1;
+  grid-template-columns: minmax(0, 1.3fr) minmax(150px, .7fr);
 }
 
 .a4-report-sheet.daily .a4-panel {
@@ -7832,6 +7853,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   }
   .a4-report-sheet.daily {
     gap: 4px;
+    height: 285mm;
+    max-height: 285mm;
     padding: 5mm;
   }
   .a4-report-sheet.daily .a4-masthead {
@@ -7857,7 +7880,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     font-size: 13px;
   }
   .a4-report-sheet.daily .a4-front {
-    min-height: 72px;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: auto;
   }
   .a4-report-sheet.daily .a4-lead {
     padding: 6px 7px;
@@ -7868,7 +7892,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     line-height: 1.1;
   }
   .a4-report-sheet.daily .a4-report-body {
+    grid-template-columns: minmax(0, 1fr);
     gap: 5px;
+  }
+  .a4-report-sheet.daily .a4-report-side-column,
+  .a4-report-sheet.daily .a4-insight {
+    display: none;
   }
   .a4-report-sheet.daily .a4-report-main-column,
   .a4-report-sheet.daily .a4-report-side-column {
@@ -7894,6 +7923,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   }
   .a4-report-sheet.daily .a4-report-bottom-row {
     gap: 5px;
+    grid-column: 1;
+    grid-template-columns: minmax(0, 1.25fr) minmax(130px, .75fr);
   }
   .a4-report-sheet.monthly {
     gap: 4px;

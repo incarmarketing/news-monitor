@@ -1781,7 +1781,7 @@ function GACompetitorIntel({ gaIntel }) {
         <div className="ga-section-title">
           <h2><WalletCards />매출 비교</h2>
           <div className="ga-revenue-toolbar">
-            <span>최근 연간 확인값</span>
+            <span>직전 5개년 매출</span>
             <label>
               <b>비교 GA</b>
               <select value={activeRevenuePeer.key || ""} onChange={(event) => setSelectedRevenuePeer(event.target.value)}>
@@ -1919,8 +1919,8 @@ function GARevenueComparisonTable({ rows = [], peerLabel = "비교 GA" }) {
           {rows.map((row) => (
             <tr key={row.period}>
               <td>{row.label}</td>
-              <td>{formatGaRevenue(row.incaAmount)}</td>
-              <td>{formatGaRevenue(row.peerAmount)}</td>
+              <td className={!Number.isFinite(row.incaAmount) ? "missing" : ""}>{formatGaRevenueCell(row.incaAmount)}</td>
+              <td className={!Number.isFinite(row.peerAmount) ? "missing" : ""}>{formatGaRevenueCell(row.peerAmount)}</td>
               <td className={gaGapTone(row.gap)}>{formatGaRevenueGap(row.gap)}</td>
             </tr>
           ))}
@@ -2113,22 +2113,31 @@ function buildGaRevenueComparisonRows({ revenueRows = [], companies = [], ownCom
   const peerMerged = { ...(fallbackByKey.get(gaCompanyKey(peerCompany)) || {}), ...peerCompany };
   const ownRows = annualRevenueRowsForCompany(revenueRows, ownMerged);
   const peerRows = annualRevenueRowsForCompany(revenueRows, peerMerged);
-  const periods = Array.from(new Set([...ownRows, ...peerRows].map((row) => row.period)))
-    .filter((period) => /^20\d{2}$/.test(String(period)))
-    .sort()
-    .slice(-5);
+  const periods = buildRecentAnnualRevenuePeriods(ownRows, peerRows, 5);
   return periods.map((period) => {
     const inca = ownRows.find((row) => row.period === period) || {};
     const peer = peerRows.find((row) => row.period === period) || {};
-    const gap = safeNumberDiff(inca.amount, peer.amount);
+    const incaAmount = Number.isFinite(Number(inca.amount)) ? Number(inca.amount) : null;
+    const peerAmount = Number.isFinite(Number(peer.amount)) ? Number(peer.amount) : null;
+    const gap = Number.isFinite(incaAmount) && Number.isFinite(peerAmount)
+      ? safeNumberDiff(incaAmount, peerAmount)
+      : null;
     return {
       period,
       label: compactRevenuePeriodLabel(period),
-      incaAmount: Number.isFinite(Number(inca.amount)) ? Number(inca.amount) : null,
-      peerAmount: Number.isFinite(Number(peer.amount)) ? Number(peer.amount) : null,
+      incaAmount,
+      peerAmount,
       gap,
     };
   });
+}
+
+function buildRecentAnnualRevenuePeriods(ownRows = [], peerRows = [], length = 5) {
+  const years = [...ownRows, ...peerRows]
+    .map((row) => Number(String(row.period || "").match(/^20\d{2}$/)?.[0]))
+    .filter(Number.isFinite);
+  const latestYear = years.length ? Math.max(...years) : new Date().getFullYear() - 1;
+  return Array.from({ length }, (_, index) => String(latestYear - length + 1 + index));
 }
 
 function annualRevenueRowsForCompany(revenueRows = [], company = {}) {
@@ -2179,11 +2188,11 @@ function buildGaRevenueComparisonInsight(rows = [], peerLabel = "비교 GA") {
   const latest = rows.slice().reverse().find((row) => Number.isFinite(row.incaAmount) || Number.isFinite(row.peerAmount));
   if (!latest) return `${peerLabel} 매출 원장 확인이 필요합니다.`;
   if (!Number.isFinite(latest.incaAmount) || !Number.isFinite(latest.peerAmount)) {
-    return `${latest.period} 기준 확인된 매출만 비교합니다.`;
+    return `직전 5개년 중 ${latest.period} 확인값부터 비교합니다. 미입력 연도는 확인 필요로 표시됩니다.`;
   }
   const gap = safeNumberDiff(latest.incaAmount, latest.peerAmount);
   const direction = gap >= 0 ? "앞섭니다" : "낮습니다";
-  return `${latest.period} 기준 인카는 ${peerLabel}보다 ${formatGaRevenue(Math.abs(gap))} ${direction}.`;
+  return `직전 5개년 매출 추적 기준, ${latest.period} 인카는 ${peerLabel}보다 ${formatGaRevenue(Math.abs(gap))} ${direction}.`;
 }
 
 function gaRevenueSortKey(value) {
@@ -2239,12 +2248,21 @@ function formatGaInteger(value) {
 }
 
 function formatGaRevenue(value) {
+  if (value === null || value === undefined || value === "") return "-";
   const number = Number(value);
   if (!Number.isFinite(number)) return "-";
   return `${number.toLocaleString("ko-KR")}억원`;
 }
 
+function formatGaRevenueCell(value) {
+  if (value === null || value === undefined || value === "") return "확인 필요";
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "확인 필요";
+  return formatGaRevenue(number);
+}
+
 function formatGaRevenueShort(value) {
+  if (value === null || value === undefined || value === "") return "";
   const number = Number(value);
   if (!Number.isFinite(number)) return "";
   if (number >= 10000) return `${(number / 10000).toFixed(1)}조`;
@@ -2252,6 +2270,7 @@ function formatGaRevenueShort(value) {
 }
 
 function formatGaRevenueGap(value) {
+  if (value === null || value === undefined || value === "") return "-";
   const number = Number(value);
   if (!Number.isFinite(number)) return "-";
   return `${number > 0 ? "+" : ""}${number.toLocaleString("ko-KR")}억원`;
@@ -3920,15 +3939,16 @@ function A4ReportSheet({
 }) {
   const summary = data.summary || {};
   const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
-  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope);
+  const isDaily = period === "daily";
+  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope).slice(0, isDaily ? 3 : 4);
   const stats = buildA4ReportStats(summary, articles);
-  const pressLimit = period === "daily" ? 4 : period === "monthly" ? 4 : 5;
+  const pressLimit = isDaily ? 0 : period === "monthly" ? 4 : 5;
   const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, pressLimit);
-  const scrapRows = period === "daily" || period === "monthly" ? [] : scraps.slice(0, 2);
-  const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows, scope);
+  const scrapRows = isDaily || period === "monthly" ? [] : scraps.slice(0, 2);
+  const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows, scope).slice(0, isDaily ? 2 : 4);
   const toneRows = buildA4ToneLedger(articles);
-  const keywordLimit = period === "daily" ? 6 : period === "monthly" ? 6 : 10;
-  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, period === "daily" ? 4 : period === "monthly" ? 4 : 5);
+  const keywordLimit = isDaily ? 0 : period === "monthly" ? 6 : 10;
+  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, isDaily ? 3 : period === "monthly" ? 4 : 5);
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
@@ -3969,23 +3989,25 @@ function A4ReportSheet({
             )}
           </div>
         </article>
-        <aside className="a4-insight">
-          <span>집계 기준</span>
-          <dl className="a4-basis-list">
-            <div>
-              <dt>기간</dt>
-              <dd>{scope.scopeLabel || data.scope || "-"}</dd>
-            </div>
-            <div>
-              <dt>방식</dt>
-              <dd>{scope.ruleLabel}</dd>
-            </div>
-            <div>
-              <dt>기준</dt>
-              <dd>{scope.basisLabel}</dd>
-            </div>
-          </dl>
-        </aside>
+        {!isDaily && (
+          <aside className="a4-insight">
+            <span>집계 기준</span>
+            <dl className="a4-basis-list">
+              <div>
+                <dt>기간</dt>
+                <dd>{scope.scopeLabel || data.scope || "-"}</dd>
+              </div>
+              <div>
+                <dt>방식</dt>
+                <dd>{scope.ruleLabel}</dd>
+              </div>
+              <div>
+                <dt>기준</dt>
+                <dd>{scope.basisLabel}</dd>
+              </div>
+            </dl>
+          </aside>
+        )}
       </section>
 
       <section className="a4-report-body">
@@ -4000,29 +4022,31 @@ function A4ReportSheet({
           </A4Panel>
         </div>
 
-        <div className="a4-report-side-column">
-          <A4Panel title={scope.trendTitle} meta={scope.trendMeta}>
-            <A4ToneMini rows={trendRows} />
-          </A4Panel>
-
-          <A4Panel title="키워드별 기사량" meta="선정 키워드">
-            <A4BarList rows={keywordRows.slice(0, keywordLimit)} />
-          </A4Panel>
-
-          <A4Panel title="언론사 영향도" meta="상위 매체">
-            <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
-          </A4Panel>
-
-          {scrapRows.length > 0 && (
-            <A4Panel title="스크랩 확인" meta={`${scrapRows.length}건`}>
-              <div className="a4-scrap-list">
-                {scrapRows.map((item) => (
-                  <span key={`${item.source}-${item.title}`}>{item.title}</span>
-                ))}
-              </div>
+        {!isDaily && (
+          <div className="a4-report-side-column">
+            <A4Panel title={scope.trendTitle} meta={scope.trendMeta}>
+              <A4ToneMini rows={trendRows} />
             </A4Panel>
-          )}
-        </div>
+
+            <A4Panel title="키워드별 기사량" meta="선정 키워드">
+              <A4BarList rows={keywordRows.slice(0, keywordLimit)} />
+            </A4Panel>
+
+            <A4Panel title="언론사 영향도" meta="상위 매체">
+              <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
+            </A4Panel>
+
+            {scrapRows.length > 0 && (
+              <A4Panel title="스크랩 확인" meta={`${scrapRows.length}건`}>
+                <div className="a4-scrap-list">
+                  {scrapRows.map((item) => (
+                    <span key={`${item.source}-${item.title}`}>{item.title}</span>
+                  ))}
+                </div>
+              </A4Panel>
+            )}
+          </div>
+        )}
 
         <div className="a4-report-bottom-row">
           <A4Panel title="관찰 코멘트" meta="요약">
