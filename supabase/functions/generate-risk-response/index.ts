@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
   if (!isAllowedApiKey(req.headers.get("apikey"))) {
     return jsonResponse({ error: "unauthorized" }, 401);
   }
-  const session = await verifyDashboardSession(req.headers.get("x-dashboard-session") || "");
+  const sessionToken = req.headers.get("x-dashboard-session") || "";
+  const session = sessionToken ? await verifyDashboardSession(sessionToken) : { ok: false, message: "anonymous" };
   if (!session.ok || !["admin", "editor", "reporter"].includes(session.role || "")) {
     return jsonResponse({ error: "invalid_session", detail: session.message || "risk_response_requires_login" }, 401);
   }
@@ -92,7 +93,7 @@ Deno.serve(async (req) => {
       issue,
       draft,
       model,
-      requestedBy: session.employee_no || "",
+      requestedBy: session.ok ? session.employee_no || "" : "dashboard_public_risk_response",
       url: body.url || "",
     });
     if (!saveResult.ok) {
@@ -108,7 +109,7 @@ Deno.serve(async (req) => {
     model,
     finishReason: data?.candidates?.[0]?.finishReason || "",
     usageMetadata: data?.usageMetadata || {},
-    requestedBy: session.employee_no || "",
+    requestedBy: session.ok ? session.employee_no || "" : "dashboard_public_risk_response",
   });
 });
 

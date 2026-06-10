@@ -3033,6 +3033,13 @@ function RiskCenterV2({ articles = [], allArticles = [], operations = {}, onRefr
   };
 
   const handleGenerateDraft = async () => {
+    if (!operations?.session?.session_token) {
+      setDraftError("대응 초안 생성과 DB 저장은 운영 DB 로그인이 필요합니다. 로그인 후 다시 실행하면 초안이 저장됩니다.");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("news-monitor:login-required"));
+      }
+      return;
+    }
     if (typeof window !== "undefined" && !window.confirm("선택한 기사 기준으로 초안을 생성할까요?")) return;
     setGeneratingDraft(true);
     setDraftError("");
@@ -3061,7 +3068,7 @@ function RiskCenterV2({ articles = [], allArticles = [], operations = {}, onRefr
       <PageTitle
         eyebrow="Risk Response"
         title="대응센터"
-        description="최근 부정·주의 기사와 외부 URL을 기준으로 팩트체크와 대응 초안을 관리합니다."
+        description="당사 직접 언급 리스크 기사와 외부 URL을 기준으로 팩트체크와 대응 초안을 관리합니다."
         right={(
           <button
             className="ghost-button"
@@ -3104,7 +3111,7 @@ function RiskCenterV2({ articles = [], allArticles = [], operations = {}, onRefr
           </div>
           <div className="risk-recent-list">
             <div className="risk-section-head">
-              <b>최근 부정/주의 기사</b>
+              <b>당사 리스크 기사</b>
               <span>{riskArticles.length.toLocaleString("ko-KR")}건</span>
             </div>
             {riskArticles.slice(0, 8).map((article) => (
@@ -3128,7 +3135,7 @@ function RiskCenterV2({ articles = [], allArticles = [], operations = {}, onRefr
               </button>
             ))}
             {!riskArticles.length && (
-              <div className="risk-empty">최근 부정/주의 기사 데이터가 없습니다.</div>
+              <div className="risk-empty">당사 직접 언급 리스크 기사가 없습니다.</div>
             )}
           </div>
         </Panel>
@@ -3200,9 +3207,10 @@ function selectRiskCenterArticles(articles = []) {
   const usable = articles
     .filter((article) => article?.title && article.link && article.link !== "#")
     .filter((article) => !isOfficialRegulatorSource(article.source));
-  const negative = usable.filter((article) => article.tone === "부정" || String(article.riskLevel || "").toUpperCase() === "HIGH");
-  const caution = usable.filter((article) => article.tone === "주의" || String(article.riskLevel || "").toUpperCase() === "MEDIUM");
-  const selected = negative.length ? negative : caution;
+  const ownRiskArticles = usable.filter((article) => isOwnArticle(article));
+  const negative = ownRiskArticles.filter((article) => isDirectOwnNegativeArticle(article));
+  const caution = ownRiskArticles.filter((article) => article.tone === "주의" || String(article.riskLevel || "").toUpperCase() === "MEDIUM");
+  const selected = [...negative, ...caution];
   return buildRiskArticleGroups(dedupeRiskArticles(selected))
     .map((article) => {
       const relatedArticles = Array.isArray(article.relatedArticles) && article.relatedArticles.length
@@ -3219,6 +3227,12 @@ function selectRiskCenterArticles(articles = []) {
     })
     .sort((a, b) => articleTimeValue(b) - articleTimeValue(a) || compareArticleImportance(a, b))
     .slice(0, 20);
+}
+
+function isDirectOwnNegativeArticle(article = {}) {
+  const target = String(article.aiContext?.negativeTarget || "").trim();
+  if (target && target !== "own") return false;
+  return article.tone === "부정" || String(article.riskLevel || "").toUpperCase() === "HIGH";
 }
 
 function dedupeRiskArticles(rows = []) {
