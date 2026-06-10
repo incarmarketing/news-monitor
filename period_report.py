@@ -115,19 +115,19 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 
 작성 형식:
 ## 핵심 브리핑
-3문장. 기간 전체에서 보고받는 사람이 먼저 알아야 할 사실과 가장 큰 변화 축을 압축해 씁니다.
+2문장. 기간 전체에서 먼저 알아야 할 사실과 가장 큰 변화 축만 압축합니다.
 
 ## 기간 해석
-4문장. 원문 수집량과 중복 정리 후 분석 기사 수가 다른 이유, 당사 노출 비중, 업계/정책 흐름, 특정 일자 변동을 해석합니다.
+3문장. 당사 노출 비중, 업계/정책 흐름, 특정 일자 변동만 해석합니다.
 
 ## 리스크 판독
-4개 bullet. 당사 직접 부정, 일반 부정 논조, 정책/감독, GA/보험사 동향을 각각 해석합니다. 화면 숫자를 그대로 반복하지 말고 의미를 설명합니다.
+3개 bullet. 당사 직접 부정, 정책/감독, GA/보험사 동향을 각각 해석합니다.
 
 ## 관찰 포인트
-3개 bullet. 다음 기간에도 비교해야 할 반복 신호를 씁니다.
+2개 bullet. 다음 기간에도 비교해야 할 반복 신호만 씁니다.
 
 작성 제한:
-- 전체 1,150자 이내.
+- 전체 750자 이내.
 - 마크다운 굵게 표시(**)를 쓰지 마세요.
 - ###, #### 제목을 쓰지 마세요.
 - 근거 없는 추측을 쓰지 마세요.
@@ -223,21 +223,19 @@ def fallback_period_summary(aggregate: dict, top_articles: list[dict], period_la
     ]
     risk_date_text = ", ".join(risk_dates) if risk_dates else "없음"
     return f"""## 핵심 브리핑
-{period_label} 기준 원문 수집은 {total_collected}건, 중복 정리 후 분석 기사는 {total_after_cluster}건입니다. 당사 언급은 {own}건이며, 당사 직접 부정은 {own_negative_total}건으로 별도 추적 대상입니다. 전체 흐름은 {top_keyword} 키워드와 GA/보험사 동향이 주도했고, 주의 이상 일자는 {risk_days}일로 제한적입니다.
+{period_label} 기준 분석 기사는 {total_after_cluster}건이며, 당사 언급은 {own}건입니다. 당사 직접 부정은 {own_negative_total}건이고 전체 흐름은 {top_keyword} 키워드와 GA/보험사 동향이 주도했습니다.
 
 ## 기간 해석
-원문 수집 건수는 슬롯별 검색량을 합산한 값이고, 분석 기사는 중복 링크와 유사 기사를 정리한 실제 검토 기준입니다. 분석 전환율은 {conversion}%로, 같은 이슈가 여러 매체와 포털 경로에서 반복 노출된 비중을 함께 보여줍니다. 당사 직접 보도보다 GA/보험사 및 정책성 보도의 흐름이 더 큰 비중을 차지했습니다. 일자별로는 {peak_day.get('date', '-')}에 {peak_day.get('total', 0)}건으로 노출이 가장 컸고, 최근 기준일 {latest_day.get('date', '-')}은 {latest_day.get('total', 0)}건으로 마감됐습니다.
+원문 수집 {total_collected}건 중 중복 정리 후 분석 전환율은 {conversion}%입니다. 최대 노출일은 {peak_day.get('date', '-')} {peak_day.get('total', 0)}건이며, 최근 기준일 {latest_day.get('date', '-')}은 {latest_day.get('total', 0)}건입니다. 당사 직접 보도보다 정책·업계성 보도가 더 큰 비중을 차지했습니다.
 
 ## 리스크 판독
-- 당사 직접 부정: {own_negative_total}건으로, 일반 업계 부정 기사와 분리해 관리해야 하는 평판 신호입니다.
-- 일반 부정 논조: {negative}건으로, 대부분 당사 직접 이슈보다 업계·상품·제도 환경의 부정 흐름으로 읽힙니다.
-- 정책/감독: {regulation}건으로, 제도 변화가 업계 보도량을 끌어올리는지 확인하는 축입니다.
-- GA/보험사 동향: {market}건으로, 당사 직접 이슈보다 시장 환경 신호가 강한 구간입니다.
+- 당사 직접 부정: {own_negative_total}건으로 업계 부정과 분리해 봐야 합니다.
+- 정책/감독: {regulation}건으로 제도 변화의 반복 노출 여부가 핵심입니다.
+- GA/보험사 동향: {market}건으로 시장 환경 신호가 강한 구간입니다.
 
 ## 관찰 포인트
-- {top_keyword}: {top_keyword_count}건 관찰되어 다음 기간에도 반복 노출 여부를 비교해야 합니다.
-- {top_source}: {top_source_count}건으로 영향 매체 상위에 있어 포털/원매체 보정 여부를 함께 봐야 합니다.
-- 주의 관찰일: {risk_date_text} 구간이 리스크 판정일이며, 동일 이슈의 재확산인지 신규 이슈인지 분리해 봐야 합니다."""
+- {top_keyword}: {top_keyword_count}건으로 다음 기간 반복 여부를 비교합니다.
+- 주의 관찰일: {risk_date_text} 구간은 재확산 여부를 분리해 봅니다."""
 
 
 def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:

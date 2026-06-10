@@ -657,47 +657,50 @@
   @page { size:A4 landscape; margin:6mm; }
   @media print {
     * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    body { background:#fff; font-size:8.8px; line-height:1.2; }
+    html, body { width:285mm; height:198mm; overflow:hidden; }
+    body { background:#fff; font-size:8px; line-height:1.14; }
     .toolbar { display:none; }
     .sheet {
       width:auto;
-      min-height:188mm;
+      height:198mm;
+      min-height:0;
       margin:0;
       border:0;
       border-radius:0;
       box-shadow:none;
-      overflow:visible;
+      overflow:hidden;
       display:grid;
-      grid-template-rows:auto auto auto auto 1fr auto;
+      grid-template-rows:auto auto minmax(0,1.04fr) minmax(0,.94fr) minmax(0,.82fr) auto;
     }
     .report-head {
       grid-template-columns:minmax(0,1fr) 142px;
-      padding:7px 9px 8px;
+      padding:6px 8px;
       gap:8px;
       border-radius:7px;
     }
     .badge { padding:2px 6px; font-size:7.2px; }
-    h1 { margin:3px 0 3px; font-size:18px; }
+    h1 { margin:2px 0; font-size:17px; }
     .headline { font-size:8.6px; line-height:1.2; }
     .eyebrow,.risk-meta { font-size:6.9px; }
-    .risk-panel { min-width:132px; padding:6px 7px; gap:3px; border-radius:6px; }
+    .risk-panel { min-width:132px; padding:5px 7px; gap:2px; border-radius:6px; }
     .risk-label { font-size:6.4px; }
     .risk-level { font-size:16px; }
-    .kpi-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:4px; padding:5px 0; background:#fff; }
-    .kpi { min-height:35px; padding:5px 7px; border-radius:5px; }
-    .kpi b { font-size:14px; }
-    .kpi span { margin-top:3px; font-size:7px; }
-    .content-grid { grid-template-columns:1.08fr .92fr; gap:5px; padding:5px 0 0; }
+    .kpi-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:3px; padding:4px 0; background:#fff; }
+    .kpi { min-height:30px; padding:4px 6px; border-radius:5px; }
+    .kpi b { font-size:12px; }
+    .kpi span { margin-top:2px; font-size:6.5px; }
+    .content-grid { grid-template-columns:1.08fr .92fr; gap:4px; min-height:0; overflow:hidden; padding:4px 0 0; }
     .sheet > .content-grid:last-of-type { align-items:stretch; }
     .sheet > .content-grid:last-of-type .panel { min-height:100%; }
-    .panel { padding:6px; border-radius:5px; break-inside:avoid; page-break-inside:avoid; }
-    .panel h2 { margin-bottom:4px; font-size:8.5px; }
+    .panel { padding:5px; border-radius:5px; min-height:0; overflow:hidden; break-inside:avoid; page-break-inside:avoid; }
+    .panel h2 { margin-bottom:3px; font-size:8px; }
     .panel h2 span { font-size:6.5px; }
-    .summary-panel { min-height:90px; }
-    .summary-panel .analysis-body { min-height:74px; }
-    .analysis-body { max-height:none; font-size:7.2px; line-height:1.18; }
-    .analysis-body h2 { margin:4px 0 2px; padding-left:4px; border-left-width:2px; font-size:7.8px; }
-    .analysis-body p { margin-bottom:3px; }
+    .summary-panel,
+    .metrics-panel { min-height:0; }
+    .summary-panel .analysis-body { min-height:0; }
+    .analysis-body { max-height:49mm; overflow:hidden; font-size:6.7px; line-height:1.12; }
+    .analysis-body h2 { margin:3px 0 1px; padding-left:3px; border-left-width:2px; font-size:7.1px; }
+    .analysis-body p { margin-bottom:2px; }
     .analysis-body ul { margin-top:2px; padding-left:10px; }
     .analysis-body li { margin:0; }
     .tracking-list { gap:2px; }
@@ -714,16 +717,16 @@
     .synthesis-item b { margin-bottom:1px; font-size:6.5px; }
     .synthesis-item span { font-size:5.8px; line-height:1.15; }
     .track { height:4px; }
-    .trend { height:58px; gap:2px; padding-top:8px; }
-    .bar-wrap { height:38px; }
+    .trend { height:46px; gap:2px; padding-top:7px; }
+    .bar-wrap { height:29px; }
     .bar-label { top:-10px; font-size:6.1px; }
     .day { gap:1px; font-size:5.9px; }
-    .own-trend { margin-top:5px; padding-top:4px; }
+    .own-trend { margin-top:4px; padding-top:3px; }
     .own-trend-head { margin-bottom:2px; font-size:6.5px; }
     .own-trend-head span { font-size:5.8px; }
-    .own-trend-bars { height:31px; gap:2px; }
+    .own-trend-bars { height:25px; gap:2px; }
     .own-day { gap:1px; font-size:5.4px; }
-    .own-bar-wrap { height:18px; }
+    .own-bar-wrap { height:14px; }
     .own-bar-label { top:-8px; font-size:5.4px; }
     .article-table { font-size:6.8px; }
     .article-table th,.article-table td { padding:2px 3px; }
@@ -731,9 +734,9 @@
     .article-table .meta { font-size:5.8px; }
     .rank { width:20px; }
     .score { width:30px; }
-    .footer { margin-top:4px; padding:3px 0 0; font-size:6.2px; align-self:end; }
-    .density-grid { gap:4px; margin-bottom:4px; }
-    .density-item { min-height:38px; padding:5px 6px; border-radius:5px; }
+    .footer { margin-top:2px; padding:2px 0 0; font-size:5.8px; align-self:end; }
+    .density-grid { gap:3px; margin-bottom:3px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .density-item { min-height:27px; padding:4px 5px; border-radius:5px; }
     .density-item b { font-size:7.8px; line-height:1.12; }
     .density-item span { margin-top:2px; font-size:5.9px; line-height:1.15; }
     .ledger-table,
@@ -745,16 +748,35 @@
     .ledger-table th,
     .mini-table th { font-size:5.8px; }
     .risk-pill { min-width:34px; padding:1px 3px; font-size:5.9px; }
-    .rank-wrap { gap:4px; }
+    .rank-wrap { gap:3px; }
     .rank-box h3 { margin-bottom:2px; font-size:7.2px; }
-    .evidence-groups { gap:4px; }
+    .evidence-summary-grid { grid-template-columns:1fr; }
+    .evidence-summary-grid .left-stack { display:none; }
+    .evidence-groups { gap:3px; grid-template-columns:repeat(3,minmax(0,1fr)); }
     .evidence-group { padding:4px; border-radius:5px; }
+    .evidence-group:nth-child(n+4) { display:none; }
     .evidence-group h3 { margin-bottom:1px; font-size:6.9px; }
     .evidence-group h3 span { font-size:5.7px; }
-    .evidence-judgment { margin-bottom:3px; font-size:5.9px; line-height:1.16; }
+    .evidence-judgment {
+      margin-bottom:2px;
+      font-size:5.8px;
+      line-height:1.1;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
     .evidence-list { gap:2px; }
     .evidence-card { padding:2px 3px; border-radius:4px; }
-    .evidence-card b { font-size:6.2px; line-height:1.16; }
+    .evidence-card:nth-child(n+2) { display:none; }
+    .evidence-card b {
+      font-size:6.2px;
+      line-height:1.14;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
     .evidence-card span { margin-top:1px; font-size:5.4px; }
     .evidence-empty { padding:3px; font-size:5.8px; }
   }
@@ -879,7 +901,7 @@
     </div>
   </section>
 
-  <section class="content-grid">
+  <section class="content-grid evidence-summary-grid">
     <div class="left-stack">
       <div class="mix-grid">
         <div class="panel">
