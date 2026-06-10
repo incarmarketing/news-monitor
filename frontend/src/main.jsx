@@ -1823,7 +1823,7 @@ function GACompetitorIntel({ gaIntel }) {
       <section className="ga-console-grid">
         <GAMetricCard icon={Users} label="설계사수" value={`${formatGaInteger(ownRow.planners)}명`} detail={`${ownRow.rank}위 · 2025년 말`} />
         <GAMetricCard icon={Gauge} label="정착률" value={formatGaPercentPlain(ownRow.stay)} detail={`시장 평균 ${formatGaPercentPlain(marketLatest.stay)}`} />
-        <GAMetricCard icon={ShieldCheck} label="13회 유지율" value={formatGaPercentPlain(ownRow.retention13Life)} detail={`생보 기준 · 시장 대비 ${formatGaPointGap(ownRow.retention13Life, marketLatest.retention13Life)}`} />
+        <GAMetricCard icon={ShieldCheck} label="유지율" value={`13회 ${formatGaPercentPlain(ownRow.retention13Life)}`} detail={`25회 ${formatGaPercentPlain(ownRow.retention25Life)} · 생보 기준`} />
         <GAMetricCard icon={AlertTriangle} label="불완전판매율" value={formatGaPercentPlain(ownRow.poorSalesLife, 2)} detail="생보 기준 · 0% 유지 추적" tone={Number(ownRow.poorSalesLife) <= 0 ? "good" : "watch"} />
       </section>
 
@@ -1855,7 +1855,7 @@ function GACompetitorIntel({ gaIntel }) {
         <Panel title="설계사 규모" icon={Building2} meta="2025년 말 · 상위 10개사">
           <GAPlannerBarChart rows={plannerRows} ownShort={ownRow.short} />
         </Panel>
-        <Panel title="채널 품질 추이" icon={LineChart} meta="인카 vs 시장 평균">
+        <Panel title="유지율 및 정착률" icon={LineChart} meta="13회차·25회차·정착률">
           <GATrendChart rows={trendRows} />
         </Panel>
       </section>
@@ -1907,10 +1907,10 @@ function GAPlannerBarChart({ rows = [], ownShort = "" }) {
   return (
     <div className="chart-box ga-bar-chart">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 24, top: 8, bottom: 8 }}>
+        <BarChart data={rows} layout="vertical" margin={{ left: 0, right: 64, top: 8, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
           <XAxis type="number" hide />
-          <YAxis type="category" dataKey="short" tickLine={false} axisLine={false} width={116} tick={{ fontSize: 11, fontWeight: 800 }} />
+          <YAxis type="category" dataKey="short" tickLine={false} axisLine={false} width={128} tick={{ fontSize: 11, fontWeight: 800 }} />
           <Tooltip formatter={(value) => [`${formatGaInteger(value)}명`, "설계사수"]} />
           <Bar dataKey="planners" radius={[0, 7, 7, 0]} barSize={18}>
             {rows.map((row) => (
@@ -1985,21 +1985,25 @@ function GATrendChart({ rows = [] }) {
   return (
     <div className="chart-box ga-trend-chart">
       <ResponsiveContainer width="100%" height="100%">
-        <RechartsLineChart data={rows} margin={{ left: 0, right: 12, top: 14, bottom: 0 }}>
+        <RechartsLineChart data={rows} margin={{ left: 0, right: 18, top: 14, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="period" tickLine={false} axisLine={false} />
           <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Number(value).toFixed(0)}%`} />
           <Tooltip formatter={(value, name) => [formatGaPercentPlain(value), gaTrendLabel(name)]} />
           <Line type="monotone" dataKey="incaRetention13" stroke="#2855d9" strokeWidth={3} dot={{ r: 3 }} connectNulls />
           <Line type="monotone" dataKey="marketRetention13" stroke="#14805f" strokeWidth={2.4} dot={false} strokeDasharray="5 4" connectNulls />
+          <Line type="monotone" dataKey="incaRetention25" stroke="#7c3aed" strokeWidth={2.7} dot={{ r: 2.5 }} connectNulls />
+          <Line type="monotone" dataKey="marketRetention25" stroke="#64748b" strokeWidth={2.2} dot={false} strokeDasharray="5 5" connectNulls />
           <Line type="monotone" dataKey="incaStay" stroke="#b45309" strokeWidth={2.2} dot={false} connectNulls />
-          <Line type="monotone" dataKey="marketStay" stroke="#7c3aed" strokeWidth={2} dot={false} strokeDasharray="3 4" connectNulls />
+          <Line type="monotone" dataKey="marketStay" stroke="#d97706" strokeWidth={2} dot={false} strokeDasharray="3 4" connectNulls />
         </RechartsLineChart>
       </ResponsiveContainer>
-      <div className="stock-chart-legend">
-        <span className="company">인카 13회 유지율</span>
-        <span className="peer">시장 13회 유지율</span>
-        <span className="kospi">인카 정착률</span>
+      <div className="ga-quality-legend">
+        <span className="inca-r13">인카 13회</span>
+        <span className="market-r13">시장 13회</span>
+        <span className="inca-r25">인카 25회</span>
+        <span className="market-r25">시장 25회</span>
+        <span className="inca-stay">인카 정착률</span>
         <span className="market-stay">시장 정착률</span>
       </div>
     </div>
@@ -2016,7 +2020,7 @@ function GACompetitorTable({ rows = [], ownShort = "" }) {
             <th>구분</th>
             <th>GA사</th>
             <th>영업 규모</th>
-            <th>조직 안정성</th>
+            <th>유지율 및 정착률</th>
             <th>품질 리스크</th>
           </tr>
         </thead>
@@ -2079,15 +2083,25 @@ function buildGaTrendRows(labels = [], company = {}, market = []) {
   return labels.map((period, index) => {
     const marketRow = market[index] || {};
     const marketRetention13 = Number(marketRow.retention13Life);
+    const marketRetention25 = Number(marketRow.retention25Life);
     const marketStay = Number(marketRow.stay);
     return {
       period,
       incaRetention13: latestArrayValue(company.retention13LifeTrend, index),
       marketRetention13: Number.isFinite(marketRetention13) ? marketRetention13 : null,
+      incaRetention25: latestArrayValue(company.retention25LifeTrend, index),
+      marketRetention25: Number.isFinite(marketRetention25) ? marketRetention25 : null,
       incaStay: latestArrayValue(company.stayTrend, index),
       marketStay: Number.isFinite(marketStay) ? marketStay : null,
     };
-  }).filter((row) => row.incaRetention13 !== null || row.marketRetention13 !== null || row.incaStay !== null || row.marketStay !== null);
+  }).filter((row) => (
+    row.incaRetention13 !== null
+    || row.marketRetention13 !== null
+    || row.incaRetention25 !== null
+    || row.marketRetention25 !== null
+    || row.incaStay !== null
+    || row.marketStay !== null
+  ));
 }
 
 function buildGaMarketIndex(ownRow = {}, marketLatest = {}) {
@@ -2353,7 +2367,10 @@ function gaTrendLabel(name) {
   return {
     incaRetention13: "인카 13회 유지율",
     marketRetention13: "시장 13회 유지율",
+    incaRetention25: "인카 25회 유지율",
+    marketRetention25: "시장 25회 유지율",
     incaStay: "인카 정착률",
+    marketStay: "시장 정착률",
   }[name] || name;
 }
 
