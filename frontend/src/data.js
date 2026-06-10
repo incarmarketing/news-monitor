@@ -12,6 +12,7 @@ export const navItems = [
   { id: "pressRelease", label: "보도자료" },
   { id: "stocks", label: "주가/시장" },
   { id: "gaIntel", label: "업계 동향" },
+  { id: "clipping", label: "클리핑" },
   { id: "scraps", label: "스크랩" },
   { id: "risk", label: "대응센터" },
   { id: "reports", label: "리포트" },

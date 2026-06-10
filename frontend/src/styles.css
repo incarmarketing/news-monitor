@@ -6964,6 +6964,49 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-weight: 800;
 }
 
+.clipping-workspace {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.clipping-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.clipping-summary-grid article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid #dbe5f3;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(16, 24, 40, .04);
+}
+
+.clipping-summary-grid span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.clipping-summary-grid b {
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.clipping-summary-grid em {
+  color: var(--ink-2);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+}
+
 .queue-head {
   display: flex;
   align-items: center;
@@ -7568,6 +7611,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .dashboard-clipping-list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .clipping-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .clipping-card-actions {

@@ -80,6 +80,7 @@ const navIcons = {
   pressRelease: Megaphone,
   stocks: WalletCards,
   gaIntel: Building2,
+  clipping: Bookmark,
   scraps: Bookmark,
   risk: ShieldCheck,
   reports: FileText,
@@ -87,7 +88,7 @@ const navIcons = {
 };
 
 const navSections = [
-  { title: "언론·PR", ids: ["overview", "monitoring", "media", "regulators", "pressRelease", "scraps", "risk", "reports"] },
+  { title: "언론·PR", ids: ["overview", "monitoring", "media", "regulators", "pressRelease", "clipping", "scraps", "risk", "reports"] },
   { title: "시장·공시", ids: ["stocks"] },
   { title: "GA·채널", ids: ["gaIntel"] },
   { title: "운영관리", ids: ["management"] },
@@ -547,6 +548,7 @@ function App() {
     pressRelease: PressReleaseStudio,
     stocks: StockMarketDashboard,
     gaIntel: GACompetitorIntel,
+    clipping: Clipping,
     scraps: Scraps,
     risk: RiskCenterV2,
     reports: Reports,
@@ -708,30 +710,9 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, scraps = [], onScrapSaved }) {
+function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations }) {
   const { summary } = data;
   const isLoading = operations?.status === "loading" || isWorking;
-  const clippingCandidates = useMemo(() => {
-    const pool = [];
-    const seen = new Set();
-    [...(data?.issues || []), ...(articles || [])].forEach((article) => {
-      const key = articleSelectionKey(article);
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      pool.push(article);
-    });
-    const recommended = selectClippingRecommendations(pool, scraps).slice(0, 4);
-    if (recommended.length) return recommended;
-    return pool
-      .filter((article) => ["부정", "주의", "긍정"].includes(article?.tone) || article?.category === "당사")
-      .sort((a, b) => toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
-      .slice(0, 4)
-      .map((article) => ({
-        ...article,
-        clippingRecommended: true,
-        clippingReason: article.clippingReason || dashboardClippingFallbackReason(article),
-      }));
-  }, [articles, data?.issues, scraps]);
   const operationsHealth = useMemo(
     () => buildOperationsHealth({
       operations,
@@ -776,12 +757,6 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
       <section className="terminal-dashboard-grid">
         <div className="terminal-main-stack">
-          <DashboardClippingPanel
-            candidates={clippingCandidates}
-            scraps={scraps}
-            onScrapSaved={onScrapSaved}
-            onOpenMonitoring={onOpenMonitoring}
-          />
           <RiskPriorityQueue issues={data.issues} onOpenMonitoring={onOpenMonitoring} />
           <section className="terminal-analysis-board">
             <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
@@ -853,6 +828,28 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
       </div>
     </section>
   );
+}
+
+function buildClippingCandidates(articles = [], scraps = [], limit = 12) {
+  const pool = [];
+  const seen = new Set();
+  (articles || []).forEach((article) => {
+    const key = articleSelectionKey(article);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    pool.push(article);
+  });
+  const recommended = selectClippingRecommendations(pool, scraps).slice(0, limit);
+  if (recommended.length) return recommended;
+  return pool
+    .filter((article) => ["부정", "주의", "긍정"].includes(article?.tone) || article?.category === "당사")
+    .sort((a, b) => toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
+    .slice(0, limit)
+    .map((article) => ({
+      ...article,
+      clippingRecommended: true,
+      clippingReason: article.clippingReason || dashboardClippingFallbackReason(article),
+    }));
 }
 
 function dashboardClippingFallbackReason(article = {}) {
@@ -3115,6 +3112,62 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
   );
 }
 
+function Clipping({ articles = [], allArticles = [], scraps = [], onOpenMonitoring, onScrapSaved }) {
+  const sourceArticles = allArticles.length ? allArticles : articles;
+  const candidates = useMemo(
+    () => buildClippingCandidates(sourceArticles, scraps, 16),
+    [sourceArticles, scraps],
+  );
+  const ownCount = candidates.filter((item) => item.category === "당사").length;
+  const cautionCount = candidates.filter((item) => item.tone === "주의" || item.tone === "부정").length;
+  const unsavedCount = candidates.filter((item) => !isArticleScrapped(item, scraps)).length;
+
+  return (
+    <main className="workspace">
+      <PageTitle
+        eyebrow="Report Clipping"
+        title="클리핑"
+        description="보고서와 임원 공유에 넣을 만한 기사 후보를 별도로 모아 검토합니다. 통합 대시보드는 현황판으로 두고, 클리핑 판단은 이 화면에서 처리합니다."
+        right={(
+          <button type="button" className="ghost-button" onClick={() => onOpenMonitoring?.({ clipping: true })}>
+            <Search />모니터링에서 보기
+          </button>
+        )}
+      />
+      <section className="clipping-workspace">
+        <div className="clipping-summary-grid">
+          <article>
+            <span>후보 기사</span>
+            <b>{candidates.length.toLocaleString("ko-KR")}</b>
+            <em>분석 근거 보유</em>
+          </article>
+          <article>
+            <span>당사 관련</span>
+            <b>{ownCount.toLocaleString("ko-KR")}</b>
+            <em>직접 언급 우선</em>
+          </article>
+          <article>
+            <span>주의/부정</span>
+            <b>{cautionCount.toLocaleString("ko-KR")}</b>
+            <em>리스크 검토 대상</em>
+          </article>
+          <article>
+            <span>미스크랩</span>
+            <b>{unsavedCount.toLocaleString("ko-KR")}</b>
+            <em>검토 후 저장</em>
+          </article>
+        </div>
+        <DashboardClippingPanel
+          candidates={candidates}
+          scraps={scraps}
+          onScrapSaved={onScrapSaved}
+          onOpenMonitoring={onOpenMonitoring}
+        />
+      </section>
+    </main>
+  );
+}
+
 function buildStockMarketJudgement(company = {}, summary = {}, range = {}) {
   const selectedReturn = Number(range.return ?? company.returns?.["20d"]);
   const drawdown = Number(range.drawdown_from_high ?? company.range?.drawdown_from_60d_high);
@@ -3143,10 +3196,6 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
   const [analysisStatus, setAnalysisStatus] = useState("");
   const [analysisError, setAnalysisError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
-  const recommended = useMemo(
-    () => selectClippingRecommendations(allArticles, scraps).slice(0, 12),
-    [allArticles, scraps],
-  );
   const grouped = groupArticles(scraps, "category").slice(0, 5).map(([name, value]) => ({ name, value }));
   const savedReports = Array.isArray(operations.scrapAnalysisReports) ? operations.scrapAnalysisReports : [];
   const activeReport = analysisReport || savedReports[0] || null;
@@ -3248,24 +3297,6 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
           <ScrapAnalysisReportDigest report={activeReportBody} />
         </Panel>
         <div className="scrap-side-stack">
-          <Panel title="AI 추천 클리핑" icon={Newspaper} meta={`${recommended.length}건`}>
-            <div className="clip-candidate-list">
-              {recommended.map((article) => (
-                <article key={articleSelectionKey(article)} className="clip-candidate-row">
-                  <div>
-                    <span>
-                      <Chip tone={article.tone}>{article.tone}</Chip>
-                      <em>{article.category} · {article.source || "출처 확인"}</em>
-                    </span>
-                    <b>{article.title}</b>
-                    <p>{article.clippingReason || article.aiContext?.reason || "임원 클리핑 후보로 검토할 기사입니다."}</p>
-                  </div>
-                  <ArticleScrapButton article={article} scrapped={isArticleScrapped(article, scraps)} onScrapSaved={onScrapSaved} />
-                </article>
-              ))}
-              {!recommended.length && <div className="risk-empty compact">추천 클리핑 후보가 아직 없습니다.</div>}
-            </div>
-          </Panel>
           <Panel title="최근 클리핑 보고서" icon={FileText} meta={`${savedReports.length}건`}>
             <div className="scrap-report-history">
               {savedReports.slice(0, 5).map((report) => (
