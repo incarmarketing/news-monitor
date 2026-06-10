@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>전주 주간 미디어 모니터링 리포트</title>
+<title>주간 미디어 모니터링 리포트</title>
+<!-- print-layout-version: one-page-20260610 -->
 <style>
   :root {
     --ink:#101828;
@@ -657,47 +658,50 @@
   @page { size:A4 landscape; margin:6mm; }
   @media print {
     * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    body { background:#fff; font-size:8.8px; line-height:1.2; }
+    html, body { width:285mm; height:198mm; overflow:hidden; }
+    body { background:#fff; font-size:8px; line-height:1.14; }
     .toolbar { display:none; }
     .sheet {
       width:auto;
-      min-height:188mm;
+      height:198mm;
+      min-height:0;
       margin:0;
       border:0;
       border-radius:0;
       box-shadow:none;
-      overflow:visible;
+      overflow:hidden;
       display:grid;
-      grid-template-rows:auto auto auto auto 1fr auto;
+      grid-template-rows:auto auto minmax(0,1.04fr) minmax(0,.94fr) minmax(0,.82fr) auto;
     }
     .report-head {
       grid-template-columns:minmax(0,1fr) 142px;
-      padding:7px 9px 8px;
+      padding:6px 8px;
       gap:8px;
       border-radius:7px;
     }
     .badge { padding:2px 6px; font-size:7.2px; }
-    h1 { margin:3px 0 3px; font-size:18px; }
+    h1 { margin:2px 0; font-size:17px; }
     .headline { font-size:8.6px; line-height:1.2; }
     .eyebrow,.risk-meta { font-size:6.9px; }
-    .risk-panel { min-width:132px; padding:6px 7px; gap:3px; border-radius:6px; }
+    .risk-panel { min-width:132px; padding:5px 7px; gap:2px; border-radius:6px; }
     .risk-label { font-size:6.4px; }
     .risk-level { font-size:16px; }
-    .kpi-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:4px; padding:5px 0; background:#fff; }
-    .kpi { min-height:35px; padding:5px 7px; border-radius:5px; }
-    .kpi b { font-size:14px; }
-    .kpi span { margin-top:3px; font-size:7px; }
-    .content-grid { grid-template-columns:1.08fr .92fr; gap:5px; padding:5px 0 0; }
+    .kpi-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:3px; padding:4px 0; background:#fff; }
+    .kpi { min-height:30px; padding:4px 6px; border-radius:5px; }
+    .kpi b { font-size:12px; }
+    .kpi span { margin-top:2px; font-size:6.5px; }
+    .content-grid { grid-template-columns:1.08fr .92fr; gap:4px; min-height:0; overflow:hidden; padding:4px 0 0; }
     .sheet > .content-grid:last-of-type { align-items:stretch; }
     .sheet > .content-grid:last-of-type .panel { min-height:100%; }
-    .panel { padding:6px; border-radius:5px; break-inside:avoid; page-break-inside:avoid; }
-    .panel h2 { margin-bottom:4px; font-size:8.5px; }
+    .panel { padding:5px; border-radius:5px; min-height:0; overflow:hidden; break-inside:avoid; page-break-inside:avoid; }
+    .panel h2 { margin-bottom:3px; font-size:8px; }
     .panel h2 span { font-size:6.5px; }
-    .summary-panel { min-height:90px; }
-    .summary-panel .analysis-body { min-height:74px; }
-    .analysis-body { max-height:none; font-size:7.2px; line-height:1.18; }
-    .analysis-body h2 { margin:4px 0 2px; padding-left:4px; border-left-width:2px; font-size:7.8px; }
-    .analysis-body p { margin-bottom:3px; }
+    .summary-panel,
+    .metrics-panel { min-height:0; }
+    .summary-panel .analysis-body { min-height:0; }
+    .analysis-body { max-height:49mm; overflow:hidden; font-size:6.7px; line-height:1.12; }
+    .analysis-body h2 { margin:3px 0 1px; padding-left:3px; border-left-width:2px; font-size:7.1px; }
+    .analysis-body p { margin-bottom:2px; }
     .analysis-body ul { margin-top:2px; padding-left:10px; }
     .analysis-body li { margin:0; }
     .tracking-list { gap:2px; }
@@ -714,16 +718,16 @@
     .synthesis-item b { margin-bottom:1px; font-size:6.5px; }
     .synthesis-item span { font-size:5.8px; line-height:1.15; }
     .track { height:4px; }
-    .trend { height:58px; gap:2px; padding-top:8px; }
-    .bar-wrap { height:38px; }
+    .trend { height:46px; gap:2px; padding-top:7px; }
+    .bar-wrap { height:29px; }
     .bar-label { top:-10px; font-size:6.1px; }
     .day { gap:1px; font-size:5.9px; }
-    .own-trend { margin-top:5px; padding-top:4px; }
+    .own-trend { margin-top:4px; padding-top:3px; }
     .own-trend-head { margin-bottom:2px; font-size:6.5px; }
     .own-trend-head span { font-size:5.8px; }
-    .own-trend-bars { height:31px; gap:2px; }
+    .own-trend-bars { height:25px; gap:2px; }
     .own-day { gap:1px; font-size:5.4px; }
-    .own-bar-wrap { height:18px; }
+    .own-bar-wrap { height:14px; }
     .own-bar-label { top:-8px; font-size:5.4px; }
     .article-table { font-size:6.8px; }
     .article-table th,.article-table td { padding:2px 3px; }
@@ -731,9 +735,9 @@
     .article-table .meta { font-size:5.8px; }
     .rank { width:20px; }
     .score { width:30px; }
-    .footer { margin-top:4px; padding:3px 0 0; font-size:6.2px; align-self:end; }
-    .density-grid { gap:4px; margin-bottom:4px; }
-    .density-item { min-height:38px; padding:5px 6px; border-radius:5px; }
+    .footer { margin-top:2px; padding:2px 0 0; font-size:5.8px; align-self:end; }
+    .density-grid { gap:3px; margin-bottom:3px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .density-item { min-height:27px; padding:4px 5px; border-radius:5px; }
     .density-item b { font-size:7.8px; line-height:1.12; }
     .density-item span { margin-top:2px; font-size:5.9px; line-height:1.15; }
     .ledger-table,
@@ -745,16 +749,35 @@
     .ledger-table th,
     .mini-table th { font-size:5.8px; }
     .risk-pill { min-width:34px; padding:1px 3px; font-size:5.9px; }
-    .rank-wrap { gap:4px; }
+    .rank-wrap { gap:3px; }
     .rank-box h3 { margin-bottom:2px; font-size:7.2px; }
-    .evidence-groups { gap:4px; }
+    .evidence-summary-grid { grid-template-columns:1fr; }
+    .evidence-summary-grid .left-stack { display:none; }
+    .evidence-groups { gap:3px; grid-template-columns:repeat(3,minmax(0,1fr)); }
     .evidence-group { padding:4px; border-radius:5px; }
+    .evidence-group:nth-child(n+4) { display:none; }
     .evidence-group h3 { margin-bottom:1px; font-size:6.9px; }
     .evidence-group h3 span { font-size:5.7px; }
-    .evidence-judgment { margin-bottom:3px; font-size:5.9px; line-height:1.16; }
+    .evidence-judgment {
+      margin-bottom:2px;
+      font-size:5.8px;
+      line-height:1.1;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
     .evidence-list { gap:2px; }
     .evidence-card { padding:2px 3px; border-radius:4px; }
-    .evidence-card b { font-size:6.2px; line-height:1.16; }
+    .evidence-card:nth-child(n+2) { display:none; }
+    .evidence-card b {
+      font-size:6.2px;
+      line-height:1.14;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
     .evidence-card span { margin-top:1px; font-size:5.4px; }
     .evidence-empty { padding:3px; font-size:5.8px; }
   }
@@ -765,9 +788,9 @@
 <main class="sheet">
   <header class="report-head">
     <div>
-      <div class="eyebrow"><span class="badge">WEEKLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-06-01 ~ 2026-06-07</span><span>2026.06.08 07:57</span></div>
-      <h1>전주 주간 미디어 모니터링 리포트</h1>
-      <p class="headline">당사 언급 2건이 관찰됐고, 직접 부정 리스크는 낮은 수준으로 유지됐습니다.</p>
+      <div class="eyebrow"><span class="badge">WEEKLY REPORT</span><span>인카금융서비스 · 마케팅부</span><span>2026-06-08 ~ 2026-06-10</span><span>2026.06.10 13:06</span></div>
+      <h1>주간 미디어 모니터링 리포트</h1>
+      <p class="headline">당사 언급 9건이 관찰됐고, 직접 부정 리스크는 낮은 수준으로 유지됐습니다.</p>
     </div>
     <aside class="risk-panel">
       <div class="risk-label">리스크 등급</div>
@@ -777,28 +800,42 @@
   </header>
 
   <section class="kpi-grid">
-    <div class="kpi"><b>150</b><span>분석 기사</span></div>
-    <div class="kpi"><b>167</b><span>수집 원문</span></div>
-    <div class="kpi"><b>2</b><span>당사 언급</span></div>
+    <div class="kpi"><b>259</b><span>분석 기사</span></div>
+    <div class="kpi"><b>316</b><span>수집 원문</span></div>
+    <div class="kpi"><b>9</b><span>당사 언급</span></div>
     <div class="kpi"><b>0</b><span>당사 부정</span></div>
-    <div class="kpi"><b>7</b><span>정책/감독</span></div>
-    <div class="kpi"><b>158</b><span>GA/보험 동향</span></div>
+    <div class="kpi"><b>5</b><span>정책/감독</span></div>
+    <div class="kpi"><b>302</b><span>GA/보험 동향</span></div>
   </section>
 
   <section class="content-grid">
     <div class="panel summary-panel">
-      <h2>요약 분석 <span>4일 · 10구간</span></h2>
-      <div class="analysis-body"><h2>핵심 브리핑 전주 주간 기준 원문 수집은 167건, 중복 정리 후 분석 기사는 150건입니다. 당사 언급은 2건이며, 당사 직접 부정은 0건으로 별도 추적 대상입니다. 전체 흐름은 손해보험 키워드와 GA/보험사 동향이 주도했고, 주의 이상 일자는 0일로 제한적입니다. ## 기간 해석 원문 수집 건수는 슬롯별 검색량을 합산한 값이고, 분석 기사는 중복 링크와 유사 기사를 정리한 실제 검토 기준입니다. 분석 전환율은 90%로, 같은 이슈가 여러 매체와 포털 경로에서 반복 노출된 비중을 함께 보여줍니다. 당사 직접 보도보다 GA/보험사 및 정책성 보도의 흐름이 더 큰 비중을 차지했습니다. 일자별로는 2026-06-07에 64건으로 노출이 가장 컸고, 최근 기준일 2026-06-07은 64건으로 마감됐습니다. ## 리스크 모니터링 - 당사 직접 부정: 0건으로, 일반 업계 부정 기사와 분리해 관리해야 하는 평판 신호입니다. - 일반 부정 논조: 0건으로, 대부분 당사 직접 이슈보다 업계·상품·제도 환경의 부정 흐름으로 읽힙니다. - 정책/감독: 7건으로, 제도 변화가 업계 보도량을 끌어올리는지 확인하는 축입니다. - GA/보험사 동향: 158건으로, 당사 직접 이슈보다 시장 환경 신호가 강한 구간입니다. ## 관찰 포인트 - 손해보험: 85건 관찰되어 다음 기간에도 반복 노출 여부를 비교해야 합니다. - 보험저널: 11건으로 영향 매체 상위에 있어 포털/원매체 보정 여부를 함께 봐야 합니다. - 주의 관찰일: 없음 구간이 리스크 판정일이며, 동일 이슈의 재확산인지 신규 이슈인지 분리해 봐야 합니다.</h2></div>
+      <h2>요약 분석 <span>3일 · 8구간</span></h2>
+      <div class="analysis-body"><h2>핵심 브리핑</h2>
+<p>당사의 자기주식취득 결정 공시와 연동된 주가 변동성 확대가 기간 내 가장 주목할 만한 사안입니다. 업계 전반에서는 손해보험사 브랜드 평판 순위 변동이 주요 이슈로 부상했습니다.</p>
+<h2>기간 해석</h2>
+<p>당사 관련 보도는 전체 기사량 대비 낮은 비중을 차지했으며, 자기주식취득 이슈에 집중되었습니다. 기간 중반부터 손해보험 및 생명보험 업계의 월간 브랜드 평판 분석 기사가 반복적으로 노출되었습니다. 전체 기사 수집량은 주 초반 대비 감소하는 추세를 보였습니다.</p>
+<h2>리스크 판독</h2>
+<ul>
+<li>당사 직접 부정 이슈: 분석 기간 내 직접적인 부정 기사는 발생하지 않았습니다.</li>
+<li>정책/감독 동향: 금융감독원의 기업공시 설명회 개최 보도는 감독 당국의 일반적 활동 수준으로 해석됩니다.</li>
+<li>GA/보험사 동향: 특정 손해보험사의 브랜드 평판 순위 급등이 업계 경쟁 구도 변화의 신호로 관찰됩니다.</li>
+</ul>
+<h2>관찰 포인트</h2>
+<ul>
+<li>자기주식취득 결정에 따른 당사 주가 변동 및 관련 보도의 지속 여부.</li>
+<li>주요 손해보험사들의 브랜드 평판 순위 변동 추이와 후속 보도 패턴.</li>
+</ul></div>
     </div>
     <div class="panel metrics-panel">
       <h2>누적 지표 <span>관찰 지표 · 반복 노출</span></h2>
       <div class="density-grid">
         
-        <div class="density-item"><b>167 / 150</b><span>원문/분석 · 중복 정리 후 90%</span></div>
+        <div class="density-item"><b>316 / 259</b><span>원문/분석 · 중복 정리 후 82%</span></div>
         
-        <div class="density-item"><b>4일 · 10회</b><span>모니터링 구간 · 일평균 41.8건</span></div>
+        <div class="density-item"><b>3일 · 8회</b><span>모니터링 구간 · 일평균 105.3건</span></div>
         
-        <div class="density-item"><b>64건</b><span>최대 기사량 · 일 단위 최고 수집량</span></div>
+        <div class="density-item"><b>132건</b><span>최대 기사량 · 일 단위 최고 수집량</span></div>
         
         <div class="density-item"><b>손해보험</b><span>핵심 키워드 · 반복 노출 상위 키워드</span></div>
         
@@ -810,15 +847,15 @@
             <thead><tr><th>키워드</th><th>건</th><th>부정</th></tr></thead>
             <tbody>
               
-              <tr><td>손해보험</td><td class="num">85</td><td class="num">0</td></tr>
+              <tr><td>손해보험</td><td class="num">149</td><td class="num">0</td></tr>
               
-              <tr><td>생명보험</td><td class="num">49</td><td class="num">0</td></tr>
+              <tr><td>생명보험</td><td class="num">82</td><td class="num">0</td></tr>
               
-              <tr><td>제도</td><td class="num">3</td><td class="num">0</td></tr>
+              <tr><td>에이플러스에셋</td><td class="num">9</td><td class="num">0</td></tr>
               
-              <tr><td>1200%</td><td class="num">2</td><td class="num">0</td></tr>
+              <tr><td>인카금융</td><td class="num">7</td><td class="num">0</td></tr>
               
-              <tr><td>굿리치</td><td class="num">2</td><td class="num">0</td></tr>
+              <tr><td>한화생명금융서비스</td><td class="num">6</td><td class="num">0</td></tr>
               
             </tbody>
           </table>
@@ -829,15 +866,15 @@
             <thead><tr><th>매체</th><th>건</th><th>비중</th></tr></thead>
             <tbody>
               
-              <tr><td>보험저널</td><td class="num">11</td><td class="num">7%</td></tr>
+              <tr><td>google</td><td class="num">24</td><td class="num">9%</td></tr>
               
-              <tr><td>블로터</td><td class="num">5</td><td class="num">3%</td></tr>
+              <tr><td>보험저널</td><td class="num">7</td><td class="num">3%</td></tr>
               
-              <tr><td>asiatime.co.kr</td><td class="num">4</td><td class="num">3%</td></tr>
+              <tr><td>consumernews.co.kr</td><td class="num">6</td><td class="num">2%</td></tr>
               
-              <tr><td>bizwnews.com</td><td class="num">4</td><td class="num">3%</td></tr>
+              <tr><td>헤럴드경제</td><td class="num">5</td><td class="num">2%</td></tr>
               
-              <tr><td>뉴시스</td><td class="num">4</td><td class="num">3%</td></tr>
+              <tr><td>g-enews.com</td><td class="num">4</td><td class="num">2%</td></tr>
               
             </tbody>
           </table>
@@ -853,38 +890,29 @@
         
         <div class="day">
           <div class="bar-wrap">
-            <div class="bar risk-LOW" style="height:31.25%">
-              <span class="bar-label">20</span>
-            </div>
-          </div>
-          <div>06-04</div>
-        </div>
-        
-        <div class="day">
-          <div class="bar-wrap">
-            <div class="bar risk-LOW" style="height:76.5625%">
-              <span class="bar-label">49</span>
-            </div>
-          </div>
-          <div>06-05</div>
-        </div>
-        
-        <div class="day">
-          <div class="bar-wrap">
-            <div class="bar risk-LOW" style="height:53.125%">
-              <span class="bar-label">34</span>
-            </div>
-          </div>
-          <div>06-06</div>
-        </div>
-        
-        <div class="day">
-          <div class="bar-wrap">
             <div class="bar risk-LOW" style="height:100.0%">
-              <span class="bar-label">64</span>
+              <span class="bar-label">132</span>
             </div>
           </div>
-          <div>06-07</div>
+          <div>06-08</div>
+        </div>
+        
+        <div class="day">
+          <div class="bar-wrap">
+            <div class="bar risk-LOW" style="height:90.15151515151516%">
+              <span class="bar-label">119</span>
+            </div>
+          </div>
+          <div>06-09</div>
+        </div>
+        
+        <div class="day">
+          <div class="bar-wrap">
+            <div class="bar risk-LOW" style="height:49.24242424242424%">
+              <span class="bar-label">65</span>
+            </div>
+          </div>
+          <div>06-10</div>
         </div>
         
       </div>
@@ -894,45 +922,36 @@
           
           <div class="own-day">
             <div class="own-bar-wrap">
-              <div class="own-bar zero" style="height:0.0%">
-                
+              <div class="own-bar" style="height:75.0%">
+                <span class="own-bar-label">3</span>
               </div>
             </div>
-            <div>06-04</div>
-          </div>
-          
-          <div class="own-day">
-            <div class="own-bar-wrap">
-              <div class="own-bar zero" style="height:0.0%">
-                
-              </div>
-            </div>
-            <div>06-05</div>
+            <div>06-08</div>
           </div>
           
           <div class="own-day">
             <div class="own-bar-wrap">
               <div class="own-bar" style="height:100.0%">
-                <span class="own-bar-label">2</span>
+                <span class="own-bar-label">4</span>
               </div>
             </div>
-            <div>06-06</div>
+            <div>06-09</div>
           </div>
           
           <div class="own-day">
             <div class="own-bar-wrap">
-              <div class="own-bar zero" style="height:0.0%">
-                
+              <div class="own-bar" style="height:50.0%">
+                <span class="own-bar-label">2</span>
               </div>
             </div>
-            <div>06-07</div>
+            <div>06-10</div>
           </div>
           
         </div>
       </div>
     </div>
     <div class="panel">
-      <h2>일자별 모니터링 로그 <span>최근 4일 · 일 단위 집계</span></h2>
+      <h2>일자별 모니터링 로그 <span>최근 3일 · 일 단위 집계</span></h2>
       <table class="ledger-table">
         <thead>
           <tr><th>일자</th><th>수집</th><th>분석</th><th>당사</th><th>정책</th><th>GA/보험</th><th>부정</th><th>상태</th></tr>
@@ -940,45 +959,34 @@
         <tbody>
           
           <tr>
-            <td>06-04</td>
-            <td class="num">20</td>
-            <td class="num">20</td>
-            <td class="num">0</td>
-            <td class="num">1</td>
-            <td class="num">19</td>
-            <td class="num">0</td>
-            <td><span class="risk-pill low">LOW</span></td>
-          </tr>
-          
-          <tr>
-            <td>06-05</td>
-            <td class="num">49</td>
-            <td class="num">44</td>
-            <td class="num">0</td>
+            <td>06-08</td>
+            <td class="num">132</td>
+            <td class="num">108</td>
             <td class="num">3</td>
-            <td class="num">46</td>
+            <td class="num">0</td>
+            <td class="num">129</td>
             <td class="num">0</td>
             <td><span class="risk-pill low">LOW</span></td>
           </tr>
           
           <tr>
-            <td>06-06</td>
-            <td class="num">34</td>
-            <td class="num">32</td>
-            <td class="num">2</td>
-            <td class="num">1</td>
-            <td class="num">31</td>
+            <td>06-09</td>
+            <td class="num">119</td>
+            <td class="num">102</td>
+            <td class="num">4</td>
+            <td class="num">3</td>
+            <td class="num">112</td>
             <td class="num">0</td>
             <td><span class="risk-pill low">LOW</span></td>
           </tr>
           
           <tr>
-            <td>06-07</td>
-            <td class="num">64</td>
-            <td class="num">54</td>
-            <td class="num">0</td>
+            <td>06-10</td>
+            <td class="num">65</td>
+            <td class="num">49</td>
             <td class="num">2</td>
-            <td class="num">62</td>
+            <td class="num">2</td>
+            <td class="num">61</td>
             <td class="num">0</td>
             <td><span class="risk-pill low">LOW</span></td>
           </tr>
@@ -988,7 +996,7 @@
     </div>
   </section>
 
-  <section class="content-grid">
+  <section class="content-grid evidence-summary-grid">
     <div class="left-stack">
       <div class="mix-grid">
         <div class="panel">
@@ -997,21 +1005,21 @@
           <div class="mix-row">
             <span>당사</span>
             <div class="track"><div class="fill own" style="width:4%"></div></div>
-            <span class="mix-value">2건</span>
+            <span class="mix-value">9건</span>
             <div class="mix-note">인카금융서비스 직접 언급 보도입니다. 브랜드평판·실적·당사 이슈 노출을 별도로 봅니다.</div>
           </div>
           
           <div class="mix-row">
             <span>정책</span>
             <div class="track"><div class="fill regulation" style="width:4%"></div></div>
-            <span class="mix-value">7건</span>
+            <span class="mix-value">5건</span>
             <div class="mix-note">법안·감독·제도성 기사입니다. 업계 리스크의 배경 신호로 해석합니다.</div>
           </div>
           
           <div class="mix-row">
             <span>GA/보험</span>
-            <div class="track"><div class="fill market" style="width:95%"></div></div>
-            <span class="mix-value">158건</span>
+            <div class="track"><div class="fill market" style="width:96%"></div></div>
+            <span class="mix-value">302건</span>
             <div class="mix-note">GA·보험사·보험상품 관련 보도입니다. 시장 환경 변화의 주된 관찰 축입니다.</div>
           </div>
           
@@ -1049,8 +1057,8 @@
           
           <div class="mix-row">
             <span>중립 논조</span>
-            <div class="track"><div class="fill neutral" style="width:89%"></div></div>
-            <span class="mix-value">149건</span>
+            <div class="track"><div class="fill neutral" style="width:95%"></div></div>
+            <span class="mix-value">300건</span>
             <div class="mix-note">사실 전달형 기사 비중입니다. 기본 노출량의 바탕 흐름입니다.</div>
           </div>
           
@@ -1062,7 +1070,7 @@
           
           <div class="synthesis-item">
             <b>노출 구조</b>
-            <span>손해보험 키워드가 상위 반복 축이며, GA/보험 동향 158건이 전체 흐름을 주도합니다. 당사 언급은 2건으로 별도 성과·평판 축에서 보는 것이 적절합니다.</span>
+            <span>손해보험 키워드가 상위 반복 축이며, GA/보험 동향 302건이 전체 흐름을 주도합니다. 당사 언급은 9건으로 별도 성과·평판 축에서 보는 것이 적절합니다.</span>
           </div>
           
           <div class="synthesis-item">
@@ -1072,12 +1080,12 @@
           
           <div class="synthesis-item">
             <b>일자 신호</b>
-            <span>최대 노출일은 2026-06-07 64건, 최근 기준일은 2026-06-07 64건입니다. 주의 관찰일은 없음입니다.</span>
+            <span>최대 노출일은 2026-06-08 132건, 최근 기준일은 2026-06-10 65건입니다. 주의 관찰일은 없음입니다.</span>
           </div>
           
           <div class="synthesis-item">
             <b>매체 기준</b>
-            <span>상위 매체는 보험저널 11건입니다. 포털 경유 기사와 원매체명이 섞이면 영향 매체 해석이 흔들리므로 매체명 보정 상태를 함께 봐야 합니다.</span>
+            <span>상위 매체는 google 24건입니다. 포털 경유 기사와 원매체명이 섞이면 영향 매체 해석이 흔들리므로 매체명 보정 상태를 함께 봐야 합니다.</span>
           </div>
           
         </div>
@@ -1088,18 +1096,23 @@
       <div class="evidence-groups">
         
         <section class="evidence-group">
-          <h3>당사 기사 판단 <span>2건 기준</span></h3>
-          <p class="evidence-judgment">당사 언급 2건 중 직접 부정은 0건입니다. 긍정·중립 보도와 부정 보도를 분리해 브랜드 노출 성과와 평판 리스크를 함께 봅니다.</p>
+          <h3>당사 기사 판단 <span>9건 기준</span></h3>
+          <p class="evidence-judgment">당사 언급 9건 중 직접 부정은 0건입니다. 긍정·중립 보도와 부정 보도를 분리해 브랜드 노출 성과와 평판 리스크를 함께 봅니다.</p>
           <div class="evidence-list">
             
-            <a class="evidence-card" href="https://www.news2day.co.kr/article/20260602500195" target="_blank">
-              <b>[N2 포커스] 설계사 '정착지원금 경쟁' 저문다…GA '조직력'이 관건</b>
-              <span>2026-06-06 전일 18시 이후 · 뉴스투데이 · 한화생명금융서비스</span>
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMic0FVX3lxTFA4YTBjOTBqUkgyUk91RV9FM3pKNjRVOF9sSkxnREZSZlBUTHp3azZsLW1Jc1prQ0p0RktBcXNfNXc1c0ZxOFZyY2J6Qmt5b1BiLVRWbDFNd3Nld2ZLOERZWGZMUXh2TkRYSmgwVGJLVlpFX1k?oc=5" target="_blank">
+              <b>인카금융서비스, 70억원 자기주식취득 신탁계약 체결 결정 - 디지털투데이</b>
+              <span>2026-06-08 오후 13~18시 · 디지털투데이 · 인카금융</span>
             </a>
             
-            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMib0FVX3lxTE9KeEh6ck5USWkwSGotTDFBRTdVbGRCd25zcnBqYl9hcVF2QW1fSW8tZmJkT01OU0dwMHFOS3NIX1RkZ1Nnc1RjUTN4TkY1WWs4WjdSVnJFaUFKSThkRHppcnJtY0ZwZXgwbW5MclUyTQ?oc=5" target="_blank">
-              <b>[한눈에보는GA리포트] 인카금융서비스 - 보험저널</b>
-              <span>2026-06-06 전일 18시 이후 · 보험저널 · 인카금융</span>
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMilwFBVV95cUxNZWQ3TVNiMmZFOVNCTWVnamZMRlNMZ01QWEVDX1VXTHdzcm81a0d0TUJWWmhuRlJ4T0pqTFh5eDZ5UDMtdEhPM2s0SDc4ZTFTdlpUcE53ZzRNWnVGcjV2c2ladjUtY0NsX3NvTGc1Ukc3eG4yT0RzSjYxNTZyWnVmUURmTkR5YjlnZTJMRXdWTnZlNU9tMWxn0gGXAUFVX3lxTE1lZDdNU2IyZkU5U0JNZWdqZkxGU0xnTVBYRUNfVVdMd3NybzVrR3RNQlZaaG5GUnhPSmpMWHl4NnlQMy10SE8zazRINzhlMVN2WlRwTndnNE1adUZyNXZzaVp2NS1jQ2xfc29MZzVSRzd4bjJPRHNKNjE1NnJadWZRRGZORHliOWdlMkxFd1ZOdmU1T20xbGc?oc=5" target="_blank">
+              <b>인카금융서비스, +7.46% VI 발동 - 조선비즈 - Chosunbiz</b>
+              <span>2026-06-09 오전 08~13시 · google · 인카금융</span>
+            </a>
+            
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMic0FVX3lxTE5VY1FlbUgwR256TVM0X2ZBa3QybmxYdlJHbUd1UnJmYi1XQ1RJR3pDT21KcGh5V2RNeWpHZVJMYy1Venh2S2pITy1CTzNlc0Jab0RYbmp1NlJTakE1d1Rmd3JKM3hsQW9Kd25TcGt2X3ZmS3c?oc=5" target="_blank">
+              <b>인카금융서비스, 70억 원 규모 자사주 매입 신탁계약 체결...주주가치 제고 및 임직원 보상 목적 - Investing.com 한국어</b>
+              <span>2026-06-08 오후 13~18시 · google · 인카금융</span>
             </a>
             
             
@@ -1107,23 +1120,23 @@
         </section>
         
         <section class="evidence-group">
-          <h3>정책/감독 판단 <span>7건 기준</span></h3>
-          <p class="evidence-judgment">정책/감독 보도는 7건입니다. 당사 직접 이슈가 아니더라도 GA·보험 영업 환경에 영향을 줄 수 있는 제도 변화 신호입니다.</p>
+          <h3>정책/감독 판단 <span>5건 기준</span></h3>
+          <p class="evidence-judgment">정책/감독 보도는 5건입니다. 당사 직접 이슈가 아니더라도 GA·보험 영업 환경에 영향을 줄 수 있는 제도 변화 신호입니다.</p>
           <div class="evidence-list">
             
-            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMib0FVX3lxTE55alBxeEZfcktNdnU1MTdCUlR4VDMwUUJkSnVvaFpWWXZINGVkWUxFN0xZUDJZcDZodTl0a3NsMWQ2ZUlncHRWeGNGRVFSeTR3YzVZbVZLNWhDQXNZdzZoTUp1SXluTmlpMXpGUkZ6Zw?oc=5" target="_blank">
-              <b>‘1200%룰’ 적용 막판 쟁점… 지점장 인건비, 일반관리비인가 모집비용인가 - 보험저널</b>
-              <span>2026-06-04 전일 18시 이후 · 보험저널 · 1200%</span>
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMiWkFVX3lxTE1JWXlGWjF0S2JYVW5KQU5zcmxibmFsZzVKS2NIWklXMWp6R3RQTGRMcFlmNjdoUnBMUnR2TnBDS2lnS3BRVUZVaVMwVUxFdVV4ZllBcVZ2N3M3UdIBWEFVX3lxTFB3M2hXMC1RTVh0TXZraFZTSk54eVpKb2NWX2hsZjJFM1pfWGVYa2V1VjNrXzRENTBwdzMzX2tKbVlVZlp0ek84RnM5Yko0R2U1Qkt5dE5jS04?oc=5" target="_blank">
+              <b>금감원, 찾아가는 기업공시 설명회 개최…개정 상법·공시제도 집중 안내 - 아주경제</b>
+              <span>2026-06-09 전일 18시 이후 · 아주경제 · 제도</span>
             </a>
             
-            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMib0FVX3lxTE1pSHY3M2JrWGh2b3ZlMFBaUVM4ZS1ZX1I3Y3FmTF9LYnJzUURqaGdPQko2OEhuRGctUXdabzlTTlk1M2gyN1pnTE5zYXA2SGhTTW9pYjEwOFE3V0tCSVhDVkEtWlBYa3EtQkQxX2tJZw?oc=5" target="_blank">
-              <b>'1200%룰' GA 경력 설계사 리쿠르팅… "선별 영입 계속" 57.7% vs "급격 위축" 42.3% - 보험저널</b>
-              <span>2026-06-05 오후 13~18시 · 보험저널 · 1200%</span>
+            <a class="evidence-card" href="https://news.google.com/rss/articles/CBMib0FVX3lxTE9WZFE3cFZnSm9rX2JZbDZMLWJ0YmZjNkVvUHlFdGJLNEdZSERmU29sX2x4MGRqT01vV2p6SUp0Z0lxQ3JISE5GNUdhNWhkQUFHYnpISC13NUhST3J5UWptZTBCdTBhVzNxNGRMVDNQMA?oc=5" target="_blank">
+              <b>[단독] GA설계사 ‘1200%룰 FAQ’ 초안 배포… 21년 전속채널 기준과 대동소이 - 보험저널</b>
+              <span>2026-06-09 전일 18시 이후 · 보험저널 · 1200%</span>
             </a>
             
-            <a class="evidence-card" href="http://www.ftoday.co.kr/news/articleView.html?idxno=359997" target="_blank">
-              <b>'1200%룰' 한 달 전야…GA업계 현장 안착 총력</b>
-              <span>2026-06-05 오전 08~13시 · 파이낸셜투데이 · 분급</span>
+            <a class="evidence-card" href="http://www.the-biz.co.kr/news/articleView.html?idxno=722270" target="_blank">
+              <b>금리·제도개편·자본규제 완화…보험주 주가 반등 기대 커진다</b>
+              <span>2026-06-10 오전 08~13시 · the-biz.co.kr · 분급</span>
             </a>
             
             
@@ -1146,7 +1159,7 @@
   </section>
 
   <footer class="footer">
-    <span>전주 주간 미디어 모니터링 리포트 · 기준: 당사 직접 부정 기사, HIGH/MEDIUM 일자, 반복 노출 키워드</span>
+    <span>주간 미디어 모니터링 리포트 · 기준: 당사 직접 부정 기사, HIGH/MEDIUM 일자, 반복 노출 키워드</span>
     <span>인카금융서비스 마케팅부</span>
   </footer>
 </main>
