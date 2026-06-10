@@ -708,9 +708,30 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations }) {
+function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, scraps = [], onScrapSaved }) {
   const { summary } = data;
   const isLoading = operations?.status === "loading" || isWorking;
+  const clippingCandidates = useMemo(() => {
+    const pool = [];
+    const seen = new Set();
+    [...(data?.issues || []), ...(articles || [])].forEach((article) => {
+      const key = articleSelectionKey(article);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      pool.push(article);
+    });
+    const recommended = selectClippingRecommendations(pool, scraps).slice(0, 4);
+    if (recommended.length) return recommended;
+    return pool
+      .filter((article) => ["부정", "주의", "긍정"].includes(article?.tone) || article?.category === "당사")
+      .sort((a, b) => toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
+      .slice(0, 4)
+      .map((article) => ({
+        ...article,
+        clippingRecommended: true,
+        clippingReason: article.clippingReason || dashboardClippingFallbackReason(article),
+      }));
+  }, [articles, data?.issues, scraps]);
   const operationsHealth = useMemo(
     () => buildOperationsHealth({
       operations,
@@ -755,6 +776,12 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
       <section className="terminal-dashboard-grid">
         <div className="terminal-main-stack">
+          <DashboardClippingPanel
+            candidates={clippingCandidates}
+            scraps={scraps}
+            onScrapSaved={onScrapSaved}
+            onOpenMonitoring={onOpenMonitoring}
+          />
           <RiskPriorityQueue issues={data.issues} onOpenMonitoring={onOpenMonitoring} />
           <section className="terminal-analysis-board">
             <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
@@ -780,6 +807,68 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
     </main>
   );
+}
+
+function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, onOpenMonitoring }) {
+  return (
+    <section className="dashboard-clipping-panel">
+      <div className="clipping-panel-head">
+        <div>
+          <span>REPORT CLIPPING</span>
+          <h2>AI 클리핑 후보</h2>
+        </div>
+        <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.({ clipping: true })}>
+          후보 더보기
+        </button>
+      </div>
+      <div className="dashboard-clipping-list">
+        {candidates.length ? candidates.map((article, index) => {
+          const scrapped = isArticleScrapped(article, scraps);
+          return (
+            <article className={`dashboard-clipping-card ${toneCssClass(article.tone)}`} key={`${articleSelectionKey(article)}-${index}`}>
+              <div className="clipping-card-meta">
+                <Chip tone={article.tone}>{article.tone}</Chip>
+                <Chip>{article.category}</Chip>
+                <span>{formatIssueMeta(article)}</span>
+              </div>
+              <h3>{article.title}</h3>
+              <ArticleSummaryBlock item={article} dense />
+              <ArticleDecisionNote item={article} />
+              <div className="clipping-card-actions">
+                <ArticleScrapButton article={article} scrapped={scrapped} onScrapSaved={onScrapSaved} />
+                {article.link && article.link !== "#" && (
+                  <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, article.link)}>
+                    <ExternalLink /> 기사
+                  </a>
+                )}
+              </div>
+            </article>
+          );
+        }) : (
+          <article className="dashboard-clipping-empty">
+            <b>현재 클리핑 후보가 없습니다.</b>
+            <span>분석 근거가 충분한 기사만 보고서 후보로 표시합니다.</span>
+          </article>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function dashboardClippingFallbackReason(article = {}) {
+  if (article.category === "당사" && article.tone === "긍정") {
+    return "당사 평판 자산으로 활용 가능한 보도입니다. 노출 매체와 핵심 수치를 확인해 클리핑 후보로 검토합니다.";
+  }
+  if (article.category === "당사") {
+    return "당사 직접 언급 기사입니다. 사실관계와 평판 영향을 우선 확인해야 합니다.";
+  }
+  if (article.tone === "부정") {
+    return "부정 논조가 포함된 기사입니다. 당사 관련성, 반복 보도 여부, 대응 필요성을 분리해 확인합니다.";
+  }
+  if (article.tone === "주의" || article.category === "정책/규제") {
+    return "시장·규제성 신호가 있는 기사입니다. 영업환경 또는 소비자 보호 기준 변화 가능성을 확인합니다.";
+  }
+  return "보고서 근거로 활용 가능한 관찰 기사입니다. 관련 이슈와 노출 맥락을 확인합니다.";
 }
 
 
@@ -849,6 +938,7 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
               </div>
               <h3>{issue.title}</h3>
               <ArticleSummaryBlock item={issue} dense />
+              <ArticleDecisionNote item={issue} />
             </div>
             {issue.link && issue.link !== "#" && (
               <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>

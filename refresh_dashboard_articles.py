@@ -44,6 +44,7 @@ def collect_recent_articles(minutes: int) -> list[dict]:
         articles.extend(news_collector.fetch_naver_news(query, label, category, strict))
         articles.extend(news_collector.fetch_google_news(query, label, category, strict))
 
+    articles.extend(news_collector.fetch_trade_press_news())
     articles = news_collector.deduplicate(articles)
     articles = news_collector.apply_relevance_filter(articles)
     articles = news_collector.apply_exclude_filter(articles)

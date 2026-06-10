@@ -6,8 +6,8 @@ import os
 import re
 import sys
 from datetime import datetime, timedelta, timezone
-from email.utils import parsedate_to_datetime
-from urllib.parse import urlparse
+from email.utils import format_datetime, parsedate_to_datetime
+from urllib.parse import urljoin, urlparse
 
 import feedparser
 import requests
@@ -93,6 +93,8 @@ EXCLUDED_PRESS_NAMES = {
 
 DOMAIN_PRESS_MAP = {
     "fins.co.kr": "보험저널",
+    "insjournal.co.kr": "보험저널",
+    "www.insjournal.co.kr": "보험저널",
     "news2day.co.kr": "뉴스투데이",
     "econovill.com": "이코노믹리뷰",
     "pinpointnews.co.kr": "핀포인트뉴스",
@@ -169,6 +171,18 @@ CONTEXTUAL_COMPETITOR_QUERIES = {
     "글로벌금융": ["글로벌금융판매"],
 }
 STALE_GOOGLE_REEXPOSURE_DAYS = int(os.getenv("STALE_GOOGLE_REEXPOSURE_DAYS", "14"))
+ENABLE_TRADE_PRESS_SOURCES = os.getenv("ENABLE_TRADE_PRESS_SOURCES", "true").lower() not in {"0", "false", "no", "n"}
+TRADE_PRESS_ARTICLES_PER_SOURCE = int(os.getenv("TRADE_PRESS_ARTICLES_PER_SOURCE", "30"))
+TRADE_PRESS_SOURCES = [
+    {
+        "name": "보험저널",
+        "base_url": "https://www.insjournal.co.kr/",
+        "list_urls": [
+            "https://www.insjournal.co.kr/",
+            "https://www.insjournal.co.kr/news/articleList.html?view_type=sm",
+        ],
+    },
+]
 
 COLLECTION_CONTEXT_WORDS = [
     "인카금융", "인카금융서비스",
@@ -229,6 +243,11 @@ def collect_news() -> list[dict]:
             all_articles.extend(naver + google)
             stats.append((f"{label} · {category_label(category)}", len(naver), len(google)))
             progress.advance(task)
+
+    trade_articles = fetch_trade_press_news()
+    if trade_articles:
+        all_articles.extend(trade_articles)
+        stats.append(("보험전문지 원문", len(trade_articles), 0))
 
     before = len(all_articles)
     articles = deduplicate(all_articles)
@@ -395,6 +414,145 @@ def fetch_google_news(
     except Exception as exc:
         console.print(f"[red]Google '{query}' 오류:[/] {exc}")
         return []
+
+
+def fetch_trade_press_news(limit_per_source: int | None = None) -> list[dict]:
+    """Collect original articles from insurance trade media that may not surface in portals."""
+    if not ENABLE_TRADE_PRESS_SOURCES:
+        return []
+    limit = limit_per_source or TRADE_PRESS_ARTICLES_PER_SOURCE
+    articles: list[dict] = []
+    for source in TRADE_PRESS_SOURCES:
+        urls = collect_trade_press_article_urls(source, limit)
+        for url in urls[:limit]:
+            article = fetch_trade_press_article(source, url)
+            if article:
+                articles.append(article)
+    return articles
+
+
+def collect_trade_press_article_urls(source: dict, limit: int) -> list[str]:
+    seen: set[str] = set()
+    urls: list[str] = []
+    for list_url in source.get("list_urls", []):
+        html, final_url = fetch_article_html(list_url, timeout=8)
+        if not html:
+            continue
+        base_url = final_url or list_url or source.get("base_url", "")
+        patterns = [
+            r'https?://(?:www\.)?insjournal\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ]
+        for pattern in patterns:
+            for match in re.finditer(pattern, html, re.I):
+                raw = match.group(1) if match.groups() else match.group(0)
+                url = urljoin(base_url, raw)
+                if url in seen:
+                    continue
+                seen.add(url)
+                urls.append(url)
+                if len(urls) >= limit:
+                    return urls
+    return urls
+
+
+def fetch_trade_press_article(source: dict, url: str) -> dict | None:
+    html, final_url = fetch_article_html(url, timeout=8)
+    if not html:
+        return None
+    link = final_url or url
+    title = extract_article_title_from_html(html)
+    description = extract_article_description_from_html(html)
+    published = parse_article_date_from_html(html) or parse_korean_datetime_from_html(html)
+    if not title:
+        return None
+    text = f"{title} {description}"
+    category = infer_trade_press_category(text)
+    return {
+        "title": title,
+        "link": link,
+        "description": description,
+        "pub_date": format_pub_date(published) if published else "",
+        "source": source.get("name", "보험전문지"),
+        "keyword": "보험",
+        "keyword_query": "보험",
+        "keyword_category": category,
+        "keyword_strict_query": False,
+        "portal": "trade_press",
+    }
+
+
+def extract_article_title_from_html(html: str) -> str:
+    title = extract_meta_content(html, ["og:title", "twitter:title"])
+    if not title:
+        match = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.I | re.S)
+        title = match.group(1) if match else ""
+    if not title:
+        match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
+        title = match.group(1) if match else ""
+    title = clean_html(title)
+    title = re.sub(r"\s*[-|]\s*보험저널\s*$", "", title).strip()
+    return title
+
+
+def extract_article_description_from_html(html: str) -> str:
+    description = extract_meta_content(html, ["og:description", "twitter:description", "description"])
+    if not description:
+        match = re.search(r"<p[^>]*>(.*?)</p>", html, re.I | re.S)
+        description = match.group(1) if match else ""
+    description = clean_html(description)
+    description = re.sub(r"\s+", " ", description).strip()
+    return description[:600]
+
+
+def extract_meta_content(html: str, names: list[str]) -> str:
+    for name in names:
+        escaped = re.escape(name)
+        patterns = [
+            rf'<meta[^>]+(?:property|name)=["\']{escaped}["\'][^>]+content=["\']([^"\']+)["\']',
+            rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']{escaped}["\']',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, html, re.I | re.S)
+            if match:
+                return clean_html(match.group(1))
+    return ""
+
+
+def parse_korean_datetime_from_html(html: str) -> datetime | None:
+    text = clean_html(html)
+    patterns = [
+        r"(?:입력|승인|수정)\s*(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?",
+        r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if not match:
+            continue
+        year, month, day, hour, minute, second = match.groups(default="0")
+        try:
+            return datetime(
+                int(year), int(month), int(day),
+                int(hour), int(minute), int(second or 0),
+                tzinfo=KST,
+            ).astimezone(timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def infer_trade_press_category(text: str) -> str:
+    if any(name in text for name in analyzer.OWN_NAMES):
+        return "own"
+    if any(word in text for word in analyzer.REGULATION_WORDS):
+        return "regulation"
+    if analyzer.contains_competitor_word(text):
+        return "competitor"
+    return "industry"
+
+
+def format_pub_date(value: datetime) -> str:
+    return format_datetime(value.astimezone(timezone.utc), usegmt=True)
 
 
 def fetch_article_html(link: str, timeout: int = 6) -> tuple[str, str]:
@@ -701,6 +859,11 @@ def is_relevant_article(article: dict) -> bool:
 
     if category == "other":
         return keyword_matches_text(text, keyword) or keyword_matches_text(text, query)
+
+    if article.get("portal") == "trade_press":
+        if category == "own":
+            return any(name in text for name in analyzer.OWN_NAMES)
+        return has_collection_context(text)
 
     if not article_matches_collection_keyword(article, text):
         return False

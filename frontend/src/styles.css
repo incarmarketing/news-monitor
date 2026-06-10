@@ -6832,6 +6832,138 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   box-shadow: var(--surface-glow), 0 10px 24px rgba(16, 24, 40, .07);
 }
 
+.dashboard-clipping-panel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #cfd8e6;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: var(--surface-glow), 0 10px 24px rgba(16, 24, 40, .06);
+}
+
+.clipping-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 11px;
+  margin-bottom: 11px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.clipping-panel-head span {
+  color: #2554d9;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+
+.clipping-panel-head h2 {
+  margin: 3px 0 0;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.dashboard-clipping-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-clipping-card {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid #dbe5f3;
+  border-left: 4px solid #8aa0c8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.dashboard-clipping-card.negative { border-left-color: var(--red); }
+.dashboard-clipping-card.caution { border-left-color: var(--amber); }
+.dashboard-clipping-card.positive { border-left-color: var(--green); }
+.dashboard-clipping-card.neutral { border-left-color: var(--blue); }
+
+.clipping-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.clipping-card-meta > span:last-child {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.dashboard-clipping-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 950;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.clipping-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.clipping-card-actions .scrap-action,
+.clipping-card-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #2554d9;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.clipping-card-actions .scrap-action.saved {
+  border-color: #bfe3ca;
+  background: #ecfdf3;
+  color: #0f7a3f;
+}
+
+.dashboard-clipping-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.dashboard-clipping-empty b {
+  color: #111827;
+  font-size: 14px;
+}
+
+.dashboard-clipping-empty span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .queue-head {
   display: flex;
   align-items: center;
@@ -7427,6 +7559,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .queue-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .clipping-panel-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-clipping-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .clipping-card-actions {
+    justify-content: flex-start;
   }
 
   .queue-row {
