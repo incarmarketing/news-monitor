@@ -623,7 +623,7 @@ def save_ga_competitor_intel(
 
     if revenue_metrics:
         rows = [
-            {column: row.get(column) for column in GA_REVENUE_COLUMNS}
+            {column: row.get(column) for column in GA_REVENUE_COLUMNS if column in row and row.get(column) is not None}
             for row in revenue_metrics
             if row.get("company_name") and row.get("period_key")
         ]

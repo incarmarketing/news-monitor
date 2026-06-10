@@ -16,7 +16,7 @@ import supabase_store
 BASE_URL = "https://gapub.insure.or.kr"
 MAIN_URL = f"{BASE_URL}/gongsimain/mainSearch.do"
 COMPARE_URL = f"{BASE_URL}/gongsimain/mainDrgCompareSort.do"
-DETAIL_URL = f"{BASE_URL}/gongsimain/mainDrgDetail.do"
+SUMMARY_URL = f"{BASE_URL}/gongsimain/mainDrgSummary.do"
 SOURCE_URL = "https://gapub.insure.or.kr/gongsimain/mainSearch.do"
 
 KNOWN_COMPANIES = {
@@ -37,23 +37,30 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Refresh GA competitor metrics from public disclosure.")
     parser.add_argument("--stand-mm", default="", help="Disclosure month in YYYYMM. Default: latest year-end from current date.")
     parser.add_argument("--top", type=int, default=10, help="Number of ranked GA companies to persist.")
+    parser.add_argument("--revenue-start-year", type=int, default=0, help="First annual income year to collect. Default: latest 5 years.")
+    parser.add_argument("--revenue-end-year", type=int, default=0, help="Last annual income year to collect. Default: stand-mm year.")
     parser.add_argument("--dry-run", action="store_true", help="Print payload without saving to Supabase.")
     args = parser.parse_args()
 
     stand_mm = normalize_stand_mm(args.stand_mm)
+    revenue_years = annual_revenue_years(
+        stand_mm,
+        start_year=args.revenue_start_year,
+        end_year=args.revenue_end_year,
+    )
     period_label = period_label_from_stand_mm(stand_mm)
     started_at = datetime.now(timezone.utc).isoformat()
     run_key = f"ga_competitor_collect:{stand_mm}"
 
     try:
-        payload = collect_ga_competitor_intel(stand_mm=stand_mm, top=args.top)
+        payload = collect_ga_competitor_intel(stand_mm=stand_mm, top=args.top, revenue_years=revenue_years)
         payload["collect_run"] = {
             "run_key": run_key,
             "job_type": "ga_competitor_collect",
             "stand_mm": stand_mm,
             "status": "success",
-            "message": f"{period_label} 통합공시 {len(payload['companies'])}개사 수집",
-            "rows_collected": len(payload["companies"]),
+            "message": f"{period_label} 통합공시 {len(payload['companies'])}개사, 매출 {len(payload['revenue_metrics'])}건 수집",
+            "rows_collected": len(payload["companies"]) + len(payload["revenue_metrics"]),
             "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
         }
@@ -86,7 +93,7 @@ def main() -> None:
     print(f"GA competitor intel refreshed: {period_label}, companies={len(payload['companies'])}")
 
 
-def collect_ga_competitor_intel(*, stand_mm: str, top: int) -> dict[str, list[dict]]:
+def collect_ga_competitor_intel(*, stand_mm: str, top: int, revenue_years: list[int]) -> dict[str, list[dict]]:
     session = requests.Session()
     session.headers.update({
         "User-Agent": "Mozilla/5.0 news-monitor GA disclosure collector",
@@ -122,12 +129,7 @@ def collect_ga_competitor_intel(*, stand_mm: str, top: int) -> dict[str, list[di
             seen_companies.add(company_name)
 
         disclosure_metrics.append(disclosure_row(row, company_name, stand_mm, period_label))
-        try:
-            revenue = collect_revenue_row(session, row, company_name, stand_mm, period_label)
-        except requests.RequestException:
-            revenue = None
-        if revenue:
-            revenue_metrics.append(revenue)
+        revenue_metrics.extend(collect_revenue_rows(session, row, company_name, revenue_years))
 
     return {
         "companies": companies,
@@ -137,38 +139,68 @@ def collect_ga_competitor_intel(*, stand_mm: str, top: int) -> dict[str, list[di
     }
 
 
-def collect_revenue_row(session: requests.Session, row: dict[str, Any], company_name: str, stand_mm: str, period_label: str) -> dict | None:
-    year = stand_mm[:4]
-    half = "1" if stand_mm.endswith("06") else "2"
+def collect_revenue_rows(
+    session: requests.Session,
+    row: dict[str, Any],
+    company_name: str,
+    revenue_years: list[int],
+) -> list[dict]:
+    rows = []
+    for year in revenue_years:
+        try:
+            revenue = collect_annual_revenue_row(session, row, company_name, year)
+        except requests.RequestException:
+            revenue = None
+        if revenue:
+            rows.append(revenue)
+    return rows
+
+
+def collect_annual_revenue_row(
+    session: requests.Session,
+    row: dict[str, Any],
+    company_name: str,
+    year: int,
+) -> dict | None:
     response = session.post(
-        DETAIL_URL,
-        data={"drgno": row.get("drgno"), "standMm": year, "gongsiHc": half},
+        SUMMARY_URL,
+        data={"drgno": row.get("drgno"), "standMm": str(year), "gongsiHc": "2"},
         timeout=30,
     )
     response.raise_for_status()
-    table = extract_income_table(response.text)
+    table = extract_financial_income_table(response.text)
     if not table:
         return None
 
-    sales = parse_income_metric(table, "매출액")
-    operating_profit = parse_income_metric(table, "영업이익")
-    net_income = parse_income_metric(table, "당기순손익")
-    if sales is None:
+    revenue = parse_summary_income_metric(table, "수익")
+    expense = parse_summary_income_metric(table, "비용")
+    profit = parse_summary_income_metric(table, "이익")
+    if revenue is None:
         return None
 
-    period_key = year if stand_mm.endswith("12") else f"{year}H1"
-    label = f"{year} 연간" if stand_mm.endswith("12") else f"{year} 상반기"
+    period_key = str(year)
+    label = f"{year} 연간"
+    note_parts = [
+        "통합공시 상세화면 '재무 • 손익현황'의 수익 값을 자동 수집했습니다."
+    ]
+    expense_100m = thousand_krw_to_100m(expense)
+    profit_100m = thousand_krw_to_100m(profit)
+    if expense_100m is not None:
+        note_parts.append(f"비용 {expense_100m}억원")
+    if profit_100m is not None:
+        note_parts.append(f"이익 {profit_100m}억원")
+
     return {
         "company_name": company_name,
         "period_key": period_key,
         "period_label": label,
-        "amount_krw_100m": thousand_krw_to_100m(sales),
-        "operating_profit_krw_100m": thousand_krw_to_100m(operating_profit),
-        "net_income_krw_100m": thousand_krw_to_100m(net_income),
+        "amount_krw_100m": thousand_krw_to_100m(revenue),
+        "operating_profit_krw_100m": None,
+        "net_income_krw_100m": profit_100m,
         "status": "통합공시 확인",
-        "source_label": f"법인보험대리점 통합공시 {period_label} 손익현황",
+        "source_label": f"법인보험대리점 통합공시 {year} 손익현황",
         "source_url": SOURCE_URL,
-        "note": "통합공시 상세화면 손익현황의 매출액을 자동 수집했습니다.",
+        "note": " · ".join(note_parts),
         "confirmed_at": datetime.now(timezone.utc).date().isoformat(),
     }
 
@@ -210,17 +242,17 @@ def market_row(rows: list[dict], stand_mm: str, period_label: str) -> dict:
     }
 
 
-def extract_income_table(text: str) -> str:
-    match = re.search(r"(?s)<h4>\s*2\.\s*손익현황.*?</table>", text)
+def extract_financial_income_table(text: str) -> str:
+    match = re.search(r"(?s)<h3>\s*재무\s*(?:•|&bull;|·|\.)\s*손익현황.*?</table>", text)
     return match.group(0) if match else ""
 
 
-def parse_income_metric(table: str, label: str) -> int | None:
-    pattern = rf'(?s)<th[^>]*class="sub"[^>]*>\s*{re.escape(label)}\s*</th>\s*<td[^>]*>([^<]+)</td>\s*<td[^>]*>([^<]+)</td>\s*<td[^>]*>([^<]+)</td>'
+def parse_summary_income_metric(table: str, label: str) -> int | None:
+    pattern = rf"(?s)<td[^>]*>\s*{re.escape(label)}\s*</td>\s*<td[^>]*class=[\"']right[\"'][^>]*>([^<]+)</td>"
     match = re.search(pattern, table)
     if not match:
         return None
-    return int_or_none(clean_cell(match.group(3)))
+    return int_or_none(clean_cell(match.group(1)))
 
 
 def clean_cell(value: str) -> str:
@@ -250,6 +282,14 @@ def normalize_stand_mm(value: str) -> str:
         return f"{text}12"
     # The latest complete public GA year-end disclosure available in this project.
     return "202512"
+
+
+def annual_revenue_years(stand_mm: str, *, start_year: int = 0, end_year: int = 0) -> list[int]:
+    latest = end_year or int(stand_mm[:4])
+    first = start_year or latest - 4
+    if first > latest:
+        raise ValueError("revenue-start-year cannot be later than revenue-end-year")
+    return list(range(first, latest + 1))
 
 
 def period_label_from_stand_mm(value: str) -> str:

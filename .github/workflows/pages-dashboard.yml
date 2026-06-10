@@ -20,6 +20,7 @@ on:
       - "refresh_ga_competitor_intel.py"
       - "supabase_store.py"
       - ".github/workflows/pages-dashboard.yml"
+      - ".github/workflows/ga-revenue-sync.yml"
   workflow_dispatch:
 
 permissions:
@@ -70,7 +71,7 @@ jobs:
 
       - name: Refresh GA competitor intel
         run: |
-          timeout 180s python refresh_ga_competitor_intel.py --stand-mm 202512 --top 10 || \
+          timeout 240s python refresh_ga_competitor_intel.py --stand-mm 202512 --top 10 --revenue-start-year 2021 --revenue-end-year 2025 || \
             echo "::warning::GA competitor refresh did not finish; publishing with last successful data."
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
