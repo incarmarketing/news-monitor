@@ -81,6 +81,71 @@ RISK_RESPONSE_DRAFT_COLUMNS = (
     "created_by",
 )
 
+GA_COMPANY_COLUMNS = (
+    "name",
+    "short_name",
+    "display_order",
+    "active",
+    "source_note",
+)
+
+GA_DISCLOSURE_COLUMNS = (
+    "company_name",
+    "stand_mm",
+    "period_label",
+    "planners",
+    "stay_rate",
+    "retention_13_life",
+    "retention_13_nonlife",
+    "retention_25_life",
+    "retention_25_nonlife",
+    "poor_sales_life",
+    "poor_sales_nonlife",
+    "withdrawal_life",
+    "withdrawal_nonlife",
+    "source_url",
+    "source_payload",
+)
+
+GA_REVENUE_COLUMNS = (
+    "company_name",
+    "period_key",
+    "period_label",
+    "amount_krw_100m",
+    "operating_profit_krw_100m",
+    "net_income_krw_100m",
+    "status",
+    "source_label",
+    "source_url",
+    "note",
+    "confirmed_at",
+)
+
+GA_MARKET_COLUMNS = (
+    "stand_mm",
+    "period_label",
+    "companies_count",
+    "total_planners",
+    "stay_rate",
+    "retention_13_life",
+    "retention_13_nonlife",
+    "retention_25_life",
+    "retention_25_nonlife",
+    "poor_sales_life",
+    "poor_sales_nonlife",
+)
+
+GA_COLLECT_RUN_COLUMNS = (
+    "run_key",
+    "job_type",
+    "stand_mm",
+    "status",
+    "message",
+    "rows_collected",
+    "started_at",
+    "finished_at",
+)
+
 MEDIA_RELATION_EXCLUDED_SOURCES = {
     "google",
     "naver",
@@ -508,6 +573,77 @@ def save_risk_response_drafts(rows: list[dict]) -> None:
         data=json.dumps([{column: row.get(column) for column in RISK_RESPONSE_DRAFT_COLUMNS} for row in payload], ensure_ascii=False),
         headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
     )
+
+
+def save_ga_competitor_intel(
+    *,
+    companies: list[dict] | None = None,
+    disclosure_metrics: list[dict] | None = None,
+    revenue_metrics: list[dict] | None = None,
+    market_metrics: list[dict] | None = None,
+    collect_run: dict | None = None,
+) -> None:
+    """Persist GA competitor disclosure and revenue metrics."""
+    if not is_enabled():
+        return
+
+    if companies:
+        rows = [{column: row.get(column) for column in GA_COMPANY_COLUMNS} for row in companies if row.get("name")]
+        if rows:
+            request(
+                "POST",
+                "ga_companies?on_conflict=name",
+                data=json.dumps(rows, ensure_ascii=False),
+                headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+            )
+
+    if market_metrics:
+        rows = [{column: row.get(column) for column in GA_MARKET_COLUMNS} for row in market_metrics if row.get("stand_mm")]
+        if rows:
+            request(
+                "POST",
+                "ga_market_metrics?on_conflict=stand_mm",
+                data=json.dumps(rows, ensure_ascii=False),
+                headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+            )
+
+    if disclosure_metrics:
+        rows = [
+            {column: row.get(column) for column in GA_DISCLOSURE_COLUMNS}
+            for row in disclosure_metrics
+            if row.get("company_name") and row.get("stand_mm")
+        ]
+        if rows:
+            request(
+                "POST",
+                "ga_disclosure_metrics?on_conflict=company_name,stand_mm",
+                data=json.dumps(rows, ensure_ascii=False),
+                headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+            )
+
+    if revenue_metrics:
+        rows = [
+            {column: row.get(column) for column in GA_REVENUE_COLUMNS}
+            for row in revenue_metrics
+            if row.get("company_name") and row.get("period_key")
+        ]
+        if rows:
+            request(
+                "POST",
+                "ga_revenue_metrics?on_conflict=company_name,period_key",
+                data=json.dumps(rows, ensure_ascii=False),
+                headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+            )
+
+    if collect_run:
+        row = {column: collect_run.get(column) for column in GA_COLLECT_RUN_COLUMNS}
+        if row.get("run_key"):
+            request(
+                "POST",
+                "ga_collect_runs?on_conflict=run_key",
+                data=json.dumps([row], ensure_ascii=False),
+                headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+            )
 
 
 def save_notification_send(

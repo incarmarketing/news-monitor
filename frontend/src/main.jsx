@@ -1770,23 +1770,6 @@ function GACompetitorIntel({ gaIntel }) {
         )}
       />
 
-      <section className="ga-hero">
-        <div className="ga-hero-main">
-          <span className="live-label"><span /> GA INDUSTRY BOARD</span>
-          <h2>업계 규모와 채널 품질을 비교합니다.</h2>
-          <p>{data?.source?.title || gaCompetitorSeed.source.title}</p>
-          <div className="ga-hero-callout">
-            <b>{buildGaConsoleJudgement(ownRow, marketLatest)}</b>
-            <span>설계사 규모, 유지율, 불완전판매율, 매출 흐름을 업계 평균과 비교해 봅니다.</span>
-          </div>
-        </div>
-        <div className="ga-hero-snapshot">
-          <span>비교 기준</span>
-          <b>{activeRevenuePeer.label || "비교 GA"}</b>
-          <em>{revenueInsight}</em>
-        </div>
-      </section>
-
       <section className="ga-console-grid">
         <GAMetricCard icon={Users} label="설계사수" value={`${formatGaInteger(ownRow.planners)}명`} detail={`${ownRow.rank}위 · 2025년 말`} />
         <GAMetricCard icon={Gauge} label="정착률" value={formatGaPercentPlain(ownRow.stay)} detail={`시장 평균 ${formatGaPercentPlain(marketLatest.stay)}`} />
@@ -1988,29 +1971,32 @@ function GACompetitorTable({ rows = [], ownShort = "" }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.short} className={row.short === ownShort ? "own" : ""}>
-              <td>
-                <span className="ga-rank-pill">{row.rank}위</span>
-                {row.short === ownShort && <em className="ga-own-mark">당사</em>}
-              </td>
-              <td><b>{row.short}</b><span>{row.name}</span></td>
-              <td>
-                <div className="ga-table-metric"><b>{formatGaInteger(row.planners)}명</b><span>설계사</span></div>
-                <small>{row.revenue2024 ? `매출 ${formatGaRevenue(row.revenue2024)}` : "매출 확인 필요"}</small>
-              </td>
-              <td>
-                <div className="ga-table-metric"><b>{formatGaPercentPlain(row.stay)}</b><span>정착률</span></div>
-                <small>13회 {formatGaPercentPlain(row.retention13Life)} · 25회 {formatGaPercentPlain(row.retention25Life)}</small>
-              </td>
-              <td>
-                <div className={`ga-risk-score ${Number(row.poorSalesLife || 0) <= 0 ? "good" : "watch"}`}>
-                  <b>{formatGaPercentPlain(row.poorSalesLife, 2)}</b>
-                  <span>불완전판매율</span>
-                </div>
-              </td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const revenueMetric = latestGaRevenueMetric(row);
+            return (
+              <tr key={row.short} className={row.short === ownShort ? "own" : ""}>
+                <td>
+                  <span className="ga-rank-pill">{row.rank}위</span>
+                  {row.short === ownShort && <em className="ga-own-mark">당사</em>}
+                </td>
+                <td><b>{row.short}</b><span>{row.name}</span></td>
+                <td>
+                  <div className="ga-table-metric"><b>{formatGaInteger(row.planners)}명</b><span>설계사</span></div>
+                  <small>{revenueMetric ? `${revenueMetric.year} 매출 ${formatGaRevenue(revenueMetric.amount)}` : "매출 확인 필요"}</small>
+                </td>
+                <td>
+                  <div className="ga-table-metric"><b>{formatGaPercentPlain(row.stay)}</b><span>정착률</span></div>
+                  <small>13회 {formatGaPercentPlain(row.retention13Life)} · 25회 {formatGaPercentPlain(row.retention25Life)}</small>
+                </td>
+                <td>
+                  <div className={`ga-risk-score ${Number(row.poorSalesLife || 0) <= 0 ? "good" : "watch"}`}>
+                    <b>{formatGaPercentPlain(row.poorSalesLife, 2)}</b>
+                    <span>불완전판매율</span>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -2236,6 +2222,14 @@ function latestArrayValue(values = [], index) {
   const value = values[index];
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function latestGaRevenueMetric(row = {}) {
+  for (const year of [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019]) {
+    const amount = Number(row[`revenue${year}`]);
+    if (Number.isFinite(amount)) return { year, amount };
+  }
+  return null;
 }
 
 function formatGaInteger(value) {
