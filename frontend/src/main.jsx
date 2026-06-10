@@ -1895,9 +1895,11 @@ function GAMetricCard({ icon: Icon, label, value, detail, tone = "default" }) {
   return (
     <article className={`ga-metric-card ${tone}`}>
       <Icon />
-      <span>{label}</span>
-      <b>{value}</b>
-      <em>{detail}</em>
+      <div className="ga-metric-copy">
+        <span>{label}</span>
+        <b>{value}</b>
+        <em>{detail}</em>
+      </div>
     </article>
   );
 }
