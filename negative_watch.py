@@ -25,12 +25,14 @@ import news_collector
 from kakao_report_send import KAKAO_API, refresh_access_token
 from supabase_store import (
     apply_classification_feedback_to_articles,
+    article_hash as supabase_article_hash,
     load_latest_negative_watch_run,
     load_recent_negative_articles,
     notification_already_sent,
     save_dashboard_articles,
     save_negative_watch_run,
     save_notification_send,
+    save_risk_response_drafts,
 )
 
 KST = timezone(timedelta(hours=9))
@@ -39,6 +41,7 @@ STATE_DIR = BASE_DIR / ".watch-state"
 STATE_PATH = STATE_DIR / "negative_alerts.json"
 DASHBOARD_REFRESH_STATE_PATH = STATE_DIR / "dashboard_refresh.json"
 MAX_SENT_KEYS = 500
+GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 
 def github_output(name: str, value: str) -> None:
@@ -381,6 +384,209 @@ def build_alert_message(articles: list[dict], metrics: dict, minutes_back: int, 
     return "\n".join(lines)[:900]
 
 
+def risk_draft_model() -> str:
+    return (
+        os.getenv("GEMINI_RISK_RESPONSE_MODEL")
+        or os.getenv("GEMINI_EDGE_MODEL")
+        or os.getenv("GEMINI_MODEL")
+        or "gemini-2.5-pro"
+    ).strip()
+
+
+def risk_draft_article_limit() -> int:
+    try:
+        return max(1, int(os.getenv("NEGATIVE_WATCH_DRAFT_MAX_ARTICLES", "3")))
+    except ValueError:
+        return 3
+
+
+def persist_risk_response_drafts(articles: list[dict], scanned_at: str) -> None:
+    if not articles:
+        return
+    if os.getenv("NEGATIVE_WATCH_AUTO_DRAFTS", "true").lower() not in {"1", "true", "yes", "y"}:
+        return
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        print("Risk response draft generation skipped: GEMINI_API_KEY is missing.")
+        return
+
+    model = risk_draft_model()
+    rows: list[dict] = []
+    for article in articles[: risk_draft_article_limit()]:
+        issue = build_risk_draft_issue(article)
+        for draft_type in ("press", "internal"):
+            try:
+                draft = request_risk_response_draft(
+                    api_key=api_key,
+                    model=model,
+                    draft_type=draft_type,
+                    issue=issue,
+                    article=article,
+                )
+                status = "draft"
+            except Exception as error:
+                print(f"Gemini risk draft failed for {draft_type}: {error}")
+                draft = fallback_risk_response_draft(draft_type, article, issue)
+                status = "fallback"
+            rows.append(
+                {
+                    "article_hash": supabase_article_hash(article),
+                    "draft_type": draft_type,
+                    "title": article.get("title", ""),
+                    "link": article.get("link", ""),
+                    "source": article.get("source", ""),
+                    "tone": "negative",
+                    "risk_level": article.get("risk_level") or "MEDIUM",
+                    "issue": issue,
+                    "draft": draft,
+                    "status": status,
+                    "model": model,
+                    "context": {
+                        "scanned_at": scanned_at,
+                        "keyword": article.get("keyword", ""),
+                        "summary": analyzer.build_quality_summary(article),
+                        "ai_context": article.get("_ai_context") or {},
+                    },
+                    "created_by": "negative_watch",
+                    "article": article,
+                }
+            )
+    try:
+        save_risk_response_drafts(rows)
+        print(f"Persisted risk response drafts: {len(rows)}")
+    except Exception as error:
+        print(f"Risk response draft persistence failed: {error}")
+        if os.getenv("NEGATIVE_WATCH_REQUIRE_DRAFT_PERSIST", "").lower() in {"1", "true", "yes", "y"}:
+            raise
+
+
+def build_risk_draft_issue(article: dict) -> str:
+    title = clean_alert_title(article.get("title", ""), 140)
+    source = str(article.get("source") or "").strip()
+    keyword = str(article.get("keyword") or "").strip()
+    summary = analyzer.build_quality_summary(article)
+    description = re.sub(r"\s+", " ", str(article.get("description") or article.get("summary") or "")).strip()
+    lines = [
+        f"기사 제목: {title}",
+        f"출처: {source or '확인 필요'}",
+        f"키워드: {keyword or '확인 필요'}",
+        f"핵심 요약: {summary}",
+    ]
+    if description and description != summary:
+        lines.append(f"원문 단서: {compact(description, 360)}")
+    return "\n".join(lines)
+
+
+def request_risk_response_draft(*, api_key: str, model: str, draft_type: str, issue: str, article: dict) -> str:
+    prompt = build_risk_draft_prompt(draft_type, issue, article)
+    response = requests.post(
+        GEMINI_GENERATE_URL.format(model=model),
+        params={"key": api_key},
+        headers={"Content-Type": "application/json"},
+        data=json.dumps(
+            {
+                "systemInstruction": {
+                    "parts": [
+                        {
+                            "text": (
+                                "당신은 보험/GA 업계 언론홍보 리스크 대응 초안을 작성하는 한국어 PR 실무자입니다. "
+                                "사실 확인 전 단정 표현, 법적 책임 인정처럼 보이는 표현, 기사 문장 복붙을 피하고 "
+                                "확인 범위와 대응 원칙을 실무자가 바로 검토할 수 있게 씁니다."
+                            )
+                        }
+                    ]
+                },
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": 0.2,
+                    "maxOutputTokens": int(os.getenv("GEMINI_RISK_RESPONSE_MAX_TOKENS", "3200")),
+                },
+            },
+            ensure_ascii=False,
+        ).encode("utf-8"),
+        timeout=45,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    parts = payload.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+    draft = "\n".join(part.get("text", "") for part in parts).strip()
+    if not draft:
+        raise RuntimeError("empty_gemini_response")
+    return normalize_generated_draft(draft)
+
+
+def build_risk_draft_prompt(draft_type: str, issue: str, article: dict) -> str:
+    purpose = (
+        "언론 문의 대응용 공식 입장 초안"
+        if draft_type == "press"
+        else "사내 공유 및 임원 보고용 대응 메모"
+    )
+    sections = (
+        "입장 요지 / 확인 중인 사항 / 당사 대응 방향 / 기자 문의 응대 문구"
+        if draft_type == "press"
+        else "이슈 개요 / 리스크 판단 / 확인 필요 사항 / 즉시 조치 / 대외 커뮤니케이션 원칙"
+    )
+    return "\n".join(
+        [
+            f"목적: {purpose}",
+            "회사: 인카금융서비스",
+            f"작성일: {now_kst().strftime('%Y-%m-%d')}",
+            f"기사 URL: {article.get('link') or '확인 필요'}",
+            "",
+            "기사 정보:",
+            issue,
+            "",
+            "작성 조건:",
+            "- Markdown 제목 기호(#, **, ---) 없이 작성",
+            "- 기사 제목을 반복하지 말고 쟁점의 성격을 먼저 정의",
+            "- 당사가 직접 언급된 부정 보도라는 전제로 사실 확인 범위를 분리",
+            "- 불확실한 내용은 '확인 중' 또는 '확인 필요'로 표현",
+            "- 법적 책임 인정, 사과, 유감 표명은 사실 확인 전 쓰지 않음",
+            "- 각 항목은 2~4개 불릿, 문장은 끝까지 완결",
+            "- 언론용은 외부 전달 가능 표현, 사내용은 담당부서 행동 중심",
+            f"- 항목 구성: {sections}",
+        ]
+    )
+
+
+def normalize_generated_draft(value: str) -> str:
+    text = re.sub(r"\*\*|^#{1,6}\s*|---+", "", value, flags=re.MULTILINE)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def fallback_risk_response_draft(draft_type: str, article: dict, issue: str) -> str:
+    title = clean_alert_title(article.get("title", ""), 120) or "부정 보도"
+    if draft_type == "press":
+        return "\n".join(
+            [
+                "[입장 요지]",
+                f"- '{title}' 보도와 관련해 기사에 제기된 사안의 사실관계를 확인하고 있습니다.",
+                "- 확인 전 단계에서 단정적 입장 표명은 지양하되, 필요한 자료는 신속히 점검하겠습니다.",
+                "",
+                "[확인 중인 사항]",
+                "- 기사에 언급된 당사 관련 수치, 행위, 이해관계자 범위를 확인합니다.",
+                "- 반복 보도 여부와 원문 출처, 보도 확산 경로를 함께 확인합니다.",
+                "",
+                "[문의 대응 문구]",
+                "- 현재 관련 내용을 확인 중이며, 확인된 사실에 근거해 필요한 설명을 드리겠습니다.",
+            ]
+        )
+    return "\n".join(
+        [
+            "[이슈 개요]",
+            f"- '{title}' 보도가 감지되어 당사 관련 사실관계 확인이 필요합니다.",
+            "",
+            "[리스크 판단]",
+            "- 당사명이 직접 언급된 부정 보도이므로 기사 원문, 수치, 반복 보도 여부를 우선 확인합니다.",
+            "",
+            "[즉시 조치]",
+            "- 원문 저장, 기사 내 당사 관련 문장 추출, 유관부서 사실 확인 요청을 진행합니다.",
+            "- 외부 문의가 있을 경우 확인 중인 범위와 확인 완료 후 안내 가능 항목을 구분해 응대합니다.",
+        ]
+    )
+
+
 def send_kakao_alert(access_token: str, text: str, link_url: str) -> dict:
     template = {
         "object_type": "text",
@@ -547,6 +753,8 @@ def main() -> None:
         print("Dry run: Kakao alert was not sent.")
         print(build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives)))
         return
+
+    persist_risk_response_drafts(new_negatives, scanned_at)
 
     link = build_alert_link(new_negatives[0])
     message = build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives))

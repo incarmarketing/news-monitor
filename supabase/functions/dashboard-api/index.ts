@@ -29,6 +29,7 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   press_aliases: { read: true, writeRoles: ["admin", "editor"] },
   notification_sends: { read: true, writeRoles: [] },
   negative_watch_runs: { read: true, writeRoles: [] },
+  risk_response_drafts: { read: true, writeRoles: ["admin", "editor", "reporter"] },
   classification_feedback: { read: true, writeRoles: ["admin", "editor", "reporter"] },
   ga_companies: { read: true, writeRoles: ["admin", "editor"] },
   ga_disclosure_metrics: { read: true, writeRoles: ["admin", "editor"] },

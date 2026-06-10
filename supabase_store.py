@@ -65,6 +65,22 @@ NEGATIVE_WATCH_COLUMNS = (
     "message",
 )
 
+RISK_RESPONSE_DRAFT_COLUMNS = (
+    "article_hash",
+    "draft_type",
+    "title",
+    "link",
+    "source",
+    "tone",
+    "risk_level",
+    "issue",
+    "draft",
+    "status",
+    "model",
+    "context",
+    "created_by",
+)
+
 MEDIA_RELATION_EXCLUDED_SOURCES = {
     "google",
     "naver",
@@ -450,6 +466,48 @@ def save_dashboard_articles(articles: list[dict], *, report_date: str, window: d
     if rows:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
         save_own_media_relations(rows)
+
+
+def save_risk_response_drafts(rows: list[dict]) -> None:
+    """Persist AI-generated risk response drafts for dashboard review."""
+    if not is_enabled() or not rows:
+        return
+    payload = []
+    for row in rows:
+        article = row.get("article") if isinstance(row.get("article"), dict) else {}
+        article_key = str(row.get("article_hash") or "").strip()
+        if not article_key and article:
+            article_key = article_hash(article)
+        title = str(row.get("title") or article.get("title") or "").strip()
+        draft = str(row.get("draft") or "").strip()
+        draft_type = str(row.get("draft_type") or "").strip()
+        if not article_key or not title or not draft or draft_type not in {"press", "internal"}:
+            continue
+        payload.append(
+            {
+                "article_hash": article_key,
+                "draft_type": draft_type,
+                "title": title,
+                "link": str(row.get("link") or article.get("link") or "").strip(),
+                "source": str(row.get("source") or article.get("source") or "").strip(),
+                "tone": str(row.get("tone") or article.get("_tone") or article.get("tone") or "negative").strip() or "negative",
+                "risk_level": str(row.get("risk_level") or article.get("risk_level") or "MEDIUM").strip() or "MEDIUM",
+                "issue": str(row.get("issue") or "").strip(),
+                "draft": draft,
+                "status": str(row.get("status") or "draft").strip() or "draft",
+                "model": str(row.get("model") or "").strip(),
+                "context": row.get("context") if isinstance(row.get("context"), dict) else {},
+                "created_by": str(row.get("created_by") or "negative_watch").strip() or "negative_watch",
+            }
+        )
+    if not payload:
+        return
+    request(
+        "POST",
+        "risk_response_drafts?on_conflict=article_hash,draft_type",
+        data=json.dumps([{column: row.get(column) for column in RISK_RESPONSE_DRAFT_COLUMNS} for row in payload], ensure_ascii=False),
+        headers={"Prefer": "resolution=merge-duplicates,return=minimal"},
+    )
 
 
 def save_notification_send(

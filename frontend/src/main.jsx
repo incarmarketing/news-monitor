@@ -57,6 +57,7 @@ import {
 import {
   deleteReporterProfile,
   generatePressReleaseWithGemini,
+  generateRiskResponseWithGemini,
   loadOperationalData,
   saveArticleScrap,
   saveClassificationFeedback,
@@ -2971,14 +2972,17 @@ function Scraps({ scraps, onOpenMonitoring, onScrapSaved }) {
   );
 }
 
-function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) {
+function RiskCenterV2({ articles = [], allArticles = [], operations = {}, onRefreshOperations }) {
   const sourceArticles = allArticles.length ? allArticles : articles;
   const riskArticles = useMemo(() => selectRiskCenterArticles(sourceArticles), [sourceArticles]);
+  const savedDrafts = useMemo(() => Array.isArray(operations.riskDrafts) ? operations.riskDrafts : [], [operations.riskDrafts]);
   const [draftType, setDraftType] = useState("press");
   const [articleUrl, setArticleUrl] = useState("");
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [dropActive, setDropActive] = useState(false);
   const [draft, setDraft] = useState("");
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [draftError, setDraftError] = useState("");
 
   useEffect(() => {
     if (articleUrl || selectedArticle || !riskArticles.length) return;
@@ -2992,11 +2996,15 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
   const activeArticle = selectedUrlMatches ? selectedArticle : matchedArticle || selectedArticle || makeManualRiskArticle(articleUrl);
   const facts = buildRiskCenterFacts(activeArticle, articleUrl);
   const activeKey = articleSelectionKey(activeArticle);
+  const activeSavedDraft = savedDrafts.find((row) => row.draftType === draftType && riskDraftMatchesArticle(row, activeArticle));
+  const displayedDraft = draft || activeSavedDraft?.draft || "";
+  const visibleDrafts = savedDrafts.slice(0, 6);
 
   const applyArticle = (article) => {
     setSelectedArticle(article);
     setArticleUrl(article.link && article.link !== "#" ? article.link : "");
     setDraft("");
+    setDraftError("");
   };
 
   const applyUrl = (value) => {
@@ -3004,6 +3012,7 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
     setArticleUrl(nextUrl);
     setSelectedArticle(findArticleByUrl(sourceArticles, nextUrl));
     setDraft("");
+    setDraftError("");
   };
 
   const handleDrop = (event) => {
@@ -3029,16 +3038,35 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
     }
   };
 
-  const handleGenerateDraft = () => {
+  const handleGenerateDraft = async () => {
     if (typeof window !== "undefined" && !window.confirm("선택한 기사 기준으로 초안을 생성할까요?")) return;
-    setDraft(buildRiskResponseDraft(draftType, activeArticle, facts));
+    setGeneratingDraft(true);
+    setDraftError("");
+    try {
+      const issue = buildRiskResponseIssue(activeArticle, facts);
+      const result = await generateRiskResponseWithGemini({
+        type: draftType,
+        issue,
+        url: activeArticle?.link && activeArticle.link !== "#" ? activeArticle.link : articleUrl,
+        context: facts,
+        article: riskDraftArticlePayload(activeArticle),
+        save: true,
+      });
+      setDraft(result?.draft || buildRiskResponseDraft(draftType, activeArticle, facts));
+      await onRefreshOperations?.();
+    } catch (error) {
+      setDraft(buildRiskResponseDraft(draftType, activeArticle, facts));
+      setDraftError(`Gemini 저장 생성 실패: ${error?.message || "fallback"}`);
+    } finally {
+      setGeneratingDraft(false);
+    }
   };
 
   return (
     <main className="workspace">
       <PageTitle
         eyebrow="Risk Response"
-        title="리스크 대응센터"
+        title="대응센터"
         description="최근 부정·주의 기사와 외부 URL을 기준으로 팩트체크와 대응 초안을 관리합니다."
         right={(
           <button
@@ -3110,14 +3138,47 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
             )}
           </div>
         </Panel>
-        <Panel title="대응 초안" icon={FilePenLine} meta={draft ? "생성 완료" : "생성 전 확인"}>
+        <Panel title="대응 초안" icon={FilePenLine} meta={displayedDraft ? "초안 저장/확인" : "생성 전 확인"}>
           <div className="segmented">
             <button className={draftType === "press" ? "active" : ""} onClick={() => { setDraftType("press"); setDraft(""); }}>언론 해명용</button>
             <button className={draftType === "internal" ? "active" : ""} onClick={() => { setDraftType("internal"); setDraft(""); }}>사내 해명용</button>
           </div>
           <div className="draft-preview">
             <b>{draftType === "press" ? "언론 해명용 초안" : "사내 공유용 초안"}</b>
-            <p>{draft || "팩트체크 내용을 확인한 뒤 초안을 생성합니다."}</p>
+            {activeSavedDraft && !draft && (
+              <span className="risk-draft-meta">DB 저장 초안 · {activeSavedDraft.date} {activeSavedDraft.time} · {activeSavedDraft.model || "Gemini"}</span>
+            )}
+            <p>{displayedDraft || "팩트체크 내용을 확인한 뒤 초안을 생성합니다."}</p>
+          </div>
+          {draftError && <div className="risk-ai-status warning">{draftError}</div>}
+          <div className="risk-draft-ledger">
+            <div className="risk-section-head">
+              <b>저장된 초안</b>
+              <span>{savedDrafts.length.toLocaleString("ko-KR")}건</span>
+            </div>
+            {visibleDrafts.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                className={`risk-draft-row ${row.draftType === draftType && riskDraftMatchesArticle(row, activeArticle) ? "active" : ""}`}
+                onClick={() => {
+                  setDraftType(row.draftType || "press");
+                  setDraft(row.draft || "");
+                  if (row.link) setArticleUrl(row.link);
+                  setSelectedArticle(findArticleByUrl(sourceArticles, row.link) || {
+                    title: row.title,
+                    link: row.link,
+                    source: row.source,
+                    tone: row.tone,
+                    riskLevel: row.riskLevel,
+                  });
+                }}
+              >
+                <span>{riskDraftTypeLabel(row.draftType)} · {row.source || "출처 확인"} · {row.date} {row.time}</span>
+                <b>{row.title}</b>
+              </button>
+            ))}
+            {!visibleDrafts.length && <div className="risk-empty compact">저장된 초안이 아직 없습니다.</div>}
           </div>
           <div className="risk-actions">
             {activeArticle?.link && activeArticle.link !== "#" && (
@@ -3131,7 +3192,9 @@ function RiskCenterV2({ articles = [], allArticles = [], onRefreshOperations }) 
                 <ExternalLink />기사 열기
               </a>
             )}
-            <button className="primary-button confirm-button" onClick={handleGenerateDraft}>초안 생성</button>
+            <button className="primary-button confirm-button" onClick={handleGenerateDraft} disabled={generatingDraft}>
+              {generatingDraft ? "생성/저장 중" : "초안 생성"}
+            </button>
           </div>
         </Panel>
       </section>
@@ -3383,6 +3446,59 @@ function buildRiskCenterFacts(article = {}, articleUrl = "") {
     issueType: buildRiskIssueType(article),
     summaryLines,
   };
+}
+
+function riskDraftMatchesArticle(draft = {}, article = {}) {
+  const draftHash = String(draft.articleHash || draft.article_hash || "").trim();
+  const articleHashes = [
+    article.articleHash,
+    article.article_hash,
+    article.id,
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+  if (draftHash && articleHashes.includes(draftHash)) return true;
+
+  const draftLink = normalizeRiskUrl(draft.link || "");
+  const articleLink = normalizeRiskUrl(article.link || "");
+  if (draftLink && articleLink && draftLink === articleLink) return true;
+
+  const draftTitle = normalizeSummaryCompareKey(draft.title || "");
+  const articleTitle = normalizeSummaryCompareKey(article.title || "");
+  return Boolean(draftTitle && articleTitle && draftTitle === articleTitle && String(draft.source || "") === String(article.source || ""));
+}
+
+function riskDraftTypeLabel(value = "") {
+  return value === "internal" ? "사내" : "언론";
+}
+
+function riskDraftArticlePayload(article = {}) {
+  return {
+    articleHash: article.articleHash || article.article_hash || article.id || "",
+    title: article.title || "",
+    link: article.link || "",
+    source: article.source || "",
+    tone: article.tone || "",
+    riskLevel: article.riskLevel || article.risk_level || "",
+    category: article.category || "",
+    keyword: article.keyword || "",
+    summary: compactArticleSummary(article) || buildRiskDraftSummaryLines(article).join(" "),
+  };
+}
+
+function buildRiskResponseIssue(article = {}, facts = {}) {
+  const lines = [
+    `제목: ${cleanSummaryText(article.title || "확인 대상 기사")}`,
+    `출처: ${cleanSummaryText(article.source || "출처 확인")}`,
+    `분류: ${facts.tone || article.tone || "확인"} · ${facts.relevance || "관련성 확인"} · ${facts.issueType || buildRiskIssueType(article)}`,
+    `핵심 주장: ${facts.claim || compactArticleSummary(article) || "원문 확인 필요"}`,
+  ];
+  const summaryLines = Array.isArray(facts.summaryLines) && facts.summaryLines.length
+    ? facts.summaryLines
+    : buildRiskDraftSummaryLines(article);
+  summaryLines.slice(0, 4).forEach((line, index) => {
+    lines.push(`요약 ${index + 1}: ${line}`);
+  });
+  if (article.link && article.link !== "#") lines.push(`링크: ${article.link}`);
+  return lines.filter(Boolean).join("\n");
 }
 
 function buildRiskRelevance(article = {}) {

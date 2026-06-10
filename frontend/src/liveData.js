@@ -414,6 +414,7 @@ export async function loadOperationalData() {
     ads: [],
     aliases: [],
     keywords: [],
+    riskDrafts: [],
     feedback: [],
     feedbackGeneratedAt: "",
     aiStatus: null,
@@ -691,6 +692,7 @@ async function loadOperationalDataFromSupabaseSession() {
       ads: rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
       aliases: rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
       keywords: rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
+      riskDrafts: rest(config, session, "risk_response_drafts?select=id,article_hash,draft_type,title,link,source,tone,risk_level,issue,draft,status,model,context,created_by,created_at,updated_at&order=created_at.desc&limit=200"),
       feedback: rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500"),
       gaCompanies: rest(config, session, "ga_companies?select=name,short_name,display_order,active&active=eq.true&order=display_order.asc,name.asc&limit=200"),
       gaDisclosureMetrics: rest(config, session, "ga_disclosure_metrics?select=company_name,stand_mm,period_label,planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,source_url,collected_at&order=stand_mm.asc,company_name.asc&limit=5000"),
@@ -719,6 +721,7 @@ async function loadOperationalDataFromSupabaseSession() {
       ads = [],
       aliases = [],
       keywords = [],
+      riskDrafts = [],
       feedback = [],
       gaCompanies = [],
       gaDisclosureMetrics = [],
@@ -743,6 +746,7 @@ async function loadOperationalDataFromSupabaseSession() {
       ads: Array.isArray(ads) ? ads.map(normalizeAd) : [],
       aliases: Array.isArray(aliases) ? aliases : [],
       keywords: Array.isArray(keywords) ? keywords.map(normalizeKeyword).filter(Boolean) : [],
+      riskDrafts: Array.isArray(riskDrafts) ? riskDrafts.map(normalizeRiskDraft).filter(Boolean) : [],
       feedback: Array.isArray(feedback) ? feedback.map(normalizeFeedback).filter(Boolean) : [],
       feedbackGeneratedAt: new Date().toISOString(),
       dataLoadWarnings: optionalErrors,
@@ -761,6 +765,32 @@ async function loadOperationalDataFromSupabaseSession() {
   }
 }
 
+export async function generateRiskResponseWithGemini(payload = {}) {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
+  const session = getStoredSession();
+  const headers = {
+    apikey: config.anon_key,
+    Authorization: `Bearer ${config.anon_key}`,
+    "Content-Type": "application/json",
+  };
+  if (session?.session_token) {
+    headers["X-Dashboard-Session"] = session.session_token;
+  }
+  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/generate-risk-response`, {
+    method: "POST",
+    cache: "no-store",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!response.ok) {
+    throw new Error(data?.error || `generate_risk_response_${response.status}`);
+  }
+  return data;
+}
+
 function normalizeKeyword(row) {
   const keyword = typeof row === "string" ? row : row?.keyword;
   if (!keyword) return null;
@@ -768,6 +798,30 @@ function normalizeKeyword(row) {
     keyword: String(keyword).trim(),
     category: row?.category || "other",
     enabled: row?.enabled !== false,
+  };
+}
+
+function normalizeRiskDraft(row) {
+  if (!row?.draft || !row?.title) return null;
+  return {
+    id: row.id || `${row.article_hash || row.link || row.title}-${row.draft_type}`,
+    articleHash: row.article_hash || "",
+    draftType: row.draft_type || "press",
+    title: row.title || "",
+    link: row.link || "",
+    source: row.source || "",
+    tone: normalizeTone(row.tone) || "부정",
+    riskLevel: String(row.risk_level || "").toUpperCase(),
+    issue: row.issue || "",
+    draft: row.draft || "",
+    status: row.status || "draft",
+    model: row.model || "",
+    context: row.context || {},
+    createdBy: row.created_by || "",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || "",
+    date: formatArticleDate(row.created_at) || String(row.created_at || "").slice(0, 10),
+    time: formatTime(row.created_at),
   };
 }
 

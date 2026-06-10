@@ -5,16 +5,16 @@ export const periodTabs = [
 ];
 
 export const navItems = [
-  { id: "overview", label: "실시간 대시보드" },
-  { id: "monitoring", label: "실시간 모니터링" },
-  { id: "regulators", label: "금융당국 보도자료" },
-  { id: "media", label: "언론 동향 분석" },
-  { id: "pressRelease", label: "보도자료 작성" },
+  { id: "overview", label: "대시보드" },
+  { id: "monitoring", label: "모니터링" },
+  { id: "regulators", label: "금융당국" },
+  { id: "media", label: "언론동향" },
+  { id: "pressRelease", label: "보도자료" },
   { id: "stocks", label: "주가/시장" },
   { id: "gaIntel", label: "업계 동향" },
-  { id: "scraps", label: "주요 기사 스크랩" },
-  { id: "risk", label: "리스크 대응센터" },
-  { id: "reports", label: "일간/주간/월간 보고서" },
+  { id: "scraps", label: "스크랩" },
+  { id: "risk", label: "대응센터" },
+  { id: "reports", label: "리포트" },
   { id: "management", label: "운영 관리" },
 ];
 

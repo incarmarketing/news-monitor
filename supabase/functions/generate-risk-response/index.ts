@@ -9,6 +9,8 @@ type DraftRequest = {
   issue?: string;
   url?: string;
   context?: unknown;
+  article?: Record<string, unknown>;
+  save?: boolean;
 };
 
 type SessionInfo = {
@@ -48,7 +50,7 @@ Deno.serve(async (req) => {
   }
 
   const type = body.type === "press" ? "press" : "internal";
-  const model = Deno.env.get("GEMINI_EDGE_MODEL") || "gemini-2.5-flash";
+  const model = Deno.env.get("GEMINI_RISK_RESPONSE_MODEL") || Deno.env.get("GEMINI_EDGE_MODEL") || "gemini-2.5-pro";
   const maxOutputTokens = Number(Deno.env.get("GEMINI_MAX_OUTPUT_TOKENS") || "3600") || 3600;
   const prompt = buildPrompt({ type, issue, url: body.url || "", context: body.context });
   const response = await fetch(
@@ -81,10 +83,28 @@ Deno.serve(async (req) => {
   if (!draft) {
     return jsonResponse({ error: "empty_gemini_response" }, 502);
   }
+  const article = body.article && typeof body.article === "object" ? body.article as Record<string, unknown> : {};
+  let savedDraft: unknown = null;
+  if (body.save === true) {
+    const saveResult = await saveRiskResponseDraft({
+      article,
+      draftType: type,
+      issue,
+      draft,
+      model,
+      requestedBy: session.employee_no || "",
+      url: body.url || "",
+    });
+    if (!saveResult.ok) {
+      return jsonResponse({ error: "risk_draft_save_failed", detail: saveResult.data, status: saveResult.status }, 502);
+    }
+    savedDraft = saveResult.data;
+  }
 
   return jsonResponse({
     ok: true,
     draft,
+    savedDraft,
     model,
     finishReason: data?.candidates?.[0]?.finishReason || "",
     usageMetadata: data?.usageMetadata || {},
@@ -149,6 +169,65 @@ function buildPrompt(input: { type: "internal" | "press"; issue: string; url: st
   ].join("\n");
 }
 
+async function saveRiskResponseDraft(input: {
+  article: Record<string, unknown>;
+  draftType: "internal" | "press";
+  issue: string;
+  draft: string;
+  model: string;
+  requestedBy: string;
+  url: string;
+}) {
+  const title = stringValue(input.article.title) || firstIssueLine(input.issue) || "리스크 대응 초안";
+  const link = stringValue(input.article.link) || input.url || "";
+  const articleHash = stringValue(input.article.articleHash)
+    || stringValue(input.article.article_hash)
+    || stableDraftHash([link, title, stringValue(input.article.source)].join("|"));
+  const row = {
+    article_hash: articleHash,
+    draft_type: input.draftType,
+    title,
+    link,
+    source: stringValue(input.article.source),
+    tone: stringValue(input.article.tone) || "negative",
+    risk_level: stringValue(input.article.riskLevel) || stringValue(input.article.risk_level) || "MEDIUM",
+    issue: input.issue,
+    draft: input.draft,
+    status: "draft",
+    model: input.model,
+    context: {
+      category: input.article.category || "",
+      keyword: input.article.keyword || "",
+      summary: input.article.summary || "",
+      created_from: "generate-risk-response",
+    },
+    created_by: input.requestedBy || "dashboard",
+  };
+  return supabaseRest("risk_response_drafts?on_conflict=article_hash,draft_type", {
+    method: "POST",
+    body: JSON.stringify([row]),
+    prefer: "resolution=merge-duplicates,return=representation",
+    contentType: "application/json",
+  });
+}
+
+function firstIssueLine(value: string) {
+  return String(value || "").split("\n").map((line) => line.trim()).find(Boolean) || "";
+}
+
+function stringValue(value: unknown) {
+  return String(value || "").trim();
+}
+
+function stableDraftHash(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `risk_${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
 function todayKst() {
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -192,20 +271,36 @@ async function verifyDashboardSession(token: string): Promise<SessionInfo> {
 }
 
 async function supabaseRpc(functionName: string, body: Record<string, unknown>) {
+  return supabaseFetch(`rpc/${functionName}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    contentType: "application/json",
+  });
+}
+
+async function supabaseRest(path: string, options: { method: string; body?: string; prefer?: string; contentType?: string }) {
+  return supabaseFetch(path, options);
+}
+
+async function supabaseFetch(path: string, options: { method: string; body?: string; prefer?: string; contentType?: string }) {
   const url = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !serviceKey) {
     return { ok: false, status: 500, data: { error: "missing_supabase_service_config" } };
   }
-  const response = await fetch(`${url}/rest/v1/rpc/${functionName}`, {
-    method: "POST",
+
+  const headers: Record<string, string> = {
+    apikey: serviceKey,
+    Authorization: `Bearer ${serviceKey}`,
+  };
+  if (options.contentType) headers["Content-Type"] = options.contentType;
+  if (options.prefer) headers.Prefer = options.prefer;
+
+  const response = await fetch(`${url}/rest/v1/${path}`, {
+    method: options.method,
     cache: "no-store",
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
+    headers,
+    body: options.body,
   });
   const text = await response.text();
   let data: unknown = {};

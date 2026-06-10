@@ -4493,6 +4493,82 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   white-space: pre-wrap;
 }
 
+.risk-draft-meta {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.risk-ai-status {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.risk-ai-status.warning {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.risk-draft-ledger {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.risk-draft-row {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.risk-draft-row:hover,
+.risk-draft-row.active {
+  border-color: rgba(40, 85, 217, .45);
+  background: #f8fbff;
+  box-shadow: 0 6px 18px rgba(21, 40, 89, .08);
+}
+
+.risk-draft-row span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.risk-draft-row b {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.risk-empty.compact {
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
 .risk-url-drop {
   padding: 6px;
   border: 1px dashed transparent;
