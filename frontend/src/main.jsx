@@ -1616,10 +1616,8 @@ function StockDisclosureBoard({ disclosures = {}, companyName = "인카금융서
   const items = Array.isArray(disclosures) ? disclosures : (disclosures.items || []);
   const visibleItems = items.slice(0, 4);
   const status = disclosures.status || (visibleItems.length ? "ok" : "empty");
-  const emptyTitle = status === "error" ? "OpenDART 인증 확인 필요" : "OpenDART 연결 대기";
-  const emptyMessage = status === "error"
-    ? (disclosures.message || "OpenDART 호출 중 오류가 발생했습니다. GitHub Secret의 API 키 값을 확인하세요.")
-    : "DART API 키와 기업 고유번호를 연결하면 기업설명회, 실적, 사업보고서 공시가 이 영역에 자동 표시됩니다.";
+  const emptyTitle = dartDisclosureEmptyTitle(status);
+  const emptyMessage = dartDisclosureEmptyMessage(disclosures, status);
   const dartSearchUrl = `https://dart.fss.or.kr/dsab007/main.do?textCrpNM=${encodeURIComponent(companyName)}`;
   return (
     <section className="stock-disclosure-board">
@@ -1667,9 +1665,38 @@ function StockDisclosureBoard({ disclosures = {}, companyName = "인카금융서
 
 function dartDisclosureStatusLabel(status) {
   if (status === "ok") return "자동 수집";
-  if (status === "error") return "연결 확인";
+  if (status === "timeout") return "연결 지연";
+  if (status === "network_error") return "네트워크 확인";
+  if (status === "auth_error") return "인증 확인";
+  if (status === "error") return "수집 확인";
   if (status === "not_configured") return "키 설정 필요";
   return "공시 대기";
+}
+
+function dartDisclosureEmptyTitle(status) {
+  if (status === "timeout") return "OpenDART 연결 지연";
+  if (status === "network_error") return "OpenDART 네트워크 확인";
+  if (status === "auth_error") return "OpenDART 인증 확인 필요";
+  if (status === "error") return "OpenDART 수집 확인 필요";
+  if (status === "not_configured") return "OpenDART 키 설정 필요";
+  return "OpenDART 연결 대기";
+}
+
+function dartDisclosureEmptyMessage(disclosures, status) {
+  const message = sanitizeDashboardSecretText(disclosures?.message || "");
+  if (message) return message;
+  if (status === "timeout") return "OpenDART 서버 응답이 지연되어 이번 갱신에서 공시를 가져오지 못했습니다. 다음 자동 갱신에서 재시도합니다.";
+  if (status === "network_error") return "OpenDART 연결 중 네트워크 오류가 발생했습니다. API 키는 화면에 노출하지 않고 다음 갱신에서 재시도합니다.";
+  if (status === "auth_error") return "GitHub Secret의 DART_API_KEY와 DART_CORP_CODE 값을 확인하세요.";
+  if (status === "error") return "OpenDART 응답을 해석하지 못했습니다. 잠시 후 다시 갱신됩니다.";
+  return "DART API 키와 기업 고유번호를 연결하면 기업설명회, 실적, 사업보고서 공시가 이 영역에 자동 표시됩니다.";
+}
+
+function sanitizeDashboardSecretText(value) {
+  return String(value || "")
+    .replace(/crtfc_key=[^&\s)]+/gi, "crtfc_key=***")
+    .replace(/https?:\/\/opendart\.fss\.or\.kr\/\S+/gi, "OpenDART API")
+    .trim();
 }
 
 function StockTrendChart({ rows = [] }) {

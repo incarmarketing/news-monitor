@@ -7,6 +7,7 @@ import math
 import os
 import re
 import statistics
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from xml.etree import ElementTree
@@ -19,6 +20,8 @@ PUBLIC_DATA_DIR = BASE_DIR / "public" / "data"
 NAVER_CHART_URL = "https://fchart.stock.naver.com/sise.nhn"
 NAVER_REALTIME_URL = "https://polling.finance.naver.com/api/realtime/domestic"
 OPENDART_LIST_URL = "https://opendart.fss.or.kr/api/list.json"
+OPENDART_TIMEOUT = (8, 30)
+OPENDART_RETRIES = 3
 REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept": "application/json,text/plain,*/*",
@@ -462,40 +465,74 @@ def fetch_dart_disclosures(days: int = 365, limit: int = 8) -> dict:
 
     end_date = now.date()
     begin_date = end_date - timedelta(days=days)
-    try:
-        response = requests.get(
-            OPENDART_LIST_URL,
-            params={
-                "crtfc_key": api_key,
-                "corp_code": corp_code,
-                "bgn_de": begin_date.strftime("%Y%m%d"),
-                "end_de": end_date.strftime("%Y%m%d"),
-                "page_no": 1,
-                "page_count": 100,
-                "sort": "date",
-                "sort_mth": "desc",
-            },
-            headers=REQUEST_HEADERS,
-            timeout=15,
-        )
-        response.raise_for_status()
-        payload = response.json()
-    except Exception as exc:
+    params = {
+        "crtfc_key": api_key,
+        "corp_code": corp_code,
+        "bgn_de": begin_date.strftime("%Y%m%d"),
+        "end_de": end_date.strftime("%Y%m%d"),
+        "page_no": 1,
+        "page_count": 100,
+        "sort": "date",
+        "sort_mth": "desc",
+    }
+    payload = None
+    for attempt in range(1, OPENDART_RETRIES + 1):
+        try:
+            response = requests.get(
+                OPENDART_LIST_URL,
+                params=params,
+                headers=REQUEST_HEADERS,
+                timeout=OPENDART_TIMEOUT,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            break
+        except requests.Timeout:
+            if attempt < OPENDART_RETRIES:
+                time.sleep(attempt * 2)
+                continue
+            return {
+                "status": "timeout",
+                "source": "OpenDART",
+                "updated_at": now.isoformat(),
+                "items": [],
+                "message": "OpenDART 서버 응답이 지연되어 이번 갱신에서 공시를 가져오지 못했습니다. 다음 자동 갱신에서 재시도합니다.",
+            }
+        except requests.RequestException:
+            return {
+                "status": "network_error",
+                "source": "OpenDART",
+                "updated_at": now.isoformat(),
+                "items": [],
+                "message": "OpenDART 연결 중 네트워크 오류가 발생했습니다. API 키는 화면에 노출하지 않고 다음 갱신에서 재시도합니다.",
+            }
+        except ValueError:
+            return {
+                "status": "error",
+                "source": "OpenDART",
+                "updated_at": now.isoformat(),
+                "items": [],
+                "message": "OpenDART 응답 형식을 해석하지 못했습니다. 다음 갱신에서 재시도합니다.",
+            }
+
+    if not isinstance(payload, dict):
         return {
             "status": "error",
             "source": "OpenDART",
             "updated_at": now.isoformat(),
             "items": [],
-            "message": str(exc),
+            "message": "OpenDART 응답이 비어 있습니다. 다음 갱신에서 재시도합니다.",
         }
 
     if str(payload.get("status")) != "000":
+        code = str(payload.get("status") or "")
+        status = "auth_error" if code in {"010", "011", "020", "100", "800"} else "error"
         return {
-            "status": "error",
+            "status": status,
             "source": "OpenDART",
             "updated_at": now.isoformat(),
             "items": [],
-            "message": payload.get("message") or "OpenDART returned an error.",
+            "message": safe_dart_api_message(payload.get("message"), code),
         }
 
     rows = payload.get("list") or []
@@ -509,6 +546,18 @@ def fetch_dart_disclosures(days: int = 365, limit: int = 8) -> dict:
         "updated_at": now.isoformat(),
         "items": [normalize_dart_disclosure(row) for row in filtered[:limit]],
     }
+
+
+def safe_dart_api_message(message: object, code: str = "") -> str:
+    """Return a UI-safe OpenDART message without request URLs or API keys."""
+    text = re.sub(r"\s+", " ", str(message or "")).strip()
+    text = re.sub(r"crtfc_key=[^&\s)]+", "crtfc_key=***", text)
+    text = re.sub(r"https?://opendart\.fss\.or\.kr/\S+", "OpenDART API", text)
+    if not text:
+        text = "OpenDART에서 오류 응답을 반환했습니다."
+    if code:
+        return f"{text} (응답 코드 {code})"
+    return text
 
 
 def clean_secret_value(value: object) -> str:
