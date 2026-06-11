@@ -26,6 +26,7 @@ import gemini_helper
 import groq_helper
 
 KST = timezone(timedelta(hours=9))
+PROVIDER_KEYS = ("gemini_pro", "gemini_flash", "groq")
 
 FORBIDDEN_TERMS = (
     "당사 직접 언급 기사",
@@ -135,12 +136,15 @@ def main() -> None:
     generated_at = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S KST")
     strict_mode = os.getenv("MODEL_QUALITY_STRICT", "0").strip().lower() in {"1", "true", "yes"}
     sample_limit = max(1, int(os.getenv("MODEL_QUALITY_SAMPLE_LIMIT", str(len(SAMPLES)))))
+    gemini_pro_model = os.getenv("GEMINI_PRO_MODEL", os.getenv("GEMINI_MODEL", config.GEMINI_MODEL)).strip()
+    gemini_flash_model = os.getenv("GEMINI_FLASH_MODEL", "gemini-2.5-flash").strip()
 
     results = []
     groq_blocked = False
     for sample in SAMPLES[:sample_limit]:
         articles = sample["articles"]
-        gemini_result = summarize_with_gemini(articles)
+        gemini_pro_result = summarize_with_gemini(articles, provider="gemini_pro", model_name=gemini_pro_model)
+        gemini_flash_result = summarize_with_gemini(articles, provider="gemini_flash", model_name=gemini_flash_model)
         groq_result = (
             provider_payload("groq", "skipped_after_rate_limit", model=os.getenv("GROQ_ISSUE_MODEL", ""))
             if groq_blocked
@@ -153,7 +157,8 @@ def main() -> None:
                 "id": sample["id"],
                 "label": sample["label"],
                 "expected_terms": list(sample["expected_terms"]),
-                "gemini": evaluate_provider_result(gemini_result, sample),
+                "gemini_pro": evaluate_provider_result(gemini_pro_result, sample),
+                "gemini_flash": evaluate_provider_result(gemini_flash_result, sample),
                 "groq": evaluate_provider_result(groq_result, sample),
                 "input_titles": [article["title"] for article in articles],
             }
@@ -162,12 +167,14 @@ def main() -> None:
     payload = {
         "generated_at": generated_at,
         "strict_mode": strict_mode,
-        "gemini_model": os.getenv("GEMINI_MODEL", config.GEMINI_MODEL),
+        "gemini_pro_model": gemini_pro_model,
+        "gemini_flash_model": gemini_flash_model,
         "groq_model": os.getenv("GROQ_ISSUE_MODEL") or os.getenv("GROQ_MODEL", ""),
         "case_count": len(results),
         "results": results,
         "overall": {
-            "gemini_pass": sum(1 for item in results if item["gemini"]["passed"]),
+            "gemini_pro_pass": sum(1 for item in results if item["gemini_pro"]["passed"]),
+            "gemini_flash_pass": sum(1 for item in results if item["gemini_flash"]["passed"]),
             "groq_pass": sum(1 for item in results if item["groq"]["passed"]),
             "groq_rate_limited": sum(1 for item in results if item["groq"].get("status") == "rate_limited"),
         },
@@ -184,7 +191,7 @@ def main() -> None:
     failed = [
         f"{item['label']}:{provider}"
         for item in results
-        for provider in ("gemini", "groq")
+        for provider in PROVIDER_KEYS
         if not item[provider]["passed"]
     ]
     if strict_mode and failed:
@@ -192,18 +199,18 @@ def main() -> None:
         raise SystemExit(1)
 
 
-def summarize_with_gemini(articles: list[dict]) -> dict:
+def summarize_with_gemini(articles: list[dict], *, provider: str, model_name: str) -> dict:
     prompt = groq_helper.build_issue_prompt(articles)
     full_prompt = f"{ai_fallback.ISSUE_SYSTEM_PROMPT}\n\n{prompt}"
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
-        return provider_payload("gemini", "gemini_key_missing", model=os.getenv("GEMINI_MODEL", ""))
+        return provider_payload(provider, "gemini_key_missing", model=model_name)
 
     ai_fallback.configure_gemini(api_key)
     attempts: list[dict] = []
-    for model_name in gemini_helper.model_candidates():
+    for candidate_model in [model_name]:
         try:
-            model = genai.GenerativeModel(model_name)
+            model = genai.GenerativeModel(candidate_model)
             response = model.generate_content(
                 full_prompt,
                 generation_config={
@@ -216,9 +223,9 @@ def summarize_with_gemini(articles: list[dict]) -> dict:
             summary = groq_helper.clean_issue_summary(raw_text)
             status = "ok" if summary else ("raw_rejected" if raw_text else "empty")
             return provider_payload(
-                "gemini",
+                provider,
                 status,
-                model=model_name,
+                model=candidate_model,
                 raw=raw_text,
                 summary=summary,
                 extraction_error=extraction_error,
@@ -227,17 +234,17 @@ def summarize_with_gemini(articles: list[dict]) -> dict:
         except BaseException as exc:
             if isinstance(exc, (KeyboardInterrupt, SystemExit)):
                 raise
-            attempts.append({"model": model_name, "error": gemini_helper.error_summary(exc)})
+            attempts.append({"model": candidate_model, "error": gemini_helper.error_summary(exc)})
             if gemini_helper.is_quota_error(exc):
                 return provider_payload(
-                    "gemini",
+                    provider,
                     "quota_or_rate_limit",
-                    model=model_name,
+                    model=candidate_model,
                     error=gemini_helper.error_summary(exc),
                     attempts=attempts,
                 )
 
-    return provider_payload("gemini", "failed", error="all model candidates failed", attempts=attempts)
+    return provider_payload(provider, "failed", error="model candidate failed", attempts=attempts)
 
 
 def summarize_with_groq(articles: list[dict]) -> dict:
@@ -400,24 +407,29 @@ def render_markdown(payload: dict) -> str:
         "",
         f"- 생성: {payload['generated_at']}",
         f"- Strict mode: {'on' if payload.get('strict_mode') else 'off'}",
-        f"- Gemini 모델: {payload.get('gemini_model') or '-'}",
+        f"- Gemini Pro 모델: {payload.get('gemini_pro_model') or '-'}",
+        f"- Gemini Flash 모델: {payload.get('gemini_flash_model') or '-'}",
         f"- Groq 모델: {payload.get('groq_model') or '-'}",
-        f"- Gemini 통과: {payload['overall']['gemini_pass']}/{payload['case_count']}",
+        f"- Gemini Pro 통과: {payload['overall']['gemini_pro_pass']}/{payload['case_count']}",
+        f"- Gemini Flash 통과: {payload['overall']['gemini_flash_pass']}/{payload['case_count']}",
         f"- Groq 통과: {payload['overall']['groq_pass']}/{payload['case_count']}",
         f"- Groq rate limit: {payload['overall'].get('groq_rate_limited', 0)}건",
         "",
-        "| 케이스 | Gemini 상태 | Gemini 요약 | Groq 상태 | Groq 요약 | 판정 |",
-        "|---|---|---|---|---|---|",
+        "| 케이스 | Pro 상태 | Pro 요약 | Flash 상태 | Flash 요약 | Groq 상태 | Groq 요약 | 판정 |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for item in payload["results"]:
-        gemini = item["gemini"]
+        gemini_pro = item["gemini_pro"]
+        gemini_flash = item["gemini_flash"]
         groq = item["groq"]
-        verdict = "OK" if gemini["passed"] and groq["passed"] else "CHECK"
+        verdict = "OK" if all(item[provider]["passed"] for provider in PROVIDER_KEYS) else "CHECK"
         lines.append(
-            "| {label} | {gemini_status} | {gemini} | {groq_status} | {groq} | {verdict} |".format(
+            "| {label} | {pro_status} | {pro} | {flash_status} | {flash} | {groq_status} | {groq} | {verdict} |".format(
                 label=escape_cell(item["label"]),
-                gemini_status=escape_cell(gemini.get("status") or "-"),
-                gemini=escape_cell(gemini["summary"] or "(empty)"),
+                pro_status=escape_cell(gemini_pro.get("status") or "-"),
+                pro=escape_cell(gemini_pro["summary"] or "(empty)"),
+                flash_status=escape_cell(gemini_flash.get("status") or "-"),
+                flash=escape_cell(gemini_flash["summary"] or "(empty)"),
                 groq_status=escape_cell(groq.get("status") or "-"),
                 groq=escape_cell(groq["summary"] or "(empty)"),
                 verdict=verdict,
@@ -427,7 +439,7 @@ def render_markdown(payload: dict) -> str:
     lines.append("## Detailed Checks")
     for item in payload["results"]:
         lines.append(f"### {item['label']}")
-        for provider in ("gemini", "groq"):
+        for provider in PROVIDER_KEYS:
             result = item[provider]
             failed = [name for name, ok in result["checks"].items() if not ok]
             lines.append(
