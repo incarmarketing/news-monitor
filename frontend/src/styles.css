@@ -2627,8 +2627,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ga-revenue-legend {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 12px;
+  width: 100%;
   padding: 0 6px;
   color: var(--ink-2);
   font-size: 11px;
@@ -2656,7 +2658,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ga-revenue-summary {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 0;
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--line-soft);

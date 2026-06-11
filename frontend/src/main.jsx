@@ -1928,8 +1928,6 @@ function GACompetitorIntel({ gaIntel }) {
     ownCompany,
     peerCompany: activeRevenuePeer.company,
   });
-  const revenueInsight = buildGaRevenueComparisonInsight(revenueCompareRows, activeRevenuePeer.label || "비교 GA");
-
   return (
     <main className="workspace ga-intel-workspace">
       <PageTitle
@@ -1973,7 +1971,6 @@ function GACompetitorIntel({ gaIntel }) {
         <div className="ga-revenue-compare-grid">
           <GARevenueComparisonChart rows={revenueCompareRows} peerLabel={activeRevenuePeer.label || "비교 GA"} />
           <div className="ga-revenue-summary">
-            <b>{revenueInsight}</b>
             <GARevenueComparisonTable rows={revenueCompareRows} peerLabel={activeRevenuePeer.label || "비교 GA"} />
           </div>
         </div>
@@ -2097,7 +2094,12 @@ function GARevenueComparisonChart({ rows = [], peerLabel = "비교 GA" }) {
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} minTickGap={0} tick={{ fontSize: 11, fontWeight: 800 }} />
           <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value)).toLocaleString("ko-KR")}억`} />
-          <Tooltip formatter={(value, name) => [formatGaRevenue(value), name === "incaAmount" ? "인카금융서비스" : peerLabel]} />
+          <Tooltip
+            formatter={(value, name, entry) => [
+              formatGaRevenue(value),
+              entry?.dataKey === "incaAmount" || name === "인카금융서비스" ? "인카금융서비스" : peerLabel,
+            ]}
+          />
           <Bar dataKey="incaAmount" name="인카금융서비스" radius={[7, 7, 0, 0]} fill="#2855d9" barSize={24}>
             <LabelList dataKey="incaAmount" content={renderGaRevenueValueLabel} />
           </Bar>
