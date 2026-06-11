@@ -44,13 +44,6 @@ on:
         required: false
         default: ""
         type: string
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - ".run-state/**"
-      - ".watch-state/**"
-      - "data/daily/**"
   schedule:
     - cron: "*/5 22 * * *" # 07:00-07:59 KST weekly/monthly reports only
     - cron: "*/5 23,0-14 * * *" # 08:00-23:59 KST daily report watchdog only
