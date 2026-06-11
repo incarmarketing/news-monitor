@@ -200,6 +200,37 @@ def ai_context_enabled() -> bool:
     return False
 
 
+def ai_context_pro_review_enabled() -> bool:
+    return __import__("os").getenv("AI_CONTEXT_PRO_REVIEW", "true").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "y",
+        "on",
+    }
+
+
+def should_pro_review_ai_context(article: dict, context: dict) -> bool:
+    if not ai_context_pro_review_enabled():
+        return False
+    normalized = normalized_ai_context(article, context)
+    rule_category = article.get("_category") or categorize(article)
+    rule_tone = article.get("_tone") or analyze_tone(article)
+    confidence = float(normalized.get("confidence") or 0)
+
+    if normalized["negative_target"] == "own":
+        return True
+    if normalized["category"] == "own" and normalized["own_mentioned"] and normalized["tone"] in {"negative", "caution"}:
+        return True
+    if rule_category == "own" and rule_tone in {"negative", "caution"}:
+        return True
+    if normalized["tone"] == "negative":
+        return True
+    if confidence and confidence < 0.68 and (normalized["own_mentioned"] or normalized["tone"] in {"negative", "caution"}):
+        return True
+    return False
+
+
 def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
     remaining_ai_reviews = ai_context_budget() if ai_context_enabled() else 0
     for article in articles:
@@ -312,7 +343,7 @@ def apply_ai_context_classification(article: dict) -> bool:
 
     text, provider = generate_gemini_text(
         prompt,
-        max_tokens=900,
+        max_tokens=720,
         temperature=0.0,
         purpose="article_context_classification",
     )
@@ -321,6 +352,20 @@ def apply_ai_context_classification(article: dict) -> bool:
         apply_context_safety_guardrails(article)
         return False
     context["provider"] = provider
+
+    if should_pro_review_ai_context(article, context):
+        pro_text, pro_provider = generate_gemini_text(
+            prompt,
+            max_tokens=900,
+            temperature=0.0,
+            purpose="article_context_pro_review",
+        )
+        pro_context = parse_ai_context_response(pro_text)
+        if pro_context:
+            pro_context["provider"] = pro_provider
+            pro_context["primary_provider"] = provider
+            context = pro_context
+
     article["_ai_context"] = apply_context_safety_guardrails(article, context)
     return True
 

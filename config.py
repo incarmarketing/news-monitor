@@ -32,6 +32,12 @@ MAX_ARTICLES_FOR_PROMPT = 32
 SCHEDULE_TIMES = ["08:00", "13:00", "18:00"]
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-pro")
+GEMINI_PRO_MODEL = os.getenv("GEMINI_PRO_MODEL", GEMINI_MODEL).strip() or "gemini-2.5-pro"
+GEMINI_FLASH_MODEL = os.getenv("GEMINI_FLASH_MODEL", "gemini-2.5-flash").strip() or "gemini-2.5-flash"
+GEMINI_FLASH_LITE_MODEL = os.getenv("GEMINI_FLASH_LITE_MODEL", "gemini-2.5-flash-lite").strip()
+GEMINI_CONTEXT_MODEL = os.getenv("GEMINI_CONTEXT_MODEL", GEMINI_FLASH_MODEL).strip() or GEMINI_FLASH_MODEL
+GEMINI_ISSUE_MODEL = os.getenv("GEMINI_ISSUE_MODEL", GEMINI_FLASH_MODEL).strip() or GEMINI_FLASH_MODEL
+GEMINI_REPORT_MODEL = os.getenv("GEMINI_REPORT_MODEL", GEMINI_PRO_MODEL).strip() or GEMINI_PRO_MODEL
 GEMINI_FALLBACK_MODELS = [
     model.strip()
     for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-2.5-flash,gemini-2.5-flash-lite").split(",")

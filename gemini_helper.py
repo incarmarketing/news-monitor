@@ -28,6 +28,52 @@ def model_candidates() -> list[str]:
     return models
 
 
+def unique_models(models: list[str]) -> list[str]:
+    result: list[str] = []
+    for model in models:
+        model = (model or "").strip()
+        if model and model not in result:
+            result.append(model)
+    return result
+
+
+def pro_model_candidates() -> list[str]:
+    return unique_models([getattr(config, "GEMINI_PRO_MODEL", ""), config.GEMINI_MODEL])
+
+
+def flash_model_candidates() -> list[str]:
+    return unique_models([
+        getattr(config, "GEMINI_FLASH_MODEL", ""),
+        getattr(config, "GEMINI_FLASH_LITE_MODEL", ""),
+    ])
+
+
+def model_candidates_for_purpose(purpose: str, preferred: list[str] | None = None) -> list[str]:
+    if preferred:
+        return unique_models(preferred)
+
+    purpose_key = (purpose or "").lower()
+    if purpose_key in {"article_context_classification", "issue_summary", "issue_summary_batch"}:
+        configured = (
+            getattr(config, "GEMINI_ISSUE_MODEL", "")
+            if purpose_key.startswith("issue_summary")
+            else getattr(config, "GEMINI_CONTEXT_MODEL", "")
+        )
+        return unique_models([configured, *flash_model_candidates()])
+
+    if purpose_key.startswith("daily_report") or purpose_key.startswith("period_report"):
+        return unique_models([
+            getattr(config, "GEMINI_REPORT_MODEL", ""),
+            *pro_model_candidates(),
+            *getattr(config, "GEMINI_FALLBACK_MODELS", []),
+        ])
+
+    if purpose_key in {"article_context_pro_review", "press_release", "risk_response", "scrap_analysis"}:
+        return pro_model_candidates()
+
+    return model_candidates()
+
+
 def error_summary(error: Exception) -> str:
     return " ".join(str(error).split())[:500]
 

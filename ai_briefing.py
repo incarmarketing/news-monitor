@@ -139,7 +139,7 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
 
     prompt = build_prompt(clustered, metrics, yesterday)
     failures: list[dict] = []
-    for model_name in gemini_helper.model_candidates():
+    for model_name in gemini_helper.model_candidates_for_purpose("daily_report"):
         try:
             with console.status(f"[cyan]Gemini {model_name} 보고서 작성 중...[/]", spinner="dots"):
                 model = genai.GenerativeModel(model_name)

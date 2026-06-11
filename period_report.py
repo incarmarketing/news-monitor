@@ -136,7 +136,7 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
 """
 
     failures: list[dict] = []
-    for model_name in gemini_helper.model_candidates():
+    for model_name in gemini_helper.model_candidates_for_purpose(f"period_report:{period_label}"):
         try:
             with console.status(f"[cyan]Gemini AI {model_name} {period_label} 보고서 작성 중...[/]", spinner="dots"):
                 model = genai.GenerativeModel(model_name)

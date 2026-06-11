@@ -179,6 +179,7 @@ def generate_gemini_text(
     max_tokens: int,
     temperature: float,
     purpose: str,
+    model_names: list[str] | None = None,
 ) -> tuple[str, str]:
     """Generate text with Gemini candidates only; never falls back here."""
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
@@ -190,7 +191,7 @@ def generate_gemini_text(
         return "", "gemini_circuit_open"
 
     configure_gemini(api_key)
-    for model_name in gemini_helper.model_candidates():
+    for model_name in gemini_helper.model_candidates_for_purpose(purpose, model_names):
         try:
             model = genai.GenerativeModel(model_name)
             response = model.generate_content(

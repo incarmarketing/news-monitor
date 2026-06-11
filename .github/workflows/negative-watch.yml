@@ -71,6 +71,12 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_PRO_MODEL || secrets.GEMINI_MODEL || secrets.GEMINI_EDGE_MODEL || 'gemini-2.5-pro' }}
+          GEMINI_PRO_MODEL: ${{ secrets.GEMINI_PRO_MODEL || secrets.GEMINI_MODEL || secrets.GEMINI_EDGE_MODEL || 'gemini-2.5-pro' }}
+          GEMINI_FLASH_MODEL: ${{ secrets.GEMINI_FLASH_MODEL || 'gemini-2.5-flash' }}
+          GEMINI_CONTEXT_MODEL: ${{ secrets.GEMINI_CONTEXT_MODEL || secrets.GEMINI_FLASH_MODEL || 'gemini-2.5-flash' }}
+          AI_CONTEXT_MAX_ARTICLES: ${{ secrets.NEGATIVE_WATCH_AI_CONTEXT_MAX_ARTICLES || '8' }}
+          AI_CONTEXT_PRO_REVIEW: "true"
           GEMINI_RISK_RESPONSE_MODEL: ${{ secrets.GEMINI_RISK_RESPONSE_MODEL || secrets.GEMINI_EDGE_MODEL || 'gemini-2.5-pro' }}
           NEGATIVE_WATCH_AUTO_DRAFTS: "true"
           NEGATIVE_WATCH_DRAFT_MAX_ARTICLES: "3"
