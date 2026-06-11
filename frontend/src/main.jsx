@@ -4007,8 +4007,12 @@ function buildRiskArticleGroups(articles = []) {
 
   return groups
     .map((group) => {
-      const members = [...group.members].sort(compareArticleImportance);
-      const representative = members[0] || {};
+      const sortedMembers = [...group.members].sort(compareArticleImportance);
+      const representative = sortedMembers[0] || {};
+      const members = dedupeIssueMembers(
+        sortedMembers.filter((member) => articleBelongsToSameIssue(representative, member)),
+      );
+      if (!members.length && representative.title) members.push(representative);
       const sources = unique(members.map((item) => item.source).filter(Boolean));
       return {
         ...representative,
@@ -6382,18 +6386,63 @@ function displayTone(value) {
 
 function normalizeArticleDisplay(row = {}) {
   if (!row || typeof row !== "object") return row;
-  if (!isCompetitorBrandReputationAgainstOwn(row)) return row;
-  const relatedArticles = Array.isArray(row.relatedArticles)
-    ? row.relatedArticles.map((item) => ({ ...item, tone: item.tone === "긍정" ? "주의" : item.tone }))
-    : row.relatedArticles;
-  return {
+  const cleanRelatedArticles = filterRelatedArticlesForRepresentative(row);
+  const relatedSourceCount = unique(cleanRelatedArticles.map((item) => item.source).filter(Boolean)).length;
+  const baseRow = {
     ...row,
+    relatedArticles: cleanRelatedArticles,
+    relatedCount: cleanRelatedArticles.length,
+    relatedSourceCount,
+    clusterSize: Math.max(1, cleanRelatedArticles.length),
+  };
+  if (!isCompetitorBrandReputationAgainstOwn(row)) return baseRow;
+  const relatedArticles = cleanRelatedArticles.map((item) => ({
+    ...item,
+    tone: item.tone === "긍정" || item.tone === "positive" ? "주의" : item.tone,
+    summaryLines: buildBrandReputationDisplayLines(item),
+  }));
+  return {
+    ...baseRow,
     category: row.category === "당사" || row.category === "긍정" ? "경쟁사" : row.category,
     tone: row.tone === "긍정" || row.tone === "positive" ? "주의" : row.tone || "주의",
     summary: "",
     summaryLines: buildBrandReputationDisplayLines(row),
     relatedArticles,
+    relatedCount: relatedArticles.length,
+    relatedSourceCount,
+    clusterSize: Math.max(1, relatedArticles.length),
   };
+}
+
+function filterRelatedArticlesForRepresentative(row = {}) {
+  const members = Array.isArray(row.relatedArticles) && row.relatedArticles.length ? row.relatedArticles : [row];
+  const representative = row;
+  const cleaned = [];
+  const seen = new Set();
+  members.forEach((member) => {
+    if (!articleBelongsToSameIssue(representative, member)) return;
+    const key = issueMemberKey(member);
+    if (key && seen.has(key)) return;
+    if (key) seen.add(key);
+    cleaned.push(member);
+  });
+  if (!cleaned.length) return [row];
+  const representativeKey = issueMemberKey(row);
+  if (representativeKey && !seen.has(representativeKey)) cleaned.unshift(row);
+  return cleaned.sort(compareArticleImportance);
+}
+
+function articleBelongsToSameIssue(representative = {}, candidate = {}) {
+  if (!representative || !candidate) return false;
+  const repTopic = articleTopicSignature(representative);
+  const candidateTopic = articleTopicSignature(candidate);
+  if (repTopic || candidateTopic) {
+    if (repTopic && candidateTopic) return repTopic === candidateTopic;
+    if (repTopic?.startsWith("브랜드평판-") || candidateTopic?.startsWith("브랜드평판-")) return false;
+  }
+  const repSeed = articleGroupSeed(representative);
+  const candidateSeed = articleGroupSeed(candidate);
+  return areRelatedArticleSeeds(repSeed, candidateSeed);
 }
 
 function patchCorrectedArticles(rows = [], article = {}, correction = {}) {
@@ -9348,8 +9397,12 @@ function buildRelatedArticleGroups(articles = []) {
 
   return groups
     .map((group) => {
-      const members = [...group.members].sort(compareArticleImportance);
-      const representative = members[0] || {};
+      const sortedMembers = [...group.members].sort(compareArticleImportance);
+      const representative = sortedMembers[0] || {};
+      const members = dedupeIssueMembers(
+        sortedMembers.filter((member) => articleBelongsToSameIssue(representative, member)),
+      );
+      if (!members.length && representative.title) members.push(representative);
       const sources = unique(members.map((item) => item.source).filter(Boolean));
       return {
         ...representative,
