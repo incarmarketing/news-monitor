@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -24,6 +25,10 @@ DEFAULT_REPORT_URL = "https://incarmarketing.github.io/news-monitor/"
 KST = timezone(timedelta(hours=9))
 
 
+class KakaoTokenError(RuntimeError):
+    """Raised when Kakao OAuth refresh token cannot be used."""
+
+
 def refresh_access_token() -> str:
     refresh_token = os.environ["KAKAO_REFRESH_TOKEN"].strip()
     if len(refresh_token) < 40 or "여기에" in refresh_token:
@@ -40,8 +45,29 @@ def refresh_access_token() -> str:
 
     response = requests.post(KAKAO_OAUTH, data=data, timeout=15)
     if not response.ok:
-        raise RuntimeError(f"Kakao token refresh failed: {response.status_code} {response.text}")
-    return response.json()["access_token"]
+        detail = response.text
+        if response.status_code == 400 and "invalid_grant" in detail:
+            raise KakaoTokenError(
+                "Kakao refresh token expired_or_invalid. "
+                "KAKAO_REFRESH_TOKEN을 다시 발급해 GitHub Secrets에 갱신해야 합니다."
+            )
+        raise KakaoTokenError(f"Kakao token refresh failed: {response.status_code} {detail}")
+    payload = response.json()
+    if payload.get("refresh_token"):
+        print(
+            "::warning::Kakao issued a new refresh token. "
+            "GitHub Secrets의 KAKAO_REFRESH_TOKEN 자동 갱신은 지원되지 않으므로 "
+            "다음 토큰 만료 전에 재발급/갱신 절차를 점검하세요."
+        )
+    return payload["access_token"]
+
+
+def check_kakao_token() -> None:
+    load_dotenv()
+    token = refresh_access_token()
+    if not token:
+        raise KakaoTokenError("Kakao access token refresh returned an empty token.")
+    print("Kakao token preflight OK.")
 
 
 def load_latest_daily() -> dict:
@@ -406,4 +432,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--check-token":
+        check_kakao_token()
+        raise SystemExit(0)
     main()

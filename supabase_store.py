@@ -687,7 +687,8 @@ def save_notification_send(
     if not is_enabled():
         return
     normalized_status = str(status or "").lower()
-    key = dedupe_key or notification_dedupe_key(message_type, title, normalized_status)
+    key = dedupe_key if dedupe_key is not None else notification_dedupe_key(message_type, title, normalized_status)
+    key = str(key or "").strip() or None
     row = {
         "sent_at": sent_at or datetime.now(timezone.utc).isoformat(),
         "channel": channel,
@@ -735,12 +736,14 @@ def save_notification_send(
 
 
 def notification_dedupe_key(message_type: str, title: str, status: str = "success") -> str:
-    if str(status or "").lower() != "success":
-        return ""
     clean_type = re.sub(r"\s+", " ", str(message_type or "").strip())
     clean_title = re.sub(r"\s+", " ", str(title or "").strip())
     if not clean_type or not clean_title:
         return ""
+    if str(status or "").lower() != "success":
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+        digest = hashlib.sha256(f"{clean_type}:{clean_title}:{status}:{stamp}".encode("utf-8")).hexdigest()[:12]
+        return f"{clean_type}:{clean_title}:{status}:{digest}"
     return f"{clean_type}:{clean_title}"
 
 
