@@ -818,7 +818,7 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
               </div>
               <h3>{article.title}</h3>
               <ArticleSummaryBlock item={article} dense />
-              <ArticleDecisionNote item={article} />
+              <ArticleDecisionNote item={article} hideClippingLabel />
             </article>
           );
         }) : (
@@ -6095,13 +6095,13 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function ArticleDecisionNote({ item }) {
+function ArticleDecisionNote({ item, hideClippingLabel = false }) {
   const context = item?.aiContext || {};
   const reason = item?.clippingReason || context.reason || "";
   const evidence = context.evidence || "";
   const confidence = Number(context.confidence || 0);
   const chips = [];
-  if (item?.clippingRecommended) chips.push("클리핑 후보");
+  if (item?.clippingRecommended && !hideClippingLabel) chips.push("클리핑 후보");
   if (context.negativeTarget && context.negativeTarget !== "none") chips.push(`대상 ${negativeTargetLabel(context.negativeTarget)}`);
   if (confidence > 0) chips.push(`신뢰도 ${Math.round(confidence * 100)}%`);
   if (!reason && !evidence && !chips.length) return null;
