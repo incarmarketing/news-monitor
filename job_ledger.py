@@ -139,7 +139,11 @@ def normalize_finish_status(raw: str) -> str:
 
 
 def write_row(row: dict) -> None:
-    cleaned = {key: value for key, value in row.items() if value is not None}
+    cleaned = {
+        key: value
+        for key, value in row.items()
+        if value is not None or key == "finished_at"
+    }
     rest_request("POST", f"job_runs?on_conflict={quote('run_key')}", [cleaned])
     print(f"job_ledger {cleaned['status']}: {cleaned['run_key']}")
 
