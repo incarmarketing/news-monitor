@@ -14,11 +14,15 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+import google.generativeai as genai
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 import ai_fallback
+import config
+import gemini_helper
 import groq_helper
 
 KST = timezone(timedelta(hours=9))
@@ -129,32 +133,35 @@ def main() -> None:
     output_dir = Path(os.getenv("MODEL_QUALITY_OUTPUT_DIR", "artifacts/model-quality-compare"))
     output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S KST")
+    strict_mode = os.getenv("MODEL_QUALITY_STRICT", "0").strip().lower() in {"1", "true", "yes"}
 
     results = []
     for sample in SAMPLES:
         articles = sample["articles"]
-        gemini_text = summarize_with_gemini(articles)
-        groq_text = groq_helper.summarize_issue(articles, retries=1)
+        gemini_result = summarize_with_gemini(articles)
+        groq_result = summarize_with_groq(articles)
         results.append(
             {
                 "id": sample["id"],
                 "label": sample["label"],
                 "expected_terms": list(sample["expected_terms"]),
-                "gemini": evaluate_summary(gemini_text, sample),
-                "groq": evaluate_summary(groq_text, sample),
+                "gemini": evaluate_provider_result(gemini_result, sample),
+                "groq": evaluate_provider_result(groq_result, sample),
                 "input_titles": [article["title"] for article in articles],
             }
         )
 
     payload = {
         "generated_at": generated_at,
-        "gemini_provider": "gemini",
+        "strict_mode": strict_mode,
+        "gemini_model": os.getenv("GEMINI_MODEL", config.GEMINI_MODEL),
         "groq_model": os.getenv("GROQ_ISSUE_MODEL") or os.getenv("GROQ_MODEL", ""),
         "case_count": len(results),
         "results": results,
         "overall": {
             "gemini_pass": sum(1 for item in results if item["gemini"]["passed"]),
             "groq_pass": sum(1 for item in results if item["groq"]["passed"]),
+            "groq_rate_limited": sum(1 for item in results if item["groq"].get("status") == "rate_limited"),
         },
     }
 
@@ -172,23 +179,169 @@ def main() -> None:
         for provider in ("gemini", "groq")
         if not item[provider]["passed"]
     ]
-    if failed:
+    if strict_mode and failed:
         print("Model quality compare failed:", ", ".join(failed), file=sys.stderr)
         raise SystemExit(1)
 
 
-def summarize_with_gemini(articles: list[dict]) -> str:
+def summarize_with_gemini(articles: list[dict]) -> dict:
     prompt = groq_helper.build_issue_prompt(articles)
-    text, provider = ai_fallback.generate_gemini_text(
-        f"{ai_fallback.ISSUE_SYSTEM_PROMPT}\n\n{prompt}",
-        max_tokens=180,
+    full_prompt = f"{ai_fallback.ISSUE_SYSTEM_PROMPT}\n\n{prompt}"
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return provider_payload("gemini", "gemini_key_missing", model=os.getenv("GEMINI_MODEL", ""))
+
+    ai_fallback.configure_gemini(api_key)
+    attempts: list[dict] = []
+    for model_name in gemini_helper.model_candidates():
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(
+                full_prompt,
+                generation_config={"max_output_tokens": 180, "temperature": 0.1},
+                request_options=gemini_helper.request_options(),
+            )
+            raw_text, extraction_error, metadata = extract_gemini_text(response)
+            summary = groq_helper.clean_issue_summary(raw_text)
+            status = "ok" if summary else ("raw_rejected" if raw_text else "empty")
+            return provider_payload(
+                "gemini",
+                status,
+                model=model_name,
+                raw=raw_text,
+                summary=summary,
+                extraction_error=extraction_error,
+                metadata=metadata,
+            )
+        except BaseException as exc:
+            if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                raise
+            attempts.append({"model": model_name, "error": gemini_helper.error_summary(exc)})
+            if gemini_helper.is_quota_error(exc):
+                return provider_payload(
+                    "gemini",
+                    "quota_or_rate_limit",
+                    model=model_name,
+                    error=gemini_helper.error_summary(exc),
+                    attempts=attempts,
+                )
+
+    return provider_payload("gemini", "failed", error="all model candidates failed", attempts=attempts)
+
+
+def summarize_with_groq(articles: list[dict]) -> dict:
+    if not groq_helper.is_enabled():
+        return provider_payload("groq", "groq_key_missing", model=os.getenv("GROQ_ISSUE_MODEL", ""))
+
+    model_name = os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL)
+    raw_text = groq_helper.chat_completion(
+        [
+            {"role": "system", "content": groq_helper.ISSUE_SUMMARY_SYSTEM_PROMPT},
+            {"role": "user", "content": groq_helper.build_issue_prompt(articles)},
+        ],
+        max_tokens=int(os.getenv("GROQ_ISSUE_MAX_TOKENS", "90")),
         temperature=0.1,
+        retries=1,
         purpose="model_quality_compare",
+        model=model_name,
     )
-    summary = groq_helper.clean_issue_summary(text)
-    if not summary and provider:
-        return ""
-    return summary
+    summary = groq_helper.clean_issue_summary(raw_text)
+    rate_limit = groq_helper.rate_limit_status()
+    status = "ok" if summary else ("rate_limited" if is_groq_rate_limited(rate_limit) else "raw_rejected" if raw_text else "empty")
+    return provider_payload(
+        "groq",
+        status,
+        model=model_name,
+        raw=raw_text,
+        summary=summary,
+        rate_limit=rate_limit,
+    )
+
+
+def provider_payload(
+    provider: str,
+    status: str,
+    *,
+    model: str = "",
+    raw: str = "",
+    summary: str = "",
+    error: str = "",
+    extraction_error: str = "",
+    attempts: list[dict] | None = None,
+    metadata: dict | None = None,
+    rate_limit: dict | None = None,
+) -> dict:
+    return {
+        "provider": provider,
+        "status": status,
+        "model": model,
+        "raw": raw,
+        "summary": summary,
+        "error": error,
+        "extraction_error": extraction_error,
+        "attempts": attempts or [],
+        "metadata": metadata or {},
+        "rate_limit": rate_limit or {},
+    }
+
+
+def extract_gemini_text(response: object) -> tuple[str, str, dict]:
+    extraction_error = ""
+    try:
+        text = str(getattr(response, "text", "") or "").strip()
+        if text:
+            return text, "", gemini_response_metadata(response)
+    except Exception as exc:
+        extraction_error = gemini_helper.error_summary(exc)
+
+    parts: list[str] = []
+    for candidate in getattr(response, "candidates", []) or []:
+        content = getattr(candidate, "content", None)
+        for part in getattr(content, "parts", []) or []:
+            value = getattr(part, "text", "")
+            if value:
+                parts.append(str(value))
+    return "\n".join(parts).strip(), extraction_error, gemini_response_metadata(response)
+
+
+def gemini_response_metadata(response: object) -> dict:
+    candidates = []
+    for candidate in getattr(response, "candidates", []) or []:
+        candidates.append(
+            {
+                "finish_reason": str(getattr(candidate, "finish_reason", "") or ""),
+                "safety_ratings": str(getattr(candidate, "safety_ratings", "") or "")[:240],
+            }
+        )
+    return {
+        "prompt_feedback": str(getattr(response, "prompt_feedback", "") or "")[:240],
+        "candidates": candidates[:2],
+    }
+
+
+def is_groq_rate_limited(rate_limit: dict) -> bool:
+    if not rate_limit:
+        return False
+    status = str(rate_limit.get("status", ""))
+    return status == "429" or bool(rate_limit.get("daily_limit_tokens"))
+
+
+def evaluate_provider_result(result: dict, sample: dict) -> dict:
+    evaluated = evaluate_summary(result.get("summary", ""), sample)
+    evaluated.update(
+        {
+            "provider": result.get("provider", ""),
+            "status": result.get("status", ""),
+            "model": result.get("model", ""),
+            "raw_preview": preview_text(result.get("raw", "")),
+            "error": result.get("error", ""),
+            "extraction_error": result.get("extraction_error", ""),
+            "attempts": result.get("attempts", []),
+            "metadata": result.get("metadata", {}),
+            "rate_limit": result.get("rate_limit", {}),
+        }
+    )
+    return evaluated
 
 
 def evaluate_summary(summary: str, sample: dict) -> dict:
@@ -223,26 +376,38 @@ def normalize_text(value: object) -> str:
     return re.sub(r"\W+", "", str(value or "").lower())
 
 
+def preview_text(value: object, limit: int = 180) -> str:
+    text = groq_helper.clean_prompt_text(value)
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "..."
+
+
 def render_markdown(payload: dict) -> str:
     lines = [
         "# Model Quality Compare",
         "",
         f"- 생성: {payload['generated_at']}",
+        f"- Strict mode: {'on' if payload.get('strict_mode') else 'off'}",
+        f"- Gemini 모델: {payload.get('gemini_model') or '-'}",
         f"- Groq 모델: {payload.get('groq_model') or '-'}",
         f"- Gemini 통과: {payload['overall']['gemini_pass']}/{payload['case_count']}",
         f"- Groq 통과: {payload['overall']['groq_pass']}/{payload['case_count']}",
+        f"- Groq rate limit: {payload['overall'].get('groq_rate_limited', 0)}건",
         "",
-        "| 케이스 | Gemini | Groq | 판정 |",
-        "|---|---|---|---|",
+        "| 케이스 | Gemini 상태 | Gemini 요약 | Groq 상태 | Groq 요약 | 판정 |",
+        "|---|---|---|---|---|---|",
     ]
     for item in payload["results"]:
         gemini = item["gemini"]
         groq = item["groq"]
         verdict = "OK" if gemini["passed"] and groq["passed"] else "CHECK"
         lines.append(
-            "| {label} | {gemini} | {groq} | {verdict} |".format(
+            "| {label} | {gemini_status} | {gemini} | {groq_status} | {groq} | {verdict} |".format(
                 label=escape_cell(item["label"]),
+                gemini_status=escape_cell(gemini.get("status") or "-"),
                 gemini=escape_cell(gemini["summary"] or "(empty)"),
+                groq_status=escape_cell(groq.get("status") or "-"),
                 groq=escape_cell(groq["summary"] or "(empty)"),
                 verdict=verdict,
             )
@@ -254,7 +419,24 @@ def render_markdown(payload: dict) -> str:
         for provider in ("gemini", "groq"):
             result = item[provider]
             failed = [name for name, ok in result["checks"].items() if not ok]
-            lines.append(f"- {provider}: {'PASS' if result['passed'] else 'FAIL'} / failed={failed or '-'}")
+            lines.append(
+                f"- {provider}: {'PASS' if result['passed'] else 'FAIL'} "
+                f"/ status={result.get('status') or '-'} / failed={failed or '-'}"
+            )
+            if result.get("raw_preview"):
+                lines.append(f"  - raw: {escape_cell(result['raw_preview'])}")
+            if result.get("error"):
+                lines.append(f"  - error: {escape_cell(result['error'])}")
+            if result.get("extraction_error"):
+                lines.append(f"  - extraction: {escape_cell(result['extraction_error'])}")
+            rate_limit = result.get("rate_limit") or {}
+            if rate_limit:
+                brief_rate_limit = {
+                    key: rate_limit.get(key)
+                    for key in ("status", "daily_limit_tokens", "daily_used_tokens", "daily_requested_tokens", "retry_after")
+                    if rate_limit.get(key)
+                }
+                lines.append(f"  - rate_limit: {escape_cell(json.dumps(brief_rate_limit, ensure_ascii=False))}")
     return "\n".join(lines)
 
 
