@@ -23,7 +23,8 @@ _GEMINI_CONFIGURED_KEY = ""
 ISSUE_SYSTEM_PROMPT = """
 당신은 한국어 언론 모니터링 기사 요약 전문가입니다.
 판단, 대응 제안, 위험 평가를 추가하지 말고 기사 묶음에서 확인되는 이슈의 사실관계만 한 문장으로 정리합니다.
-""".strip()
+{rules}
+""".format(rules=groq_helper.SUMMARY_QUALITY_RULES).strip()
 
 
 def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> tuple[str, str]:
@@ -129,6 +130,7 @@ def build_group_batch_prompt(groups: list[dict]) -> str:
         "각 관련 기사 묶음의 핵심 이슈를 한국어 한 문장으로 요약하세요.",
         "반드시 입력 순서와 같은 JSON 문자열 배열만 출력하세요.",
         "제목 반복, 출처, 날짜, 판단, 대응 제안은 쓰지 마세요.",
+        groq_helper.SUMMARY_QUALITY_RULES,
     ]
     for index, group in enumerate(groups, 1):
         rows = []
@@ -238,6 +240,8 @@ def rules_issue_summary(articles: list[dict]) -> str:
 def split_candidate_sentences(value: object) -> list[str]:
     text = groq_helper.clean_prompt_text(value)
     text = re.sub(r"\b기사\s*열기\b", " ", text)
+    text = re.sub(r"^\s*[\[［(【]?[가-힣A-Za-z0-9_.-]{2,20}\s*=\s*[가-힣]{2,6}\s*기자[\]］)】]?\s*", "", text)
+    text = re.sub(r"^\s*[\[［(【]?[^\]］)】\n]{2,30}\s+기자[\]］)】]?\s*", "", text)
     text = re.sub(r"\s+", " ", text).strip()
     if not text:
         return []
@@ -255,8 +259,19 @@ def is_low_value_sentence(sentence: str) -> bool:
         "기준 핵심만 요약",
         "키워드 기준으로 수집",
         "직접 언급 기사로",
+        "당사 직접 언급",
+        "평판 영향",
+        "우호 보도",
+        "홍보 자산",
+        "보고서에 포함",
+        "별도 추적",
+        "정책·감독 이슈로",
+        "시장 평가",
+        "규제성 신호",
+        "문맥 중심",
         "리스크 점검 근거",
         "확인이 필요",
+        "확인합니다",
         "관찰합니다",
         "추적합니다",
     )

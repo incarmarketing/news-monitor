@@ -692,7 +692,7 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
           <X />
         </button>
         <h2>운영 데이터 연결</h2>
-        <p>기존 대시보드와 같은 사번 로그인으로 실시간 기사, 언론사, 기자, 광고비 데이터를 불러옵니다.</p>
+        <p>기존 대시보드와 같은 사번 로그인으로 기사, 언론사, 기자, 광고비 데이터를 불러옵니다.</p>
         <label>
           <span>사번</span>
           <input value={employeeNo} onChange={(event) => setEmployeeNo(event.target.value)} autoFocus />
@@ -732,8 +732,8 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
     <main className="workspace">
       <PageTitle
         eyebrow={`${data.label} · ${data.scope}`}
-        title="실시간 대시보드"
-        description="검색 키워드 기준 최신 이슈, 당사 리스크, 알림톡, 보고서 생성 상태를 5분 단위로 확인합니다."
+        title="대시보드"
+        description="검색 키워드 기준 주요 이슈, 당사 리스크, 알림톡, 보고서 생성 상태를 운영 데이터 기준으로 확인합니다."
         right={(
           <button
             type="button"
@@ -1086,8 +1086,8 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   return (
     <main className="workspace">
       <PageTitle
-        eyebrow="Live Monitoring"
-        title="실시간 모니터링"
+        eyebrow="Monitoring"
+        title="모니터링"
         description="기사 목록을 샘플 5개로 줄이지 않고, 연결 가능한 운영 기사 전체를 필터와 함께 펼쳐 봅니다."
         right={(
           <div className="page-actions">
@@ -3052,45 +3052,98 @@ function trimPressHeadline(value) {
 }
 
 function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, scraps, onOpenMonitoring, operations }) {
-  const periodArticles = useMemo(
-    () => articles.length ? articles : filterArticlesByPeriod(allArticles || [], period),
-    [articles, allArticles, period],
+  const mediaSourceArticles = useMemo(
+    () => (allArticles?.length ? allArticles : articles).filter((article) => !isOfficialRegulatorSource(article.source)),
+    [allArticles, articles],
   );
-  const trendArticles = useMemo(
-    () => lastNDays(allArticles?.length ? allArticles : periodArticles, 31),
-    [allArticles, periodArticles],
+  const latestDate = useMemo(() => latestArticleDate(mediaSourceArticles), [mediaSourceArticles]);
+  const [rangeDraft, setRangeDraft] = useState({ start: "", end: "" });
+  const [activeRange, setActiveRange] = useState({ start: "", end: "" });
+  const [rangeNotice, setRangeNotice] = useState("");
+  useEffect(() => {
+    if (!latestDate || activeRange.start || activeRange.end || rangeDraft.start || rangeDraft.end) return;
+    const start = addDaysToDateKey(latestDate, -29);
+    const next = { start: start || latestDate, end: latestDate };
+    setRangeDraft(next);
+    setActiveRange(next);
+  }, [activeRange.end, activeRange.start, latestDate, rangeDraft.end, rangeDraft.start]);
+  const analysisArticles = useMemo(
+    () => filterArticlesByDateRange(mediaSourceArticles, activeRange.start, activeRange.end),
+    [activeRange.end, activeRange.start, mediaSourceArticles],
   );
-  const analysisArticles = periodArticles.length ? periodArticles : trendArticles;
-  const scopeLabel = periodScopeLabel(period);
+  const analysisDays = dateRangeDayCount(activeRange.start, activeRange.end) || 30;
+  const scopeLabel = activeRange.start && activeRange.end
+    ? `${activeRange.start} ~ ${activeRange.end}`
+    : "선택 기간";
+  const mediaSummaryData = useMemo(
+    () => composeMediaAnalysisData(data, analysisArticles, scopeLabel),
+    [analysisArticles, data, scopeLabel],
+  );
   const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
   const dailyTrend = useMemo(
-    () => buildDailyToneTrend(trendArticles, 31, data.toneTrend),
-    [trendArticles, data.toneTrend],
+    () => buildDateRangeToneTrend(analysisArticles, activeRange.start, activeRange.end, Math.min(analysisDays, 90), data.toneTrend),
+    [activeRange.end, activeRange.start, analysisArticles, analysisDays, data.toneTrend],
   );
   const keywordRows = useMemo(
     () => buildKeywordFlow(analysisArticles, selectedKeywords),
     [analysisArticles, selectedKeywords],
   );
   const issueRows = useMemo(
-    () => buildMediaAnalysisIssues(analysisArticles, period).slice(0, 6),
-    [analysisArticles, period],
+    () => buildMediaAnalysisIssues(analysisArticles, "custom").slice(0, 6),
+    [analysisArticles],
   );
-  const observations = buildPeriodObservations(data, issueRows, period);
+  const observations = buildPeriodObservations(mediaSummaryData, issueRows, "custom", scopeLabel);
+  const applyRange = (days = null) => {
+    const fallbackEnd = latestDate || activeRange.end || rangeDraft.end;
+    let nextStart = rangeDraft.start;
+    let nextEnd = rangeDraft.end || fallbackEnd;
+    if (days && fallbackEnd) {
+      nextEnd = fallbackEnd;
+      nextStart = addDaysToDateKey(fallbackEnd, -(days - 1)) || fallbackEnd;
+    }
+    const normalized = normalizeAnalysisDateRange(nextStart, nextEnd, 90);
+    setRangeDraft(normalized);
+    setActiveRange(normalized);
+    setRangeNotice(normalized.clamped ? "최대 90일 기준으로 시작일을 조정했습니다." : "");
+  };
   return (
     <main className="workspace">
       <PageTitle
         eyebrow={`${scopeLabel} 분석`}
         title="언론 동향 분석"
-        description="트렌드, 매체 영향도, 키워드 흐름, 핵심 이슈를 보고서와 분리된 분석 화면에서 확인합니다."
+        description="보고서 형식과 분리해 원하는 기간의 트렌드, 매체 영향도, 키워드 흐름, 핵심 이슈를 확인합니다."
         right={(
-          <div className="page-actions">
-            <PeriodControl period={period} setPeriod={setPeriod} compact />
+          <div className="media-range-actions">
+            {[7, 30, 90].map((days) => (
+              <button key={days} type="button" className="ghost-button compact-button" onClick={() => applyRange(days)}>
+                {days}일
+              </button>
+            ))}
           </div>
         )}
       />
+      <section className="media-range-panel">
+        <div>
+          <span>분석 기간</span>
+          <b>{scopeLabel}</b>
+          <em>최대 90일 · 금융당국 공식 보도자료 제외</em>
+        </div>
+        <label>
+          <span>시작 기준일</span>
+          <input type="date" value={rangeDraft.start} onChange={(event) => setRangeDraft((current) => ({ ...current, start: event.target.value }))} />
+        </label>
+        <label>
+          <span>종료 기준일</span>
+          <input type="date" value={rangeDraft.end} onChange={(event) => setRangeDraft((current) => ({ ...current, end: event.target.value }))} />
+        </label>
+        <button type="button" className="primary-button" onClick={() => applyRange()}>
+          분석 적용
+        </button>
+        {rangeNotice && <small>{rangeNotice}</small>}
+      </section>
       <section className="media-analysis-layout media-intel-board">
         <div className="media-analysis-column">
-          <Panel title="일별 논조 추이" icon={Activity} meta="최근 31일 · 긍정/부정/주의">
+          <Panel title="일별 논조 추이" icon={Activity} meta={`${Math.min(analysisDays, 90)}일 · 긍정/중립/주의/부정`}>
             <ToneTrend rows={dailyTrend} />
           </Panel>
           <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
@@ -3103,10 +3156,10 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
         </div>
         <div className="media-analysis-column">
           <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
-            <PressInfluence rows={data.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
+            <PressInfluence rows={mediaSummaryData.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
           </Panel>
-          <Panel title="핵심 이슈" icon={Newspaper} meta={periodIssueMeta(period, issueRows)}>
-            <MonthlyIssueDigest issues={issueRows} period={period} />
+          <Panel title="핵심 이슈" icon={Newspaper} meta={periodIssueMeta("custom", issueRows)}>
+            <MonthlyIssueDigest issues={issueRows} period="custom" />
           </Panel>
         </div>
       </section>
@@ -7405,7 +7458,7 @@ function issueSemanticKey(issue = {}) {
 
 function periodIssueMeta(period, issues = []) {
   const related = issues.reduce((sum, issue) => sum + Math.max(0, Number(issue.relatedCount || 1) - 1), 0);
-  const label = period === "daily" ? "당일" : period === "weekly" ? "주간" : "월간";
+  const label = period === "daily" ? "당일" : period === "weekly" ? "주간" : period === "monthly" ? "월간" : "선택 기간";
   return related ? `${label} 대표 ${issues.length}건 · 관련 ${related}건` : `${label} 대표 ${issues.length}건`;
 }
 
@@ -7919,18 +7972,45 @@ function summaryHaystack(item = {}) {
 }
 
 function periodScopeLabel(period) {
-  return { daily: "일간", weekly: "주간", monthly: "월간" }[period] || "기간";
+  return { daily: "일간", weekly: "주간", monthly: "월간", custom: "선택 기간" }[period] || "기간";
 }
 
-function buildPeriodObservations(data, issues = [], period = "monthly") {
+function composeMediaAnalysisData(base = {}, articles = [], scopeLabel = "선택 기간") {
+  const usableArticles = articles.filter(isUsableArticle);
+  const ownMentions = usableArticles.filter(isOwnArticle).length;
+  const ownNegative = usableArticles.filter((article) => isOwnArticle(article) && article.tone === "부정").length;
+  const caution = usableArticles.filter((article) => article.tone === "주의").length;
+  const gaInsurance = usableArticles.filter((article) => ["GA", "보험사"].includes(article.category)).length;
+  return {
+    ...base,
+    scope: scopeLabel,
+    summary: {
+      ...(base.summary || {}),
+      collected: usableArticles.length,
+      analyzed: usableArticles.filter((article) => article.tone !== "제외").length,
+      ownMentions,
+      ownNegative,
+      caution,
+      gaInsurance,
+      risk: ownNegative >= 3 ? "HIGH" : ownNegative > 0 ? "MEDIUM" : "LOW",
+      headline: buildHeadline(usableArticles, ownMentions, ownNegative, caution),
+    },
+    pressInfluence: buildPressInfluence(usableArticles),
+    categoryFlow: groupArticles(usableArticles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
+    toneTrend: buildToneTrend(usableArticles),
+  };
+}
+
+function buildPeriodObservations(data, issues = [], period = "monthly", customScopeLabel = "") {
   const summary = data.summary || {};
   const lead = issues[0];
   const topPress = data.pressInfluence?.[0];
-  const scope = periodScopeLabel(period);
+  const scope = customScopeLabel || periodScopeLabel(period);
   const periodIntent = {
     daily: "일간 보고서는 신규 당사 언급과 즉시 확인할 리스크를 우선 배치합니다.",
     weekly: "주간 보고서는 반복 노출과 논조 변화가 있는 이슈를 우선 묶어 봅니다.",
     monthly: "월간 보고서는 누적 관리 대상, 매체 영향도, 키워드 흐름을 함께 봅니다.",
+    custom: "선택 기간 안에서 당사 언급, 정책 신호, 반복 노출 이슈를 같은 기준으로 비교합니다.",
   }[period] || "선택 기간의 보도 흐름을 기준으로 핵심 이슈를 정리합니다.";
   const observations = [];
   observations.push(periodIntent);
@@ -8976,6 +9056,38 @@ function filterRowsByPeriod(articles, period) {
     .map(({ article }) => article);
 }
 
+function filterArticlesByDateRange(articles = [], start = "", end = "") {
+  const normalized = normalizeAnalysisDateRange(start, end, 90);
+  if (!normalized.start && !normalized.end) return articles;
+  return articles.filter((article) => {
+    const key = rowDateKey(article);
+    if (!key) return false;
+    return (!normalized.start || key >= normalized.start) && (!normalized.end || key <= normalized.end);
+  });
+}
+
+function normalizeAnalysisDateRange(start = "", end = "", maxDays = 90) {
+  let nextStart = normalizeDateKey(start);
+  let nextEnd = normalizeDateKey(end);
+  if (nextStart && nextEnd && nextStart > nextEnd) {
+    [nextStart, nextEnd] = [nextEnd, nextStart];
+  }
+  let clamped = false;
+  const dayCount = dateRangeDayCount(nextStart, nextEnd);
+  if (dayCount && maxDays && dayCount > maxDays && nextEnd) {
+    nextStart = addDaysToDateKey(nextEnd, -(maxDays - 1));
+    clamped = true;
+  }
+  return { start: nextStart, end: nextEnd, clamped };
+}
+
+function dateRangeDayCount(start = "", end = "") {
+  const startTime = dateKeyToUtcTime(start);
+  const endTime = dateKeyToUtcTime(end);
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime) return 0;
+  return Math.floor((endTime - startTime) / (24 * 60 * 60 * 1000)) + 1;
+}
+
 function resolveMonitoringDateRange(articles = [], preset = {}) {
   if (preset.startDate || preset.endDate) {
     return {
@@ -9300,6 +9412,24 @@ function articleMatchesKeyword(article, keyword) {
   if (haystack.includes(normalizedKeyword)) return true;
   const tokens = normalizedKeyword.split(" ").filter((token) => token.length > 1);
   return tokens.length > 1 && tokens.every((token) => haystack.includes(token));
+}
+
+function buildDateRangeToneTrend(articles, start = "", end = "", maxDays = 90, fallback = []) {
+  const normalized = normalizeAnalysisDateRange(start, end, maxDays);
+  if (!normalized.start || !normalized.end) return buildDailyToneTrend(articles, Math.min(maxDays || 30, 90), fallback);
+  const buckets = new Map();
+  let cursor = normalized.start;
+  while (cursor && cursor <= normalized.end) {
+    buckets.set(cursor, { date: cursor.slice(5), positive: 0, negative: 0, caution: 0, neutral: 0 });
+    cursor = addDaysToDateKey(cursor, 1);
+  }
+  articles.forEach((article) => {
+    const key = rowDateKey(article);
+    if (!key || key < normalized.start || key > normalized.end) return;
+    addToneToBucket(buckets.get(key), article.tone);
+  });
+  const rows = Array.from(buckets.values());
+  return rows.some(hasToneSignal) ? rows : ensureTrendHasTone(fallback);
 }
 
 const OWN_DASHBOARD_KEYWORD = "인카금융서비스";
@@ -9709,7 +9839,7 @@ function composeRealtimeData(base, articles, liveConnected = false) {
   }
   return {
     ...composePeriodData(base, realtimeArticles, [], true),
-    label: "실시간",
+    label: "대시보드",
     scope: realtimeArticles[0]?.date ? `${realtimeArticles[0].date} 당일 기사` : "당일 기사",
   };
 }
