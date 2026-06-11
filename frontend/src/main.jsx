@@ -2031,12 +2031,44 @@ function GAMetricCard({ icon: Icon, label, value, detail, tone = "default" }) {
   );
 }
 
+function renderGaPlannerValueLabel(props) {
+  const { x, y, width, height, value } = props;
+  const label = formatGaInteger(value);
+  if (!label || label === "-") return null;
+  return (
+    <text
+      className="ga-chart-value-label"
+      x={Number(x || 0) + Number(width || 0) + 10}
+      y={Number(y || 0) + Number(height || 0) / 2 + 4}
+      textAnchor="start"
+    >
+      {label}
+    </text>
+  );
+}
+
+function renderGaRevenueValueLabel(props) {
+  const { x, y, width, value } = props;
+  const label = formatGaRevenueChartLabel(value);
+  if (!label) return null;
+  return (
+    <text
+      className="ga-chart-value-label ga-revenue-value-label"
+      x={Number(x || 0) + Number(width || 0) / 2}
+      y={Math.max(12, Number(y || 0) - 8)}
+      textAnchor="middle"
+    >
+      {label}
+    </text>
+  );
+}
+
 function GAPlannerBarChart({ rows = [], ownShort = "" }) {
   if (!rows.length) return <p className="a4-empty">경쟁사 비교 데이터가 없습니다.</p>;
   return (
     <div className="chart-box ga-bar-chart">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rows} layout="vertical" margin={{ left: 0, right: 64, top: 8, bottom: 8 }}>
+        <BarChart data={rows} layout="vertical" margin={{ left: 0, right: 92, top: 8, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="short" tickLine={false} axisLine={false} width={128} tick={{ fontSize: 11, fontWeight: 800 }} />
@@ -2045,7 +2077,7 @@ function GAPlannerBarChart({ rows = [], ownShort = "" }) {
             {rows.map((row) => (
               <Cell key={row.short} fill={row.short === ownShort ? "#e8a33d" : "#2855d9"} />
             ))}
-            <LabelList dataKey="planners" position="right" formatter={(value) => formatGaInteger(value)} fill="#0f1f3d" fontSize={11} fontWeight={900} />
+            <LabelList dataKey="planners" content={renderGaPlannerValueLabel} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -2060,16 +2092,16 @@ function GARevenueComparisonChart({ rows = [], peerLabel = "비교 GA" }) {
   return (
     <div className="chart-box ga-revenue-chart" aria-label="GA 연간 매출 비교 그래프">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rows} margin={{ left: 4, right: 18, top: 18, bottom: 4 }}>
+        <BarChart data={rows} margin={{ left: 10, right: 28, top: 36, bottom: 8 }} barGap={8} barCategoryGap={20}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} minTickGap={0} tick={{ fontSize: 11, fontWeight: 800 }} />
           <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value)).toLocaleString("ko-KR")}억`} />
           <Tooltip formatter={(value, name) => [formatGaRevenue(value), name === "incaAmount" ? "인카금융서비스" : peerLabel]} />
-          <Bar dataKey="incaAmount" name="인카금융서비스" radius={[7, 7, 0, 0]} fill="#2855d9" barSize={28}>
-            <LabelList dataKey="incaAmount" position="top" formatter={(value) => formatGaRevenueShort(value)} fill="#0f1f3d" fontSize={10} fontWeight={900} />
+          <Bar dataKey="incaAmount" name="인카금융서비스" radius={[7, 7, 0, 0]} fill="#2855d9" barSize={24}>
+            <LabelList dataKey="incaAmount" content={renderGaRevenueValueLabel} />
           </Bar>
-          <Bar dataKey="peerAmount" name={peerLabel} radius={[7, 7, 0, 0]} fill="#14805f" barSize={28}>
-            <LabelList dataKey="peerAmount" position="top" formatter={(value) => formatGaRevenueShort(value)} fill="#0f1f3d" fontSize={10} fontWeight={900} />
+          <Bar dataKey="peerAmount" name={peerLabel} radius={[7, 7, 0, 0]} fill="#14805f" barSize={24}>
+            <LabelList dataKey="peerAmount" content={renderGaRevenueValueLabel} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -2459,6 +2491,13 @@ function formatGaRevenueShort(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "";
   return `${Math.round(number).toLocaleString("ko-KR")}억`;
+}
+
+function formatGaRevenueChartLabel(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return "";
+  return Math.round(number).toLocaleString("ko-KR");
 }
 
 function formatGaRevenueGap(value) {

@@ -2601,6 +2601,29 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-height: 0;
 }
 
+.ga-revenue-chart .recharts-wrapper,
+.ga-revenue-chart .recharts-surface,
+.ga-bar-chart .recharts-wrapper,
+.ga-bar-chart .recharts-surface {
+  overflow: visible;
+}
+
+.ga-chart-value-label {
+  fill: var(--ink);
+  font-size: 10.5px;
+  font-weight: 950;
+  letter-spacing: 0;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.ga-revenue-value-label {
+  font-size: 9.8px;
+}
+
 .ga-revenue-legend {
   display: flex;
   align-items: center;
