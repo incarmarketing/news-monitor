@@ -2160,13 +2160,22 @@ function GATrendChart({ rows = [] }) {
           <Line type="monotone" dataKey="marketStay" stroke="#d97706" strokeWidth={2} dot={false} strokeDasharray="3 4" connectNulls />
         </RechartsLineChart>
       </ResponsiveContainer>
-      <div className="ga-quality-legend">
-        <span className="inca-r13">인카 13회</span>
-        <span className="market-r13">시장 13회</span>
-        <span className="inca-r25">인카 25회</span>
-        <span className="market-r25">시장 25회</span>
-        <span className="inca-stay">인카 정착률</span>
-        <span className="market-stay">시장 정착률</span>
+      <div className="ga-quality-legend" aria-label="유지율 및 정착률 범례">
+        <div className="ga-quality-legend-group">
+          <b>13회 유지율</b>
+          <span className="inca-r13">인카금융</span>
+          <span className="market-r13">시장 평균</span>
+        </div>
+        <div className="ga-quality-legend-group">
+          <b>25회 유지율</b>
+          <span className="inca-r25">인카금융</span>
+          <span className="market-r25">시장 평균</span>
+        </div>
+        <div className="ga-quality-legend-group">
+          <b>정착률</b>
+          <span className="inca-stay">인카금융</span>
+          <span className="market-stay">시장 평균</span>
+        </div>
       </div>
     </div>
   );
