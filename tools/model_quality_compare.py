@@ -134,9 +134,10 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     generated_at = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S KST")
     strict_mode = os.getenv("MODEL_QUALITY_STRICT", "0").strip().lower() in {"1", "true", "yes"}
+    sample_limit = max(1, int(os.getenv("MODEL_QUALITY_SAMPLE_LIMIT", str(len(SAMPLES)))))
 
     results = []
-    for sample in SAMPLES:
+    for sample in SAMPLES[:sample_limit]:
         articles = sample["articles"]
         gemini_result = summarize_with_gemini(articles)
         groq_result = summarize_with_groq(articles)
@@ -198,7 +199,10 @@ def summarize_with_gemini(articles: list[dict]) -> dict:
             model = genai.GenerativeModel(model_name)
             response = model.generate_content(
                 full_prompt,
-                generation_config={"max_output_tokens": 180, "temperature": 0.1},
+                generation_config={
+                    "max_output_tokens": int(os.getenv("GEMINI_ISSUE_MAX_TOKENS", "768")),
+                    "temperature": 0.1,
+                },
                 request_options=gemini_helper.request_options(),
             )
             raw_text, extraction_error, metadata = extract_gemini_text(response)

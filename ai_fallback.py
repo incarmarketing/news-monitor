@@ -46,7 +46,7 @@ def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> 
     prompt = groq_helper.build_issue_prompt(articles)
     gemini_text, gemini_provider = generate_gemini_text(
         f"{ISSUE_SYSTEM_PROMPT}\n\n{prompt}",
-        max_tokens=160,
+        max_tokens=int(os.getenv("GEMINI_ISSUE_MAX_TOKENS", "768")),
         temperature=0.1,
         purpose="issue_summary",
     )

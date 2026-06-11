@@ -41,6 +41,7 @@ jobs:
           GROQ_MODEL: ${{ secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
           GROQ_ISSUE_MODEL: ${{ secrets.GROQ_ISSUE_MODEL || secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
           GEMINI_TIMEOUT_SECONDS: "45"
+          GEMINI_ISSUE_MAX_TOKENS: "768"
           MODEL_QUALITY_STRICT: "0"
 
       - name: Upload comparison artifact
