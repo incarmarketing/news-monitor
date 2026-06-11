@@ -40,8 +40,8 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
           GROQ_ISSUE_MODEL: ${{ secrets.GROQ_ISSUE_MODEL || secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
-          GEMINI_TIMEOUT_SECONDS: "45"
-          GEMINI_ISSUE_MAX_TOKENS: "768"
+          GEMINI_TIMEOUT_SECONDS: "75"
+          GEMINI_ISSUE_MAX_TOKENS: "4096"
           MODEL_QUALITY_STRICT: "0"
 
       - name: Upload comparison artifact

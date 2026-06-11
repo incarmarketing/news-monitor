@@ -137,10 +137,17 @@ def main() -> None:
     sample_limit = max(1, int(os.getenv("MODEL_QUALITY_SAMPLE_LIMIT", str(len(SAMPLES)))))
 
     results = []
+    groq_blocked = False
     for sample in SAMPLES[:sample_limit]:
         articles = sample["articles"]
         gemini_result = summarize_with_gemini(articles)
-        groq_result = summarize_with_groq(articles)
+        groq_result = (
+            provider_payload("groq", "skipped_after_rate_limit", model=os.getenv("GROQ_ISSUE_MODEL", ""))
+            if groq_blocked
+            else summarize_with_groq(articles)
+        )
+        if groq_result.get("status") == "rate_limited":
+            groq_blocked = True
         results.append(
             {
                 "id": sample["id"],
@@ -200,7 +207,7 @@ def summarize_with_gemini(articles: list[dict]) -> dict:
             response = model.generate_content(
                 full_prompt,
                 generation_config={
-                    "max_output_tokens": int(os.getenv("GEMINI_ISSUE_MAX_TOKENS", "768")),
+                    "max_output_tokens": int(os.getenv("GEMINI_ISSUE_MAX_TOKENS", "4096")),
                     "temperature": 0.1,
                 },
                 request_options=gemini_helper.request_options(),
