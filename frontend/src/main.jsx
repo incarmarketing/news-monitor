@@ -912,6 +912,7 @@ function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring 
 
 function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
   const ranked = [...(issues || [])]
+    .map(normalizeArticleDisplay)
     .sort((a, b) => toneRank(b.tone) - toneRank(a.tone))
     .slice(0, 6);
   return (
@@ -7464,26 +7465,30 @@ function buildIssues(articles, fallback) {
     .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
   const uniqueIssues = [];
   for (const article of important) {
-    const titleKey = normalizeGroupTitle(article.title || "");
+    const displayArticle = normalizeArticleDisplay(article);
+    const titleKey = normalizeGroupTitle(displayArticle.title || "");
     if (uniqueIssues.some((item) => normalizeGroupTitle(item.title || "") === titleKey)) continue;
-    const relatedArticles = dedupeIssueMembers(Array.isArray(article.relatedArticles) && article.relatedArticles.length
-      ? article.relatedArticles
-      : [article]);
+    const relatedArticles = dedupeIssueMembers(Array.isArray(displayArticle.relatedArticles) && displayArticle.relatedArticles.length
+      ? displayArticle.relatedArticles.map(normalizeArticleDisplay)
+      : [displayArticle]);
+    const summaryLines = Array.isArray(displayArticle.summaryLines) && displayArticle.summaryLines.length
+      ? displayArticle.summaryLines
+      : buildArticleSummaryLines(displayArticle);
     uniqueIssues.push({
-      tone: article.tone,
-      category: article.category,
-      source: article.source,
-      representativeSource: article.representativeSource || article.source,
-      title: article.title,
-      summary: article.issueSummary || compactArticleSummary(article),
-      summaryLines: article.issueSummary ? [article.issueSummary] : buildArticleSummaryLines(article),
-      publishedAt: article.time || article.date || "-",
-      link: article.link,
-      issueSummary: article.issueSummary || "",
+      tone: displayArticle.tone,
+      category: displayArticle.category,
+      source: displayArticle.source,
+      representativeSource: displayArticle.representativeSource || displayArticle.source,
+      title: displayArticle.title,
+      summary: displayArticle.issueSummary || summaryLines.join(" "),
+      summaryLines: displayArticle.issueSummary ? [displayArticle.issueSummary] : summaryLines,
+      publishedAt: displayArticle.time || displayArticle.date || "-",
+      link: displayArticle.link,
+      issueSummary: displayArticle.issueSummary || "",
       relatedArticles,
-      relatedCount: Number(article.relatedCount || relatedArticles.length || 1),
-      relatedSourceCount: Number(article.relatedSourceCount || unique(relatedArticles.map((item) => item.source).filter(Boolean)).length || 1),
-      relatedSources: article.relatedSources,
+      relatedCount: Number(displayArticle.relatedCount || relatedArticles.length || 1),
+      relatedSourceCount: Number(displayArticle.relatedSourceCount || unique(relatedArticles.map((item) => item.source).filter(Boolean)).length || 1),
+      relatedSources: displayArticle.relatedSources,
     });
     if (uniqueIssues.length >= 5) break;
   }
