@@ -6169,19 +6169,20 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
       {rows.map((row) => {
-        const related = Array.isArray(row.relatedArticles) ? row.relatedArticles : [];
+        const displayRow = normalizeArticleDisplay(row);
+        const related = Array.isArray(displayRow.relatedArticles) ? displayRow.relatedArticles.map(normalizeArticleDisplay) : [];
         const hasRelated = related.length > 1;
-        const scrapped = isArticleScrapped(row, scraps);
+        const scrapped = isArticleScrapped(displayRow, scraps);
         return (
-          <article key={`${row.id || row.link || row.title}-${row.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
+          <article key={`${displayRow.id || displayRow.link || displayRow.title}-${displayRow.time}`} className={hasRelated ? "feed-row related" : "feed-row"}>
             <div className="feed-main">
               <div className="feed-title-line">
-                <Chip tone={row.tone}>{row.tone}</Chip>
-                <b>{row.title}</b>
+                <Chip tone={displayRow.tone}>{displayRow.tone}</Chip>
+                <b>{displayRow.title}</b>
               </div>
-              <span className="feed-meta">{formatFeedMeta(row, hasRelated)}</span>
-              {!compact && <ArticleSummaryBlock item={row} dense />}
-              {!compact && <ArticleDecisionNote item={row} />}
+              <span className="feed-meta">{formatFeedMeta(displayRow, hasRelated)}</span>
+              {!compact && <ArticleSummaryBlock item={displayRow} dense />}
+              {!compact && <ArticleDecisionNote item={displayRow} />}
               {!compact && hasRelated && (
                 <details className="related-details">
                   <summary>묶인 기사 보기</summary>
@@ -6205,15 +6206,15 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
             </div>
             {!compact && (
               <div className="feed-actions">
-                <ArticleCorrectionControl article={row} onSaved={onFeedbackSaved} />
-                <ArticleScrapButton article={row} scrapped={scrapped} onScrapSaved={onScrapSaved} showLabel />
-                {row.link && row.link !== "#" && (
+                <ArticleCorrectionControl article={displayRow} onSaved={onFeedbackSaved} />
+                <ArticleScrapButton article={displayRow} scrapped={scrapped} onScrapSaved={onScrapSaved} showLabel />
+                {displayRow.link && displayRow.link !== "#" && (
                   <a
-                    href={row.link}
+                    href={displayRow.link}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="기사 열기"
-                    onClick={(event) => openArticleLink(event, row.link)}
+                    onClick={(event) => openArticleLink(event, displayRow.link)}
                   >
                     <ExternalLink /> 기사 열기
                   </a>
@@ -6377,6 +6378,22 @@ function displayTone(value) {
   if (canonical === "positive" || /긍정/.test(text)) return "긍정";
   if (canonical === "exclude" || /제외/.test(text)) return "제외";
   return text || "중립";
+}
+
+function normalizeArticleDisplay(row = {}) {
+  if (!row || typeof row !== "object") return row;
+  if (!isCompetitorBrandReputationAgainstOwn(row)) return row;
+  const relatedArticles = Array.isArray(row.relatedArticles)
+    ? row.relatedArticles.map((item) => ({ ...item, tone: item.tone === "긍정" ? "주의" : item.tone }))
+    : row.relatedArticles;
+  return {
+    ...row,
+    category: row.category === "당사" || row.category === "긍정" ? "경쟁사" : row.category,
+    tone: row.tone === "긍정" || row.tone === "positive" ? "주의" : row.tone || "주의",
+    summary: "",
+    summaryLines: buildBrandReputationDisplayLines(row),
+    relatedArticles,
+  };
 }
 
 function patchCorrectedArticles(rows = [], article = {}, correction = {}) {
@@ -7642,6 +7659,44 @@ function isBrandReputationSummaryText(value = "") {
     && /보험|손해보험|생명보험|금융/.test(text);
 }
 
+function isCompetitorBrandReputationAgainstOwn(item = {}) {
+  const text = summaryHaystack(item);
+  if (!/브랜드평판|평판\s*랭킹|평판\s*순위/.test(text)) return false;
+  if (!/인카금융/.test(text)) return false;
+  if (/인카금융(?:서비스)?[^.。!?]{0,35}(?:1위|선두|최고|최상위)/.test(text)) return false;
+  const competitorFirst = /(한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋)[^.。!?]{0,35}(?:1위|선두|탈환)/i.test(text);
+  const ownFollow = /(?:인카금융(?:서비스)?[^.。!?]{0,45}(?:2위|뒤이어|초박빙|추격)|(?:2위|뒤이어|초박빙|추격)[^.。!?]{0,45}인카금융(?:서비스)?)/.test(text);
+  return competitorFirst && ownFollow;
+}
+
+function brandReputationLeaderName(item = {}) {
+  const text = summaryHaystack(item);
+  const match = text.match(/(한화생명금융서비스|인카금융서비스|인카금융|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋)[^.。!?]{0,35}(?:1위|선두|탈환)/i);
+  return match?.[1] || "";
+}
+
+function buildBrandReputationDisplayLines(item = {}) {
+  const text = summaryHaystack(item);
+  const leader = brandReputationLeaderName(item);
+  const isGa = /GA|보험대리점|독립\s*보험대리점/.test(text);
+  if (isCompetitorBrandReputationAgainstOwn(item)) {
+    return [
+      `${leader || "경쟁사"}가 ${isGa ? "GA" : "보험"} 브랜드평판 1위로 소개되고, 인카금융서비스는 후순위 경쟁사로 언급됐습니다.`,
+      "당사 성과성 보도가 아니라 브랜드평판 순위 변화와 경쟁사 노출 흐름을 확인할 기사입니다.",
+    ];
+  }
+  if (leader && !/인카금융/.test(leader)) {
+    return [
+      `${leader}가 ${isGa ? "GA" : "보험"} 브랜드평판 1위로 소개된 경쟁사 평판 보도입니다.`,
+      "직접 리스크보다 경쟁사 브랜드 노출과 평판 추이를 관찰하는 자료입니다.",
+    ];
+  }
+  if (/인카금융/.test(leader)) {
+    return ["인카금융서비스가 브랜드평판 상위권으로 소개된 당사 평판 보도입니다."];
+  }
+  return [`${isGa ? "GA" : "보험"} 브랜드평판 순위 변화와 소비자 인식 흐름을 다룬 기사입니다.`];
+}
+
 function isInsuranceLossSummaryText(value = "") {
   const text = cleanSummaryText(value);
   return /실손|손해율|적자폭|보험 민원|민원/.test(text) && /보험|손보|생보|계약/.test(text);
@@ -7909,7 +7964,7 @@ function headlineBasedSummary(item = {}) {
     return "경쟁 보험사의 특약 출시 이후 누적 가입 성과와 상품 반응을 다룬 보도입니다.";
   }
   if (topic === "brand-reputation") {
-    return "손해보험사 브랜드평판 순위 변화를 통해 보험사별 소비자 인식과 브랜드 경쟁 흐름을 다룬 기사입니다.";
+    return buildBrandReputationDisplayLines(item)[0] || "보험·GA 브랜드평판 순위 변화를 통해 소비자 인식과 브랜드 경쟁 흐름을 다룬 기사입니다.";
   }
   if (topic === "investment") {
     return "투자의견, 목표가, 주가 흐름처럼 시장 평가 변화가 핵심입니다.";
@@ -7952,8 +8007,7 @@ function buildContextualSummaryLines(item = {}) {
     lines.push("경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다.");
     lines.push("상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다.");
   } else if (topic === "brand-reputation") {
-    lines.push("손해보험사 브랜드평판 순위 변화와 소비자 인식 흐름을 다룬 기사입니다.");
-    lines.push("직접 리스크보다 경쟁사 브랜드 노출과 평판 추이를 관찰하는 자료로 봅니다.");
+    lines.push(...buildBrandReputationDisplayLines(item));
   } else if (topic === "investment") {
     lines.push("증권가 투자의견이나 목표가 조정 등 시장 평가 변화가 기사 핵심입니다.");
   } else if (topic === "settlement-support") {
@@ -9328,7 +9382,7 @@ function articleGroupSeed(article) {
 }
 
 function mergeGroupSeed(current, next) {
-  const tokens = unique([...(current.tokens || []), ...(next.tokens || [])]);
+  const tokens = current.tokens || [];
   return {
     canonical: current.canonical.length >= next.canonical.length ? current.canonical : next.canonical,
     topic: current.topic || next.topic || "",
@@ -9351,6 +9405,10 @@ function areRelatedArticleSeeds(a, b) {
 function articleTopicSignature(article = {}) {
   const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""} ${article.keyword || ""}`);
   const includesAll = (terms) => terms.every((term) => text.includes(normalizeGroupTitle(term)));
+  if (text.includes("브랜드평판")) {
+    const leader = brandReputationLeaderName(article);
+    if (leader) return `브랜드평판-${normalizeGroupTitle(leader)}`;
+  }
   if (
     (text.includes("금감원") || text.includes("금융감독원")) &&
     (text.includes("8대 금융지주") || text.includes("8대 지주") || text.includes("금융지주")) &&
@@ -9377,7 +9435,10 @@ function normalizeGroupTitle(value) {
 }
 
 function articleTokens(value) {
-  const stop = new Set(["기자", "뉴스", "보도", "관련", "통해", "대한", "위해", "올해", "지난", "이번", "추진", "확산", "맞손", "역량", "마음", "지원", "강화", "본격화"]);
+  const stop = new Set([
+    "기자", "뉴스", "보도", "관련", "통해", "대한", "위해", "올해", "지난", "이번", "추진", "확산", "맞손", "역량", "마음", "지원", "강화", "본격화",
+    "보험", "금융", "서비스", "손해보험", "생명보험", "소비자", "협회", "업계", "동향", "기사", "발간", "출시",
+  ]);
   return normalizeGroupTitle(value)
     .split(/\s+/)
     .filter((token) => token.length > 1 && !stop.has(token) && !/^\d+$/.test(token));

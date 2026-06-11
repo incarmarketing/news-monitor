@@ -303,6 +303,7 @@ def build_ai_context_prompt(article: dict) -> str:
 - 전세사기 피해 지원, 기부, 사회공헌, 보호, ESG 지원은 부정이 아닙니다.
 - 당사 주가 하락, 목표가 하향, 정착지원금 증가, 업계 과열 속 명단 언급은 부정이 아니라 주의입니다.
 - 당사 성과, 수상, 우수인증설계사, 브랜드평판, 실적 개선처럼 당사에 우호적인 보도만 긍정입니다.
+- 경쟁사가 브랜드평판 1위이고 인카금융서비스가 2위, 뒤이어, 초박빙 등으로 언급된 보도는 당사 긍정이 아니라 경쟁사/시장 평판 관찰 기사입니다.
 - 당사 부정은 인카금융서비스가 기사에서 직접 비판/조사/제재/불완전판매/소비자 피해/불법 의혹의 대상으로 지목된 경우만 가능합니다.
 - 근거 문장이 없으면 negative로 판정하지 마세요.
 
@@ -474,6 +475,12 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["own_mentioned"] = True
         if result["category"] in {"other", "exclude"}:
             result["category"] = "own"
+
+    if is_competitor_brand_reputation_against_own(article):
+        result["category"] = "competitor"
+        result["tone"] = "caution"
+        result["negative_target"] = "none"
+        result["own_mentioned"] = True
 
     if is_non_business_noise(article):
         result["category"] = "other"
@@ -705,6 +712,8 @@ def analyze_tone(article: dict) -> str:
         return "neutral"
     if is_relief_support_article(article):
         return "positive" if is_own_article(article) and is_own_positive_focus_article(article) else "neutral"
+    if is_competitor_brand_reputation_against_own(article):
+        return "caution"
 
     severe_score = 0
     caution_score = 0
@@ -796,6 +805,8 @@ def is_zero_misconduct_positive_article(article: dict) -> bool:
 def is_own_positive_focus_article(article: dict) -> bool:
     """Only direct company-favorable coverage can be counted as positive."""
     if not is_own_article(article):
+        return False
+    if is_competitor_brand_reputation_against_own(article):
         return False
 
     title = article.get("title", "")
@@ -1108,7 +1119,10 @@ def is_broken_quality_sentence(value: object) -> bool:
 
 def build_contextual_summary_sentences(article: dict) -> list[str]:
     lines: list[str] = []
-    if is_stock_volatility_article(article):
+    if is_competitor_brand_reputation_against_own(article):
+        lines.append("경쟁사가 GA 브랜드평판 1위로 소개되고 인카금융서비스는 후순위 경쟁사로 언급된 평판 기사입니다")
+        lines.append("당사 성과성 보도가 아니라 브랜드평판 순위 변화와 경쟁사 노출 흐름을 확인할 기사입니다")
+    elif is_stock_volatility_article(article):
         lines.append("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다")
         lines.append("직접 경영 이슈보다 거래량과 주가 변동성 관찰이 필요한 주가성 기사입니다")
     elif is_sales_conduct_article(article):
@@ -1183,6 +1197,24 @@ def is_brand_reputation_article(article: dict) -> bool:
     return bool(re.search(r"브랜드평판|평판 판도|소비자 평판|브랜드 경쟁", text, re.I)) and bool(
         re.search(r"보험|손해보험|생명보험|금융", text, re.I)
     )
+
+
+def is_competitor_brand_reputation_against_own(article: dict) -> bool:
+    text = article_summary_text(article)
+    if not re.search(r"브랜드평판|평판\s*랭킹|평판\s*순위", text, re.I):
+        return False
+    if not any(name in text for name in OWN_NAMES):
+        return False
+    own_first = re.search(r"인카금융(?:서비스)?[^.。!?]{0,35}(?:1위|선두|최고|최상위)", text)
+    if own_first:
+        return False
+    competitor_first = re.search(
+        r"(한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋)[^.。!?]{0,35}(?:1위|선두|탈환)",
+        text,
+        re.I,
+    )
+    own_follow = re.search(r"(?:인카금융(?:서비스)?[^.。!?]{0,45}(?:2위|뒤이어|초박빙|추격)|(?:2위|뒤이어|초박빙|추격)[^.。!?]{0,45}인카금융(?:서비스)?)", text)
+    return bool(competitor_first and own_follow)
 
 
 def is_insurance_loss_context_article(article: dict) -> bool:
