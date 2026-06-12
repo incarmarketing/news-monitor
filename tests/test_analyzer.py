@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 import analyzer
 
@@ -177,6 +178,34 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertIn("_summary", analyzed[0])
         self.assertNotIn("당사 직접 언급", analyzed[0]["_summary"])
         self.assertFalse(analyzed[0]["_summary"].endswith("..."))
+
+    def test_analyze_reuses_cached_classification_without_ai_call(self) -> None:
+        articles = [
+            {
+                "title": "인카금융서비스, 우수인증설계사 2262명 배출",
+                "description": "인카금융서비스가 GA업계 최다 규모의 우수인증설계사를 배출했다.",
+                "keyword": "인카금융서비스",
+                "keyword_category": "own",
+                "_category": "own",
+                "_tone": "positive",
+                "_summary": "인카금융서비스가 우수인증설계사 배출 규모를 통해 영업조직 전문성을 부각했습니다.",
+                "_analysis_cache_applied": True,
+                "_ai_context": {
+                    "category": "own",
+                    "tone": "positive",
+                    "own_mentioned": True,
+                    "negative_target": "none",
+                    "evidence": "인카금융서비스가 GA업계 최다 규모의 우수인증설계사를 배출했다.",
+                },
+            }
+        ]
+
+        with patch.object(analyzer, "apply_ai_context_classification", side_effect=AssertionError("AI should not run")):
+            analyzed, metrics = analyzer.analyze(articles, top_n=1)
+
+        self.assertEqual(analyzed[0]["_tone"], "positive")
+        self.assertEqual(metrics["analysis_cache_hits"], 1)
+        self.assertEqual(metrics["ai_context_reviews"], 0)
 
     def test_unambiguous_competitor_words_ignore_plain_mega_noise(self) -> None:
         self.assertFalse(analyzer.contains_unambiguous_competitor_word("메가 히트 상품 출시"))

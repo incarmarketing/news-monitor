@@ -25,6 +25,7 @@ import news_collector
 import slack_notify
 from supabase_store import (
     apply_classification_feedback_to_articles,
+    apply_cached_analysis_to_articles,
     article_hash as supabase_article_hash,
     load_latest_negative_watch_run,
     load_recent_negative_articles,
@@ -200,9 +201,9 @@ def is_within_minutes(article: dict, minutes_back: int) -> bool:
 
 
 def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
+    apply_classification_feedback_to_articles(articles)
+    apply_cached_analysis_to_articles(articles)
     analyzed, metrics = analyzer.analyze(articles, top_n=max(len(articles), 1))
-    if apply_classification_feedback_to_articles(analyzed):
-        metrics = analyzer.build_metrics(analyzed, analyzed)
     negatives = [
         article
         for article in analyzed

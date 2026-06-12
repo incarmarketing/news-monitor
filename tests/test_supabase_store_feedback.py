@@ -75,6 +75,31 @@ class ClassificationFeedbackTests(unittest.TestCase):
 
         self.assertEqual(article["_tone"], "positive")
 
+    def test_article_analysis_cache_applies_stored_context(self) -> None:
+        link = "https://example.com/positive"
+        article = {"title": "인카금융서비스 우수인증설계사 배출", "link": link}
+        article_hash = hashlib.sha256(link.encode("utf-8")).hexdigest()
+        cache = {
+            article_hash: {
+                "article_hash": article_hash,
+                "summary": "인카금융서비스가 우수인증설계사 배출 성과를 통해 영업조직 전문성을 부각했습니다.",
+                "category": "own",
+                "tone": "positive",
+                "own_mentioned": True,
+                "negative_target": "none",
+                "classification_evidence": "인카금융서비스 우수인증설계사 배출",
+                "classification_provider": "gemini-2.5-flash",
+            }
+        }
+
+        applied = supabase_store.apply_article_analysis_cache(article, cache)
+
+        self.assertTrue(applied)
+        self.assertTrue(article["_analysis_cache_applied"])
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_tone"], "positive")
+        self.assertIn("우수인증설계사", article["_summary"])
+
 
 if __name__ == "__main__":
     unittest.main()

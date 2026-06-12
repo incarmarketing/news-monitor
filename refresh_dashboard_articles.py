@@ -69,6 +69,8 @@ def main() -> None:
         print(f"Dashboard refresh: no articles in last {args.minutes} minutes.")
         return
 
+    supabase_store.apply_classification_feedback_to_articles(articles)
+    supabase_store.apply_cached_analysis_to_articles(articles)
     analyzed, metrics = analyzer.analyze(articles, top_n=max(len(articles), 1))
     supabase_store.save_dashboard_articles(
         analyzed,

@@ -468,6 +468,135 @@ def apply_classification_feedback_to_articles(
     return applied
 
 
+def load_article_analysis_cache(articles: list[dict], batch_size: int = 80) -> dict[str, dict]:
+    """Return existing article analysis keyed by article_hash.
+
+    This keeps scheduled jobs light: previously analyzed articles reuse stored
+    classification/summary values instead of spending AI tokens again.
+    """
+    if not is_enabled() or not articles:
+        return {}
+    hashes = []
+    for article in articles:
+        try:
+            value = article_hash(article)
+        except Exception:
+            continue
+        if value:
+            hashes.append(value)
+    hashes = list(dict.fromkeys(hashes))
+    if not hashes:
+        return {}
+
+    columns = (
+        "article_hash,title,link,source,keyword,summary,score,category,tone,"
+        "own_mentioned,negative_target,classification_evidence,classification_reason,"
+        "classification_confidence,classification_provider,clipping_recommended,clipping_reason,"
+        "raw,created_at"
+    )
+    fallback_columns = "article_hash,title,link,source,keyword,summary,score,category,tone,raw,created_at"
+    result: dict[str, dict] = {}
+    for index in range(0, len(hashes), batch_size):
+        batch = hashes[index : index + batch_size]
+        hash_filter = ",".join(batch)
+        try:
+            rows = request(
+                "GET",
+                "news_articles?"
+                f"select={columns}"
+                f"&article_hash=in.({quote(hash_filter, safe=',')})"
+                "&order=created_at.desc",
+            ).json()
+        except Exception as error:
+            try:
+                rows = request(
+                    "GET",
+                    "news_articles?"
+                    f"select={fallback_columns}"
+                    f"&article_hash=in.({quote(hash_filter, safe=',')})"
+                    "&order=created_at.desc",
+                ).json()
+            except Exception as fallback_error:
+                print(f"Supabase article analysis cache skipped: {error}; fallback: {fallback_error}")
+                continue
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            key = str(row.get("article_hash") or "").strip()
+            if key and key not in result:
+                result[key] = row
+    return result
+
+
+def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) -> bool:
+    if not cache_index or article.get("_feedback_applied"):
+        return False
+    try:
+        key = article_hash(article)
+    except Exception:
+        return False
+    row = cache_index.get(key)
+    if not row:
+        return False
+
+    category = str(row.get("category") or "").strip()
+    tone = str(row.get("tone") or "").strip()
+    summary = str(row.get("summary") or "").strip()
+    if category not in analyzer.AI_CONTEXT_CATEGORIES - {"exclude"}:
+        category = ""
+    if tone not in analyzer.AI_CONTEXT_TONES - {"exclude"}:
+        tone = ""
+    if not category and not tone and not summary:
+        return False
+
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    cached_context = raw.get("_ai_context") if isinstance(raw.get("_ai_context"), dict) else raw.get("ai_context")
+    cached_context = cached_context if isinstance(cached_context, dict) else {}
+    context = {
+        **cached_context,
+        "category": category or cached_context.get("category") or article.get("_category") or article.get("category") or "",
+        "tone": tone or cached_context.get("tone") or article.get("_tone") or article.get("tone") or "",
+        "own_mentioned": row.get("own_mentioned", cached_context.get("own_mentioned")),
+        "negative_target": row.get("negative_target") or cached_context.get("negative_target") or "none",
+        "evidence": row.get("classification_evidence") or cached_context.get("evidence") or "",
+        "reason": row.get("classification_reason") or cached_context.get("reason") or "",
+        "confidence": row.get("classification_confidence") or cached_context.get("confidence") or 0,
+        "provider": row.get("classification_provider") or cached_context.get("provider") or "news_articles_cache",
+        "clipping_recommended": row.get("clipping_recommended", cached_context.get("clipping_recommended")),
+        "clipping_reason": row.get("clipping_reason") or cached_context.get("clipping_reason") or "",
+    }
+    if category:
+        article["_category"] = category
+        article["category"] = category
+    if tone:
+        article["_tone"] = tone
+        article["tone"] = tone
+    if summary:
+        article["_summary"] = summary
+    if row.get("score") is not None:
+        article["_cached_score"] = row.get("score")
+    article["_ai_context"] = context
+    article["_analysis_cache_applied"] = True
+    article["_analysis_cache_source"] = "news_articles"
+    return True
+
+
+def apply_cached_analysis_to_articles(
+    articles: list[dict],
+    cache_index: dict[str, dict] | None = None,
+) -> int:
+    cache_index = cache_index if cache_index is not None else load_article_analysis_cache(articles)
+    if not cache_index:
+        return 0
+    applied = 0
+    for article in articles:
+        if apply_article_analysis_cache(article, cache_index):
+            applied += 1
+    if applied:
+        print(f"Article analysis cache applied: {applied} article(s)")
+    return applied
+
+
 def parse_pub_date(value: str) -> str | None:
     if not value:
         return None

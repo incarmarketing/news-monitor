@@ -186,9 +186,9 @@ AI_NEGATIVE_TARGETS = {"own", "industry", "competitor", "policy", "none"}
 def ai_context_budget() -> int:
     """Limit per-run AI classification calls so scheduled jobs stay predictable."""
     try:
-        return max(0, int(__import__("os").getenv("AI_CONTEXT_MAX_ARTICLES", "35")))
+        return max(0, int(__import__("os").getenv("AI_CONTEXT_MAX_ARTICLES", "18")))
     except ValueError:
-        return 35
+        return 18
 
 
 def ai_context_enabled() -> bool:
@@ -224,8 +224,6 @@ def should_pro_review_ai_context(article: dict, context: dict) -> bool:
         return True
     if rule_category == "own" and rule_tone in {"negative", "caution"}:
         return True
-    if normalized["tone"] == "negative":
-        return True
     if confidence and confidence < 0.68 and (normalized["own_mentioned"] or normalized["tone"] in {"negative", "caution"}):
         return True
     return False
@@ -234,15 +232,25 @@ def should_pro_review_ai_context(article: dict, context: dict) -> bool:
 def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
     remaining_ai_reviews = ai_context_budget() if ai_context_enabled() else 0
     for article in articles:
-        article["_category"] = categorize(article)
-        article["_tone"] = analyze_tone(article)
-        if remaining_ai_reviews and should_ai_context_review(article):
-            remaining_ai_reviews -= 1
-            apply_ai_context_classification(article)
+        if article.get("_feedback_applied"):
+            article["_category"] = article.get("_category") or article.get("category") or categorize(article)
+            article["_tone"] = article.get("_tone") or article.get("tone") or analyze_tone(article)
+            article["_ai_context"] = normalized_ai_context(article, article.get("_ai_context"))
+        elif article.get("_analysis_cache_applied"):
+            article["_category"] = article.get("_category") or article.get("category") or categorize(article)
+            article["_tone"] = article.get("_tone") or article.get("tone") or analyze_tone(article)
+            apply_context_safety_guardrails(article, article.get("_ai_context"))
         else:
-            apply_context_safety_guardrails(article)
+            article["_category"] = categorize(article)
+            article["_tone"] = analyze_tone(article)
+            if remaining_ai_reviews and should_ai_context_review(article):
+                remaining_ai_reviews -= 1
+                apply_ai_context_classification(article)
+            else:
+                apply_context_safety_guardrails(article)
         article["_score"] = score_article(article)
-        article["_summary"] = build_quality_summary(article)
+        if not article.get("_summary") or is_bad_cached_summary(article.get("_summary")):
+            article["_summary"] = build_quality_summary(article)
 
     articles.sort(key=lambda x: x.get("_score", 0), reverse=True)
     clustered = cluster_articles(articles[:top_n])
@@ -278,8 +286,12 @@ def should_ai_context_review(article: dict) -> bool:
     text = article_context_text(article)
     if is_own_article(article):
         return True
-    if category in {"regulation", "competitor", "industry"} and tone in {"negative", "caution", "positive"}:
+    if category == "regulation":
+        return tone in {"negative", "caution"} or has_priority_policy_context(text)
+    if category in {"competitor", "industry"} and is_competitor_brand_reputation_against_own(article):
         return True
+    if category in {"competitor", "industry"} and tone in {"negative", "caution"}:
+        return has_material_business_context(text)
     if any(word in text for word in SEVERE_NEGATIVE_WORDS + CAUTION_WORDS + RISK_CONTEXT_WORDS):
         return has_material_business_context(text)
     return False
@@ -368,6 +380,7 @@ def apply_ai_context_classification(article: dict) -> bool:
             context = pro_context
 
     article["_ai_context"] = apply_context_safety_guardrails(article, context)
+    article["_ai_context_reviewed"] = True
     return True
 
 
@@ -677,6 +690,16 @@ def has_material_business_context(text: str) -> bool:
     return any(word in text for word in MATERIAL_BUSINESS_CONTEXT_WORDS)
 
 
+def has_priority_policy_context(text: str) -> bool:
+    return bool(
+        re.search(
+            r"1200%|판매수수료|정착지원금|불완전판매|부당승환|내부통제|보험대리점|GA|설계사|모집수수료|금융감독원|금융위원회",
+            text,
+            re.I,
+        )
+    )
+
+
 def is_non_business_noise(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     title = article.get("title", "")
@@ -954,6 +977,8 @@ def normalize_title(title: str) -> str:
 def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
     category_count = Counter(a.get("_category", "other") for a in all_articles)
     tone_count = Counter(a.get("_tone", "neutral") for a in all_articles)
+    analysis_cache_hits = sum(1 for a in all_articles if a.get("_analysis_cache_applied"))
+    ai_context_reviews = sum(1 for a in all_articles if a.get("_ai_context_reviewed"))
     own_tone_count = Counter(
         a.get("_tone", "neutral")
         for a in all_articles
@@ -989,6 +1014,9 @@ def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
             "negative": own_tone_count.get("negative", 0),
         },
         "risk_level": calculate_risk_level(own_negative),
+        "analysis_cache_hits": analysis_cache_hits,
+        "ai_context_reviews": ai_context_reviews,
+        "ai_context_budget": ai_context_budget(),
     }
 
 
@@ -1094,6 +1122,17 @@ def is_generic_quality_sentence(value: object) -> bool:
     if not text or len(text) < 8:
         return True
     return any(phrase in text for phrase in GENERIC_SUMMARY_PHRASES)
+
+
+def is_bad_cached_summary(value: object) -> bool:
+    text = clean_summary_fragment(value)
+    if not text:
+        return True
+    if len(text) > 240:
+        return True
+    if text.endswith("...") or text.endswith("…"):
+        return True
+    return is_generic_quality_sentence(text) or is_broken_quality_sentence(text)
 
 
 def unique_quality_sentences(lines: list[str]) -> list[str]:

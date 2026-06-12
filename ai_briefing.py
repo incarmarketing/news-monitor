@@ -67,12 +67,10 @@ TONE_LABELS = {
 
 def run_briefing(articles: list[dict]) -> Path:
     console.print("\n[cyan]분석 단계: 스코어링 / 카테고리화 / 유사 기사 묶기[/]")
+    feedback_index = supabase_store.load_classification_feedback_index()
+    supabase_store.apply_classification_feedback_to_articles(articles, feedback_index)
+    supabase_store.apply_cached_analysis_to_articles(articles)
     clustered, metrics = analyzer.analyze(articles, top_n=config.TOP_N_FOR_BRIEFING)
-    if supabase_store.apply_classification_feedback_to_articles(articles):
-        articles.sort(key=lambda item: item.get("_score", 0), reverse=True)
-        clustered = analyzer.cluster_articles(articles[: config.TOP_N_FOR_BRIEFING])
-        clustered.sort(key=lambda item: item.get("_score", 0), reverse=True)
-        metrics = analyzer.build_metrics(articles, clustered)
     assign_report_ids(clustered)
     yesterday = archiver.load_yesterday()
 
@@ -83,7 +81,8 @@ def run_briefing(articles: list[dict]) -> Path:
         f"  수집 {metrics['total_collected']}건 -> 분석 기사 {metrics['total_after_cluster']}건 "
         f"(당사 {metrics['by_category']['own']} "
         f"긍정 {own_tone.get('positive', 0)}·중립 {own_tone.get('neutral', 0)}·부정 {own_tone.get('negative', 0)} / "
-        f"경쟁·업계 {market_count} / 리스크 [{risk_color}]{metrics['risk_level']}[/])"
+        f"경쟁·업계 {market_count} / 리스크 [{risk_color}]{metrics['risk_level']}[/] / "
+        f"캐시 {metrics.get('analysis_cache_hits', 0)}·AI {metrics.get('ai_context_reviews', 0)})"
     )
 
     report = generate_report(clustered, metrics, yesterday)
