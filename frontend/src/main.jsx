@@ -6923,8 +6923,8 @@ function AiUsagePanel({ status }) {
     ? Math.round(reserveValues.reduce((sum, value) => sum + value, 0) / reserveValues.length)
     : null;
   const meterFill = Number.isFinite(groqReserve) ? groqReserve : 0;
-  const unknownLabel = groqHasKey ? "호출 전" : "키 없음";
-  const unknownValue = groqHasKey ? "요약 호출 후 표시" : "GitHub Secret 확인";
+  const unknownLabel = groqHasKey ? "미수신" : "키 없음";
+  const unknownValue = groqHasKey ? "응답 헤더 없음" : "GitHub Secret 확인";
   const geminiReport = gemini.latest_report || {};
   const geminiState = formatGeminiState(gemini, geminiReport);
   const geminiDetail = formatGeminiDetail(gemini, geminiReport);
@@ -6942,7 +6942,7 @@ function AiUsagePanel({ status }) {
           </div>
         </div>
         <div className="ai-power-copy">
-          <span>AI</span>
+          <span>백업 AI</span>
           <b>{groq.model || "-"}</b>
         </div>
       </div>
@@ -6961,7 +6961,7 @@ function AiUsagePanel({ status }) {
   );
 }
 
-function AiMeterRow({ label, percent, value, mode = "remaining", emptyStatus = "대기" }) {
+function AiMeterRow({ label, percent, value, mode = "remaining", emptyStatus = "미수신" }) {
   const fill = Number.isFinite(percent) ? percent : 0;
   const status = percent === null || percent === undefined
     ? emptyStatus
@@ -7000,7 +7000,7 @@ function clampPercent(value) {
   return Math.max(0, Math.min(100, value));
 }
 
-function formatLimitPair(remaining, limit, fallback = "다음 호출 후 표시") {
+function formatLimitPair(remaining, limit, fallback = "응답 헤더 없음") {
   if (remaining === undefined && limit === undefined) return fallback;
   const left = remaining === undefined ? "-" : formatCompactNumber(remaining);
   const right = limit === undefined ? "-" : formatCompactNumber(limit);
