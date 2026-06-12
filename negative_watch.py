@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 import analyzer
 import config
 import news_collector
-from kakao_report_send import KAKAO_API, refresh_access_token
+import slack_notify
 from supabase_store import (
     apply_classification_feedback_to_articles,
     article_hash as supabase_article_hash,
@@ -587,21 +587,10 @@ def fallback_risk_response_draft(draft_type: str, article: dict, issue: str) -> 
     )
 
 
-def send_kakao_alert(access_token: str, text: str, link_url: str) -> dict:
-    template = {
-        "object_type": "text",
-        "text": text,
-        "link": {"web_url": link_url, "mobile_web_url": link_url},
-        "button_title": "기사 확인",
-    }
-    response = requests.post(
-        f"{KAKAO_API}/v2/api/talk/memo/default/send",
-        headers={"Authorization": f"Bearer {access_token}"},
-        data={"template_object": json.dumps(template, ensure_ascii=False)},
-        timeout=15,
-    )
-    response.raise_for_status()
-    return response.json()
+def send_slack_alert(text: str, link_url: str, article: dict) -> dict:
+    title = clean_alert_title(article.get("title", ""), 100) or "부정/주의 기사 감지"
+    article_url = str(article.get("link") or "").strip()
+    return slack_notify.send_alert(text, link_url, title=title, article_url=article_url)
 
 
 def mark_alerts_sent(state: dict, sent: set[str], articles: list[dict], sent_at: str) -> None:
@@ -750,7 +739,7 @@ def main() -> None:
             status="dry_run",
             message="dry run",
         )
-        print("Dry run: Kakao alert was not sent.")
+        print("Dry run: Slack alert was not sent.")
         print(build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives)))
         return
 
@@ -777,8 +766,7 @@ def main() -> None:
         return
     state_persisted = False
     try:
-        token = refresh_access_token()
-        result = send_kakao_alert(token, message, link)
+        result = send_slack_alert(message, link, new_negatives[0])
         mark_alerts_sent(state, sent, new_negatives, scanned_at)
         save_state(state)
         state_persisted = True
@@ -789,6 +777,7 @@ def main() -> None:
             link_url=link,
             status="success",
             provider_response=result,
+            channel="slack",
         )
         finish_watch_run(
             scanned_at=scanned_at,
@@ -799,7 +788,7 @@ def main() -> None:
             status="alert_sent",
             message=f"{len(new_negatives)} new negative article(s)",
         )
-        print("Kakao negative alert result:", result)
+        print("Slack negative alert result:", result)
     except Exception as error:
         save_notification_send(
             message_type="negative_alert",
@@ -808,6 +797,7 @@ def main() -> None:
             link_url=link,
             status="failed",
             error=str(error),
+            channel="slack",
         )
         finish_watch_run(
             scanned_at=scanned_at,

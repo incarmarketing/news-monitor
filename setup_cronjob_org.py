@@ -108,7 +108,7 @@ def specs() -> list[CronSpec]:
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
-                "inputs": {"period_reports": "none", "send_kakao": "true", "report_slot": "08"},
+                "inputs": {"period_reports": "none", "send_slack": "true", "report_slot": "08"},
             },
             minutes=primary_minute,
             hours=[8],
@@ -121,7 +121,7 @@ def specs() -> list[CronSpec]:
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
-                "inputs": {"period_reports": "none", "send_kakao": "true", "report_slot": "13"},
+                "inputs": {"period_reports": "none", "send_slack": "true", "report_slot": "13"},
             },
             minutes=primary_minute,
             hours=[13],
@@ -134,7 +134,7 @@ def specs() -> list[CronSpec]:
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
-                "inputs": {"period_reports": "none", "send_kakao": "true", "report_slot": "18"},
+                "inputs": {"period_reports": "none", "send_slack": "true", "report_slot": "18"},
             },
             minutes=primary_minute,
             hours=[18],
@@ -147,7 +147,7 @@ def specs() -> list[CronSpec]:
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
-                "inputs": {"period_reports": "weekly", "send_kakao": "true", "report_slot": "auto"},
+                "inputs": {"period_reports": "weekly", "send_slack": "true", "report_slot": "auto"},
             },
             minutes=[0],
             hours=[7],
@@ -160,7 +160,7 @@ def specs() -> list[CronSpec]:
             workflow="news-briefing.yml",
             body={
                 "ref": "main",
-                "inputs": {"period_reports": "monthly", "send_kakao": "true", "report_slot": "auto"},
+                "inputs": {"period_reports": "monthly", "send_slack": "true", "report_slot": "auto"},
             },
             minutes=[0],
             hours=[7],

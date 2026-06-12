@@ -142,8 +142,11 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
   const periodReports = authenticated
     ? sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none")
     : "none";
-  const sendKakao = authenticated
-    ? payload.send_kakao === true || String(payload.send_kakao || "").toLowerCase() === "true"
+  const sendSlack = authenticated
+    ? payload.send_slack === true
+      || String(payload.send_slack || "").toLowerCase() === "true"
+      || payload.send_kakao === true
+      || String(payload.send_kakao || "").toLowerCase() === "true"
     : false;
   const reportSlot = authenticated
     ? sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto")
@@ -156,7 +159,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
   const cooldownMinutes = authenticated
     ? numberEnv("DASHBOARD_REFRESH_COOLDOWN_MINUTES", 2)
     : numberEnv("DASHBOARD_PUBLIC_REFRESH_COOLDOWN_MINUTES", 5);
-  const runKey = dashboardRefreshRunKey(workflow, periodReports, sendKakao, reportSlot, authenticated);
+  const runKey = dashboardRefreshRunKey(workflow, periodReports, sendSlack, reportSlot, authenticated);
   const recentDispatch = await hasRecentDashboardDispatch(runKey, cooldownMinutes);
   if (recentDispatch.active) {
     return jsonResponse({
@@ -190,7 +193,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
       },
       body: JSON.stringify({
         ref,
-        inputs: workflowInputs(workflow, periodReports, sendKakao, reportSlot),
+        inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot),
       }),
     },
   );
@@ -212,7 +215,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     ok: true,
     workflow,
     ref,
-    inputs: workflowInputs(workflow, periodReports, sendKakao, reportSlot),
+    inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot),
     requested_by: session.employee_no || "dashboard_public_refresh",
     requested_at: new Date().toISOString(),
   });
@@ -221,12 +224,12 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
 function dashboardRefreshRunKey(
   workflow: string,
   periodReports: string,
-  sendKakao: boolean,
+  sendSlack: boolean,
   reportSlot: string,
   authenticated: boolean,
 ) {
   const scope = authenticated ? "auth" : "public";
-  return `dashboard_refresh:${scope}:${workflow}:${periodReports}:${sendKakao ? "send" : "nosend"}:${reportSlot}`;
+  return `dashboard_refresh:${scope}:${workflow}:${periodReports}:${sendSlack ? "send" : "nosend"}:${reportSlot}`;
 }
 
 async function hasRecentDashboardDispatch(runKey: string, cooldownMinutes: number) {
@@ -289,11 +292,12 @@ function sanitizeWorkflow(value: unknown) {
   return ["news-briefing.yml", "pages-dashboard.yml"].includes(workflow) ? workflow : "news-briefing.yml";
 }
 
-function workflowInputs(workflow: string, periodReports: string, sendKakao: boolean, reportSlot: string) {
+function workflowInputs(workflow: string, periodReports: string, sendSlack: boolean, reportSlot: string) {
   if (workflow === "pages-dashboard.yml") return {};
   return {
     period_reports: periodReports,
-    send_kakao: String(sendKakao),
+    send_slack: String(sendSlack),
+    send_kakao: String(sendSlack),
     report_slot: reportSlot,
   };
 }

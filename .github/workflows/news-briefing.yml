@@ -13,14 +13,24 @@ on:
           - weekly
           - monthly
           - both
-      send_kakao:
-        description: "Send KakaoTalk notification"
+      send_slack:
+        description: "Send Slack notification"
         required: true
         default: true
         type: boolean
-      force_kakao_send:
+      send_kakao:
+        description: "Legacy alias for Slack notification"
+        required: false
+        default: false
+        type: boolean
+      force_slack_send:
         description: "Force resend even when the same report was already sent"
         required: true
+        default: false
+        type: boolean
+      force_kakao_send:
+        description: "Legacy alias for forced Slack resend"
+        required: false
         default: false
         type: boolean
       report_slot:
@@ -35,7 +45,7 @@ on:
           - "13"
           - "18"
       backfill_only:
-        description: "Archive missed slot without Pages deploy or Kakao send"
+        description: "Archive missed slot without Pages deploy or notification send"
         required: true
         default: false
         type: boolean
@@ -99,6 +109,7 @@ jobs:
           SCHEDULE_CRON: ${{ github.event.schedule }}
           MANUAL_REPORT_SLOT: ${{ github.event.inputs.report_slot }}
           MANUAL_BACKFILL_ONLY: ${{ github.event.inputs.backfill_only }}
+          FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.force_slack_send == 'true' || github.event.inputs.force_kakao_send == 'true') && '1' || '' }}
           FORCE_KAKAO_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_kakao_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -125,7 +136,7 @@ jobs:
           npm run build
 
       - name: Check Supabase write secret
-        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-kakao]'))
+        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-slack]') || contains(github.event.head_commit.message, '[send-kakao]'))
         run: |
           if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
             echo "::error::SUPABASE_SERVICE_ROLE_KEY secret is missing. Daily reports would be sent without dashboard DB persistence."
@@ -134,16 +145,8 @@ jobs:
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-      - name: Check Kakao token before report work
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.send_kakao == 'true') || contains(github.event.head_commit.message, '[send-kakao]'))
-        run: python kakao_report_send.py --check-token
-        env:
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
-          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
-
       - name: Generate briefing
-        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-kakao]'))
+        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-slack]') || contains(github.event.head_commit.message, '[send-kakao]'))
         run: python run_once.py
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -256,53 +259,52 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Send KakaoTalk link
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true') && ((github.event_name == 'schedule' && steps.guard.outputs.should_period != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none' && github.event.inputs.send_kakao == 'true') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[send-kakao]')))
-        run: python kakao_report_send.py
+      - name: Send Slack report link
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true') && ((github.event_name == 'schedule' && steps.guard.outputs.should_period != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none' && (github.event.inputs.send_slack == 'true' || github.event.inputs.send_kakao == 'true')) || (github.event_name == 'push' && (contains(github.event.head_commit.message, '[send-slack]') || contains(github.event.head_commit.message, '[send-kakao]'))))
+        run: python slack_notify.py daily
         env:
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
-          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
+          SLACK_AI_USAGE_WEBHOOK_URL: ${{ secrets.SLACK_AI_USAGE_WEBHOOK_URL }}
           REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
           REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
-          FORCE_KAKAO_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_kakao_send == 'true' && '1' || '' }}
+          FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.force_slack_send == 'true' || github.event.inputs.force_kakao_send == 'true') && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
-      - name: Send period KakaoTalk link
-        if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && github.event.inputs.send_kakao == 'true'))
+      - name: Send period Slack report link
+        if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && (github.event.inputs.send_slack == 'true' || github.event.inputs.send_kakao == 'true')))
         run: |
           PERIOD="${{ github.event.inputs.period_reports }}"
           REPORT_MONTH="${{ github.event.inputs.report_month }}"
 
           if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
-            python kakao_period_send.py weekly
+            python slack_notify.py period weekly
           fi
           if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%d)" = "01" ]; then
-            python kakao_period_send.py monthly
+            python slack_notify.py period monthly
           fi
           if [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
-            python kakao_period_send.py weekly
+            python slack_notify.py period weekly
           fi
           if [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
             if [ -n "$REPORT_MONTH" ]; then
-              python kakao_period_send.py monthly "$REPORT_MONTH"
+              python slack_notify.py period monthly "$REPORT_MONTH"
             else
-              python kakao_period_send.py monthly
+              python slack_notify.py period monthly
             fi
           fi
         env:
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
-          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
-          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
           REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Persist run archive
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-kakao]'))
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]') || contains(github.event.head_commit.message, '[send-kakao]'))
         run: |
           if [ "${{ steps.guard.outputs.should_mark }}" = "true" ]; then
             python schedule_guard.py mark "${{ steps.guard.outputs.marker_path }}"

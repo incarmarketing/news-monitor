@@ -128,13 +128,17 @@ def begin_manual_or_push(event_name: str) -> None:
         marker_path = marker.as_posix()
         should_mark = "true"
         backfill_only = os.getenv("MANUAL_BACKFILL_ONLY", "").strip().lower() in {"1", "true", "yes", "y"}
+        force_send = any(
+            os.getenv(key, "").strip().lower() in {"1", "true", "yes", "y"}
+            for key in ("FORCE_SLACK_SEND", "FORCE_KAKAO_SEND")
+        )
         if is_period_dispatch and not period_report_due(now):
             should_run = "false"
             print("Period report dispatch skipped: not Monday or first day of month.")
-        elif not backfill_only and not os.getenv("FORCE_KAKAO_SEND") and slot_is_complete(today, manual_slot, marker):
+        elif not backfill_only and not force_send and slot_is_complete(today, manual_slot, marker):
             should_run = "false"
             print(f"Already completed manually dispatched slot: {marker}")
-        elif not backfill_only and not os.getenv("FORCE_KAKAO_SEND") and slot_recently_failed(today, manual_slot, now):
+        elif not backfill_only and not force_send and slot_recently_failed(today, manual_slot, now):
             should_run = "false"
             print(f"Manual dispatch skipped during failure cooldown: {marker}")
         elif backfill_only:

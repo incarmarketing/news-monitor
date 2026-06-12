@@ -362,7 +362,7 @@ function App() {
         await triggerNewsCollection({
           workflow,
           period_reports: "none",
-          send_kakao: false,
+          send_slack: false,
           report_slot: "auto",
           source: options.source || "dashboard_manual_refresh",
         });
