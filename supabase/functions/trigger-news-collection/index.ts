@@ -312,7 +312,11 @@ async function dailyReportSucceeded(date: string, slot: string) {
     "notification_sends",
     `select=id&message_type=eq.daily_report&title=eq.${encodeURIComponent(title)}&status=eq.success&limit=1`,
   );
-  return reportRows.length > 0 && sendRows.length > 0;
+  const jobRows = await selectRows(
+    "job_runs",
+    `select=run_key&run_key=eq.${encodeURIComponent(`daily_report:${date}:${slot}`)}&status=eq.success&limit=1`,
+  );
+  return reportRows.length > 0 && (sendRows.length > 0 || jobRows.length > 0);
 }
 
 async function periodReportSucceeded(period: PeriodReportKind) {

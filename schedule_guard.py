@@ -201,10 +201,17 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
             "&status=eq.success"
             "&limit=1",
         )
+        job_rows = supabase_select(
+            "job_runs",
+            "select=run_key"
+            f"&run_key=eq.{quote(f'daily_report:{report_date}:{slot}')}"
+            "&status=eq.success"
+            "&limit=1",
+        )
     except RuntimeError as error:
         print(f"Supabase completion check unavailable: {error}")
         return None
-    return bool(report_rows) and bool(send_rows)
+    return bool(report_rows) and (bool(send_rows) or bool(job_rows))
 
 
 def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:

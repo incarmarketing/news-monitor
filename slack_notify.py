@@ -214,9 +214,7 @@ def force_send_enabled() -> bool:
 
 
 def notification_log_title(title: str) -> str:
-    if not force_send_enabled():
-        return title
-    return f"{title} {K['resend']} {datetime.now(KST):%Y%m%d%H%M%S}"
+    return title
 
 
 def forced_resend_dedupe_key(message_type: str, title: str) -> str | None:
@@ -446,6 +444,9 @@ def build_ai_usage_payload(report: dict) -> tuple[str, dict]:
 def maybe_send_ai_usage_alert(report: dict) -> None:
     if not needs_ai_usage_alert(report):
         return
+    if not os.getenv("SLACK_AI_USAGE_WEBHOOK_URL", "").strip():
+        print("AI usage alert skipped: SLACK_AI_USAGE_WEBHOOK_URL is not configured.")
+        return
     title = ai_usage_alert_title(report)
     if not force_send_enabled() and notification_already_sent("ai_usage_alert", title):
         print(f"AI usage alert already sent: {title}")
@@ -499,6 +500,7 @@ def send_daily() -> None:
             provider_response=result,
             channel="slack",
             dedupe_key=log_dedupe_key,
+            require_log=False,
         )
         print("Slack daily report result:", result)
         print("Report link:", link)
@@ -534,7 +536,7 @@ def send_period(period: str, report_month: str = "") -> None:
             status="success",
             provider_response=result,
             channel="slack",
-            require_log=True,
+            require_log=False,
         )
         print("Slack period report result:", result)
         print("Period report link:", link)
