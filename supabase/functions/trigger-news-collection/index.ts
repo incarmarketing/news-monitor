@@ -106,66 +106,144 @@ async function runWatchdog(source: string) {
 async function ensureDailyReport(slot: string, source: string) {
   const date = kstDate();
   const runKey = `daily_report:${date}:${slot}`;
+  const dispatchKey = `watchdog:daily_report:${date}:${slot}`;
   if (await dailyReportSucceeded(date, slot)) {
     return { job: "daily_report", slot, date, dispatched: false, reason: "already_success" };
   }
   if (await hasFreshDispatch(runKey)) {
-    return { job: "daily_report", slot, date, dispatched: false, reason: "dispatch_in_flight" };
+    return { job: "daily_report", slot, date, dispatched: false, reason: "report_run_in_flight" };
+  }
+  if (await hasFreshWatchdogDispatch(dispatchKey)) {
+    return { job: "daily_report", slot, date, dispatched: false, reason: "watchdog_dispatch_in_flight" };
   }
 
   await recordJobRun({
-    run_key: runKey,
-    job_type: "daily_report",
+    run_key: dispatchKey,
+    job_type: "watchdog",
     report_date: date,
     report_slot: slot,
     expected_at: expectedAtIso(slot),
-    status: "watchdog_dispatched",
+    status: "started",
     started_at: new Date().toISOString(),
+    finished_at: null,
     last_seen_at: new Date().toISOString(),
     triggered_by: "supabase_watchdog",
     provider: source,
     workflow: "news-briefing.yml",
-    details: { reason: "missing_daily_report_or_send", source },
+    details: { reason: "missing_daily_report_or_send", target_run_key: runKey, source },
   });
-  await dispatchWorkflow("news-briefing.yml", {
-    period_reports: "none",
-    send_kakao: "true",
-    report_slot: slot,
-    backfill_only: "false",
-  });
+  try {
+    const dispatch = await dispatchWorkflow("news-briefing.yml", {
+      period_reports: "none",
+      send_kakao: "true",
+      report_slot: slot,
+      backfill_only: "false",
+    });
+    await recordJobRun({
+      run_key: dispatchKey,
+      job_type: "watchdog",
+      report_date: date,
+      report_slot: slot,
+      expected_at: expectedAtIso(slot),
+      status: "success",
+      finished_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString(),
+      triggered_by: "supabase_watchdog",
+      provider: source,
+      workflow: "news-briefing.yml",
+      error: "",
+      details: { reason: "missing_daily_report_or_send", target_run_key: runKey, source, dispatch },
+    });
+  } catch (error) {
+    await recordJobRun({
+      run_key: dispatchKey,
+      job_type: "watchdog",
+      report_date: date,
+      report_slot: slot,
+      expected_at: expectedAtIso(slot),
+      status: "failed",
+      finished_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString(),
+      triggered_by: "supabase_watchdog",
+      provider: source,
+      workflow: "news-briefing.yml",
+      error: String(error?.message || error),
+      details: { reason: "missing_daily_report_or_send", target_run_key: runKey, source },
+    });
+    throw error;
+  }
   return { job: "daily_report", slot, date, dispatched: true, reason: "missing_daily_report_or_send" };
 }
 
 async function ensurePeriodReport(period: PeriodReportKind, source: string) {
   const date = kstDate();
   const runKey = `period_report:${date}:07`;
+  const dispatchKey = `watchdog:period_report:${date}:07`;
   if (await periodReportSucceeded(period)) {
     return { job: "period_report", period, date, dispatched: false, reason: "already_success" };
   }
   if (await hasFreshDispatch(runKey)) {
-    return { job: "period_report", period, date, dispatched: false, reason: "dispatch_in_flight" };
+    return { job: "period_report", period, date, dispatched: false, reason: "report_run_in_flight" };
+  }
+  if (await hasFreshWatchdogDispatch(dispatchKey)) {
+    return { job: "period_report", period, date, dispatched: false, reason: "watchdog_dispatch_in_flight" };
   }
 
   await recordJobRun({
-    run_key: runKey,
-    job_type: "period_report",
+    run_key: dispatchKey,
+    job_type: "watchdog",
     report_date: date,
     report_slot: "07",
     expected_at: expectedAtIso("07"),
-    status: "watchdog_dispatched",
+    status: "started",
     started_at: new Date().toISOString(),
+    finished_at: null,
     last_seen_at: new Date().toISOString(),
     triggered_by: "supabase_watchdog",
     provider: source,
     workflow: "news-briefing.yml",
-    details: { reason: "missing_period_report_or_send", period, source },
+    details: { reason: "missing_period_report_or_send", period, target_run_key: runKey, source },
   });
-  await dispatchWorkflow("news-briefing.yml", {
-    period_reports: "both",
-    send_kakao: "true",
-    report_slot: "07",
-    backfill_only: "false",
-  });
+  try {
+    const dispatch = await dispatchWorkflow("news-briefing.yml", {
+      period_reports: "both",
+      send_kakao: "true",
+      report_slot: "07",
+      backfill_only: "false",
+    });
+    await recordJobRun({
+      run_key: dispatchKey,
+      job_type: "watchdog",
+      report_date: date,
+      report_slot: "07",
+      expected_at: expectedAtIso("07"),
+      status: "success",
+      finished_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString(),
+      triggered_by: "supabase_watchdog",
+      provider: source,
+      workflow: "news-briefing.yml",
+      error: "",
+      details: { reason: "missing_period_report_or_send", period, target_run_key: runKey, source, dispatch },
+    });
+  } catch (error) {
+    await recordJobRun({
+      run_key: dispatchKey,
+      job_type: "watchdog",
+      report_date: date,
+      report_slot: "07",
+      expected_at: expectedAtIso("07"),
+      status: "failed",
+      finished_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString(),
+      triggered_by: "supabase_watchdog",
+      provider: source,
+      workflow: "news-briefing.yml",
+      error: String(error?.message || error),
+      details: { reason: "missing_period_report_or_send", period, target_run_key: runKey, source },
+    });
+    throw error;
+  }
   return { job: "period_report", period, date, dispatched: true, reason: "missing_period_report_or_send" };
 }
 
@@ -254,6 +332,19 @@ async function hasFreshDispatch(runKey: string) {
   if (!row) return false;
   if (row.status === "success") return true;
   if (!["started", "dispatched", "watchdog_dispatched"].includes(String(row.status))) return false;
+  const seenAt = row.last_seen_at ? new Date(String(row.last_seen_at)) : null;
+  const maxAge = Number(Deno.env.get("WATCHDOG_INFLIGHT_MINUTES") || "8");
+  return Boolean(seenAt && Date.now() - seenAt.getTime() < maxAge * 60 * 1000);
+}
+
+async function hasFreshWatchdogDispatch(runKey: string) {
+  const rows = await selectRows(
+    "job_runs",
+    `select=run_key,status,last_seen_at&run_key=eq.${encodeURIComponent(runKey)}&limit=1`,
+  );
+  const row = rows[0];
+  if (!row) return false;
+  if (row.status === "failed" || row.status === "cancelled") return false;
   const seenAt = row.last_seen_at ? new Date(String(row.last_seen_at)) : null;
   const maxAge = Number(Deno.env.get("WATCHDOG_INFLIGHT_MINUTES") || "8");
   return Boolean(seenAt && Date.now() - seenAt.getTime() < maxAge * 60 * 1000);

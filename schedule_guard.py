@@ -229,7 +229,7 @@ def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:
     age_minutes = (now - last_seen.astimezone(KST)).total_seconds() / 60
 
     active_cooldown = in_progress_cooldown_minutes()
-    if status in {"started", "dispatched", "watchdog_dispatched"} and age_minutes <= active_cooldown:
+    if status in {"started", "dispatched"} and age_minutes <= active_cooldown:
         print(
             "Recent report run is still in progress: "
             f"{run_key}, status={status}, age={age_minutes:.1f}m, cooldown={active_cooldown}m"
