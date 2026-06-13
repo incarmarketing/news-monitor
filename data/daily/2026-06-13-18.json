@@ -1,0 +1,97 @@
+{
+  "date": "2026-06-13",
+  "timestamp": "2026-06-13T18:04:45.286021+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-06-13T13:00:00+09:00",
+    "end": "2026-06-13T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 3,
+    "total_after_cluster": 3,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 3,
+      "industry": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 0,
+      "positive": 0,
+      "neutral": 3
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-06-13 18:04 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 이슈가 중심이다. 보안과 거래가 주요하다. ## 핵심 이슈 - 카드사 정보유출 - 오피스빌딩 거래 ## 지표 해석 전체 수집 3건 중 분석 대상은 3건이다. 경쟁/업계 3건이다. ## 분석 키워드 손해보험, 보안, 오피스빌딩",
+  "articles": [
+    {
+      "title": "카드사, 잇단 정보유출에도 보안 담당자 부족",
+      "link": "https://daily.hankooki.com/news/articleView.html?idxno=1376258",
+      "source": "daily.hankooki.com",
+      "keyword": "손해보험",
+      "description": "이는 비금융에서 비교적 투자가 저조한 손해보험업권(19.5%)과 유사한 수준이다. 같은 기간 은행권의 정보 예산은 74.8%가 늘었으며 생명보험업권은 51% 늘었다. 매년 보안과 관련된 지적이 이어지자 금감원은 징벌적...",
+      "_summary": "이는 비금융에서 비교적 투자가 저조한 손해보험업권(19.5%)과 유사한 수준이다 같은 기간 은행권의 정보 예산은 74.8%가 늘었으며 생명보험업권은 51% 늘었다 매년 보안과 관련된 지적이 이어지자 금감원은 징벌적.",
+      "pub_date": "Sat, 13 Jun 2026 16:32:00 +0900",
+      "_report_id": 1,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "4월 서울 오피스빌딩 거래금액 '반토막'…사무실은 63% 증가",
+      "link": "https://news.tvchosun.com/site/data/html_dir/2026/06/13/2026061390086.html",
+      "source": "news.tvchosun.com",
+      "keyword": "손해보험",
+      "description": "매매가격이 1000억원을 넘은 오피스빌딩 거래는 종로구 '하나손해보험빌딩'이 유일했다. 해당 매물은 약 1369억원에 손바뀜이 이어졌다. 이어 종로구 'ABL 생명보험 사옥'과 강동구 '프라임 빌딩'이 각각 540억원...",
+      "_summary": "매매가격이 1000억원을 넘은 오피스빌딩 거래는 종로구 '하나손해보험빌딩'이 유일했다 해당 매물은 약 1369억원에 손바뀜이 이어졌다 이어 종로구 'ABL 생명보험 사옥'과 강동구 '프라임 빌딩'이 각각 540억원.",
+      "pub_date": "Sat, 13 Jun 2026 14:22:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“올여름 비 많이 온다는데”...손보업계 ‘침수차’ 비상령",
+      "link": "https://www.ekn.kr/web/view.php?key=20260613028362885",
+      "source": "ekn.kr",
+      "keyword": "손해보험",
+      "description": "여름철이 다가오면서 손해보험사들의 주름살이 깊어지고 있다. 장마로 인한 침수차량이 발생하면 손실이 커지기 때문이다. 13일 기상청에 따르면 이번달과 다음달 강수량이 평년 보다 높을 확률은 40%에 달한다....",
+      "_summary": "여름철이 다가오면서 손해보험사들의 주름살이 깊어지고 있다 장마로 인한 침수차량이 발생하면 손실이 커지기 때문이다 13일 기상청에 따르면 이번달과 다음달 강수량이 평년 보다",
+      "pub_date": "Sat, 13 Jun 2026 14:10:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
