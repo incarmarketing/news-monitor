@@ -1,0 +1,167 @@
+{
+  "date": "2026-06-13",
+  "timestamp": "2026-06-13T13:04:12.471584+09:00",
+  "window": {
+    "slot": "13",
+    "label": "당일 08:00~13:00",
+    "short_label": "오전 08~13시",
+    "start": "2026-06-13T08:00:00+09:00",
+    "end": "2026-06-13T13:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 8,
+    "total_after_cluster": 8,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 8,
+      "industry": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 0,
+      "positive": 0,
+      "neutral": 8
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 1,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "rules_fallback",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-06-13 18:04 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론\n당사 직접 이슈보다 \"이마트, DB손해보험과 손잡고 반려동물 맞춤형 ‘올라 펫보험…\" 등 업계 흐름이 중심입니다.\n\n## 핵심 이슈\n- [1] 이마트, DB손해보험과 손잡고 반려동물 맞춤형 ‘올라…: 경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요\n- [2] 미니보험 넘어 장기보험으로…카카오페이손보, 성장·수익…: 카카오페이손해보험이 올해 1분기 역대 최대 분기 매출을 기록하며 성장세를 지속하고 있다 해외여행보험을…\n\n## 지표 해석\n전체 수집 8건 중 분석 대상은 8건입니다. 당사 0건은 긍정 0, 주의 0, 중립 0, 부정 0건으로 나눕니다. 정책/규제 0건, 경쟁/업계 8건이며 전체 주의 0건과 부정 0건은 별도 관찰합니다.\n\n\n## 분석 키워드\n손해보험",
+  "articles": [
+    {
+      "title": "이마트, DB손해보험과 손잡고 반려동물 맞춤형 ‘올라 펫보험’ 출시 - issueon.co.kr",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE15T0ZBQWNrdjRLVkxIMEZ6VEdpTEVRclBVQUduTk9RNURaNldIbnRzUFB5ZlRqN0ppSnd0OTRzRXhySTZ2cmY5RDF6UVRMVFJHU1gxRVFLZk43TzFzTFZOdVR1eDFlV0hhc1VN?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "description": "이마트, DB손해보험과 손잡고 반려동물 맞춤형 ‘올라 펫보험’ 출시&nbsp;&nbsp;issueon.co.kr",
+      "_summary": "경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다 이마트, DB손해보험과 손잡고 반려동물 맞춤형 ‘올라 펫보험’ 출시 issueon.co.kr.",
+      "pub_date": "Sat, 13 Jun 2026 02:07:02 GMT",
+      "_report_id": 1,
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "미니보험 넘어 장기보험으로…카카오페이손보, 성장·수익성 개선 이어...",
+      "link": "https://www.dailian.co.kr/news/view/1655448/?sc=Naver",
+      "source": "데일리안",
+      "keyword": "손해보험",
+      "description": "카카오페이손해보험이 올해 1분기 역대 최대 분기 매출을 기록하며 성장세를 지속하고 있다. 해외여행보험을 기반으로 확보한 고객층을 장기보험으로 확장하면서 외형 성장과 수익성 개선 흐름도 이어지는 모습이다....",
+      "_summary": "카카오페이손해보험이 올해 1분기 역대 최대 분기 매출을 기록하며 성장세를 지속하고 있다 해외여행보험을 기반으로 확보한 고객층을 장기보험으로 확장하면서 외형 성장과 수익성 개선 흐름도 이어지는 모습이다",
+      "pub_date": "Sat, 13 Jun 2026 12:06:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[ABC AI금융시대=홍원학 삼성생명 사장] 보험을 넘어 인생을 설계하다, ...",
+      "link": "https://www.ajunews.com/view/20260612093240668",
+      "source": "ajunews.com",
+      "keyword": "손해보험",
+      "description": "삼성생명과 삼성화재, 보험 생태계를 다시 만들다 홍원학의 강점은 생명보험과 손해보험을 모두 경험했다는 점이다. 그는 삼성생명뿐 아니라 삼성화재 대표도 역임했다. 생보와 손보의 차이와 공통점을 누구보다 잘...",
+      "_summary": "삼성생명과 삼성화재, 보험 생태계를 다시 만들다 홍원학의 강점은 생명보험과 손해보험을 모두 경험했다는 점이다 그는 삼성생명뿐 아니라 삼성화재 대표도 역임했다",
+      "pub_date": "Sat, 13 Jun 2026 11:34:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[취재+] 5세대 실손 한달, 문걸어 잠근 생보사들의 '조용한 보이콧'",
+      "link": "http://www.biztribune.co.kr/news/articleView.html?idxno=354647",
+      "source": "biztribune.co.kr",
+      "keyword": "손해보험",
+      "description": "결국 현장의 설계사들이 판매가 열려 있고 수수료 조건이 더 유리한 손해보험사의 5세대 상품으로 고객을 유도하는 '손보 쏠림' 현상이라는 부작용만 키우고 있다. 이 같은 공급자 중심의 셈법은 고스란히 소비자들의...",
+      "_summary": "경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다 결국 현장의 설계사들이 판매가 열려 있고 수수료 조건이 더 유리한 손해보험사의 5세대 상품으로 고객을 유도하는 '손보 쏠림' 현상이라는 부작용만 키우고 있다",
+      "pub_date": "Sat, 13 Jun 2026 09:32:00 +0900",
+      "_report_id": 4,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "삼성화재, 글로벌 보험 컨퍼런스 'KIIC 2026' 개최…보험산업 미래 논의",
+      "link": "https://www.thepublic.kr/news/articleView.html?idxno=307458",
+      "source": "thepublic.kr",
+      "keyword": "손해보험",
+      "description": "최근 인공지능(AI)과 자율주행 등 미래 기술의 발전으로 새로운 형태의 리스크가 대두되면서, 손해보험업계가 선제적 대응 체계 마련에 속도를 내고 있다. 이종 산업 간의 기술 융합을 통해 신규 시장을 개척하고...",
+      "_summary": "최근 인공지능(AI)과 자율주행 등 미래 기술의 발전으로 새로운 형태의 리스크가 대두되면서, 손해보험업계가 선제적 대응 체계 마련에 속도를 내고 있다 이종 산업 간의 기술 융합을 통해 신규 시장을 개척하고. 삼성화재, 글로벌 보험 컨퍼런스 'KIIC 2026' 개최…보험산업 미래 논의.",
+      "pub_date": "Sat, 13 Jun 2026 08:48:00 +0900",
+      "_report_id": 5,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "KB 양종희 '연임 변수' 지배구조 개선안 임박",
+      "link": "https://biz.sbs.co.kr/article_hub/20000315984?division=NAVER",
+      "source": "biz.sbs.co.kr",
+      "keyword": "손해보험",
+      "description": "양 회장은 정통 KB맨 출신으로, 1989년 주택은행으로 입행해 은행·지주·보험을 두루 거쳤고, 특히 KB손해보험 대표 시절 실적 개선 성과로 능력을 인정받았습니다. [앵커] 양 회장의 연임 의지는 어떻게 봐야 할까요? [기자]...",
+      "_summary": "양 회장은 정통 KB맨 출신으로, 1989년 주택은행으로 입행해 은행·지주·보험을 두루 거쳤고, 특히 KB손해보험 대표 시절 실적 개선 성과로 능력을 인정받았습니다 [앵커] 양 회장의 연임 의지는 어떻게 봐야 할까요 KB 양종희 '연임 변수' 지배구조 개선안 임박.",
+      "pub_date": "Sat, 13 Jun 2026 08:01:00 +0900",
+      "_report_id": 6,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "'참교육 선생님' 위한 보험이 있다…교권침해·법률비 보장[영화in보험...",
+      "link": "https://www.news1.kr/finance/insurance-card/6196134",
+      "source": "뉴스1",
+      "keyword": "손해보험",
+      "description": "더케이(The-K)손해보험은 지난 2016년 교직원이 업무 중 사고나 교권 침해로 민사·행정소송을 진행할 경우 관련 법률 비용과 형사상 벌금을 지원하는 '무배당 The-K교직원법률비용보험'을 업계 최초로 출시했다. 더케이손보는...",
+      "_summary": "경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다 더케이(The-K)손해보험은 지난 2016년 교직원이 업무 중 사고나 교권 침해로 민사·행정소송을 진행할 경우 관련 법률 비용과 형사상 벌금을 지원하는 '무배당 The-K교직원법률비용보험'을 업계 최초로 출시했다",
+      "pub_date": "Sat, 13 Jun 2026 08:00:00 +0900",
+      "_report_id": 7,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“상속포기 했는데 보험금은 받았습니다”…원칙과 예외 [상속리포트]",
+      "link": "https://www.donga.com/news/Economy/article/all/20260612/134090829/2",
+      "source": "donga.com",
+      "keyword": "생명보험",
+      "description": "대법원도 보험계약자가 피보험자의 상속인을 보험수익자로 정한 생명보험계약에서는 피보험자가 사망하면 상속인이 보험수익자의 지위에서 보험회사에 직접 보험금을 청구할 수 있으며, 이 권리는 보험계약의 효력으로...",
+      "_summary": "“상속포기 했는데 보험금은 받았습니다”…원칙과 예외 [상속리포트].",
+      "pub_date": "Sat, 13 Jun 2026 10:01:00 +0900",
+      "_report_id": 8,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
