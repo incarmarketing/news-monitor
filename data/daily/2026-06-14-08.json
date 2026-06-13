@@ -1,0 +1,195 @@
+{
+  "date": "2026-06-14",
+  "timestamp": "2026-06-14T08:04:45.696006+09:00",
+  "window": {
+    "slot": "08",
+    "label": "전일 18:00~당일 08:00",
+    "short_label": "전일 18시 이후",
+    "start": "2026-06-13T18:00:00+09:00",
+    "end": "2026-06-14T08:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 11,
+    "total_after_cluster": 10,
+    "by_category": {
+      "own": 1,
+      "regulation": 4,
+      "competitor": 6,
+      "industry": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 1,
+      "positive": 0,
+      "neutral": 10
+    },
+    "own_negative": 0,
+    "own_total": 1,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 1,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-06-14 18:05 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 당사 언급 1건 확인. 직접 부정 이슈는 없습니다. 전체 리스크는 LOW입니다. ## 핵심 이슈 - 이가돈, 수익률 1200% 돈 때문에 개명? - 리플, 14달러 간다? 1200% 잭팟 신호 ## 지표 해석 전체 수집 11건 중 분석 대상은 10건입니다. 정책/규제 4건, 경쟁/업계 6건입니다. ## 분석 키워드 1200%, 손해보험, 제도, 리플",
+  "articles": [
+    {
+      "title": "이가돈, 수익률 1200% 돈 때문에 개명? “이대로 가면 돈이 된다” (동치...",
+      "link": "https://www.newsen.com/news_view.php?uid=202606140610561710",
+      "source": "newsen.com",
+      "keyword": "1200%",
+      "description": "1200%까지 수익이 올랐다”고 개명 사연과 함께 투자 노하우 공개까지 예고했다. 또 전원주는 “백화점 가는 역사가 없고. 버스 타고 지하철 타고. 헌 돈은 쓸 까봐 집에 가서 다린다. 집이 컴컴하다. 검침원이 이거 고장...",
+      "_summary": "1200%까지 수익이 올랐다”고 개명 사연과 함께 투자 노하우 공개까지 예고했다 또 전원주는 “백화점 가는 역사가 없고. 버스 타고 지하철 타고.",
+      "pub_date": "Sun, 14 Jun 2026 06:13:00 +0900",
+      "_report_id": 1,
+      "_score": 16,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "리플, 14달러 간다? 1200% 잭팟 신호 터졌다 - MSN",
+      "link": "https://news.google.com/rss/articles/CBMimgJBVV95cUxQS1ZwQWJXdFJPWWNOTlFER1lPRDV2TndpS1VhSmdrM0FIQkczckVhUmtUWlVjVGNWencwd3dkcmRpdDcxajNDNnlQaE1VbWFqRHdZeHpqbjBkNzhkalROZ3laeG1QcnVZU2ptNEpqeTgzb29KOXdSalJuNlpYNmc2VjQzVTFWYWdiSENPU3N1OG5jbjRVcXdULTN3WnFlMkFxQk82WVRvRDBLRFNVREVPQWMtS0tvQzJzMkVWMkltd2hwbUgyZWZTZjhUU0FrUGRiNDdkS21tSFRLUHVadDBKcHFTeU9SWUJPX1Z4Y3FZb1NnWF9ZaVpucFNXc1IzUEU3QmE4SEhtRVNQaFhhbjQxREhCSnZlT1huVlE?oc=5",
+      "source": "google",
+      "keyword": "1200%",
+      "description": "리플, 14달러 간다? 1200% 잭팟 신호 터졌다&nbsp;&nbsp;MSN",
+      "_summary": "리플, 14달러 간다 1200% 잭팟 신호 터졌다 리플, 14달러 간다? 1200% 잭팟 신호 터졌다 - MSN.",
+      "pub_date": "Sat, 13 Jun 2026 19:06:07 GMT",
+      "_report_id": 2,
+      "_score": 16,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "KLPGA ‘철녀’ 안송이, 400경기 출장 금자탑",
+      "link": "https://www.seoul.co.kr/news/sport/golf/2026/06/14/20260614500006?wlog_tag3=naver",
+      "source": "seoul.co.kr",
+      "keyword": "인카금융",
+      "description": "이왕이면 메이저 대회에서 통산 3번째 우승컵을 들어 올리는 꿈을 향해 다시 달리겠다“고 말헸다. KLPGA투어는 오는 19일 인카금융 더헤븐 마스터즈 1라운드를 마치고 안송이의 400경기 출장 기념식을 열 예정이다.",
+      "_summary": "이왕이면 메이저 대회에서 통산 3번째 우승컵을 들어 올리는 꿈을 향해 다시 달리겠다“고 말헸다 KLPGA투어는 오는 19일 인카금융 더헤븐 마스터즈 1라운드를 마치고 안송이의 400경기 출장 기념식을 열 예정이다 KLPGA ‘철녀’ 안송이, 400경기 출장 금자탑.",
+      "pub_date": "Sun, 14 Jun 2026 07:57:00 +0900",
+      "_report_id": 3,
+      "_score": 14,
+      "_category": "own",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "이마트, DB손해보험과 ‘올라 펫보험’ 출시 - 뉴스펫",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTFA0cjZkMGt6ZGVXS0tmek5rYndUNHZpc2tXVGpNMk5wLWZMazNxTFExUGxmbXZPZzRYX3RQN2tzUVgzTHhxSGt0ZDlJNzVZS203QzhRVzBHS2laVTB0TnduWXdpMWVaQXhyYWtV?oc=5",
+      "source": "google",
+      "keyword": "손해보험",
+      "description": "이마트, DB손해보험과 ‘올라 펫보험’ 출시&nbsp;&nbsp;뉴스펫",
+      "_summary": "경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다 이마트, DB손해보험과 ‘올라 펫보험’ 출시 뉴스펫.",
+      "pub_date": "Sat, 13 Jun 2026 09:52:49 GMT",
+      "_report_id": 4,
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "역대급 폭염 예고에 지선 공약까지…기후보험 현실화 주목",
+      "link": "http://www.fins.co.kr/news/articleView.html?idxno=108787",
+      "source": "보험매일",
+      "keyword": "손해보험",
+      "description": "현재 손해보험업계에서 운영 중인 대표적인 기후 리스크 대응 보험은 풍수해·지진재해보험과 농작물재해보험이다. 풍수해·지진재해보험은 태풍, 호우, 지진 등으로 인한 주택·온실·상가·공장 피해를 보장하고...",
+      "_summary": "현재 손해보험업계에서 운영 중인 대표적인 기후 리스크 대응 보험은 풍수해·지진재해보험과 농작물재해보험이다 풍수해·지진재해보험은 태풍, 호우, 지진 등으로 인한 주택·온실·상가·공장 피해를 보장하고. 역대급 폭염 예고에 지선 공약까지…기후보험 현실화 주목.",
+      "pub_date": "Sun, 14 Jun 2026 07:46:00 +0900",
+      "_report_id": 5,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험사기 적발 1.1조원 넘어…메리츠·DB손보, 환수 승소율 100% ‘두각’",
+      "link": "https://www.ceoscoredaily.com/page/view/2026060912253039912",
+      "source": "ceoscoredaily.com",
+      "keyword": "손해보험",
+      "description": "국내 손해보험사들이 보험사기 유죄확정판결을 받은 피고인을 상대로 제기하는 민사 본안소송(이하 보험사기 소송)에서 대체로 높은 전부승소율을 유지하고 있는 것으로 나타났다. 일부 손보사는 전부승소율이...",
+      "_summary": "국내 손해보험사들이 보험사기 유죄확정판결을 받은 피고인을 상대로 제기하는 민사 본안소송(이하 보험사기 소송)에서 대체로 높은 전부승소율을 유지하고 있는 것으로 나타났다 일부 손보사는 전부승소율이. 보험사기 적발 1.1조원 넘어…메리츠·DB손보, 환수 승소율 100% ‘두각’.",
+      "pub_date": "Sun, 14 Jun 2026 07:00:00 +0900",
+      "_report_id": 6,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "고배당에 안정성까지… 서울보증보험 재평가 신호탄 터지나",
+      "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=459850",
+      "source": "핀포인트뉴스",
+      "keyword": "손해보험",
+      "description": "일반 손해보험사와 달리 보증을 핵심 사업으로 영위하는 만큼 차별화된 수익 구조를 보유하고 있다는 평가를 받는다. 보증보험 사업은 경제 성장과 밀접하게 연결돼 있다. 기업 활동이 늘어나고 신규 사업과 계약 체결이...",
+      "_summary": "일반 손해보험사와 달리 보증을 핵심 사업으로 영위하는 만큼 차별화된 수익 구조를 보유하고 있다는 평가를 받는다 보증보험 사업은 경제 성장과 밀접하게 연결돼 있다 기업 활동이 늘어나고 신규 사업과 계약 체결이.",
+      "pub_date": "Sun, 14 Jun 2026 05:44:00 +0900",
+      "_report_id": 7,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "개인정보보호법 개정, 사후처벌을 넘어 사전예방과 피해구제로",
+      "link": "http://www.newmanagement.co.kr/?p=15861",
+      "source": "newmanagement.co.kr",
+      "keyword": "손해보험",
+      "description": "※CPO(Chief Privacy Officer): 개인정보 처리에 관한 업무를 총괄해서 책임지는 개인정보 보호책임자 개인정보보호법과 신용정보법 중복은 개선과제 조형진 NH농협손해보험 부사장 저는 금융회사 입장에서 두 가지 문제를...",
+      "_summary": "핵심은 해킹 사고 보도가 아니라 보안 점검과 피해 예방 체계 확대입니다 ※CPO(Chief Privacy Officer): 개인정보 처리에 관한 업무를 총괄해서 책임지는 개인정보 보호책임자 개인정보보호법과 신용정보법 중복은 개선과제 조형진 NH농협손해보험 부사장 저는 금융회사 입장에서 두 가지 문제를.",
+      "pub_date": "Sat, 13 Jun 2026 18:30:00 +0900",
+      "_report_id": 8,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험사도 고환율 장기화에 비상, 환헤지 비용 상승에 건전성·배당 부담...",
+      "link": "https://www.businesspost.co.kr/BP?command=article_view&num=439772",
+      "source": "businesspost.co.kr",
+      "keyword": "생명보험",
+      "description": "한 생명보험사 관계자는 비즈니스포스트에 \"보험사는 대부분 환헤지로 환율 변동 위험에 대비하고 있어 영향은 적은 편이다\"며 \"다만 고환율 상황이 장기화하면 커진 환헤지 비용이 부담되는 구조\"라고 말했다. 10일...",
+      "_summary": "한 생명보험사 관계자는 비즈니스포스트에 \"보험사는 대부분 환헤지로 환율 변동 위험에 대비하고 있어 영향은 적은 편이다\"며 \"다만 고환율 상황이 장기화하면 커진 환헤지 비용이 부담되는 구조\"라고 말했다 보험사도 고환율 장기화에 비상, 환헤지 비용 상승에 건전성·배당 부담.",
+      "pub_date": "Sun, 14 Jun 2026 06:02:00 +0900",
+      "_report_id": 9,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "은행 점포 빈자리 '우체국'이 메우나...대리업 실효성 시험대",
+      "link": "http://www.hansbiz.co.kr/news/articleView.html?idxno=843896",
+      "source": "hansbiz.co.kr",
+      "keyword": "제도",
+      "description": "은행대리업은 은행이 아닌 제3자가 은행의 일부 업무를 대신 수행하는 제도다. 앞서 금융위는 지난해 4대... 아울러 은행권의 오프라인 채널 축소도 이번 제도 도입 배경으로 거론된다. 5대 은행의 국내 영업점 수는 지난해...",
+      "_summary": "은행대리업은 은행이 아닌 제3자가 은행의 일부 업무를 대신 수행하는 제도다 앞서 금융위는 지난해 4대. 아울러 은행권의 오프라인 채널 축소도 이번 제도 도입 배경으로 거론된다",
+      "pub_date": "Sun, 14 Jun 2026 07:40:00 +0900",
+      "_report_id": 10,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
