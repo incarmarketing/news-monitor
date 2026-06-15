@@ -1349,7 +1349,7 @@ def build_contextual_summary_sentences(article: dict) -> list[str]:
     lines: list[str] = []
     if is_competitor_brand_reputation_against_own(article):
         lines.append("경쟁사가 GA 브랜드평판 1위로 소개되고 인카금융서비스는 후순위 경쟁사로 언급된 평판 기사입니다")
-        lines.append("당사 성과성 보도가 아니라 브랜드평판 순위 변화와 경쟁사 노출 흐름을 확인할 기사입니다")
+        lines.append("인카 중심 성과 보도가 아니라 브랜드평판 순위 변화와 경쟁사 노출 흐름을 확인할 기사입니다")
     elif is_stock_volatility_article(article):
         lines.append("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다")
         lines.append("직접 경영 이슈보다 거래량과 주가 변동성 관찰이 필요한 주가성 기사입니다")
@@ -1433,7 +1433,10 @@ def is_competitor_brand_reputation_against_own(article: dict) -> bool:
         return False
     if not any(name in text for name in OWN_NAMES):
         return False
-    own_first = re.search(r"인카금융(?:서비스)?[^.。!?]{0,35}(?:1위|선두|최고|최상위)", text)
+    own_first = re.search(
+        r"인카금융(?:서비스)?\s*(?:가|은|는|,)?\s*(?:GA|독립 보험대리점|보험대리점|브랜드평판)?\s*(?:1위|선두|최고|최상위)",
+        text,
+    )
     if own_first:
         return False
     competitor_first = re.search(

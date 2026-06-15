@@ -495,7 +495,7 @@ function App() {
     ? [
         {
           label: "부정기사 감시",
-          cadence: "24시간 · 5분",
+          cadence: "24시간 · 10분",
           latest: operations.watchRuns[0].latest,
           state: operations.watchRuns[0].state,
         },
@@ -5770,6 +5770,10 @@ function AdManagement({ rows }) {
 function KeywordManagement({ keywords = [] }) {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("own");
+  const [matchMode, setMatchMode] = useState("keyword");
+  const [contextTerms, setContextTerms] = useState("");
+  const [excludeTerms, setExcludeTerms] = useState("");
+  const [priority, setPriority] = useState(100);
   const [status, setStatus] = useState("");
   const [draftKeywords, setDraftKeywords] = useState([]);
   const rows = useMemo(
@@ -5784,11 +5788,21 @@ function KeywordManagement({ keywords = [] }) {
       setStatus("추가할 키워드를 입력하세요.");
       return;
     }
-    const nextKeyword = { keyword: cleanKeyword, category, enabled: true };
+    const nextKeyword = {
+      keyword: cleanKeyword,
+      category,
+      enabled: true,
+      matchMode,
+      contextTerms: splitKeywordTerms(contextTerms),
+      excludeTerms: splitKeywordTerms(excludeTerms),
+      priority: Number(priority) || 100,
+    };
     try {
-      await saveMonitorKeyword(cleanKeyword, category);
+      await saveMonitorKeyword(nextKeyword);
       setDraftKeywords((current) => upsertKeywordRow(current, nextKeyword));
       setKeyword("");
+      setContextTerms("");
+      setExcludeTerms("");
       setStatus("운영 DB 저장 완료");
     } catch (error) {
       setStatus(error?.message?.includes("missing_dashboard_session") || error?.message?.includes("invalid_session")
@@ -5820,6 +5834,40 @@ function KeywordManagement({ keywords = [] }) {
               placeholder="예: 글로벌금융판매"
             />
           </label>
+          <label>
+            <span>매칭 방식</span>
+            <select value={matchMode} onChange={(event) => setMatchMode(event.target.value)}>
+              {keywordMatchModes.map((item) => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>포함 문맥</span>
+            <input
+              value={contextTerms}
+              onChange={(event) => setContextTerms(event.target.value)}
+              placeholder="예: 보험, GA, 설계사"
+            />
+          </label>
+          <label>
+            <span>제외 문맥</span>
+            <input
+              value={excludeTerms}
+              onChange={(event) => setExcludeTerms(event.target.value)}
+              placeholder="예: 메가커피, 메가박스"
+            />
+          </label>
+          <label className="compact-field">
+            <span>우선순위</span>
+            <input
+              type="number"
+              min="1"
+              max="999"
+              value={priority}
+              onChange={(event) => setPriority(event.target.value)}
+            />
+          </label>
           <div className="operation-form-actions">
             <button className="primary-button" onClick={handleAddKeyword}>키워드 추가</button>
           </div>
@@ -5834,7 +5882,9 @@ function KeywordManagement({ keywords = [] }) {
               </div>
               <p>{keywordCategoryRule(group.category)}</p>
               <div className="keyword-chip-grid">
-                {group.items.map((item) => <Chip key={`${item.category}-${item.keyword}`} tone={keywordCategoryTone(item.category)}>{item.keyword}</Chip>)}
+                {group.items.map((item) => (
+                  <KeywordRuleChip key={`${item.category}-${item.keyword}`} item={item} />
+                ))}
               </div>
             </article>
           ))}
@@ -6148,6 +6198,23 @@ function ArticleSummaryBlock({ item, dense = false }) {
     <ul className={dense ? "summary-lines dense" : "summary-lines"}>
       {lines.map((line) => <li key={line}>{line}</li>)}
     </ul>
+  );
+}
+
+function KeywordRuleChip({ item }) {
+  const mode = keywordMatchModeLabel(item.matchMode);
+  const contextCount = item.contextTerms?.length || 0;
+  const excludeCount = item.excludeTerms?.length || 0;
+  const meta = [
+    mode,
+    contextCount ? `포함 ${contextCount}` : "",
+    excludeCount ? `제외 ${excludeCount}` : "",
+  ].filter(Boolean).join(" · ");
+  return (
+    <span className={`keyword-rule-chip tone-${keywordCategoryTone(item.category)}`}>
+      <b>{item.keyword}</b>
+      <small>{meta}</small>
+    </span>
   );
 }
 
@@ -6616,13 +6683,13 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   let status = "ok";
   if (failedWorkflow) status = "fail";
   else if (delay === null) status = workflow?.status === "error" ? "warn" : "pending";
-  else if (delay > 15) status = "fail";
-  else if (delay > 10) status = "warn";
+  else if (delay > 25) status = "fail";
+  else if (delay > 16) status = "warn";
   const detail = delay === null
     ? "최근 실행 확인 대기"
     : `${formatRelativeMinutes(delay)} 전 실행`;
   const workflowText = latestWorkflow?.status === "in_progress" ? "실행 중" : formatWorkflowConclusion(latestWorkflow);
-  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 5분";
+  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 10분";
   return {
     title: "부정기사 감시",
     icon: Radar,
@@ -6950,7 +7017,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
         ? "감시 확인 중"
         : "정상 감시";
   const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
-  const meta = health?.meta || `${watchJob.cadence || "24시간 5분 주기"} · ${watchJob.state || "확인"}`;
+  const meta = health?.meta || `${watchJob.cadence || "24시간 10분 주기"} · ${watchJob.state || "확인"}`;
   return (
     <section className="panel watch-panel">
       <div className="watch-title-row">
@@ -6970,7 +7037,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
           <h2>{heading}</h2>
           <p>{detail}</p>
           <strong>{meta}</strong>
-          <span>24시간 5분 주기</span>
+          <span>24시간 10분 주기</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>
@@ -7815,7 +7882,7 @@ function buildBrandReputationDisplayLines(item = {}) {
   if (isCompetitorBrandReputationAgainstOwn(item)) {
     return [
       `${leader || "경쟁사"}가 ${isGa ? "GA" : "보험"} 브랜드평판 1위로 소개되고, 인카금융서비스는 후순위 경쟁사로 언급됐습니다.`,
-      "당사 성과성 보도가 아니라 브랜드평판 순위 변화와 경쟁사 노출 흐름을 확인할 기사입니다.",
+      "인카 중심 성과 보도가 아니라 브랜드평판 순위 변화와 경쟁사 노출 흐름을 확인할 기사입니다.",
     ];
   }
   if (leader && !/인카금융/.test(leader)) {
@@ -8484,6 +8551,13 @@ const keywordCategories = [
   { id: "exclude", label: "제외 후보", rule: "브랜드평판, 스포츠, 상품명 오탐처럼 수집 제외 후보로 관리합니다." },
 ];
 
+const keywordMatchModes = [
+  { id: "keyword", label: "일반" },
+  { id: "context", label: "문맥 필수" },
+  { id: "strict", label: "확장어 고정" },
+  { id: "exact", label: "정확 일치" },
+];
+
 function canonicalHost(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -8691,6 +8765,11 @@ function normalizeKeywordRow(row) {
     keyword,
     category: String(row?.category || "other").trim() || "other",
     enabled: row?.enabled !== false,
+    matchMode: normalizeKeywordMatchMode(row?.matchMode || row?.match_mode),
+    contextTerms: splitKeywordTerms(row?.contextTerms || row?.context_terms),
+    excludeTerms: splitKeywordTerms(row?.excludeTerms || row?.exclude_terms),
+    priority: normalizeKeywordPriority(row?.priority),
+    memo: String(row?.memo || "").trim(),
   };
 }
 
@@ -8729,6 +8808,25 @@ function keywordCategoryTone(category) {
   }[category] || "중립";
 }
 
+function keywordMatchModeLabel(mode) {
+  return keywordMatchModes.find((item) => item.id === mode)?.label || "일반";
+}
+
+function normalizeKeywordMatchMode(value) {
+  const mode = String(value || "keyword").trim();
+  return keywordMatchModes.some((item) => item.id === mode) ? mode : "keyword";
+}
+
+function normalizeKeywordPriority(value) {
+  const priority = Number(value);
+  return Number.isFinite(priority) ? Math.max(1, Math.min(999, Math.round(priority))) : 100;
+}
+
+function splitKeywordTerms(value) {
+  const items = Array.isArray(value) ? value : String(value || "").split(/[,|\n]/);
+  return items.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
 function groupKeywordRows(rows = []) {
   const order = keywordCategories.map((item) => item.id);
   const groups = new Map();
@@ -8739,7 +8837,7 @@ function groupKeywordRows(rows = []) {
   return Array.from(groups.entries())
     .map(([category, items]) => ({
       category,
-      items: items.sort((a, b) => a.keyword.localeCompare(b.keyword, "ko-KR")),
+      items: items.sort((a, b) => (Number(a.priority || 100) - Number(b.priority || 100)) || a.keyword.localeCompare(b.keyword, "ko-KR")),
     }))
     .sort((a, b) => {
       const aOrder = order.includes(a.category) ? order.indexOf(a.category) : order.length;
@@ -9519,25 +9617,25 @@ function articleGroupSeed(article) {
 }
 
 function mergeGroupSeed(current, next) {
-  const tokens = current.tokens || [];
   return {
-    canonical: current.canonical.length >= next.canonical.length ? current.canonical : next.canonical,
-    topic: current.topic || next.topic || "",
-    tokens,
-    tokenSet: new Set(tokens),
+    canonical: current.canonical || "",
+    topic: current.topic || "",
+    tokens: current.tokens || [],
+    tokenSet: new Set(current.tokens || []),
   };
 }
 
 function areRelatedArticleSeeds(a, b) {
   if (!a.canonical || !b.canonical) return false;
-  if (a.topic && b.topic && a.topic === b.topic) return true;
+  const sharedCount = sharedTokenCount(a.tokens, b.tokens);
+  if (a.topic && b.topic && a.topic === b.topic && sharedCount >= 2) return true;
   const shorter = a.canonical.length < b.canonical.length ? a.canonical : b.canonical;
   const longer = a.canonical.length < b.canonical.length ? b.canonical : a.canonical;
-  if (shorter.length >= 32 && longer.includes(shorter)) return true;
-  if (a.canonical.slice(0, 34) === b.canonical.slice(0, 34) && sharedTokenCount(a.tokens, b.tokens) >= 2) return true;
+  if (shorter.length >= 24 && longer.includes(shorter) && sharedCount >= 2) return true;
+  if (a.canonical.length >= 32 && b.canonical.length >= 32 && a.canonical.slice(0, 34) === b.canonical.slice(0, 34) && sharedCount >= 2) return true;
+  if (Math.min(a.tokenSet?.size || 0, b.tokenSet?.size || 0) < 3) return false;
   const overlap = tokenOverlapRatio(a.tokenSet, b.tokenSet);
-  const sharedCount = sharedTokenCount(a.tokens, b.tokens);
-  return (overlap >= 0.72 && sharedCount >= 3) || (overlap >= 0.62 && sharedCount >= 2 && sharedLongToken(a.tokens, b.tokens));
+  return overlap >= 0.72 && sharedCount >= 2 && sharedLongToken(a.tokens, b.tokens);
 }
 
 function articleTopicSignature(article = {}) {
@@ -9558,6 +9656,12 @@ function articleTopicSignature(article = {}) {
   if (includesAll(["신협", "특혜대출"])) return "신협-특혜대출";
   if (includesAll(["신협", "부실채권"])) return "신협-부실채권";
   if (includesAll(["소비자보호", "금융현장"]) && (text.includes("금감원") || text.includes("금융감독원"))) return "금감원-소비자보호-현장";
+  if (includesAll(["롯데손해보험", "경영개선계획"])) return "롯데손해보험-경영개선계획";
+  if (includesAll(["인카금융서비스", "우수인증설계사"])) return "인카금융서비스-우수인증설계사";
+  if (includesAll(["정착지원금", "인카금융서비스"])) return "ga-정착지원금-인카";
+  if (text.includes("투자의견") && (text.includes("하향") || text.includes("낮아")) && (text.includes("인카") || (text.includes("코스피") && text.includes("증권가")))) {
+    return "인카금융서비스-투자의견-하향";
+  }
   return "";
 }
 
@@ -9575,7 +9679,7 @@ function normalizeGroupTitle(value) {
 function articleTokens(value) {
   const stop = new Set([
     "기자", "뉴스", "보도", "관련", "통해", "대한", "위해", "올해", "지난", "이번", "추진", "확산", "맞손", "역량", "마음", "지원", "강화", "본격화",
-    "보험", "금융", "서비스", "손해보험", "생명보험", "소비자", "협회", "업계", "동향", "기사", "발간", "출시",
+    "보험", "금융", "서비스", "손해보험", "생명보험", "보험사", "금융위", "금감원", "금융감독원", "금융위원회", "소비자", "협회", "업계", "동향", "기사", "발간", "출시", "시장", "관리", "확대", "개최", "결정", "nbsp",
   ]);
   return normalizeGroupTitle(value)
     .split(/\s+/)

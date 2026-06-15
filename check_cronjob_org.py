@@ -18,7 +18,7 @@ TARGET_TITLES = {
     "news-monitor monthly report",
 }
 NEGATIVE_WATCH_TITLE = "news-monitor negative watch"
-EXPECTED_NEGATIVE_MINUTES = list(range(0, 60, 5))
+EXPECTED_NEGATIVE_MINUTES = list(range(0, 60, 10))
 EXPECTED_NEGATIVE_HOURS = list(range(24))
 
 
@@ -68,7 +68,7 @@ def print_negative_watch_schedule_warning(job: dict) -> None:
     minutes_ok = minutes == EXPECTED_NEGATIVE_MINUTES
     hours_ok = hours == EXPECTED_NEGATIVE_HOURS
     if minutes_ok and hours_ok:
-        print("negative-watch cadence=5min/24h OK")
+        print("negative-watch cadence=10min/24h OK")
         return
     if not minutes_ok:
         print(

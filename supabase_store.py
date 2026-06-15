@@ -1335,10 +1335,23 @@ def load_dashboard_scraps(limit: int = 100) -> list[dict]:
 def load_monitor_keyword_rows() -> list[dict]:
     if not is_enabled():
         return []
-    response = request(
-        "GET",
-        "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc",
-    )
+    try:
+        response = request(
+            "GET",
+            (
+                "monitor_keywords?"
+                "select=keyword,category,enabled,match_mode,context_terms,exclude_terms,priority,memo"
+                "&enabled=eq.true&order=category.asc,priority.asc,created_at.asc"
+            ),
+        )
+    except requests.HTTPError as error:
+        status = getattr(error.response, "status_code", None)
+        if status not in {400, 404}:
+            raise
+        response = request(
+            "GET",
+            "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc",
+        )
     rows = []
     for row in response.json():
         keyword = str(row.get("keyword") or "").strip()
@@ -1349,6 +1362,11 @@ def load_monitor_keyword_rows() -> list[dict]:
                 "keyword": keyword,
                 "category": row.get("category") or "other",
                 "enabled": row.get("enabled", True) is not False,
+                "match_mode": str(row.get("match_mode") or "keyword").strip() or "keyword",
+                "context_terms": row.get("context_terms") if isinstance(row.get("context_terms"), list) else [],
+                "exclude_terms": row.get("exclude_terms") if isinstance(row.get("exclude_terms"), list) else [],
+                "priority": row.get("priority") or 100,
+                "memo": row.get("memo") or "",
             }
         )
     return rows

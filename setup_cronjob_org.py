@@ -90,14 +90,14 @@ def job_payload(spec: CronSpec, github_token: str, enabled: bool) -> dict:
 def specs() -> list[CronSpec]:
     all_months = [-1]
     every_day = [-1]
-    every_five_minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+    every_ten_minutes = [0, 10, 20, 30, 40, 50]
     primary_minute = [0]
     return [
         CronSpec(
             title="news-monitor negative watch",
             workflow="negative-watch.yml",
             body={"ref": "main", "inputs": {"mode": "single"}},
-            minutes=[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55],
+            minutes=every_ten_minutes,
             hours=list(range(24)),
             wdays=every_day,
             mdays=every_day,

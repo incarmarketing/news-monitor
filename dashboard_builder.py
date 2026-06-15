@@ -278,7 +278,28 @@ def headline_fallback_summary(article: dict, category: str, tone: str) -> str:
     if re.match(r"^(포토|영상|인사|부고)\b", title):
         return f"{source or '해당 매체'}의 단신성 기사로, 원문 근거 확인 후 모니터링 우선순위를 낮춰 봅니다."
     compact = re.split(r"[.!?。]", title.replace("…", " "))[0].strip()[:72]
-    return f"{compact} 내용을 다룬 기사입니다."
+    headline_line = f"{compact} 내용을 다룬 기사입니다."
+    if is_usable_summary_line(headline_line, title):
+        return headline_line
+    return category_fallback_summary(article, category, tone)
+
+
+def category_fallback_summary(article: dict, category: str, tone: str) -> str:
+    keyword = clean_summary_text(article.get("keyword", ""))
+    keyword_text = f"{keyword} 관련 " if keyword else ""
+    if category == "own":
+        return f"{keyword_text}당사 언급 기사로, 원문에서 성과·리스크·단순 언급 여부를 구분해 확인합니다."
+    if category == "regulation":
+        return f"{keyword_text}정책·규제 흐름 기사로, 적용 대상과 영업 영향 여부를 확인합니다."
+    if category == "competitor":
+        return f"{keyword_text}경쟁사 동향 기사로, 상품·채널·평판 변화 중 무엇이 쟁점인지 확인합니다."
+    if category == "industry":
+        return f"{keyword_text}업계 동향 기사로, 보험·GA 시장 흐름과 당사 관련성을 분리해 봅니다."
+    if tone == "negative":
+        return "부정 신호 후보 기사로, 직접 피해·제재·사칭 등 핵심 근거를 원문에서 확인합니다."
+    if tone == "caution":
+        return "주의 관찰 기사로, 시장성 이슈와 직접 리스크 여부를 분리해 확인합니다."
+    return "모니터링 후보 기사로, 원문 근거와 키워드 문맥을 함께 확인합니다."
 
 
 def is_usable_summary_line(line: object, title: object = "") -> bool:
@@ -419,29 +440,34 @@ def article_group_seed(row: dict) -> dict:
 
 
 def merge_group_seed(current: dict, next_seed: dict) -> dict:
-    tokens = unique_lines([*(current.get("tokens") or []), *(next_seed.get("tokens") or [])])
     return {
-        "canonical": current.get("canonical", "")
-        if len(current.get("canonical", "")) >= len(next_seed.get("canonical", ""))
-        else next_seed.get("canonical", ""),
-        "topic": current.get("topic") or next_seed.get("topic") or "",
-        "tokens": tokens,
-        "token_set": set(tokens),
+        "canonical": current.get("canonical", ""),
+        "topic": current.get("topic") or "",
+        "tokens": current.get("tokens") or [],
+        "token_set": set(current.get("tokens") or []),
     }
 
 
 def are_related_article_seeds(a: dict, b: dict) -> bool:
     if not a.get("canonical") or not b.get("canonical"):
         return False
-    if a.get("topic") and b.get("topic") and a["topic"] == b["topic"]:
-        return True
+    shared_count = shared_meaningful_token_count(a.get("tokens", []), b.get("tokens", []))
     shorter, longer = sorted([a["canonical"], b["canonical"]], key=len)
-    if len(shorter) >= 22 and shorter in longer:
+    if len(shorter) >= 24 and shorter in longer and shared_count >= 2:
         return True
-    if a["canonical"][:28] == b["canonical"][:28]:
+    if (
+        len(a["canonical"]) >= 32
+        and len(b["canonical"]) >= 32
+        and a["canonical"][:32] == b["canonical"][:32]
+        and shared_count >= 2
+    ):
         return True
+    if a.get("topic") and b.get("topic") and a["topic"] == b["topic"]:
+        return shared_count >= 2
+    if min(len(a.get("token_set", set())), len(b.get("token_set", set()))) < 3:
+        return False
     overlap = token_overlap_ratio(a.get("token_set", set()), b.get("token_set", set()))
-    return overlap >= 0.62 or (overlap >= 0.48 and shared_long_token(a.get("tokens", []), b.get("tokens", [])))
+    return overlap >= 0.72 and shared_count >= 2 and shared_long_token(a.get("tokens", []), b.get("tokens", []))
 
 
 def article_topic_signature(row: dict) -> str:
@@ -466,6 +492,14 @@ def article_topic_signature(row: dict) -> str:
         return "신협-부실채권"
     if includes_all(["소비자보호", "금융현장"]) and ("금감원" in text or "금융감독원" in text):
         return "금감원-소비자보호-현장"
+    if includes_all(["롯데손해보험", "경영개선계획"]):
+        return "롯데손해보험-경영개선계획"
+    if includes_all(["인카금융서비스", "우수인증설계사"]):
+        return "인카금융서비스-우수인증설계사"
+    if includes_all(["정착지원금", "인카금융서비스"]):
+        return "ga-정착지원금-인카"
+    if "투자의견" in text and ("하향" in text or "낮아" in text) and ("인카" in text or ("코스피" in text and "증권가" in text)):
+        return "인카금융서비스-투자의견-하향"
     return ""
 
 
@@ -474,7 +508,7 @@ def normalize_group_title(value: object) -> str:
     text = re.sub(r"\[[^\]]+\]|\([^)]*\)|<[^>]+>", " ", text)
     text = re.sub(r"https?://\S+", " ", text)
     text = re.sub(r"[^\w\s가-힣]", " ", text)
-    text = re.sub(r"\b(단독|종합|속보|영상|포토|인터뷰|기획|칼럼)\b", " ", text)
+    text = re.sub(r"\b(?:단독|종합|속보|영상|포토|인터뷰|기획|칼럼|사설)\b", " ", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
@@ -488,21 +522,33 @@ def article_tokens(value: object) -> list[str]:
         "대한",
         "위해",
         "올해",
-        "지난",
         "이번",
         "추진",
-        "확산",
-        "맞손",
-        "역량",
-        "마음",
-        "지원",
         "강화",
-        "본격화",
+        "본격",
+        "금융",
+        "보험",
+        "보험사",
+        "금융위",
+        "금감원",
+        "금융감독원",
+        "금융위원회",
+        "손해보험",
+        "생명보험",
+        "서비스",
+        "업계",
+        "시장",
+        "관리",
+        "확대",
+        "개최",
+        "결정",
+        "출시",
+        "nbsp",
     }
     return [
         token
         for token in normalize_group_title(value).split()
-        if len(token) > 1 and token not in stop and not token.isdigit()
+        if len(token) > 1 and token not in stop and not token.isdigit() and not token.endswith("기자")
     ]
 
 
@@ -515,6 +561,16 @@ def token_overlap_ratio(a_set: set[str], b_set: set[str]) -> float:
 def shared_long_token(a_tokens: list[str], b_tokens: list[str]) -> bool:
     b_set = set(b_tokens)
     return any(len(token) >= 5 and token in b_set for token in a_tokens)
+
+
+def shared_meaningful_tokens(a_tokens: list[str], b_tokens: list[str], *, minimum: int) -> bool:
+    return shared_meaningful_token_count(a_tokens, b_tokens) >= minimum
+
+
+def shared_meaningful_token_count(a_tokens: list[str], b_tokens: list[str]) -> int:
+    b_set = set(b_tokens)
+    shared = {token for token in a_tokens if len(token) >= 3 and token in b_set}
+    return len(shared)
 
 
 def issue_group_score(group: dict) -> int:
@@ -1174,112 +1230,6 @@ def publish_supabase_public_config() -> None:
         json.dumps({"url": url, "anon_key": anon_key}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-
-
-def article_group_seed(row: dict) -> dict:
-    canonical = normalize_group_title(row.get("title", ""))
-    topic = article_topic_signature(row)
-    tokens = article_tokens(f"{canonical} {row.get('keyword', '')}")
-    return {"canonical": canonical, "topic": topic, "tokens": tokens, "token_set": set(tokens)}
-
-
-def are_related_article_seeds(a: dict, b: dict) -> bool:
-    if not a.get("canonical") or not b.get("canonical"):
-        return False
-    shorter, longer = sorted([a["canonical"], b["canonical"]], key=len)
-    if len(shorter) >= 24 and shorter in longer:
-        return True
-    if len(a["canonical"]) >= 32 and len(b["canonical"]) >= 32 and a["canonical"][:32] == b["canonical"][:32]:
-        return True
-    if a.get("topic") and b.get("topic") and a["topic"] == b["topic"]:
-        return shared_meaningful_tokens(a.get("tokens", []), b.get("tokens", []), minimum=2)
-    overlap = token_overlap_ratio(a.get("token_set", set()), b.get("token_set", set()))
-    return overlap >= 0.72 and shared_long_token(a.get("tokens", []), b.get("tokens", []))
-
-
-def article_topic_signature(row: dict) -> str:
-    text = normalize_group_title(
-        f"{row.get('title', '')} {row.get('summary', '') or row.get('description', '')} {row.get('keyword', '')}"
-    )
-
-    def includes_all(terms: list[str]) -> bool:
-        return all(normalize_group_title(term) in text for term in terms)
-
-    if includes_all(["금감원", "금융지주", "소비자보호"]):
-        return "금감원-금융지주-소비자보호"
-    if includes_all(["홍콩els", "제재"]):
-        return "홍콩els-제재"
-    if includes_all(["신협", "특혜대출"]):
-        return "신협-특혜대출"
-    if includes_all(["신협", "부실채권"]):
-        return "신협-부실채권"
-    if includes_all(["소비자보호", "금융현장"]) and ("금감원" in text or "금융감독원" in text):
-        return "금감원-소비자보호-금융현장"
-    if includes_all(["롯데손해보험", "경영개선계획"]):
-        return "롯데손해보험-경영개선계획"
-    if includes_all(["인카금융서비스", "우수인증설계사"]):
-        return "인카금융서비스-우수인증설계사"
-    if includes_all(["정착지원금", "인카금융서비스"]):
-        return "ga-정착지원금-인카"
-    if "투자의견" in text and ("하향" in text or "낮아" in text) and ("인카" in text or ("코스피" in text and "증권가" in text)):
-        return "인카금융서비스-투자의견-하향"
-    return ""
-
-
-def normalize_group_title(value: object) -> str:
-    text = str(value or "").lower()
-    text = re.sub(r"\[[^\]]+\]|\([^)]*\)|<[^>]+>", " ", text)
-    text = re.sub(r"https?://\S+", " ", text)
-    text = re.sub(r"[^\w\s가-힣]", " ", text)
-    text = re.sub(r"\b(?:단독|종합|속보|영상|포토|인터뷰|기획|칼럼|사설)\b", " ", text)
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def article_tokens(value: object) -> list[str]:
-    stop = {
-        "기자",
-        "뉴스",
-        "보도",
-        "관련",
-        "통해",
-        "대한",
-        "위해",
-        "올해",
-        "이번",
-        "추진",
-        "강화",
-        "본격",
-        "금융",
-        "보험",
-        "보험사",
-        "금융위",
-        "금감원",
-        "금융감독원",
-        "금융위원회",
-        "서비스",
-        "업계",
-        "시장",
-        "관리",
-        "확대",
-        "개최",
-        "결정",
-    }
-    return [
-        token
-        for token in normalize_group_title(value).split()
-        if len(token) > 1 and token not in stop and not token.isdigit() and not token.endswith("기자")
-    ]
-
-
-def shared_long_token(a_tokens: list[str], b_tokens: list[str]) -> bool:
-    b_set = set(b_tokens)
-    return any(len(token) >= 5 and token in b_set for token in a_tokens)
-
-
-def shared_meaningful_tokens(a_tokens: list[str], b_tokens: list[str], *, minimum: int) -> bool:
-    b_set = set(b_tokens)
-    shared = {token for token in a_tokens if len(token) >= 3 and token in b_set}
-    return len(shared) >= minimum
 
 
 def enrich_issue_summaries(rows: list[dict]) -> list[dict]:

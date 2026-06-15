@@ -114,6 +114,25 @@ async function publicRest(config, path) {
   return data;
 }
 
+const MONITOR_KEYWORDS_EXTENDED_PATH = "monitor_keywords?select=keyword,category,enabled,match_mode,context_terms,exclude_terms,priority,memo&enabled=eq.true&order=category.asc,priority.asc,created_at.asc&limit=1000";
+const MONITOR_KEYWORDS_BASIC_PATH = "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000";
+
+async function loadMonitorKeywords(config, session) {
+  try {
+    return await rest(config, session, MONITOR_KEYWORDS_EXTENDED_PATH);
+  } catch {
+    return rest(config, session, MONITOR_KEYWORDS_BASIC_PATH);
+  }
+}
+
+async function loadPublicMonitorKeywords(config) {
+  try {
+    return await publicRest(config, MONITOR_KEYWORDS_EXTENDED_PATH);
+  } catch {
+    return publicRest(config, MONITOR_KEYWORDS_BASIC_PATH);
+  }
+}
+
 export async function triggerNewsCollection(payload = {}) {
   const config = await loadSupabaseConfig();
   const session = getStoredSession();
@@ -123,7 +142,7 @@ export async function triggerNewsCollection(payload = {}) {
     send_slack: payload.send_slack === true,
     report_slot: payload.report_slot || "auto",
     source: payload.source || "dashboard_manual_refresh",
-  }, { allowAnonymous: true });
+  });
 }
 
 async function writeRest(path, method, body, headers = {}) {
@@ -172,14 +191,27 @@ export async function saveMediaRelation(media = {}) {
   );
 }
 
-export async function saveMonitorKeyword(keyword, category = "other") {
-  const cleanKeyword = String(keyword || "").trim();
-  const cleanCategory = String(category || "other").trim() || "other";
+export async function saveMonitorKeyword(keyword, category = "other", options = {}) {
+  const payload = typeof keyword === "object" && keyword !== null
+    ? keyword
+    : { keyword, category, ...options };
+  const cleanKeyword = String(payload.keyword || "").trim();
+  const cleanCategory = String(payload.category || "other").trim() || "other";
   if (!cleanKeyword) throw new Error("keyword_required");
+  const body = {
+    keyword: cleanKeyword,
+    category: cleanCategory,
+    enabled: payload.enabled !== false,
+    match_mode: normalizeKeywordMatchMode(payload.matchMode || payload.match_mode),
+    context_terms: normalizeTermArray(payload.contextTerms || payload.context_terms),
+    exclude_terms: normalizeTermArray(payload.excludeTerms || payload.exclude_terms),
+    priority: normalizePriority(payload.priority),
+    memo: String(payload.memo || "").trim(),
+  };
   return writeRest(
     "monitor_keywords?on_conflict=keyword,category",
     "POST",
-    [{ keyword: cleanKeyword, category: cleanCategory, enabled: true }],
+    [body],
     { Prefer: "resolution=merge-duplicates,return=representation" },
   );
 }
@@ -819,7 +851,7 @@ async function loadOperationalDataFromSupabaseSession() {
       reporters: rest(config, session, "reporters?select=id,name,media,beat,status,contact_date,email,phone,request,memo,updated_at&order=updated_at.desc&limit=500"),
       ads: rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
       aliases: rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
-      keywords: rest(config, session, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
+      keywords: loadMonitorKeywords(config, session),
       riskDrafts: rest(config, session, "risk_response_drafts?select=id,article_hash,draft_type,title,link,source,tone,risk_level,issue,draft,status,model,context,created_by,created_at,updated_at&order=created_at.desc&limit=200"),
       feedback: rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500"),
       gaCompanies: rest(config, session, "ga_companies?select=name,short_name,display_order,active&active=eq.true&order=display_order.asc,name.asc&limit=200"),
@@ -929,7 +961,7 @@ async function loadOperationalDataFromSupabasePublic() {
       ),
       mediaRelations: publicRest(config, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc"),
       aliases: publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
-      keywords: publicRest(config, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
+      keywords: loadPublicMonitorKeywords(config),
     };
     const optionalEntries = await Promise.allSettled(
       Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
@@ -1005,7 +1037,29 @@ function normalizeKeyword(row) {
     keyword: String(keyword).trim(),
     category: row?.category || "other",
     enabled: row?.enabled !== false,
+    matchMode: normalizeKeywordMatchMode(row?.match_mode || row?.matchMode),
+    contextTerms: normalizeTermArray(row?.context_terms || row?.contextTerms),
+    excludeTerms: normalizeTermArray(row?.exclude_terms || row?.excludeTerms),
+    priority: normalizePriority(row?.priority),
+    memo: String(row?.memo || "").trim(),
   };
+}
+
+function normalizeKeywordMatchMode(value) {
+  const mode = String(value || "keyword").trim();
+  return ["keyword", "context", "strict", "exact"].includes(mode) ? mode : "keyword";
+}
+
+function normalizeTermArray(value) {
+  const items = Array.isArray(value)
+    ? value
+    : String(value || "").split(/[,|\n]/);
+  return items.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function normalizePriority(value) {
+  const priority = Number(value);
+  return Number.isFinite(priority) ? Math.max(1, Math.min(999, Math.round(priority))) : 100;
 }
 
 function normalizeRiskDraft(row) {

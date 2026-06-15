@@ -254,13 +254,13 @@ async function ensureNegativeWatch(source: string) {
     "select=scanned_at,status&order=scanned_at.desc,created_at.desc&limit=1",
   );
   const latestAt = latest[0]?.scanned_at ? new Date(String(latest[0].scanned_at)) : null;
-  const threshold = Number(Deno.env.get("WATCHDOG_NEGATIVE_MAX_AGE_MINUTES") || "7");
+  const threshold = Number(Deno.env.get("WATCHDOG_NEGATIVE_MAX_AGE_MINUTES") || "12");
   const stale = !latestAt || Date.now() - latestAt.getTime() > threshold * 60 * 1000;
   if (!stale) {
     return { job: "negative_watch", dispatched: false, reason: "recent_success", latest_at: latestAt?.toISOString() || "" };
   }
 
-  const runKey = `negative_watch:watchdog:${fiveMinuteBucketKey()}`;
+  const runKey = `negative_watch:watchdog:${tenMinuteBucketKey()}`;
   if (await hasFreshDispatch(runKey)) {
     return { job: "negative_watch", dispatched: false, reason: "dispatch_in_flight", run_key: runKey };
   }
@@ -523,8 +523,8 @@ function expectedAtIso(slot: string) {
   return new Date(Date.UTC(p.year, p.month - 1, p.day, Number(slot) - 9, 0, 0)).toISOString();
 }
 
-function fiveMinuteBucketKey() {
+function tenMinuteBucketKey() {
   const p = kstNowParts();
-  const minute = Math.floor(p.minute / 5) * 5;
+  const minute = Math.floor(p.minute / 10) * 10;
   return `${p.year}${String(p.month).padStart(2, "0")}${String(p.day).padStart(2, "0")}${String(p.hour).padStart(2, "0")}${String(minute).padStart(2, "0")}`;
 }

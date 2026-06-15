@@ -58,8 +58,7 @@ Deno.serve(async (req) => {
   const payload = body.payload || {};
   const sessionToken = req.headers.get("x-dashboard-session") || "";
   const session = sessionToken ? await verifySession(sessionToken) : { ok: false, message: "anonymous" };
-  const publicRefresh = action === "trigger_collection";
-  if (!session.ok && !publicRefresh) {
+  if (!session.ok) {
     return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
   }
 
@@ -132,7 +131,7 @@ async function revokeSession(token: string) {
 
 async function triggerCollection(session: SessionInfo, payload: Record<string, unknown>) {
   const authenticated = session.ok === true;
-  if (authenticated && !["admin", "editor"].includes(session.role || "")) {
+  if (!authenticated || !["admin", "editor"].includes(session.role || "")) {
     return jsonResponse({ error: "write_not_allowed" }, 403);
   }
 
@@ -141,16 +140,10 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
   const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
   const workflow = sanitizeWorkflow(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml");
   const ref = Deno.env.get("GITHUB_REF") || "main";
-  const periodReports = authenticated
-    ? sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none")
-    : "none";
-  const sendSlack = authenticated
-    ? payload.send_slack === true
-      || String(payload.send_slack || "").toLowerCase() === "true"
-    : false;
-  const reportSlot = authenticated
-    ? sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto")
-    : "auto";
+  const periodReports = sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
+  const sendSlack = payload.send_slack === true
+    || String(payload.send_slack || "").toLowerCase() === "true";
+  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto");
 
   if (!token) {
     return jsonResponse({ error: "missing_github_dispatch_token" }, 500);

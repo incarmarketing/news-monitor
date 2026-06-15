@@ -6602,7 +6602,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-add-form {
-  grid-template-columns: minmax(132px, 160px) minmax(0, 1fr) 112px;
+  grid-template-columns:
+    minmax(126px, .68fr)
+    minmax(190px, 1fr)
+    minmax(126px, .7fr)
+    minmax(180px, 1fr)
+    minmax(180px, 1fr)
+    minmax(84px, .4fr)
+    auto;
   align-items: start;
 }
 
@@ -6613,6 +6620,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .keyword-add-form .primary-button {
   width: 112px;
   padding: 0 10px;
+}
+
+.keyword-add-form .compact-field {
+  min-width: 84px;
 }
 
 .keyword-management-grid {
@@ -6653,6 +6664,21 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     min-width: 0;
     padding-top: 0;
     justify-content: stretch;
+  }
+
+  .keyword-add-form .primary-button {
+    width: 100%;
+  }
+}
+
+@container (min-width: 721px) and (max-width: 1040px) {
+  .keyword-add-form {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .keyword-add-form .operation-form-actions {
+    min-width: 0;
+    padding-top: 21px;
   }
 
   .keyword-add-form .primary-button {
@@ -6703,6 +6729,53 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .keyword-chip-grid {
   align-items: center;
   min-height: 30px;
+}
+
+.keyword-rule-chip {
+  display: inline-grid;
+  grid-template-columns: minmax(0, auto);
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.keyword-rule-chip b,
+.keyword-rule-chip small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyword-rule-chip b {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.keyword-rule-chip small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.keyword-rule-chip.tone-긍정 {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.keyword-rule-chip.tone-주의 {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.keyword-rule-chip.tone-제외 {
+  border-color: #e2e8f0;
+  background: #f8fafc;
 }
 
 .feedback-login-note {
