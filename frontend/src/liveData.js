@@ -19,6 +19,16 @@ const STOCK_MARKET_DATA_PATHS = [
   `${import.meta.env.BASE_URL || "/"}data/stock-market.json`,
 ];
 
+const ARTICLE_PAGE_SIZE = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_PAGE_SIZE", 1000, 500, 2000);
+const SESSION_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_SESSION_ARTICLE_MAX_ROWS", 20000, 1000, 50000);
+const PUBLIC_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_PUBLIC_ARTICLE_MAX_ROWS", 12000, 1000, 50000);
+
+function readPositiveEnvInt(name, fallback, min, max) {
+  const parsed = Number.parseInt(import.meta.env?.[name] || "", 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
+}
+
 const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/;
 const INVESTMENT_REPORT_RE = /투자의견|목표주가|목표가|증권가|리포트|애널리스트/;
 const OWN_NAME_RE = /인카금융서비스|인카금융/;
@@ -813,8 +823,8 @@ async function loadOperationalDataFromSupabaseSession() {
         "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size,raw",
         "order=report_date.desc,score.desc",
       ].join("&"),
-      1000,
-      50000,
+      ARTICLE_PAGE_SIZE,
+      SESSION_ARTICLE_MAX_ROWS,
     );
     const optionalRequests = {
       notifications: rest(
@@ -947,8 +957,8 @@ async function loadOperationalDataFromSupabasePublic() {
         "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
         "order=report_date.desc,score.desc",
       ].join("&"),
-      1000,
-      50000,
+      ARTICLE_PAGE_SIZE,
+      PUBLIC_ARTICLE_MAX_ROWS,
     );
     const optionalRequests = {
       reportRuns: publicRest(

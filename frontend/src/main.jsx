@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -463,32 +463,36 @@ function App() {
   }, [activeSection]);
 
   const baseData = periodData[period];
-  const scopedArticles = useMemo(
-    () => filterArticlesByPeriod(operations.articles || [], period),
-    [operations.articles, period],
-  );
-  const scopedReportRuns = useMemo(
-    () => filterRowsByPeriod(operations.reportRuns || [], period),
-    [operations.reportRuns, period],
-  );
+  const needsPeriodData = activeSection === "media" || activeSection === "reports";
+  const needsRealtimeData = activeSection === "overview";
+  const needsManagementData = activeSection === "management";
   const liveConnected = operations.status === "live";
   const allArticles = liveConnected ? operations.articles || [] : [];
   const scraps = liveConnected ? operations.scraps || [] : [];
+  const needsScopedArticles = needsPeriodData || (needsManagementData && !liveConnected);
+  const scopedArticles = useMemo(
+    () => needsScopedArticles ? filterArticlesByPeriod(operations.articles || [], period) : [],
+    [operations.articles, period, needsScopedArticles],
+  );
+  const scopedReportRuns = useMemo(
+    () => needsPeriodData ? filterRowsByPeriod(operations.reportRuns || [], period) : [],
+    [operations.reportRuns, period, needsPeriodData],
+  );
   const data = useMemo(
-    () => composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected, period),
-    [baseData, scopedArticles, scopedReportRuns, liveConnected, period],
+    () => needsPeriodData ? composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected, period) : baseData,
+    [baseData, scopedArticles, scopedReportRuns, liveConnected, period, needsPeriodData],
   );
   const realtimeArticles = useMemo(
-    () => selectRealtimeArticles(allArticles),
-    [allArticles],
+    () => needsRealtimeData ? selectRealtimeArticles(allArticles) : [],
+    [allArticles, needsRealtimeData],
   );
   const realtimeData = useMemo(
-    () => composeRealtimeData(periodData.daily, realtimeArticles, liveConnected),
-    [realtimeArticles, liveConnected],
+    () => needsRealtimeData ? composeRealtimeData(periodData.daily, realtimeArticles, liveConnected) : periodData.daily,
+    [realtimeArticles, liveConnected, needsRealtimeData],
   );
   const management = useMemo(
-    () => composeManagementData(operations, liveConnected ? operations.articles || [] : scopedArticles),
-    [operations, scopedArticles, liveConnected],
+    () => needsManagementData ? composeManagementData(operations, liveConnected ? operations.articles || [] : scopedArticles) : {},
+    [operations, scopedArticles, liveConnected, needsManagementData],
   );
   const notifications = liveConnected ? operations.notifications || [] : [];
   const jobs = liveConnected && operations.watchRuns?.length
@@ -996,11 +1000,13 @@ function OpsStatusRail({
 }
 
 function Monitoring({ data, articles, scraps = [], monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved, onScrapSaved }) {
+  const [isFilterPending, startFilterTransition] = useTransition();
   const regularArticles = useMemo(
     () => articles.filter((article) => !isOfficialRegulatorSource(article.source)),
     [articles],
   );
-  const latestDate = useMemo(() => latestArticleDate(regularArticles), [regularArticles]);
+  const deferredRegularArticles = useDeferredValue(regularArticles);
+  const latestDate = useMemo(() => latestArticleDate(deferredRegularArticles), [deferredRegularArticles]);
   const [query, setQuery] = useState("");
   const [queryInput, setQueryInput] = useState("");
   const [tone, setTone] = useState("all");
@@ -1013,8 +1019,8 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const sources = useMemo(() => unique(regularArticles.map((article) => article.source)).slice(0, 80), [regularArticles]);
-  const categories = useMemo(() => unique(regularArticles.map((article) => article.category)).slice(0, 40), [regularArticles]);
+  const sources = useMemo(() => unique(deferredRegularArticles.map((article) => article.source)).slice(0, 80), [deferredRegularArticles]);
+  const categories = useMemo(() => unique(deferredRegularArticles.map((article) => article.category)).slice(0, 40), [deferredRegularArticles]);
   useEffect(() => {
     if (!latestDate || startDateInput || endDateInput || startDate || endDate) return;
     setStartDateInput(latestDate);
@@ -1029,7 +1035,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
     setTone(monitoringPreset.tone || "all");
     setCategory(monitoringPreset.category || "all");
     setSource(monitoringPreset.source || "all");
-    const range = resolveMonitoringDateRange(regularArticles, monitoringPreset);
+    const range = resolveMonitoringDateRange(deferredRegularArticles, monitoringPreset);
     if (range.start || range.end) {
       setStartDateInput(range.start);
       setEndDateInput(range.end);
@@ -1037,7 +1043,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
       setEndDate(range.end);
     }
     setVisible(30);
-  }, [monitoringPreset, regularArticles]);
+  }, [monitoringPreset, deferredRegularArticles]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const focusArticleHash = String(monitoringPreset?.articleHash || "").trim();
@@ -1045,8 +1051,8 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
     const focusArticleTitle = String(monitoringPreset?.articleTitle || "").trim();
     const hasFocusTarget = Boolean(focusArticleHash || focusArticleLink || focusArticleTitle);
     const focusTargetAvailable = hasFocusTarget
-      && regularArticles.some((article) => articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle));
-    return regularArticles.filter((article) => {
+      && deferredRegularArticles.some((article) => articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle));
+    return deferredRegularArticles.filter((article) => {
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
       const articleDate = article.date || "";
       const focusMatched = !focusTargetAvailable || articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle);
@@ -1060,7 +1066,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
         (source === "all" || article.source === source)
       );
     });
-  }, [regularArticles, category, endDate, monitoringPreset, query, source, startDate, tone]);
+  }, [deferredRegularArticles, category, endDate, monitoringPreset, query, source, startDate, tone]);
   const applyDateFilter = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
@@ -1073,16 +1079,22 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
     setEndDate(nextEnd);
     setVisible(30);
   };
-  const grouped = useMemo(() => buildRelatedArticleGroups(filtered), [filtered]);
-  const visibleRows = viewMode === "related" ? grouped : filtered;
+  const deferredFiltered = useDeferredValue(filtered);
+  const grouped = useMemo(
+    () => viewMode === "related" ? buildRelatedArticleGroups(deferredFiltered) : [],
+    [deferredFiltered, viewMode],
+  );
+  const visibleRows = viewMode === "related" ? grouped : deferredFiltered;
   const feedMeta = viewMode === "related"
     ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
     : `${filtered.length.toLocaleString("ko-KR")}건`;
-  const isLoading = operations?.status === "loading" || isWorking;
+  const isLoading = operations?.status === "loading" || isWorking || isFilterPending;
   const applyFilters = () => {
-    applyDateFilter();
-    setQuery(queryInput);
-    setVisible(30);
+    startFilterTransition(() => {
+      applyDateFilter();
+      setQuery(queryInput);
+      setVisible(30);
+    });
   };
 
   return (
