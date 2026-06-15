@@ -9,6 +9,7 @@ from collections import Counter
 
 
 OWN_NAMES = ["인카금융", "인카금융서비스"]
+SHORT_INCAR_PATTERN = re.compile(r"(?<![0-9A-Za-z가-힣])인카(?![0-9A-Za-z가-힣])", re.I)
 
 REGULATION_WORDS = [
     "금감원", "금융위", "금융감독원", "금융소비자보호", "규제", "법안", "1200%",
@@ -168,6 +169,24 @@ MATERIAL_CAUTION_CONTEXT_WORDS = [
 MATERIAL_BUSINESS_CONTEXT_WORDS = DOMAIN_CONTEXT_WORDS + MATERIAL_CAUTION_CONTEXT_WORDS + [
     "보험료", "보험금", "계약", "상품", "실손", "생명보험", "손해보험", "GA",
     "설계사", "대리점", "금융서비스", "실적", "영업", "채권", "증권",
+]
+
+SHORT_INCAR_BUSINESS_CONTEXT_WORDS = [
+    "보험", "보험사", "생명보험", "손해보험", "보험대리점", "법인보험대리점",
+    "GA", "보험GA", "설계사", "보험설계사", "금융서비스", "금감원",
+    "금융감독원", "금융위", "금융위원회", "수수료", "정착지원금",
+    "불완전판매", "부당승환", "브랜드평판", "우수인증설계사", "실적",
+    "매출", "순익", "공시", "코스닥", "주가", "증권",
+]
+
+SHORT_INCAR_NOISE_WORDS = [
+    "인카 게이밍", "인카게이밍", "in-car", "메르세데스", "벤츠", "Mercedes",
+    "Mercedes pay", "메르세데스 페이", "차량 구매", "차량 결제", "내비게이션",
+    "내비", "인포테인먼트", "모빌리티", "커넥티드카", "오토 차이나",
+    "오비고", "NHN KCP", "현대차", "기아", "카&테크", "SBA",
+    "후보 명단", "기초단체장 후보", "병역필", "전과", "프로볼링", "KPBA",
+    "인카제국", "잉카", "마추픽추", "페루", "남미", "쿠스코", "안데스",
+    "유적", "문명", "관광", "여행",
 ]
 
 SALES_CONDUCT_TRIGGER_WORDS = [
@@ -679,7 +698,7 @@ def categorize(article: dict) -> str:
         return "other"
     if rule_category in KEYWORD_CATEGORIES:
         return rule_category
-    if any(keyword in text for keyword in OWN_NAMES):
+    if contains_own_name(text):
         return "own"
     if is_sales_conduct_context_text(text):
         return "regulation"
@@ -700,6 +719,12 @@ def categorize(article: dict) -> str:
 def normalize_keyword_category(value: object) -> str:
     category = str(value or "").strip()
     return category if category in KEYWORD_CATEGORIES else ""
+
+
+def contains_own_name(text: object) -> bool:
+    text = str(text or "")
+    compact = re.sub(r"\s+", "", text)
+    return any(name in text or name in compact for name in OWN_NAMES)
 
 
 def contains_competitor_word(text: str) -> bool:
@@ -808,6 +833,30 @@ def has_material_business_context(text: str) -> bool:
     return any(word in text for word in MATERIAL_BUSINESS_CONTEXT_WORDS)
 
 
+def contains_short_incar_keyword(text: str) -> bool:
+    return bool(SHORT_INCAR_PATTERN.search(str(text or "")))
+
+
+def is_short_incar_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not contains_short_incar_keyword(text):
+        return False
+    if contains_own_name(text):
+        return False
+    return any(word in text for word in SHORT_INCAR_NOISE_WORDS)
+
+
+def has_short_incar_business_context(text: str) -> bool:
+    text = str(text or "")
+    if contains_own_name(text):
+        return True
+    if not contains_short_incar_keyword(text):
+        return False
+    if is_short_incar_noise_text(text):
+        return False
+    return any(word in text for word in SHORT_INCAR_BUSINESS_CONTEXT_WORDS)
+
+
 def has_priority_policy_context(text: str) -> bool:
     if is_sales_conduct_context_text(text):
         return True
@@ -824,6 +873,8 @@ def is_non_business_noise(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     title = article.get("title", "")
     if not text.strip():
+        return True
+    if is_short_incar_noise_text(text):
         return True
     if matched_context_rule(text, {"exclude"}):
         return True
@@ -1006,12 +1057,12 @@ def has_own_evidence(article: dict) -> bool:
             raw.get("body", ""),
         )
     )
-    return any(name in text for name in OWN_NAMES)
+    return contains_own_name(text)
 
 
 def contains_own_reference(value: object) -> bool:
     text = str(value or "")
-    return any(name in text for name in OWN_NAMES) or "당사" in text
+    return contains_own_name(text) or "당사" in text
 
 
 def is_unsupported_own_reference(article: dict, value: object) -> bool:

@@ -163,7 +163,7 @@ DOMAIN_PRESS_MAP = {
 }
 
 KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
-AMBIGUOUS_COLLECTION_KEYWORDS = {"메가", "GA", "브랜드평판", "브랜드 평판", "평판", "글로벌금융"}
+AMBIGUOUS_COLLECTION_KEYWORDS = {"인카", "메가", "GA", "브랜드평판", "브랜드 평판", "평판", "글로벌금융"}
 BROAD_REPUTATION_KEYWORDS = {"브랜드평판", "브랜드 평판", "평판"}
 CONTEXTUAL_REPUTATION_QUERIES = [
     "보험대리점 브랜드평판",
@@ -964,6 +964,8 @@ def is_relevant_article(article: dict) -> bool:
         return False
 
     if category == "other":
+        if is_short_incar_collection_keyword(keyword) or is_short_incar_collection_keyword(query):
+            return analyzer.has_short_incar_business_context(text)
         if analyzer.is_sales_conduct_context_text(text):
             return True
         return keyword_matches_text(text, keyword) or keyword_matches_text(text, query)
@@ -1000,6 +1002,8 @@ def article_matches_collection_keyword(article: dict, text: str) -> bool:
     query = str(article.get("keyword_query") or keyword).strip()
     if analyzer.is_sales_conduct_noise_text(text):
         return False
+    if is_short_incar_collection_keyword(keyword) or is_short_incar_collection_keyword(query):
+        return analyzer.has_short_incar_business_context(text)
     if analyzer.is_sales_conduct_context_text(text) and (
         "1200" in compact_keyword(keyword)
         or "수수료" in keyword
@@ -1029,6 +1033,11 @@ def keyword_matches_text(text: str, keyword: str) -> bool:
 
 def compact_keyword(value: str) -> str:
     return re.sub(r"\s+", "", str(value or "")).lower()
+
+
+def is_short_incar_collection_keyword(keyword: str) -> bool:
+    normalized = compact_keyword(keyword)
+    return normalized in {"인카", "inca", "incar"}
 
 
 def keyword_requires_context(keyword: str) -> bool:
