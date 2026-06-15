@@ -1083,11 +1083,20 @@ def exact_keyword_matches_text(text: str, keyword: str) -> bool:
     keyword = str(keyword or "").strip()
     if not keyword:
         return False
-    return bool(re.search(rf"(?<![0-9A-Za-z가-힣]){re.escape(keyword)}(?![0-9A-Za-z가-힣])", text))
+    return bool(re.search(rf"(?<![0-9A-Za-z가-힣]){re.escape(keyword)}(?![0-9A-Za-z가-힣])", text, flags=re.IGNORECASE))
 
 
 def terms_match_text(text: str, terms: list[str]) -> bool:
-    return any(term and (term in text or compact_keyword(term) in compact_keyword(text)) for term in terms)
+    return any(term_matches_text(text, term) for term in terms)
+
+
+def term_matches_text(text: str, term: str) -> bool:
+    term = str(term or "").strip()
+    if not term:
+        return False
+    if re.fullmatch(r"[A-Za-z0-9]{1,3}", term):
+        return bool(re.search(rf"(?<![0-9A-Za-z]){re.escape(term)}(?![0-9A-Za-z])", text, flags=re.IGNORECASE))
+    return term in text or compact_keyword(term) in compact_keyword(text)
 
 
 def compact_keyword(value: str) -> str:
