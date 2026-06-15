@@ -19,11 +19,11 @@ const kstOffsetMs = 9 * 60 * 60 * 1000;
 const periodReports = {
   weekly: {
     messageType: "weekly_report",
-    title: "\uC8FC\uAC04 \uC5B8\uB860 \uBAA8\uB2C8\uD130\uB9C1 \uBCF4\uACE0\uC11C",
+    title: "\uC8FC\uAC04 \uC5B8\uB860 \uB3D9\uD5A5",
   },
   monthly: {
     messageType: "monthly_report",
-    title: "\uC6D4\uAC04 \uC5B8\uB860 \uBAA8\uB2C8\uD130\uB9C1 \uBCF4\uACE0\uC11C",
+    title: "\uC6D4\uAC04 \uC5B8\uB860 \uB3D9\uD5A5",
   },
 } as const;
 type PeriodReportKind = keyof typeof periodReports;
@@ -178,12 +178,13 @@ async function ensureDailyReport(slot: string, source: string) {
 
 async function ensurePeriodReport(period: PeriodReportKind, source: string) {
   const date = kstDate();
-  const runKey = `period_report:${date}:07`;
-  const dispatchKey = `watchdog:period_report:${date}:07`;
+  const runKey = `period_report:${period}:${date}:07`;
+  const legacyRunKey = `period_report:${date}:07`;
+  const dispatchKey = `watchdog:period_report:${period}:${date}:07`;
   if (await periodReportSucceeded(period)) {
     return { job: "period_report", period, date, dispatched: false, reason: "already_success" };
   }
-  if (await hasFreshDispatch(runKey)) {
+  if (await hasFreshDispatch(runKey) || await hasFreshDispatch(legacyRunKey)) {
     return { job: "period_report", period, date, dispatched: false, reason: "report_run_in_flight" };
   }
   if (await hasFreshWatchdogDispatch(dispatchKey)) {
@@ -207,7 +208,7 @@ async function ensurePeriodReport(period: PeriodReportKind, source: string) {
   });
   try {
     const dispatch = await dispatchWorkflow("news-briefing.yml", {
-      period_reports: "both",
+      period_reports: period,
       send_slack: "true",
       send_kakao: "true",
       report_slot: "07",

@@ -299,6 +299,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
           REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
+          FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.force_slack_send == 'true' || github.event.inputs.force_kakao_send == 'true') && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}

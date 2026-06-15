@@ -785,7 +785,7 @@ async function loadOperationalDataFromSupabaseSession() {
       notifications: rest(
         config,
         session,
-        "notification_sends?select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=80",
+        "notification_sends?select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at&channel=eq.slack&order=sent_at.desc&limit=80",
       ),
       watchRuns: rest(
         config,
@@ -1376,7 +1376,7 @@ function shouldReplaceDedupedArticle(current, next) {
 }
 
 function normalizeNotification(row) {
-  const rawTitle = row.title || row.message_type || row.channel || "알림톡";
+  const rawTitle = row.title || row.message_type || row.channel || "슬랙";
   return {
     id: row.id || `${row.sent_at}-${row.message_type}`,
     sentAt: row.sent_at || row.created_at || "",
@@ -1393,7 +1393,7 @@ function normalizeNotification(row) {
 }
 
 function compactNotificationTitle(row) {
-  const rawTitle = String(row?.title || row?.message_type || row?.channel || "알림톡").trim();
+  const rawTitle = String(row?.title || row?.message_type || row?.channel || "슬랙").trim();
   const dateText = compactNotificationDate(rawTitle) || compactNotificationDate(row?.sent_at || row?.created_at);
   const titleKey = `${rawTitle} ${row?.message_type || ""}`.toLowerCase();
   if (/ai_usage_alert|ai\s*요약\s*사용량|ai.*사용량/.test(titleKey)) {

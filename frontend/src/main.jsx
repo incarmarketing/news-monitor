@@ -725,7 +725,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   );
   const watchHealth = operationsHealth.items.find((item) => item.title === "부정기사 감시");
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
-  const notificationHealth = operationsHealth.items.find((item) => item.title === "알림톡");
+  const notificationHealth = operationsHealth.items.find((item) => item.title === "슬랙");
   const actionsHealth = operationsHealth.items.find((item) => item.title === "GitHub Actions");
   const historyHealth = operationsHealth.items.find((item) => item.title === "Supabase 기록");
   return (
@@ -733,7 +733,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
       <PageTitle
         eyebrow={`${data.label} · ${data.scope}`}
         title="대시보드"
-        description="검색 키워드 기준 주요 이슈, 당사 리스크, 알림톡, 보고서 생성 상태를 운영 데이터 기준으로 확인합니다."
+        description="검색 키워드 기준 주요 이슈, 당사 리스크, 슬랙 발송, 보고서 생성 상태를 운영 데이터 기준으로 확인합니다."
         right={(
           <button
             type="button"
@@ -983,7 +983,7 @@ function OpsStatusRail({
       </div>
       <WatchPanel jobs={jobs} risk={summary?.risk} health={watchHealth} />
       <AiUsagePanel status={operations?.aiStatus} />
-      <Panel title="알림톡 발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
+      <Panel title="슬랙 발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
         <NotificationStatusSummary health={notificationHealth} total={notifications.length} />
         <NotificationList rows={notifications} />
       </Panel>
@@ -6693,12 +6693,12 @@ function buildNotificationHealth(notifications = []) {
   const latest = notifications[0];
   const status = !scoped.length ? "warn" : failed.length ? "fail" : "ok";
   return {
-    title: "알림톡",
+    title: "슬랙",
     icon: Bell,
     status,
     label: healthStatusLabel(status),
     detail: scoped.length ? `최근 이력 성공 ${success.length} · 실패 ${failed.length}` : "발송 이력 없음",
-    meta: latest ? `최신 ${latest.time} · ${latest.type}` : "알림톡 기록 확인 필요",
+    meta: latest ? `최신 ${latest.time} · ${latest.type}` : "슬랙 기록 확인 필요",
   };
 }
 
@@ -7070,7 +7070,7 @@ function formatGeminiUsageText(usage = {}) {
 function NotificationList({ rows }) {
   const [showAll, setShowAll] = useState(false);
   const [selected, setSelected] = useState(null);
-  const collapsedLimit = 5;
+  const collapsedLimit = 3;
   const expandedLimit = 20;
   const displayLimit = showAll ? expandedLimit : collapsedLimit;
   const visibleRows = rows.slice(0, displayLimit);
@@ -7110,7 +7110,7 @@ function NotificationStatusSummary({ health, total = 0 }) {
     <div className={`operation-status-summary ${health?.status || "unknown"}`}>
       <div>
         <HealthStatusPill status={health?.status || "unknown"} label={health?.label || "확인"} />
-        <b>{health?.detail || "알림톡 이력 확인 대기"}</b>
+        <b>{health?.detail || "슬랙 이력 확인 대기"}</b>
       </div>
       <span>{health?.meta || `누적 ${Number(total || 0).toLocaleString("ko-KR")}건`}</span>
     </div>
@@ -7124,8 +7124,8 @@ function NotificationDetail({ item, onClose }) {
         <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
           <X />
         </button>
-        <span className="detail-kicker">알림톡 발송 내역</span>
-        <h2>{item.rawTitle || item.type || "알림톡"}</h2>
+        <span className="detail-kicker">슬랙 발송 내역</span>
+        <h2>{item.rawTitle || item.type || "슬랙"}</h2>
         <div className="detail-meta">
           <Chip tone={item.status}>{item.status}</Chip>
           <span>{item.time}</span>

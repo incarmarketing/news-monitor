@@ -664,7 +664,7 @@ export const contextRules = [
   {
     label: "부정",
     body: "사기, 불법, 제재, 고객 피해, 개인정보, 금융사고처럼 즉시 대응이 필요한 직접 리스크",
-    action: "알림톡 + 대응센터",
+    action: "슬랙 알림 + 대응센터",
   },
   {
     label: "제외",
@@ -697,7 +697,7 @@ export const reportTemplatePresets = [
   { name: "임원용 1페이지", use: "핵심 판단, 리스크, 근거 기사만 압축", format: "한 장 보고서" },
   { name: "실무 상세형", use: "기사 목록, 분류, 키워드, 일자 로그까지 확인", format: "대시보드형 리포트" },
   { name: "신문형 주간/월간", use: "기간 흐름과 반복 이슈를 읽히는 지면으로 정리", format: "뉴스레터형 PDF" },
-  { name: "카톡 요약형", use: "모바일에서 바로 읽는 핵심 브리핑", format: "짧은 알림톡" },
+  { name: "슬랙 브리핑형", use: "모바일에서 바로 읽는 핵심 브리핑", format: "짧은 슬랙 카드" },
 ];
 
 export const automationChecklist = [

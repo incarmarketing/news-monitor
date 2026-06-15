@@ -525,30 +525,37 @@ def send_period(period: str, report_month: str = "") -> None:
         raise SystemExit(f"Unknown period: {period}")
     report_month = normalize_report_month(report_month)
     title, link, payload = build_period_payload(period, report_month)
+    message_type = f"{period}_report"
+    if not force_send_enabled() and notification_already_sent(message_type, title, strict=True):
+        print(f"Slack period report already sent: {title}")
+        return
+    log_dedupe_key = forced_resend_dedupe_key(message_type, title)
     try:
         verify_public_report_link(link, label=title)
         result = post_to_slack(payload, kind="report")
         save_notification_send(
-            message_type=f"{period}_report",
+            message_type=message_type,
             title=title,
             body=payload["text"],
             link_url=link,
             status="success",
             provider_response=result,
             channel="slack",
+            dedupe_key=log_dedupe_key,
             require_log=False,
         )
         print("Slack period report result:", result)
         print("Period report link:", link)
     except Exception as error:
         save_notification_send(
-            message_type=f"{period}_report",
+            message_type=message_type,
             title=title,
             body=payload["text"],
             link_url=link,
             status="failed",
             error=str(error),
             channel="slack",
+            dedupe_key=log_dedupe_key,
             require_log=False,
         )
         raise
