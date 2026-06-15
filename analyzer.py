@@ -673,6 +673,12 @@ def categorize(article: dict) -> str:
     text = article.get("title", "") + " " + article.get("description", "")
     if is_non_business_noise(article):
         return "other"
+    rule = matched_context_rule(text)
+    rule_category = rule.get("category")
+    if rule_category in {"exclude", "other"}:
+        return "other"
+    if rule_category in KEYWORD_CATEGORIES:
+        return rule_category
     if any(keyword in text for keyword in OWN_NAMES):
         return "own"
     if is_sales_conduct_context_text(text):
@@ -749,19 +755,37 @@ def monitor_rule_by_key(rule_key: str) -> dict:
     return next((rule for rule in CONTEXT_RULES if rule.get("rule_key") == rule_key), {})
 
 
+def matched_context_rule(text: str, categories: set[str] | None = None) -> dict:
+    text = str(text or "")
+    for rule in CONTEXT_RULES:
+        if categories and rule.get("category") not in categories:
+            continue
+        if context_rule_matches(text, rule):
+            return rule
+    return {}
+
+
 def monitor_rule_matches(text: str, rule_key: str = "") -> bool:
     text = str(text or "")
     for rule in CONTEXT_RULES:
         if rule_key and rule.get("rule_key") != rule_key:
             continue
-        triggers = rule.get("trigger_terms") or []
-        required = rule.get("required_terms") or []
-        if triggers and not any(term in text for term in triggers):
-            continue
-        if required and not any(term in text for term in required):
-            continue
-        return True
+        if context_rule_matches(text, rule):
+            return True
     return False
+
+
+def context_rule_matches(text: str, rule: dict) -> bool:
+    triggers = rule.get("trigger_terms") or []
+    required = rule.get("required_terms") or []
+    excluded = rule.get("exclude_terms") or []
+    if excluded and any(term in text for term in excluded):
+        return False
+    if triggers and not any(term in text for term in triggers):
+        return False
+    if required and not any(term in text for term in required):
+        return False
+    return True
 
 
 def has_domain_context(text: str) -> bool:
@@ -801,6 +825,8 @@ def is_non_business_noise(article: dict) -> bool:
     title = article.get("title", "")
     if not text.strip():
         return True
+    if matched_context_rule(text, {"exclude"}):
+        return True
     if is_sales_conduct_noise_text(text):
         return True
     if is_stock_listing_noise(article):
@@ -834,6 +860,14 @@ def analyze_tone(article: dict) -> str:
     if is_relief_support_article(article):
         return "positive" if is_own_article(article) and is_own_positive_focus_article(article) else "neutral"
     if is_competitor_brand_reputation_against_own(article):
+        return "caution"
+    rule = matched_context_rule(text)
+    rule_tone = rule.get("tone")
+    if rule_tone in {"exclude", "neutral"}:
+        return "neutral"
+    if rule_tone == "positive" and rule.get("category") == "own":
+        return "positive"
+    if rule_tone == "caution" and category != "own":
         return "caution"
     if category == "regulation" and is_sales_conduct_context_text(text):
         return "caution"
@@ -888,6 +922,8 @@ def should_mark_caution(article: dict, category: str, severe_score: int, caution
     if is_investment_downgrade_article(article) or is_stock_decline_article(article):
         return True
     if is_settlement_support_caution_article(article):
+        return True
+    if matched_context_rule(text, {"own", "regulation", "competitor", "industry"}).get("tone") == "caution":
         return True
     if category == "regulation" and is_sales_conduct_context_text(text):
         return True
