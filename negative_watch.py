@@ -107,7 +107,13 @@ def is_active_time(current: datetime | None = None) -> bool:
     return current.hour >= start_hour or current.hour <= end_hour
 
 
+def local_alert_state_enabled() -> bool:
+    return os.getenv("NEGATIVE_WATCH_LOCAL_STATE", "").strip().lower() in {"1", "true", "yes", "y"}
+
+
 def load_state() -> dict:
+    if not local_alert_state_enabled():
+        return {"sent_keys": [], "alerts": []}
     STATE_DIR.mkdir(exist_ok=True)
     if not STATE_PATH.exists():
         return {"sent_keys": [], "alerts": []}
@@ -118,6 +124,9 @@ def load_state() -> dict:
 
 
 def save_state(state: dict) -> None:
+    if not local_alert_state_enabled():
+        return
+    STATE_DIR.mkdir(exist_ok=True)
     sent_keys = state.get("sent_keys", [])
     state["sent_keys"] = sent_keys[-MAX_SENT_KEYS:]
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -594,6 +603,31 @@ def send_slack_alert(text: str, link_url: str, article: dict) -> dict:
     return slack_notify.send_alert(text, link_url, title=title, article_url=article_url)
 
 
+def alert_title_for_article(article: dict) -> str:
+    return f"부정기사 감지 {article_key(article)}"
+
+
+def notification_already_sent_for_article(article: dict) -> bool:
+    try:
+        return notification_already_sent("negative_alert", alert_title_for_article(article), channel="slack")
+    except Exception as error:
+        print("Negative alert notification lookup skipped:", error)
+        return False
+
+
+def filter_unsent_negative_articles(articles: list[dict], sent_keys: set[str]) -> list[dict]:
+    result = []
+    for article in articles:
+        key = article_key(article)
+        if key in sent_keys:
+            continue
+        if notification_already_sent_for_article(article):
+            sent_keys.add(key)
+            continue
+        result.append(article)
+    return result
+
+
 def mark_alerts_sent(state: dict, sent: set[str], articles: list[dict], sent_at: str) -> None:
     for article in articles:
         key = article_key(article)
@@ -673,7 +707,7 @@ def finish_watch_run(
 
 def main() -> None:
     load_dotenv()
-    base_minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "5"))
+    base_minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "10"))
     minutes_back = effective_minutes_back(base_minutes_back)
     scanned_at = now_kst().isoformat()
     if minutes_back > base_minutes_back:
@@ -710,7 +744,7 @@ def main() -> None:
     sent = set(state.get("sent_keys", []))
     all_negatives = merge_negative_candidates(db_negatives, negatives, alert_state_articles(state))
     persist_negative_articles(all_negatives, metrics, scanned_at, minutes_back)
-    new_negatives = [article for article in all_negatives if article_key(article) not in sent]
+    new_negatives = filter_unsent_negative_articles(all_negatives, sent)
 
     print(
         f"Negative watcher scanned {len(articles)} company articles; "
@@ -748,7 +782,7 @@ def main() -> None:
 
     link = build_alert_link(new_negatives[0])
     message = build_alert_message(new_negatives, metrics, minutes_back, len(db_negatives))
-    alert_title = f"부정기사 감지 {article_key(new_negatives[0])}"
+    alert_title = alert_title_for_article(new_negatives[0])
     if notification_already_sent("negative_alert", alert_title):
         print(f"Negative alert already sent: {alert_title}")
         for article in new_negatives:
@@ -780,6 +814,16 @@ def main() -> None:
             provider_response=result,
             channel="slack",
         )
+        for article in new_negatives[1:]:
+            save_notification_send(
+                message_type="negative_alert",
+                title=alert_title_for_article(article),
+                body=f"동일 알림 묶음에 포함된 부정기사: {clean_alert_title(article.get('title', ''), 140)}",
+                link_url=build_alert_link(article),
+                status="success",
+                provider_response={"grouped_with": alert_title},
+                channel="slack",
+            )
         finish_watch_run(
             scanned_at=scanned_at,
             minutes_back=minutes_back,

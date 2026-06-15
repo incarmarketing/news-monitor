@@ -294,6 +294,8 @@ def collect_news() -> list[dict]:
             progress.update(task, description=f"[cyan]'{label}' 수집 중")
             naver = fetch_naver_news(query, label, category, row.get("strict_query", False))
             google = fetch_google_news(query, label, category, row.get("strict_query", False))
+            apply_keyword_rule_metadata(naver, row)
+            apply_keyword_rule_metadata(google, row)
             all_articles.extend(naver + google)
             stats.append((f"{label} · {category_label(category)}", len(naver), len(google)))
             progress.advance(task)
@@ -334,9 +336,17 @@ def normalize_collection_keywords(keywords: list[str | dict]) -> list[dict]:
         if isinstance(item, dict):
             keyword = str(item.get("keyword") or "").strip()
             category = normalize_keyword_category(item.get("category"))
+            match_mode = normalize_keyword_match_mode(item.get("match_mode"))
+            context_terms = normalize_term_list(item.get("context_terms") or item.get("required_terms"))
+            exclude_terms = normalize_term_list(item.get("exclude_terms"))
+            priority = item.get("priority") or 100
         else:
             keyword = str(item).strip()
             category = infer_keyword_category(keyword)
+            match_mode = "keyword"
+            context_terms = []
+            exclude_terms = []
+            priority = 100
         if not keyword:
             continue
         expanded = expand_keyword_queries(keyword, category)
@@ -353,10 +363,37 @@ def normalize_collection_keywords(keywords: list[str | dict]) -> list[dict]:
                     "query": query,
                     "category": category,
                     "strict_query": query != keyword and category != "other",
+                    "match_mode": match_mode,
+                    "context_terms": context_terms,
+                    "exclude_terms": exclude_terms,
+                    "priority": priority,
                 }
             )
             seen.add(key)
     return normalized
+
+
+def apply_keyword_rule_metadata(articles: list[dict], row: dict) -> None:
+    for article in articles:
+        article["keyword_match_mode"] = row.get("match_mode") or "keyword"
+        article["keyword_context_terms"] = row.get("context_terms") or []
+        article["keyword_exclude_terms"] = row.get("exclude_terms") or []
+        article["keyword_priority"] = row.get("priority") or 100
+
+
+def normalize_term_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        terms = value
+    elif isinstance(value, str):
+        terms = re.split(r"[,|\n]", value)
+    else:
+        terms = []
+    return [str(term).strip() for term in terms if str(term).strip()]
+
+
+def normalize_keyword_match_mode(value: object) -> str:
+    mode = str(value or "keyword").strip()
+    return mode if mode in {"keyword", "context", "strict", "exact"} else "keyword"
 
 
 def normalize_keyword_category(value: object) -> str:
@@ -1000,7 +1037,14 @@ def has_collection_context(text: str) -> bool:
 def article_matches_collection_keyword(article: dict, text: str) -> bool:
     keyword = str(article.get("keyword") or "").strip()
     query = str(article.get("keyword_query") or keyword).strip()
+    match_mode = normalize_keyword_match_mode(article.get("keyword_match_mode"))
+    context_terms = normalize_term_list(article.get("keyword_context_terms"))
+    exclude_terms = normalize_term_list(article.get("keyword_exclude_terms"))
     if analyzer.is_sales_conduct_noise_text(text):
+        return False
+    if terms_match_text(text, exclude_terms):
+        return False
+    if context_terms and not terms_match_text(text, context_terms):
         return False
     if is_short_incar_collection_keyword(keyword) or is_short_incar_collection_keyword(query):
         return analyzer.has_short_incar_business_context(text)
@@ -1012,6 +1056,10 @@ def article_matches_collection_keyword(article: dict, text: str) -> bool:
         or "승환" in keyword
     ):
         return True
+    if match_mode == "exact":
+        return exact_keyword_matches_text(text, query) or exact_keyword_matches_text(text, keyword)
+    if match_mode == "strict":
+        return keyword_matches_text(text, query)
     if article.get("keyword_strict_query"):
         return keyword_matches_text(text, query)
     return keyword_matches_text(text, query) or keyword_matches_text(text, keyword)
@@ -1029,6 +1077,17 @@ def keyword_matches_text(text: str, keyword: str) -> bool:
     if not keyword:
         return False
     return keyword in text or compact_keyword(keyword) in compact_keyword(text)
+
+
+def exact_keyword_matches_text(text: str, keyword: str) -> bool:
+    keyword = str(keyword or "").strip()
+    if not keyword:
+        return False
+    return bool(re.search(rf"(?<![0-9A-Za-z가-힣]){re.escape(keyword)}(?![0-9A-Za-z가-힣])", text))
+
+
+def terms_match_text(text: str, terms: list[str]) -> bool:
+    return any(term and (term in text or compact_keyword(term) in compact_keyword(text)) for term in terms)
 
 
 def compact_keyword(value: str) -> str:

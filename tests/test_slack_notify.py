@@ -17,7 +17,7 @@ class SlackPeriodNotificationTests(unittest.TestCase):
         ):
             slack_notify.send_period("weekly")
 
-        already_sent.assert_called_once_with("weekly_report", "주간 언론 동향", strict=True)
+        already_sent.assert_called_once_with("weekly_report", "주간 언론 동향", strict=True, channel="slack")
         verify_link.assert_not_called()
         post_to_slack.assert_not_called()
         save_send.assert_not_called()

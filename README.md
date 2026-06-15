@@ -66,9 +66,9 @@
 
 ### 2. 환경 설정에서 키워드를 관리합니다
 
-대시보드의 `환경 설정` 화면에서 키워드를 추가하거나 삭제합니다. 이 키워드는 Supabase에 저장되며, 자동 수집과 대시보드 분석 기준으로 사용됩니다.
+대시보드의 `환경 설정` 화면에서 키워드를 추가하거나 삭제합니다. 이 키워드는 Supabase `monitor_keywords`에 저장되며, 자동 수집과 대시보드 분석의 1차 분류 기준으로 사용됩니다.
 
-짧고 애매한 키워드는 주의해야 합니다. 예를 들어 `메가`만 넣으면 `메가톤급`, `메가박스` 같은 엉뚱한 자료가 들어올 수 있습니다. 그래서 이 프로젝트는 짧은 키워드가 들어왔을 때 보험/GA/설계사/금융 같은 맥락 단어가 같이 있는지 한 번 더 확인합니다.
+짧고 애매한 키워드는 주의해야 합니다. 예를 들어 `메가`만 넣으면 `메가톤급`, `메가박스` 같은 엉뚱한 자료가 들어올 수 있습니다. 그래서 이 프로젝트는 키워드마다 `match_mode`, `context_terms`, `exclude_terms`, `priority`를 함께 저장해 보험/GA/설계사/금융 같은 문맥 단어가 있는지 확인하고, 카페·영화관·학원처럼 무관한 문맥은 수집 단계에서 제외합니다.
 
 ### 3. 자동 수집이 실행됩니다
 
@@ -139,7 +139,7 @@ AI/룰 기반 분석
 - 로컬 PC는 개발, 테스트, 화면 확인용입니다.
 - GitHub Actions는 실제 운영 실행자입니다.
 - cron-job.org는 GitHub Actions 예약 지연을 줄이는 외부 호출 장치입니다.
-- Supabase Cron은 cron-job.org까지 놓쳤을 때 DB 내부에서 5분마다 감시 함수를 다시 확인하는 보조 백업입니다.
+- Supabase Cron은 cron-job.org까지 놓쳤을 때 DB 내부에서 주기적으로 감시 함수를 다시 확인하는 보조 백업입니다.
 - Supabase는 수집 자료, 키워드, 스크랩, 언론사, 기자, 광고비, 발송 이력, 부정기사 감시 로그를 저장합니다.
 - GitHub Pages는 최신 대시보드와 보고서를 보여줍니다.
 
@@ -211,8 +211,10 @@ supabase/.temp/
 - `202605270001_dashboard_employee_login.sql`: 사번 로그인
 - `202605270002_dashboard_session_security.sql`: 세션 보안과 RLS 정리
 - `202605270003_keyword_categories_and_shared_scraps.sql`: 키워드 카테고리와 공유 스크랩
+- `202606150004_monitor_keyword_match_rules.sql`: 키워드 문맥 포함어/제외어/우선순위 확장
 - `202605270004_notifications_and_watch_runs.sql`: 알림 발송 이력과 부정기사 감시 로그
-- `202605270006_negative_watch_five_minute_default.sql`: 부정기사 5분 감시 기본값
+- `202605270006_negative_watch_five_minute_default.sql`: 과거 부정기사 5분 감시 기본값
+- `202606150005_negative_watch_ten_minute_default.sql`: 부정기사 10분 감시 기본값
 - `20260531070408_supabase_watchdog_cron.sql`: Supabase Cron 보조 백업 감시
 
 Supabase는 단순 DB가 아니라 이 툴의 운영 기억장치입니다. 로컬 브라우저 저장소에 중요한 데이터를 남기지 않고, 키워드/스크랩/언론사/발송 이력/감시 로그를 Supabase 기준으로 공유합니다.
@@ -265,23 +267,23 @@ GitHub Actions는 `.github/workflows`에 있습니다.
 - `sync-external-cron.yml`: cron-job.org 외부 호출 설정 동기화
 
 GitHub Actions의 `schedule`은 지연될 수 있습니다. 그래서 cron-job.org가 GitHub workflow를 직접 깨우도록 보조 장치를 둡니다.
-Supabase Cron은 여기에 한 번 더 붙는 백업입니다. DB 안의 `news-monitor-supabase-watchdog` 작업이 5분마다 `trigger-news-collection` Edge Function의 `watchdog` 경로를 호출하고, 일일 보고서, 주간/월간 보고서, 부정기사 감시가 늦어졌을 때만 GitHub Actions를 다시 깨웁니다.
+Supabase Cron은 여기에 한 번 더 붙는 백업입니다. DB 안의 `news-monitor-supabase-watchdog` 작업이 주기적으로 `trigger-news-collection` Edge Function의 `watchdog` 경로를 호출하고, 일일 보고서, 주간/월간 보고서, 부정기사 감시가 늦어졌을 때만 GitHub Actions를 다시 깨웁니다.
 
 ### 10. 부정기사 감시 만들기
 
-1. `negative_watch.py`는 최근 `minutes_back=5` 범위의 기사를 검사합니다.
-2. GitHub Actions `Negative Article Watch`는 클라우드 러너 안에서 5분마다 검사합니다.
+1. `negative_watch.py`는 최근 `minutes_back=10` 범위의 기사를 검사합니다.
+2. GitHub Actions `Negative Article Watch`는 클라우드 러너 안에서 10분마다 검사합니다.
 3. 러너는 1시간 단위로 다음 실행을 직접 예약하고, GitHub hourly schedule은 복구용 안전장치로 둡니다.
 4. 실행이 늦어지면 Supabase의 마지막 성공 시각을 보고 누락 구간을 자동으로 보정 검사합니다.
-5. cron-job.org의 `news-monitor negative watch`는 이 workflow를 5분마다 한 번 더 깨우는 보조 장치입니다.
-6. Supabase Cron의 `news-monitor-supabase-watchdog`은 5분마다 최신 성공 시각을 확인하는 마지막 백업입니다.
+5. cron-job.org의 `news-monitor negative watch`는 이 workflow를 10분마다 한 번 더 깨우는 보조 장치입니다.
+6. Supabase Cron의 `news-monitor-supabase-watchdog`은 최신 성공 시각을 확인하는 마지막 백업입니다.
 7. 실행 결과는 Supabase `negative_watch_runs`에 저장하며, 저장 실패는 workflow 실패로 처리합니다.
 8. 대시보드에는 마지막 수행 시각, 상태, 최근 검사 결과만 간결하게 보여줍니다.
 
 중요한 구분:
 
-- `minutes_back=5`: 한 번 실행할 때 최근 5분 기사를 본다는 뜻
-- 실행 주기 5분: 실제 감시가 5분마다 호출되어야 한다는 뜻
+- `minutes_back=10`: 한 번 실행할 때 최근 10분 기사를 본다는 뜻
+- 실행 주기 10분: 실제 감시가 10분마다 호출되어야 한다는 뜻
 
 ### 11. 주간/월간 보고서 만들기
 
@@ -507,8 +509,8 @@ powershell -ExecutionPolicy Bypass -File .\tools\preflight.ps1
 
 ### 부정기사 감시
 
-- 운영 목표: 24시간 5분마다
-- 검사 범위: 매 실행 시 최근 5분 기사
+- 운영 목표: 24시간 10분마다
+- 검사 범위: 매 실행 시 최근 10분 기사
 - 실행 위치: GitHub Actions와 cron-job.org
 - 저장 위치: Supabase `negative_watch_runs`
 
@@ -555,10 +557,10 @@ git diff --check
 
 ### 부정기사 감시가 지연될 때
 
-1. GitHub Actions `Negative Article Watch`의 최신 실행 로그에서 5분 간격 iteration이 이어지는지 봅니다.
-2. Supabase `negative_watch_runs`의 최신 `scanned_at`이 12분 이상 늦어졌는지 확인합니다.
+1. GitHub Actions `Negative Article Watch`의 최신 실행 로그에서 10분 간격 iteration이 이어지는지 봅니다.
+2. Supabase `negative_watch_runs`의 최신 `scanned_at`이 25분 이상 늦어졌는지 확인합니다.
 3. GitHub Secrets에 `CRONJOB_API_KEY`, `CRON_DISPATCH_TOKEN`이 있으면 `Sync External Cron`을 수동 실행합니다.
-4. `python check_cronjob_org.py`로 `negative-watch cadence=5min/24h OK`가 나오는지 확인합니다.
+4. `python check_cronjob_org.py`로 `negative-watch cadence=10min/24h OK`가 나오는지 확인합니다.
 5. Supabase SQL에서 `cron.job`의 `news-monitor-supabase-watchdog`이 active인지 확인합니다.
 6. `cron.job_run_details`에서 최근 실행이 `succeeded`인지 확인합니다.
 7. 다음 실행에서 catch-up window가 자동 확장됐는지 로그를 확인합니다.
