@@ -463,7 +463,7 @@ function App() {
   }, [activeSection]);
 
   const baseData = periodData[period];
-  const needsPeriodData = activeSection === "media" || activeSection === "reports";
+  const needsPeriodData = activeSection === "reports";
   const needsRealtimeData = activeSection === "overview";
   const needsManagementData = activeSection === "management";
   const liveConnected = operations.status === "live";
@@ -3120,7 +3120,8 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
     () => (allArticles?.length ? allArticles : articles).filter((article) => !isOfficialRegulatorSource(article.source)),
     [allArticles, articles],
   );
-  const latestDate = useMemo(() => latestArticleDate(mediaSourceArticles), [mediaSourceArticles]);
+  const deferredMediaSourceArticles = useDeferredValue(mediaSourceArticles);
+  const latestDate = useMemo(() => latestArticleDate(deferredMediaSourceArticles), [deferredMediaSourceArticles]);
   const [rangeDraft, setRangeDraft] = useState({ start: "", end: "" });
   const [activeRange, setActiveRange] = useState({ start: "", end: "" });
   const [rangeNotice, setRangeNotice] = useState("");
@@ -3132,31 +3133,35 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
     setActiveRange(next);
   }, [activeRange.end, activeRange.start, latestDate, rangeDraft.end, rangeDraft.start]);
   const analysisArticles = useMemo(
-    () => filterArticlesByDateRange(mediaSourceArticles, activeRange.start, activeRange.end),
-    [activeRange.end, activeRange.start, mediaSourceArticles],
+    () => filterArticlesByDateRange(deferredMediaSourceArticles, activeRange.start, activeRange.end),
+    [activeRange.end, activeRange.start, deferredMediaSourceArticles],
   );
+  const deferredAnalysisArticles = useDeferredValue(analysisArticles);
   const analysisDays = dateRangeDayCount(activeRange.start, activeRange.end) || 30;
   const scopeLabel = activeRange.start && activeRange.end
     ? `${activeRange.start} ~ ${activeRange.end}`
     : "선택 기간";
   const mediaSummaryData = useMemo(
-    () => composeMediaAnalysisData(data, analysisArticles, scopeLabel),
-    [analysisArticles, data, scopeLabel],
+    () => composeMediaAnalysisData(data, deferredAnalysisArticles, scopeLabel),
+    [data, deferredAnalysisArticles, scopeLabel],
   );
   const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
   const dailyTrend = useMemo(
-    () => buildDateRangeToneTrend(analysisArticles, activeRange.start, activeRange.end, Math.min(analysisDays, 90), data.toneTrend),
-    [activeRange.end, activeRange.start, analysisArticles, analysisDays, data.toneTrend],
+    () => buildDateRangeToneTrend(deferredAnalysisArticles, activeRange.start, activeRange.end, Math.min(analysisDays, 90), data.toneTrend),
+    [activeRange.end, activeRange.start, deferredAnalysisArticles, analysisDays, data.toneTrend],
   );
   const keywordRows = useMemo(
-    () => buildKeywordFlow(analysisArticles, selectedKeywords),
-    [analysisArticles, selectedKeywords],
+    () => buildKeywordFlow(deferredAnalysisArticles, selectedKeywords),
+    [deferredAnalysisArticles, selectedKeywords],
   );
   const issueRows = useMemo(
-    () => buildMediaAnalysisIssues(analysisArticles, "custom").slice(0, 6),
-    [analysisArticles],
+    () => buildMediaAnalysisIssues(deferredAnalysisArticles, "custom").slice(0, 6),
+    [deferredAnalysisArticles],
   );
-  const observations = buildPeriodObservations(mediaSummaryData, issueRows, "custom", scopeLabel);
+  const observations = useMemo(
+    () => buildPeriodObservations(mediaSummaryData, issueRows, "custom", scopeLabel),
+    [issueRows, mediaSummaryData, scopeLabel],
+  );
   const applyRange = (days = null) => {
     const fallbackEnd = latestDate || activeRange.end || rangeDraft.end;
     let nextStart = rangeDraft.start;
@@ -9578,14 +9583,18 @@ function normalizeRegulatorDisplayTitle(value) {
 
 function buildRelatedArticleGroups(articles = []) {
   const groups = [];
+  const bucketIndex = new Map();
   articles.forEach((article, index) => {
     const seed = articleGroupSeed(article);
-    const target = groups.find((group) => areRelatedArticleSeeds(seed, group.seed));
+    const bucketKeys = articleGroupBucketKeys(seed);
+    const target = findRelatedArticleGroup(groups, bucketIndex, bucketKeys, seed);
     if (target) {
-      target.members.push(article);
-      target.seed = mergeGroupSeed(target.seed, seed);
+      target.group.members.push(article);
+      target.group.seed = mergeGroupSeed(target.group.seed, seed);
+      addGroupToBuckets(bucketIndex, target.index, bucketKeys);
     } else {
       groups.push({ seed, members: [article], index });
+      addGroupToBuckets(bucketIndex, groups.length - 1, bucketKeys);
     }
   });
 
@@ -9620,11 +9629,15 @@ function articleGroupSeed(article) {
   const topic = articleTopicSignature(article);
   const summaryTokens = articleTokens(`${article.summary || article.description || article.content || ""}`).slice(0, 16);
   const tokens = articleTokens(`${canonical} ${summaryTokens.join(" ")}`);
+  const distinctiveTokens = tokens.filter(isDistinctiveRelatedToken);
   return {
     canonical,
     topic,
     tokens,
+    distinctiveTokens,
+    titleKey: relatedTitleKey(canonical, tokens),
     tokenSet: new Set(tokens),
+    distinctiveTokenSet: new Set(distinctiveTokens),
   };
 }
 
@@ -9633,21 +9646,70 @@ function mergeGroupSeed(current, next) {
     canonical: current.canonical || "",
     topic: current.topic || "",
     tokens: current.tokens || [],
+    distinctiveTokens: current.distinctiveTokens || [],
+    titleKey: current.titleKey || "",
     tokenSet: new Set(current.tokens || []),
+    distinctiveTokenSet: new Set(current.distinctiveTokens || []),
   };
 }
 
 function areRelatedArticleSeeds(a, b) {
   if (!a.canonical || !b.canonical) return false;
   const sharedCount = sharedTokenCount(a.tokens, b.tokens);
-  if (a.topic && b.topic && a.topic === b.topic && sharedCount >= 2) return true;
+  const sharedDistinctive = sharedTokenCount(a.distinctiveTokens, b.distinctiveTokens);
+  if (a.topic && b.topic && a.topic === b.topic && (sharedDistinctive >= 1 || sharedCount >= 3)) return true;
+  if (a.titleKey && b.titleKey && a.titleKey === b.titleKey && sharedDistinctive >= 2) return true;
   const shorter = a.canonical.length < b.canonical.length ? a.canonical : b.canonical;
   const longer = a.canonical.length < b.canonical.length ? b.canonical : a.canonical;
-  if (shorter.length >= 24 && longer.includes(shorter) && sharedCount >= 2) return true;
-  if (a.canonical.length >= 32 && b.canonical.length >= 32 && a.canonical.slice(0, 34) === b.canonical.slice(0, 34) && sharedCount >= 2) return true;
-  if (Math.min(a.tokenSet?.size || 0, b.tokenSet?.size || 0) < 3) return false;
+  if (shorter.length >= 28 && longer.includes(shorter) && sharedDistinctive >= 2) return true;
+  if (a.canonical.length >= 36 && b.canonical.length >= 36 && a.canonical.slice(0, 36) === b.canonical.slice(0, 36) && sharedDistinctive >= 2) return true;
+  if (Math.min(a.distinctiveTokenSet?.size || 0, b.distinctiveTokenSet?.size || 0) < 2) return false;
   const overlap = tokenOverlapRatio(a.tokenSet, b.tokenSet);
-  return overlap >= 0.72 && sharedCount >= 2 && sharedLongToken(a.tokens, b.tokens);
+  const distinctiveOverlap = tokenOverlapRatio(a.distinctiveTokenSet, b.distinctiveTokenSet);
+  return overlap >= 0.82 && distinctiveOverlap >= 0.62 && sharedDistinctive >= 2 && sharedLongToken(a.distinctiveTokens, b.distinctiveTokens);
+}
+
+function findRelatedArticleGroup(groups, bucketIndex, bucketKeys, seed) {
+  const candidateIndexes = new Set();
+  bucketKeys.forEach((key) => {
+    (bucketIndex.get(key) || []).forEach((index) => candidateIndexes.add(index));
+  });
+  for (const index of candidateIndexes) {
+    const group = groups[index];
+    if (group && areRelatedArticleSeeds(seed, group.seed)) return { group, index };
+  }
+  return null;
+}
+
+function addGroupToBuckets(bucketIndex, groupIndex, bucketKeys) {
+  bucketKeys.forEach((key) => {
+    const bucket = bucketIndex.get(key) || [];
+    if (!bucket.includes(groupIndex)) bucket.push(groupIndex);
+    bucketIndex.set(key, bucket);
+  });
+}
+
+function articleGroupBucketKeys(seed = {}) {
+  const keys = new Set();
+  if (seed.topic) keys.add(`topic:${seed.topic}`);
+  if (seed.titleKey) keys.add(`title:${seed.titleKey}`);
+  (seed.distinctiveTokens || []).slice(0, 5).forEach((token) => keys.add(`token:${token}`));
+  return Array.from(keys);
+}
+
+function relatedTitleKey(canonical = "", tokens = []) {
+  const distinctive = tokens.filter(isDistinctiveRelatedToken).slice(0, 7);
+  if (distinctive.length >= 3) return distinctive.join("|");
+  if (canonical.length >= 34) return canonical.slice(0, 44);
+  return "";
+}
+
+function isDistinctiveRelatedToken(token = "") {
+  const text = String(token || "").trim().toLowerCase();
+  if (text.length < 3) return false;
+  if (/^\d+$/.test(text)) return false;
+  if (/^(보험|금융|서비스|업계|시장|소비자|보호|강화|확대|지원|관련|기준|관리|판매|상품|실적|규제|정책|회사|기업|대표|최근|오늘|이번|지난|국내|전체|분석|공시|기사|보도|뉴스|생명보험|손해보험|보험사|설계사|대리점|ga)$/i.test(text)) return false;
+  return true;
 }
 
 function articleTopicSignature(article = {}) {
