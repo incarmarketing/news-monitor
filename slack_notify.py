@@ -207,10 +207,7 @@ def verify_public_report_link(link_url: str, *, label: str = "report", attempts:
 
 
 def force_send_enabled() -> bool:
-    return any(
-        os.getenv(key, "").strip().lower() in {"1", "true", "yes", "y"}
-        for key in ("FORCE_SLACK_SEND", "FORCE_KAKAO_SEND")
-    )
+    return os.getenv("FORCE_SLACK_SEND", "").strip().lower() in {"1", "true", "yes", "y"}
 
 
 def notification_log_title(title: str) -> str:

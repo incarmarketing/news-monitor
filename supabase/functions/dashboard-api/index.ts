@@ -145,8 +145,6 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
   const sendSlack = authenticated
     ? payload.send_slack === true
       || String(payload.send_slack || "").toLowerCase() === "true"
-      || payload.send_kakao === true
-      || String(payload.send_kakao || "").toLowerCase() === "true"
     : false;
   const reportSlot = authenticated
     ? sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto")
@@ -297,7 +295,6 @@ function workflowInputs(workflow: string, periodReports: string, sendSlack: bool
   return {
     period_reports: periodReports,
     send_slack: String(sendSlack),
-    send_kakao: String(sendSlack),
     report_slot: reportSlot,
   };
 }

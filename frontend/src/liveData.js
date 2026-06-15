@@ -120,8 +120,7 @@ export async function triggerNewsCollection(payload = {}) {
   return dashboardApi(config, session, "trigger_collection", {
     workflow: payload.workflow || "news-briefing.yml",
     period_reports: payload.period_reports || "none",
-    send_slack: payload.send_slack === true || payload.send_kakao === true,
-    send_kakao: payload.send_slack === true || payload.send_kakao === true,
+    send_slack: payload.send_slack === true,
     report_slot: payload.report_slot || "auto",
     source: payload.source || "dashboard_manual_refresh",
   }, { allowAnonymous: true });

@@ -128,10 +128,7 @@ def begin_manual_or_push(event_name: str) -> None:
         marker_path = marker.as_posix()
         should_mark = "true"
         backfill_only = os.getenv("MANUAL_BACKFILL_ONLY", "").strip().lower() in {"1", "true", "yes", "y"}
-        force_send = any(
-            os.getenv(key, "").strip().lower() in {"1", "true", "yes", "y"}
-            for key in ("FORCE_SLACK_SEND", "FORCE_KAKAO_SEND")
-        )
+        force_send = os.getenv("FORCE_SLACK_SEND", "").strip().lower() in {"1", "true", "yes", "y"}
         if is_period_dispatch and not period_report_due(now):
             should_run = "false"
             print("Period report dispatch skipped: not Monday or first day of month.")

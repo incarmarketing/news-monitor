@@ -136,7 +136,6 @@ async function ensureDailyReport(slot: string, source: string) {
     const dispatch = await dispatchWorkflow("news-briefing.yml", {
       period_reports: "none",
       send_slack: "true",
-      send_kakao: "true",
       report_slot: slot,
       backfill_only: "false",
     });
@@ -210,7 +209,6 @@ async function ensurePeriodReport(period: PeriodReportKind, source: string) {
     const dispatch = await dispatchWorkflow("news-briefing.yml", {
       period_reports: period,
       send_slack: "true",
-      send_kakao: "true",
       report_slot: "07",
       backfill_only: "false",
     });
@@ -479,7 +477,6 @@ function sanitizeWorkflowInputs(workflow: string, inputs?: Record<string, string
   return sanitizeInputs(inputs || {
     period_reports: "none",
     send_slack: "false",
-    send_kakao: "false",
     report_slot: "auto",
     backfill_only: "false",
   });
@@ -489,9 +486,8 @@ function sanitizeInputs(inputs: Record<string, string | boolean>) {
   const result: Record<string, string> = {};
   const period = String(inputs.period_reports || "none");
   result.period_reports = ["none", "weekly", "monthly", "both"].includes(period) ? period : "none";
-  const sendSlack = String(inputs.send_slack || inputs.send_kakao || "false") === "true";
+  const sendSlack = String(inputs.send_slack || "false") === "true";
   result.send_slack = sendSlack ? "true" : "false";
-  result.send_kakao = sendSlack ? "true" : "false";
   const slot = String(inputs.report_slot || "auto");
   result.report_slot = ["auto", "07", "08", "13", "18"].includes(slot) ? slot : "auto";
   result.backfill_only = String(inputs.backfill_only || "false") === "true" ? "true" : "false";
