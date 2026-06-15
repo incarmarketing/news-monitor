@@ -175,7 +175,7 @@ def slot_is_complete(report_date: str, slot: str, marker_path: Path) -> bool:
     if status is False:
         if marker_path.exists():
             print(
-                "Ignoring local marker because Supabase has no confirmed Kakao send "
+                "Ignoring local marker because Supabase has no confirmed report completion "
                 f"for {report_date} {slot}: {marker_path}"
             )
         return False
@@ -189,15 +189,6 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
             f"select=run_key&report_date=eq.{quote(report_date)}"
             f"&report_slot=eq.{quote(slot)}&limit=1",
         )
-        title = f"{DAILY_REPORT_TITLE_PREFIX} {report_date} {slot}"
-        send_rows = supabase_select(
-            "notification_sends",
-            "select=id"
-            "&message_type=eq.daily_report"
-            f"&title=eq.{quote(title)}"
-            "&status=eq.success"
-            "&limit=1",
-        )
         job_rows = supabase_select(
             "job_runs",
             "select=run_key"
@@ -208,7 +199,7 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
     except RuntimeError as error:
         print(f"Supabase completion check unavailable: {error}")
         return None
-    return bool(report_rows) and (bool(send_rows) or bool(job_rows))
+    return bool(report_rows) or bool(job_rows)
 
 
 def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:

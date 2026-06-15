@@ -21,6 +21,7 @@ type SessionInfo = {
 const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   news_articles: { read: true, writeRoles: ["admin", "editor"] },
   report_runs: { read: true, writeRoles: ["admin", "editor"] },
+  job_runs: { read: true, writeRoles: [] },
   monitor_keywords: { read: true, writeRoles: ["admin", "editor"] },
   monitor_context_rules: { read: true, writeRoles: ["admin", "editor"] },
   article_scraps: { read: true, writeRoles: ["admin", "editor", "reporter"] },

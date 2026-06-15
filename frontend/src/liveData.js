@@ -512,6 +512,7 @@ export async function loadOperationalData() {
     notifications: [],
     watchRuns: [],
     reportRuns: [],
+    jobRuns: [],
     scraps: [],
     scrapAnalysisReports: [],
     mediaRelations: [],
@@ -697,6 +698,7 @@ async function loadStaticOperationalData() {
       const payload = await fetchJson(path);
       const articles = Array.isArray(payload?.articles) ? deduplicateArticles(payload.articles.map(normalizeArticle).filter(Boolean)) : [];
       const reportRuns = Array.isArray(payload?.report_runs) ? payload.report_runs.map(normalizeReportRun) : [];
+      const jobRuns = Array.isArray(payload?.job_runs) ? payload.job_runs.map(normalizeJobRun) : [];
       if (!articles.length && !reportRuns.length) continue;
       const rawScraps = Array.isArray(payload?.scraps) ? payload.scraps : [];
       const storedScrapReports = rawScraps.map(normalizeClippingAnalysisReportFromScrap).filter(Boolean);
@@ -708,9 +710,10 @@ async function loadStaticOperationalData() {
         status: "live",
         message: `누적 데이터 ${articles.length.toLocaleString("ko-KR")}건`,
         articles,
-        notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification) : [],
+        notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification).filter(isSlackNotification) : [],
         watchRuns: Array.isArray(payload?.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
         reportRuns,
+        jobRuns,
         scraps: rawScraps.map(normalizeScrap).filter(Boolean),
         scrapAnalysisReports: mergeScrapAnalysisReportRows(directScrapReports, storedScrapReports),
         mediaRelations: Array.isArray(payload?.media_relations)
@@ -744,6 +747,7 @@ async function loadOperationalDataFromSupabaseSession() {
     notifications: [],
     watchRuns: [],
     reportRuns: [],
+    jobRuns: [],
     scraps: [],
     scrapAnalysisReports: [],
     mediaRelations: [],
@@ -796,6 +800,11 @@ async function loadOperationalDataFromSupabaseSession() {
         session,
         "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
       ),
+      jobRuns: rest(
+        config,
+        session,
+        "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
+      ),
       scraps: rest(
         config,
         session,
@@ -834,6 +843,7 @@ async function loadOperationalDataFromSupabaseSession() {
       notifications = [],
       watchRuns = [],
       reportRuns = [],
+      jobRuns = [],
       scraps = [],
       scrapAnalysisReports = [],
       mediaRelations = [],
@@ -863,9 +873,10 @@ async function loadOperationalDataFromSupabaseSession() {
       status: "live",
       message,
       articles: Array.isArray(articles) ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean)) : [],
-      notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification) : [],
+      notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification).filter(isSlackNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(reportRuns) ? reportRuns.map(normalizeReportRun) : [],
+      jobRuns: Array.isArray(jobRuns) ? jobRuns.map(normalizeJobRun) : [],
       scraps: rawScraps.map(normalizeScrap).filter(Boolean),
       scrapAnalysisReports: mergeScrapAnalysisReportRows(directScrapReports, storedScrapReports),
       mediaRelations: Array.isArray(mediaRelations) ? mediaRelations.filter((row) => !row.hidden).map(normalizeMedia) : [],
@@ -912,6 +923,10 @@ async function loadOperationalDataFromSupabasePublic() {
         config,
         "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
       ),
+      jobRuns: publicRest(
+        config,
+        "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
+      ),
       mediaRelations: publicRest(config, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc"),
       aliases: publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
       keywords: publicRest(config, "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000"),
@@ -935,6 +950,7 @@ async function loadOperationalDataFromSupabasePublic() {
       notifications: [],
       watchRuns: [],
       reportRuns: Array.isArray(optionalData.reportRuns) ? optionalData.reportRuns.map(normalizeReportRun) : [],
+      jobRuns: Array.isArray(optionalData.jobRuns) ? optionalData.jobRuns.map(normalizeJobRun) : [],
       scraps: [],
       scrapAnalysisReports: [],
       mediaRelations: Array.isArray(optionalData.mediaRelations)
@@ -1392,6 +1408,11 @@ function normalizeNotification(row) {
   };
 }
 
+function isSlackNotification(row = {}) {
+  const channel = String(row.channel || "").trim().toLowerCase();
+  return !channel || channel === "slack";
+}
+
 function compactNotificationTitle(row) {
   const rawTitle = String(row?.title || row?.message_type || row?.channel || "슬랙").trim();
   const dateText = compactNotificationDate(rawTitle) || compactNotificationDate(row?.sent_at || row?.created_at);
@@ -1444,6 +1465,25 @@ function normalizeReportRun(row) {
     timestamp: row?.timestamp || "",
     riskLevel: String(row?.risk_level || row?.riskLevel || metrics.risk_level || "").toUpperCase(),
     metrics,
+  };
+}
+
+function normalizeJobRun(row) {
+  const startedAt = row?.started_at || row?.created_at || "";
+  const finishedAt = row?.finished_at || row?.last_seen_at || row?.updated_at || "";
+  return {
+    id: row?.run_key || row?.id || `${row?.job_type || ""}-${row?.report_date || ""}-${row?.report_slot || ""}`,
+    runKey: row?.run_key || "",
+    jobType: row?.job_type || "",
+    date: String(row?.report_date || startedAt || finishedAt || "").slice(0, 10),
+    slot: String(row?.report_slot || ""),
+    workflow: row?.workflow || "",
+    status: String(row?.status || "").toLowerCase(),
+    startedAt,
+    finishedAt,
+    lastSeenAt: row?.last_seen_at || row?.updated_at || finishedAt,
+    error: row?.error || "",
+    details: row?.details && typeof row.details === "object" ? row.details : {},
   };
 }
 

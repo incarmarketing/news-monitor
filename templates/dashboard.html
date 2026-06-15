@@ -2979,7 +2979,7 @@
               </div>
             </div>
             <div class="panel notification-panel">
-              <h2 class="panel-title"><i data-lucide="message-circle"></i> 알림톡 발송 이력</h2>
+              <h2 class="panel-title"><i data-lucide="message-circle"></i> 슬랙 발송 이력</h2>
               <div class="notification-list" id="notificationHistory"></div>
             </div>
           </div>
@@ -3417,7 +3417,7 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="notificationModalTitle">
       <div class="modal-head">
         <div>
-          <h2 id="notificationModalTitle">알림톡 발송 내용</h2>
+          <h2 id="notificationModalTitle">슬랙 발송 내용</h2>
           <div class="notification-meta" id="notificationModalMeta"></div>
         </div>
         <button class="btn" onclick="closeNotificationModal()"><i data-lucide="x"></i><span>닫기</span></button>
@@ -3433,7 +3433,7 @@
     <div class="modal notification-list-modal" role="dialog" aria-modal="true" aria-labelledby="notificationListModalTitle">
       <div class="modal-head">
         <div>
-          <h2 id="notificationListModalTitle">알림톡 발송 이력</h2>
+          <h2 id="notificationListModalTitle">슬랙 발송 이력</h2>
           <div class="notification-meta">최근 발송 내역 전체</div>
         </div>
         <button class="btn" onclick="closeNotificationListModal()"><i data-lucide="x"></i><span>닫기</span></button>
@@ -4478,7 +4478,7 @@
         weekly_report:"주간 동향",
         monthly_report:"월간 동향",
         negative_alert:"부정기사 알림",
-      }[type] || "알림톡";
+      }[type] || "슬랙";
     }
 
     function openNotificationModal(index) {
@@ -7949,7 +7949,8 @@
     async function fetchSupabaseNotifications() {
       try {
         const query = [
-          "select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at",
+          "select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at",
+          "channel=eq.slack",
           "order=sent_at.desc,created_at.desc",
           "limit=100",
         ].join("&");

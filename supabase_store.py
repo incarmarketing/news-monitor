@@ -816,7 +816,12 @@ def save_notification_send(
     if not is_enabled():
         return
     normalized_status = str(status or "").lower()
-    key = dedupe_key if dedupe_key is not None else notification_dedupe_key(message_type, title, normalized_status)
+    key = dedupe_key if dedupe_key is not None else notification_dedupe_key(
+        message_type,
+        title,
+        normalized_status,
+        channel=channel,
+    )
     key = str(key or "").strip() or None
     row = {
         "sent_at": sent_at or datetime.now(timezone.utc).isoformat(),
@@ -856,7 +861,7 @@ def save_notification_send(
             except Exception as legacy_exc:
                 text = str(legacy_exc)
                 exc = legacy_exc
-        if key and notification_dedupe_key_exists(key):
+        if key and notification_dedupe_key_exists(key, channel=channel):
             print(f"Supabase notification log already exists: {key}")
             return
         print(f"Supabase notification log failed: {exc}")
@@ -864,26 +869,30 @@ def save_notification_send(
             raise
 
 
-def notification_dedupe_key(message_type: str, title: str, status: str = "success") -> str:
+def notification_dedupe_key(message_type: str, title: str, status: str = "success", *, channel: str = "") -> str:
     clean_type = re.sub(r"\s+", " ", str(message_type or "").strip())
     clean_title = re.sub(r"\s+", " ", str(title or "").strip())
+    clean_channel = re.sub(r"\s+", " ", str(channel or "").strip().lower())
+    prefix = f"{clean_channel}:" if clean_channel and clean_channel != "kakao" else ""
     if not clean_type or not clean_title:
         return ""
     if str(status or "").lower() != "success":
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
         digest = hashlib.sha256(f"{clean_type}:{clean_title}:{status}:{stamp}".encode("utf-8")).hexdigest()[:12]
-        return f"{clean_type}:{clean_title}:{status}:{digest}"
-    return f"{clean_type}:{clean_title}"
+        return f"{prefix}{clean_type}:{clean_title}:{status}:{digest}"
+    return f"{prefix}{clean_type}:{clean_title}"
 
 
-def notification_dedupe_key_exists(dedupe_key: str) -> bool:
+def notification_dedupe_key_exists(dedupe_key: str, *, channel: str | None = None) -> bool:
     if not is_enabled() or not dedupe_key:
         return False
     try:
+        channel_filter = f"&channel=eq.{quote(str(channel), safe='')}" if channel else ""
         rows = request(
             "GET",
             "notification_sends?select=id"
             f"&dedupe_key=eq.{quote(dedupe_key, safe='')}"
+            f"{channel_filter}"
             "&limit=1",
         ).json()
         return bool(rows)
@@ -891,18 +900,27 @@ def notification_dedupe_key_exists(dedupe_key: str) -> bool:
         return False
 
 
-def notification_already_sent(message_type: str, title: str, status: str = "success", *, strict: bool = False) -> bool:
+def notification_already_sent(
+    message_type: str,
+    title: str,
+    status: str = "success",
+    *,
+    strict: bool = False,
+    channel: str | None = None,
+) -> bool:
     """Return True when the same notification title already has a successful send log."""
     if not is_enabled() or not message_type or not title:
         return False
-    dedupe_key = notification_dedupe_key(message_type, title, status)
-    if dedupe_key and notification_dedupe_key_exists(dedupe_key):
+    dedupe_key = notification_dedupe_key(message_type, title, status, channel=channel or "")
+    if dedupe_key and notification_dedupe_key_exists(dedupe_key, channel=channel):
         return True
+    channel_filter = f"&channel=eq.{quote(str(channel), safe='')}" if channel else ""
     query = (
         "notification_sends?select=id"
         f"&message_type=eq.{quote(message_type, safe='')}"
         f"&title=eq.{quote(title, safe='')}"
         f"&status=eq.{quote(status, safe='')}"
+        f"{channel_filter}"
         "&limit=1"
     )
     try:
@@ -1279,6 +1297,7 @@ def load_dashboard_notifications(limit: int = 80) -> list[dict]:
         (
             "notification_sends?"
             "select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at"
+            "&channel=eq.slack"
             f"&order=sent_at.desc&limit={limit}"
         ),
     )

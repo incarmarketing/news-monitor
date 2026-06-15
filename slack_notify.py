@@ -217,7 +217,7 @@ def notification_log_title(title: str) -> str:
 def forced_resend_dedupe_key(message_type: str, title: str) -> str | None:
     if not force_send_enabled():
         return None
-    return f"{message_type}:{title}:resend:{datetime.now(KST):%Y%m%d%H%M%S}"
+    return f"slack:{message_type}:{title}:resend:{datetime.now(KST):%Y%m%d%H%M%S}"
 
 
 def parse_iso_datetime(value: str) -> datetime | None:
@@ -445,7 +445,7 @@ def maybe_send_ai_usage_alert(report: dict) -> None:
         print("AI usage alert skipped: SLACK_AI_USAGE_WEBHOOK_URL is not configured.")
         return
     title = ai_usage_alert_title(report)
-    if not force_send_enabled() and notification_already_sent("ai_usage_alert", title):
+    if not force_send_enabled() and notification_already_sent("ai_usage_alert", title, channel="slack"):
         print(f"AI usage alert already sent: {title}")
         return
     link, payload = build_ai_usage_payload(report)
@@ -478,7 +478,7 @@ def send_daily() -> None:
     report = load_latest_daily()
     link = report_link(report)
     title = daily_title(report)
-    if not force_send_enabled() and notification_already_sent("daily_report", title, strict=True):
+    if not force_send_enabled() and notification_already_sent("daily_report", title, strict=True, channel="slack"):
         print(f"Slack daily report already sent: {title}")
         maybe_send_ai_usage_alert(report)
         return
@@ -523,7 +523,7 @@ def send_period(period: str, report_month: str = "") -> None:
     report_month = normalize_report_month(report_month)
     title, link, payload = build_period_payload(period, report_month)
     message_type = f"{period}_report"
-    if not force_send_enabled() and notification_already_sent(message_type, title, strict=True):
+    if not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
         print(f"Slack period report already sent: {title}")
         return
     log_dedupe_key = forced_resend_dedupe_key(message_type, title)
