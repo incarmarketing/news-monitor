@@ -86,7 +86,7 @@ jobs:
           NEGATIVE_WATCH_MAX_CATCHUP_MINUTES: "1440"
           NEGATIVE_WATCH_REQUIRE_DB_LOG: "true"
           NEGATIVE_WATCH_REQUIRE_ARTICLE_PERSIST: "true"
-          NEGATIVE_WATCH_DASHBOARD_REFRESH: "throttled"
+          NEGATIVE_WATCH_DASHBOARD_REFRESH: "on_alert"
           NEGATIVE_WATCH_DASHBOARD_REFRESH_MINUTES: "15"
 
       - name: Record watch finish

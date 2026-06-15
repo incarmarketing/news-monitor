@@ -98,5 +98,13 @@ class TradePressCollectorTests(unittest.TestCase):
         ])
 
 
+class KeywordContextMatchTests(unittest.TestCase):
+    def test_short_latin_context_term_does_not_match_inside_words(self) -> None:
+        self.assertFalse(news_collector.terms_match_text("global magazine launch", ["GA"]))
+
+    def test_short_latin_context_term_matches_korean_suffix_context(self) -> None:
+        self.assertTrue(news_collector.terms_match_text("GA업계 정착지원금 공시", ["GA"]))
+
+
 if __name__ == "__main__":
     unittest.main()

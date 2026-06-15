@@ -155,9 +155,12 @@ def dashboard_refresh_interval_minutes() -> int:
 
 
 def dashboard_refresh_due(scanned_at: str, *, negative_count: int, new_negative_count: int, status: str) -> bool:
-    mode = os.getenv("NEGATIVE_WATCH_DASHBOARD_REFRESH", "throttled").strip().lower()
+    mode = os.getenv("NEGATIVE_WATCH_DASHBOARD_REFRESH", "on_alert").strip().lower()
     if mode in {"0", "false", "no", "never", "off"} or status in {"skipped", "dry_run"}:
         return False
+    alert_refresh = new_negative_count > 0 or status in {"alert_sent", "alert_failed"}
+    if mode in {"on_alert", "alert", "changes", "changed"}:
+        return alert_refresh
 
     interval = dashboard_refresh_interval_minutes()
     state = load_dashboard_refresh_state()
@@ -165,7 +168,7 @@ def dashboard_refresh_due(scanned_at: str, *, negative_count: int, new_negative_
     current = parse_datetime(scanned_at) or datetime.now(timezone.utc)
 
     interval_due = not last_refresh or (interval > 0 and (current - last_refresh).total_seconds() >= interval * 60)
-    should_refresh = mode == "always" or new_negative_count > 0 or status in {"alert_sent", "alert_failed"}
+    should_refresh = mode == "always" or alert_refresh
     if not should_refresh and interval > 0:
         should_refresh = interval_due
     if not should_refresh and negative_count > 0:
