@@ -784,7 +784,7 @@ async function loadOperationalDataFromSupabaseSession() {
       notifications: rest(
         config,
         session,
-        "notification_sends?select=id,sent_at,channel,message_type,title,body,link_url,status,error,created_at&channel=eq.slack&order=sent_at.desc&limit=80",
+        "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&channel=eq.slack&order=sent_at.desc&limit=80",
       ),
       watchRuns: rest(
         config,
@@ -1382,6 +1382,7 @@ function normalizeNotification(row) {
     rawStatus: row.status || "",
     rawTitle,
     messageType: row.message_type || "",
+    dedupeKey: row.dedupe_key || "",
     channel: row.channel || "",
     time: formatTime(row.sent_at || row.created_at),
     type: compactNotificationTitle(row),

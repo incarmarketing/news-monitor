@@ -6687,7 +6687,7 @@ function buildNotificationHealth(notifications = []) {
     const minutes = minutesSince(item.sentAt);
     return minutes !== null && minutes <= 24 * 60;
   });
-  const scoped = recent.length ? recent : notifications.slice(0, 12);
+  const scoped = latestNotificationRowsByKey(recent.length ? recent : notifications.slice(0, 12));
   const failed = scoped.filter((item) => !isNotificationSuccess(item));
   const success = scoped.filter(isNotificationSuccess);
   const latest = notifications[0];
@@ -6700,6 +6700,28 @@ function buildNotificationHealth(notifications = []) {
     detail: scoped.length ? `최근 이력 성공 ${success.length} · 실패 ${failed.length}` : "발송 이력 없음",
     meta: latest ? `최신 ${latest.time} · ${latest.type}` : "슬랙 기록 확인 필요",
   };
+}
+
+function latestNotificationRowsByKey(rows = []) {
+  const sorted = [...rows].sort((a, b) => (parseTimestamp(b.sentAt)?.getTime() || 0) - (parseTimestamp(a.sentAt)?.getTime() || 0));
+  const seen = new Set();
+  const result = [];
+  sorted.forEach((item) => {
+    const key = notificationLogicalKey(item);
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(item);
+  });
+  return result;
+}
+
+function notificationLogicalKey(item = {}) {
+  const dedupe = String(item.dedupeKey || "").trim();
+  if (dedupe) return dedupe.replace(/:(?:success|sent|failed|failure|error)$/i, "");
+  const slotKey = notificationSlotKey(item);
+  if (slotKey) return slotKey;
+  const title = String(item.rawTitle || item.type || item.messageType || "slack").replace(/\s+/g, " ").trim();
+  return `${String(item.channel || "slack").toLowerCase()}:${String(item.messageType || "").toLowerCase()}:${title}`;
 }
 
 function buildWorkflowActionsHealth(workflowHealth = {}) {
@@ -6838,13 +6860,35 @@ function kstHour(value) {
 }
 
 function isDailyReportNotificationForSlot(item = {}, dateKey, slot) {
-  const text = `${item.rawTitle || item.type || ""} ${item.messageType || ""}`.toLowerCase();
+  const text = `${item.rawTitle || item.type || ""} ${item.messageType || ""} ${item.body || ""} ${item.link || ""} ${item.dedupeKey || ""}`.toLowerCase();
   const isDaily = /daily_report|일일|언론 동향/.test(text);
   if (!isDaily) return false;
-  const title = String(item.rawTitle || item.type || "");
-  const titleHasSlot = title.includes(`${dateKey} ${slot}`) || title.includes(`${dateKey}-${slot}`);
+  const compact = text.replace(/\s+/g, " ");
+  const shortDate = dateKey.slice(2);
+  const titleHasSlot = compact.includes(`${dateKey} ${slot}`)
+    || compact.includes(`${dateKey}-${slot}`)
+    || compact.includes(`${shortDate} ${slot}`)
+    || compact.includes(`${shortDate}-${slot}`)
+    || compact.includes(`slot=${slot}`)
+    || compact.includes(`report_slot=${slot}`)
+    || compact.includes(`daily:${dateKey}:${slot}`);
   const sentMatchesSlot = item.sentAt && kstDateKey(item.sentAt) === dateKey && kstHour(item.sentAt) === slot;
   return isNotificationSuccess(item) && (titleHasSlot || sentMatchesSlot);
+}
+
+function notificationSlotKey(item = {}) {
+  const text = `${item.rawTitle || ""} ${item.type || ""} ${item.messageType || ""} ${item.body || ""} ${item.link || ""} ${item.dedupeKey || ""}`;
+  const isDaily = /daily_report|일일|언론 동향/.test(text);
+  if (!isDaily) return "";
+  const dateMatch = text.match(/(20\d{2})[-.](\d{2})[-.](\d{2})/);
+  const slotMatch = text.match(/(?:slot|report_slot)[=:\s-]*(0?8|13|18)/i)
+    || text.match(/(?:^|[\sT])((?:0?8)|13|18):[0-5]\d/)
+    || text.match(/(?:^|[^0-9])((?:0?8)|13|18)\s*시/);
+  const sentDate = item.sentAt ? kstDateKey(item.sentAt) : "";
+  const date = dateMatch ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}` : sentDate;
+  const slot = slotMatch ? slotMatch[1].padStart(2, "0") : (item.sentAt ? kstHour(item.sentAt) : "");
+  if (!date || !["08", "13", "18"].includes(slot)) return "";
+  return `daily:${date}:${slot}`;
 }
 
 function isReportRunForSlot(row = {}, dateKey, slot) {
@@ -9441,7 +9485,7 @@ function articleGroupSeed(article) {
   const canonical = normalizeGroupTitle(article.title || "");
   const topic = articleTopicSignature(article);
   const summaryTokens = articleTokens(`${article.summary || article.description || article.content || ""}`).slice(0, 16);
-  const tokens = articleTokens(`${canonical} ${summaryTokens.join(" ")} ${article.keyword || ""}`);
+  const tokens = articleTokens(`${canonical} ${summaryTokens.join(" ")}`);
   return {
     canonical,
     topic,
@@ -9465,14 +9509,15 @@ function areRelatedArticleSeeds(a, b) {
   if (a.topic && b.topic && a.topic === b.topic) return true;
   const shorter = a.canonical.length < b.canonical.length ? a.canonical : b.canonical;
   const longer = a.canonical.length < b.canonical.length ? b.canonical : a.canonical;
-  if (shorter.length >= 22 && longer.includes(shorter)) return true;
-  if (a.canonical.slice(0, 28) === b.canonical.slice(0, 28)) return true;
+  if (shorter.length >= 32 && longer.includes(shorter)) return true;
+  if (a.canonical.slice(0, 34) === b.canonical.slice(0, 34) && sharedTokenCount(a.tokens, b.tokens) >= 2) return true;
   const overlap = tokenOverlapRatio(a.tokenSet, b.tokenSet);
-  return overlap >= 0.62 || (overlap >= 0.48 && sharedLongToken(a.tokens, b.tokens));
+  const sharedCount = sharedTokenCount(a.tokens, b.tokens);
+  return (overlap >= 0.72 && sharedCount >= 3) || (overlap >= 0.62 && sharedCount >= 2 && sharedLongToken(a.tokens, b.tokens));
 }
 
 function articleTopicSignature(article = {}) {
-  const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""} ${article.keyword || ""}`);
+  const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""}`);
   const includesAll = (terms) => terms.every((term) => text.includes(normalizeGroupTitle(term)));
   if (text.includes("브랜드평판")) {
     const leader = brandReputationLeaderName(article);
@@ -9525,6 +9570,11 @@ function tokenOverlapRatio(aSet, bSet) {
 function sharedLongToken(aTokens, bTokens) {
   const bSet = new Set(bTokens);
   return aTokens.some((token) => token.length >= 5 && bSet.has(token));
+}
+
+function sharedTokenCount(aTokens = [], bTokens = []) {
+  const bSet = new Set(bTokens);
+  return unique(aTokens).filter((token) => bSet.has(token)).length;
 }
 
 function compareArticleImportance(a, b) {

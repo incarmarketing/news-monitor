@@ -269,6 +269,7 @@ NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 
 def collect_news() -> list[dict]:
     window = report_window.current_window()
+    configure_context_rules_from_supabase()
     console.print(Panel.fit(
         f"[bold cyan]뉴스 수집 시작[/]  [dim]{datetime.now(KST).strftime('%Y-%m-%d %H:%M')} · {window['label']}[/]",
         border_style="cyan",
@@ -959,8 +960,12 @@ def is_relevant_article(article: dict) -> bool:
         return False
     if analyzer.is_non_business_noise(article):
         return False
+    if analyzer.is_sales_conduct_noise_text(text):
+        return False
 
     if category == "other":
+        if analyzer.is_sales_conduct_context_text(text):
+            return True
         return keyword_matches_text(text, keyword) or keyword_matches_text(text, query)
 
     if article.get("portal") == "trade_press":
@@ -981,6 +986,10 @@ def is_relevant_article(article: dict) -> bool:
 
 
 def has_collection_context(text: str) -> bool:
+    if analyzer.is_sales_conduct_noise_text(text):
+        return False
+    if analyzer.is_sales_conduct_context_text(text):
+        return True
     if analyzer.contains_competitor_word(text):
         return True
     return any(word in text for word in COLLECTION_CONTEXT_WORDS)
@@ -989,9 +998,26 @@ def has_collection_context(text: str) -> bool:
 def article_matches_collection_keyword(article: dict, text: str) -> bool:
     keyword = str(article.get("keyword") or "").strip()
     query = str(article.get("keyword_query") or keyword).strip()
+    if analyzer.is_sales_conduct_noise_text(text):
+        return False
+    if analyzer.is_sales_conduct_context_text(text) and (
+        "1200" in compact_keyword(keyword)
+        or "수수료" in keyword
+        or "정착지원금" in keyword
+        or "부당승환" in keyword
+        or "승환" in keyword
+    ):
+        return True
     if article.get("keyword_strict_query"):
         return keyword_matches_text(text, query)
     return keyword_matches_text(text, query) or keyword_matches_text(text, keyword)
+
+
+def configure_context_rules_from_supabase() -> None:
+    try:
+        analyzer.configure_context_rules(supabase_store.load_monitor_context_rules())
+    except Exception as error:
+        console.print(f"[yellow]문맥 규칙 DB 로드 건너뜀:[/] {error}")
 
 
 def keyword_matches_text(text: str, keyword: str) -> bool:

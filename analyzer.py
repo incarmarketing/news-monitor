@@ -170,6 +170,23 @@ MATERIAL_BUSINESS_CONTEXT_WORDS = DOMAIN_CONTEXT_WORDS + MATERIAL_CAUTION_CONTEX
     "설계사", "대리점", "금융서비스", "실적", "영업", "채권", "증권",
 ]
 
+SALES_CONDUCT_TRIGGER_WORDS = [
+    "1200%", "1200％", "1200% 룰", "1200%룰", "판매수수료", "모집수수료",
+    "정착지원금", "부당승환", "승환계약", "설계사 영입", "스카우트 경쟁",
+]
+
+SALES_CONDUCT_REQUIRED_CONTEXT_WORDS = [
+    "보험", "보험사", "생명보험", "손해보험", "보험대리점", "법인보험대리점",
+    "GA", "보험GA", "보험설계사", "설계사", "보험모집인", "보험계약",
+    "금감원", "금융감독원", "금융위", "금융위원회", "보험업법",
+]
+
+SALES_CONDUCT_NOISE_WORDS = [
+    "수익률", "주식", "증권", "코스피", "코스닥", "SK하이닉스", "하이닉스",
+    "삼성전자", "반도체", "제약바이오", "바이오", "신세계", "백화점",
+    "가구", "유튜브", "숭실대", "대학생", "IPO", "공모주", "코인",
+]
+
 CATEGORIES = {
     "own": OWN_NAMES,
     "regulation": REGULATION_WORDS,
@@ -181,6 +198,31 @@ KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
 AI_CONTEXT_CATEGORIES = {"own", "regulation", "competitor", "industry", "other", "exclude"}
 AI_CONTEXT_TONES = {"positive", "neutral", "caution", "negative", "exclude"}
 AI_NEGATIVE_TARGETS = {"own", "industry", "competitor", "policy", "none"}
+CONTEXT_RULES: list[dict] = []
+
+
+def configure_context_rules(rows: list[dict] | None) -> None:
+    """Load DB-backed context rules. Invalid rows are ignored and code defaults remain active."""
+    global CONTEXT_RULES
+    cleaned = []
+    for row in rows or []:
+        if not isinstance(row, dict) or row.get("enabled") is False:
+            continue
+        triggers = [str(item).strip() for item in row.get("trigger_terms") or [] if str(item).strip()]
+        if not triggers:
+            continue
+        cleaned.append(
+            {
+                "rule_key": str(row.get("rule_key") or "").strip(),
+                "category": str(row.get("category") or "other").strip(),
+                "tone": str(row.get("tone") or "neutral").strip(),
+                "trigger_terms": triggers,
+                "required_terms": [str(item).strip() for item in row.get("required_terms") or [] if str(item).strip()],
+                "exclude_terms": [str(item).strip() for item in row.get("exclude_terms") or [] if str(item).strip()],
+                "priority": int(row.get("priority") or 100),
+            }
+        )
+    CONTEXT_RULES = sorted(cleaned, key=lambda item: item.get("priority", 100))
 
 
 def ai_context_budget() -> int:
@@ -633,6 +675,8 @@ def categorize(article: dict) -> str:
         return "other"
     if any(keyword in text for keyword in OWN_NAMES):
         return "own"
+    if is_sales_conduct_context_text(text):
+        return "regulation"
     preferred = normalize_keyword_category(article.get("keyword_category"))
     if preferred in {"regulation", "competitor", "industry"} and has_domain_context(text):
         return preferred
@@ -674,14 +718,64 @@ def is_ambiguous_competitor_match(text: str, keyword: str) -> bool:
     return bool(standalone and has_domain_context(text))
 
 
+def is_sales_conduct_context_text(text: str) -> bool:
+    """True when an ambiguous term such as 1200% is actually about insurance sales conduct."""
+    text = str(text or "")
+    if monitor_rule_matches(text, "ga_sales_commission_1200"):
+        return True
+    if not any(word in text for word in SALES_CONDUCT_TRIGGER_WORDS):
+        return False
+    return any(word in text for word in SALES_CONDUCT_REQUIRED_CONTEXT_WORDS)
+
+
+def is_sales_conduct_noise_text(text: str) -> bool:
+    """Suppress BigKinds-style 1200% noise such as stock return, retail, or semiconductor articles."""
+    text = str(text or "")
+    db_rule = monitor_rule_by_key("ga_sales_commission_1200")
+    db_triggers = db_rule.get("trigger_terms", []) if db_rule else []
+    has_db_trigger = bool(db_triggers) and any(term in text for term in db_triggers)
+    if not has_db_trigger and not re.search(r"1200\s*[%％]|1200%룰|1200% 룰", text, re.I):
+        return False
+    if is_sales_conduct_context_text(text):
+        return False
+    exclude_terms = db_rule.get("exclude_terms", []) if db_rule else SALES_CONDUCT_NOISE_WORDS
+    required_terms = db_rule.get("required_terms", []) if db_rule else SALES_CONDUCT_REQUIRED_CONTEXT_WORDS
+    if any(word in text for word in exclude_terms):
+        return True
+    return not any(word in text for word in required_terms)
+
+
+def monitor_rule_by_key(rule_key: str) -> dict:
+    return next((rule for rule in CONTEXT_RULES if rule.get("rule_key") == rule_key), {})
+
+
+def monitor_rule_matches(text: str, rule_key: str = "") -> bool:
+    text = str(text or "")
+    for rule in CONTEXT_RULES:
+        if rule_key and rule.get("rule_key") != rule_key:
+            continue
+        triggers = rule.get("trigger_terms") or []
+        required = rule.get("required_terms") or []
+        if triggers and not any(term in text for term in triggers):
+            continue
+        if required and not any(term in text for term in required):
+            continue
+        return True
+    return False
+
+
 def has_domain_context(text: str) -> bool:
+    if is_sales_conduct_noise_text(text):
+        return False
     if any(word in text for word in OWN_NAMES):
         return True
-    if any(word in text for word in REGULATION_WORDS):
+    if is_sales_conduct_context_text(text):
+        return True
+    if any(word in text for word in REGULATION_WORDS if word not in {"1200%"}):
         return True
     if any(word in text for word in INDUSTRY_WORDS):
         return True
-    if any(word in text for word in DOMAIN_CONTEXT_WORDS):
+    if any(word in text for word in DOMAIN_CONTEXT_WORDS if word not in {"1200%"}):
         return True
     return False
 
@@ -691,9 +785,11 @@ def has_material_business_context(text: str) -> bool:
 
 
 def has_priority_policy_context(text: str) -> bool:
+    if is_sales_conduct_context_text(text):
+        return True
     return bool(
         re.search(
-            r"1200%|판매수수료|정착지원금|불완전판매|부당승환|내부통제|보험대리점|GA|설계사|모집수수료|금융감독원|금융위원회",
+            r"불완전판매|내부통제|보험대리점|GA|설계사|금융감독원|금융위원회",
             text,
             re.I,
         )
@@ -704,6 +800,8 @@ def is_non_business_noise(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     title = article.get("title", "")
     if not text.strip():
+        return True
+    if is_sales_conduct_noise_text(text):
         return True
     if is_stock_listing_noise(article):
         return True
@@ -736,6 +834,8 @@ def analyze_tone(article: dict) -> str:
     if is_relief_support_article(article):
         return "positive" if is_own_article(article) and is_own_positive_focus_article(article) else "neutral"
     if is_competitor_brand_reputation_against_own(article):
+        return "caution"
+    if category == "regulation" and is_sales_conduct_context_text(text):
         return "caution"
 
     severe_score = 0
@@ -788,6 +888,8 @@ def should_mark_caution(article: dict, category: str, severe_score: int, caution
     if is_investment_downgrade_article(article) or is_stock_decline_article(article):
         return True
     if is_settlement_support_caution_article(article):
+        return True
+    if category == "regulation" and is_sales_conduct_context_text(text):
         return True
     if category == "own" and caution_score >= 2:
         return True

@@ -22,6 +22,7 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   news_articles: { read: true, writeRoles: ["admin", "editor"] },
   report_runs: { read: true, writeRoles: ["admin", "editor"] },
   monitor_keywords: { read: true, writeRoles: ["admin", "editor"] },
+  monitor_context_rules: { read: true, writeRoles: ["admin", "editor"] },
   article_scraps: { read: true, writeRoles: ["admin", "editor", "reporter"] },
   media_relations: { read: true, writeRoles: ["admin", "editor"] },
   reporters: { read: true, writeRoles: ["admin", "editor"] },

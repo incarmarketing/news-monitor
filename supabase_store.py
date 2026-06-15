@@ -1371,6 +1371,43 @@ def load_monitor_profile() -> dict:
     }
 
 
+def load_monitor_context_rules() -> list[dict]:
+    if not is_enabled():
+        return []
+    try:
+        response = request(
+            "GET",
+            (
+                "monitor_context_rules?"
+                "select=rule_key,label,category,tone,trigger_terms,required_terms,exclude_terms,priority,enabled"
+                "&enabled=eq.true&order=priority.asc,rule_key.asc"
+            ),
+        )
+    except requests.HTTPError as error:
+        status = getattr(error.response, "status_code", None)
+        if status in {400, 404}:
+            return []
+        raise
+    rows = []
+    for row in response.json():
+        if not isinstance(row, dict):
+            continue
+        rows.append(
+            {
+                "rule_key": str(row.get("rule_key") or "").strip(),
+                "label": str(row.get("label") or "").strip(),
+                "category": row.get("category") or "other",
+                "tone": row.get("tone") or "neutral",
+                "trigger_terms": row.get("trigger_terms") if isinstance(row.get("trigger_terms"), list) else [],
+                "required_terms": row.get("required_terms") if isinstance(row.get("required_terms"), list) else [],
+                "exclude_terms": row.get("exclude_terms") if isinstance(row.get("exclude_terms"), list) else [],
+                "priority": row.get("priority") or 100,
+                "enabled": row.get("enabled", True) is not False,
+            }
+        )
+    return rows
+
+
 def load_monitor_keywords() -> list[str]:
     keywords = []
     seen = set()
