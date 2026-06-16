@@ -18,7 +18,9 @@ on:
       - "regulator_collector.py"
       - "refresh_regulator_releases.py"
       - "refresh_ga_competitor_intel.py"
+      - "slack_notify.py"
       - "supabase_store.py"
+      - "supabase/migrations/**"
       - ".github/workflows/pages-dashboard.yml"
       - ".github/workflows/ga-revenue-sync.yml"
   workflow_dispatch:
