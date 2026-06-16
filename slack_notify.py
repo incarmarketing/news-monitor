@@ -497,7 +497,7 @@ def send_daily() -> None:
             provider_response=result,
             channel="slack",
             dedupe_key=log_dedupe_key,
-            require_log=False,
+            require_log=True,
         )
         print("Slack daily report result:", result)
         print("Report link:", link)
@@ -539,7 +539,7 @@ def send_period(period: str, report_month: str = "") -> None:
             provider_response=result,
             channel="slack",
             dedupe_key=log_dedupe_key,
-            require_log=False,
+            require_log=True,
         )
         print("Slack period report result:", result)
         print("Period report link:", link)
