@@ -306,26 +306,27 @@ async function dailyReportSucceeded(date: string, slot: string) {
     "report_runs",
     `select=run_key&report_date=eq.${encodeURIComponent(date)}&report_slot=eq.${encodeURIComponent(slot)}&limit=1`,
   );
-  const title = `\uC77C\uC77C \uC5B8\uB860 \uB3D9\uD5A5 ${date} ${slot}`;
-  const sendRows = await selectRows(
-    "notification_sends",
-    `select=id&message_type=eq.daily_report&title=eq.${encodeURIComponent(title)}&status=eq.success&limit=1`,
-  );
   const jobRows = await selectRows(
     "job_runs",
     `select=run_key&run_key=eq.${encodeURIComponent(`daily_report:${date}:${slot}`)}&status=eq.success&limit=1`,
   );
-  return reportRows.length > 0 && (sendRows.length > 0 || jobRows.length > 0);
+  return reportRows.length > 0 || jobRows.length > 0;
 }
 
 async function periodReportSucceeded(period: PeriodReportKind) {
   const config = periodReports[period];
+  const now = kstNowParts();
+  const date = dateKey(now);
   const bounds = kstDayBoundsIso();
-  const rows = await selectRows(
+  const sendRows = await selectRows(
     "notification_sends",
-    `select=id&message_type=eq.${encodeURIComponent(config.messageType)}&title=eq.${encodeURIComponent(config.title)}&status=eq.success&sent_at=gte.${encodeURIComponent(bounds.start)}&sent_at=lt.${encodeURIComponent(bounds.end)}&limit=1`,
+    `select=id&channel=eq.slack&message_type=eq.${encodeURIComponent(config.messageType)}&title=eq.${encodeURIComponent(config.title)}&status=eq.success&sent_at=gte.${encodeURIComponent(bounds.start)}&sent_at=lt.${encodeURIComponent(bounds.end)}&limit=1`,
   );
-  return rows.length > 0;
+  const jobRows = await selectRows(
+    "job_runs",
+    `select=run_key&job_type=eq.period_report&report_date=eq.${encodeURIComponent(date)}&report_slot=eq.07&status=eq.success&limit=1`,
+  );
+  return sendRows.length > 0 || jobRows.length > 0;
 }
 
 async function hasFreshDispatch(runKey: string) {
