@@ -846,7 +846,7 @@ async function loadOperationalDataFromSupabaseSession() {
         config,
         session,
         "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
-      ),
+      ).catch(() => []),
       scraps: rest(
         config,
         session,
