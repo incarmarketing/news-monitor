@@ -5228,7 +5228,7 @@ function Management({ management, operations, onRefreshOperations, isWorking }) 
           {tab === "media" && <MediaManagement rows={management.media} reporters={management.reporters} aliases={operations.aliases || []} />}
           {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
           {tab === "ads" && <AdManagement rows={management.ads} />}
-          {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} />}
+          {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} articles={operations.articles || []} />}
           {tab === "feedback" && (
             <FeedbackManagement
               feedback={operations.feedback || []}
@@ -5784,7 +5784,7 @@ function AdManagement({ rows }) {
   );
 }
 
-function KeywordManagement({ keywords = [] }) {
+function KeywordManagement({ keywords = [], articles = [] }) {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("own");
   const [subcategory, setSubcategory] = useState("");
@@ -5808,6 +5808,7 @@ function KeywordManagement({ keywords = [] }) {
     () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), draftKeywords),
     [keywords, draftKeywords],
   );
+  const validation = useMemo(() => buildKeywordRuleValidation(rows, articles), [rows, articles]);
 
   const resetKeywordForm = ({ clearStatus = true } = {}) => {
     setKeyword("");
@@ -6031,6 +6032,7 @@ function KeywordManagement({ keywords = [] }) {
             {status && <p className="status-note">{status}</p>}
           </div>
         </div>
+        <KeywordRuleValidation validation={validation} />
         <KeywordManagerTable rows={rows} onEdit={handleEditKeyword} />
       </Panel>
     </section>
@@ -6352,6 +6354,7 @@ function KeywordManagerTable({ rows = [], onEdit }) {
       <table className="keyword-ledger-table">
         <thead>
           <tr>
+            <th>수정</th>
             <th>상위 구분</th>
             <th>세부 구분</th>
             <th>키워드/개체명</th>
@@ -6375,8 +6378,9 @@ function KeywordManagerTable({ rows = [], onEdit }) {
             const excludeTerms = item.excludeTerms?.length ? item.excludeTerms.join(", ") : "-";
             return (
               <tr key={`${item.category}-${item.keyword}`}>
+                <td><button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button></td>
                 <td><span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span></td>
-                <td className="ledger-subcategory">{item.subcategory || "-"}</td>
+                <td className="ledger-subcategory">{keywordSubcategoryLabel(item.subcategory)}</td>
                 <td className="ledger-keyword">{item.keyword}</td>
                 <td>{keywordEntityTypeLabel(item.entityType)}</td>
                 <td><span className={`ledger-pill ${item.isSearchKeyword === false ? "muted" : "active"}`}>{item.isSearchKeyword === false ? "분류" : "검색"}</span></td>
@@ -6389,12 +6393,40 @@ function KeywordManagerTable({ rows = [], onEdit }) {
                 <td className="ledger-terms">{contextTerms}</td>
                 <td className="ledger-terms exclude">{excludeTerms}</td>
                 <td className="ledger-memo">{item.memo || "-"}</td>
-                <td><button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button></td>
               </tr>
             );
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function KeywordRuleValidation({ validation }) {
+  if (!validation?.articleCount) {
+    return (
+      <div className="keyword-validation-bar empty">
+        <b>분류 검증</b>
+        <span>검증할 기사 데이터가 아직 로드되지 않았습니다.</span>
+      </div>
+    );
+  }
+  const categoryOrder = ["own", "competitor", "industry", "regulation", "exclude", "other"];
+  return (
+    <div className="keyword-validation-bar">
+      <div className="keyword-validation-head">
+        <b>분류 검증</b>
+        <span>현재 규칙을 누적 기사 {validation.articleCount.toLocaleString("ko-KR")}건에 적용한 미리보기입니다.</span>
+      </div>
+      <div className="keyword-validation-metrics">
+        <span><strong>{validation.matched.toLocaleString("ko-KR")}</strong>매칭</span>
+        <span><strong>{validation.unmatched.toLocaleString("ko-KR")}</strong>미매칭</span>
+        {categoryOrder.map((category) => {
+          const count = validation.byCategory[category] || 0;
+          if (!count) return null;
+          return <span key={category}><strong>{count.toLocaleString("ko-KR")}</strong>{keywordCategoryLabel(category)}</span>;
+        })}
+      </div>
     </div>
   );
 }
@@ -9035,6 +9067,20 @@ function keywordCategoryLabel(category) {
   return keywordCategories.find((item) => item.id === category)?.label || "기타";
 }
 
+function keywordSubcategoryLabel(value) {
+  const key = String(value || "").trim();
+  if (!key) return "-";
+  return {
+    direct_company: "직접 언급",
+    ga_competitor: "GA 경쟁",
+    insurance_company: "보험사",
+    market_trend: "시장 동향",
+    policy_supervision: "정책 감독",
+    noise: "제외 신호",
+    general: "일반",
+  }[key] || key;
+}
+
 function keywordCategoryRule(category) {
   return keywordCategories.find((item) => item.id === category)?.rule || "운영자가 지정한 문맥으로 분류합니다.";
 }
@@ -9093,6 +9139,66 @@ function normalizeKeywordPriority(value) {
 function splitKeywordTerms(value) {
   const items = Array.isArray(value) ? value : String(value || "").split(/[,|\n]/);
   return items.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function buildKeywordRuleValidation(rows = [], articles = []) {
+  const enabledRows = rows
+    .map(normalizeKeywordRow)
+    .filter((row) => row?.enabled !== false && row.analysisExcluded !== true)
+    .sort((a, b) => Number(a.priority || 100) - Number(b.priority || 100));
+  const summary = {
+    articleCount: Array.isArray(articles) ? articles.length : 0,
+    matched: 0,
+    unmatched: 0,
+    byCategory: {},
+  };
+  if (!summary.articleCount || !enabledRows.length) {
+    summary.unmatched = summary.articleCount;
+    return summary;
+  }
+  articles.forEach((article) => {
+    const matched = enabledRows.find((row) => keywordRuleMatchesArticle(row, article));
+    if (matched) {
+      summary.matched += 1;
+      summary.byCategory[matched.category] = (summary.byCategory[matched.category] || 0) + 1;
+    } else {
+      summary.unmatched += 1;
+    }
+  });
+  return summary;
+}
+
+function keywordRuleMatchesArticle(row, article = {}) {
+  const targetText = normalizeKeywordText(articleTextForKeywordTarget(article, row.matchTarget));
+  if (!targetText) return false;
+  const keywordText = normalizeKeywordText(row.keyword);
+  if (!keywordText) return false;
+  const contextTerms = row.contextTerms || [];
+  const excludeTerms = row.excludeTerms || [];
+  if (excludeTerms.some((term) => targetText.includes(normalizeKeywordText(term)))) return false;
+  if (row.requireArticleMention && !targetText.includes(keywordText)) return false;
+  if (row.matchMode === "exact" && targetText !== keywordText) return false;
+  if (row.matchMode === "strict" && !new RegExp(`(^|\\s)${escapeRegExp(keywordText)}($|\\s)`).test(targetText)) return false;
+  if (row.matchMode !== "context" && !targetText.includes(keywordText)) return false;
+  if (contextTerms.length && !contextTerms.some((term) => targetText.includes(normalizeKeywordText(term)))) return false;
+  return true;
+}
+
+function articleTextForKeywordTarget(article = {}, target = "title_summary") {
+  const title = article.title || "";
+  const summary = article.summary || article.description || "";
+  const source = article.source || article.media || "";
+  const keyword = article.keyword || "";
+  if (target === "title_only") return title;
+  if (target === "summary_only") return summary;
+  if (target === "source") return source;
+  if (target === "keyword") return keyword;
+  if (target === "all") return `${title} ${summary} ${source}`;
+  return `${title} ${summary}`;
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function groupKeywordRows(rows = []) {
