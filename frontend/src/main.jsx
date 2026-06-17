@@ -5791,8 +5791,11 @@ function KeywordManagement({ keywords = [] }) {
   const [contextTerms, setContextTerms] = useState("");
   const [excludeTerms, setExcludeTerms] = useState("");
   const [priority, setPriority] = useState(100);
+  const [memo, setMemo] = useState("");
+  const [editingKey, setEditingKey] = useState("");
   const [status, setStatus] = useState("");
   const [draftKeywords, setDraftKeywords] = useState([]);
+  const isEditing = Boolean(editingKey);
   const rows = useMemo(
     () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), draftKeywords),
     [keywords, draftKeywords],
@@ -5802,6 +5805,32 @@ function KeywordManagement({ keywords = [] }) {
   const categorySummary = useMemo(() => summarizeKeywordCategories(rows), [rows]);
   const contextRows = useMemo(() => rows.filter((row) => row.matchMode !== "keyword" || row.contextTerms?.length), [rows]);
   const excludeRows = useMemo(() => rows.filter((row) => row.excludeTerms?.length || row.category === "exclude"), [rows]);
+
+  const resetKeywordForm = ({ clearStatus = true } = {}) => {
+    setKeyword("");
+    setCategory("own");
+    setMatchMode("keyword");
+    setContextTerms("");
+    setExcludeTerms("");
+    setPriority(100);
+    setMemo("");
+    setEditingKey("");
+    if (clearStatus) setStatus("");
+  };
+
+  const handleEditKeyword = (row) => {
+    const normalized = normalizeKeywordRow(row);
+    if (!normalized) return;
+    setEditingKey(keywordRowIdentity(normalized));
+    setKeyword(normalized.keyword);
+    setCategory(normalized.category);
+    setMatchMode(normalized.matchMode);
+    setContextTerms((normalized.contextTerms || []).join(", "));
+    setExcludeTerms((normalized.excludeTerms || []).join(", "));
+    setPriority(normalized.priority || 100);
+    setMemo(normalized.memo || "");
+    setStatus(`${normalized.keyword} 문맥 조건을 수정 중입니다. 키워드명과 상위 구분은 중복 방지를 위해 잠겨 있습니다.`);
+  };
 
   const handleAddKeyword = async () => {
     const cleanKeyword = keyword.trim();
@@ -5817,14 +5846,13 @@ function KeywordManagement({ keywords = [] }) {
       contextTerms: splitKeywordTerms(contextTerms),
       excludeTerms: splitKeywordTerms(excludeTerms),
       priority: Number(priority) || 100,
+      memo: memo.trim(),
     };
     try {
       await saveMonitorKeyword(nextKeyword);
       setDraftKeywords((current) => upsertKeywordRow(current, nextKeyword));
-      setKeyword("");
-      setContextTerms("");
-      setExcludeTerms("");
-      setStatus("운영 DB 저장 완료");
+      resetKeywordForm({ clearStatus: false });
+      setStatus(isEditing ? "문맥 조건 수정 저장 완료" : "운영 DB 저장 완료");
     } catch (error) {
       setStatus(error?.message?.includes("missing_dashboard_session") || error?.message?.includes("invalid_session")
         ? "운영 DB 세션이 필요합니다. 로그인 후 다시 저장하세요."
@@ -5853,30 +5881,30 @@ function KeywordManagement({ keywords = [] }) {
             eyebrow="검색 API 입력값"
             rows={rows}
             empty="등록된 수집 키워드가 없습니다."
-            render={(item) => <KeywordRuleChip item={item} />}
+            render={(item) => <EditableKeywordRuleChip item={item} onEdit={handleEditKeyword} />}
           />
           <KeywordStageSection
             title="문맥 필수 조건"
             eyebrow="오탐 방지 핵심"
             rows={contextRows}
             empty="문맥 필수 조건이 걸린 키워드가 없습니다."
-            render={(item) => <KeywordContextCard item={item} type="context" />}
+            render={(item) => <EditableKeywordContextCard item={item} type="context" onEdit={handleEditKeyword} />}
           />
           <KeywordStageSection
             title="제외 문맥"
             eyebrow="노이즈 차단"
             rows={excludeRows}
             empty="제외 문맥이 걸린 키워드가 없습니다."
-            render={(item) => <KeywordContextCard item={item} type="exclude" />}
+            render={(item) => <EditableKeywordContextCard item={item} type="exclude" onEdit={handleEditKeyword} />}
           />
         </div>
       </Panel>
 
       <Panel title="키워드 규칙 추가" icon={FilePenLine} meta="수집어 + 문맥 조건">
-        <div className="operation-form keyword-add-form">
+        <div className={`operation-form keyword-add-form${isEditing ? " is-editing" : ""}`}>
           <label>
             <span>상위 구분</span>
-            <select value={category} onChange={(event) => setCategory(event.target.value)}>
+            <select value={category} onChange={(event) => setCategory(event.target.value)} disabled={isEditing}>
               {keywordCategories.map((item) => (
                 <option key={item.id} value={item.id}>{item.label}</option>
               ))}
@@ -5887,6 +5915,7 @@ function KeywordManagement({ keywords = [] }) {
             <input
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
+              disabled={isEditing}
               onKeyDown={(event) => {
                 if (event.key === "Enter") handleAddKeyword();
               }}
@@ -5927,8 +5956,17 @@ function KeywordManagement({ keywords = [] }) {
               onChange={(event) => setPriority(event.target.value)}
             />
           </label>
+          <label className="keyword-memo-field">
+            <span>운영 메모</span>
+            <input
+              value={memo}
+              onChange={(event) => setMemo(event.target.value)}
+              placeholder="예: 보험/GA 문맥에서만 사용, 스포츠·행사 기사 제외"
+            />
+          </label>
           <div className="operation-form-actions">
-            <button className="primary-button" onClick={handleAddKeyword}>키워드 추가</button>
+            <button className="primary-button" onClick={handleAddKeyword}>{isEditing ? "수정 저장" : "키워드 추가"}</button>
+            {isEditing && <button className="ghost-button keyword-edit-cancel" onClick={() => resetKeywordForm()}>취소</button>}
           </div>
           {status && <p className="status-note">{status}</p>}
         </div>
@@ -5957,7 +5995,7 @@ function KeywordManagement({ keywords = [] }) {
               <p>{keywordCategoryRule(group.category)}</p>
               <div className="keyword-chip-grid">
                 {group.items.map((item) => (
-                  <KeywordRuleChip key={`${item.category}-${item.keyword}`} item={item} />
+                  <EditableKeywordRuleChip key={`${item.category}-${item.keyword}`} item={item} onEdit={handleEditKeyword} />
                 ))}
               </div>
             </article>
@@ -6003,7 +6041,24 @@ function KeywordStageSection({ title, eyebrow, rows = [], empty, render }) {
   );
 }
 
-function KeywordContextCard({ item, type = "context" }) {
+function EditableKeywordContextCard({ item, type = "context", onEdit }) {
+  const terms = type === "exclude" ? item.excludeTerms || [] : item.contextTerms || [];
+  const fallback = type === "exclude" && item.category === "exclude" ? ["제외 후보"] : [];
+  const visibleTerms = terms.length ? terms : fallback;
+  return (
+    <div className={`keyword-context-card ${type}`}>
+      <div>
+        <b>{item.keyword}</b>
+        <span>{keywordCategoryLabel(item.category)} · {keywordMatchModeLabel(item.matchMode)}</span>
+      </div>
+      {onEdit && <button className="keyword-edit-button" onClick={() => onEdit(item)}>수정</button>}
+      <p>{visibleTerms.slice(0, 5).join(" · ") || "조건 없음"}</p>
+      {visibleTerms.length > 5 && <small>+{visibleTerms.length - 5}개</small>}
+    </div>
+  );
+}
+
+function KeywordContextCard({ item, type = "context", onEdit }) {
   const terms = type === "exclude" ? item.excludeTerms || [] : item.contextTerms || [];
   const fallback = type === "exclude" && item.category === "exclude" ? ["제외 후보"] : [];
   const visibleTerms = terms.length ? terms : fallback;
@@ -6320,6 +6375,26 @@ function ArticleSummaryBlock({ item, dense = false }) {
     <ul className={dense ? "summary-lines dense" : "summary-lines"}>
       {lines.map((line) => <li key={line}>{line}</li>)}
     </ul>
+  );
+}
+
+function EditableKeywordRuleChip({ item, onEdit }) {
+  const mode = keywordMatchModeLabel(item.matchMode);
+  const contextCount = item.contextTerms?.length || 0;
+  const excludeCount = item.excludeTerms?.length || 0;
+  const meta = [
+    mode,
+    contextCount ? `포함 ${contextCount}` : "",
+    excludeCount ? `제외 ${excludeCount}` : "",
+  ].filter(Boolean).join(" · ");
+  return (
+    <span className={`keyword-rule-chip tone-${keywordCategoryTone(item.category)}`}>
+      <span className="keyword-rule-copy">
+        <b>{item.keyword}</b>
+        <small>{meta}</small>
+      </span>
+      {onEdit && <button className="keyword-edit-button" onClick={() => onEdit(item)}>수정</button>}
+    </span>
   );
 }
 
@@ -8893,6 +8968,12 @@ function normalizeKeywordRow(row) {
     priority: normalizeKeywordPriority(row?.priority),
     memo: String(row?.memo || "").trim(),
   };
+}
+
+function keywordRowIdentity(row) {
+  const normalized = normalizeKeywordRow(row);
+  if (!normalized) return "";
+  return `${normalized.category}:${normalizeKeywordText(normalized.keyword)}`;
 }
 
 function mergeKeywordRows(remoteRows = [], localRows = []) {

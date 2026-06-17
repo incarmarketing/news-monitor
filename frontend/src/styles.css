@@ -6615,6 +6615,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-add-form .operation-form-actions {
   min-width: 112px;
+  gap: 6px;
 }
 
 .keyword-add-form .primary-button {
@@ -6622,8 +6623,18 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   padding: 0 10px;
 }
 
+.keyword-add-form .keyword-edit-cancel {
+  height: 40px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
 .keyword-add-form .compact-field {
   min-width: 84px;
+}
+
+.keyword-add-form .keyword-memo-field {
+  grid-column: span 2;
 }
 
 .keyword-management-grid {
@@ -6847,6 +6858,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-context-card small {
+  grid-column: 1 / -1;
   align-self: start;
   color: var(--blue);
   font-size: 10px;
@@ -6937,6 +6949,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: 1fr;
   }
 
+  .keyword-add-form .keyword-memo-field {
+    grid-column: 1 / -1;
+  }
+
   .keyword-add-form .operation-form-actions {
     min-width: 0;
     padding-top: 0;
@@ -6951,6 +6967,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 @container (min-width: 561px) and (max-width: 720px) {
   .keyword-add-form {
     grid-template-columns: minmax(132px, 160px) minmax(0, 1fr);
+  }
+
+  .keyword-add-form .keyword-memo-field {
+    grid-column: 1 / -1;
   }
 
   .keyword-add-form .operation-form-actions {
@@ -6968,6 +6988,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 @container (min-width: 721px) and (max-width: 1040px) {
   .keyword-add-form {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .keyword-add-form .keyword-memo-field {
+    grid-column: 1 / -1;
   }
 
   .keyword-add-form .operation-form-actions {
@@ -7060,8 +7084,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-rule-chip {
   display: inline-grid;
-  grid-template-columns: minmax(0, auto);
-  gap: 2px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
   min-width: 0;
   max-width: 100%;
   padding: 6px 9px;
@@ -7069,6 +7094,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   border-radius: 8px;
   background: #fff;
   color: var(--ink);
+}
+
+.keyword-rule-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .keyword-rule-chip b,
@@ -7088,6 +7119,25 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   color: var(--muted);
   font-size: 10px;
   font-weight: 900;
+}
+
+.keyword-edit-button {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--blue);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.keyword-edit-button:hover {
+  border-color: var(--blue);
+  background: #eef4ff;
 }
 
 .keyword-rule-chip.tone-긍정 {
