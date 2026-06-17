@@ -5192,7 +5192,7 @@ function Management({ management, operations, onRefreshOperations, isWorking }) 
     ["media", "언론사 관리", Building2],
     ["reporters", "기자 관리", Users],
     ["ads", "광고비 관리", WalletCards],
-    ["keywords", "키워드/문맥", Settings],
+    ["keywords", "키워드 문맥", Settings],
     ["feedback", "분류 피드백", FilePenLine],
   ];
   return (
@@ -5216,7 +5216,7 @@ function Management({ management, operations, onRefreshOperations, isWorking }) 
         )}
       />
       <ManagementSummary management={management} operations={operations} />
-      <section className="admin-crud-panel">
+      <section className="admin-crud-panel admin-crud-panel-top-tabs">
         <div className="management-tabs admin-tabs-rail">
           {tabs.map(([id, label, Icon]) => (
             <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>
@@ -5885,7 +5885,7 @@ function KeywordManagement({ keywords = [] }) {
 
   return (
     <section className="keyword-management-shell keyword-management-single">
-      <Panel title="상위 구분별 원장" icon={ShieldCheck} meta={`${rows.length.toLocaleString("ko-KR")}개 · 추가/수정/문맥 관리`}>
+      <Panel title="분류 기준 관리" icon={ShieldCheck} meta={`${rows.length.toLocaleString("ko-KR")}개 · 키워드/문맥 원장`}>
         <div className="keyword-ledger-editor">
           <div className="keyword-ledger-editor-head">
             <b>{isEditing ? "키워드 조건 수정" : "새 키워드 추가"}</b>

@@ -8181,8 +8181,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .admin-crud-panel {
   display: grid;
-  grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
   min-width: 0;
   padding: 12px;
@@ -8193,22 +8193,21 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .management-tabs.admin-tabs-rail {
-  position: sticky;
-  top: 76px;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 7px;
+  grid-template-columns: repeat(5, minmax(128px, 1fr));
+  gap: 8px;
   margin: 0;
-  padding: 8px;
+  padding: 7px;
   border: 1px solid #d8e1ef;
   border-radius: 8px;
   background: #fff;
 }
 
 .management-tabs.admin-tabs-rail button {
-  justify-content: flex-start;
-  min-height: 42px;
+  justify-content: center;
+  min-height: 40px;
   border-radius: 7px;
+  white-space: nowrap;
 }
 
 .admin-panel-body {
