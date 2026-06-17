@@ -1418,7 +1418,20 @@ def build_contextual_summary_sentences(article: dict) -> list[str]:
 
 
 def article_summary_text(article: dict) -> str:
-    return f"{article.get('title', '')} {article.get('description', '')} {article.get('summary', '')}"
+    """Text for contextual classification.
+
+    Use original article material only. Generated summaries can contain
+    rule-based context from a different article cluster, so using them here can
+    create a feedback loop where a product article becomes a policy article.
+    """
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    description = (
+        article.get("description")
+        or raw.get("description")
+        or raw.get("summary")
+        or ""
+    )
+    return f"{article.get('title', '')} {description}"
 
 
 def is_sales_conduct_article(article: dict) -> bool:

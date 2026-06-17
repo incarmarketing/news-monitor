@@ -326,6 +326,24 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertIn("소비자 피해", summary)
         self.assertNotIn("지급 규모와 순위", summary)
 
+    def test_quality_summary_does_not_inject_sales_conduct_into_product_article(self) -> None:
+        article = {
+            "title": "삼성생명, 암 치료부터 가족 보장까지 ‘암치료플러스종신보험’ 출시",
+            "description": (
+                "삼성생명이 ‘삼성 암치료플러스종신보험’을 출시했다. "
+                "이번 상품은 종신보험의 사망보장에 암 치료 보장을 결합한 것이 특징이다."
+            ),
+            "summary": "1200%룰 시행을 앞두고 설계사 영입 경쟁과 판매수수료 운영 부담이 함께 거론됐습니다.",
+            "keyword": "보험",
+            "keyword_category": "industry",
+        }
+
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertIn("암치료플러스종신보험", summary)
+        self.assertNotIn("1200%룰", summary)
+        self.assertNotIn("판매수수료", summary)
+
 
 class AnalyzerAiContextGuardrailTests(unittest.TestCase):
     def test_ai_context_non_own_positive_is_downgraded_to_neutral(self) -> None:

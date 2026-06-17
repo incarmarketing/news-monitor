@@ -99,11 +99,11 @@ with rules as (
     a.id,
     case
       when r.match_target = 'title_only' then coalesce(a.title, '')
-      when r.match_target = 'summary_only' then coalesce(a.summary, '')
+      when r.match_target = 'summary_only' then coalesce(a.raw->>'description', a.raw->>'summary', a.summary, '')
       when r.match_target = 'source' then coalesce(a.source, '')
       when r.match_target = 'keyword' then coalesce(a.keyword, '')
-      when r.match_target = 'all' then concat_ws(' ', a.title, a.summary, a.source, a.keyword)
-      else concat_ws(' ', a.title, a.summary)
+      when r.match_target = 'all' then concat_ws(' ', a.title, coalesce(a.raw->>'description', a.raw->>'summary', a.summary), a.source, a.keyword)
+      else concat_ws(' ', a.title, coalesce(a.raw->>'description', a.raw->>'summary', a.summary))
     end as target_text,
     r.keyword,
     r.category,

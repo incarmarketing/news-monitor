@@ -9191,7 +9191,9 @@ function keywordRuleMatchesArticle(row, article = {}) {
 
 function articleTextForKeywordTarget(article = {}, target = "title_summary") {
   const title = article.title || "";
-  const summary = article.summary || article.description || "";
+  const raw = article.raw && typeof article.raw === "object" ? article.raw : {};
+  const originalDescription = article.description || raw.description || raw.summary || "";
+  const summary = originalDescription || article.summary || "";
   const source = article.source || article.media || "";
   const keyword = article.keyword || "";
   if (target === "title_only") return title;
