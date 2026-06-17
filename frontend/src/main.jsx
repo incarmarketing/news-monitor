@@ -5800,7 +5800,6 @@ function KeywordManagement({ keywords = [] }) {
     () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), draftKeywords),
     [keywords, draftKeywords],
   );
-  const grouped = useMemo(() => groupKeywordRows(rows), [rows]);
   const stages = useMemo(() => buildKeywordStages(rows), [rows]);
   const categorySummary = useMemo(() => summarizeKeywordCategories(rows), [rows]);
   const contextRows = useMemo(() => rows.filter((row) => row.matchMode !== "keyword" || row.contextTerms?.length), [rows]);
@@ -5985,22 +5984,7 @@ function KeywordManagement({ keywords = [] }) {
       </Panel>
 
       <Panel title="상위 구분별 원장" icon={ShieldCheck} meta="현재 운영 DB 기준">
-        <div className="keyword-manager-list">
-          {grouped.map((group) => (
-            <article key={group.category} className="keyword-manager-group">
-              <div>
-                <b>{keywordCategoryLabel(group.category)}</b>
-                <span>{group.items.length.toLocaleString("ko-KR")}개</span>
-              </div>
-              <p>{keywordCategoryRule(group.category)}</p>
-              <div className="keyword-manager-rows">
-                {group.items.map((item) => (
-                  <KeywordManagerRow key={`${item.category}-${item.keyword}`} item={item} onEdit={handleEditKeyword} />
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+        <KeywordManagerTable rows={rows} onEdit={handleEditKeyword} />
       </Panel>
 
       <Panel title="분류/논조 기준" icon={ShieldCheck} meta="피드백으로 계속 보정">
@@ -6398,33 +6382,47 @@ function EditableKeywordRuleChip({ item, onEdit }) {
   );
 }
 
-function KeywordManagerRow({ item, onEdit }) {
-  const contextTerms = item.contextTerms?.length ? item.contextTerms.join(", ") : "-";
-  const excludeTerms = item.excludeTerms?.length ? item.excludeTerms.join(", ") : "-";
+function KeywordManagerTable({ rows = [], onEdit }) {
+  const sortedRows = [...rows].sort((a, b) =>
+    keywordCategoryLabel(a.category).localeCompare(keywordCategoryLabel(b.category), "ko-KR")
+    || (Number(a.priority || 100) - Number(b.priority || 100))
+    || String(a.keyword || "").localeCompare(String(b.keyword || ""), "ko-KR")
+  );
   return (
-    <article className={`keyword-manager-row tone-${keywordCategoryTone(item.category)}`}>
-      <div className="keyword-manager-main">
-        <b>{item.keyword}</b>
-        <span>{keywordCategoryLabel(item.category)}</span>
-      </div>
-      <div className="keyword-manager-meta">
-        <span>{keywordMatchModeLabel(item.matchMode)}</span>
-        <span>우선순위 {item.priority || 100}</span>
-      </div>
-      <div className="keyword-manager-context">
-        <small>문맥 필수</small>
-        <p>{contextTerms}</p>
-      </div>
-      <div className="keyword-manager-context exclude">
-        <small>제외 문맥</small>
-        <p>{excludeTerms}</p>
-      </div>
-      <div className="keyword-manager-memo">
-        <small>메모</small>
-        <p>{item.memo || "-"}</p>
-      </div>
-      <button className="keyword-manager-edit" onClick={() => onEdit(item)}>조건 수정</button>
-    </article>
+    <div className="keyword-ledger-wrap">
+      <table className="keyword-ledger-table">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>키워드</th>
+            <th>매칭</th>
+            <th>우선순위</th>
+            <th>문맥 필수</th>
+            <th>제외 문맥</th>
+            <th>운영 메모</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedRows.map((item) => {
+            const contextTerms = item.contextTerms?.length ? item.contextTerms.join(", ") : "-";
+            const excludeTerms = item.excludeTerms?.length ? item.excludeTerms.join(", ") : "-";
+            return (
+              <tr key={`${item.category}-${item.keyword}`}>
+                <td><span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span></td>
+                <td className="ledger-keyword">{item.keyword}</td>
+                <td>{keywordMatchModeLabel(item.matchMode)}</td>
+                <td className="ledger-number">{item.priority || 100}</td>
+                <td className="ledger-terms">{contextTerms}</td>
+                <td className="ledger-terms exclude">{excludeTerms}</td>
+                <td className="ledger-memo">{item.memo || "-"}</td>
+                <td><button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

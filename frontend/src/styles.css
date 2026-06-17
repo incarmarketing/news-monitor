@@ -7233,6 +7233,133 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   filter: brightness(.95);
 }
 
+.keyword-ledger-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.keyword-ledger-table {
+  width: max-content;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.keyword-ledger-table th,
+.keyword-ledger-table td {
+  max-width: 240px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.keyword-ledger-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fbff;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+.keyword-ledger-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.keyword-ledger-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ledger-category {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.ledger-category.tone-긍정 {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.ledger-category.tone-주의 {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.ledger-category.tone-제외 {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.ledger-keyword {
+  min-width: 150px;
+  font-weight: 950;
+}
+
+.ledger-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+}
+
+.ledger-terms {
+  min-width: 220px;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+}
+
+.ledger-terms.exclude {
+  color: #9a3412;
+}
+
+.ledger-memo {
+  min-width: 170px;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+}
+
+.keyword-ledger-edit {
+  min-width: 58px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.keyword-ledger-edit:hover {
+  filter: brightness(.95);
+}
+
 .keyword-chip-grid {
   align-items: center;
   min-height: 30px;
