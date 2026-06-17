@@ -7450,10 +7450,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .keyword-ledger-table th:nth-child(9),
 .keyword-ledger-table td:nth-child(9) { width: 72px; text-align: center; }
 .keyword-ledger-table th:nth-child(10),
-.keyword-ledger-table td:nth-child(10),
 .keyword-ledger-table th:nth-child(11),
-.keyword-ledger-table td:nth-child(11) { width: 250px; text-align: left; }
-.keyword-ledger-table th:nth-child(12),
+.keyword-ledger-table th:nth-child(12) { width: 250px; text-align: center; }
+.keyword-ledger-table td:nth-child(10),
+.keyword-ledger-table td:nth-child(11),
 .keyword-ledger-table td:nth-child(12) { width: 250px; text-align: left; }
 
 .keyword-ledger-table tbody tr:hover {
