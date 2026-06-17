@@ -6354,10 +6354,7 @@ function KeywordManagerTable({ rows = [], onEdit }) {
       <table className="keyword-ledger-table">
         <thead>
           <tr>
-            <th>수정</th>
-            <th>상위 구분</th>
-            <th>세부 구분</th>
-            <th>키워드/개체명</th>
+            <th>분류 기준</th>
             <th>개체 유형</th>
             <th>검색어</th>
             <th>본문 등장</th>
@@ -6382,10 +6379,14 @@ function KeywordManagerTable({ rows = [], onEdit }) {
             const tone = keywordDefaultToneLabel(item.defaultTone);
             return (
               <tr key={`${item.category}-${item.keyword}`}>
-                <td><button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button></td>
-                <td><span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span></td>
-                <td title={subcategory}><span className="ledger-subcategory">{subcategory}</span></td>
-                <td title={item.keyword}><span className="ledger-keyword">{item.keyword}</span></td>
+                <td className="ledger-anchor-cell">
+                  <button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button>
+                  <span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span>
+                  <span className="ledger-keyword-block" title={item.keyword}>
+                    <b>{item.keyword}</b>
+                    <em title={subcategory}>{subcategory}</em>
+                  </span>
+                </td>
                 <td title={entityType}>{entityType}</td>
                 <td><span className={`ledger-pill ${item.isSearchKeyword === false ? "muted" : "active"}`}>{item.isSearchKeyword === false ? "분류" : "검색"}</span></td>
                 <td><span className={`ledger-pill ${item.requireArticleMention ? "active" : "muted"}`}>{item.requireArticleMention ? "필수" : "선택"}</span></td>
