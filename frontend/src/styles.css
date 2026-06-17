@@ -6662,19 +6662,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-stage-flow {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .keyword-stage-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 9px;
-  align-items: center;
+  gap: 8px;
+  align-items: start;
   min-width: 0;
-  min-height: 86px;
-  padding: 11px;
+  overflow: hidden;
+  min-height: 78px;
+  padding: 10px;
   border: 1px solid var(--line-soft);
   border-radius: 10px;
   background: linear-gradient(180deg, #fff 0, #f8fbff 100%);
@@ -6683,12 +6684,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .keyword-stage-card > span {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   background: #eef4ff;
   color: var(--blue);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 950;
 }
 
@@ -6698,26 +6699,32 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-stage-card b {
   display: block;
+  overflow: hidden;
   color: var(--ink);
-  font-size: 13px;
-  line-height: 1.1;
+  font-size: 12px;
+  line-height: 1.25;
   font-weight: 950;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .keyword-stage-card p {
+  display: -webkit-box;
+  overflow: hidden;
   min-width: 0;
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
   font-size: 11px;
   line-height: 1.35;
   font-weight: 850;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .keyword-stage-card strong {
   justify-self: end;
   color: var(--ink);
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
   font-weight: 950;
   white-space: nowrap;
@@ -6740,7 +6747,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-stage-board {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 10px;
 }
 
@@ -6748,7 +6755,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   gap: 8px;
   min-width: 0;
-  padding: 12px;
+  overflow: hidden;
+  padding: 11px;
   border: 1px solid var(--line-soft);
   border-radius: 10px;
   background: #fff;
@@ -6787,8 +6795,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-stage-items {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
   gap: 6px;
   min-width: 0;
 }
@@ -7014,11 +7022,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   }
 
   .keyword-stage-flow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   }
 
   .keyword-stage-card:last-child {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .keyword-stage-board,

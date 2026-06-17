@@ -5881,21 +5881,21 @@ function KeywordManagement({ keywords = [] }) {
             eyebrow="검색 API 입력값"
             rows={rows}
             empty="등록된 수집 키워드가 없습니다."
-            render={(item) => <EditableKeywordRuleChip item={item} onEdit={handleEditKeyword} />}
+            render={(item) => <EditableKeywordRuleChip item={item} />}
           />
           <KeywordStageSection
             title="문맥 필수 조건"
             eyebrow="오탐 방지 핵심"
             rows={contextRows}
             empty="문맥 필수 조건이 걸린 키워드가 없습니다."
-            render={(item) => <EditableKeywordContextCard item={item} type="context" onEdit={handleEditKeyword} />}
+            render={(item) => <EditableKeywordContextCard item={item} type="context" />}
           />
           <KeywordStageSection
             title="제외 문맥"
             eyebrow="노이즈 차단"
             rows={excludeRows}
             empty="제외 문맥이 걸린 키워드가 없습니다."
-            render={(item) => <EditableKeywordContextCard item={item} type="exclude" onEdit={handleEditKeyword} />}
+            render={(item) => <EditableKeywordContextCard item={item} type="exclude" />}
           />
         </div>
       </Panel>
