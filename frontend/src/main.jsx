@@ -6369,30 +6369,34 @@ function KeywordManagerTable({ rows = [], onEdit }) {
             <th>포함 문맥</th>
             <th>제외 문맥</th>
             <th>운영 메모</th>
-            <th>관리</th>
           </tr>
         </thead>
         <tbody>
           {sortedRows.map((item) => {
             const contextTerms = item.contextTerms?.length ? item.contextTerms.join(", ") : "-";
             const excludeTerms = item.excludeTerms?.length ? item.excludeTerms.join(", ") : "-";
+            const subcategory = keywordSubcategoryLabel(item.subcategory);
+            const entityType = keywordEntityTypeLabel(item.entityType);
+            const matchTarget = keywordMatchTargetLabel(item.matchTarget);
+            const matchMode = keywordMatchModeLabel(item.matchMode);
+            const tone = keywordDefaultToneLabel(item.defaultTone);
             return (
               <tr key={`${item.category}-${item.keyword}`}>
                 <td><button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button></td>
                 <td><span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span></td>
-                <td className="ledger-subcategory">{keywordSubcategoryLabel(item.subcategory)}</td>
-                <td className="ledger-keyword">{item.keyword}</td>
-                <td>{keywordEntityTypeLabel(item.entityType)}</td>
+                <td title={subcategory}><span className="ledger-subcategory">{subcategory}</span></td>
+                <td title={item.keyword}><span className="ledger-keyword">{item.keyword}</span></td>
+                <td title={entityType}>{entityType}</td>
                 <td><span className={`ledger-pill ${item.isSearchKeyword === false ? "muted" : "active"}`}>{item.isSearchKeyword === false ? "분류" : "검색"}</span></td>
                 <td><span className={`ledger-pill ${item.requireArticleMention ? "active" : "muted"}`}>{item.requireArticleMention ? "필수" : "선택"}</span></td>
-                <td>{keywordMatchTargetLabel(item.matchTarget)}</td>
-                <td>{keywordMatchModeLabel(item.matchMode)}</td>
-                <td><span className={`ledger-tone tone-${item.defaultTone || "neutral"}`}>{keywordDefaultToneLabel(item.defaultTone)}</span></td>
+                <td title={matchTarget}>{matchTarget}</td>
+                <td title={matchMode}>{matchMode}</td>
+                <td><span className={`ledger-tone tone-${item.defaultTone || "neutral"}`}>{tone}</span></td>
                 <td><span className={`ledger-pill ${item.analysisExcluded ? "danger" : "muted"}`}>{item.analysisExcluded ? "제외" : "포함"}</span></td>
                 <td className="ledger-number">{item.priority || 100}</td>
-                <td className="ledger-terms">{contextTerms}</td>
-                <td className="ledger-terms exclude">{excludeTerms}</td>
-                <td className="ledger-memo">{item.memo || "-"}</td>
+                <td title={contextTerms}><span className="ledger-terms">{contextTerms}</span></td>
+                <td title={excludeTerms}><span className="ledger-terms exclude">{excludeTerms}</span></td>
+                <td title={item.memo || "-"}><span className="ledger-memo">{item.memo || "-"}</span></td>
               </tr>
             );
           })}
