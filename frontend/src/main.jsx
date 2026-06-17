@@ -6352,6 +6352,20 @@ function KeywordManagerTable({ rows = [], onEdit }) {
   return (
     <div className="keyword-ledger-wrap">
       <table className="keyword-ledger-table">
+        <colgroup>
+          <col className="ledger-col-anchor" />
+          <col className="ledger-col-entity" />
+          <col className="ledger-col-search" />
+          <col className="ledger-col-mention" />
+          <col className="ledger-col-target" />
+          <col className="ledger-col-mode" />
+          <col className="ledger-col-tone" />
+          <col className="ledger-col-exclude" />
+          <col className="ledger-col-priority" />
+          <col className="ledger-col-context" />
+          <col className="ledger-col-context" />
+          <col className="ledger-col-memo" />
+        </colgroup>
         <thead>
           <tr>
             <th>분류 기준</th>
@@ -6380,12 +6394,14 @@ function KeywordManagerTable({ rows = [], onEdit }) {
             return (
               <tr key={`${item.category}-${item.keyword}`}>
                 <td className="ledger-anchor-cell">
-                  <button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button>
-                  <span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span>
-                  <span className="ledger-keyword-block" title={item.keyword}>
-                    <b>{item.keyword}</b>
-                    <em title={subcategory}>{subcategory}</em>
-                  </span>
+                  <div className="ledger-anchor-row">
+                    <button className="keyword-ledger-edit" onClick={() => onEdit(item)}>수정</button>
+                    <span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span>
+                    <span className="ledger-keyword-block" title={item.keyword}>
+                      <b>{item.keyword}</b>
+                      <em title={subcategory}>{subcategory}</em>
+                    </span>
+                  </div>
                 </td>
                 <td title={entityType}>{entityType}</td>
                 <td><span className={`ledger-pill ${item.isSearchKeyword === false ? "muted" : "active"}`}>{item.isSearchKeyword === false ? "분류" : "검색"}</span></td>

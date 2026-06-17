@@ -7383,6 +7383,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-ledger-table th,
 .keyword-ledger-table td {
+  box-sizing: border-box;
   height: 50px;
   padding: 7px 10px;
   border-bottom: 1px solid var(--line-soft);
@@ -7394,6 +7395,18 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   white-space: nowrap;
   background: #fff;
 }
+
+.keyword-ledger-table .ledger-col-anchor { width: 330px; }
+.keyword-ledger-table .ledger-col-entity { width: 88px; }
+.keyword-ledger-table .ledger-col-search { width: 72px; }
+.keyword-ledger-table .ledger-col-mention { width: 84px; }
+.keyword-ledger-table .ledger-col-target { width: 96px; }
+.keyword-ledger-table .ledger-col-mode { width: 92px; }
+.keyword-ledger-table .ledger-col-tone { width: 82px; }
+.keyword-ledger-table .ledger-col-exclude { width: 82px; }
+.keyword-ledger-table .ledger-col-priority { width: 72px; }
+.keyword-ledger-table .ledger-col-context { width: 250px; }
+.keyword-ledger-table .ledger-col-memo { width: 250px; }
 
 .keyword-ledger-table th {
   position: sticky;
@@ -7411,9 +7424,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   position: sticky;
   left: 0;
   z-index: 6;
-  width: 330px;
   text-align: left;
-  box-shadow: 3px 0 0 rgba(148, 163, 184, .24);
+  box-shadow: 2px 0 0 #dbe4f0;
 }
 
 .keyword-ledger-table th:nth-child(1) {
@@ -7436,7 +7448,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .keyword-ledger-table th:nth-child(8),
 .keyword-ledger-table td:nth-child(8) { width: 82px; text-align: center; }
 .keyword-ledger-table th:nth-child(9),
-.keyword-ledger-table td:nth-child(9) { width: 72px; text-align: right; }
+.keyword-ledger-table td:nth-child(9) { width: 72px; text-align: center; }
 .keyword-ledger-table th:nth-child(10),
 .keyword-ledger-table td:nth-child(10),
 .keyword-ledger-table th:nth-child(11),
@@ -7476,10 +7488,16 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ledger-anchor-cell {
+  padding: 0 10px;
+}
+
+.ledger-anchor-row {
   display: grid;
   grid-template-columns: 48px 56px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
+  width: 100%;
+  min-width: 0;
 }
 
 .ledger-category.tone-긍정 {
@@ -7548,14 +7566,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ledger-number {
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
   font-weight: 950;
 }
 
 .ledger-terms {
   display: block;
-  width: 230px;
+  width: 100%;
   overflow: hidden;
   color: var(--ink);
   text-overflow: ellipsis;
@@ -7568,7 +7586,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ledger-memo {
   display: block;
-  width: 230px;
+  width: 100%;
   overflow: hidden;
   color: var(--muted);
   text-overflow: ellipsis;
