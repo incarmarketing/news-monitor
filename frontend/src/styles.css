@@ -6638,6 +6638,300 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   container-type: inline-size;
 }
 
+.keyword-management-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, .75fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.keyword-management-shell > .panel:first-child {
+  grid-column: 1 / -1;
+}
+
+.keyword-stage-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.keyword-stage-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  min-height: 86px;
+  padding: 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fff 0, #f8fbff 100%);
+}
+
+.keyword-stage-card > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.keyword-stage-card div {
+  min-width: 0;
+}
+
+.keyword-stage-card b {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.1;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.keyword-stage-card p {
+  min-width: 0;
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
+.keyword-stage-card strong {
+  justify-self: end;
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.keyword-stage-card.tone-주의 {
+  border-color: #fed7aa;
+  background: linear-gradient(180deg, #fff 0, #fff7ed 100%);
+}
+
+.keyword-stage-card.tone-제외 {
+  border-color: #cbd5e1;
+  background: linear-gradient(180deg, #fff 0, #f8fafc 100%);
+}
+
+.keyword-stage-card.tone-긍정 {
+  border-color: #bbf7d0;
+  background: linear-gradient(180deg, #fff 0, #f0fdf4 100%);
+}
+
+.keyword-stage-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.keyword-stage-section {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.keyword-stage-section-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 8px;
+  align-items: end;
+  min-width: 0;
+}
+
+.keyword-stage-section-head span {
+  grid-column: 1 / -1;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+.keyword-stage-section-head b {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 950;
+}
+
+.keyword-stage-section-head strong {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.keyword-stage-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.keyword-stage-empty,
+.keyword-stage-more {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 850;
+}
+
+.keyword-context-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  min-width: 0;
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.keyword-context-card.exclude {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.keyword-context-card > div {
+  min-width: 0;
+}
+
+.keyword-context-card b,
+.keyword-context-card span,
+.keyword-context-card p,
+.keyword-context-card small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyword-context-card b {
+  display: block;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.keyword-context-card span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.keyword-context-card p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+
+.keyword-context-card small {
+  align-self: start;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.keyword-category-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.keyword-category-card {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.keyword-category-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.keyword-category-card b,
+.keyword-category-card strong {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.keyword-category-card p,
+.keyword-category-card small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 850;
+}
+
+.keyword-category-card.tone-긍정 {
+  border-color: #bbf7d0;
+}
+
+.keyword-category-card.tone-주의 {
+  border-color: #fed7aa;
+}
+
+.keyword-category-card.tone-제외 {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.keyword-verification-note {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  background: #f4f7ff;
+}
+
+.keyword-verification-note b {
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.keyword-verification-note p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 850;
+}
+
 @container (max-width: 560px) {
   .keyword-add-form {
     grid-template-columns: 1fr;
@@ -6683,6 +6977,39 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .keyword-add-form .primary-button {
     width: 100%;
+  }
+}
+
+@media (max-width: 1180px) {
+  .keyword-management-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .keyword-stage-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .keyword-stage-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .keyword-stage-board,
+  .keyword-category-matrix {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .keyword-stage-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .keyword-stage-card:last-child {
+    grid-column: auto;
+  }
+
+  .keyword-stage-card {
+    min-height: 72px;
   }
 }
 
