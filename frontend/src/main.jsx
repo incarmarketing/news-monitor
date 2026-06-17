@@ -5800,10 +5800,6 @@ function KeywordManagement({ keywords = [] }) {
     () => mergeKeywordRows(keywords.length ? keywords : keywordRowsFromGroups(), draftKeywords),
     [keywords, draftKeywords],
   );
-  const stages = useMemo(() => buildKeywordStages(rows), [rows]);
-  const categorySummary = useMemo(() => summarizeKeywordCategories(rows), [rows]);
-  const contextRows = useMemo(() => rows.filter((row) => row.matchMode !== "keyword" || row.contextTerms?.length), [rows]);
-  const excludeRows = useMemo(() => rows.filter((row) => row.excludeTerms?.length || row.category === "exclude"), [rows]);
 
   const resetKeywordForm = ({ clearStatus = true } = {}) => {
     setKeyword("");
@@ -5860,201 +5856,86 @@ function KeywordManagement({ keywords = [] }) {
   };
 
   return (
-    <section className="keyword-management-shell">
-      <Panel title="단계형 키워드 운영" icon={Settings} meta={`${rows.length.toLocaleString("ko-KR")}개`}>
-        <div className="keyword-stage-flow">
-          {stages.map((stage) => (
-            <article key={stage.id} className={`keyword-stage-card tone-${stage.tone}`}>
-              <span>{stage.step}</span>
-              <div>
-                <b>{stage.title}</b>
-                <p>{stage.description}</p>
-              </div>
-              <strong>{stage.count}</strong>
-            </article>
-          ))}
-        </div>
-        <div className="keyword-stage-board">
-          <KeywordStageSection
-            title="수집 키워드"
-            eyebrow="검색 API 입력값"
-            rows={rows}
-            empty="등록된 수집 키워드가 없습니다."
-            render={(item) => <EditableKeywordRuleChip item={item} />}
-          />
-          <KeywordStageSection
-            title="문맥 필수 조건"
-            eyebrow="오탐 방지 핵심"
-            rows={contextRows}
-            empty="문맥 필수 조건이 걸린 키워드가 없습니다."
-            render={(item) => <EditableKeywordContextCard item={item} type="context" />}
-          />
-          <KeywordStageSection
-            title="제외 문맥"
-            eyebrow="노이즈 차단"
-            rows={excludeRows}
-            empty="제외 문맥이 걸린 키워드가 없습니다."
-            render={(item) => <EditableKeywordContextCard item={item} type="exclude" />}
-          />
-        </div>
-      </Panel>
-
-      <Panel title={isEditing ? "키워드 조건 수정" : "키워드 규칙 추가"} icon={FilePenLine} meta={isEditing ? "기존 키워드 문맥 조건 편집" : "수집어 + 문맥 조건"}>
-        <div className={`operation-form keyword-add-form${isEditing ? " is-editing" : ""}`}>
-          <label>
-            <span>상위 구분</span>
-            <select value={category} onChange={(event) => setCategory(event.target.value)} disabled={isEditing}>
-              {keywordCategories.map((item) => (
-                <option key={item.id} value={item.id}>{item.label}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>키워드</span>
-            <input
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              disabled={isEditing}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") handleAddKeyword();
-              }}
-              placeholder="예: 글로벌금융판매"
-            />
-          </label>
-          <label>
-            <span>매칭 방식</span>
-            <select value={matchMode} onChange={(event) => setMatchMode(event.target.value)}>
-              {keywordMatchModes.map((item) => (
-                <option key={item.id} value={item.id}>{item.label}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>포함 문맥</span>
-            <input
-              value={contextTerms}
-              onChange={(event) => setContextTerms(event.target.value)}
-              placeholder="예: 보험, GA, 설계사"
-            />
-          </label>
-          <label>
-            <span>제외 문맥</span>
-            <input
-              value={excludeTerms}
-              onChange={(event) => setExcludeTerms(event.target.value)}
-              placeholder="예: 메가커피, 메가박스"
-            />
-          </label>
-          <label className="compact-field">
-            <span>우선순위</span>
-            <input
-              type="number"
-              min="1"
-              max="999"
-              value={priority}
-              onChange={(event) => setPriority(event.target.value)}
-            />
-          </label>
-          <label className="keyword-memo-field">
-            <span>운영 메모</span>
-            <input
-              value={memo}
-              onChange={(event) => setMemo(event.target.value)}
-              placeholder="예: 보험/GA 문맥에서만 사용, 스포츠·행사 기사 제외"
-            />
-          </label>
-          <div className="operation-form-actions">
-            <button className="primary-button" onClick={handleAddKeyword}>{isEditing ? "수정 저장" : "키워드 추가"}</button>
-            {isEditing && <button className="ghost-button keyword-edit-cancel" onClick={() => resetKeywordForm()}>취소</button>}
+    <section className="keyword-management-shell keyword-management-single">
+      <Panel title="상위 구분별 원장" icon={ShieldCheck} meta={`${rows.length.toLocaleString("ko-KR")}개 · 추가/수정/문맥 관리`}>
+        <div className="keyword-ledger-editor">
+          <div className="keyword-ledger-editor-head">
+            <b>{isEditing ? "키워드 조건 수정" : "새 키워드 추가"}</b>
+            <span>{isEditing ? "선택한 원장 행의 문맥 조건을 수정합니다." : "검색 키워드와 문맥 조건을 원장에 추가합니다."}</span>
           </div>
-          {status && <p className="status-note">{status}</p>}
+          <div className={`operation-form keyword-add-form${isEditing ? " is-editing" : ""}`}>
+            <label>
+              <span>상위 구분</span>
+              <select value={category} onChange={(event) => setCategory(event.target.value)} disabled={isEditing}>
+                {keywordCategories.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>키워드</span>
+              <input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                disabled={isEditing}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") handleAddKeyword();
+                }}
+                placeholder="예: 글로벌금융판매"
+              />
+            </label>
+            <label>
+              <span>매칭 방식</span>
+              <select value={matchMode} onChange={(event) => setMatchMode(event.target.value)}>
+                {keywordMatchModes.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>포함 문맥</span>
+              <input
+                value={contextTerms}
+                onChange={(event) => setContextTerms(event.target.value)}
+                placeholder="예: 보험, GA, 설계사"
+              />
+            </label>
+            <label>
+              <span>제외 문맥</span>
+              <input
+                value={excludeTerms}
+                onChange={(event) => setExcludeTerms(event.target.value)}
+                placeholder="예: 메가커피, 메가박스"
+              />
+            </label>
+            <label className="compact-field">
+              <span>우선순위</span>
+              <input
+                type="number"
+                min="1"
+                max="999"
+                value={priority}
+                onChange={(event) => setPriority(event.target.value)}
+              />
+            </label>
+            <label className="keyword-memo-field">
+              <span>운영 메모</span>
+              <input
+                value={memo}
+                onChange={(event) => setMemo(event.target.value)}
+                placeholder="예: 보험/GA 문맥에서만 사용, 스포츠·행사 기사 제외"
+              />
+            </label>
+            <div className="operation-form-actions">
+              <button className="primary-button" onClick={handleAddKeyword}>{isEditing ? "수정 저장" : "키워드 추가"}</button>
+              {isEditing && <button className="ghost-button keyword-edit-cancel" onClick={() => resetKeywordForm()}>취소</button>}
+            </div>
+            {status && <p className="status-note">{status}</p>}
+          </div>
         </div>
-        <div className="keyword-category-matrix">
-          {categorySummary.map((item) => (
-            <article key={item.category} className={`keyword-category-card tone-${keywordCategoryTone(item.category)}`}>
-              <div>
-                <b>{item.label}</b>
-                <strong>{item.count.toLocaleString("ko-KR")}개</strong>
-              </div>
-              <p>{item.rule}</p>
-              <small>문맥 {item.contextCount.toLocaleString("ko-KR")} · 제외 {item.excludeCount.toLocaleString("ko-KR")}</small>
-            </article>
-          ))}
-        </div>
-      </Panel>
-
-      <Panel title="상위 구분별 원장" icon={ShieldCheck} meta="현재 운영 DB 기준">
         <KeywordManagerTable rows={rows} onEdit={handleEditKeyword} />
       </Panel>
-
-      <Panel title="분류/논조 기준" icon={ShieldCheck} meta="피드백으로 계속 보정">
-        <RuleStack />
-        <div className="keyword-verification-note">
-          <b>검증 흐름</b>
-          <p>잘못 분류된 기사는 분류 피드백에 저장되고, 반복 패턴은 키워드/문맥 규칙 후보로 승격하는 구조가 적합합니다.</p>
-        </div>
-      </Panel>
     </section>
-  );
-}
-
-function KeywordStageSection({ title, eyebrow, rows = [], empty, render }) {
-  const visibleRows = rows.slice(0, 12);
-  return (
-    <article className="keyword-stage-section">
-      <div className="keyword-stage-section-head">
-        <span>{eyebrow}</span>
-        <b>{title}</b>
-        <strong>{rows.length.toLocaleString("ko-KR")}개</strong>
-      </div>
-      {visibleRows.length ? (
-        <div className="keyword-stage-items">
-          {visibleRows.map((item) => (
-            <React.Fragment key={`${title}-${item.category}-${item.keyword}`}>
-              {render(item)}
-            </React.Fragment>
-          ))}
-        </div>
-      ) : (
-        <p className="keyword-stage-empty">{empty}</p>
-      )}
-      {rows.length > visibleRows.length && (
-        <small className="keyword-stage-more">외 {(rows.length - visibleRows.length).toLocaleString("ko-KR")}개는 원장에서 확인</small>
-      )}
-    </article>
-  );
-}
-
-function EditableKeywordContextCard({ item, type = "context", onEdit }) {
-  const terms = type === "exclude" ? item.excludeTerms || [] : item.contextTerms || [];
-  const fallback = type === "exclude" && item.category === "exclude" ? ["제외 후보"] : [];
-  const visibleTerms = terms.length ? terms : fallback;
-  return (
-    <div className={`keyword-context-card ${type}`}>
-      <div>
-        <b>{item.keyword}</b>
-        <span>{keywordCategoryLabel(item.category)} · {keywordMatchModeLabel(item.matchMode)}</span>
-      </div>
-      {onEdit && <button className="keyword-edit-button" onClick={() => onEdit(item)}>수정</button>}
-      <p>{visibleTerms.slice(0, 5).join(" · ") || "조건 없음"}</p>
-      {visibleTerms.length > 5 && <small>+{visibleTerms.length - 5}개</small>}
-    </div>
-  );
-}
-
-function KeywordContextCard({ item, type = "context", onEdit }) {
-  const terms = type === "exclude" ? item.excludeTerms || [] : item.contextTerms || [];
-  const fallback = type === "exclude" && item.category === "exclude" ? ["제외 후보"] : [];
-  const visibleTerms = terms.length ? terms : fallback;
-  return (
-    <div className={`keyword-context-card ${type}`}>
-      <div>
-        <b>{item.keyword}</b>
-        <span>{keywordCategoryLabel(item.category)} · {keywordMatchModeLabel(item.matchMode)}</span>
-      </div>
-      <p>{visibleTerms.slice(0, 5).join(" · ") || "조건 없음"}</p>
-      {visibleTerms.length > 5 && <small>+{visibleTerms.length - 5}개</small>}
-    </div>
   );
 }
 
@@ -6362,26 +6243,6 @@ function ArticleSummaryBlock({ item, dense = false }) {
   );
 }
 
-function EditableKeywordRuleChip({ item, onEdit }) {
-  const mode = keywordMatchModeLabel(item.matchMode);
-  const contextCount = item.contextTerms?.length || 0;
-  const excludeCount = item.excludeTerms?.length || 0;
-  const meta = [
-    mode,
-    contextCount ? `포함 ${contextCount}` : "",
-    excludeCount ? `제외 ${excludeCount}` : "",
-  ].filter(Boolean).join(" · ");
-  return (
-    <span className={`keyword-rule-chip tone-${keywordCategoryTone(item.category)}`}>
-      <span className="keyword-rule-copy">
-        <b>{item.keyword}</b>
-        <small>{meta}</small>
-      </span>
-      {onEdit && <button className="keyword-edit-button" onClick={() => onEdit(item)}>수정</button>}
-    </span>
-  );
-}
-
 function KeywordManagerTable({ rows = [], onEdit }) {
   const sortedRows = [...rows].sort((a, b) =>
     keywordCategoryLabel(a.category).localeCompare(keywordCategoryLabel(b.category), "ko-KR")
@@ -6423,23 +6284,6 @@ function KeywordManagerTable({ rows = [], onEdit }) {
         </tbody>
       </table>
     </div>
-  );
-}
-
-function KeywordRuleChip({ item }) {
-  const mode = keywordMatchModeLabel(item.matchMode);
-  const contextCount = item.contextTerms?.length || 0;
-  const excludeCount = item.excludeTerms?.length || 0;
-  const meta = [
-    mode,
-    contextCount ? `포함 ${contextCount}` : "",
-    excludeCount ? `제외 ${excludeCount}` : "",
-  ].filter(Boolean).join(" · ");
-  return (
-    <span className={`keyword-rule-chip tone-${keywordCategoryTone(item.category)}`}>
-      <b>{item.keyword}</b>
-      <small>{meta}</small>
-    </span>
   );
 }
 
@@ -9075,69 +8919,6 @@ function groupKeywordRows(rows = []) {
       const bOrder = order.includes(b.category) ? order.indexOf(b.category) : order.length;
       return aOrder - bOrder;
     });
-}
-
-function buildKeywordStages(rows = []) {
-  const activeRows = rows.filter((row) => row.enabled !== false);
-  const contextRows = activeRows.filter((row) => row.matchMode !== "keyword" || row.contextTerms?.length);
-  const excludeRows = activeRows.filter((row) => row.excludeTerms?.length || row.category === "exclude");
-  const classificationRows = activeRows.filter((row) => ["own", "competitor", "industry", "regulation"].includes(row.category));
-  return [
-    {
-      id: "collect",
-      step: "01",
-      title: "수집어",
-      description: "뉴스 API에 직접 들어가는 검색 기준입니다.",
-      count: activeRows.length.toLocaleString("ko-KR"),
-      tone: "중립",
-    },
-    {
-      id: "context",
-      step: "02",
-      title: "문맥 필수",
-      description: "키워드가 업종 문맥 안에서만 통과하도록 제한합니다.",
-      count: contextRows.length.toLocaleString("ko-KR"),
-      tone: "주의",
-    },
-    {
-      id: "exclude",
-      step: "03",
-      title: "제외 문맥",
-      description: "스포츠, 주식 자동기사, 무관 브랜드 노이즈를 차단합니다.",
-      count: excludeRows.length.toLocaleString("ko-KR"),
-      tone: "제외",
-    },
-    {
-      id: "classify",
-      step: "04",
-      title: "분류 기준",
-      description: "당사, GA, 보험사, 정책/규제로 보고서 기준을 정리합니다.",
-      count: classificationRows.length.toLocaleString("ko-KR"),
-      tone: "긍정",
-    },
-    {
-      id: "verify",
-      step: "05",
-      title: "검증",
-      description: "오분류 피드백을 쌓아 다음 규칙 후보로 승격합니다.",
-      count: "피드백",
-      tone: "중립",
-    },
-  ];
-}
-
-function summarizeKeywordCategories(rows = []) {
-  return keywordCategories.map((category) => {
-    const items = rows.filter((row) => row.category === category.id);
-    return {
-      category: category.id,
-      label: category.label,
-      rule: category.rule,
-      count: items.length,
-      contextCount: items.filter((row) => row.matchMode !== "keyword" || row.contextTerms?.length).length,
-      excludeCount: items.filter((row) => row.excludeTerms?.length || row.category === "exclude").length,
-    };
-  }).filter((item) => item.count > 0 || item.category !== "other");
 }
 
 function buildFeedbackRuleCandidates(rows = []) {

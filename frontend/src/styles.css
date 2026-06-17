@@ -6656,8 +6656,49 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   align-items: start;
 }
 
+.keyword-management-shell.keyword-management-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .keyword-management-shell > .panel:first-child {
   grid-column: 1 / -1;
+}
+
+.keyword-ledger-editor {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.keyword-ledger-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.keyword-ledger-editor-head b {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.keyword-ledger-editor-head span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.4;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .keyword-stage-flow {
@@ -7033,6 +7074,16 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 @media (max-width: 640px) {
+  .keyword-ledger-editor-head {
+    display: grid;
+    gap: 4px;
+  }
+
+  .keyword-ledger-editor-head span {
+    text-align: left;
+    white-space: normal;
+  }
+
   .keyword-manager-row {
     grid-template-columns: 1fr;
     grid-template-areas:
