@@ -56,11 +56,21 @@ create table if not exists public.news_articles (
 create table if not exists public.monitor_keywords (
   keyword text,
   category text not null default 'other',
+  subcategory text,
+  entity_type text not null default 'keyword'
+    check (entity_type in ('keyword', 'organization', 'person', 'location', 'topic', 'noise')),
   enabled boolean not null default true,
+  is_search_keyword boolean not null default true,
+  require_article_mention boolean not null default false,
+  match_target text not null default 'title_summary'
+    check (match_target in ('title_summary', 'title_only', 'summary_only', 'source', 'keyword', 'all')),
   match_mode text not null default 'keyword'
     check (match_mode in ('keyword', 'context', 'strict', 'exact')),
   context_terms text[] not null default '{}',
   exclude_terms text[] not null default '{}',
+  default_tone text not null default 'neutral'
+    check (default_tone in ('positive', 'neutral', 'caution', 'negative', 'exclude')),
+  analysis_excluded boolean not null default false,
   priority integer not null default 100,
   memo text,
   created_at timestamptz not null default now(),

@@ -124,7 +124,7 @@ async function publicRest(config, path) {
   return data;
 }
 
-const MONITOR_KEYWORDS_EXTENDED_PATH = "monitor_keywords?select=keyword,category,enabled,match_mode,context_terms,exclude_terms,priority,memo&enabled=eq.true&order=category.asc,priority.asc,created_at.asc&limit=1000";
+const MONITOR_KEYWORDS_EXTENDED_PATH = "monitor_keywords?select=keyword,category,subcategory,entity_type,enabled,is_search_keyword,require_article_mention,match_target,match_mode,context_terms,exclude_terms,default_tone,analysis_excluded,priority,memo&enabled=eq.true&order=category.asc,priority.asc,created_at.asc&limit=1000";
 const MONITOR_KEYWORDS_BASIC_PATH = "monitor_keywords?select=keyword,category,enabled&enabled=eq.true&order=category.asc,created_at.asc&limit=1000";
 
 async function loadMonitorKeywords(config, session) {
@@ -211,10 +211,17 @@ export async function saveMonitorKeyword(keyword, category = "other", options = 
   const body = {
     keyword: cleanKeyword,
     category: cleanCategory,
+    subcategory: String(payload.subcategory || payload.subCategory || "").trim(),
+    entity_type: normalizeKeywordEntityType(payload.entityType || payload.entity_type),
     enabled: payload.enabled !== false,
+    is_search_keyword: payload.isSearchKeyword !== false && payload.is_search_keyword !== false,
+    require_article_mention: payload.requireArticleMention === true || payload.require_article_mention === true,
+    match_target: normalizeKeywordMatchTarget(payload.matchTarget || payload.match_target),
     match_mode: normalizeKeywordMatchMode(payload.matchMode || payload.match_mode),
     context_terms: normalizeTermArray(payload.contextTerms || payload.context_terms),
     exclude_terms: normalizeTermArray(payload.excludeTerms || payload.exclude_terms),
+    default_tone: normalizeKeywordDefaultTone(payload.defaultTone || payload.default_tone),
+    analysis_excluded: payload.analysisExcluded === true || payload.analysis_excluded === true,
     priority: normalizePriority(payload.priority),
     memo: String(payload.memo || "").trim(),
   };
@@ -1043,21 +1050,47 @@ export async function generateRiskResponseWithGemini(payload = {}) {
 function normalizeKeyword(row) {
   const keyword = typeof row === "string" ? row : row?.keyword;
   if (!keyword) return null;
+  const category = row?.category || "other";
+  const hasRequireFlag = row?.requireArticleMention !== undefined || row?.require_article_mention !== undefined;
+  const hasSearchFlag = row?.isSearchKeyword !== undefined || row?.is_search_keyword !== undefined;
+  const hasExcludeFlag = row?.analysisExcluded !== undefined || row?.analysis_excluded !== undefined;
   return {
     keyword: String(keyword).trim(),
-    category: row?.category || "other",
+    category,
+    subcategory: String(row?.subcategory || row?.subCategory || "").trim(),
+    entityType: normalizeKeywordEntityType(row?.entity_type || row?.entityType || (category === "own" || category === "competitor" ? "organization" : category === "exclude" ? "noise" : "keyword")),
     enabled: row?.enabled !== false,
+    isSearchKeyword: hasSearchFlag ? row?.is_search_keyword !== false && row?.isSearchKeyword !== false : category !== "exclude",
+    requireArticleMention: hasRequireFlag ? row?.require_article_mention === true || row?.requireArticleMention === true : category === "own" || category === "competitor",
+    matchTarget: normalizeKeywordMatchTarget(row?.match_target || row?.matchTarget),
     matchMode: normalizeKeywordMatchMode(row?.match_mode || row?.matchMode),
     contextTerms: normalizeTermArray(row?.context_terms || row?.contextTerms),
     excludeTerms: normalizeTermArray(row?.exclude_terms || row?.excludeTerms),
+    defaultTone: normalizeKeywordDefaultTone(row?.default_tone || row?.defaultTone || (category === "regulation" ? "caution" : category === "exclude" ? "exclude" : "neutral")),
+    analysisExcluded: hasExcludeFlag ? row?.analysis_excluded === true || row?.analysisExcluded === true : category === "exclude",
     priority: normalizePriority(row?.priority),
     memo: String(row?.memo || "").trim(),
   };
 }
 
+function normalizeKeywordEntityType(value) {
+  const item = String(value || "keyword").trim();
+  return ["keyword", "organization", "person", "location", "topic", "noise"].includes(item) ? item : "keyword";
+}
+
+function normalizeKeywordMatchTarget(value) {
+  const item = String(value || "title_summary").trim();
+  return ["title_summary", "title_only", "summary_only", "source", "keyword", "all"].includes(item) ? item : "title_summary";
+}
+
 function normalizeKeywordMatchMode(value) {
   const mode = String(value || "keyword").trim();
   return ["keyword", "context", "strict", "exact"].includes(mode) ? mode : "keyword";
+}
+
+function normalizeKeywordDefaultTone(value) {
+  const item = String(value || "neutral").trim();
+  return ["positive", "neutral", "caution", "negative", "exclude"].includes(item) ? item : "neutral";
 }
 
 function normalizeTermArray(value) {

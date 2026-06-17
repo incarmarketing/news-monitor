@@ -1340,7 +1340,7 @@ def load_monitor_keyword_rows() -> list[dict]:
             "GET",
             (
                 "monitor_keywords?"
-                "select=keyword,category,enabled,match_mode,context_terms,exclude_terms,priority,memo"
+                "select=keyword,category,subcategory,entity_type,enabled,is_search_keyword,require_article_mention,match_target,match_mode,context_terms,exclude_terms,default_tone,analysis_excluded,priority,memo"
                 "&enabled=eq.true&order=category.asc,priority.asc,created_at.asc"
             ),
         )
@@ -1361,10 +1361,17 @@ def load_monitor_keyword_rows() -> list[dict]:
             {
                 "keyword": keyword,
                 "category": row.get("category") or "other",
+                "subcategory": row.get("subcategory") or "",
+                "entity_type": str(row.get("entity_type") or "keyword").strip() or "keyword",
                 "enabled": row.get("enabled", True) is not False,
+                "is_search_keyword": row.get("is_search_keyword", True) is not False,
+                "require_article_mention": row.get("require_article_mention", False) is True,
+                "match_target": str(row.get("match_target") or "title_summary").strip() or "title_summary",
                 "match_mode": str(row.get("match_mode") or "keyword").strip() or "keyword",
                 "context_terms": row.get("context_terms") if isinstance(row.get("context_terms"), list) else [],
                 "exclude_terms": row.get("exclude_terms") if isinstance(row.get("exclude_terms"), list) else [],
+                "default_tone": str(row.get("default_tone") or "neutral").strip() or "neutral",
+                "analysis_excluded": row.get("analysis_excluded", False) is True,
                 "priority": row.get("priority") or 100,
                 "memo": row.get("memo") or "",
             }
@@ -1449,6 +1456,8 @@ def load_monitor_keywords() -> list[str]:
     keywords = []
     seen = set()
     for row in load_monitor_keyword_rows():
+        if row.get("is_search_keyword") is False:
+            continue
         keyword = row["keyword"]
         if keyword in seen:
             continue

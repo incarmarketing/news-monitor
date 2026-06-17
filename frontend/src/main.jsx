@@ -5787,9 +5787,16 @@ function AdManagement({ rows }) {
 function KeywordManagement({ keywords = [] }) {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState("own");
+  const [subcategory, setSubcategory] = useState("");
+  const [entityType, setEntityType] = useState("keyword");
+  const [isSearchKeyword, setIsSearchKeyword] = useState(true);
+  const [requireArticleMention, setRequireArticleMention] = useState(false);
+  const [matchTarget, setMatchTarget] = useState("title_summary");
   const [matchMode, setMatchMode] = useState("keyword");
   const [contextTerms, setContextTerms] = useState("");
   const [excludeTerms, setExcludeTerms] = useState("");
+  const [defaultTone, setDefaultTone] = useState("neutral");
+  const [analysisExcluded, setAnalysisExcluded] = useState(false);
   const [priority, setPriority] = useState(100);
   const [memo, setMemo] = useState("");
   const [editingKey, setEditingKey] = useState("");
@@ -5804,9 +5811,16 @@ function KeywordManagement({ keywords = [] }) {
   const resetKeywordForm = ({ clearStatus = true } = {}) => {
     setKeyword("");
     setCategory("own");
+    setSubcategory("");
+    setEntityType("keyword");
+    setIsSearchKeyword(true);
+    setRequireArticleMention(false);
+    setMatchTarget("title_summary");
     setMatchMode("keyword");
     setContextTerms("");
     setExcludeTerms("");
+    setDefaultTone("neutral");
+    setAnalysisExcluded(false);
     setPriority(100);
     setMemo("");
     setEditingKey("");
@@ -5819,9 +5833,16 @@ function KeywordManagement({ keywords = [] }) {
     setEditingKey(keywordRowIdentity(normalized));
     setKeyword(normalized.keyword);
     setCategory(normalized.category);
+    setSubcategory(normalized.subcategory || "");
+    setEntityType(normalized.entityType || "keyword");
+    setIsSearchKeyword(normalized.isSearchKeyword !== false);
+    setRequireArticleMention(normalized.requireArticleMention === true);
+    setMatchTarget(normalized.matchTarget || "title_summary");
     setMatchMode(normalized.matchMode);
     setContextTerms((normalized.contextTerms || []).join(", "));
     setExcludeTerms((normalized.excludeTerms || []).join(", "));
+    setDefaultTone(normalized.defaultTone || "neutral");
+    setAnalysisExcluded(normalized.analysisExcluded === true);
     setPriority(normalized.priority || 100);
     setMemo(normalized.memo || "");
     setStatus(`${normalized.keyword} 문맥 조건을 수정 중입니다. 키워드명과 상위 구분은 중복 방지를 위해 잠겨 있습니다.`);
@@ -5836,10 +5857,17 @@ function KeywordManagement({ keywords = [] }) {
     const nextKeyword = {
       keyword: cleanKeyword,
       category,
+      subcategory: subcategory.trim(),
+      entityType,
       enabled: true,
+      isSearchKeyword,
+      requireArticleMention,
+      matchTarget,
       matchMode,
       contextTerms: splitKeywordTerms(contextTerms),
       excludeTerms: splitKeywordTerms(excludeTerms),
+      defaultTone,
+      analysisExcluded,
       priority: Number(priority) || 100,
       memo: memo.trim(),
     };
@@ -5873,6 +5901,14 @@ function KeywordManagement({ keywords = [] }) {
               </select>
             </label>
             <label>
+              <span>세부 구분</span>
+              <input
+                value={subcategory}
+                onChange={(event) => setSubcategory(event.target.value)}
+                placeholder="예: 직접언급, 브랜드평판, 감독정책"
+              />
+            </label>
+            <label>
               <span>키워드</span>
               <input
                 value={keyword}
@@ -5883,6 +5919,22 @@ function KeywordManagement({ keywords = [] }) {
                 }}
                 placeholder="예: 글로벌금융판매"
               />
+            </label>
+            <label>
+              <span>개체 유형</span>
+              <select value={entityType} onChange={(event) => setEntityType(event.target.value)}>
+                {keywordEntityTypes.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>매칭 대상</span>
+              <select value={matchTarget} onChange={(event) => setMatchTarget(event.target.value)}>
+                {keywordMatchTargets.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
             </label>
             <label>
               <span>매칭 방식</span>
@@ -5907,6 +5959,35 @@ function KeywordManagement({ keywords = [] }) {
                 onChange={(event) => setExcludeTerms(event.target.value)}
                 placeholder="예: 메가커피, 메가박스"
               />
+            </label>
+            <label>
+              <span>검색어 여부</span>
+              <select value={isSearchKeyword ? "yes" : "no"} onChange={(event) => setIsSearchKeyword(event.target.value === "yes")}>
+                <option value="yes">검색에 사용</option>
+                <option value="no">분류에만 사용</option>
+              </select>
+            </label>
+            <label>
+              <span>본문 등장</span>
+              <select value={requireArticleMention ? "required" : "optional"} onChange={(event) => setRequireArticleMention(event.target.value === "required")}>
+                <option value="optional">선택</option>
+                <option value="required">필수</option>
+              </select>
+            </label>
+            <label>
+              <span>기본 논조</span>
+              <select value={defaultTone} onChange={(event) => setDefaultTone(event.target.value)}>
+                {keywordDefaultTones.map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>분석 포함</span>
+              <select value={analysisExcluded ? "exclude" : "include"} onChange={(event) => setAnalysisExcluded(event.target.value === "exclude")}>
+                <option value="include">포함</option>
+                <option value="exclude">제외</option>
+              </select>
             </label>
             <label className="compact-field">
               <span>우선순위</span>
@@ -6254,11 +6335,18 @@ function KeywordManagerTable({ rows = [], onEdit }) {
       <table className="keyword-ledger-table">
         <thead>
           <tr>
-            <th>구분</th>
-            <th>키워드</th>
-            <th>매칭</th>
+            <th>상위 구분</th>
+            <th>세부 구분</th>
+            <th>키워드/개체명</th>
+            <th>개체 유형</th>
+            <th>검색어</th>
+            <th>본문 등장</th>
+            <th>매칭 대상</th>
+            <th>매칭 방식</th>
+            <th>기본 논조</th>
+            <th>분석 제외</th>
             <th>우선순위</th>
-            <th>문맥 필수</th>
+            <th>포함 문맥</th>
             <th>제외 문맥</th>
             <th>운영 메모</th>
             <th>관리</th>
@@ -6271,8 +6359,15 @@ function KeywordManagerTable({ rows = [], onEdit }) {
             return (
               <tr key={`${item.category}-${item.keyword}`}>
                 <td><span className={`ledger-category tone-${keywordCategoryTone(item.category)}`}>{keywordCategoryLabel(item.category)}</span></td>
+                <td className="ledger-subcategory">{item.subcategory || "-"}</td>
                 <td className="ledger-keyword">{item.keyword}</td>
+                <td>{keywordEntityTypeLabel(item.entityType)}</td>
+                <td><span className={`ledger-pill ${item.isSearchKeyword === false ? "muted" : "active"}`}>{item.isSearchKeyword === false ? "분류" : "검색"}</span></td>
+                <td><span className={`ledger-pill ${item.requireArticleMention ? "active" : "muted"}`}>{item.requireArticleMention ? "필수" : "선택"}</span></td>
+                <td>{keywordMatchTargetLabel(item.matchTarget)}</td>
                 <td>{keywordMatchModeLabel(item.matchMode)}</td>
+                <td><span className={`ledger-tone tone-${item.defaultTone || "neutral"}`}>{keywordDefaultToneLabel(item.defaultTone)}</span></td>
+                <td><span className={`ledger-pill ${item.analysisExcluded ? "danger" : "muted"}`}>{item.analysisExcluded ? "제외" : "포함"}</span></td>
                 <td className="ledger-number">{item.priority || 100}</td>
                 <td className="ledger-terms">{contextTerms}</td>
                 <td className="ledger-terms exclude">{excludeTerms}</td>
@@ -8613,9 +8708,9 @@ const emptyMediaForm = {
 
 const keywordCategories = [
   { id: "own", label: "당사", rule: "당사명, 브랜드, 임직원처럼 직접 언급만 당사로 분류합니다." },
-  { id: "competitor", label: "경쟁사/GA", rule: "보험, GA, 설계사, 정착지원금 문맥이 함께 있을 때만 경쟁사 이슈로 봅니다." },
-  { id: "industry", label: "업계동향", rule: "보험 시장, 판매채널, 소비자 동향처럼 업계 흐름을 추적합니다." },
-  { id: "regulation", label: "정책/규제", rule: "금융당국, 수수료, 제도, 법령 이슈를 주의 관찰로 분리합니다." },
+  { id: "competitor", label: "GA", rule: "GA, 설계사, 정착지원금 문맥이 함께 있을 때 경쟁사 이슈로 봅니다." },
+  { id: "industry", label: "보험사", rule: "보험사, 판매채널, 소비자 동향처럼 보험사·업계 흐름을 추적합니다." },
+  { id: "regulation", label: "정책", rule: "금융당국, 수수료, 제도, 법령 이슈를 주의 관찰로 분리합니다." },
   { id: "other", label: "기타", rule: "일반 관심 키워드나 별도 문맥 분석 대상입니다." },
   { id: "exclude", label: "제외 후보", rule: "브랜드평판, 스포츠, 상품명 오탐처럼 수집 제외 후보로 관리합니다." },
 ];
@@ -8625,6 +8720,32 @@ const keywordMatchModes = [
   { id: "context", label: "문맥 필수" },
   { id: "strict", label: "확장어 고정" },
   { id: "exact", label: "정확 일치" },
+];
+
+const keywordEntityTypes = [
+  { id: "keyword", label: "키워드" },
+  { id: "organization", label: "기관/회사" },
+  { id: "person", label: "인물" },
+  { id: "location", label: "장소" },
+  { id: "topic", label: "주제" },
+  { id: "noise", label: "제외 신호" },
+];
+
+const keywordMatchTargets = [
+  { id: "title_summary", label: "제목+요약" },
+  { id: "title_only", label: "제목" },
+  { id: "summary_only", label: "요약" },
+  { id: "source", label: "언론사" },
+  { id: "keyword", label: "검색어" },
+  { id: "all", label: "전체" },
+];
+
+const keywordDefaultTones = [
+  { id: "positive", label: "긍정" },
+  { id: "neutral", label: "중립" },
+  { id: "caution", label: "주의" },
+  { id: "negative", label: "부정" },
+  { id: "exclude", label: "제외" },
 ];
 
 function canonicalHost(value) {
@@ -8819,24 +8940,46 @@ function keywordRowsFromGroups() {
     "제외 후보": "exclude",
   };
   return keywordGroups.flatMap((group) =>
-    group.keywords.map((keyword) => ({
-      keyword,
-      category: categoryMap[group.group] || "other",
-      enabled: true,
-    })),
+    group.keywords.map((keyword) => {
+      const category = categoryMap[group.group] || "other";
+      return {
+        keyword,
+        category,
+        subcategory: category === "own" ? "direct_company" : category === "competitor" ? "ga_competitor" : "",
+        entityType: category === "own" || category === "competitor" ? "organization" : category === "exclude" ? "noise" : "keyword",
+        enabled: true,
+        isSearchKeyword: category !== "exclude",
+        requireArticleMention: category === "own" || category === "competitor",
+        matchTarget: "title_summary",
+        matchMode: "keyword",
+        defaultTone: category === "regulation" ? "caution" : category === "exclude" ? "exclude" : "neutral",
+        analysisExcluded: category === "exclude",
+      };
+    }),
   );
 }
 
 function normalizeKeywordRow(row) {
   const keyword = String(row?.keyword || "").trim();
   if (!keyword) return null;
+  const category = String(row?.category || "other").trim() || "other";
+  const hasRequireFlag = row?.requireArticleMention !== undefined || row?.require_article_mention !== undefined;
+  const hasSearchFlag = row?.isSearchKeyword !== undefined || row?.is_search_keyword !== undefined;
+  const hasExcludeFlag = row?.analysisExcluded !== undefined || row?.analysis_excluded !== undefined;
   return {
     keyword,
-    category: String(row?.category || "other").trim() || "other",
+    category,
+    subcategory: String(row?.subcategory || row?.subCategory || "").trim(),
+    entityType: normalizeKeywordEntityType(row?.entityType || row?.entity_type || (category === "own" || category === "competitor" ? "organization" : category === "exclude" ? "noise" : "keyword")),
     enabled: row?.enabled !== false,
+    isSearchKeyword: hasSearchFlag ? row?.isSearchKeyword !== false && row?.is_search_keyword !== false : category !== "exclude",
+    requireArticleMention: hasRequireFlag ? row?.requireArticleMention === true || row?.require_article_mention === true : category === "own" || category === "competitor",
+    matchTarget: normalizeKeywordMatchTarget(row?.matchTarget || row?.match_target),
     matchMode: normalizeKeywordMatchMode(row?.matchMode || row?.match_mode),
     contextTerms: splitKeywordTerms(row?.contextTerms || row?.context_terms),
     excludeTerms: splitKeywordTerms(row?.excludeTerms || row?.exclude_terms),
+    defaultTone: normalizeKeywordDefaultTone(row?.defaultTone || row?.default_tone || (category === "regulation" ? "caution" : category === "exclude" ? "exclude" : "neutral")),
+    analysisExcluded: hasExcludeFlag ? row?.analysisExcluded === true || row?.analysis_excluded === true : category === "exclude",
     priority: normalizeKeywordPriority(row?.priority),
     memo: String(row?.memo || "").trim(),
   };
@@ -8887,9 +9030,36 @@ function keywordMatchModeLabel(mode) {
   return keywordMatchModes.find((item) => item.id === mode)?.label || "일반";
 }
 
+function keywordEntityTypeLabel(type) {
+  return keywordEntityTypes.find((item) => item.id === type)?.label || "키워드";
+}
+
+function keywordMatchTargetLabel(target) {
+  return keywordMatchTargets.find((item) => item.id === target)?.label || "제목+요약";
+}
+
+function keywordDefaultToneLabel(tone) {
+  return keywordDefaultTones.find((item) => item.id === tone)?.label || "중립";
+}
+
+function normalizeKeywordEntityType(value) {
+  const item = String(value || "keyword").trim();
+  return keywordEntityTypes.some((option) => option.id === item) ? item : "keyword";
+}
+
+function normalizeKeywordMatchTarget(value) {
+  const item = String(value || "title_summary").trim();
+  return keywordMatchTargets.some((option) => option.id === item) ? item : "title_summary";
+}
+
 function normalizeKeywordMatchMode(value) {
   const mode = String(value || "keyword").trim();
   return keywordMatchModes.some((item) => item.id === mode) ? mode : "keyword";
+}
+
+function normalizeKeywordDefaultTone(value) {
+  const item = String(value || "neutral").trim();
+  return keywordDefaultTones.some((option) => option.id === item) ? item : "neutral";
 }
 
 function normalizeKeywordPriority(value) {

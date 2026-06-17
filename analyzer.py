@@ -320,12 +320,16 @@ def analyze(articles: list[dict], top_n: int = 60) -> tuple[list[dict], dict]:
 
 
 def article_context_text(article: dict, limit: int = 1800) -> str:
+    """Article evidence text.
+
+    Do not include the collection keyword here. A search keyword is only a
+    retrieval hint, not proof that the article itself mentions that entity.
+    """
     parts = [
         article.get("title", ""),
         article.get("description", ""),
         article.get("summary", ""),
         article.get("_summary", ""),
-        article.get("keyword", ""),
         article.get("source", ""),
     ]
     text = re.sub(r"\s+", " ", " ".join(str(part or "") for part in parts)).strip()
@@ -906,6 +910,10 @@ def analyze_tone(article: dict) -> str:
 
     if is_non_business_noise(article):
         return "neutral"
+    if is_own_direct_negative_article(article):
+        return "negative"
+    if is_own_caution_article(article):
+        return "caution"
     if is_preventive_security_article(article):
         return "neutral"
     if is_relief_support_article(article):
@@ -950,7 +958,7 @@ def analyze_tone(article: dict) -> str:
         return "neutral"
 
     # 당사 직접 사고/제재성 이슈만 부정으로 둔다. 시장 약세나 투자의견 하향은 주의로 본다.
-    if is_own_article(article) and severe_score >= 4 and severe_score >= positive_score:
+    if is_own_article(article) and is_own_direct_negative_article(article) and severe_score >= 4 and severe_score >= positive_score:
         return "negative"
     if (
         positive_score >= 2
@@ -1041,6 +1049,34 @@ def is_own_positive_focus_article(article: dict) -> bool:
 
 def is_own_article(article: dict) -> bool:
     return has_own_evidence(article)
+
+
+def is_own_direct_negative_article(article: dict) -> bool:
+    """Directly negative only when the article alleges own-company misconduct."""
+    if not is_own_article(article):
+        return False
+    text = article_summary_text(article)
+    return bool(
+        re.search(
+            r"인카금융스캔들|불법\s*사채|가로챈|관리\s*부실|압수수색|기소|검찰|경찰|과태료|제재|소송|사기|횡령|배임",
+            text,
+            re.I,
+        )
+    )
+
+
+def is_own_caution_article(article: dict) -> bool:
+    """Own mention with market/supervisory context is caution, not negative."""
+    if not is_own_article(article):
+        return False
+    text = article_summary_text(article)
+    return bool(
+        re.search(
+            r"금감원|금융감독원|금융위원회|금융위|1200%|정착지원금|부당승환|불완전판매|점검|검사|주가|최저가|하락|목표가\s*하향|VI\s*발동",
+            text,
+            re.I,
+        )
+    )
 
 
 def has_own_evidence(article: dict) -> bool:
@@ -1382,7 +1418,7 @@ def build_contextual_summary_sentences(article: dict) -> list[str]:
 
 
 def article_summary_text(article: dict) -> str:
-    return f"{article.get('title', '')} {article.get('description', '')} {article.get('summary', '')} {article.get('keyword', '')}"
+    return f"{article.get('title', '')} {article.get('description', '')} {article.get('summary', '')}"
 
 
 def is_sales_conduct_article(article: dict) -> bool:
