@@ -28,4 +28,3 @@ update public.monitor_keywords
      '한금서',
      '한화생명금융서비스'
    );
-
