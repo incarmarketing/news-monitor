@@ -6602,24 +6602,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-add-form {
-  grid-template-columns:
-    minmax(126px, .68fr)
-    minmax(190px, 1fr)
-    minmax(126px, .7fr)
-    minmax(180px, 1fr)
-    minmax(180px, 1fr)
-    minmax(84px, .4fr)
-    auto;
-  align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
 }
 
 .keyword-add-form .operation-form-actions {
-  min-width: 112px;
+  grid-column: 3;
+  min-width: 0;
   gap: 6px;
+  justify-content: flex-end;
 }
 
 .keyword-add-form .primary-button {
-  width: 112px;
+  width: 100%;
+  min-width: 112px;
   padding: 0 10px;
 }
 
@@ -6630,11 +6626,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-add-form .compact-field {
-  min-width: 84px;
+  min-width: 0;
 }
 
 .keyword-add-form .keyword-memo-field {
-  grid-column: span 2;
+  grid-column: 1 / 3;
 }
 
 .keyword-management-grid {
@@ -6646,6 +6642,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-management-grid > .panel {
+  container-type: inline-size;
+}
+
+.keyword-management-shell > .panel {
   container-type: inline-size;
 }
 
@@ -6999,12 +6999,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   }
 
   .keyword-add-form .keyword-memo-field {
-    grid-column: 1 / -1;
+    grid-column: 1 / 3;
   }
 
   .keyword-add-form .operation-form-actions {
+    grid-column: 3;
     min-width: 0;
-    padding-top: 21px;
+    padding-top: 0;
   }
 
   .keyword-add-form .primary-button {
@@ -7015,10 +7016,6 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 @media (max-width: 1180px) {
   .keyword-management-shell {
     grid-template-columns: 1fr;
-  }
-
-  .keyword-manager-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   }
 
   .keyword-stage-flow {
@@ -7038,6 +7035,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 @media (max-width: 640px) {
   .keyword-manager-row {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "main"
+      "meta"
+      "context"
+      "exclude"
+      "memo"
+      "action";
     align-items: stretch;
   }
 
@@ -7107,17 +7111,17 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-manager-row {
   display: grid;
-  grid-template-columns:
-    minmax(120px, .9fr)
-    minmax(110px, .65fr)
-    minmax(160px, 1fr)
-    minmax(160px, 1fr)
-    minmax(120px, .8fr)
-    auto;
-  gap: 8px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "main action"
+    "meta action"
+    "context context"
+    "exclude exclude"
+    "memo memo";
+  gap: 8px 10px;
+  align-items: start;
   min-width: 0;
-  padding: 9px;
+  padding: 10px;
   border: 1px solid var(--line);
   border-left: 4px solid var(--blue);
   border-radius: 9px;
@@ -7140,6 +7144,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-manager-main {
+  grid-area: main;
   display: grid;
   gap: 3px;
 }
@@ -7165,6 +7170,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .keyword-manager-meta {
+  grid-area: meta;
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
@@ -7190,12 +7196,26 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   white-space: nowrap;
 }
 
+.keyword-manager-context {
+  grid-area: context;
+}
+
 .keyword-manager-context.exclude p {
   color: #9a3412;
 }
 
+.keyword-manager-context.exclude {
+  grid-area: exclude;
+}
+
+.keyword-manager-memo {
+  grid-area: memo;
+}
+
 .keyword-manager-edit {
+  grid-area: action;
   justify-self: end;
+  align-self: start;
   min-width: 84px;
   height: 34px;
   padding: 0 12px;
