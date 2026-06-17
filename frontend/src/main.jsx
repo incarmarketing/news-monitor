@@ -5800,6 +5800,7 @@ function KeywordManagement({ keywords = [] }) {
   const [priority, setPriority] = useState(100);
   const [memo, setMemo] = useState("");
   const [editingKey, setEditingKey] = useState("");
+  const [editingOriginal, setEditingOriginal] = useState(null);
   const [status, setStatus] = useState("");
   const [draftKeywords, setDraftKeywords] = useState([]);
   const isEditing = Boolean(editingKey);
@@ -5824,6 +5825,7 @@ function KeywordManagement({ keywords = [] }) {
     setPriority(100);
     setMemo("");
     setEditingKey("");
+    setEditingOriginal(null);
     if (clearStatus) setStatus("");
   };
 
@@ -5831,6 +5833,7 @@ function KeywordManagement({ keywords = [] }) {
     const normalized = normalizeKeywordRow(row);
     if (!normalized) return;
     setEditingKey(keywordRowIdentity(normalized));
+    setEditingOriginal({ keyword: normalized.keyword, category: normalized.category });
     setKeyword(normalized.keyword);
     setCategory(normalized.category);
     setSubcategory(normalized.subcategory || "");
@@ -5845,7 +5848,7 @@ function KeywordManagement({ keywords = [] }) {
     setAnalysisExcluded(normalized.analysisExcluded === true);
     setPriority(normalized.priority || 100);
     setMemo(normalized.memo || "");
-    setStatus(`${normalized.keyword} 문맥 조건을 수정 중입니다. 키워드명과 상위 구분은 중복 방지를 위해 잠겨 있습니다.`);
+    setStatus(`${normalized.keyword} 분류 기준을 수정 중입니다. 상위 구분도 변경할 수 있습니다.`);
   };
 
   const handleAddKeyword = async () => {
@@ -5871,9 +5874,23 @@ function KeywordManagement({ keywords = [] }) {
       priority: Number(priority) || 100,
       memo: memo.trim(),
     };
+    if (isEditing && editingOriginal) {
+      nextKeyword.previousKeyword = editingOriginal.keyword;
+      nextKeyword.previousCategory = editingOriginal.category;
+    }
     try {
       await saveMonitorKeyword(nextKeyword);
-      setDraftKeywords((current) => upsertKeywordRow(current, nextKeyword));
+      setDraftKeywords((current) => {
+        let nextRows = current;
+        if (
+          isEditing
+          && editingOriginal
+          && (editingOriginal.keyword !== nextKeyword.keyword || editingOriginal.category !== nextKeyword.category)
+        ) {
+          nextRows = upsertKeywordRow(nextRows, { ...editingOriginal, enabled: false });
+        }
+        return upsertKeywordRow(nextRows, nextKeyword);
+      });
       resetKeywordForm({ clearStatus: false });
       setStatus(isEditing ? "문맥 조건 수정 저장 완료" : "운영 DB 저장 완료");
     } catch (error) {
@@ -5894,7 +5911,7 @@ function KeywordManagement({ keywords = [] }) {
           <div className={`operation-form keyword-add-form${isEditing ? " is-editing" : ""}`}>
             <label>
               <span>상위 구분</span>
-              <select value={category} onChange={(event) => setCategory(event.target.value)} disabled={isEditing}>
+              <select value={category} onChange={(event) => setCategory(event.target.value)}>
                 {keywordCategories.map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
                 ))}
@@ -8995,7 +9012,13 @@ function mergeKeywordRows(remoteRows = [], localRows = []) {
   const map = new Map();
   [...remoteRows, ...localRows].forEach((row) => {
     const normalized = normalizeKeywordRow(row);
-    if (normalized?.enabled) map.set(`${normalized.category}:${normalizeKeywordText(normalized.keyword)}`, normalized);
+    if (!normalized) return;
+    const key = `${normalized.category}:${normalizeKeywordText(normalized.keyword)}`;
+    if (normalized.enabled === false) {
+      map.delete(key);
+    } else {
+      map.set(key, normalized);
+    }
   });
   return Array.from(map.values());
 }

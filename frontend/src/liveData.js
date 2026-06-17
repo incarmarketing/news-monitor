@@ -208,6 +208,8 @@ export async function saveMonitorKeyword(keyword, category = "other", options = 
   const cleanKeyword = String(payload.keyword || "").trim();
   const cleanCategory = String(payload.category || "other").trim() || "other";
   if (!cleanKeyword) throw new Error("keyword_required");
+  const previousKeyword = String(payload.previousKeyword || payload.previous_keyword || "").trim();
+  const previousCategory = String(payload.previousCategory || payload.previous_category || "").trim();
   const body = {
     keyword: cleanKeyword,
     category: cleanCategory,
@@ -225,6 +227,19 @@ export async function saveMonitorKeyword(keyword, category = "other", options = 
     priority: normalizePriority(payload.priority),
     memo: String(payload.memo || "").trim(),
   };
+  if (
+    previousKeyword
+    && previousCategory
+    && (previousKeyword !== cleanKeyword || previousCategory !== cleanCategory)
+  ) {
+    const moved = await writeRest(
+      `monitor_keywords?keyword=eq.${encodeURIComponent(previousKeyword)}&category=eq.${encodeURIComponent(previousCategory)}`,
+      "PATCH",
+      body,
+      { Prefer: "return=representation" },
+    );
+    if (Array.isArray(moved) && moved.length) return moved;
+  }
   return writeRest(
     "monitor_keywords?on_conflict=keyword,category",
     "POST",
