@@ -7009,6 +7009,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: 1fr;
   }
 
+  .keyword-manager-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+
   .keyword-stage-flow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7024,6 +7028,16 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 @media (max-width: 640px) {
+  .keyword-manager-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .keyword-manager-edit {
+    justify-self: stretch;
+    width: 100%;
+  }
+
   .keyword-stage-flow {
     grid-template-columns: 1fr;
   }
@@ -7077,6 +7091,120 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   line-height: 1.45;
 }
 
+.keyword-manager-rows {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.keyword-manager-row {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, .9fr)
+    minmax(110px, .65fr)
+    minmax(160px, 1fr)
+    minmax(160px, 1fr)
+    minmax(120px, .8fr)
+    auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blue);
+  border-radius: 9px;
+  background: #f8fbff;
+}
+
+.keyword-manager-row.tone-주의 {
+  border-left-color: #f59e0b;
+}
+
+.keyword-manager-row.tone-제외 {
+  border-left-color: #64748b;
+}
+
+.keyword-manager-main,
+.keyword-manager-meta,
+.keyword-manager-context,
+.keyword-manager-memo {
+  min-width: 0;
+}
+
+.keyword-manager-main {
+  display: grid;
+  gap: 3px;
+}
+
+.keyword-manager-main b {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyword-manager-main span,
+.keyword-manager-meta span,
+.keyword-manager-context small,
+.keyword-manager-memo small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1.25;
+}
+
+.keyword-manager-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.keyword-manager-meta span {
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--blue);
+}
+
+.keyword-manager-context p,
+.keyword-manager-memo p {
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyword-manager-context.exclude p {
+  color: #9a3412;
+}
+
+.keyword-manager-edit {
+  justify-self: end;
+  min-width: 84px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--blue);
+  border-radius: 9px;
+  background: var(--blue);
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.keyword-manager-edit:hover {
+  filter: brightness(.95);
+}
+
 .keyword-chip-grid {
   align-items: center;
   min-height: 30px;
@@ -7123,21 +7251,21 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .keyword-edit-button {
   appearance: none;
-  border: 1px solid var(--line);
+  border: 1px solid var(--blue);
   border-radius: 999px;
-  background: #fff;
-  color: var(--blue);
+  background: var(--blue);
+  color: #fff;
   cursor: pointer;
   font-size: 10px;
   font-weight: 950;
   line-height: 1;
-  padding: 5px 8px;
+  padding: 6px 9px;
   white-space: nowrap;
 }
 
 .keyword-edit-button:hover {
   border-color: var(--blue);
-  background: #eef4ff;
+  background: #182b86;
 }
 
 .keyword-rule-chip.tone-긍정 {

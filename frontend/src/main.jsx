@@ -5900,7 +5900,7 @@ function KeywordManagement({ keywords = [] }) {
         </div>
       </Panel>
 
-      <Panel title="키워드 규칙 추가" icon={FilePenLine} meta="수집어 + 문맥 조건">
+      <Panel title={isEditing ? "키워드 조건 수정" : "키워드 규칙 추가"} icon={FilePenLine} meta={isEditing ? "기존 키워드 문맥 조건 편집" : "수집어 + 문맥 조건"}>
         <div className={`operation-form keyword-add-form${isEditing ? " is-editing" : ""}`}>
           <label>
             <span>상위 구분</span>
@@ -5993,9 +5993,9 @@ function KeywordManagement({ keywords = [] }) {
                 <span>{group.items.length.toLocaleString("ko-KR")}개</span>
               </div>
               <p>{keywordCategoryRule(group.category)}</p>
-              <div className="keyword-chip-grid">
+              <div className="keyword-manager-rows">
                 {group.items.map((item) => (
-                  <EditableKeywordRuleChip key={`${item.category}-${item.keyword}`} item={item} onEdit={handleEditKeyword} />
+                  <KeywordManagerRow key={`${item.category}-${item.keyword}`} item={item} onEdit={handleEditKeyword} />
                 ))}
               </div>
             </article>
@@ -6395,6 +6395,36 @@ function EditableKeywordRuleChip({ item, onEdit }) {
       </span>
       {onEdit && <button className="keyword-edit-button" onClick={() => onEdit(item)}>수정</button>}
     </span>
+  );
+}
+
+function KeywordManagerRow({ item, onEdit }) {
+  const contextTerms = item.contextTerms?.length ? item.contextTerms.join(", ") : "-";
+  const excludeTerms = item.excludeTerms?.length ? item.excludeTerms.join(", ") : "-";
+  return (
+    <article className={`keyword-manager-row tone-${keywordCategoryTone(item.category)}`}>
+      <div className="keyword-manager-main">
+        <b>{item.keyword}</b>
+        <span>{keywordCategoryLabel(item.category)}</span>
+      </div>
+      <div className="keyword-manager-meta">
+        <span>{keywordMatchModeLabel(item.matchMode)}</span>
+        <span>우선순위 {item.priority || 100}</span>
+      </div>
+      <div className="keyword-manager-context">
+        <small>문맥 필수</small>
+        <p>{contextTerms}</p>
+      </div>
+      <div className="keyword-manager-context exclude">
+        <small>제외 문맥</small>
+        <p>{excludeTerms}</p>
+      </div>
+      <div className="keyword-manager-memo">
+        <small>메모</small>
+        <p>{item.memo || "-"}</p>
+      </div>
+      <button className="keyword-manager-edit" onClick={() => onEdit(item)}>조건 수정</button>
+    </article>
   );
 }
 
