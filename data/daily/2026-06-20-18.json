@@ -1,0 +1,181 @@
+{
+  "date": "2026-06-20",
+  "timestamp": "2026-06-20T18:06:41.041601+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-06-20T13:00:00+09:00",
+    "end": "2026-06-20T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 10,
+    "total_after_cluster": 9,
+    "by_category": {
+      "own": 0,
+      "regulation": 2,
+      "competitor": 0,
+      "industry": 8,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 1,
+      "positive": 0,
+      "neutral": 9
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-06-21 08:07 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 당사 직접 이슈는 없으며 업계 흐름이 중심입니다. 금융소비자보호 교육 강화가 주목됩니다. ## 핵심 이슈 - 금융소비자보호 교육 강화 - 보험업계 동향 ## 지표 해석 전체 수집 10건 중 분석 대상은 9건입니다. 경쟁/업계 8건, 정책/규제 2건입니다. ## 분석 키워드 불완전판매, 보험업계, 금융소비자보호",
+  "articles": [
+    {
+      "title": "iM뱅크, 금융소비자보호 교육 강화…“사전 예방 중심 문화 정착”",
+      "link": "https://www.edaily.co.kr/news/newspath.asp?newsid=01554726645483688",
+      "source": "이데일리",
+      "keyword": "불완전판매",
+      "description": "금융권에서는 금융소비자보호법 시행 이후 불완전판매 예방과 내부통제 강화가 핵심 과제로 떠오르고 있다. 이에 따라 주요 금융회사들은 소비자 중심 경영체계 구축과 임직원 교육 강화에 적극 나서고 있다. iM뱅크도...",
+      "_summary": "금융권에서는 금융소비자보호법 시행 이후 불완전판매 예방과 내부통제 강화가 핵심 과제로 떠오르고 있다 이에 따라 주요 금융회사들은 소비자 중심 경영체계 구축과 임직원 교육 강화에 적극 나서고 있다",
+      "pub_date": "Sat, 20 Jun 2026 14:10:00 +0900",
+      "_report_id": 1,
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험업계 사후보장서 '예방'으로···AI·헬스케어 결합 속도 - 뉴스웨이",
+      "link": "https://news.google.com/rss/articles/CBMiakFVX3lxTE9tNFBlZkJmVkU0S3VPYjRJTjgyNGVEQUFXcks4TXpjUjNjcGNOZURlRmhRLXV2UXVzMXFpVlk5YW96aEd0aFNPYUpabVNFVVZfSk00MnFfNVVxUzJfSURoak1OTXplc0xTc3c?oc=5",
+      "source": "google",
+      "keyword": "보험업계",
+      "description": "보험업계 사후보장서 '예방'으로···AI·헬스케어 결합 속도&nbsp;&nbsp;뉴스웨이",
+      "_summary": "보험업계 사후보장서 '예방'으로···AI·헬스케어 결합 속도 뉴스웨이. 보험업계 사후보장서 '예방'으로···AI·헬스케어 결합 속도 - 뉴스웨이.",
+      "pub_date": "Sat, 20 Jun 2026 08:23:00 GMT",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "이번주 국내 주요 금융일정(6.22~6.26)",
+      "link": "https://www.newspim.com/news/view/20260619000885",
+      "source": "newspim.com",
+      "keyword": "책무구조도",
+      "description": "[사진=뉴스핌DB] 6월 21일(일요일) 금융위원회, 청년미래적금 출시 안내(12시) 금융위원회, 금융규제 샌드박스 제도개선 발표행사주재(12시) 금융감독원, 대형 여전사·저축은행 책무구조도 시범운영 결과 및 향후 계획...",
+      "_summary": "[사진=뉴스핌DB] 6월 21일(일요일) 금융위원회, 청년미래적금 출시 안내(12시) 금융위원회, 금융규제 샌드박스 제도개선 발표행사주재(12시) 금융감독원, 대형 여전사·저축은행 책무구조도 시범운영 결과 및 향후 계획. 이번주 국내 주요 금융일정(6.22~6.26).",
+      "pub_date": "Sat, 20 Jun 2026 17:00:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "5세대 실손 첫달 성적표 '부진'…\"1·2세대 가입자 전환 여부 변수될것...",
+      "link": "https://www.asiatime.co.kr/article/20260617500326",
+      "source": "asiatime.co.kr",
+      "keyword": "손해보험",
+      "description": "(사진=연합뉴스) 20일 보험업계에 따르면 5세대 실손보험 출시 이후 한 달간 실손을 취급하는 국내 손해보험사 아홉 곳의 5세대 실손 가입·전환 건수는 5만289건으로 집계됐다. 이는 전체 실손 계약 2927만9589건의 0.17...",
+      "_summary": "경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다 (사진=연합뉴스) 20일 보험업계에 따르면 5세대 실손보험 출시 이후 한 달간 실손을 취급하는 국내 손해보험사 아홉 곳의 5세대 실손 가입·전환 건수는 5만289건으로 집계됐다",
+      "pub_date": "Sat, 20 Jun 2026 15:36:00 +0900",
+      "_report_id": 4,
+      "_score": 7,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“한국 사람들, 주식 수익 들고 백화점 간다며?”…외신이 바라본 AI 투...",
+      "link": "https://www.sedaily.com/article/20058116?ref=naver",
+      "source": "서울경제",
+      "keyword": "보험설계사",
+      "description": "37세 보험설계사 예룬하오는 매달 월급의 절반 이상을 AI·반도체 관련 종목에 투자해 자산이 4배 이상 증가했고, 최근 약 6억7000만원 규모의 아파트를 구입했다. 일본도 마찬가지다. 닛케이 지수가 사상 처음으로...",
+      "_summary": "37세 보험설계사 예룬하오는 매달 월급의 절반 이상을 AI·반도체 관련 종목에 투자해 자산이 4배 이상 증가했고, 최근 약 6억7000만원 규모의 아파트를 구입했다 일본도 마찬가지다 “한국 사람들, 주식 수익 들고 백화점 간다며?”…외신이 바라본 AI 투.",
+      "pub_date": "Sat, 20 Jun 2026 16:42:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[금융 HOT 뉴스] \"보험사 지급여력비율 216.1%…전분기 대비 3.8%p 올라\"",
+      "link": "http://www.bizwnews.com/news/articleView.html?idxno=139027",
+      "source": "bizwnews.com",
+      "keyword": "손해보험",
+      "description": "생명보험사는 207.7%(전분기 대비 1.8p 상승), 손해보험사는 229.7%(전분기 대비 7.8p 상승)를 기록했다. 가용자본은 310.9조원으로 전분기보다 26.9조원 늘었다. 당기순이익(4.5조원) 시현과 주가 상승에 따른...",
+      "_summary": "생명보험사는 207.7%(전분기 대비 1.8p 상승), 손해보험사는 229.7%(전분기 대비 7.8p 상승)를 기록했다 가용자본은 310.9조원으로 전분기보다 26.9조원 늘었다",
+      "pub_date": "Sat, 20 Jun 2026 13:54:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"9천피 더 간다\" 기대감에 빚투 과열…예탁금·담보대출 동반 급증",
+      "link": "https://economist.co.kr/article/view/ecn202606200011",
+      "source": "economist.co.kr",
+      "keyword": "생명보험",
+      "description": "삼성생명·교보생명·한화생명 등 국내 3대 생명보험사의 약관대출 잔액은 지난달 말 기준 32조4224억원으로 한 달 새 4793억원 증가했다. 올해 들어 증가한 규모만 9705억원에 달한다. 마이너스통장 역시 줄지 않고 있다....",
+      "_summary": "삼성생명·교보생명·한화생명 등 국내 3대 생명보험사의 약관대출 잔액은 지난달 말 기준 32조4224억원으로 한 달 새 4793억원 증가했다 올해 들어 증가한 규모만 9705억원에 달한다 마이너스통장 역시 줄지 않고 있다",
+      "pub_date": "Sat, 20 Jun 2026 16:43:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "일본生, 스페이스X '초기 투자'로 수천억엔 차익",
+      "link": "http://www.inews24.com/view/1978224",
+      "source": "inews24.com",
+      "keyword": "생명보험",
+      "description": "일본 최대 생명보험사 닛폰생명보험(日本生命)이 10여년 전부터 미국 우주개발기업 스페이스X에 투자해 수 천억엔의 투자 수익을 거두게 됐다고 니혼게이자이신문이 보도했다. 20일 닛케이에 따르면, 닛폰생명은...",
+      "_summary": "일본 최대 생명보험사 닛폰생명보험(日本生命)이 10여년 전부터 미국 우주개발기업 스페이스X에 투자해 수 천억엔의 투자 수익을 거두게 됐다고 니혼게이자이신문이 보도했다 20일 닛케이에 따르면, 닛폰생명은. 일본生, 스페이스X '초기 투자'로 수천억엔 차익.",
+      "pub_date": "Sat, 20 Jun 2026 16:10:00 +0900",
+      "_report_id": 8,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[부고] 오기석(초당대학교 교수)씨 모친상",
+      "link": "https://www.insnews.co.kr/news/articleView.html?idxno=91409",
+      "source": "한국보험신문",
+      "keyword": "보험",
+      "description": "▲정정순씨 별세, 오기석(초당대학교 교수, 前 한국보험학회 편집위원장)씨 모친상 = 19일, 전북대학교병원 장례식장 3호 (전라북도 전주시 덕진구 건지로 20),",
+      "_summary": "▲정정순씨 별세, 오기석(초당대학교 교수, 前 한국보험학회 편집위원장)씨 모친상 = 19일, 전북대학교병원 장례식장 3호 (전라북도 전주시 덕진구 건지로 20),. [부고] 오기석(초당대학교 교수)씨 모친상.",
+      "pub_date": "Sat, 20 Jun 2026 05:48:00 GMT",
+      "_report_id": 9,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
