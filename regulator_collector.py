@@ -49,6 +49,31 @@ REGULATOR_CONTEXT_WORDS = [
 REGULATOR_GENERIC_WORDS = {"수수료", "내부통제", "금융소비자보호", "감독"}
 REGULATOR_DIRECT_WORDS = [word for word in REGULATOR_CONTEXT_WORDS if word not in REGULATOR_GENERIC_WORDS]
 
+REGULATOR_RELEASE_KEYWORDS = [
+    {
+        "label": "디지털/보안",
+        "pattern": r"디지털|보안|해킹|AI|마이데이터|플랫폼|전산|개인정보|침해|금융보안",
+    },
+    {
+        "label": "소비자보호",
+        "pattern": r"소비자|민원|분쟁|실손|보험금|청구|유의|보호|피해|장애인|불완전판매|광고|의료기관|가이드라인|빚 독촉|채무조정",
+    },
+    {
+        "label": "건전성/자본",
+        "pattern": r"지급여력|자본|대출채권|경영개선|건전성|손해율|실적|리스크|적자|충당금|가계대출|가계부채|외환시장|보험권 간담회",
+    },
+    {
+        "label": "판매채널/GA",
+        "pattern": r"GA|법인보험대리점|보험대리점|대리점|설계사|판매수수료|수수료|정착지원금|부당승환|채널|모집|영업|시책|1200%?|분급",
+    },
+    {
+        "label": "감독/검사",
+        "pattern": r"검사|제재|내부통제|감독|업무설명회|운영계획|관리 강화|공시|승인|조건부|보고|제도|법령|시행령|개정|책무구조",
+    },
+]
+
+DEFAULT_REGULATOR_KEYWORD = "감독/검사"
+
 
 def fetch_regulator_releases(days_back: int = 45, max_pages: int = 3) -> list[dict]:
     """Return relevant FSS/FSC official releases as article-shaped rows."""
@@ -197,18 +222,35 @@ def fetch_html(url: str) -> str:
 
 def build_release_article(*, source: str, title: str, link: str, dept: str, date_text: str) -> dict:
     pub_date = datetime.strptime(date_text, "%Y-%m-%d").replace(hour=9, minute=0, tzinfo=KST)
+    release_keyword = classify_release_keyword(title, dept)
     return {
         "title": title,
         "link": link,
-        "description": f"{source} 공식 보도자료입니다. 담당부서: {dept or '확인 필요'}. 보험/GA/설계사/감독 문맥 중심으로 별도 확인합니다.",
+        "description": compact_release_description(dept, release_keyword),
         "pub_date": format_datetime(pub_date),
         "source": source,
-        "keyword": "금융당국 보도자료",
-        "keyword_query": "금융당국 보도자료",
+        "keyword": release_keyword,
+        "keyword_query": release_keyword,
         "keyword_category": "regulation",
         "keyword_strict_query": False,
+        "regulator_keyword": release_keyword,
+        "regulator_department": dept or "",
         "portal": "regulator",
     }
+
+
+def classify_release_keyword(*parts: str) -> str:
+    text = " ".join(clean_text(part) for part in parts if part)
+    for rule in REGULATOR_RELEASE_KEYWORDS:
+        if re.search(rule["pattern"], text, re.I):
+            return rule["label"]
+    return DEFAULT_REGULATOR_KEYWORD
+
+
+def compact_release_description(dept: str, keyword: str) -> str:
+    if dept:
+        return f"{keyword} · {clean_text(dept)}"
+    return keyword
 
 
 def flatten_api_rows(value) -> list[dict]:

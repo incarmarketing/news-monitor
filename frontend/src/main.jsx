@@ -1214,23 +1214,26 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
 function Regulators({ articles = [], operations, isWorking, onRefreshOperations }) {
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
+  const [keyword, setKeyword] = useState("all");
   const [source, setSource] = useState("all");
   const [tone, setTone] = useState("all");
   const [selected, setSelected] = useState(() => new Set());
   const regulatorRows = useMemo(() => selectRegulatorRows(articles), [articles]);
+  const keywords = useMemo(() => REGULATOR_KEYWORD_LABELS, []);
   const sources = useMemo(() => unique(regulatorRows.map((article) => article.source)).slice(0, 40), [regulatorRows]);
   const tones = useMemo(() => sortToneLabels(regulatorRows.map((article) => article.tone)).slice(0, 8), [regulatorRows]);
   const filteredRows = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return regulatorRows.filter((article) => {
-      const text = `${article.title || ""} ${article.source || ""} ${article.summary || ""}`.toLowerCase();
+      const text = `${article.title || ""} ${article.source || ""} ${article.summary || ""} ${article.regulatorKeyword || ""}`.toLowerCase();
       return (
         (!needle || text.includes(needle)) &&
+        (keyword === "all" || article.regulatorKeyword === keyword) &&
         (source === "all" || article.source === source) &&
         (tone === "all" || article.tone === tone)
       );
     });
-  }, [query, regulatorRows, source, tone]);
+  }, [keyword, query, regulatorRows, source, tone]);
   const selectedRows = useMemo(
     () => filteredRows.filter((article) => selected.has(articleSelectionKey(article))),
     [filteredRows, selected],
@@ -1240,6 +1243,7 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
   const resetFilters = () => {
     setQuery("");
     setQueryInput("");
+    setKeyword("all");
     setSource("all");
     setTone("all");
   };
@@ -1269,7 +1273,7 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
       <PageTitle
         eyebrow="Official Releases"
         title="금융당국 보도자료"
-        description="금융감독원·금융위원회 보도자료를 중복 제거 기준으로 모아 정책/규제 이슈만 빠르게 확인합니다."
+        description="금융감독원·금융위원회 보도자료를 5개 정책 키워드로 자동 분류해 확인합니다."
       />
       <section className="filter-card regulator-filter">
         <label className="wide-filter">
@@ -1282,6 +1286,13 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
             }}
             placeholder="제목, 출처, 요약 검색"
           />
+        </label>
+        <label>
+          <span>키워드</span>
+          <select value={keyword} onChange={(event) => setKeyword(event.target.value)}>
+            <option value="all">전체</option>
+            {keywords.map((item) => <option key={item}>{item}</option>)}
+          </select>
         </label>
         <label>
           <span>출처</span>
@@ -1318,7 +1329,7 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
           <button className="ghost-button compact-button" onClick={toggleVisibleSelection}>
             {allVisibleSelected ? "선택 해제" : "현재 목록 선택"}
           </button>
-          <span>{selectedRows.length ? `${selectedRows.length.toLocaleString("ko-KR")}건 선택 분석 중` : "선택하면 위 분석이 선택 보도자료 기준으로 바뀝니다"}</span>
+          <span>{selectedRows.length ? `${selectedRows.length.toLocaleString("ko-KR")}건 선택` : "선택 기준 분류"}</span>
         </div>
         <RegulatorReleaseFeed rows={filteredRows} selected={selected} onToggle={toggleSelected} />
       </Panel>
@@ -1331,40 +1342,22 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
   return (
     <section className="panel regulator-analysis-panel">
       <div className="panel-head">
-        <h2><ShieldCheck />당국 방향성 분석</h2>
+        <h2><ShieldCheck />키워드 자동 분류</h2>
         <span>{selectedCount ? `${selectedCount.toLocaleString("ko-KR")}건 선택` : `최근 ${Math.min(totalCount, rows.length).toLocaleString("ko-KR")}건 기준`}</span>
       </div>
-      <div className="regulator-analysis-body">
-        <div className="regulator-analysis-lead">
+      <div className="regulator-keyword-board">
+        <div className="regulator-keyword-summary">
           <b>{analysis.headline}</b>
-          <p>{analysis.summary}</p>
-          <div className="regulator-watch-list">
-            <span>후속 확인 포인트</span>
-            <ul>
-              {analysis.watchItems.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </div>
+          <span>{analysis.summary}</span>
         </div>
-        <div className="regulator-analysis-right">
-          <div className="regulator-theme-grid">
-            {analysis.themes.map((theme) => (
-              <article key={theme.label}>
-                <span>{theme.label}</span>
-                <b>{theme.count.toLocaleString("ko-KR")}건</b>
-                <p>{theme.note}</p>
-                {theme.examples.length > 0 && <small>{theme.examples[0]}</small>}
-              </article>
-            ))}
-          </div>
-          <div className="regulator-impact-grid">
-            {analysis.impactCards.map((card) => (
-              <article key={card.label}>
-                <span>{card.label}</span>
-                <b>{card.value}</b>
-                <p>{card.detail}</p>
-              </article>
-            ))}
-          </div>
+        <div className="regulator-theme-grid compact">
+          {analysis.themes.map((theme) => (
+            <article key={theme.label}>
+              <span>{theme.label}</span>
+              <b>{theme.count.toLocaleString("ko-KR")}건</b>
+              {theme.examples.length > 0 && <small>{theme.examples[0]}</small>}
+            </article>
+          ))}
         </div>
       </div>
     </section>
@@ -1377,6 +1370,7 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
       {rows.map((row) => {
         const key = articleSelectionKey(row);
         const checked = selected.has(key);
+        const summary = compactRegulatorSummary(row);
         return (
           <article key={key} className={checked ? "regulator-release-row selected" : "regulator-release-row"}>
             <label>
@@ -1386,10 +1380,11 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
             <div>
               <div className="feed-title-line">
                 <Chip tone={row.tone}>{row.tone}</Chip>
+                <span className="regulator-keyword-pill">{row.regulatorKeyword}</span>
                 <b>{row.title}</b>
               </div>
               <span className="feed-meta">{formatFeedMeta(row, false)}</span>
-              <ArticleSummaryBlock item={row} dense />
+              {summary && <p className="regulator-release-summary">{summary}</p>}
             </div>
             {row.link && row.link !== "#" && (
               <a
@@ -9995,42 +9990,37 @@ function articleSelectionKey(article = {}) {
   return String(article.id || article.link || `${article.source}-${article.date}-${article.title}`);
 }
 
+const REGULATOR_KEYWORD_RULES = [
+  {
+    label: "디지털/보안",
+    pattern: /디지털|보안|해킹|AI|마이데이터|플랫폼|전산|개인정보|침해|금융보안/i,
+  },
+  {
+    label: "소비자보호",
+    pattern: /소비자|민원|분쟁|실손|보험금|청구|유의|보호|피해|장애인|불완전판매|광고|의료기관|가이드라인|빚 독촉|채무조정/i,
+  },
+  {
+    label: "건전성/자본",
+    pattern: /지급여력|자본|대출채권|경영개선|건전성|손해율|실적|리스크|적자|충당금|가계대출|가계부채|외환시장|보험권 간담회/i,
+  },
+  {
+    label: "판매채널\/GA",
+    pattern: /GA|법인보험대리점|보험대리점|대리점|설계사|판매수수료|수수료|정착지원금|부당승환|채널|모집|영업|시책|1200%?|분급/i,
+  },
+  {
+    label: "감독/검사",
+    pattern: /검사|제재|내부통제|감독|업무설명회|운영계획|관리 강화|공시|승인|조건부|보고|제도|법령|시행령|개정|책무구조/i,
+  },
+];
+
+const REGULATOR_KEYWORD_LABELS = REGULATOR_KEYWORD_RULES.map((rule) => rule.label);
+const DEFAULT_REGULATOR_KEYWORD = "감독/검사";
+
 function buildRegulatorDirectionAnalysis(rows = []) {
   const sourceRows = rows.filter((row) => row?.title);
-  const themes = [
-    {
-      label: "소비자보호",
-      note: "민원, 분쟁, 실손 청구, 보험금 지급처럼 소비자 접점 관리가 중심입니다.",
-      action: "민원, 분쟁, 실손, 보험금 지급 기준이 고객 안내와 민원 대응 프로세스에 미치는 영향을 확인합니다.",
-      pattern: /소비자|민원|분쟁|실손|보험금|청구|유의|보호|피해|장애인|불완전판매|광고/i,
-    },
-    {
-      label: "판매채널/GA",
-      note: "GA, 설계사, 수수료, 정착지원금, 부당승환 등 판매 과정의 책임성 강화 신호입니다.",
-      action: "GA, 설계사, 수수료, 정착지원금, 광고심의 문맥이 영업 현장 운영 기준과 연결되는지 점검합니다.",
-      pattern: /GA|법인보험대리점|대리점|설계사|판매|수수료|정착지원금|부당승환|채널|모집|영업|시책/i,
-    },
-    {
-      label: "건전성/자본",
-      note: "지급여력, 자본, 대출채권, 경영개선처럼 재무·자본 관리 흐름입니다.",
-      action: "손해율, 지급여력, 자본, 대출채권, 경영개선 이슈가 업권 평판과 거래처 리스크로 번지는지 봅니다.",
-      pattern: /지급여력|자본|대출채권|경영개선|건전성|손해율|실적|리스크|적자|충당금/i,
-    },
-    {
-      label: "감독·검사",
-      note: "검사, 제재, 내부통제, 감독방향 등 당국의 점검 강도가 드러나는 영역입니다.",
-      action: "검사, 제재, 내부통제, 공시, 승인 조건처럼 후속 조치가 필요한 항목을 별도로 추적합니다.",
-      pattern: /검사|제재|내부통제|감독|업무설명회|운영계획|관리 강화|공시|승인|조건부|보고|제도/i,
-    },
-    {
-      label: "디지털/보안",
-      note: "마이데이터, 해킹, 보안, AI, 플랫폼처럼 기술·데이터 운영 리스크가 포함됩니다.",
-      action: "금융보안, 개인정보, AI, 플랫폼 관련 보도는 보안 점검과 데이터 처리 기준 변화 여부를 확인합니다.",
-      pattern: /디지털|보안|해킹|AI|마이데이터|플랫폼|전산|개인정보|침해|금융보안/i,
-    },
-  ].map((theme) => ({
+  const themes = REGULATOR_KEYWORD_RULES.map((theme) => ({
     ...theme,
-    matches: sourceRows.filter((row) => theme.pattern.test(regulatorText(row))),
+    matches: sourceRows.filter((row) => resolveRegulatorKeyword(row) === theme.label),
   })).map((theme) => ({
     ...theme,
     count: theme.matches.length,
@@ -10039,59 +10029,48 @@ function buildRegulatorDirectionAnalysis(rows = []) {
   const ranked = themes.sort((a, b) => b.count - a.count);
   const top = ranked.find((theme) => theme.count > 0) || ranked[0];
   const second = ranked.find((theme) => theme.count > 0 && theme.label !== top.label);
-  const latest = [...sourceRows].sort((a, b) => articleTimeValue(b) - articleTimeValue(a))[0];
   const headline = rows.length
-    ? `${top.label} 중심의 당국 신호가 가장 강하게 잡힙니다`
-    : "선택된 보도자료가 없습니다";
+    ? `${top.label} ${top.count.toLocaleString("ko-KR")}건`
+    : "선택 보도자료 없음";
   const summary = rows.length
-    ? `${rows.length.toLocaleString("ko-KR")}건 기준으로 ${top.label}${second ? `와 ${second.label}` : ""} 흐름이 우선 관찰됩니다. 최신 보도 "${normalizeRegulatorDisplayTitle(latest?.title)}"는 시행 대상, 후속 가이드, 현장 적용 기준을 분리해 확인하는 것이 좋습니다.`
-    : "보도자료를 선택하면 선택 묶음 기준으로 당국 방향성을 분석합니다.";
+    ? `전체 ${rows.length.toLocaleString("ko-KR")}건${second ? ` · ${second.label} ${second.count.toLocaleString("ko-KR")}건` : ""}`
+    : "보도자료를 선택하거나 필터를 조정하세요.";
   return {
     headline,
     summary,
     themes: ranked.slice(0, 5),
-    impactCards: buildRegulatorImpactCards(ranked),
-    watchItems: buildRegulatorWatchItems(sourceRows, ranked),
   };
 }
 
 function regulatorText(row = {}) {
-  return `${row.title || ""} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""} ${row.category || ""}`;
+  return `${row.title || ""} ${row.summary || ""} ${row.description || ""} ${row.keyword || ""} ${row.category || ""} ${row.classification_reason || ""} ${row.classificationReason || ""}`;
 }
 
-function buildRegulatorImpactCards(themes = []) {
-  const activeThemes = themes.filter((theme) => theme.count > 0);
-  const cards = (activeThemes.length ? activeThemes : themes).slice(0, 3).map((theme) => ({
-    label: theme.label,
-    value: theme.count > 0 ? "우선 점검" : "관찰 유지",
-    detail: theme.action || theme.note,
-  }));
-  while (cards.length < 3) {
-    cards.push({
-      label: "후속 보도",
-      value: "대기",
-      detail: "선택한 보도자료가 늘어나면 시행일, 대상 업권, 후속 브리핑 기준으로 세부 분석을 보강합니다.",
-    });
-  }
-  return cards;
+function resolveRegulatorKeyword(row = {}) {
+  const explicit = String(row.regulatorKeyword || row.regulator_keyword || row.keyword || "").trim();
+  if (REGULATOR_KEYWORD_LABELS.includes(explicit)) return explicit;
+  const text = regulatorText(row);
+  const match = REGULATOR_KEYWORD_RULES.find((rule) => rule.pattern.test(text));
+  return match?.label || DEFAULT_REGULATOR_KEYWORD;
 }
 
-function buildRegulatorWatchItems(rows = [], themes = []) {
-  if (!rows.length) return ["보도자료를 선택하면 시행 대상, 후속 일정, 영업 영향 기준으로 분석합니다."];
-  const top = themes.find((theme) => theme.count > 0);
-  const latest = [...rows].sort((a, b) => articleTimeValue(b) - articleTimeValue(a))[0];
-  const items = [];
-  if (top) items.push(top.action);
-  if (themes.find((theme) => theme.label === "판매채널/GA" && theme.count > 0)) {
-    items.push("GA·설계사 관련 항목은 모집 절차, 광고심의, 수수료·정착지원금 관리 기준과 연결해 봅니다.");
-  }
-  if (themes.find((theme) => theme.label === "소비자보호" && theme.count > 0)) {
-    items.push("소비자보호 항목은 민원, 불완전판매, 보험금 지급 안내 문구에 반영할 필요가 있는지 확인합니다.");
-  }
-  if (latest?.title) {
-    items.push(`최신 보도 "${normalizeRegulatorDisplayTitle(latest.title)}"의 시행일과 적용 대상 업권을 확인합니다.`);
-  }
-  return unique(items).slice(0, 4);
+function compactRegulatorSummary(row = {}) {
+  const summary = cleanRegulatorComment(row.summary || row.description || "");
+  const title = normalizeRegulatorDisplayTitle(row.title);
+  if (!summary || summary === title || summary.length < 12) return "";
+  if (/기준으로.*확인|확인해야|점검|관찰|이슈가\s*핵심|공식\s*보도자료|분류\s*원장|직접\s*부정|정책\/규제|기사입니다/i.test(summary)) return "";
+  return summary;
+}
+
+function cleanRegulatorComment(value = "") {
+  return String(value || "")
+    .replace(/금융(?:감독원|위원회)\s*공식\s*보도자료입니다\.?/g, "")
+    .replace(/담당부서\s*:\s*[^.·]+\.?/g, "")
+    .replace(/보험\/GA\/설계사\/감독\s*문맥\s*중심으로\s*별도\s*확인합니다\.?/g, "")
+    .replace(/원문\s*기준\s*분류\s*원장\s*키워드\s*매칭\s*:\s*[^.·]+\.?/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/^[.·\s]+|[.·\s]+$/g, "")
+    .trim();
 }
 
 function selectRegulatorRows(articles = []) {
@@ -10102,14 +10081,22 @@ function selectRegulatorRows(articles = []) {
       const link = String(article.link || article.url || "");
       return /금융감독원|금융위원회/.test(source) || /fss\.or\.kr|fsc\.go\.kr/.test(link);
     })
+    .map((article) => {
+      const regulatorKeyword = resolveRegulatorKeyword(article);
+      return {
+        ...article,
+        regulatorKeyword,
+        keyword: regulatorKeyword,
+      };
+    })
+    .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
     .filter((article) => {
       const title = normalizeRegulatorDisplayTitle(article.title);
-      const key = `${article.date || ""}:${article.source || ""}:${title}`;
+      const key = `${article.source || ""}:${title}`;
       if (!title || seen.has(key)) return false;
       seen.add(key);
       return true;
     })
-    .sort((a, b) => articleTimeValue(b) - articleTimeValue(a));
 }
 
 function normalizeRegulatorDisplayTitle(value) {

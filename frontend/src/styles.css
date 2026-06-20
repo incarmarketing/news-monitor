@@ -981,6 +981,38 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   margin-bottom: 12px;
 }
 
+.regulator-keyword-board {
+  display: grid;
+  grid-template-columns: minmax(210px, .58fr) minmax(0, 1.42fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.regulator-keyword-summary {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #bcd0ff;
+  border-radius: 8px;
+  background: #f7faff;
+}
+
+.regulator-keyword-summary b {
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.regulator-keyword-summary span {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
 .regulator-analysis-body {
   display: grid;
   grid-template-columns: minmax(260px, .9fr) minmax(0, 1.6fr);
@@ -1029,6 +1061,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-width: 0;
 }
 
+.regulator-theme-grid.compact {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .regulator-theme-grid article,
 .regulator-impact-grid article {
   display: grid;
@@ -1059,6 +1095,33 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-size: 11px;
   font-weight: 800;
   line-height: 1.35;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.regulator-keyword-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid #c8d6ff;
+  border-radius: 999px;
+  background: #f7faff;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.regulator-release-summary {
+  display: -webkit-box;
+  margin: 5px 0 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.42;
   overflow: hidden;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -8521,6 +8584,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .content-grid.two,
   .media-analysis-layout,
   .media-intel-board,
+  .regulator-keyword-board,
   .regulator-analysis-body,
   .regulator-analysis-right,
   .regulator-impact-grid,
@@ -8559,6 +8623,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .regulator-theme-grid.compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .wide-filter {
     grid-column: span 2;
   }
@@ -8576,6 +8644,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .media-range-panel label,
   .media-range-panel button {
     grid-column: 1 / -1;
+  }
+
+  .regulator-theme-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .regulator-release-row {
+    grid-template-columns: 24px minmax(0, 1fr) 32px;
   }
 
   .desktop-only { display: none; }
