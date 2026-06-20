@@ -298,6 +298,148 @@ def first_text(section_map: dict[str, list[str]], names: list[str]) -> str:
     return ""
 
 
+GENERIC_SUMMARY_MARKERS = (
+    K["check_report_articles"],
+    "\uc774\uc288\uac00 \ud575\uc2ec\uc785\ub2c8\ub2e4",
+    "\uae30\uc900 \ud575\uc2ec\ub9cc \uc694\uc57d",
+    "\ud0a4\uc6cc\ub4dc \uae30\uc900\uc73c\ub85c \uc218\uc9d1",
+    "\ubcf4\uace0\uc11c\uc5d0\uc11c \uc8fc\uc694 \uadfc\uac70",
+    "\ub2f9\uc0ac \uc9c1\uc811 \uc5b8\uae09 \uae30\uc0ac",
+    "\uc9c1\uc811 \ubd80\uc815\uc740 \uc544\ub2c8\uc9c0\ub9cc",
+)
+
+
+def clean_slack_text(value: object) -> str:
+    text = str(value or "")
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+    text = (
+        text.replace("&nbsp;", " ")
+        .replace("&amp;nbsp;", " ")
+        .replace("&quot;", '"')
+        .replace("&#39;", "'")
+    )
+    return compact(text, 800, ellipsis=False).strip(" .")
+
+
+def normalize_issue_text(value: object) -> str:
+    text = clean_slack_text(value).lower()
+    text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"\[[^\]]+\]", " ", text)
+    text = re.sub(r"\s+-\s+[a-z0-9_.-]+$", " ", text)
+    text = re.sub(r"[^\w\uac00-\ud7a3]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def useful_slack_summary(value: object, *, title: str = "", min_len: int = 8) -> str:
+    text = clean_slack_text(value)
+    if len(text) < min_len:
+        return ""
+    if title and normalize_issue_text(text) == normalize_issue_text(title):
+        return ""
+    if any(marker in text for marker in GENERIC_SUMMARY_MARKERS):
+        return ""
+    return text
+
+
+def article_title(article: dict) -> str:
+    return clean_slack_text(article.get("title", ""))
+
+
+def article_summary(article: dict, title: str) -> str:
+    for key in ("_summary", "summary", "description"):
+        summary = useful_slack_summary(article.get(key, ""), title=title, min_len=14)
+        if summary:
+            return compact(summary, 160, ellipsis=False)
+    return ""
+
+
+def article_issue_key(article: dict, title: str) -> str:
+    text = normalize_issue_text(f"{title} {article.get('_summary', '')} {article.get('description', '')}")
+    if "\uc778\uce74\uae08\uc735" in text and "\ub354\ud5e4\ube10" in text and "\ub9c8\uc2a4\ud130\uc988" in text:
+        return "event:incar-the-heaven-masters"
+    if "\uae08\uc735\uc18c\ube44\uc790\ubcf4\ud638" in text and "\uae08\uac10\uc6d0" in text:
+        return "event:fss-consumer-protection"
+    if "\uc2e0\ud611" in text and "\ub0b4\ubd80\ud1b5\uc81c" in text:
+        return "event:cu-internal-control"
+    key = normalize_issue_text(title)
+    words = key.split()
+    return " ".join(words[:12]) if words else key
+
+
+def article_rank(article: dict) -> int:
+    category = str(article.get("_category") or article.get("category") or "").lower()
+    tone = str(article.get("_tone") or article.get("tone") or "").lower()
+    score = int(float(article.get("_score") or article.get("score") or 0))
+    cluster_size = int(float(article.get("_cluster_size") or article.get("cluster_size") or 1))
+    score += min(cluster_size, 12) * 8
+    score += {"own": 500, "regulation": 220, "competitor": 120, "industry": 80}.get(category, 0)
+    score += {"negative": 500, "caution": 280, "positive": 180, "neutral": 40}.get(tone, 0)
+    return score
+
+
+def article_issue_lines(report: dict, limit: int = 3) -> list[str]:
+    rows: list[tuple[int, int, dict, str]] = []
+    seen: set[str] = set()
+    for index, article in enumerate(report.get("articles", []) or []):
+        title = article_title(article)
+        if not title:
+            continue
+        key = article_issue_key(article, title)
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append((article_rank(article), index, article, title))
+
+    rows.sort(key=lambda row: (-row[0], row[1]))
+    lines: list[str] = []
+    for _, _, article, title in rows[:limit]:
+        headline = compact(title, 110, ellipsis=False)
+        summary = article_summary(article, title)
+        if summary:
+            lines.append(f"- *{headline}*\n  {summary}")
+        else:
+            lines.append(f"- *{headline}*")
+    return lines
+
+
+def parsed_issue_lines(issues: list[str], limit: int = 3) -> list[str]:
+    lines = []
+    for issue in issues:
+        text = useful_slack_summary(issue, min_len=10)
+        if text:
+            lines.append(f"- {compact(text, 130, ellipsis=False)}")
+        if len(lines) >= limit:
+            break
+    return lines
+
+
+def daily_issue_lines(report: dict, sections: dict) -> list[str]:
+    article_lines = article_issue_lines(report, limit=3)
+    if article_lines:
+        return article_lines
+    return parsed_issue_lines(sections.get("issues", []), limit=3)
+
+
+def daily_conclusion(report: dict, sections: dict, issue_lines: list[str]) -> str:
+    conclusion = useful_slack_summary(sections.get("conclusion", ""), min_len=20)
+    if conclusion:
+        return compact(conclusion, 220, ellipsis=False)
+
+    metrics = report.get("metrics", {})
+    first_issue = re.sub(r"[*\-]", "", issue_lines[0] if issue_lines else "").splitlines()[0].strip()
+    risk = metrics.get("risk_level", "-")
+    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
+    own_negative = metrics.get("own_by_tone", {}).get("negative", metrics.get("own_negative", 0))
+    if first_issue:
+        return compact(
+            f"{first_issue} | {K['risk']} {risk}, {K['own_mentions']} {own_total}{K['count']}, "
+            f"{K['own_negative']} {own_negative}{K['count']}",
+            220,
+            ellipsis=False,
+        )
+    return K["default_conclusion"]
+
+
 def daily_title(report: dict) -> str:
     window = report.get("window", {})
     slot = str(window.get("slot") or os.getenv("REPORT_SLOT", "").strip() or "auto").zfill(2)
@@ -313,7 +455,8 @@ def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
     analyzed = metrics.get("analyzed", metrics.get("total", 0))
     window = window_label(report.get("window", {}))
     title = daily_title(report)
-    issues = sections["issues"][:3]
+    issues = daily_issue_lines(report, sections)
+    conclusion = daily_conclusion(report, sections, issues)
 
     fields = [
         f"*{K['basis']}*\n{short_report_date(report.get('date', ''))} {window['name']} | {window['range']}",
@@ -323,7 +466,7 @@ def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
         f"*{K['own_negative']}*\n{own_tone.get('negative', metrics.get('own_negative', 0))}{K['count']}",
         f"*{K['positive_neutral']}*\n{own_tone.get('positive', 0)} / {own_tone.get('neutral', 0)}",
     ]
-    issue_text = "\n".join([f"- {compact(issue, 100, ellipsis=False)}" for issue in issues])
+    issue_text = "\n".join(issues)
     if not issue_text:
         issue_text = f"- {K['check_report_articles']}"
 
@@ -331,7 +474,7 @@ def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
     payload = {
         "text": fallback,
         "blocks": [
-            section(f"*{title}*\n{compact(sections['conclusion'], 220, ellipsis=False)}", fields),
+            section(f"*{title}*\n{conclusion}", fields),
             divider(),
             section(f"*{K['key_issue']}*\n{issue_text}"),
             actions((K["open_report"], link), (K["dashboard"], join_public_url(DEFAULT_REPORT_URL, "dashboard.html"))),
