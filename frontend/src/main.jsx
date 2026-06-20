@@ -1355,7 +1355,6 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
             <article key={theme.label}>
               <span>{theme.label}</span>
               <b>{theme.count.toLocaleString("ko-KR")}건</b>
-              {theme.examples.length > 0 && <small>{theme.examples[0]}</small>}
             </article>
           ))}
         </div>
@@ -1370,7 +1369,6 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
       {rows.map((row) => {
         const key = articleSelectionKey(row);
         const checked = selected.has(key);
-        const summary = compactRegulatorSummary(row);
         return (
           <article key={key} className={checked ? "regulator-release-row selected" : "regulator-release-row"}>
             <label>
@@ -1384,7 +1382,6 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
                 <b>{row.title}</b>
               </div>
               <span className="feed-meta">{formatFeedMeta(row, false)}</span>
-              {summary && <p className="regulator-release-summary">{summary}</p>}
             </div>
             {row.link && row.link !== "#" && (
               <a
@@ -10024,7 +10021,6 @@ function buildRegulatorDirectionAnalysis(rows = []) {
   })).map((theme) => ({
     ...theme,
     count: theme.matches.length,
-    examples: unique(theme.matches.map((row) => normalizeRegulatorDisplayTitle(row.title)).filter(Boolean)).slice(0, 2),
   }));
   const ranked = themes.sort((a, b) => b.count - a.count);
   const top = ranked.find((theme) => theme.count > 0) || ranked[0];
@@ -10052,25 +10048,6 @@ function resolveRegulatorKeyword(row = {}) {
   const text = regulatorText(row);
   const match = REGULATOR_KEYWORD_RULES.find((rule) => rule.pattern.test(text));
   return match?.label || DEFAULT_REGULATOR_KEYWORD;
-}
-
-function compactRegulatorSummary(row = {}) {
-  const summary = cleanRegulatorComment(row.summary || row.description || "");
-  const title = normalizeRegulatorDisplayTitle(row.title);
-  if (!summary || summary === title || summary.length < 12) return "";
-  if (/기준으로.*확인|확인해야|점검|관찰|이슈가\s*핵심|공식\s*보도자료|분류\s*원장|직접\s*부정|정책\/규제|기사입니다/i.test(summary)) return "";
-  return summary;
-}
-
-function cleanRegulatorComment(value = "") {
-  return String(value || "")
-    .replace(/금융(?:감독원|위원회)\s*공식\s*보도자료입니다\.?/g, "")
-    .replace(/담당부서\s*:\s*[^.·]+\.?/g, "")
-    .replace(/보험\/GA\/설계사\/감독\s*문맥\s*중심으로\s*별도\s*확인합니다\.?/g, "")
-    .replace(/원문\s*기준\s*분류\s*원장\s*키워드\s*매칭\s*:\s*[^.·]+\.?/g, "")
-    .replace(/\s+/g, " ")
-    .replace(/^[.·\s]+|[.·\s]+$/g, "")
-    .trim();
 }
 
 function selectRegulatorRows(articles = []) {
