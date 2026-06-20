@@ -128,6 +128,15 @@ def article_summary(article: dict, category: str, tone: str) -> str:
         or analyzer.is_non_insurance_investment_misconduct_noise_article(article)
         or analyzer.is_ambiguous_competitor_homonym_noise_article(article)
         or analyzer.is_sports_occupation_insurance_agent_noise_article(article)
+        or analyzer.is_stock_market_sector_noise_article(article)
+        or analyzer.is_entertainment_marketing_noise_article(article)
+        or analyzer.is_celeb_insurance_agent_noise_article(article)
+        or analyzer.is_political_media_digest_noise_article(article)
+        or analyzer.is_community_event_attendee_noise_article(article)
+        or analyzer.is_sports_sponsorship_incidental_noise_article(article)
+        or analyzer.is_overseas_local_insurance_noise_article(article)
+        or analyzer.is_foreign_macro_insurance_incidental_noise_article(article)
+        or analyzer.is_external_geopolitical_shipping_noise_article(article)
         or analyzer.is_own_sponsored_sports_noise_article(article)
     ) else clean_summary_text(article.get("description", "") or article.get("summary", ""))
     lines = []
@@ -248,6 +257,24 @@ def contextual_summary_lines(article: dict, category: str, tone: str) -> list[st
     if analyzer.is_ambiguous_competitor_homonym_noise_article(article):
         return []
     if analyzer.is_sports_occupation_insurance_agent_noise_article(article):
+        return []
+    if analyzer.is_stock_market_sector_noise_article(article):
+        return []
+    if analyzer.is_entertainment_marketing_noise_article(article):
+        return []
+    if analyzer.is_celeb_insurance_agent_noise_article(article):
+        return []
+    if analyzer.is_political_media_digest_noise_article(article):
+        return []
+    if analyzer.is_community_event_attendee_noise_article(article):
+        return []
+    if analyzer.is_sports_sponsorship_incidental_noise_article(article):
+        return []
+    if analyzer.is_overseas_local_insurance_noise_article(article):
+        return []
+    if analyzer.is_foreign_macro_insurance_incidental_noise_article(article):
+        return []
+    if analyzer.is_external_geopolitical_shipping_noise_article(article):
         return []
     if analyzer.is_own_sponsored_sports_noise_article(article):
         return []
