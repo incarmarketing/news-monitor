@@ -7,6 +7,44 @@ from unittest.mock import patch
 import slack_notify
 
 
+class SlackDailyPayloadTests(unittest.TestCase):
+    def test_daily_payload_falls_back_to_article_headlines_and_summaries(self) -> None:
+        report = {
+            "date": "2026-06-20",
+            "window": {"slot": "13", "short_label": "08:00~13:00"},
+            "metrics": {
+                "risk_level": "LOW",
+                "analyzed": 2,
+                "by_category": {"own": 1},
+                "own_by_tone": {"negative": 0, "positive": 1, "neutral": 0},
+            },
+            "briefing": "",
+            "articles": [
+                {
+                    "title": "\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4, \uc6b0\uc218\uc778\uc99d\uc124\uacc4\uc0ac 2262\uba85 \ubc30\ucd9c",
+                    "_summary": "\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4\uac00 GA\uc5c5\uacc4 \ucd5c\ub2e4 \uaddc\ubaa8\uc758 \uc6b0\uc218\uc778\uc99d\uc124\uacc4\uc0ac\ub97c \ubc30\ucd9c\ud588\ub2e4.",
+                    "_category": "own",
+                    "_tone": "positive",
+                    "_score": 80,
+                },
+                {
+                    "title": "\uae08\uc735\uc18c\ube44\uc790\ubcf4\ud638 \uac15\ud654 \ud611\uc57d",
+                    "description": "\uae08\uac10\uc6d0\uacfc \uae08\uc735\uc9c0\uc8fc\uc0ac\uac00 \uc18c\ube44\uc790\ubcf4\ud638 \ud611\uc57d\uc744 \uccb4\uacb0\ud588\ub2e4.",
+                    "_category": "regulation",
+                    "_tone": "caution",
+                    "_score": 50,
+                },
+            ],
+        }
+
+        _, payload = slack_notify.build_daily_payload(report, "https://example.com/report.html")
+        key_issue_block = payload["blocks"][2]["text"]["text"]
+
+        self.assertIn("\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4", key_issue_block)
+        self.assertIn("GA\uc5c5\uacc4 \ucd5c\ub2e4", key_issue_block)
+        self.assertNotIn(slack_notify.K["check_report_articles"], key_issue_block)
+
+
 class SlackPeriodNotificationTests(unittest.TestCase):
     def test_period_report_skips_when_success_log_exists(self) -> None:
         with (
