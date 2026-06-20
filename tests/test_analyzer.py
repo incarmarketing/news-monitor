@@ -443,8 +443,9 @@ class AnalyzerToneTests(unittest.TestCase):
         article["_tone"] = analyzer.analyze_tone(article)
         context = analyzer.apply_context_safety_guardrails(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
-        self.assertEqual(context["category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertFalse(analyzer.is_own_sponsored_sports_noise_article(article))
+        self.assertEqual(context["category"], "sponsorship")
         self.assertEqual(context["tone"], "neutral")
         self.assertFalse(context["clipping_recommended"])
 
@@ -463,8 +464,8 @@ class AnalyzerToneTests(unittest.TestCase):
         article["_category"] = analyzer.categorize(article)
         article["_tone"] = analyzer.analyze_tone(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
         self.assertEqual(article["_tone"], "neutral")
 
     def test_player_milestone_with_own_host_mention_is_sports_noise(self) -> None:
@@ -481,8 +482,8 @@ class AnalyzerToneTests(unittest.TestCase):
         article["_category"] = analyzer.categorize(article)
         article["_tone"] = analyzer.analyze_tone(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
         self.assertEqual(article["_tone"], "neutral")
 
     def test_incar_golf_csr_story_can_stay_company_positive(self) -> None:
@@ -496,8 +497,8 @@ class AnalyzerToneTests(unittest.TestCase):
         article["_category"] = analyzer.categorize(article)
         article["_tone"] = analyzer.analyze_tone(article)
 
-        self.assertFalse(analyzer.is_own_sponsored_sports_noise_article(article))
-        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
         self.assertEqual(article["_tone"], "positive")
 
     def test_stock_watchlist_with_own_name_only_is_noise(self) -> None:
@@ -700,8 +701,8 @@ class AnalyzerToneTests(unittest.TestCase):
         article["_category"] = analyzer.categorize(article)
         article["_tone"] = analyzer.analyze_tone(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
 
     def test_stock_market_sector_listing_is_noise_when_insurance_is_only_sector_name(self) -> None:
         article = {
@@ -806,8 +807,8 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
 
     def test_market_short_selling_listing_with_insurer_name_is_noise(self) -> None:
         article = {
@@ -902,7 +903,7 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertTrue(analyzer.is_external_geopolitical_shipping_noise_article(article))
         self.assertEqual(article["_category"], "other")
 
-    def test_own_golf_sports_preview_is_noise_even_with_title_sponsor_mention(self) -> None:
+    def test_own_golf_sports_preview_goes_to_sponsorship_track(self) -> None:
         article = {
             "title": "우승 후보 총출동! 바다 품은 더헤븐CC서 KLPGA 별들의 격돌",
             "description": "올해 대회는 더헤븐리조트와 국내 대표 보험대리점 기업 인카금융서비스가 공동 주최한다.",
@@ -912,10 +913,10 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
 
-    def test_own_golf_event_logistics_is_noise(self) -> None:
+    def test_own_golf_event_logistics_goes_to_sponsorship_track(self) -> None:
         article = {
             "title": "'인카금융 더헤븐 마스터즈' 주차·셔틀·날씨까지 알아두면 좋은 관람 정보",
             "description": "갤러리를 위한 대회 관람 동선과 셔틀버스 운행 정보를 정리한 기사입니다.",
@@ -925,10 +926,10 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
 
-    def test_own_golf_preview_headline_is_noise(self) -> None:
+    def test_own_golf_preview_headline_goes_to_sponsorship_track(self) -> None:
         article = {
             "title": "[PREVIEW] 인카금융 더헤븐 마스터즈",
             "description": "KLPGA 대회 일정과 출전 선수, 코스 공략 포인트를 소개하는 경기 프리뷰입니다.",
@@ -938,8 +939,8 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
 
     def test_third_party_tournament_partner_marketing_is_noise(self) -> None:
         article = {
@@ -951,8 +952,8 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
-        self.assertEqual(article["_category"], "other")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
 
     def test_own_golf_sponsorship_pr_story_is_kept(self) -> None:
         article = {
@@ -964,8 +965,8 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertFalse(analyzer.is_own_sponsored_sports_preview_noise_article(article))
-        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_own_sponsored_sports_article(article))
+        self.assertEqual(article["_category"], "sponsorship")
 
     def test_general_sports_keyword_article_is_noise(self) -> None:
         article = {

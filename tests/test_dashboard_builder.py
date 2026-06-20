@@ -77,7 +77,7 @@ class DashboardSummaryTests(unittest.TestCase):
         self.assertNotIn("1200%룰", summary)
         self.assertNotIn("설계사 영입", summary)
 
-    def test_incar_golf_scoreboard_is_removed_from_dashboard_rows(self) -> None:
+    def test_incar_golf_scoreboard_is_retained_as_sponsorship_row(self) -> None:
         archives = [
             {
                 "date": "2026-06-20",
@@ -109,8 +109,11 @@ class DashboardSummaryTests(unittest.TestCase):
         rows = dashboard_builder.build_articles(archives)
 
         titles = [row["title"] for row in rows]
-        self.assertNotIn("서교림, '인카금융 더헤븐 마스터즈’ 선두 질주", titles)
+        self.assertIn("서교림, '인카금융 더헤븐 마스터즈’ 선두 질주", titles)
         self.assertIn("인카금융서비스, 우수인증설계사 2262명 배출", titles)
+        sponsorship_row = next(row for row in rows if row["title"] == "서교림, '인카금융 더헤븐 마스터즈’ 선두 질주")
+        self.assertEqual(sponsorship_row["category"], "sponsorship")
+        self.assertEqual(sponsorship_row["tone"], "neutral")
 
     def test_incar_golf_csr_story_keeps_summary(self) -> None:
         article = {
@@ -201,8 +204,10 @@ class DashboardSummaryTests(unittest.TestCase):
 
         titles = [row["title"] for row in rows]
         self.assertNotIn("호르무즈 통항료 국제법 위반 논란에 이란, 독점 유료 보험 의무화 추진", titles)
-        self.assertNotIn("이글 2방 서교림, 인카금융 더 헤븐 1라운드 공동 선두", titles)
+        self.assertIn("이글 2방 서교림, 인카금융 더 헤븐 1라운드 공동 선두", titles)
         self.assertIn("보험주 재평가 본격화, 수익성·주주환원 모두 기대", titles)
+        event_row = next(row for row in rows if row["title"] == "이글 2방 서교림, 인카금융 더 헤븐 1라운드 공동 선두")
+        self.assertEqual(event_row["category"], "sponsorship")
 
     def test_third_pass_noise_articles_are_removed_from_dashboard_rows(self) -> None:
         archives = [
@@ -254,12 +259,14 @@ class DashboardSummaryTests(unittest.TestCase):
         rows = dashboard_builder.build_articles(archives)
 
         titles = [row["title"] for row in rows]
-        self.assertNotIn("[포토]‘인카금융 더헤븐 마스터즈’감사합니다", titles)
+        self.assertIn("[포토]‘인카금융 더헤븐 마스터즈’감사합니다", titles)
         self.assertNotIn("[공매도 브리핑] SK하이닉스 공매도 2513억…유한양행 비중 33.38%", titles)
         self.assertNotIn("[JPA Adjusters & Associates] 침수·화재 사고, 보험사가 놓친 피해까지 찾아낸다", titles)
         self.assertIn("보험주 재평가 본격화…수익성·주주환원 모두 기대", titles)
+        photo_row = next(row for row in rows if row["title"] == "[포토]‘인카금융 더헤븐 마스터즈’감사합니다")
+        self.assertEqual(photo_row["category"], "sponsorship")
 
-    def test_fourth_pass_noise_articles_are_removed_but_sponsorship_pr_is_kept(self) -> None:
+    def test_fourth_pass_noise_articles_are_removed_but_own_tournament_is_sponsorship(self) -> None:
         archives = [
             {
                 "date": "2026-06-20",
@@ -301,8 +308,11 @@ class DashboardSummaryTests(unittest.TestCase):
 
         titles = [row["title"] for row in rows]
         self.assertNotIn("[안보칼럼] 호르무즈해협 안전보장을 위한 대한민국의 역할과 한계", titles)
-        self.assertNotIn("우승 후보 총출동! 바다 품은 더헤븐CC서 KLPGA 별들의 격돌", titles)
+        self.assertIn("우승 후보 총출동! 바다 품은 더헤븐CC서 KLPGA 별들의 격돌", titles)
         self.assertIn("인카금융서비스, KLPGA 정규 골프대회 후원", titles)
+        categories = {row["title"]: row["category"] for row in rows}
+        self.assertEqual(categories["우승 후보 총출동! 바다 품은 더헤븐CC서 KLPGA 별들의 격돌"], "sponsorship")
+        self.assertEqual(categories["인카금융서비스, KLPGA 정규 골프대회 후원"], "sponsorship")
 
 
 if __name__ == "__main__":

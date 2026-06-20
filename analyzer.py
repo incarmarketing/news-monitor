@@ -344,9 +344,9 @@ CATEGORIES = {
     "competitor": COMPETITOR_WORDS,
     "industry": INDUSTRY_WORDS,
 }
-KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
+KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "sponsorship", "other"}
 
-AI_CONTEXT_CATEGORIES = {"own", "regulation", "competitor", "industry", "other", "exclude"}
+AI_CONTEXT_CATEGORIES = {"own", "regulation", "competitor", "industry", "sponsorship", "other", "exclude"}
 AI_CONTEXT_TONES = {"positive", "neutral", "caution", "negative", "exclude"}
 AI_NEGATIVE_TARGETS = {"own", "industry", "competitor", "policy", "none"}
 CONTEXT_RULES: list[dict] = []
@@ -517,7 +517,7 @@ def build_ai_context_prompt(article: dict) -> str:
 - 근거 문장이 없으면 negative로 판정하지 마세요.
 
 허용값:
-category: own | regulation | competitor | industry | other | exclude
+category: own | regulation | competitor | industry | sponsorship | other | exclude
 tone: positive | neutral | caution | negative | exclude
 negative_target: own | industry | competitor | policy | none
 
@@ -604,6 +604,10 @@ def normalize_ai_context_category(value: object) -> str:
         "policy": "regulation",
         "ga": "competitor",
         "market": "industry",
+        "brand": "sponsorship",
+        "sponsor": "sponsorship",
+        "sponsorship": "sponsorship",
+        "event": "sponsorship",
         "noise": "exclude",
     }.get(text, text)
     return mapped if mapped in AI_CONTEXT_CATEGORIES else ""
@@ -695,6 +699,21 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         article["_ai_context"] = result
         return result
 
+    if is_own_sponsored_sports_article(article):
+        result["category"] = "sponsorship"
+        result["tone"] = "positive" if is_own_sponsored_sports_brand_article(article) else "neutral"
+        result["own_mentioned"] = True
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = is_own_sponsored_sports_brand_article(article)
+        if result["clipping_recommended"] and not result.get("clipping_reason"):
+            result["clipping_reason"] = "당사 주최 대회의 브랜드·스폰서십 노출 성과로 보존할 기사입니다."
+        article["_category"] = result["category"]
+        article["_tone"] = result["tone"]
+        article["category"] = result["category"]
+        article["tone"] = result["tone"]
+        article["_ai_context"] = result
+        return result
+
     if is_own_article(article):
         result["own_mentioned"] = True
         if result["category"] in {"other", "exclude"}:
@@ -770,6 +789,8 @@ def should_recommend_clipping(article: dict, context: dict) -> bool:
     """Recommend only articles that are useful for executive PR clipping."""
     if context.get("tone") == "exclude" or context.get("category") == "other":
         return False
+    if context.get("category") == "sponsorship":
+        return is_own_sponsored_sports_brand_article(article)
     if is_non_business_noise(article):
         return False
     if context.get("category") == "own":
@@ -792,6 +813,8 @@ def build_clipping_reason(article: dict, context: dict) -> str:
         return "당사 언급이 포함된 주의 이슈로 임원 보고 후보입니다."
     if category == "own":
         return "당사 직접 언급 기사로 노출 맥락 확인이 필요합니다."
+    if category == "sponsorship":
+        return "당사 주최 대회의 브랜드·스폰서십 노출 성과로 별도 보존할 기사입니다."
     if category == "regulation":
         return "정책·감독 변화가 영업환경에 미칠 영향을 확인할 기사입니다."
     if category in {"competitor", "industry"} and tone in {"negative", "caution"}:
@@ -816,7 +839,9 @@ def score_article(article: dict) -> int:
     text = f"{title} {desc}"
     score = 0
 
-    if is_own_article(article):
+    if article.get("_category") == "sponsorship":
+        score += 2
+    elif is_own_article(article):
         score += 14
     elif article.get("_category") in {"regulation", "competitor"}:
         score += 8
@@ -827,7 +852,7 @@ def score_article(article: dict) -> int:
         score += 4
     if any(press in text for press in MAJOR_PRESS):
         score += 3
-    if is_own_article(article) and any(word in title for word in NEGATIVE_WORDS):
+    if article.get("_category") != "sponsorship" and is_own_article(article) and any(word in title for word in NEGATIVE_WORDS):
         score += 6
     if is_investment_downgrade_article(article):
         score += 8
@@ -848,6 +873,8 @@ def categorize(article: dict) -> str:
     text = article.get("title", "") + " " + article.get("description", "")
     if is_external_insurance_noise_article(article):
         return "other"
+    if is_own_sponsored_sports_article(article):
+        return "sponsorship"
     if is_non_business_noise(article):
         return "other"
     rule = matched_context_rule(text)
@@ -1340,6 +1367,51 @@ def is_general_sports_noise_article(article: dict) -> bool:
     return bool(GENERAL_SPORTS_NOISE_RE.search(text)) and not bool(GENERAL_SPORTS_KEEP_RE.search(text))
 
 
+def own_sponsored_sports_text(article: dict) -> str:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    return " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("source"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("summary"),
+            article.get("keyword"),
+        )
+    )
+
+
+def is_own_sponsored_sports_article(article: dict) -> bool:
+    text = own_sponsored_sports_text(article)
+    if not text.strip():
+        return False
+    has_own_tournament = bool(
+        re.search(r"인카금융(?:서비스)?\s*더\s*헤븐|인카금융(?:서비스)?\s*더헤븐|인카금융(?:서비스)?[^.。!?]{0,35}마스터즈|더헤븐CC|인카금융(?:서비스)?[^.。!?]{0,35}슈퍼볼링|슈퍼볼링[^.。!?]{0,35}인카금융", text, re.I)
+    )
+    has_hosted_context = contains_own_name(text) and bool(
+        re.search(r"KLPGA|골프|마스터즈|더헤븐|더\s*헤븐|슈퍼볼링|볼링|대회|라운드|티샷|버디|이글|스윙|언더파|타수|선수|프로암|갤러리|관람|협찬사", text, re.I)
+    )
+    return has_own_tournament or has_hosted_context
+
+
+def is_own_sponsored_sports_brand_article(article: dict) -> bool:
+    text = own_sponsored_sports_text(article)
+    title = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            (article.get("raw") if isinstance(article.get("raw"), dict) else {}).get("title"),
+        )
+    )
+    return bool(
+        re.search(r"기부|확정형\s*기부|사회공헌|브랜드|협약|후원|스폰서|주최|홍보|마케팅|ESG|파트너십", title, re.I)
+        or re.search(r"기부|확정형\s*기부|사회공헌|ESG|브랜드\s*홍보|스포츠마케팅|파트너십", text, re.I)
+    )
+
+
 def is_own_sponsored_sports_preview_noise_article(article: dict) -> bool:
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
     title = " ".join(str(value or "") for value in (article.get("title"), raw.get("title")))
@@ -1401,22 +1473,7 @@ def is_own_sponsored_sports_scoreboard_title(title: object) -> bool:
 
 
 def is_own_sponsored_sports_noise_article(article: dict) -> bool:
-    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
-    if is_own_sponsored_sports_preview_noise_article(article):
-        return True
-    if is_own_sponsored_sports_scoreboard_title(article.get("title")) or is_own_sponsored_sports_scoreboard_title(raw.get("title")):
-        return True
-    text = " ".join(
-        str(value or "")
-        for value in (
-            article.get("title"),
-            article.get("description"),
-            raw.get("title"),
-            raw.get("description"),
-            raw.get("summary"),
-        )
-    )
-    return is_own_sponsored_sports_noise_text(text)
+    return False
 
 
 def monitor_rule_by_key(rule_key: str) -> dict:
@@ -1523,6 +1580,8 @@ def is_non_business_noise(article: dict) -> bool:
         return True
     if is_external_insurance_noise_article(article):
         return True
+    if is_own_sponsored_sports_article(article):
+        return False
     if is_general_finance_noise_article(article):
         return True
     if is_admin_agency_noise_article(article):
@@ -1589,6 +1648,8 @@ def analyze_tone(article: dict) -> str:
 
     if is_external_insurance_noise_article(article):
         return "exclude"
+    if is_own_sponsored_sports_article(article):
+        return "positive" if is_own_sponsored_sports_brand_article(article) else "neutral"
     if is_non_business_noise(article):
         return "neutral"
     if is_preventive_security_article(article):
@@ -1919,6 +1980,7 @@ def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
             "regulation": category_count.get("regulation", 0),
             "competitor": category_count.get("competitor", 0),
             "industry": category_count.get("industry", 0),
+            "sponsorship": category_count.get("sponsorship", 0),
             "other": category_count.get("other", 0),
         },
         "by_tone": {
@@ -1929,6 +1991,7 @@ def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
         },
         "own_negative": own_negative,
         "own_total": category_count.get("own", 0),
+        "sponsorship_total": category_count.get("sponsorship", 0),
         "own_by_tone": {
             "positive": own_tone_count.get("positive", 0),
             "caution": own_tone_count.get("caution", 0),
