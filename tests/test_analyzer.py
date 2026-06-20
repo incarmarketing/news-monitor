@@ -364,6 +364,264 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotIn("1200%룰", summary)
         self.assertNotIn("판매수수료 운영", summary)
 
+    def test_shipping_insurance_fee_without_financial_context_is_noise(self) -> None:
+        article = {
+            "title": "해상 통항 보험료 인상에 화물 운임 부담 커져",
+            "description": "중동 항로를 지나는 선박과 화물 운송사들이 보험료와 운임 부담을 우려하고 있다.",
+            "keyword": "보험사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_external_insurance_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "exclude")
+
+    def test_incar_golf_scoreboard_is_not_company_positive(self) -> None:
+        article = {
+            "title": "서교림, '인카금융 더헤븐 마스터즈’ 선두 질주",
+            "description": "KLPGA 투어 2라운드에서 서교림이 버디를 잡고 공동 선두에 올랐다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        context = analyzer.apply_context_safety_guardrails(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
+        self.assertEqual(context["category"], "other")
+        self.assertEqual(context["tone"], "neutral")
+        self.assertFalse(context["clipping_recommended"])
+
+    def test_google_related_headlines_do_not_rescue_golf_scoreboard(self) -> None:
+        article = {
+            "title": "[ KLPGA] 서교림·김민별, 인카금융 더헤븐 마스터즈 1R 공동 선두 - 폴리뉴스 Polinews",
+            "description": (
+                "[ KLPGA] 서교림·김민별, 인카금융 더헤븐 마스터즈 1R 공동 선두 "
+                "인카금융, KLPGA '더헤븐 마스터스' 후원 네이트 "
+                "러프에 탄식, 어색함도 잠시 웃음꽃… 프로암 이모저모"
+            ),
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_player_milestone_with_own_host_mention_is_sports_noise(self) -> None:
+        article = {
+            "title": "안송이, KLPGA 최초 400경기 금자탑… “500경기 새 목표”",
+            "description": (
+                "메인 스폰서인 KB금융그룹을 비롯해 대회 주최사 인카금융서비스, "
+                "더헤븐리조트 관계자도 자리했다. 참석자들은 기념 보드와 꽃다발을 전달했다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_incar_golf_csr_story_can_stay_company_positive(self) -> None:
+        article = {
+            "title": "격이 다른 확정형 기부… 인카금융 더헤븐 마스터즈 '파3 홀'의 비밀",
+            "description": "인카금융서비스가 골프 대회 파3 홀에서 확정형 기부 프로그램을 운영하며 사회공헌 메시지를 전했다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertFalse(analyzer.is_own_sponsored_sports_noise_article(article))
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_tone"], "positive")
+
+    def test_stock_watchlist_with_own_name_only_is_noise(self) -> None:
+        article = {
+            "title": "[52주 최저가] 파인텍 -7.9%↓... 218개 장중 신저가",
+            "description": "종목 목록에 인카금융서비스 9,340원 등 다수 상장사가 포함됐다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_stock_listing_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_ambiguous_competitor_keywords_need_ga_context(self) -> None:
+        self.assertEqual(
+            analyzer.categorize({"title": "메가 히트 신제품 출시", "description": "유통가가 대형 할인 행사를 예고했다.", "keyword_category": "competitor"}),
+            "other",
+        )
+        self.assertEqual(
+            analyzer.categorize({"title": "글로벌 금융시장 변동성 확대", "description": "환율과 원유 가격 변동이 이어졌다.", "keyword_category": "competitor"}),
+            "other",
+        )
+
+    def test_general_baseball_article_is_non_business_noise(self) -> None:
+        article = {
+            "title": "[프로야구] 중간 순위(19일)",
+            "description": "키움 감독은 마무리 투수 운영과 더블 스토퍼 구상을 설명했다.",
+            "keyword": "보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_general_finance_workout_article_is_non_business_noise(self) -> None:
+        article = {
+            "title": "한양증권 220억 조기상환 거부한 중앙일보, 하나은행에 워크아웃 신청",
+            "description": "중앙일보가 220억원 규모 어음 최종부도 처리 위기에 놓이면서 채권시장 우려가 커졌다.",
+            "keyword": "금융",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_general_finance_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_regulator_consumer_protection_article_is_not_general_finance_noise(self) -> None:
+        article = {
+            "title": "금감원·8대 금융지주, 소비자보호 맞손",
+            "description": "금융감독원은 보험사와 금융권의 금융소비자보호 역량 강화를 위한 협약을 추진했다.",
+            "keyword": "금융감독원",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertFalse(analyzer.is_general_finance_noise_article(article))
+        self.assertFalse(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "regulation")
+
+    def test_government_committee_article_with_only_finance_committee_mention_is_noise(self) -> None:
+        article = {
+            "title": "노태악 4년간 받은 선관위 수당만 1.8억, 셀프증액 논란",
+            "description": "공정거래위원회나 금융위원회 등 다른 정부 위원회에서도 운영하는 제도라며 문제가 없다는 입장이다.",
+            "keyword": "금융위원회",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_admin_agency_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_public_agency_evaluation_without_insurance_market_context_is_noise(self) -> None:
+        article = {
+            "title": "금융 공공기관 경영평가 예보 우수, 주금공 양호·신보 보통",
+            "description": "금융위원회 산하 공공기관 중 예금보험공사와 한국주택금융공사의 경영평가 결과가 공개됐다.",
+            "keyword": "금융위원회",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_admin_agency_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_public_health_insurance_reward_article_is_noise_without_private_insurance_context(self) -> None:
+        article = {
+            "title": "로또 대신 신고, 정부는 건강보험 부당청구 포상금 확대",
+            "description": "복지부는 국민건강보험공단과 함께 가짜진료 신고 포상금과 환수 금액 제도를 안내했다.",
+            "keyword": "보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_public_health_insurance_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_non_insurance_investment_misconduct_article_is_noise(self) -> None:
+        article = {
+            "title": "회사채 투자자 보호를 위한 사채 제도 개선",
+            "description": "전문투자자 대상 회사채와 사채관리회사 제도 개선 과정에서 불완전판매 논란도 거론됐다.",
+            "keyword": "불완전판매",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_non_insurance_investment_misconduct_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_mega_box_article_from_ambiguous_competitor_keyword_is_noise(self) -> None:
+        article = {
+            "title": "메가박스중앙 회생 절차 신청에 영화계 긴장",
+            "description": "메가박스중앙의 장단기 차입금과 영화관 운영 부담이 커졌다는 내용이다.",
+            "keyword": "메가",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_ambiguous_competitor_homonym_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_mega_financial_service_article_is_not_homonym_noise(self) -> None:
+        article = {
+            "title": "메가금융서비스 GA 조직 확대",
+            "description": "메가금융서비스가 보험대리점 설계사 조직을 확대했다.",
+            "keyword": "메가",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertFalse(analyzer.is_ambiguous_competitor_homonym_noise_article(article))
+        self.assertEqual(article["_category"], "competitor")
+
+    def test_soccer_referee_occupation_insurance_agent_is_noise(self) -> None:
+        article = {
+            "title": "이강인 가격 논란, 주심 판정에 축구 팬 분통",
+            "description": "보험설계사로 알려진 테헤라 주심은 깐깐한 판정으로 유명했고 옐로카드를 꺼냈다.",
+            "keyword": "보험설계사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_sports_occupation_insurance_agent_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
 
 class AnalyzerAiContextGuardrailTests(unittest.TestCase):
     def test_ai_context_non_own_positive_is_downgraded_to_neutral(self) -> None:

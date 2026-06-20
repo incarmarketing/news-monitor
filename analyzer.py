@@ -157,7 +157,22 @@ POSITIVE_RANKING_WORDS = ["브랜드평판", "1위", "수상", "선정", "최고
 PHOTO_SPORTS_NOISE_WORDS = [
     "포토", "화보", "갤러리", "골프", "여자오픈", "오픈", "라운드", "최종라운드",
     "1번홀", "홀에서", "리조트", "파72", "우승상금", "순위를 올린다",
+    "프로야구", "프로농구", "프로배구", "KBO", "키움 감독", "두산", "마무리 투수",
+    "더블 스토퍼", "선발투수", "타자", "홈런", "연패", "승리투수",
 ]
+
+OWN_SPONSORED_SPORTS_TRIGGERS = [
+    "인카금융 더헤븐 마스터즈", "인카금융 더 헤븐 마스터즈", "인카금융서비스 더헤븐 마스터즈",
+    "KLPGA", "골프", "라운드", "티샷", "버디", "이글", "스윙", "선두", "공동", "순위",
+    "우승", "상금", "홀", "언더파", "타수", "선수",
+]
+
+OWN_SPONSORED_SPORTS_KEEP_TERMS = [
+    "기부", "확정형 기부", "사회공헌", "브랜드", "협약", "인카금융서비스가",
+    "인카금융서비스는", "인카금융이", "인카금융은", "홍보", "마케팅", "ESG",
+]
+
+OWN_SPONSORED_SPORTS_TITLE_KEEP_TERMS = OWN_SPONSORED_SPORTS_KEEP_TERMS + ["후원", "스폰서", "주최"]
 
 MATERIAL_CAUTION_CONTEXT_WORDS = [
     "투자의견", "목표주가", "목표가", "주가", "하향", "급락", "자본성증권",
@@ -208,19 +223,57 @@ SALES_CONDUCT_NOISE_WORDS = [
 
 EXTERNAL_INSURANCE_NOISE_TRIGGERS = [
     "호르무즈", "호르무즈 해협", "이란", "통항", "선박", "해운", "유조선",
-    "해협", "중동", "원유", "해상 통항",
+    "해협", "중동", "원유", "해상 통항", "해상", "항만", "항구", "화물", "물류",
+    "운임", "항공", "항로",
 ]
 
 EXTERNAL_INSURANCE_NOISE_TERMS = [
     "보험 수수료", "보험수수료", "보험증권", "보험 증권", "통항 수수료",
-    "수수료 부과", "보험료", "보험료 부과", "보험사",
+    "수수료 부과", "보험료", "보험료 부과", "보험사", "보험 가입 의무",
 ]
 
 EXTERNAL_INSURANCE_KEEP_TERMS = [
     "생명보험", "손해보험", "보험대리점", "법인보험대리점", "보험설계사",
     "GA", "인카금융", "금융감독원", "금감원", "금융위원회", "금융위",
-    "보험업법", "불완전판매", "보험사기", "실손", "손해율", "보험금",
+    "보험업법", "불완전판매", "보험사기", "실손", "손해율", "보험금", "해상보험",
 ]
+
+GENERAL_FINANCE_NOISE_RE = re.compile(
+    r"한양증권|중앙일보|하나은행|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|증권사",
+    re.I,
+)
+INSURANCE_GA_KEEP_RE = re.compile(
+    r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회|금융소비자보호",
+    re.I,
+)
+ADMIN_AGENCY_NOISE_RE = re.compile(
+    r"선관위|선거관리위원회|정부\s*위원회|위원회\s*수당|셀프증액|공공기관\s*경영평가|금융\s*공공기관\s*경영평가|예금보험공사|주택금융공사|주금공|신용보증기금|신보",
+    re.I,
+)
+INSURANCE_GA_MATERIAL_KEEP_RE = re.compile(
+    r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원",
+    re.I,
+)
+PUBLIC_HEALTH_INSURANCE_NOISE_RE = re.compile(
+    r"국민건강보험공단|건강보험공단|복지부|보건복지부|건강보험\s*부당\s*청구|가짜진료|요양급여|진료행위|환수\s*금액|신고\s*포상금",
+    re.I,
+)
+PRIVATE_INSURANCE_KEEP_RE = re.compile(
+    r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|1200%|정착지원금",
+    re.I,
+)
+NON_INSURANCE_INVESTMENT_MISCONDUCT_NOISE_RE = re.compile(
+    r"미래에셋|미래에셋증권|스페이스X|전문투자자|사채관리회사|회사채|채권자|증권사|금융투자|ELS|홍콩ELS|공모펀드",
+    re.I,
+)
+AMBIGUOUS_COMPETITOR_HOMONYM_NOISE_RE = re.compile(
+    r"메가박스|메가박스중앙|메가커피|메가MGC|메가스터디|메가\s*히트|메가\s*런치|메가\s*세일|메가\s*이벤트",
+    re.I,
+)
+SPORTS_OCCUPATION_INSURANCE_AGENT_NOISE_RE = re.compile(
+    r"손흥민|이강인|축구|월드컵|A매치|옐로카드|레드카드|퇴장|주심|심판|파울|경고|PSG|파리생제르맹",
+    re.I,
+)
 
 CATEGORIES = {
     "own": OWN_NAMES,
@@ -837,6 +890,190 @@ def is_external_insurance_noise_article(article: dict) -> bool:
     return is_external_insurance_noise_text(text)
 
 
+def is_general_finance_noise_text(text: str) -> bool:
+    text = str(text or "")
+    return bool(GENERAL_FINANCE_NOISE_RE.search(text)) and not bool(INSURANCE_GA_KEEP_RE.search(text))
+
+
+def is_general_finance_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_general_finance_noise_text(text)
+
+
+def is_admin_agency_noise_text(text: str) -> bool:
+    text = str(text or "")
+    return bool(ADMIN_AGENCY_NOISE_RE.search(text)) and not bool(INSURANCE_GA_MATERIAL_KEEP_RE.search(text))
+
+
+def is_admin_agency_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_admin_agency_noise_text(text)
+
+
+def is_public_health_insurance_noise_text(text: str) -> bool:
+    text = str(text or "")
+    return bool(PUBLIC_HEALTH_INSURANCE_NOISE_RE.search(text)) and not bool(PRIVATE_INSURANCE_KEEP_RE.search(text))
+
+
+def is_public_health_insurance_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_public_health_insurance_noise_text(text)
+
+
+def is_non_insurance_investment_misconduct_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if PRIVATE_INSURANCE_KEEP_RE.search(text):
+        return False
+    if not NON_INSURANCE_INVESTMENT_MISCONDUCT_NOISE_RE.search(text):
+        return False
+    return bool(re.search(r"불완전판매|내부통제|고객보호|투자자\s*보호|전문투자자|회사채|사채관리회사|미배정|제재", text, re.I))
+
+
+def is_non_insurance_investment_misconduct_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_non_insurance_investment_misconduct_noise_text(text)
+
+
+def is_ambiguous_competitor_homonym_noise_text(text: str) -> bool:
+    text = str(text or "")
+    return bool(AMBIGUOUS_COMPETITOR_HOMONYM_NOISE_RE.search(text)) and not bool(
+        re.search(r"메가금융서비스|보험대리점|법인보험대리점|보험설계사|보험GA|GA|손해보험|생명보험", text, re.I)
+    )
+
+
+def is_ambiguous_competitor_homonym_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_ambiguous_competitor_homonym_noise_text(text)
+
+
+def is_sports_occupation_insurance_agent_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not SPORTS_OCCUPATION_INSURANCE_AGENT_NOISE_RE.search(text):
+        return False
+    if not re.search(r"보험설계사(?:로\s*알려진|인|로서|라는)\s*(?:테헤라\s*)?(?:주심|심판)|(?:주심|심판)[^.。!?]{0,30}보험설계사", text, re.I):
+        return False
+    return not bool(
+        re.search(r"보험대리점|법인보험대리점|보험GA|GA|생명보험|손해보험|보험회사|보험업계|보험상품|보험계약|불완전판매|보험사기", text, re.I)
+    )
+
+
+def is_sports_occupation_insurance_agent_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_sports_occupation_insurance_agent_noise_text(text)
+
+
+def is_own_sponsored_sports_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not contains_own_name(text) and "인카금융 더헤븐 마스터즈" not in text and "인카금융 더 헤븐 마스터즈" not in text:
+        return False
+    if not any(term in text for term in OWN_SPONSORED_SPORTS_TRIGGERS):
+        return False
+    if any(term in text for term in OWN_SPONSORED_SPORTS_KEEP_TERMS):
+        return False
+    return True
+
+
+def is_own_sponsored_sports_scoreboard_title(title: object) -> bool:
+    text = str(title or "")
+    if not (
+        re.search(r"인카금융(?:서비스)?\s*더\s*헤븐\s*마스터즈", text)
+        or re.search(r"인카금융(?:서비스)?\s*더헤븐\s*마스터즈", text)
+    ):
+        return False
+    if any(term in text for term in OWN_SPONSORED_SPORTS_TITLE_KEEP_TERMS):
+        return False
+    return bool(
+        re.search(
+            r"KLPGA|골프|라운드|[0-9]R|티샷|버디|이글|스윙|선두|공동|순위|우승|상금|언더파|타수|홀|선수|청사진|포토",
+            text,
+            re.I,
+        )
+    )
+
+
+def is_own_sponsored_sports_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    if is_own_sponsored_sports_scoreboard_title(article.get("title")) or is_own_sponsored_sports_scoreboard_title(raw.get("title")):
+        return True
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+        )
+    )
+    return is_own_sponsored_sports_noise_text(text)
+
+
 def monitor_rule_by_key(rule_key: str) -> dict:
     return next((rule for rule in CONTEXT_RULES if rule.get("rule_key") == rule_key), {})
 
@@ -876,6 +1113,8 @@ def context_rule_matches(text: str, rule: dict) -> bool:
 
 def has_domain_context(text: str) -> bool:
     if is_external_insurance_noise_text(text):
+        return False
+    if is_own_sponsored_sports_noise_text(text):
         return False
     if is_sales_conduct_noise_text(text):
         return False
@@ -938,6 +1177,20 @@ def is_non_business_noise(article: dict) -> bool:
     if not text.strip():
         return True
     if is_external_insurance_noise_article(article):
+        return True
+    if is_general_finance_noise_article(article):
+        return True
+    if is_admin_agency_noise_article(article):
+        return True
+    if is_public_health_insurance_noise_article(article):
+        return True
+    if is_non_insurance_investment_misconduct_noise_article(article):
+        return True
+    if is_ambiguous_competitor_homonym_noise_article(article):
+        return True
+    if is_sports_occupation_insurance_agent_noise_article(article):
+        return True
+    if is_own_sponsored_sports_noise_article(article):
         return True
     if is_short_incar_noise_text(text):
         return True
