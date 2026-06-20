@@ -7844,10 +7844,12 @@ function buildIssues(articles, fallback) {
     .filter((article) => article?.title)
     .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
   const uniqueIssues = [];
+  const seenIssueKeys = new Set();
   for (const article of important) {
     const displayArticle = normalizeArticleDisplay(article);
-    const titleKey = normalizeGroupTitle(displayArticle.title || "");
-    if (uniqueIssues.some((item) => normalizeGroupTitle(item.title || "") === titleKey)) continue;
+    const issueKey = majorIssueDedupeKey(displayArticle);
+    if (!issueKey || seenIssueKeys.has(issueKey)) continue;
+    seenIssueKeys.add(issueKey);
     const relatedArticles = dedupeIssueMembers(Array.isArray(displayArticle.relatedArticles) && displayArticle.relatedArticles.length
       ? displayArticle.relatedArticles.map(normalizeArticleDisplay)
       : [displayArticle]);
@@ -7873,6 +7875,28 @@ function buildIssues(articles, fallback) {
     if (uniqueIssues.length >= 5) break;
   }
   return uniqueIssues.length ? uniqueIssues : fallback;
+}
+
+function majorIssueDedupeKey(article = {}) {
+  const eventTopic = articleEventTopicSignature(article);
+  if (eventTopic) return `event:${eventTopic}`;
+  const primaryTopic = articlePrimarySummaryTopic(article);
+  if (primaryTopic) return `topic:${primaryTopic}:${normalizeIssueEntityKey(article)}`;
+  const related = Array.isArray(article.relatedArticles) && article.relatedArticles.length ? article.relatedArticles : [article];
+  const tokenSource = related.map((item) => item.title || "").join(" ");
+  const tokens = articleTokens(tokenSource).filter(isDistinctiveRelatedToken).slice(0, 6);
+  if (tokens.length >= 3) return `tokens:${tokens.join("|")}`;
+  const titleKey = normalizeGroupTitle(article.title || "");
+  return titleKey ? `title:${titleKey.slice(0, 80)}` : "";
+}
+
+function normalizeIssueEntityKey(article = {}) {
+  const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || ""} ${article.keyword || ""}`);
+  if (text.includes(normalizeGroupTitle("인카금융"))) return "incar";
+  if (text.includes(normalizeGroupTitle("삼성생명"))) return "samsung-life";
+  if (text.includes(normalizeGroupTitle("DB손해보험")) || text.includes(normalizeGroupTitle("db손해보험"))) return "db-insurance";
+  if (text.includes(normalizeGroupTitle("KB손해보험")) || text.includes(normalizeGroupTitle("kb손해보험"))) return "kb-insurance";
+  return "";
 }
 
 function dashboardIssueScore(issue = {}) {
@@ -8014,7 +8038,9 @@ function articlePrimarySummaryTopic(item = {}) {
   const title = cleanSummaryText(item.title || "");
   const text = summaryHaystack(item);
   const own = isOwnArticle(item);
+  const eventTopic = articleEventTopicSignature(item);
 
+  if (eventTopic) return eventTopic;
   if (own && isOwnPerformanceSummaryText(title)) return "own-performance";
   if (isStockVolatilitySummaryText(title)) return "stock-volatility";
   if (isInsuranceSalesConductSummaryText(title)) return "sales-conduct";
@@ -8038,6 +8064,12 @@ function articlePrimarySummaryTopic(item = {}) {
   if (isSettlementSupportSummaryText(text)) return "settlement-support";
   if (isInsuranceLossSummaryText(text)) return "insurance-loss";
   if (isPreventiveSecuritySummaryText(text)) return "security";
+  return "";
+}
+
+function articleEventTopicSignature(item = {}) {
+  const text = cleanSummaryText(`${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`);
+  if (/인카금융/.test(text) && /더헤븐/.test(text) && /마스터즈/.test(text)) return "incar-theheaven-masters";
   return "";
 }
 
@@ -10095,6 +10127,7 @@ function isDistinctiveRelatedToken(token = "") {
 function articleTopicSignature(article = {}) {
   const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""}`);
   const includesAll = (terms) => terms.every((term) => text.includes(normalizeGroupTitle(term)));
+  if (includesAll(["인카금융", "더헤븐", "마스터즈"])) return "event:incar-theheaven-masters";
   if (text.includes("브랜드평판")) {
     const leader = brandReputationLeaderName(article);
     if (leader) return `브랜드평판-${normalizeGroupTitle(leader)}`;
