@@ -1002,7 +1002,7 @@ function OpsStatusRail({
 function Monitoring({ data, articles, scraps = [], monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved, onScrapSaved }) {
   const [isFilterPending, startFilterTransition] = useTransition();
   const regularArticles = useMemo(
-    () => articles.filter((article) => !isOfficialRegulatorSource(article.source) && !isExternalInsuranceNoiseArticle(article)),
+    () => articles.filter((article) => !isOfficialRegulatorSource(article.source) && isUsableMonitoringArticle(article)),
     [articles],
   );
   const deferredRegularArticles = useDeferredValue(regularArticles);
@@ -8041,6 +8041,13 @@ function articlePrimarySummaryTopic(item = {}) {
   const eventTopic = articleEventTopicSignature(item);
 
   if (isExternalInsuranceNoiseArticle(item)) return "";
+  if (isGeneralFinanceNoiseArticle(item)) return "";
+  if (isAdminAgencyNoiseArticle(item)) return "";
+  if (isPublicHealthInsuranceNoiseArticle(item)) return "";
+  if (isNonInsuranceInvestmentMisconductNoiseArticle(item)) return "";
+  if (isAmbiguousCompetitorHomonymNoiseArticle(item)) return "";
+  if (isSportsOccupationInsuranceAgentNoiseArticle(item)) return "";
+  if (isOwnSponsoredSportsNoiseArticle(item)) return "";
   if (eventTopic) return eventTopic;
   if (own && isOwnPerformanceSummaryText(title)) return "own-performance";
   if (isStockVolatilitySummaryText(title)) return "stock-volatility";
@@ -8070,6 +8077,7 @@ function articlePrimarySummaryTopic(item = {}) {
 
 function articleEventTopicSignature(item = {}) {
   const text = cleanSummaryText(`${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`);
+  if (isOwnSponsoredSportsNoiseArticle(item)) return "";
   if (/인카금융/.test(text) && /더헤븐/.test(text) && /마스터즈/.test(text)) return "incar-theheaven-masters";
   return "";
 }
@@ -8206,6 +8214,13 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
 
 function buildArticleSummaryLines(item = {}) {
   if (isExternalInsuranceNoiseArticle(item)) return [];
+  if (isGeneralFinanceNoiseArticle(item)) return [];
+  if (isAdminAgencyNoiseArticle(item)) return [];
+  if (isPublicHealthInsuranceNoiseArticle(item)) return [];
+  if (isNonInsuranceInvestmentMisconductNoiseArticle(item)) return [];
+  if (isAmbiguousCompetitorHomonymNoiseArticle(item)) return [];
+  if (isSportsOccupationInsuranceAgentNoiseArticle(item)) return [];
+  if (isOwnSponsoredSportsNoiseArticle(item)) return [];
   const titleKeys = summaryTitleKeys(item);
   if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
     const explicitLines = dedupeSummaryLines(
@@ -8555,10 +8570,28 @@ function originalArticleHaystack(item = {}) {
 
 function isExternalInsuranceNoiseArticle(item = {}) {
   const text = originalArticleHaystack(item);
-  const hasExternalShippingSignal = /호르무즈|이란|통항|선박|해운|유조선|해협|중동|원유|해상 통항/.test(text);
-  const hasInsuranceFeeSignal = /보험\s*수수료|보험증권|보험\s*증권|통항\s*수수료|수수료\s*부과|보험료|보험사/.test(text);
-  const hasInsuranceBusinessSignal = /생명보험|손해보험|보험대리점|법인보험대리점|보험설계사|GA|인카금융|금융감독원|금감원|금융위원회|금융위|보험업법|불완전판매|보험사기|실손|손해율|보험금/.test(text);
+  const hasExternalShippingSignal = /호르무즈|이란|통항|선박|해운|유조선|해협|중동|원유|해상 통항|해상|항만|항구|화물|물류|운임|항공|항로/.test(text);
+  const hasInsuranceFeeSignal = /보험\s*수수료|보험증권|보험\s*증권|통항\s*수수료|수수료\s*부과|보험료|보험사|보험\s*가입\s*의무/.test(text);
+  const hasInsuranceBusinessSignal = /생명보험|손해보험|보험대리점|법인보험대리점|보험설계사|GA|인카금융|금융감독원|금감원|금융위원회|금융위|보험업법|불완전판매|보험사기|실손|손해율|보험금|해상보험/.test(text);
   return hasExternalShippingSignal && hasInsuranceFeeSignal && !hasInsuranceBusinessSignal;
+}
+
+function isOwnSponsoredSportsNoiseArticle(item = {}) {
+  const raw = item.raw && typeof item.raw === "object" ? item.raw : {};
+  if (isOwnSponsoredSportsScoreboardTitle(item.title) || isOwnSponsoredSportsScoreboardTitle(raw.title)) return true;
+  const text = originalArticleHaystack(item);
+  const hasOwnTournament = /인카금융(?:서비스)?\s*더\s*헤븐\s*마스터즈|인카금융(?:서비스)?\s*더헤븐\s*마스터즈/.test(text);
+  const hasSportsSignal = /KLPGA|골프|라운드|티샷|버디|이글|스윙|선두|공동|순위|우승|상금|언더파|타수|선수|홀에서/.test(text);
+  const hasCompanyStory = /기부|확정형\s*기부|사회공헌|브랜드|협약|인카금융서비스가|인카금융서비스는|인카금융이|인카금융은|홍보|마케팅|ESG/.test(text);
+  return hasOwnTournament && hasSportsSignal && !hasCompanyStory;
+}
+
+function isOwnSponsoredSportsScoreboardTitle(value = "") {
+  const text = String(value || "");
+  const hasOwnTournament = /인카금융(?:서비스)?\s*더\s*헤븐\s*마스터즈|인카금융(?:서비스)?\s*더헤븐\s*마스터즈/.test(text);
+  const hasSportsSignal = /KLPGA|골프|라운드|[0-9]R|티샷|버디|이글|스윙|선두|공동|순위|우승|상금|언더파|타수|홀|선수|청사진|포토/.test(text);
+  const hasCompanyStory = /기부|확정형\s*기부|후원|사회공헌|브랜드|스폰서|주최|협약|인카금융서비스가|인카금융서비스는|인카금융이|인카금융은|홍보|마케팅|ESG/.test(text);
+  return hasOwnTournament && hasSportsSignal && !hasCompanyStory;
 }
 
 function periodScopeLabel(period) {
@@ -10323,11 +10356,22 @@ function groupArticles(articles, key) {
 }
 
 function isUsableArticle(article) {
-  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article) && !isExternalInsuranceNoiseArticle(article);
+  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article) && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
+}
+
+function isUsableMonitoringArticle(article) {
+  return article && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isStockListingNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
 }
 
 function isOwnArticle(article) {
   if (isStockListingNoiseArticle(article)) return false;
+  if (isGeneralFinanceNoiseArticle(article)) return false;
+  if (isAdminAgencyNoiseArticle(article)) return false;
+  if (isPublicHealthInsuranceNoiseArticle(article)) return false;
+  if (isNonInsuranceInvestmentMisconductNoiseArticle(article)) return false;
+  if (isAmbiguousCompetitorHomonymNoiseArticle(article)) return false;
+  if (isSportsOccupationInsuranceAgentNoiseArticle(article)) return false;
+  if (isOwnSponsoredSportsNoiseArticle(article)) return false;
   return hasOwnArticleEvidence(article);
 }
 
@@ -10366,6 +10410,57 @@ function isStockListingNoiseArticle(article = {}) {
     return false;
   }
   return true;
+}
+
+function isGeneralSportsNoiseArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasSportsSignal = /프로야구|프로농구|프로배구|KBO|키움\s*감독|두산|마무리\s*투수|더블\s*스토퍼|선발투수|타자|홈런|연패|승리투수|골프청사진|MT포토|티샷|버디|스윙/.test(text);
+  const hasBusinessSignal = /인카금융서비스|인카금융|생명보험|손해보험|보험대리점|법인보험대리점|보험설계사|GA|금감원|금융감독원|금융위|금융위원회|불완전판매|보험사기|보험금|보험료/.test(text);
+  return hasSportsSignal && !hasBusinessSignal;
+}
+
+function isGeneralFinanceNoiseArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasFinanceNoise = /한양증권|중앙일보|하나은행|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|증권사/.test(text);
+  const hasInsuranceGaContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회/.test(text);
+  return hasFinanceNoise && !hasInsuranceGaContext;
+}
+
+function isAdminAgencyNoiseArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasAdminNoise = /선관위|선거관리위원회|정부\s*위원회|위원회\s*수당|셀프증액|공공기관\s*경영평가|금융\s*공공기관\s*경영평가|예금보험공사|주택금융공사|주금공|신용보증기금|신보/.test(text);
+  const hasMaterialInsuranceGaContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원/.test(text);
+  return hasAdminNoise && !hasMaterialInsuranceGaContext;
+}
+
+function isPublicHealthInsuranceNoiseArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasPublicHealthInsuranceNoise = /국민건강보험공단|건강보험공단|복지부|보건복지부|건강보험\s*부당\s*청구|가짜진료|요양급여|진료행위|환수\s*금액|신고\s*포상금/.test(text);
+  const hasPrivateInsuranceContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|1200%|정착지원금/.test(text);
+  return hasPublicHealthInsuranceNoise && !hasPrivateInsuranceContext;
+}
+
+function isNonInsuranceInvestmentMisconductNoiseArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasPrivateInsuranceContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|1200%|정착지원금/.test(text);
+  const hasInvestmentMisconduct = /미래에셋|미래에셋증권|스페이스X|전문투자자|사채관리회사|회사채|채권자|증권사|금융투자|ELS|홍콩ELS|공모펀드/.test(text)
+    && /불완전판매|내부통제|고객보호|투자자\s*보호|전문투자자|회사채|사채관리회사|미배정|제재/.test(text);
+  return hasInvestmentMisconduct && !hasPrivateInsuranceContext;
+}
+
+function isAmbiguousCompetitorHomonymNoiseArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasHomonymNoise = /메가박스|메가박스중앙|메가커피|메가MGC|메가스터디|메가\s*히트|메가\s*런치|메가\s*세일|메가\s*이벤트/.test(text);
+  const hasGaCompetitorContext = /메가금융서비스|보험대리점|법인보험대리점|보험설계사|보험GA|GA|손해보험|생명보험/.test(text);
+  return hasHomonymNoise && !hasGaCompetitorContext;
+}
+
+function isSportsOccupationInsuranceAgentNoiseArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasSportsContext = /손흥민|이강인|축구|월드컵|A매치|옐로카드|레드카드|퇴장|주심|심판|파울|경고|PSG|파리생제르맹/.test(text);
+  const hasOccupationOnly = /보험설계사(?:로\s*알려진|인|로서|라는)\s*(?:테헤라\s*)?(?:주심|심판)|(?:주심|심판)[^.。!?]{0,30}보험설계사/.test(text);
+  const hasInsuranceBusinessContext = /보험대리점|법인보험대리점|보험GA|GA|생명보험|손해보험|보험회사|보험업계|보험상품|보험계약|불완전판매|보험사기/.test(text);
+  return hasSportsContext && hasOccupationOnly && !hasInsuranceBusinessContext;
 }
 
 function categoryPresetFor(value) {

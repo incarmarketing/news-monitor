@@ -77,6 +77,88 @@ class DashboardSummaryTests(unittest.TestCase):
         self.assertNotIn("1200%룰", summary)
         self.assertNotIn("설계사 영입", summary)
 
+    def test_incar_golf_scoreboard_is_removed_from_dashboard_rows(self) -> None:
+        archives = [
+            {
+                "date": "2026-06-20",
+                "window": {"label": "오전", "slot": "08"},
+                "metrics": {},
+                "articles": [
+                    {
+                        "title": "서교림, '인카금융 더헤븐 마스터즈’ 선두 질주",
+                        "description": "KLPGA 투어 2라운드에서 서교림이 버디를 잡고 공동 선두에 올랐다.",
+                        "source": "뉴스1",
+                        "keyword": "인카금융",
+                        "_category": "own",
+                        "_tone": "positive",
+                        "_score": 99,
+                    },
+                    {
+                        "title": "인카금융서비스, 우수인증설계사 2262명 배출",
+                        "description": "인카금융서비스가 우수인증설계사 배출 규모를 크게 늘렸다.",
+                        "source": "보험매일",
+                        "keyword": "인카금융서비스",
+                        "_category": "own",
+                        "_tone": "positive",
+                        "_score": 120,
+                    },
+                ],
+            }
+        ]
+
+        rows = dashboard_builder.build_articles(archives)
+
+        titles = [row["title"] for row in rows]
+        self.assertNotIn("서교림, '인카금융 더헤븐 마스터즈’ 선두 질주", titles)
+        self.assertIn("인카금융서비스, 우수인증설계사 2262명 배출", titles)
+
+    def test_incar_golf_csr_story_keeps_summary(self) -> None:
+        article = {
+            "title": "격이 다른 확정형 기부… 인카금융 더헤븐 마스터즈 '파3 홀'의 비밀",
+            "description": "인카금융서비스가 골프 대회 파3 홀에서 확정형 기부 프로그램을 운영했다.",
+            "keyword": "인카금융",
+        }
+
+        summary = dashboard_builder.article_summary(article, "own", "positive")
+
+        self.assertIn("확정형 기부", summary)
+        self.assertNotIn("경기결과", summary)
+
+    def test_general_finance_workout_article_is_removed_from_dashboard_rows(self) -> None:
+        archives = [
+            {
+                "date": "2026-06-20",
+                "window": {"label": "오후", "slot": "13"},
+                "metrics": {},
+                "articles": [
+                    {
+                        "title": "한양증권 220억 조기상환 거부한 중앙일보, 하나은행에 워크아웃 신청",
+                        "description": "중앙일보가 220억원 규모 어음 최종부도 처리 위기에 놓이면서 채권시장 우려가 커졌다.",
+                        "source": "더퍼블릭",
+                        "keyword": "금융",
+                        "_category": "industry",
+                        "_tone": "neutral",
+                        "_score": 30,
+                    },
+                    {
+                        "title": "금감원·8대 금융지주, 소비자보호 맞손",
+                        "description": "금융감독원은 보험사와 금융권의 금융소비자보호 역량 강화를 위한 협약을 추진했다.",
+                        "source": "조세일보",
+                        "keyword": "금융감독원",
+                        "_category": "regulation",
+                        "_tone": "caution",
+                        "_score": 80,
+                    },
+                ],
+            }
+        ]
+
+        rows = dashboard_builder.build_articles(archives)
+
+        titles = [row["title"] for row in rows]
+        self.assertNotIn("한양증권 220억 조기상환 거부한 중앙일보, 하나은행에 워크아웃 신청", titles)
+        self.assertIn("금감원·8대 금융지주, 소비자보호 맞손", titles)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -79,7 +79,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
         archive_articles = archive.get("articles", [])
         supabase_store.apply_classification_feedback_to_articles(archive_articles, feedback_index)
         for index, article in enumerate(archive_articles, 1):
-            if analyzer.is_external_insurance_noise_article(article):
+            if analyzer.is_non_business_noise(article):
                 continue
             if is_stock_listing_noise(article):
                 continue
@@ -120,7 +120,16 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 def article_summary(article: dict, category: str, tone: str) -> str:
     title = clean_summary_text(article.get("title", ""))
-    existing = "" if analyzer.is_external_insurance_noise_article(article) else clean_summary_text(article.get("description", "") or article.get("summary", ""))
+    existing = "" if (
+        analyzer.is_external_insurance_noise_article(article)
+        or analyzer.is_general_finance_noise_article(article)
+        or analyzer.is_admin_agency_noise_article(article)
+        or analyzer.is_public_health_insurance_noise_article(article)
+        or analyzer.is_non_insurance_investment_misconduct_noise_article(article)
+        or analyzer.is_ambiguous_competitor_homonym_noise_article(article)
+        or analyzer.is_sports_occupation_insurance_agent_noise_article(article)
+        or analyzer.is_own_sponsored_sports_noise_article(article)
+    ) else clean_summary_text(article.get("description", "") or article.get("summary", ""))
     lines = []
     if existing:
         lines.extend(split_summary_sentences(existing)[:3])
@@ -227,6 +236,20 @@ def contextual_summary_lines(article: dict, category: str, tone: str) -> list[st
     text = dashboard_original_article_text(article)
     lines: list[str] = []
     if analyzer.is_external_insurance_noise_article(article):
+        return []
+    if analyzer.is_general_finance_noise_article(article):
+        return []
+    if analyzer.is_admin_agency_noise_article(article):
+        return []
+    if analyzer.is_public_health_insurance_noise_article(article):
+        return []
+    if analyzer.is_non_insurance_investment_misconduct_noise_article(article):
+        return []
+    if analyzer.is_ambiguous_competitor_homonym_noise_article(article):
+        return []
+    if analyzer.is_sports_occupation_insurance_agent_noise_article(article):
+        return []
+    if analyzer.is_own_sponsored_sports_noise_article(article):
         return []
     if is_stock_volatility_text(text):
         lines.append("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다.")
@@ -358,7 +381,7 @@ def load_supabase_articles() -> list[dict]:
     supabase_store.apply_classification_feedback_to_articles(rows)
     articles = []
     for row in rows:
-        if analyzer.is_external_insurance_noise_article(row):
+        if analyzer.is_non_business_noise(row):
             continue
         if is_stock_listing_noise(row):
             continue
