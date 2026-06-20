@@ -17,6 +17,7 @@ import supabase_store
 import config
 import archiver
 import ai_fallback
+import analyzer
 import gemini_helper
 import groq_helper
 
@@ -78,6 +79,8 @@ def build_articles(archives: list[dict]) -> list[dict]:
         archive_articles = archive.get("articles", [])
         supabase_store.apply_classification_feedback_to_articles(archive_articles, feedback_index)
         for index, article in enumerate(archive_articles, 1):
+            if analyzer.is_external_insurance_noise_article(article):
+                continue
             if is_stock_listing_noise(article):
                 continue
             link = article.get("link", "")
@@ -117,7 +120,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
 
 def article_summary(article: dict, category: str, tone: str) -> str:
     title = clean_summary_text(article.get("title", ""))
-    existing = clean_summary_text(article.get("description", "") or article.get("summary", ""))
+    existing = "" if analyzer.is_external_insurance_noise_article(article) else clean_summary_text(article.get("description", "") or article.get("summary", ""))
     lines = []
     if existing:
         lines.extend(split_summary_sentences(existing)[:3])
@@ -183,7 +186,9 @@ def is_generic_summary_line(value: object) -> bool:
 
 
 def is_sales_conduct_text(text: str) -> bool:
-    return bool(re.search(r"불완전판매|소비자 피해|소비자보호|생보협회|손보협회|종신보험|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건", text, re.I)) and bool(
+    has_sales_risk = bool(re.search(r"불완전판매|소비자 피해|소비자보호|생보협회|손보협회|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건", text, re.I))
+    has_product_sales_risk = bool(re.search(r"종신보험", text, re.I) and re.search(r"불완전판매|판매\s*관행|판매채널|해소가 관건|소비자\s*피해", text, re.I))
+    return (has_sales_risk or has_product_sales_risk) and bool(
         re.search(r"GA|보험|설계사|생보|손보|협회|대리점", text, re.I)
     )
 
@@ -219,8 +224,10 @@ def is_brand_reputation_text(text: str) -> bool:
 
 
 def contextual_summary_lines(article: dict, category: str, tone: str) -> list[str]:
-    text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
+    text = dashboard_original_article_text(article)
     lines: list[str] = []
+    if analyzer.is_external_insurance_noise_article(article):
+        return []
     if is_stock_volatility_text(text):
         lines.append("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다.")
         lines.append("직접 경영 이슈보다 거래량과 주가 변동성 관찰이 필요한 주가성 기사입니다.")
@@ -262,7 +269,7 @@ def contextual_summary_lines(article: dict, category: str, tone: str) -> list[st
 
 
 def headline_fallback_summary(article: dict, category: str, tone: str) -> str:
-    text = f"{article.get('title', '')} {article.get('summary', '')} {article.get('description', '')} {article.get('keyword', '')}"
+    text = dashboard_original_article_text(article)
     if re.search(r"한눈에보는GA리포트|GA리포트", text, re.I):
         return contextual_summary_lines(article, category, tone)[0]
     if re.search(r"VI 발동|변동성완화장치|1200%|불완전판매|소비자 피해|생보협회|종신보험|Having사업단|맞춤형 온라인 금융 컨설팅|주식시장 주요공시|자사주|누적 가입|브랜드평판|보험사기|실손24|금융취약계층|사회공헌|정착지원금|투자의견|금융보안원", text, re.I):
@@ -282,6 +289,21 @@ def headline_fallback_summary(article: dict, category: str, tone: str) -> str:
     if is_usable_summary_line(headline_line, title):
         return headline_line
     return category_fallback_summary(article, category, tone)
+
+
+def dashboard_original_article_text(article: dict) -> str:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    return " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
 
 
 def category_fallback_summary(article: dict, category: str, tone: str) -> str:
@@ -336,6 +358,8 @@ def load_supabase_articles() -> list[dict]:
     supabase_store.apply_classification_feedback_to_articles(rows)
     articles = []
     for row in rows:
+        if analyzer.is_external_insurance_noise_article(row):
+            continue
         if is_stock_listing_noise(row):
             continue
         category = row.get("category", "other")

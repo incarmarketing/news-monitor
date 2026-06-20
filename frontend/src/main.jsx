@@ -1002,7 +1002,7 @@ function OpsStatusRail({
 function Monitoring({ data, articles, scraps = [], monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved, onScrapSaved }) {
   const [isFilterPending, startFilterTransition] = useTransition();
   const regularArticles = useMemo(
-    () => articles.filter((article) => !isOfficialRegulatorSource(article.source)),
+    () => articles.filter((article) => !isOfficialRegulatorSource(article.source) && !isExternalInsuranceNoiseArticle(article)),
     [articles],
   );
   const deferredRegularArticles = useDeferredValue(regularArticles);
@@ -8036,10 +8036,11 @@ function isOwnPerformanceArticle(item = {}) {
 
 function articlePrimarySummaryTopic(item = {}) {
   const title = cleanSummaryText(item.title || "");
-  const text = summaryHaystack(item);
+  const text = originalArticleHaystack(item);
   const own = isOwnArticle(item);
   const eventTopic = articleEventTopicSignature(item);
 
+  if (isExternalInsuranceNoiseArticle(item)) return "";
   if (eventTopic) return eventTopic;
   if (own && isOwnPerformanceSummaryText(title)) return "own-performance";
   if (isStockVolatilitySummaryText(title)) return "stock-volatility";
@@ -8091,7 +8092,9 @@ function isSettlementSupportSummaryText(value = "") {
 
 function isInsuranceSalesConductSummaryText(value = "") {
   const text = cleanSummaryText(value);
-  return /불완전판매|소비자 피해|소비자보호|생보협회|손보협회|종신보험|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건/.test(text)
+  const hasSalesRisk = /불완전판매|소비자 피해|소비자보호|생보협회|손보협회|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건/.test(text);
+  const hasProductSalesRisk = /종신보험/.test(text) && /불완전판매|판매\s*관행|판매채널|해소가 관건|소비자\s*피해/.test(text);
+  return (hasSalesRisk || hasProductSalesRisk)
     && /GA|보험|설계사|생보|손보|협회|대리점/.test(text);
 }
 
@@ -8202,6 +8205,7 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
 }
 
 function buildArticleSummaryLines(item = {}) {
+  if (isExternalInsuranceNoiseArticle(item)) return [];
   const titleKeys = summaryTitleKeys(item);
   if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
     const explicitLines = dedupeSummaryLines(
@@ -8212,7 +8216,7 @@ function buildArticleSummaryLines(item = {}) {
     if (explicitLines.length) return explicitLines;
   }
   const cleanTitle = cleanSummaryText(item.title || "");
-  const text = cleanSummaryText(item.summary || item.description || "");
+  const text = cleanSummaryText(originalArticleDescription(item) || item.summary || item.description || "");
   const sentences = splitSummarySentences(text)
     .map(normalizeSummaryLine)
     .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence) && !isSummaryDuplicateOfTitle(sentence, titleKeys));
@@ -8528,6 +8532,33 @@ function composeHeadlineSummary(item = {}) {
 
 function summaryHaystack(item = {}) {
   return cleanSummaryText(`${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`);
+}
+
+function originalArticleDescription(item = {}) {
+  const raw = item.raw && typeof item.raw === "object" ? item.raw : {};
+  return cleanSummaryText(item.description || raw.description || raw.summary || raw.content || raw.body || "");
+}
+
+function originalArticleHaystack(item = {}) {
+  const raw = item.raw && typeof item.raw === "object" ? item.raw : {};
+  return cleanSummaryText([
+    item.title,
+    item.description,
+    raw.title,
+    raw.description,
+    raw.summary,
+    raw.content,
+    raw.body,
+    item.keyword,
+  ].filter(Boolean).join(" "));
+}
+
+function isExternalInsuranceNoiseArticle(item = {}) {
+  const text = originalArticleHaystack(item);
+  const hasExternalShippingSignal = /호르무즈|이란|통항|선박|해운|유조선|해협|중동|원유|해상 통항/.test(text);
+  const hasInsuranceFeeSignal = /보험\s*수수료|보험증권|보험\s*증권|통항\s*수수료|수수료\s*부과|보험료|보험사/.test(text);
+  const hasInsuranceBusinessSignal = /생명보험|손해보험|보험대리점|법인보험대리점|보험설계사|GA|인카금융|금융감독원|금감원|금융위원회|금융위|보험업법|불완전판매|보험사기|실손|손해율|보험금/.test(text);
+  return hasExternalShippingSignal && hasInsuranceFeeSignal && !hasInsuranceBusinessSignal;
 }
 
 function periodScopeLabel(period) {
@@ -10292,7 +10323,7 @@ function groupArticles(articles, key) {
 }
 
 function isUsableArticle(article) {
-  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article);
+  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article) && !isExternalInsuranceNoiseArticle(article);
 }
 
 function isOwnArticle(article) {

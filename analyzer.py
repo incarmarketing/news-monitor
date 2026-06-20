@@ -206,6 +206,22 @@ SALES_CONDUCT_NOISE_WORDS = [
     "가구", "유튜브", "숭실대", "대학생", "IPO", "공모주", "코인",
 ]
 
+EXTERNAL_INSURANCE_NOISE_TRIGGERS = [
+    "호르무즈", "호르무즈 해협", "이란", "통항", "선박", "해운", "유조선",
+    "해협", "중동", "원유", "해상 통항",
+]
+
+EXTERNAL_INSURANCE_NOISE_TERMS = [
+    "보험 수수료", "보험수수료", "보험증권", "보험 증권", "통항 수수료",
+    "수수료 부과", "보험료", "보험료 부과", "보험사",
+]
+
+EXTERNAL_INSURANCE_KEEP_TERMS = [
+    "생명보험", "손해보험", "보험대리점", "법인보험대리점", "보험설계사",
+    "GA", "인카금융", "금융감독원", "금감원", "금융위원회", "금융위",
+    "보험업법", "불완전판매", "보험사기", "실손", "손해율", "보험금",
+]
+
 CATEGORIES = {
     "own": OWN_NAMES,
     "regulation": REGULATION_WORDS,
@@ -549,6 +565,20 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     rule_category = article.get("_category") or categorize(article)
     rule_tone = article.get("_tone") or analyze_tone(article)
 
+    if is_external_insurance_noise_article(article):
+        result["category"] = "other"
+        result["tone"] = "exclude"
+        result["own_mentioned"] = False
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = False
+        result["clipping_reason"] = ""
+        article["_category"] = result["category"]
+        article["_tone"] = result["tone"]
+        article["category"] = result["category"]
+        article["tone"] = result["tone"]
+        article["_ai_context"] = result
+        return result
+
     if is_own_article(article):
         result["own_mentioned"] = True
         if result["category"] in {"other", "exclude"}:
@@ -694,6 +724,8 @@ def score_article(article: dict) -> int:
 
 def categorize(article: dict) -> str:
     text = article.get("title", "") + " " + article.get("description", "")
+    if is_external_insurance_noise_article(article):
+        return "other"
     if is_non_business_noise(article):
         return "other"
     rule = matched_context_rule(text)
@@ -780,6 +812,31 @@ def is_sales_conduct_noise_text(text: str) -> bool:
     return not any(word in text for word in required_terms)
 
 
+def is_external_insurance_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not any(word in text for word in EXTERNAL_INSURANCE_NOISE_TRIGGERS):
+        return False
+    if not any(word in text for word in EXTERNAL_INSURANCE_NOISE_TERMS):
+        return False
+    return not any(word in text for word in EXTERNAL_INSURANCE_KEEP_TERMS)
+
+
+def is_external_insurance_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_external_insurance_noise_text(text)
+
+
 def monitor_rule_by_key(rule_key: str) -> dict:
     return next((rule for rule in CONTEXT_RULES if rule.get("rule_key") == rule_key), {})
 
@@ -818,6 +875,8 @@ def context_rule_matches(text: str, rule: dict) -> bool:
 
 
 def has_domain_context(text: str) -> bool:
+    if is_external_insurance_noise_text(text):
+        return False
     if is_sales_conduct_noise_text(text):
         return False
     if any(word in text for word in OWN_NAMES):
@@ -878,6 +937,8 @@ def is_non_business_noise(article: dict) -> bool:
     title = article.get("title", "")
     if not text.strip():
         return True
+    if is_external_insurance_noise_article(article):
+        return True
     if is_short_incar_noise_text(text):
         return True
     if matched_context_rule(text, {"exclude"}):
@@ -908,14 +969,16 @@ def analyze_tone(article: dict) -> str:
     text = title + " " + article.get("description", "")
     category = article.get("_category") or categorize(article)
 
+    if is_external_insurance_noise_article(article):
+        return "exclude"
     if is_non_business_noise(article):
+        return "neutral"
+    if is_preventive_security_article(article):
         return "neutral"
     if is_own_direct_negative_article(article):
         return "negative"
     if is_own_caution_article(article):
         return "caution"
-    if is_preventive_security_article(article):
-        return "neutral"
     if is_relief_support_article(article):
         return "positive" if is_own_article(article) and is_own_positive_focus_article(article) else "neutral"
     if is_competitor_brand_reputation_against_own(article):
@@ -1058,7 +1121,7 @@ def is_own_direct_negative_article(article: dict) -> bool:
     text = article_summary_text(article)
     return bool(
         re.search(
-            r"인카금융스캔들|불법\s*사채|가로챈|관리\s*부실|압수수색|기소|검찰|경찰|과태료|제재|소송|사기|횡령|배임",
+            r"인카금융스캔들|불법\s*사채|가로챈|관리\s*부실|불완전판매\s*(?:조사|검사|적발|착수|의혹)|내부통제\s*위반|압수수색|기소|검찰|경찰|과태료|제재|소송|사기|횡령|배임",
             text,
             re.I,
         )
@@ -1276,7 +1339,7 @@ GENERIC_SUMMARY_PHRASES = [
 def build_quality_summary(article: dict) -> str:
     """Build a concise, non-generic summary for dashboard/report cards."""
     title = clean_summary_fragment(article.get("title", ""))
-    body = clean_summary_fragment(article.get("description", "") or article.get("summary", ""))
+    body = "" if is_external_insurance_noise_article(article) else clean_summary_fragment(article.get("description", "") or article.get("summary", ""))
     contextual = [
         sentence
         for sentence in build_contextual_summary_sentences(article)
@@ -1436,7 +1499,9 @@ def article_summary_text(article: dict) -> str:
 
 def is_sales_conduct_article(article: dict) -> bool:
     text = article_summary_text(article)
-    return bool(re.search(r"불완전판매|소비자 피해|소비자보호|생보협회|손보협회|종신보험|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건", text, re.I)) and bool(
+    has_sales_risk = bool(re.search(r"불완전판매|소비자 피해|소비자보호|생보협회|손보협회|설계사 쟁탈전|쟁탈전|판매채널|보험업계 긴장|해소가 관건", text, re.I))
+    has_product_sales_risk = bool(re.search(r"종신보험", text, re.I) and re.search(r"불완전판매|판매\s*관행|판매채널|해소가 관건|소비자\s*피해", text, re.I))
+    return (has_sales_risk or has_product_sales_risk) and bool(
         re.search(r"GA|보험|설계사|생보|손보|협회|대리점", text, re.I)
     )
 
