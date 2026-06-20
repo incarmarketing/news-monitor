@@ -344,6 +344,26 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotIn("1200%룰", summary)
         self.assertNotIn("판매수수료", summary)
 
+    def test_hormuz_shipping_insurance_fee_is_excluded_noise(self) -> None:
+        article = {
+            "title": "이란, 호르무즈 통항 선박에 향후 보험 수수료 부과 시사",
+            "description": "호르무즈 해협을 지나는 선박에 보험증권이나 통항 수수료를 요구할 가능성이 거론됐다.",
+            "summary": "1200%룰 시행을 앞두고 설계사 영입 경쟁과 판매수수료 운영 부담이 함께 거론됐습니다.",
+            "keyword": "보험사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        context = analyzer.apply_context_safety_guardrails(article)
+        summary = analyzer.build_quality_summary(article)
+
+        self.assertEqual(context["category"], "other")
+        self.assertEqual(context["tone"], "exclude")
+        self.assertTrue(analyzer.is_external_insurance_noise_article(article))
+        self.assertNotIn("1200%룰", summary)
+        self.assertNotIn("판매수수료 운영", summary)
+
 
 class AnalyzerAiContextGuardrailTests(unittest.TestCase):
     def test_ai_context_non_own_positive_is_downgraded_to_neutral(self) -> None:

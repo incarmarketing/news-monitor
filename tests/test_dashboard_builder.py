@@ -64,6 +64,19 @@ class DashboardSummaryTests(unittest.TestCase):
         self.assertIn("판매채널", summary)
         self.assertNotIn("정착지원금 지급 규모", summary)
 
+    def test_hormuz_shipping_fee_does_not_reuse_sales_conduct_summary(self) -> None:
+        article = {
+            "title": "이란, 호르무즈 통항 선박에 향후 보험 수수료 부과 시사",
+            "summary": "1200%룰 시행을 앞두고 설계사 영입 경쟁과 판매수수료 운영 부담이 함께 거론됐습니다.",
+            "keyword": "보험사",
+        }
+
+        self.assertTrue(dashboard_builder.analyzer.is_external_insurance_noise_article(article))
+        summary = dashboard_builder.article_summary(article, "industry", "neutral")
+
+        self.assertNotIn("1200%룰", summary)
+        self.assertNotIn("설계사 영입", summary)
+
 
 if __name__ == "__main__":
     unittest.main()
