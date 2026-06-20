@@ -46,9 +46,13 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_category"], "regulation")
+        self.assertTrue(analyzer.is_settlement_support_list_article(article))
         self.assertTrue(analyzer.is_settlement_support_caution_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "caution")
+        context = analyzer.apply_context_safety_guardrails(article)
+        self.assertEqual(context["category"], "regulation")
+        self.assertEqual(context["tone"], "caution")
 
     def test_preventive_security_context_is_not_negative(self) -> None:
         article = {
@@ -285,6 +289,54 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertEqual(article["_category"], "competitor")
         self.assertEqual(article["_tone"], "caution")
         self.assertNotIn("당사 성과", analyzer.build_quality_summary(article))
+
+    def test_competitor_brand_reputation_rank_list_is_not_own_positive(self) -> None:
+        article = {
+            "title": "[빅데이터로본다] 독립 보험대리점 2026년 6월 브랜드평판 1위 한화생명금융서비스",
+            "description": "브랜드평판 빅데이터 분석 결과 1위 한화생명금융서비스, 2위 인카금융서비스, 3위 에이플러스에셋 순으로 나타났다.",
+            "keyword": "한화생명금융서비스",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        analyzer.apply_context_safety_guardrails(article)
+
+        self.assertEqual(article["_category"], "competitor")
+        self.assertEqual(article["_tone"], "caution")
+        self.assertFalse(analyzer.is_own_positive_focus_article(article))
+
+    def test_competitor_brand_reputation_truncated_title_is_not_own_caution(self) -> None:
+        article = {
+            "title": "[브랜드평판] 한화생명금융서비스, 독립 보험대리점 6월 1위... 인카금융...",
+            "description": "한화생명금융서비스가 21%대 급등을 앞세워 1위 자리를 탈환한 반면, 지난달 1위였던 인카금융서비스는 5%대 하락으로 2위로 밀려났다.",
+            "keyword": "한화생명금융서비스",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        analyzer.apply_context_safety_guardrails(article)
+
+        self.assertEqual(article["_category"], "competitor")
+        self.assertEqual(article["_tone"], "caution")
+        self.assertTrue(analyzer.is_competitor_brand_reputation_against_own(article))
+
+    def test_own_brand_reputation_rank_first_is_kept_positive(self) -> None:
+        article = {
+            "title": "[브랜드평판] 독립 보험대리점 6월 1위 인카금융서비스",
+            "description": "인카금융서비스가 GA 브랜드평판 1위를 기록하며 미디어와 소비자 지표에서 선두를 차지했다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        analyzer.apply_context_safety_guardrails(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertNotEqual(article["_tone"], "caution")
+        self.assertTrue(analyzer.is_own_positive_focus_article(article))
 
     def test_relief_support_for_fraud_victims_is_not_negative(self) -> None:
         article = {
@@ -620,6 +672,312 @@ class AnalyzerToneTests(unittest.TestCase):
 
         self.assertTrue(analyzer.is_sports_occupation_insurance_agent_noise_article(article))
         self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_hormuz_paid_insurance_mandate_is_noise_even_with_insurer_word(self) -> None:
+        article = {
+            "title": "호르무즈 통항료 국제법 위반 논란에 이란, 독점 유료 보험 의무화 추진",
+            "description": "선주가 승인 보험에 가입해야 하고 미국 은행이나 보험사가 연루될 경우 제재 위험이 거론됐다.",
+            "keyword": "보험사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_external_insurance_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_klpga_incar_theheaven_without_masters_word_is_scoreboard_noise(self) -> None:
+        article = {
+            "title": "이글 2방 서교림, 인카금융 더 헤븐 1라운드 공동 선두",
+            "description": "KLPGA 대회 1라운드에서 서교림과 김민별이 65타 공동 선두에 올랐다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_stock_market_sector_listing_is_noise_when_insurance_is_only_sector_name(self) -> None:
+        article = {
+            "title": "코스피 장중 최고치 경신 뒤 약보합, 코스닥 3%대 하락",
+            "description": "업종별로는 생명보험이 5.54% 올라 상승률 1위를 기록했고 항공화물운송과 물류도 강세였다.",
+            "keyword": "생명보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_stock_market_sector_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_insurance_stock_sector_article_stays_when_insurance_stocks_are_focus(self) -> None:
+        article = {
+            "title": "보험주 재평가 본격화, 수익성·주주환원 모두 기대",
+            "description": "보험지수는 삼성생명, DB손해보험, 한화생명 등 주요 보험 관련 기업으로 구성된다.",
+            "keyword": "보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertFalse(analyzer.is_stock_market_sector_noise_article(article))
+        self.assertEqual(article["_category"], "industry")
+
+    def test_kt_musical_baseball_marketing_is_not_competitor_article(self) -> None:
+        article = {
+            "title": "충성 고객 확실히 챙긴다, KT 장기 고객 1200명 뮤지컬 초청",
+            "description": "KT는 프로야구 시즌 동안 위즈파크 캠핑존 초대 혜택도 운영한다.",
+            "keyword": "프로야구",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_entertainment_marketing_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_celebrity_insurance_agent_profile_is_noise(self) -> None:
+        article = {
+            "title": "쥬얼리 출신 조민아, 보험왕 됐다",
+            "description": "조민아가 SNS를 통해 보험 설계사 MVP 수상 근황을 전했다.",
+            "keyword": "보험설계사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_celeb_insurance_agent_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_political_media_digest_with_incidental_insurance_quote_is_noise(self) -> None:
+        article = {
+            "title": "지지율 오른 국힘, 부정선거론 제기 논란",
+            "description": "신문 사설은 금융당국, 수사기관, 보험업계가 정보를 공유해야 한다는 다른 기사도 함께 다뤘다.",
+            "keyword": "보험업계",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_political_media_digest_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_community_event_attendee_list_with_insurer_executive_is_noise(self) -> None:
+        article = {
+            "title": "서울제주도민회 회장 이·취임식 및 지방선거 당선인 축하연 성료",
+            "description": "농협손해보험 부사장, 구청장 당선인 등 주요 인사 300여 명이 자리를 빛냈다.",
+            "keyword": "손해보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_community_event_attendee_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_hormuz_shipping_insurance_stays_noise_even_with_nonlife_keyword(self) -> None:
+        article = {
+            "title": "[미-이란 종전합의] 호르무즈 정상화 수순…손보사들 한숨 돌리나",
+            "description": "호르무즈 해협 통항과 선박보험 보험료 부담이 완화될 수 있다는 해운 리스크 기사입니다.",
+            "keyword": "손해보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_external_insurance_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_incar_masters_photo_without_score_words_is_noise(self) -> None:
+        article = {
+            "title": "[포토]‘인카금융 더헤븐 마스터즈’감사합니다",
+            "description": "대회 현장 사진 기사입니다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_market_short_selling_listing_with_insurer_name_is_noise(self) -> None:
+        article = {
+            "title": "[공매도 브리핑] SK하이닉스 공매도 2513억…유한양행 비중 33.38%",
+            "description": "농심, 미원상사, 영풍, DB손해보험이 뒤를 이었다는 종목 순위표 기사입니다.",
+            "keyword": "손해보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_stock_market_sector_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_insurance_stock_sector_focus_is_kept_after_listing_tightening(self) -> None:
+        article = {
+            "title": "보험주 재평가 본격화…수익성·주주환원 모두 기대",
+            "description": "보험지수가 강세를 보이며 보험업종 주주환원 기대가 부각됐습니다.",
+            "keyword": "보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertFalse(analyzer.is_stock_market_sector_noise_article(article))
+        self.assertNotEqual(article["_category"], "other")
+
+    def test_overseas_local_adjuster_article_is_noise(self) -> None:
+        article = {
+            "title": "[JPA Adjusters & Associates] 침수·화재 사고, 보험사가 놓친 피해까지 찾아낸다",
+            "description": "미주 지역 보험 클레임 조정사 홍보 기사입니다.",
+            "source": "미주중앙일보",
+            "keyword": "보험사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_overseas_local_insurance_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_foreign_macro_life_insurer_incidental_article_is_noise(self) -> None:
+        article = {
+            "title": "해외서 돈 벌어도 안 들어오면 소용없다···환율 안정 효과 떨어지는 이유",
+            "description": "대만은 해외투자의 상당 부분이 생명보험사를 중심으로 한 증권투자로 이뤄진다는 거시경제 분석입니다.",
+            "keyword": "생명보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_foreign_macro_insurance_incidental_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_worldcup_partner_exposure_is_not_insurance_industry_article(self) -> None:
+        article = {
+            "title": "[월드컵 이모저모] 새벽 6시 치킨집 출근부터 7000명 거리응원까지",
+            "description": "교보생명은 월드컵부터 보험업계 유일의 국가대표팀 공식 파트너로 캠페인을 공개했다.",
+            "keyword": "보험업계",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_sports_sponsorship_incidental_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_hormuz_security_column_is_noise_even_when_insurance_industry_is_mentioned(self) -> None:
+        article = {
+            "title": "[안보칼럼] 호르무즈해협 안전보장을 위한 대한민국의 역할과 한계",
+            "description": "국제해사기구와 해운·보험업계가 인정할 수 있는 안전항로 인증이 필요하다는 안보 칼럼입니다.",
+            "keyword": "보험업계",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_external_geopolitical_shipping_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_source_domain_ga_letters_do_not_keep_hormuz_noise(self) -> None:
+        article = {
+            "title": "美정보기관 “이란에 내준 호르무즈 통제권, 핵무기보다 강력”",
+            "description": "해운 통항과 보험사 부담을 다룬 국제 안보 기사로 국내 영업조직 문맥은 없습니다.",
+            "source": "donga.com",
+            "keyword": "보험사",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_external_geopolitical_shipping_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_own_golf_sports_preview_is_noise_even_with_title_sponsor_mention(self) -> None:
+        article = {
+            "title": "우승 후보 총출동! 바다 품은 더헤븐CC서 KLPGA 별들의 격돌",
+            "description": "올해 대회는 더헤븐리조트와 국내 대표 보험대리점 기업 인카금융서비스가 공동 주최한다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_own_golf_event_logistics_is_noise(self) -> None:
+        article = {
+            "title": "'인카금융 더헤븐 마스터즈' 주차·셔틀·날씨까지 알아두면 좋은 관람 정보",
+            "description": "갤러리를 위한 대회 관람 동선과 셔틀버스 운행 정보를 정리한 기사입니다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_own_golf_preview_headline_is_noise(self) -> None:
+        article = {
+            "title": "[PREVIEW] 인카금융 더헤븐 마스터즈",
+            "description": "KLPGA 대회 일정과 출전 선수, 코스 공략 포인트를 소개하는 경기 프리뷰입니다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_third_party_tournament_partner_marketing_is_noise(self) -> None:
+        article = {
+            "title": "[N포커스] 하루틴의 이유 있는 일상 침투…'팬심' 저격 마케팅으로 입지 확대",
+            "description": "KLPGA 인카금융 더헤븐 마스터즈에 하루틴이 협찬사로 참여했다는 제3 브랜드 마케팅 기사입니다.",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_own_sponsored_sports_preview_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+
+    def test_own_golf_sponsorship_pr_story_is_kept(self) -> None:
+        article = {
+            "title": "인카금융서비스, KLPGA 정규 골프대회 후원",
+            "description": "인카금융서비스가 KLPGA 정규 골프대회 후원을 통해 브랜드 홍보와 스포츠마케팅을 확대한다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertFalse(analyzer.is_own_sponsored_sports_preview_noise_article(article))
+        self.assertEqual(article["_category"], "own")
+
+    def test_general_sports_keyword_article_is_noise(self) -> None:
+        article = {
+            "title": "'전국 날씨 비 소식' 프로야구 구장 경기 진행 여부 주목",
+            "description": "KBO 경기 우천취소 가능성과 구장별 날씨 상황을 전한 일반 스포츠 기사입니다.",
+            "keyword": "프로야구",
+            "keyword_category": "other",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertTrue(analyzer.is_general_sports_noise_article(article))
         self.assertEqual(article["_category"], "other")
 
 

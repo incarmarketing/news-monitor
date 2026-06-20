@@ -159,6 +159,151 @@ class DashboardSummaryTests(unittest.TestCase):
         self.assertNotIn("한양증권 220억 조기상환 거부한 중앙일보, 하나은행에 워크아웃 신청", titles)
         self.assertIn("금감원·8대 금융지주, 소비자보호 맞손", titles)
 
+    def test_second_pass_noise_articles_are_removed_from_dashboard_rows(self) -> None:
+        archives = [
+            {
+                "date": "2026-06-20",
+                "window": {"label": "오후", "slot": "13"},
+                "metrics": {},
+                "articles": [
+                    {
+                        "title": "호르무즈 통항료 국제법 위반 논란에 이란, 독점 유료 보험 의무화 추진",
+                        "description": "선주가 승인 보험에 가입해야 하고 미국 은행이나 보험사가 연루될 경우 제재 위험이 거론됐다.",
+                        "source": "한국일보",
+                        "keyword": "보험사",
+                        "_category": "industry",
+                        "_tone": "caution",
+                        "_score": 90,
+                    },
+                    {
+                        "title": "이글 2방 서교림, 인카금융 더 헤븐 1라운드 공동 선두",
+                        "description": "KLPGA 대회 1라운드에서 서교림과 김민별이 공동 선두에 올랐다.",
+                        "source": "한스경제",
+                        "keyword": "인카금융",
+                        "_category": "own",
+                        "_tone": "positive",
+                        "_score": 88,
+                    },
+                    {
+                        "title": "보험주 재평가 본격화, 수익성·주주환원 모두 기대",
+                        "description": "보험지수는 삼성생명, DB손해보험, 한화생명 등 주요 보험 관련 기업으로 구성된다.",
+                        "source": "보험매일",
+                        "keyword": "보험",
+                        "_category": "industry",
+                        "_tone": "neutral",
+                        "_score": 70,
+                    },
+                ],
+            }
+        ]
+
+        rows = dashboard_builder.build_articles(archives)
+
+        titles = [row["title"] for row in rows]
+        self.assertNotIn("호르무즈 통항료 국제법 위반 논란에 이란, 독점 유료 보험 의무화 추진", titles)
+        self.assertNotIn("이글 2방 서교림, 인카금융 더 헤븐 1라운드 공동 선두", titles)
+        self.assertIn("보험주 재평가 본격화, 수익성·주주환원 모두 기대", titles)
+
+    def test_third_pass_noise_articles_are_removed_from_dashboard_rows(self) -> None:
+        archives = [
+            {
+                "date": "2026-06-20",
+                "window": {"label": "오후", "slot": "13"},
+                "metrics": {},
+                "articles": [
+                    {
+                        "title": "[포토]‘인카금융 더헤븐 마스터즈’감사합니다",
+                        "description": "대회 현장 사진 기사입니다.",
+                        "source": "이데일리",
+                        "keyword": "인카금융",
+                        "_category": "own",
+                        "_tone": "neutral",
+                        "_score": 90,
+                    },
+                    {
+                        "title": "[공매도 브리핑] SK하이닉스 공매도 2513억…유한양행 비중 33.38%",
+                        "description": "농심, 미원상사, 영풍, DB손해보험이 뒤를 이었다는 종목 순위표 기사입니다.",
+                        "source": "톱스타뉴스",
+                        "keyword": "손해보험",
+                        "_category": "industry",
+                        "_tone": "neutral",
+                        "_score": 80,
+                    },
+                    {
+                        "title": "[JPA Adjusters & Associates] 침수·화재 사고, 보험사가 놓친 피해까지 찾아낸다",
+                        "description": "미주 지역 보험 클레임 조정사 홍보 기사입니다.",
+                        "source": "미주중앙일보",
+                        "keyword": "보험사",
+                        "_category": "industry",
+                        "_tone": "neutral",
+                        "_score": 70,
+                    },
+                    {
+                        "title": "보험주 재평가 본격화…수익성·주주환원 모두 기대",
+                        "description": "보험지수가 강세를 보이며 보험업종 주주환원 기대가 부각됐습니다.",
+                        "source": "보험매일",
+                        "keyword": "보험",
+                        "_category": "industry",
+                        "_tone": "neutral",
+                        "_score": 85,
+                    },
+                ],
+            }
+        ]
+
+        rows = dashboard_builder.build_articles(archives)
+
+        titles = [row["title"] for row in rows]
+        self.assertNotIn("[포토]‘인카금융 더헤븐 마스터즈’감사합니다", titles)
+        self.assertNotIn("[공매도 브리핑] SK하이닉스 공매도 2513억…유한양행 비중 33.38%", titles)
+        self.assertNotIn("[JPA Adjusters & Associates] 침수·화재 사고, 보험사가 놓친 피해까지 찾아낸다", titles)
+        self.assertIn("보험주 재평가 본격화…수익성·주주환원 모두 기대", titles)
+
+    def test_fourth_pass_noise_articles_are_removed_but_sponsorship_pr_is_kept(self) -> None:
+        archives = [
+            {
+                "date": "2026-06-20",
+                "window": {"label": "오후", "slot": "13"},
+                "metrics": {},
+                "articles": [
+                    {
+                        "title": "[안보칼럼] 호르무즈해협 안전보장을 위한 대한민국의 역할과 한계",
+                        "description": "국제해사기구와 해운·보험업계가 인정할 수 있는 안전항로 인증이 필요하다는 안보 칼럼입니다.",
+                        "source": "코나스",
+                        "keyword": "보험업계",
+                        "_category": "industry",
+                        "_tone": "neutral",
+                        "_score": 70,
+                    },
+                    {
+                        "title": "우승 후보 총출동! 바다 품은 더헤븐CC서 KLPGA 별들의 격돌",
+                        "description": "올해 대회는 더헤븐리조트와 국내 대표 보험대리점 기업 인카금융서비스가 공동 주최한다.",
+                        "source": "STN스포츠",
+                        "keyword": "인카금융서비스",
+                        "_category": "own",
+                        "_tone": "neutral",
+                        "_score": 90,
+                    },
+                    {
+                        "title": "인카금융서비스, KLPGA 정규 골프대회 후원",
+                        "description": "인카금융서비스가 KLPGA 정규 골프대회 후원을 통해 브랜드 홍보와 스포츠마케팅을 확대한다.",
+                        "source": "보험신보",
+                        "keyword": "인카금융서비스",
+                        "_category": "own",
+                        "_tone": "neutral",
+                        "_score": 100,
+                    },
+                ],
+            }
+        ]
+
+        rows = dashboard_builder.build_articles(archives)
+
+        titles = [row["title"] for row in rows]
+        self.assertNotIn("[안보칼럼] 호르무즈해협 안전보장을 위한 대한민국의 역할과 한계", titles)
+        self.assertNotIn("우승 후보 총출동! 바다 품은 더헤븐CC서 KLPGA 별들의 격돌", titles)
+        self.assertIn("인카금융서비스, KLPGA 정규 골프대회 후원", titles)
+
 
 if __name__ == "__main__":
     unittest.main()

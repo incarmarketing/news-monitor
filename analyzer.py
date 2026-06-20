@@ -163,6 +163,7 @@ PHOTO_SPORTS_NOISE_WORDS = [
 
 OWN_SPONSORED_SPORTS_TRIGGERS = [
     "인카금융 더헤븐 마스터즈", "인카금융 더 헤븐 마스터즈", "인카금융서비스 더헤븐 마스터즈",
+    "인카금융 더 헤븐", "인카금융 더헤븐", "더헤븐CC", "더 헤븐",
     "KLPGA", "골프", "라운드", "티샷", "버디", "이글", "스윙", "선두", "공동", "순위",
     "우승", "상금", "홀", "언더파", "타수", "선수",
 ]
@@ -230,12 +231,14 @@ EXTERNAL_INSURANCE_NOISE_TRIGGERS = [
 EXTERNAL_INSURANCE_NOISE_TERMS = [
     "보험 수수료", "보험수수료", "보험증권", "보험 증권", "통항 수수료",
     "수수료 부과", "보험료", "보험료 부과", "보험사", "보험 가입 의무",
+    "유료 보험", "보험 의무화", "통항료", "보험 제공", "보험 업계",
 ]
 
 EXTERNAL_INSURANCE_KEEP_TERMS = [
-    "생명보험", "손해보험", "보험대리점", "법인보험대리점", "보험설계사",
+    "보험대리점", "법인보험대리점", "보험설계사",
     "GA", "인카금융", "금융감독원", "금감원", "금융위원회", "금융위",
-    "보험업법", "불완전판매", "보험사기", "실손", "손해율", "보험금", "해상보험",
+    "보험업법", "불완전판매", "보험사기", "실손", "손해율", "보험금 지급",
+    "보험계약", "정착지원금", "1200%",
 ]
 
 GENERAL_FINANCE_NOISE_RE = re.compile(
@@ -243,7 +246,7 @@ GENERAL_FINANCE_NOISE_RE = re.compile(
     re.I,
 )
 INSURANCE_GA_KEEP_RE = re.compile(
-    r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회|금융소비자보호",
+    r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회|금융소비자보호",
     re.I,
 )
 ADMIN_AGENCY_NOISE_RE = re.compile(
@@ -272,6 +275,66 @@ AMBIGUOUS_COMPETITOR_HOMONYM_NOISE_RE = re.compile(
 )
 SPORTS_OCCUPATION_INSURANCE_AGENT_NOISE_RE = re.compile(
     r"손흥민|이강인|축구|월드컵|A매치|옐로카드|레드카드|퇴장|주심|심판|파울|경고|PSG|파리생제르맹",
+    re.I,
+)
+STOCK_MARKET_SECTOR_NOISE_RE = re.compile(
+    r"코스피|코스닥|공매도|지수선물|옵션|마감시황|장중\s*최고치|하락\s*출발|상승폭\s*반납|순매수|업종별|테마별|등락률|생명보험\(\+|손해보험\(\+|보험지수",
+    re.I,
+)
+INSURANCE_STOCK_MARKET_KEEP_RE = re.compile(
+    r"보험주|보험지수|손해보험업종|생명보험업종|주주환원|보험업종",
+    re.I,
+)
+ENTERTAINMENT_MARKETING_NOISE_RE = re.compile(
+    r"KT|위즈파크|뮤지컬|그날들|캠핑존|초청|충성\s*고객|프로야구\s*시즌|장기\s*고객|콘서트|팬미팅",
+    re.I,
+)
+CELEBRITY_INSURANCE_AGENT_NOISE_RE = re.compile(
+    r"조민아|쥬얼리|서인영|셀럽|싱글맘|인스타그램|SNS|좋아요|보험왕|연예인|가수|방송인",
+    re.I,
+)
+POLITICAL_MEDIA_DIGEST_NOISE_RE = re.compile(
+    r"지지율|국힘|민주당|부정선거론|민심|정치권|선거|대통령|중앙일보\s+민심|신문\s*사설|데스크\s*칼럼",
+    re.I,
+)
+COMMUNITY_EVENT_ATTENDEE_NOISE_RE = re.compile(
+    r"도민회|향우회|이[·ㆍ]?취임식|취임식|축하연|당선인|지방선거|구청장|도의원|주요\s*인사|자리를\s*빛냈",
+    re.I,
+)
+SPORTS_SPONSORSHIP_INCIDENTAL_NOISE_RE = re.compile(
+    r"월드컵|거리응원|치킨집|축구|국가대표팀|프로야구|KBO|스포츠마케팅|팬심|팬덤|하루틴|골프청사진|티샷|공동\s*선두",
+    re.I,
+)
+OVERSEAS_LOCAL_INSURANCE_NOISE_RE = re.compile(
+    r"미주중앙일보|JPA\s*Adjusters|Adjusters\s*&\s*Associates|어저스터|침수[·ㆍ]화재|보험사가\s*놓친\s*피해|미주|LA|뉴욕",
+    re.I,
+)
+FOREIGN_MACRO_INSURANCE_INCIDENTAL_NOISE_RE = re.compile(
+    r"대만|해외투자소득|환율\s*안정|해외서\s*돈\s*벌어도|생명보험사를\s*중심으로\s*한\s*증권투자|중앙은행|수출업체",
+    re.I,
+)
+EXTERNAL_GEOPOLITICAL_SHIPPING_NOISE_RE = re.compile(
+    r"호르무즈|이란|해협|유조선|해운|선박|통항|해상통항|해상\s*통항|중동|원유",
+    re.I,
+)
+EXTERNAL_GEOPOLITICAL_SHIPPING_CONTEXT_RE = re.compile(
+    r"보험|보험사|보험업계|해운[·ㆍ]보험업계|안전항로|유료\s*호위|위험해역|국제해사기구|IMO|보험\s*약관",
+    re.I,
+)
+EXTERNAL_GEOPOLITICAL_SHIPPING_KEEP_RE = re.compile(
+    r"인카금융|보험대리점|법인보험대리점|보험GA|보험설계사|설계사|1200%|정착지원금|불완전판매|보험사기|실손|손해율",
+    re.I,
+)
+OWN_SPONSORED_SPORTS_PREVIEW_TITLE_RE = re.compile(
+    r"KLPGA|골프|우승\s*후보|개막|디펜딩\s*챔피언|방어|노승희|안송이|400경기|금자탑|기념보드|꽃다발|선수|티샷|포토|청사진|액티브Shot|인생이야기|별들의\s*격돌|주차|셔틀|날씨|관람\s*정보|갤러리|프로암|이모저모|러프|웃음꽃|하루틴|팬심|협찬사|일상\s*침투|PREVIEW|프리뷰|3승\s*사냥|사냥|더헤븐리조트|커뮤니티\s*시설|샬롬\s*뷰|품격\s*높인다",
+    re.I,
+)
+GENERAL_SPORTS_NOISE_RE = re.compile(
+    r"프로야구|프로농구|프로배구|KBO|월드컵|축구|야구|농구|배구|골프|KLPGA|US오픈|우천취소|구장|경기\s*진행|비거리|스포츠\s*바|비키니\s*미녀|황금\s*패치",
+    re.I,
+)
+GENERAL_SPORTS_KEEP_RE = re.compile(
+    r"인카금융|보험|보험사|생명보험|손해보험|보험대리점|법인보험대리점|보험설계사|보험GA|금융감독원|금감원|금융위원회|금융위|1200%|정착지원금|불완전판매|소비자보호",
     re.I,
 )
 
@@ -643,6 +706,12 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["negative_target"] = "none"
         result["own_mentioned"] = True
 
+    if is_settlement_support_list_article(article):
+        result["category"] = "regulation"
+        result["tone"] = "caution"
+        result["negative_target"] = "none"
+        result["own_mentioned"] = is_own_article(article)
+
     if is_non_business_noise(article):
         result["category"] = "other"
         result["tone"] = "neutral"
@@ -787,6 +856,10 @@ def categorize(article: dict) -> str:
         return "other"
     if rule_category in KEYWORD_CATEGORIES:
         return rule_category
+    if is_competitor_brand_reputation_against_own(article):
+        return "competitor"
+    if is_settlement_support_list_article(article):
+        return "regulation"
     if contains_own_name(text):
         return "own"
     if is_sales_conduct_context_text(text):
@@ -1028,6 +1101,274 @@ def is_sports_occupation_insurance_agent_noise_article(article: dict) -> bool:
     return is_sports_occupation_insurance_agent_noise_text(text)
 
 
+def is_stock_market_sector_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not STOCK_MARKET_SECTOR_NOISE_RE.search(text):
+        return False
+    if INSURANCE_STOCK_MARKET_KEEP_RE.search(text):
+        return False
+    return bool(re.search(r"생명보험|손해보험|보험사|보험업종|보험지수", text, re.I))
+
+
+def is_stock_market_sector_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_stock_market_sector_noise_text(text)
+
+
+def is_entertainment_marketing_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not ENTERTAINMENT_MARKETING_NOISE_RE.search(text):
+        return False
+    return not bool(re.search(r"인카금융|보험|GA|법인보험대리점|보험대리점|설계사", text, re.I))
+
+
+def is_entertainment_marketing_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_entertainment_marketing_noise_text(text)
+
+
+def is_celeb_insurance_agent_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not CELEBRITY_INSURANCE_AGENT_NOISE_RE.search(text):
+        return False
+    if not re.search(r"보험\s*설계사|보험왕|MVP|QUEEN|수상|근황", text, re.I):
+        return False
+    return not bool(re.search(r"보험대리점|법인보험대리점|GA|보험GA|영업조직|불완전판매|소비자보호|보험업계", text, re.I))
+
+
+def is_celeb_insurance_agent_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_celeb_insurance_agent_noise_text(text)
+
+
+def is_political_media_digest_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not POLITICAL_MEDIA_DIGEST_NOISE_RE.search(text):
+        return False
+    return not bool(re.search(r"인카금융|보험대리점|법인보험대리점|GA|보험GA|생명보험|손해보험|보험사기|보험금|실손|1200%|정착지원금", text, re.I))
+
+
+def is_political_media_digest_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_political_media_digest_noise_text(text)
+
+
+def is_community_event_attendee_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not COMMUNITY_EVENT_ATTENDEE_NOISE_RE.search(text):
+        return False
+    return not bool(re.search(r"보험상품|보험계약|보험금|보험료|손해율|실손|보험사기|업무협약|캠페인|출시|판매|소비자보호|인카금융", text, re.I))
+
+
+def is_community_event_attendee_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_community_event_attendee_noise_text(text)
+
+
+def is_sports_sponsorship_incidental_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not SPORTS_SPONSORSHIP_INCIDENTAL_NOISE_RE.search(text):
+        return False
+    if re.search(r"인카금융|보험대리점|법인보험대리점|보험GA|GA|보험설계사|설계사|1200%|정착지원금|불완전판매|보험사기", text, re.I):
+        return False
+    return bool(re.search(r"교보생명|KB금융|DB손해보험|손해보험|생명보험|보험업계|보험사", text, re.I)) and bool(
+        re.search(r"공식\s*파트너|파트너|캠페인|후원|협찬|이모저모|거리응원|팬심|팬덤|티샷|공동\s*선두|라운드", text, re.I)
+    )
+
+
+def is_sports_sponsorship_incidental_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("source"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_sports_sponsorship_incidental_noise_text(text)
+
+
+def is_overseas_local_insurance_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not OVERSEAS_LOCAL_INSURANCE_NOISE_RE.search(text):
+        return False
+    return not bool(re.search(r"인카금융|국내\s*보험|금융감독원|금감원|금융위원회|금융위|GA|보험대리점|법인보험대리점|실손|1200%|정착지원금", text, re.I))
+
+
+def is_overseas_local_insurance_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("source"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_overseas_local_insurance_noise_text(text)
+
+
+def is_foreign_macro_insurance_incidental_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not FOREIGN_MACRO_INSURANCE_INCIDENTAL_NOISE_RE.search(text):
+        return False
+    return not bool(re.search(r"인카금융|국내\s*보험|보험대리점|법인보험대리점|GA|보험설계사|실손|1200%|정착지원금|불완전판매|보험사기", text, re.I))
+
+
+def is_foreign_macro_insurance_incidental_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("source"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_foreign_macro_insurance_incidental_noise_text(text)
+
+
+def is_external_geopolitical_shipping_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not EXTERNAL_GEOPOLITICAL_SHIPPING_NOISE_RE.search(text):
+        return False
+    if not EXTERNAL_GEOPOLITICAL_SHIPPING_CONTEXT_RE.search(text):
+        return False
+    return not bool(EXTERNAL_GEOPOLITICAL_SHIPPING_KEEP_RE.search(text))
+
+
+def is_external_geopolitical_shipping_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("source"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return is_external_geopolitical_shipping_noise_text(text)
+
+
+def is_general_sports_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("source"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    return bool(GENERAL_SPORTS_NOISE_RE.search(text)) and not bool(GENERAL_SPORTS_KEEP_RE.search(text))
+
+
+def is_own_sponsored_sports_preview_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    title = " ".join(str(value or "") for value in (article.get("title"), raw.get("title")))
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("source"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            article.get("summary"),
+            article.get("keyword"),
+        )
+    )
+    if not (contains_own_name(text) or re.search(r"인카금융[^\s]*\s*더\s*헤븐|인카금융[^\s]*\s*더헤븐|더헤븐CC", text)):
+        return False
+    if re.search(r"인카금융|인카금융서비스", title) and re.search(r"후원|스폰서|주최|브랜드|마케팅|기부|사회공헌|ESG", title):
+        return False
+    if OWN_SPONSORED_SPORTS_PREVIEW_TITLE_RE.search(title):
+        return True
+    return bool(
+        re.search(r"대회\s*주최사\s*인카금융서비스|타이틀스폰서로\s*합류|공동\s*주최사", text, re.I)
+        and OWN_SPONSORED_SPORTS_PREVIEW_TITLE_RE.search(text)
+        and not re.search(r"후원|브랜드|마케팅|기부|사회공헌|ESG", title)
+    )
+
+
 def is_own_sponsored_sports_noise_text(text: str) -> bool:
     text = str(text or "")
     if not contains_own_name(text) and "인카금융 더헤븐 마스터즈" not in text and "인카금융 더 헤븐 마스터즈" not in text:
@@ -1044,6 +1385,8 @@ def is_own_sponsored_sports_scoreboard_title(title: object) -> bool:
     if not (
         re.search(r"인카금융(?:서비스)?\s*더\s*헤븐\s*마스터즈", text)
         or re.search(r"인카금융(?:서비스)?\s*더헤븐\s*마스터즈", text)
+        or re.search(r"인카금융(?:서비스)?\s*더\s*헤븐", text)
+        or re.search(r"인카금융(?:서비스)?\s*더헤븐", text)
     ):
         return False
     if any(term in text for term in OWN_SPONSORED_SPORTS_TITLE_KEEP_TERMS):
@@ -1059,6 +1402,8 @@ def is_own_sponsored_sports_scoreboard_title(title: object) -> bool:
 
 def is_own_sponsored_sports_noise_article(article: dict) -> bool:
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    if is_own_sponsored_sports_preview_noise_article(article):
+        return True
     if is_own_sponsored_sports_scoreboard_title(article.get("title")) or is_own_sponsored_sports_scoreboard_title(raw.get("title")):
         return True
     text = " ".join(
@@ -1189,6 +1534,26 @@ def is_non_business_noise(article: dict) -> bool:
     if is_ambiguous_competitor_homonym_noise_article(article):
         return True
     if is_sports_occupation_insurance_agent_noise_article(article):
+        return True
+    if is_stock_market_sector_noise_article(article):
+        return True
+    if is_entertainment_marketing_noise_article(article):
+        return True
+    if is_celeb_insurance_agent_noise_article(article):
+        return True
+    if is_political_media_digest_noise_article(article):
+        return True
+    if is_community_event_attendee_noise_article(article):
+        return True
+    if is_sports_sponsorship_incidental_noise_article(article):
+        return True
+    if is_overseas_local_insurance_noise_article(article):
+        return True
+    if is_foreign_macro_insurance_incidental_noise_article(article):
+        return True
+    if is_external_geopolitical_shipping_noise_article(article):
+        return True
+    if is_general_sports_noise_article(article):
         return True
     if is_own_sponsored_sports_noise_article(article):
         return True
@@ -1482,6 +1847,22 @@ def is_settlement_support_caution_article(article: dict) -> bool:
     return (not own_in_title and (own_list_mention or industry_title)) or (
         own_in_title and any(word in text for word in ("공시", "지급 규모", "순이다", "전년 동기"))
     )
+
+
+def is_settlement_support_list_article(article: dict) -> bool:
+    text = article.get("title", "") + " " + article.get("description", "")
+    if is_sales_conduct_article(article):
+        return False
+    has_context = any(word in text for word in SETTLEMENT_SUPPORT_CONTEXT_WORDS)
+    has_severe_signal = any(word in text for word in SETTLEMENT_SUPPORT_SEVERE_WORDS)
+    if not has_context or has_severe_signal:
+        return False
+
+    title = article.get("title", "")
+    own_in_title = any(name in title for name in OWN_NAMES)
+    own_list_mention = bool(re.search(r"[△,·]\s*인카금융서비스|\b인카금융서비스\(\d+억", text))
+    industry_title = any(word in title for word in ("GA들", "초대형 GA", "GA ", "GA설계사", "1200% 룰", "1200%룰", "정착지원금"))
+    return not own_in_title and (own_list_mention or industry_title)
 
 
 def cluster_articles(articles: list[dict], threshold: float = 0.62) -> list[dict]:
@@ -1800,19 +2181,20 @@ def is_competitor_brand_reputation_against_own(article: dict) -> bool:
         return False
     if not any(name in text for name in OWN_NAMES):
         return False
+    competitor_names = r"한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋"
+    competitor_first = re.search(
+        rf"(?:({competitor_names})[^.。!?]{{0,45}}(?:1위|선두|탈환)|(?:1위|선두|탈환)[^.。!?]{{0,45}}({competitor_names}))",
+        text,
+        re.I,
+    )
     own_first = re.search(
         r"인카금융(?:서비스)?\s*(?:가|은|는|,)?\s*(?:GA|독립 보험대리점|보험대리점|브랜드평판)?\s*(?:1위|선두|최고|최상위)",
         text,
     )
-    if own_first:
+    if own_first and not competitor_first:
         return False
-    competitor_first = re.search(
-        r"(한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋)[^.。!?]{0,35}(?:1위|선두|탈환)",
-        text,
-        re.I,
-    )
     own_follow = re.search(r"(?:인카금융(?:서비스)?[^.。!?]{0,45}(?:2위|뒤이어|초박빙|추격)|(?:2위|뒤이어|초박빙|추격)[^.。!?]{0,45}인카금융(?:서비스)?)", text)
-    return bool(competitor_first and own_follow)
+    return bool(competitor_first and (own_follow or contains_own_name(text)))
 
 
 def is_insurance_loss_context_article(article: dict) -> bool:
