@@ -39,18 +39,17 @@ class SlackDailyPayloadTests(unittest.TestCase):
 
         _, payload = slack_notify.build_daily_payload(report, "https://example.com/report.html")
         header_block = payload["blocks"][0]["text"]["text"]
-        metric_block = payload["blocks"][1]["text"]["text"]
+        metric_block = payload["blocks"][1]
         key_issue_block = payload["blocks"][3]["text"]["text"]
 
-        self.assertIn("```", metric_block)
-        self.assertNotIn("fields", payload["blocks"][1])
-        self.assertIn("\ub9ac\uc2a4\ud06c", metric_block)
-        self.assertIn("LOW", metric_block)
-        self.assertIn("\ubd84\uc11d", metric_block)
-        self.assertIn("2", metric_block)
-        self.assertIn("\uae0d\uc815", metric_block)
-        self.assertIn("\uc911\ub9bd", metric_block)
-        self.assertIn("\ubd80\uc815", metric_block)
+        self.assertEqual(metric_block["type"], "table")
+        self.assertNotIn("fields", metric_block)
+        self.assertEqual(
+            [cell["text"] for cell in metric_block["rows"][0]],
+            ["\ub9ac\uc2a4\ud06c", "\ubd84\uc11d", "\ub2f9\uc0ac", "\ubd80\uc815", "\uae0d\uc815", "\uc911\ub9bd"],
+        )
+        self.assertEqual([cell["text"] for cell in metric_block["rows"][1]], ["LOW", "2", "1", "0", "1", "0"])
+        self.assertTrue(all(setting["align"] == "center" for setting in metric_block["column_settings"]))
         self.assertNotIn(slack_notify.K["default_conclusion"], header_block)
         self.assertIn("\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4", key_issue_block)
         self.assertNotIn("GA\uc5c5\uacc4 \ucd5c\ub2e4", key_issue_block)

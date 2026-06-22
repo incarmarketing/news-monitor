@@ -110,6 +110,10 @@ def text_obj(text: str, *, plain: bool = False) -> dict:
     return {"type": "plain_text" if plain else "mrkdwn", "text": str(text or "")[:3000]}
 
 
+def raw_text_obj(text: object) -> dict:
+    return {"type": "raw_text", "text": str(text if text is not None else "-")[:75]}
+
+
 def section(text: str, fields: list[str] | None = None) -> dict:
     block = {"type": "section", "text": text_obj(text)}
     if fields:
@@ -132,25 +136,29 @@ def divider() -> dict:
 
 def metric_table_block(report: dict, metrics: dict) -> dict:
     own_tone = metrics.get("own_by_tone", {}) or {}
+    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
     own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
     positive = own_tone.get("positive", 0)
     neutral = own_tone.get("neutral", 0)
     risk = metrics.get("risk_level", "-")
     analyzed = daily_analyzed_count(metrics)
-    headers = [K["risk"], K["analyzed_short"], K["positive_short"], K["neutral_short"], K["negative_short"]]
-    values = [risk, analyzed, positive, neutral, own_negative]
-    widths = [6, 6, 5, 5, 5]
-    header_line = " ".join(center_cell(label, width) for label, width in zip(headers, widths))
-    value_line = " ".join(center_cell(value, width) for value, width in zip(values, widths))
-    return section(f"*{K['report_basis']}*\n```{header_line}\n{value_line}```")
-
-
-def center_cell(value: object, width: int) -> str:
-    text = str(value if value is not None else "-").strip()
-    if len(text) >= width:
-        return text[:width]
-    pad = width - len(text)
-    return (" " * (pad // 2)) + text + (" " * (pad - pad // 2))
+    headers = [
+        K["risk"],
+        K["analyzed_short"],
+        K["own_short"],
+        K["negative_short"],
+        K["positive_short"],
+        K["neutral_short"],
+    ]
+    values = [risk, analyzed, own_total, own_negative, positive, neutral]
+    return {
+        "type": "table",
+        "column_settings": [{"align": "center"} for _ in headers],
+        "rows": [
+            [raw_text_obj(value) for value in headers],
+            [raw_text_obj(value) for value in values],
+        ],
+    }
 
 
 def load_latest_daily() -> dict:
