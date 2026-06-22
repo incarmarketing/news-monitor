@@ -304,12 +304,13 @@ function normalizeDeepLinkCategory(value) {
     competitor: "GA",
     regulation: "정책/규제",
     industry: "보험사",
-    sponsorship: "브랜드/스폰서십",
+    sponsorship: "스폰서십",
     "당사": "당사",
     "ga": "GA",
     "보험사": "보험사",
     "정책/규제": "정책/규제",
-    "브랜드/스폰서십": "브랜드/스폰서십",
+    "브랜드/스폰서십": "스폰서십",
+    "스폰서십": "스폰서십",
   }[category] || "";
 }
 
@@ -5127,7 +5128,7 @@ function selectReportFrontArticle(articles = [], issues = []) {
 
 function reportFrontScore(item = {}) {
   const own = isOwnArticle(item);
-  const sponsorship = isOwnSponsoredSportsArticle(item) || item.category === "브랜드/스폰서십";
+  const sponsorship = isOwnSponsoredSportsArticle(item) || ["브랜드/스폰서십", "스폰서십"].includes(item.category);
   const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`;
   let score = 0;
   if (own && !sponsorship) score += 1000;
@@ -6677,7 +6678,7 @@ function articleIdentityCandidates(article = {}) {
 function displayCategory(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
-  if (canonical === "sponsorship" || /브랜드|스폰서|후원/.test(text)) return "브랜드/스폰서십";
+  if (canonical === "sponsorship" || /브랜드|스폰서|후원/.test(text)) return "스폰서십";
   if (canonical === "own" || /당사/.test(text)) return "당사";
   if (canonical === "regulation" || /정책|규제/.test(text)) return "정책/규제";
   if (canonical === "competitor" || /경쟁|GA|보험사/.test(text)) return "경쟁사";
@@ -6778,7 +6779,7 @@ function riskLevelFromTone(tone = "") {
   return "LOW";
 }
 
-const FEEDBACK_CATEGORY_OPTIONS = ["당사", "브랜드/스폰서십", "GA", "보험사", "정책/규제", "업계동향", "기타", "제외"];
+const FEEDBACK_CATEGORY_OPTIONS = ["당사", "스폰서십", "GA", "보험사", "정책/규제", "업계동향", "기타", "제외"];
 const FEEDBACK_TONE_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 
 function ArticleCorrectionControl({ article, onSaved }) {
@@ -7898,7 +7899,7 @@ function normalizeIssueEntityKey(article = {}) {
 
 function dashboardIssueScore(issue = {}) {
   const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
-  const sponsorship = members.some(isOwnSponsoredSportsArticle) || issue.category === "브랜드/스폰서십";
+  const sponsorship = members.some(isOwnSponsoredSportsArticle) || ["브랜드/스폰서십", "스폰서십"].includes(issue.category);
   const groupToneScore = Math.max(...members.map((item) => ({ 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[item.tone] || 0)));
   const toneScore = Math.max(groupToneScore, { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0);
   const categoryScore = sponsorship ? 35 : issue.category === "정책/규제" ? 130 : ["GA", "보험사"].includes(issue.category) ? 80 : 0;
@@ -8494,7 +8495,7 @@ function buildContextualSummaryLines(item = {}) {
   } else if (topic === "incar-theheaven-masters") {
     if (isOwnSponsoredSportsBrandArticle(item)) {
       lines.push("인카금융 더헤븐 마스터즈의 후원·브랜드·사회공헌 메시지가 중심입니다.");
-      lines.push("리스크 기사와 분리해 브랜드·스폰서십 성과 트랙으로 보존합니다.");
+      lines.push("리스크 기사와 분리해 스폰서십 성과 트랙으로 보존합니다.");
     } else {
       lines.push("인카금융 더헤븐 마스터즈 관련 경기·운영 보도입니다.");
       lines.push("부정 리스크가 아닌 당사 주최 대회의 브랜드 노출 기사로 별도 분류합니다.");
@@ -10560,7 +10561,7 @@ function isExternalGeopoliticalShippingNoiseArticle(article = {}) {
 }
 
 function categoryPresetFor(value) {
-  if (/브랜드|스폰서|후원|sponsor/i.test(value)) return "브랜드/스폰서십";
+  if (/브랜드|스폰서|후원|sponsor/i.test(value)) return "스폰서십";
   if (/GA/i.test(value)) return "GA";
   if (/보험사|보험/i.test(value)) return "보험사";
   if (/당사|인카/i.test(value)) return "당사";

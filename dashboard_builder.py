@@ -34,7 +34,7 @@ CATEGORY_LABELS = {
     "regulation": "규제/정책",
     "competitor": "경쟁사",
     "industry": "업계 동향",
-    "sponsorship": "브랜드/스폰서십",
+    "sponsorship": "스폰서십",
     "other": "기타",
 }
 
@@ -283,7 +283,7 @@ def contextual_summary_lines(article: dict, category: str, tone: str) -> list[st
     if analyzer.is_own_sponsored_sports_article(article):
         if analyzer.is_own_sponsored_sports_brand_article(article):
             lines.append("인카금융서비스 주최·후원 대회의 브랜드 노출과 사회공헌 메시지를 다룬 기사입니다.")
-            lines.append("리스크 기사와 분리해 브랜드·스폰서십 성과 트랙으로 보존합니다.")
+            lines.append("리스크 기사와 분리해 스폰서십 성과 트랙으로 보존합니다.")
         else:
             lines.append("인카금융 더헤븐 마스터즈 관련 경기·운영 보도입니다.")
             lines.append("부정 리스크가 아닌 당사 주최 대회의 브랜드 노출 기사로 별도 분류합니다.")
