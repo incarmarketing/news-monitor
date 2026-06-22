@@ -4507,12 +4507,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .filter-card.monitoring-filter-card {
   grid-template-columns:
-    minmax(124px, .8fr)
-    minmax(124px, .8fr)
-    repeat(4, minmax(96px, .65fr))
-    minmax(170px, 1fr)
-    auto
-    auto;
+    minmax(116px, .62fr)
+    minmax(116px, .62fr)
+    minmax(84px, .42fr)
+    minmax(84px, .42fr)
+    minmax(104px, .5fr)
+    minmax(118px, .58fr)
+    minmax(150px, 1fr)
+    minmax(340px, auto);
   gap: 8px;
   align-items: end;
 }
@@ -4521,16 +4523,27 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   grid-column: auto;
 }
 
-.filter-card.monitoring-filter-card .primary-button,
-.filter-card.monitoring-filter-card .ghost-button {
-  width: 82px;
+.monitoring-filter-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(76px, 1fr));
+  gap: 6px;
+  align-items: end;
+  min-width: 0;
+}
+
+.filter-card.monitoring-filter-card .monitoring-filter-actions .primary-button,
+.filter-card.monitoring-filter-card .monitoring-filter-actions .ghost-button {
+  width: 100%;
+  min-width: 0;
   min-height: 38px;
-  padding: 0 12px;
+  padding: 0 9px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
-.filter-card.monitoring-filter-card .filter-action {
-  min-width: 82px;
+.filter-card.monitoring-filter-card .monitoring-filter-actions svg {
+  width: 15px;
+  height: 15px;
 }
 
 .page-actions > .ghost-button,
@@ -10468,10 +10481,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 @media (max-width: 1180px) {
   .filter-card.monitoring-filter-card {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .filter-card.monitoring-filter-card .wide-filter {
+    grid-column: span 2;
+  }
+
+  .filter-card.monitoring-filter-card .monitoring-filter-actions {
     grid-column: span 2;
   }
 }
@@ -10485,8 +10502,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-column: 1 / -1;
   }
 
-  .filter-card.monitoring-filter-card > button {
-    justify-self: stretch;
-    width: 100%;
+  .filter-card.monitoring-filter-card .monitoring-filter-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

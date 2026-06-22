@@ -1106,24 +1106,6 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
 
   return (
     <main className="workspace">
-      <PageTitle
-        eyebrow="Monitoring"
-        title="모니터링"
-        description="기사 목록을 샘플 5개로 줄이지 않고, 연결 가능한 운영 기사 전체를 필터와 함께 펼쳐 봅니다."
-        right={(
-          <div className="page-actions">
-            <button
-              type="button"
-              className="ghost-button monitoring-action-button"
-              onClick={() => onRefreshOperations?.({ trigger: true, source: "monitoring_feed" })}
-              disabled={isLoading}
-            >
-              <RefreshCw />갱신
-            </button>
-            <button type="button" className="primary-button monitoring-action-button"><Download />CSV 출력</button>
-          </div>
-        )}
-      />
       <section className="filter-card monitoring-filter-card">
         <label>
           <span>시작 기준일</span>
@@ -1175,24 +1157,35 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
             placeholder="제목, 언론사, 키워드 검색"
           />
         </label>
-        <button className="primary-button filter-action" onClick={applyFilters}>
-          조회/검색
-        </button>
-        <button className="ghost-button compact-button" onClick={() => {
-          setQuery("");
-          setQueryInput("");
-          setTone("all");
-          setCategory("all");
-          setSource("all");
-          setViewMode("related");
-          setStartDateInput(latestDate);
-          setEndDateInput(latestDate);
-          setStartDate(latestDate);
-          setEndDate(latestDate);
-          setVisible(30);
-        }}>
-          초기화
-        </button>
+        <div className="monitoring-filter-actions">
+          <button className="primary-button filter-action" onClick={applyFilters}>
+            조회/검색
+          </button>
+          <button className="ghost-button compact-button" onClick={() => {
+            setQuery("");
+            setQueryInput("");
+            setTone("all");
+            setCategory("all");
+            setSource("all");
+            setViewMode("related");
+            setStartDateInput(latestDate);
+            setEndDateInput(latestDate);
+            setStartDate(latestDate);
+            setEndDate(latestDate);
+            setVisible(30);
+          }}>
+            초기화
+          </button>
+          <button
+            type="button"
+            className="ghost-button compact-button"
+            onClick={() => onRefreshOperations?.({ trigger: true, source: "monitoring_feed" })}
+            disabled={isLoading}
+          >
+            <RefreshCw />갱신
+          </button>
+          <button type="button" className="primary-button compact-button"><Download />CSV 출력</button>
+        </div>
       </section>
       <section className="monitoring-layout">
         <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
