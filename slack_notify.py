@@ -46,6 +46,10 @@ K = {
     "basis": "\uae30\uc900",
     "risk": "\ub9ac\uc2a4\ud06c",
     "analyzed_articles": "\ubd84\uc11d \uae30\uc0ac",
+    "analyzed_short": "\ubd84\uc11d",
+    "own_short": "\ub2f9\uc0ac",
+    "negative_short": "\ubd80\uc815",
+    "positive_neutral_short": "\uae0d/\uc911",
     "own_mentions": "\ub2f9\uc0ac \uc5b8\uae09",
     "own_negative": "\ub2f9\uc0ac \ubd80\uc815",
     "positive_neutral": "\uae0d\uc815/\uc911\ub9bd",
@@ -377,7 +381,7 @@ def article_rank(article: dict) -> int:
     return score
 
 
-def article_issue_lines(report: dict, limit: int = 3) -> list[str]:
+def article_issue_lines(report: dict, limit: int = 3, *, include_summary: bool = True) -> list[str]:
     rows: list[tuple[int, int, dict, str]] = []
     seen: set[str] = set()
     for index, article in enumerate(report.get("articles", []) or []):
@@ -394,8 +398,8 @@ def article_issue_lines(report: dict, limit: int = 3) -> list[str]:
     lines: list[str] = []
     for _, _, article, title in rows[:limit]:
         headline = compact(title, 110, ellipsis=False)
-        summary = article_summary(article, title)
-        if summary:
+        summary = article_summary(article, title) if include_summary else ""
+        if include_summary and summary:
             lines.append(f"- *{headline}*\n  {summary}")
         else:
             lines.append(f"- *{headline}*")
@@ -414,7 +418,7 @@ def parsed_issue_lines(issues: list[str], limit: int = 3) -> list[str]:
 
 
 def daily_issue_lines(report: dict, sections: dict) -> list[str]:
-    article_lines = article_issue_lines(report, limit=3)
+    article_lines = article_issue_lines(report, limit=3, include_summary=False)
     if article_lines:
         return article_lines
     return parsed_issue_lines(sections.get("issues", []), limit=3)
@@ -446,26 +450,45 @@ def daily_title(report: dict) -> str:
     return f"{K['media_trend']} {report.get('date', '')} {slot}"
 
 
+def daily_analyzed_count(metrics: dict) -> int:
+    for key in ("analyzed", "total_after_cluster", "total"):
+        value = metrics.get(key)
+        if value is None:
+            continue
+        try:
+            return int(float(value))
+        except (TypeError, ValueError):
+            continue
+    return 0
+
+
+def daily_status_text(report: dict, metrics: dict, window: dict) -> str:
+    own_tone = metrics.get("own_by_tone", {}) or {}
+    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
+    own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
+    positive = own_tone.get("positive", 0)
+    neutral = own_tone.get("neutral", 0)
+    risk = metrics.get("risk_level", "-")
+    analyzed = daily_analyzed_count(metrics)
+    basis = f"{short_report_date(report.get('date', ''))} {window['name']} \u00b7 {window['range']} \u00b7 {K['risk']} {risk}"
+    summary = (
+        f"{K['analyzed_short']} {analyzed}{K['count']} \u00b7 "
+        f"{K['own_short']} {own_total}{K['count']} \u00b7 "
+        f"{K['negative_short']} {own_negative}{K['count']} \u00b7 "
+        f"{K['positive_neutral_short']} {positive}/{neutral}"
+    )
+    return f"{basis}\n{summary}"
+
+
 def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
     metrics = report.get("metrics", {})
     sections = parse_briefing(report.get("briefing", ""))
-    own_tone = metrics.get("own_by_tone", {})
     own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
     risk = metrics.get("risk_level", "-")
-    analyzed = metrics.get("analyzed", metrics.get("total", 0))
     window = window_label(report.get("window", {}))
     title = daily_title(report)
     issues = daily_issue_lines(report, sections)
-    conclusion = daily_conclusion(report, sections, issues)
-
-    fields = [
-        f"*{K['basis']}*\n{short_report_date(report.get('date', ''))} {window['name']} | {window['range']}",
-        f"*{K['risk']}*\n{risk}",
-        f"*{K['analyzed_articles']}*\n{analyzed}{K['count']}",
-        f"*{K['own_mentions']}*\n{own_total}{K['count']}",
-        f"*{K['own_negative']}*\n{own_tone.get('negative', metrics.get('own_negative', 0))}{K['count']}",
-        f"*{K['positive_neutral']}*\n{own_tone.get('positive', 0)} / {own_tone.get('neutral', 0)}",
-    ]
+    status_text = daily_status_text(report, metrics, window)
     issue_text = "\n".join(issues)
     if not issue_text:
         issue_text = f"- {K['check_report_articles']}"
@@ -474,7 +497,7 @@ def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
     payload = {
         "text": fallback,
         "blocks": [
-            section(f"*{title}*\n{conclusion}", fields),
+            section(f"*{title}*\n{status_text}"),
             divider(),
             section(f"*{K['key_issue']}*\n{issue_text}"),
             actions((K["open_report"], link), (K["dashboard"], join_public_url(DEFAULT_REPORT_URL, "dashboard.html"))),

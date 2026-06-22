@@ -8,13 +8,13 @@ import slack_notify
 
 
 class SlackDailyPayloadTests(unittest.TestCase):
-    def test_daily_payload_falls_back_to_article_headlines_and_summaries(self) -> None:
+    def test_daily_payload_uses_compact_metrics_and_headline_only(self) -> None:
         report = {
             "date": "2026-06-20",
             "window": {"slot": "13", "short_label": "08:00~13:00"},
             "metrics": {
                 "risk_level": "LOW",
-                "analyzed": 2,
+                "total_after_cluster": 2,
                 "by_category": {"own": 1},
                 "own_by_tone": {"negative": 0, "positive": 1, "neutral": 0},
             },
@@ -38,10 +38,14 @@ class SlackDailyPayloadTests(unittest.TestCase):
         }
 
         _, payload = slack_notify.build_daily_payload(report, "https://example.com/report.html")
+        header_block = payload["blocks"][0]["text"]["text"]
         key_issue_block = payload["blocks"][2]["text"]["text"]
 
+        self.assertIn("\ub9ac\uc2a4\ud06c LOW", header_block)
+        self.assertIn("\ubd84\uc11d 2\uac74 \u00b7 \ub2f9\uc0ac 1\uac74 \u00b7 \ubd80\uc815 0\uac74 \u00b7 \uae0d/\uc911 1/0", header_block)
+        self.assertNotIn(slack_notify.K["default_conclusion"], header_block)
         self.assertIn("\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4", key_issue_block)
-        self.assertIn("GA\uc5c5\uacc4 \ucd5c\ub2e4", key_issue_block)
+        self.assertNotIn("GA\uc5c5\uacc4 \ucd5c\ub2e4", key_issue_block)
         self.assertNotIn(slack_notify.K["check_report_articles"], key_issue_block)
 
 
