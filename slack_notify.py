@@ -128,6 +128,46 @@ def divider() -> dict:
     return {"type": "divider"}
 
 
+def raw_cell(value: object) -> dict:
+    return {"type": "raw_text", "text": str(value or "")[:200]}
+
+
+def metric_table_block(report: dict, metrics: dict) -> dict:
+    own_tone = metrics.get("own_by_tone", {}) or {}
+    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
+    own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
+    positive = own_tone.get("positive", 0)
+    neutral = own_tone.get("neutral", 0)
+    risk = metrics.get("risk_level", "-")
+    analyzed = daily_analyzed_count(metrics)
+    return {
+        "type": "table",
+        "column_settings": [
+            {"align": "center"},
+            {"align": "right"},
+            {"align": "right"},
+            {"align": "right"},
+            {"align": "center"},
+        ],
+        "rows": [
+            [
+                raw_cell(K["risk"]),
+                raw_cell(K["analyzed_short"]),
+                raw_cell(K["own_short"]),
+                raw_cell(K["negative_short"]),
+                raw_cell(K["positive_neutral_short"]),
+            ],
+            [
+                raw_cell(risk),
+                raw_cell(analyzed),
+                raw_cell(own_total),
+                raw_cell(own_negative),
+                raw_cell(f"{positive}/{neutral}"),
+            ],
+        ],
+    }
+
+
 def load_latest_daily() -> dict:
     slot = os.getenv("REPORT_SLOT", "").strip()
     if slot in {"08", "13", "18"}:
@@ -463,21 +503,7 @@ def daily_analyzed_count(metrics: dict) -> int:
 
 
 def daily_status_text(report: dict, metrics: dict, window: dict) -> str:
-    own_tone = metrics.get("own_by_tone", {}) or {}
-    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
-    own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
-    positive = own_tone.get("positive", 0)
-    neutral = own_tone.get("neutral", 0)
-    risk = metrics.get("risk_level", "-")
-    analyzed = daily_analyzed_count(metrics)
-    basis = f"{short_report_date(report.get('date', ''))} {window['name']} \u00b7 {window['range']}"
-    summary_table = (
-        "```"
-        f"{K['risk']}  {K['analyzed_short']}  {K['own_short']}  {K['negative_short']}  {K['positive_neutral_short']}\n"
-        f"{risk:<5} {analyzed:>4}  {own_total:>4}  {own_negative:>4}  {positive}/{neutral}"
-        "```"
-    )
-    return f"{basis}\n{summary_table}"
+    return f"{short_report_date(report.get('date', ''))} {window['name']} \u00b7 {window['range']}"
 
 
 def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
@@ -498,6 +524,7 @@ def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
         "text": fallback,
         "blocks": [
             section(f"*{title}*\n{status_text}"),
+            metric_table_block(report, metrics),
             divider(),
             section(f"*{K['key_issue']}*\n{issue_text}"),
             actions((K["open_report"], link), (K["dashboard"], join_public_url(DEFAULT_REPORT_URL, "dashboard.html"))),

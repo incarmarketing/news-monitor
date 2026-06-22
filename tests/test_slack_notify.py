@@ -39,13 +39,14 @@ class SlackDailyPayloadTests(unittest.TestCase):
 
         _, payload = slack_notify.build_daily_payload(report, "https://example.com/report.html")
         header_block = payload["blocks"][0]["text"]["text"]
-        key_issue_block = payload["blocks"][2]["text"]["text"]
+        metric_block = payload["blocks"][1]
+        key_issue_block = payload["blocks"][3]["text"]["text"]
 
-        self.assertIn("```", header_block)
-        self.assertIn("\ub9ac\uc2a4\ud06c  \ubd84\uc11d  \ub2f9\uc0ac  \ubd80\uc815  \uae0d/\uc911", header_block)
-        self.assertIn("LOW", header_block)
-        self.assertIn("2", header_block)
-        self.assertIn("1/0", header_block)
+        self.assertEqual(metric_block["type"], "table")
+        self.assertEqual(metric_block["rows"][0][0]["text"], "\ub9ac\uc2a4\ud06c")
+        self.assertEqual(metric_block["rows"][1][0]["text"], "LOW")
+        self.assertEqual(metric_block["rows"][1][1]["text"], "2")
+        self.assertEqual(metric_block["rows"][1][4]["text"], "1/0")
         self.assertNotIn(slack_notify.K["default_conclusion"], header_block)
         self.assertIn("\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4", key_issue_block)
         self.assertNotIn("GA\uc5c5\uacc4 \ucd5c\ub2e4", key_issue_block)
