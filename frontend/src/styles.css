@@ -1,5 +1,6 @@
 :root {
   color-scheme: light;
+  --app-header-height: 64px;
   --bg: #f3f5f8;
   --paper: #ffffff;
   --paper-soft: #f8fafc;
@@ -52,7 +53,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .app-shell {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
-  grid-template-rows: 64px minmax(0, 1fr);
+  grid-template-rows: var(--app-header-height) minmax(0, 1fr);
   min-width: 0;
   min-height: 100vh;
   max-width: 100%;
@@ -62,15 +63,17 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   grid-column: 1 / -1;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 40;
   display: grid;
   grid-template-columns: minmax(260px, 1fr) auto;
   gap: 12px;
   align-items: center;
+  min-height: var(--app-header-height);
   padding: 10px 16px;
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, .96);
   backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(16, 24, 40, .05);
 }
 
 .brand, .user-chip, .header-user-area {
@@ -275,12 +278,15 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .side-nav {
   position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
+  top: var(--app-header-height);
+  z-index: 30;
+  align-self: start;
+  height: calc(100vh - var(--app-header-height));
   padding: 14px 10px;
   border-right: 1px solid var(--line);
   background: #fff;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .side-group + .side-group {
@@ -8567,7 +8573,6 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   }
 
   .app-header {
-    position: static;
     grid-template-columns: minmax(0, 1fr) minmax(160px, 240px);
   }
 
@@ -8575,16 +8580,17 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .side-nav {
     position: sticky;
-    top: 0;
-    z-index: 15;
+    top: var(--app-header-height);
+    z-index: 35;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
     gap: 6px;
+    max-height: calc(100vh - var(--app-header-height));
     height: auto;
     padding: 8px 12px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-    overflow: visible;
+    overflow-y: auto;
   }
 
   .side-group {
@@ -8679,6 +8685,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 @media (max-width: 680px) {
+  :root {
+    --app-header-height: 96px;
+  }
+
   .media-range-actions {
     justify-content: flex-start;
   }
