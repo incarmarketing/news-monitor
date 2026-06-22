@@ -1,0 +1,37 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/**"
+      - ".github/workflows/deploy-supabase-functions.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-supabase-functions
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy changed Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_PROJECT_REF" ]; then
+            echo "::warning::SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF is missing. Edge Function deploy skipped."
+            exit 0
+          fi
+
+          npx -y supabase@latest functions deploy dashboard-api --project-ref "$SUPABASE_PROJECT_REF"
+          npx -y supabase@latest functions deploy trigger-news-collection --project-ref "$SUPABASE_PROJECT_REF"
