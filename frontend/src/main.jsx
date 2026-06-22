@@ -6686,6 +6686,27 @@ function displayCategory(value) {
   return text || "기타";
 }
 
+function buildCategoryFlowRows(articles = [], limit = 6) {
+  return groupArticles(articles, "category").slice(0, limit).map(([category, value]) => ({
+    name: categoryFlowLabel(category),
+    category,
+    value,
+  }));
+}
+
+function categoryFlowLabel(value) {
+  const canonical = String(value || "").trim().toLowerCase();
+  return {
+    own: "당사",
+    competitor: "GA",
+    industry: "보험사",
+    regulation: "정책/규제",
+    sponsorship: "스폰서십",
+    exclude: "제외",
+    other: "기타",
+  }[canonical] || displayCategory(value);
+}
+
 function displayTone(value) {
   const text = String(value || "").trim();
   const canonical = text.toLowerCase();
@@ -7569,7 +7590,7 @@ function CategoryChart({ rows, tall = false, mini = false, verticalBars = false,
       onOpenMonitoring({ query: row.keyword || row.name });
       return;
     }
-    onOpenMonitoring({ category: categoryPresetFor(row.name) });
+    onOpenMonitoring({ category: categoryPresetFor(row.category || row.name) });
   };
   return (
     <div className={className}>
@@ -7740,7 +7761,7 @@ function composePeriodData(base, articles, reportRuns = [], liveConnected = fals
     scope: periodScope.scopeLabel || base.scope,
     periodScope,
     issues: usableArticles.length ? buildIssues(usableArticles, base.issues) : [],
-    categoryFlow: groupArticles(usableArticles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
+    categoryFlow: buildCategoryFlowRows(usableArticles),
     toneTrend: buildToneTrend(usableArticles),
     pressInfluence: buildPressInfluence(usableArticles),
   };
@@ -8673,7 +8694,7 @@ function composeMediaAnalysisData(base = {}, articles = [], scopeLabel = "선택
       headline: buildHeadline(usableArticles, ownMentions, ownNegative, caution),
     },
     pressInfluence: buildPressInfluence(usableArticles),
-    categoryFlow: groupArticles(usableArticles, "category").slice(0, 6).map(([name, value]) => ({ name, value })),
+    categoryFlow: buildCategoryFlowRows(usableArticles),
     toneTrend: buildToneTrend(usableArticles),
   };
 }
@@ -10561,8 +10582,19 @@ function isExternalGeopoliticalShippingNoiseArticle(article = {}) {
 }
 
 function categoryPresetFor(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  const preset = {
+    own: "당사",
+    sponsorship: "스폰서십",
+    competitor: "GA",
+    industry: "보험사",
+    regulation: "정책/규제",
+    exclude: "제외",
+    other: "기타",
+  }[raw];
+  if (preset) return preset;
   if (/브랜드|스폰서|후원|sponsor/i.test(value)) return "스폰서십";
-  if (/GA/i.test(value)) return "GA";
+  if (/GA|경쟁사/i.test(value)) return "GA";
   if (/보험사|보험/i.test(value)) return "보험사";
   if (/당사|인카/i.test(value)) return "당사";
   if (/정책|규제/i.test(value)) return "정책/규제";
