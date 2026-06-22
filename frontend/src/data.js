@@ -347,7 +347,7 @@ export const periodData = {
       caution: 0,
       gaInsurance: 0,
       dispatchTime: "월 07:00",
-      watchTime: "5분 단위",
+      watchTime: "10분 단위",
       headline:
         "주간 기준 당사 직접 부정은 제한적입니다. 정착지원금, 투자 의견, 수수료 규제는 주의 흐름으로 따로 봅니다.",
     },
@@ -393,7 +393,7 @@ export const periodData = {
       caution: 0,
       gaInsurance: 0,
       dispatchTime: "매월 1일 07:00",
-      watchTime: "5분 단위",
+      watchTime: "10분 단위",
       headline:
         "월간 기준 당사 리스크는 관리 가능한 범위입니다. GA 채널, 수수료 규제, 보험사 동향, 투자성 보도를 분리해 누적 추적합니다.",
     },
@@ -574,11 +574,11 @@ export const sampleScraps = [
 }));
 
 export const watchJobs = [
-  { label: "부정기사 감시", cadence: "24시간 · 5분", latest: "16:15", state: "정상" },
+  { label: "부정기사 감시", cadence: "24시간 · 10분", latest: "16:15", state: "정상" },
   { label: "일일보고 발송", cadence: "08 · 13 · 18시", latest: "13:50", state: "정상" },
   { label: "주간보고", cadence: "월요일 07시", latest: "대기", state: "예약" },
   { label: "월간보고", cadence: "매월 1일 07시", latest: "대기", state: "예약" },
-  { label: "Supabase Cron", cadence: "5분 보조 백업", latest: "16:15", state: "정상" },
+  { label: "Supabase Cron", cadence: "10분 보조 백업", latest: "16:15", state: "정상" },
 ];
 
 export const notificationHistory = [
@@ -701,7 +701,7 @@ export const reportTemplatePresets = [
 ];
 
 export const automationChecklist = [
-  { label: "5분 감시", body: "부정·주의 신호를 짧은 주기로 확인하고 자동 보고서와 분리해 운영" },
+  { label: "10분 감시", body: "부정·주의 신호를 짧은 주기로 확인하고 자동 보고서와 분리해 운영" },
   { label: "일일 보고", body: "08시, 13시, 18시 구간별 기사만 요약하고 보고서 근거 기사와 맞춤" },
   { label: "주간/월간 보고", body: "기간 흐름, 반복 키워드, 당사/정책/GA·보험사 동향을 지면형으로 정리" },
   { label: "수동 갱신", body: "갱신 버튼을 누르면 수집·분석·저장·재조회 상태를 전역 상태로 표시" },

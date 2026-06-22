@@ -8562,12 +8562,28 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   height: 14px;
 }
 
-.ops-status-rail > .panel,
-.ops-status-rail .ai-usage-panel,
-.ops-status-rail .watch-panel {
+.ops-status-rail > .panel {
   padding: 10px;
   border-radius: 7px;
   box-shadow: var(--surface-glow), 0 8px 18px rgba(16, 24, 40, .055);
+}
+
+.ops-status-rail .ops-runtime-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.ops-status-rail .ops-runtime-strip .watch-panel,
+.ops-status-rail .ops-runtime-strip .ai-usage-panel {
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+  border: 1px solid #d8e3f2;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: none;
 }
 
 .ops-status-rail .panel-head {
@@ -8597,8 +8613,17 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   padding-bottom: 12px;
 }
 
+.ops-status-rail .ops-runtime-strip .watch-panel {
+  min-height: 0;
+  padding-bottom: 8px;
+}
+
 .ops-status-rail .watch-title-row {
   margin-bottom: 9px;
+}
+
+.ops-status-rail .ops-runtime-strip .watch-title-row {
+  margin-bottom: 6px;
 }
 
 .ops-status-rail .watch-title-row span {
@@ -8617,6 +8642,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   gap: 10px;
 }
 
+.ops-status-rail .ops-runtime-strip .watch-top {
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
 .ops-status-rail .radar-asset {
   width: 76px;
   height: 76px;
@@ -8625,9 +8656,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     radial-gradient(circle, rgba(81, 103, 190, .2) 0, rgba(18, 36, 95, .64) 68%, rgba(9, 22, 68, .1) 100%);
 }
 
+.ops-status-rail .ops-runtime-strip .radar-asset {
+  width: 42px;
+  height: 42px;
+}
+
 .ops-status-rail .radar-asset svg {
   width: 26px;
   height: 26px;
+}
+
+.ops-status-rail .ops-runtime-strip .radar-asset svg {
+  width: 18px;
+  height: 18px;
 }
 
 .ops-status-rail .radar-sweep {
@@ -8635,11 +8676,21 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   height: 38px;
 }
 
+.ops-status-rail .ops-runtime-strip .radar-sweep {
+  width: 22px;
+  height: 22px;
+}
+
 .ops-status-rail .radar-ring.r1 { inset: 13px; }
 .ops-status-rail .radar-ring.r2 { inset: 26px; }
 .ops-status-rail .radar-dot { width: 6px; height: 6px; }
 .ops-status-rail .radar-dot.d1 { top: 20px; right: 21px; }
 .ops-status-rail .radar-dot.d2 { left: 20px; bottom: 22px; }
+.ops-status-rail .ops-runtime-strip .radar-ring.r1 { inset: 8px; }
+.ops-status-rail .ops-runtime-strip .radar-ring.r2 { inset: 15px; }
+.ops-status-rail .ops-runtime-strip .radar-dot { width: 4px; height: 4px; }
+.ops-status-rail .ops-runtime-strip .radar-dot.d1 { top: 11px; right: 12px; }
+.ops-status-rail .ops-runtime-strip .radar-dot.d2 { left: 11px; bottom: 12px; }
 
 .ops-status-rail .watch-top h2 {
   margin-bottom: 5px;
@@ -8648,9 +8699,25 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   text-overflow: ellipsis;
 }
 
+.ops-status-rail .ops-runtime-strip .watch-top h2 {
+  margin-bottom: 2px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .ops-status-rail .watch-top p {
   margin-bottom: 3px;
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ops-status-rail .ops-runtime-strip .watch-top p,
+.ops-status-rail .ops-runtime-strip .watch-copy strong {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -8661,6 +8728,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-size: 10px;
 }
 
+.ops-status-rail .ops-runtime-strip .watch-copy > span {
+  display: inline-flex;
+  margin-top: 4px;
+  padding: 2px 5px;
+  font-size: 9px;
+}
+
 .ops-status-rail .watch-progress {
   left: 20px;
   bottom: 11px;
@@ -8668,13 +8742,55 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   height: 4px;
 }
 
+.ops-status-rail .ops-runtime-strip .watch-progress {
+  display: none;
+}
+
 .ops-status-rail .ai-usage-panel {
   gap: 8px;
+}
+
+.ops-status-rail .ops-runtime-strip .ai-usage-panel {
+  display: grid;
+  align-content: center;
+  gap: 7px;
 }
 
 .ops-status-rail .ai-usage-head span {
   gap: 6px;
   font-size: 12px;
+}
+
+.ops-status-rail .ops-runtime-strip .ai-usage-head {
+  align-items: center;
+  gap: 6px;
+}
+
+.ops-status-rail .ops-runtime-strip .ai-usage-head span,
+.ops-status-rail .ops-runtime-strip .ai-usage-head b {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ops-status-rail .ai-compact-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ops-status-rail .ai-compact-value strong {
+  color: #0b5f51;
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: -.04em;
+}
+
+.ops-status-rail .ai-compact-value span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 .ops-status-rail .ai-power-layout {

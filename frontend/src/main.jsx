@@ -502,7 +502,7 @@ function App() {
     ? [
         {
           label: "부정기사 감시",
-          cadence: "24시간 · 5분",
+          cadence: "24시간 · 10분",
           latest: operations.watchRuns[0].latest,
           state: operations.watchRuns[0].state,
         },
@@ -771,7 +771,6 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           summary={summary}
           operations={operations}
           watchHealth={watchHealth}
-          notificationHealth={notificationHealth}
           reportHealth={reportHealth}
           actionsHealth={actionsHealth}
           historyHealth={historyHealth}
@@ -969,7 +968,6 @@ function OpsStatusRail({
   summary,
   operations,
   watchHealth,
-  notificationHealth,
   reportHealth,
   actionsHealth,
   historyHealth,
@@ -993,10 +991,8 @@ function OpsStatusRail({
           <RefreshCw />갱신
         </button>
       </div>
-      <WatchPanel jobs={jobs} risk={summary?.risk} health={watchHealth} />
-      <AiUsagePanel status={operations?.aiStatus} />
+      <OpsRuntimeStrip jobs={jobs} risk={summary?.risk} watchHealth={watchHealth} aiStatus={operations?.aiStatus} />
       <Panel title="슬랙 발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
-        <NotificationStatusSummary health={notificationHealth} total={notifications.length} />
         <NotificationList rows={notifications} />
       </Panel>
       <Panel title="보고서 자동화" icon={CalendarDays} meta="08 · 13 · 18">
@@ -7032,15 +7028,15 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   let status = "ok";
   if (failedWorkflow || failedRun) status = "fail";
   else if (delay === null) status = workflow?.status === "error" ? "warn" : "pending";
-  else if (delay > 25) status = "fail";
-  else if (delay > 16) status = "warn";
+  else if (delay > 45) status = "fail";
+  else if (delay > 25) status = "warn";
   const detail = failedRun && latestRun.message
     ? `최근 감시 실패: ${latestRun.message}`
     : delay === null
     ? "최근 실행 확인 대기"
     : `${formatRelativeMinutes(delay)} 전 실행`;
   const workflowText = latestWorkflow?.status === "in_progress" ? "실행 중" : formatWorkflowConclusion(latestWorkflow);
-  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 5분";
+  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 10분";
   return {
     title: "부정기사 감시",
     icon: Radar,
@@ -7357,6 +7353,15 @@ function formatWorkflowConclusion(run) {
   }[run.conclusion] || run.conclusion || run.status || "확인";
 }
 
+function OpsRuntimeStrip({ jobs, risk = "LOW", watchHealth, aiStatus }) {
+  return (
+    <section className="panel ops-runtime-strip">
+      <WatchPanel jobs={jobs} risk={risk} health={watchHealth} />
+      <AiUsagePanel status={aiStatus} />
+    </section>
+  );
+}
+
 function WatchPanel({ jobs, risk = "LOW", health }) {
   const watchJob = jobs.find((job) => job.label === "부정기사 감시") || jobs[0] || {};
   const status = health?.status || "unknown";
@@ -7368,9 +7373,9 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
         ? "감시 확인 중"
         : "정상 감시";
   const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
-  const meta = health?.meta || `${watchJob.cadence || "24시간 5분 주기"} · ${watchJob.state || "확인"}`;
+  const meta = health?.meta || `${watchJob.cadence || "24시간 10분 주기"} · ${watchJob.state || "확인"}`;
   return (
-    <section className="panel watch-panel">
+    <section className="watch-panel">
       <div className="watch-title-row">
         <span><Radar />부정기사 탐색</span>
         <HealthStatusPill status={status} label={health?.label || risk} />
@@ -7388,7 +7393,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
           <h2>{heading}</h2>
           <p>{detail}</p>
           <strong>{meta}</strong>
-          <span>24시간 5분 주기</span>
+          <span>24시간 10분 주기</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>
@@ -7399,23 +7404,14 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
 function AiUsagePanel({ status }) {
   const groqReserve = 100;
   return (
-    <section className="panel ai-usage-panel llama-only">
+    <section className="ai-usage-panel llama-only">
       <div className="ai-usage-head">
-        <span><Gauge />API 사용 현황</span>
-        <b>Llama 잔량 기준</b>
+        <span><Gauge />API</span>
+        <b>잔량 기준</b>
       </div>
-      <div className="ai-power-layout">
-        <div className="ai-power-meter" style={{ "--meter-fill": "100%" }}>
-          <div className="ai-power-core">
-            <strong>{groqReserve}</strong>
-            <span>% 잔량</span>
-          </div>
-        </div>
-        <div className="ai-power-copy">
-          <span>Llama</span>
-          <b>100% 잔량</b>
-          <em>요약·분류 백업 모델 기준</em>
-        </div>
+      <div className="ai-compact-value">
+        <strong>{groqReserve}%</strong>
+        <span>Llama 잔량</span>
       </div>
     </section>
   );

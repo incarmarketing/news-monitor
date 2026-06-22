@@ -1563,7 +1563,7 @@ function normalizeWatchRun(row) {
   return {
     id: row.run_key || row.scanned_at,
     label: "부정기사 감시",
-    cadence: "24시간 · 5분",
+    cadence: "24시간 · 10분",
     scannedAt: row.scanned_at || "",
     rawStatus: row.status || "",
     minutesBack: Number(row.minutes_back || 0),
