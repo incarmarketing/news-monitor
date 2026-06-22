@@ -1,0 +1,113 @@
+name: Slack Sample Notification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/slack-sample-trigger.txt"
+      - ".github/workflows/slack-sample.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  send-sample:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[slack-sample]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send sample Slack table notification
+        env:
+          WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL || secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          webhook_url = os.environ.get("WEBHOOK_URL", "").strip()
+          if not webhook_url:
+              raise SystemExit("SLACK_REPORT_WEBHOOK_URL or SLACK_WEBHOOK_URL secret is missing.")
+
+          def raw(value):
+              return {"type": "raw_text", "text": str(value)}
+
+          payload = {
+              "text": "샘플 언론 동향",
+              "blocks": [
+                  {
+                      "type": "section",
+                      "text": {
+                          "type": "mrkdwn",
+                          "text": "*샘플 언론 동향 2026-06-22 08*\n06/22 오전 · 06/21 18:00~06/22 08:00",
+                      },
+                  },
+                  {
+                      "type": "table",
+                      "column_settings": [
+                          {"align": "center"},
+                          {"align": "center"},
+                          {"align": "center"},
+                          {"align": "center"},
+                          {"align": "center"},
+                          {"align": "center"},
+                      ],
+                      "rows": [
+                          [
+                              raw("리스크"),
+                              raw("분석"),
+                              raw("당사"),
+                              raw("부정"),
+                              raw("긍정"),
+                              raw("중립"),
+                          ],
+                          [
+                              raw("LOW"),
+                              raw("42"),
+                              raw("1"),
+                              raw("0"),
+                              raw("0"),
+                              raw("1"),
+                          ],
+                      ],
+                  },
+                  {"type": "divider"},
+                  {
+                      "type": "section",
+                      "text": {
+                          "type": "mrkdwn",
+                          "text": "*핵심 이슈*\n- *인카금융서비스, 신인설계사 영업활동 기본교육*\n- *금융위, 롯데카드 제재 본격 착수*",
+                      },
+                  },
+                  {
+                      "type": "actions",
+                      "elements": [
+                          {
+                              "type": "button",
+                              "text": {"type": "plain_text", "text": "보고서 열기"},
+                              "url": "https://incarmarketing.github.io/news-monitor/",
+                          },
+                          {
+                              "type": "button",
+                              "text": {"type": "plain_text", "text": "대시보드"},
+                              "url": "https://incarmarketing.github.io/news-monitor/dashboard.html",
+                          },
+                      ],
+                  },
+              ],
+          }
+
+          request = urllib.request.Request(
+              webhook_url,
+              data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=15) as response:
+              body = response.read().decode("utf-8", errors="replace")
+              if response.status >= 400:
+                  raise SystemExit(f"Slack webhook failed: HTTP {response.status} {body[:200]}")
+              print(f"Slack sample sent: HTTP {response.status} {body[:100]}")
+          PY
