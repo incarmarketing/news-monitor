@@ -7373,7 +7373,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
         ? "감시 확인 중"
         : "정상 감시";
   const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
-  const meta = health?.meta || `${watchJob.cadence || "24시간 10분 주기"} · ${watchJob.state || "확인"}`;
+  const meta = health?.meta || `${watchJob.cadence || "10분 주기"} · ${watchJob.state || "확인"}`;
   return (
     <section className="watch-panel">
       <div className="watch-title-row">
@@ -7393,7 +7393,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
           <h2>{heading}</h2>
           <p>{detail}</p>
           <strong>{meta}</strong>
-          <span>24시간 10분 주기</span>
+          <span>10분 주기</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>

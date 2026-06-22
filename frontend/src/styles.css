@@ -8545,7 +8545,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-rail-head b {
   color: #111827;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 950;
   white-space: nowrap;
 }
@@ -8570,20 +8570,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-status-rail .ops-runtime-strip {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr);
-  gap: 8px;
-  padding: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(142px, .52fr);
+  gap: 10px;
+  padding: 9px;
 }
 
 .ops-status-rail .ops-runtime-strip .watch-panel,
 .ops-status-rail .ops-runtime-strip .ai-usage-panel {
   min-width: 0;
   min-height: 0;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #d8e3f2;
-  border-radius: 7px;
+  border-radius: 10px;
   background: #fff;
-  box-shadow: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 6px 16px rgba(15,23,42,.045);
 }
 
 .ops-status-rail .panel-head {
@@ -8594,7 +8594,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-status-rail .panel-head h2 {
   gap: 6px;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .ops-status-rail .panel-head h2 svg {
@@ -8604,8 +8604,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-status-rail .panel-head span {
   min-height: 20px;
-  padding: 2px 6px;
-  font-size: 10px;
+  padding: 3px 7px;
+  font-size: 11px;
 }
 
 .ops-status-rail .watch-panel {
@@ -8615,7 +8615,16 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-status-rail .ops-runtime-strip .watch-panel {
   min-height: 0;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
+  color: #0f172a;
+  background:
+    linear-gradient(135deg, #ffffff 0%, #f7fbff 68%, #edf5ff 100%);
+  border-color: #c9d7ec;
+}
+
+.ops-status-rail .ops-runtime-strip .watch-panel::before,
+.ops-status-rail .ops-runtime-strip .watch-panel::after {
+  display: none;
 }
 
 .ops-status-rail .watch-title-row {
@@ -8623,18 +8632,25 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail .ops-runtime-strip .watch-title-row {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .ops-status-rail .watch-title-row span {
   gap: 6px;
-  font-size: 12px;
+  color: #10205a;
+  font-size: 14px;
+}
+
+.ops-status-rail .ops-runtime-strip .watch-title-row span,
+.ops-status-rail .ops-runtime-strip .watch-title-row span svg {
+  color: #10205a;
 }
 
 .ops-status-rail .watch-title-row .health-pill {
-  min-height: 24px;
-  padding: 0 8px;
-  font-size: 10px;
+  min-height: 25px;
+  padding: 0 9px;
+  font-size: 11.5px;
+  box-shadow: none;
 }
 
 .ops-status-rail .watch-top {
@@ -8643,8 +8659,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail .ops-runtime-strip .watch-top {
-  grid-template-columns: 42px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 50px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
 }
 
@@ -8657,8 +8673,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail .ops-runtime-strip .radar-asset {
-  width: 42px;
-  height: 42px;
+  width: 50px;
+  height: 50px;
+  background:
+    repeating-radial-gradient(circle, rgba(49, 91, 232, .16) 0 1px, transparent 1px 12px),
+    radial-gradient(circle, rgba(49, 91, 232, .18) 0, rgba(255,255,255,.78) 68%, rgba(219,234,254,.96) 100%);
+  border: 1px solid #c6d6f5;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.75);
 }
 
 .ops-status-rail .radar-asset svg {
@@ -8667,8 +8688,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail .ops-runtime-strip .radar-asset svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  color: #315be8;
 }
 
 .ops-status-rail .radar-sweep {
@@ -8677,8 +8699,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail .ops-runtime-strip .radar-sweep {
-  width: 22px;
-  height: 22px;
+  width: 25px;
+  height: 25px;
+  background: conic-gradient(from 0deg, rgba(49, 91, 232, .34), rgba(125, 240, 176, .2), transparent 64%);
 }
 
 .ops-status-rail .radar-ring.r1 { inset: 13px; }
@@ -8686,11 +8709,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .radar-dot { width: 6px; height: 6px; }
 .ops-status-rail .radar-dot.d1 { top: 20px; right: 21px; }
 .ops-status-rail .radar-dot.d2 { left: 20px; bottom: 22px; }
-.ops-status-rail .ops-runtime-strip .radar-ring.r1 { inset: 8px; }
-.ops-status-rail .ops-runtime-strip .radar-ring.r2 { inset: 15px; }
-.ops-status-rail .ops-runtime-strip .radar-dot { width: 4px; height: 4px; }
-.ops-status-rail .ops-runtime-strip .radar-dot.d1 { top: 11px; right: 12px; }
-.ops-status-rail .ops-runtime-strip .radar-dot.d2 { left: 11px; bottom: 12px; }
+.ops-status-rail .ops-runtime-strip .radar-ring.r1 { inset: 9px; border-color: rgba(49, 91, 232, .26); }
+.ops-status-rail .ops-runtime-strip .radar-ring.r2 { inset: 17px; border-color: rgba(49, 91, 232, .22); }
+.ops-status-rail .ops-runtime-strip .radar-dot { width: 5px; height: 5px; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.14); }
+.ops-status-rail .ops-runtime-strip .radar-dot.d1 { top: 13px; right: 14px; }
+.ops-status-rail .ops-runtime-strip .radar-dot.d2 { left: 13px; bottom: 14px; }
 
 .ops-status-rail .watch-top h2 {
   margin-bottom: 5px;
@@ -8700,8 +8723,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail .ops-runtime-strip .watch-top h2 {
-  margin-bottom: 2px;
-  font-size: 13px;
+  margin-bottom: 3px;
+  color: #0f172a;
+  font-size: 16px;
   white-space: nowrap;
 }
 
@@ -8715,11 +8739,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .ops-runtime-strip .watch-top p,
 .ops-status-rail .ops-runtime-strip .watch-copy strong {
   margin: 0;
-  font-size: 10px;
-  line-height: 1.3;
-  white-space: nowrap;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .ops-status-rail .watch-copy > span {
@@ -8730,9 +8757,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-status-rail .ops-runtime-strip .watch-copy > span {
   display: inline-flex;
-  margin-top: 4px;
-  padding: 2px 5px;
-  font-size: 9px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  font-size: 11.5px;
+  color: #065f46;
+  background: #dcfce7;
+  border-color: #bbf7d0;
 }
 
 .ops-status-rail .watch-progress {
@@ -8753,7 +8783,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .ops-runtime-strip .ai-usage-panel {
   display: grid;
   align-content: center;
-  gap: 7px;
+  gap: 8px;
+  color: #0f172a;
+  background:
+    linear-gradient(135deg, #ffffff 0%, #f8fffc 62%, #ecfdf5 100%);
+  border-color: #c7ead9;
 }
 
 .ops-status-rail .ai-usage-head span {
@@ -8768,29 +8802,35 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-status-rail .ops-runtime-strip .ai-usage-head span,
 .ops-status-rail .ops-runtime-strip .ai-usage-head b {
-  font-size: 11px;
+  color: #0f513d;
+  font-size: 12.5px;
   white-space: nowrap;
 }
 
+.ops-status-rail .ops-runtime-strip .ai-usage-head svg {
+  color: #22c55e;
+}
+
 .ops-status-rail .ai-compact-value {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
+  display: grid;
+  align-items: start;
+  gap: 2px;
   min-width: 0;
 }
 
 .ops-status-rail .ai-compact-value strong {
   color: #0b5f51;
-  font-size: 22px;
+  font-size: 27px;
   font-weight: 950;
   letter-spacing: -.04em;
 }
 
 .ops-status-rail .ai-compact-value span {
-  color: #64748b;
-  font-size: 10px;
-  font-weight: 850;
-  white-space: nowrap;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 900;
+  white-space: normal;
+  line-height: 1.25;
 }
 
 .ops-status-rail .ai-power-layout {
@@ -8842,7 +8882,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .operation-status-summary {
   gap: 4px;
   margin-top: 0;
-  padding: 7px 8px;
+  padding: 9px 10px;
   border-radius: 7px;
 }
 
@@ -8851,12 +8891,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail .operation-status-summary b {
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.25;
 }
 
 .ops-status-rail .operation-status-summary span {
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .ops-status-rail .watch-lines,
@@ -8868,7 +8908,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .watch-lines div,
 .ops-status-rail .notification-list button {
   gap: 6px;
-  padding: 7px;
+  padding: 9px 10px;
   border-radius: 7px;
 }
 
@@ -8876,13 +8916,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .notification-list span,
 .ops-status-rail .watch-lines b,
 .ops-status-rail .notification-list b {
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .ops-status-rail .notification-more {
-  min-height: 30px;
+  min-height: 34px;
   margin-top: 7px;
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .ops-status-rail .report-automation-status {
@@ -8895,7 +8935,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .ops-status-rail .daily-slot {
   gap: 2px;
-  padding: 7px;
+  padding: 9px;
   border-radius: 7px;
 }
 
@@ -8903,7 +8943,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .daily-slot em,
 .ops-status-rail .automation-foot b,
 .ops-status-rail .automation-foot em {
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .ops-status-rail .automation-foot {
@@ -8913,7 +8953,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-status-rail .automation-foot span {
   grid-template-columns: 58px minmax(0, 1fr);
   gap: 6px;
-  padding: 7px;
+  padding: 9px;
   border-radius: 7px;
 }
 
