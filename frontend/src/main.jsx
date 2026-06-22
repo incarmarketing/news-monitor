@@ -6491,7 +6491,7 @@ function KeywordRuleValidation({ validation }) {
     <div className="keyword-validation-bar">
       <div className="keyword-validation-head">
         <b>분류 검증</b>
-        <span>현재 규칙을 누적 기사 {validation.articleCount.toLocaleString("ko-KR")}건에 적용한 미리보기입니다.</span>
+        <span>AI 요약이 아닌 원문 근거 기준으로 누적 기사 {validation.articleCount.toLocaleString("ko-KR")}건에 적용한 미리보기입니다.</span>
       </div>
       <div className="keyword-validation-metrics">
         <span><strong>{validation.matched.toLocaleString("ko-KR")}</strong>매칭</span>
@@ -8758,6 +8758,14 @@ function sourceEvidenceHaystack(item = {}) {
   const usableSummary = summary && !isLowValueAnalysisLine(summary) && !isGenericSummaryLine(summary)
     ? summary
     : "";
+  const originalDetail = [
+    item.description,
+    raw.description,
+    raw.summary,
+    raw.content,
+    raw.body,
+  ].filter(Boolean).join(" ");
+  const fallbackSummary = originalDetail ? "" : usableSummary;
   return cleanSummaryText([
     item.title,
     item.description,
@@ -8766,7 +8774,7 @@ function sourceEvidenceHaystack(item = {}) {
     raw.summary,
     raw.content,
     raw.body,
-    usableSummary,
+    fallbackSummary,
     item.keyword,
     item.source,
   ].filter(Boolean).join(" "));
@@ -9101,18 +9109,18 @@ const emptyMediaForm = {
 };
 
 const keywordCategories = [
-  { id: "own", label: "당사", rule: "당사명, 브랜드, 임직원처럼 직접 언급만 당사로 분류합니다." },
-  { id: "competitor", label: "GA", rule: "GA, 설계사, 정착지원금 문맥이 함께 있을 때 경쟁사 이슈로 봅니다." },
-  { id: "industry", label: "보험사", rule: "보험사, 판매채널, 소비자 동향처럼 보험사·업계 흐름을 추적합니다." },
-  { id: "regulation", label: "정책", rule: "금융당국, 수수료, 제도, 법령 이슈를 주의 관찰로 분리합니다." },
+  { id: "own", label: "당사", rule: "당사명·브랜드·임직원 직접 언급만 당사로 분류합니다." },
+  { id: "competitor", label: "GA", rule: "GA·보험대리점·설계사·정착지원금 문맥이 함께 있을 때 GA 이슈로 봅니다." },
+  { id: "industry", label: "보험사", rule: "보험사·상품·판매채널·소비자 동향처럼 보험업계 흐름을 추적합니다." },
+  { id: "regulation", label: "정책", rule: "금융당국·수수료·제도·법령 이슈를 정책/규제 관찰로 분리합니다." },
   { id: "other", label: "기타", rule: "일반 관심 키워드나 별도 문맥 분석 대상입니다." },
-  { id: "exclude", label: "제외 후보", rule: "브랜드평판, 스포츠, 상품명 오탐처럼 수집 제외 후보로 관리합니다." },
+  { id: "exclude", label: "제외", rule: "동명이어·스포츠·비보험 금융처럼 분석에서 제외할 신호를 관리합니다." },
 ];
 
 const keywordMatchModes = [
   { id: "keyword", label: "일반" },
   { id: "context", label: "문맥 필수" },
-  { id: "strict", label: "확장어 고정" },
+  { id: "strict", label: "정밀" },
   { id: "exact", label: "정확 일치" },
 ];
 
@@ -9532,8 +9540,18 @@ function keywordRuleMatchesArticle(row, article = {}) {
 function articleTextForKeywordTarget(article = {}, target = "title_summary") {
   const title = article.title || "";
   const raw = article.raw && typeof article.raw === "object" ? article.raw : {};
-  const originalDescription = article.description || raw.description || raw.summary || "";
-  const summary = originalDescription || article.summary || "";
+  const originalDescription = [
+    article.description,
+    raw.description,
+    raw.summary,
+    raw.content,
+    raw.body,
+  ].filter(Boolean).join(" ");
+  const summary = originalDescription || (
+    !isLowValueAnalysisLine(article.summary || "") && !isGenericSummaryLine(article.summary || "")
+      ? article.summary || ""
+      : ""
+  );
   const source = article.source || article.media || "";
   const keyword = article.keyword || "";
   if (target === "title_only") return title;
@@ -10630,8 +10648,8 @@ function isGeneralSportsNoiseArticle(article = {}) {
 }
 
 function isGeneralFinanceNoiseArticle(article = {}) {
-  const text = originalArticleHaystack(article);
-  const hasFinanceNoise = /한양증권|중앙일보|하나은행|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|증권사/.test(text);
+  const text = sourceEvidenceHaystack(article);
+  const hasFinanceNoise = /한양증권|중앙일보|하나은행|은행권|카드사?|롯데카드|신용카드|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융/.test(text);
   const hasInsuranceGaContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회/.test(text);
   return hasFinanceNoise && !hasInsuranceGaContext;
 }
@@ -10643,8 +10661,8 @@ function hasMaterialInsuranceGaContext(article = {}) {
 
 function isNonInsuranceFinancialRegulatoryArticle(article = {}) {
   const text = sourceEvidenceHaystack(article);
-  const hasRegulatorySignal = /금융위|금융위원회|금감원|금융감독원|제재|검사|감독|금융보안|해킹|내부통제|보고의무/.test(text);
-  const hasNonInsuranceSector = /카드사?|롯데카드|은행|증권|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융/.test(text);
+  const hasRegulatorySignal = /금융위|금융위원회|금감원|금융감독원|제재|제재심|검사|감독|금융보안|해킹|내부통제|보고의무|공시제도|개정\s*상법/.test(text);
+  const hasNonInsuranceSector = /카드사?|롯데카드|신용카드|은행권?|은행업|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|PG사|결제대행/.test(text);
   return hasRegulatorySignal && hasNonInsuranceSector && !hasMaterialInsuranceGaContext(article);
 }
 

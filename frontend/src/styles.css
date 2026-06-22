@@ -7551,10 +7551,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .keyword-ledger-table td:nth-child(9) { width: 72px; text-align: center; }
 .keyword-ledger-table th:nth-child(10),
 .keyword-ledger-table th:nth-child(11),
-.keyword-ledger-table th:nth-child(12) { width: 250px; text-align: center; }
+.keyword-ledger-table th:nth-child(12),
 .keyword-ledger-table td:nth-child(10),
 .keyword-ledger-table td:nth-child(11),
-.keyword-ledger-table td:nth-child(12) { width: 250px; text-align: left; }
+.keyword-ledger-table td:nth-child(12) {
+  width: 250px;
+  text-align: center;
+}
 
 .keyword-ledger-table tbody tr:hover {
   background: #f8fbff;
@@ -7676,6 +7679,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   width: 100%;
   overflow: hidden;
   color: var(--ink);
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -7689,6 +7693,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   width: 100%;
   overflow: hidden;
   color: var(--muted);
+  text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
