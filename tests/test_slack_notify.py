@@ -46,9 +46,9 @@ class SlackDailyPayloadTests(unittest.TestCase):
         self.assertNotIn("fields", metric_block)
         self.assertEqual(
             [cell["text"] for cell in metric_block["rows"][0]],
-            ["\ub9ac\uc2a4\ud06c", "\ubd84\uc11d", "\ub2f9\uc0ac", "\ubd80\uc815", "\uae0d\uc815", "\uc911\ub9bd"],
+            ["\ub9ac\uc2a4\ud06c", "\ubd84\uc11d", "\ubd80\uc815", "\uae0d\uc815", "\uc911\ub9bd"],
         )
-        self.assertEqual([cell["text"] for cell in metric_block["rows"][1]], ["LOW", "2", "1", "0", "1", "0"])
+        self.assertEqual([cell["text"] for cell in metric_block["rows"][1]], ["LOW", "2", "0", "1", "0"])
         self.assertTrue(all(setting["align"] == "center" for setting in metric_block["column_settings"]))
         self.assertNotIn(slack_notify.K["default_conclusion"], header_block)
         self.assertIn("\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4", key_issue_block)

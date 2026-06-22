@@ -136,7 +136,6 @@ def divider() -> dict:
 
 def metric_table_block(report: dict, metrics: dict) -> dict:
     own_tone = metrics.get("own_by_tone", {}) or {}
-    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
     own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
     positive = own_tone.get("positive", 0)
     neutral = own_tone.get("neutral", 0)
@@ -145,12 +144,11 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
     headers = [
         K["risk"],
         K["analyzed_short"],
-        K["own_short"],
         K["negative_short"],
         K["positive_short"],
         K["neutral_short"],
     ]
-    values = [risk, analyzed, own_total, own_negative, positive, neutral]
+    values = [risk, analyzed, own_negative, positive, neutral]
     return {
         "type": "table",
         "column_settings": [{"align": "center"} for _ in headers],

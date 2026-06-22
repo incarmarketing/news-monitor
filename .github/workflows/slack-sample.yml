@@ -52,13 +52,11 @@ jobs:
                           {"align": "center"},
                           {"align": "center"},
                           {"align": "center"},
-                          {"align": "center"},
                       ],
                       "rows": [
                           [
                               raw("리스크"),
                               raw("분석"),
-                              raw("당사"),
                               raw("부정"),
                               raw("긍정"),
                               raw("중립"),
@@ -66,7 +64,6 @@ jobs:
                           [
                               raw("LOW"),
                               raw("42"),
-                              raw("1"),
                               raw("0"),
                               raw("0"),
                               raw("1"),
