@@ -27,7 +27,7 @@ SLOT_DUE_HOUR = {
     "13": 13,
     "18": 18,
 }
-DAILY_REPORT_TITLE_PREFIX = "\uc77c\uc77c \uc5b8\ub860 \ub3d9\ud5a5"
+DAILY_NOTIFICATION_TITLE_PREFIX = "\uc5b8\ub860 \ub3d9\ud5a5"
 
 
 def github_output(name: str, value: str) -> None:
@@ -196,10 +196,27 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
             "&status=eq.success"
             "&limit=1",
         )
+        notification_rows = supabase_select(
+            "notification_sends",
+            "select=id"
+            "&channel=eq.slack"
+            "&message_type=eq.daily_report"
+            f"&title=eq.{quote(daily_notification_title(report_date, slot))}"
+            "&status=eq.success"
+            "&limit=1",
+        )
     except RuntimeError as error:
         print(f"Supabase completion check unavailable: {error}")
         return None
-    return bool(report_rows) or bool(job_rows)
+    report_complete = bool(report_rows) or bool(job_rows)
+    notification_sent = bool(notification_rows)
+    if report_complete and not notification_sent:
+        print(f"Report exists but Slack send is not confirmed for {report_date} {slot}.")
+    return report_complete and notification_sent
+
+
+def daily_notification_title(report_date: str, slot: str) -> str:
+    return f"{DAILY_NOTIFICATION_TITLE_PREFIX} {report_date} {slot}"
 
 
 def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:

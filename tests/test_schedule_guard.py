@@ -36,9 +36,27 @@ class ScheduleGuardTests(unittest.TestCase):
             with patch.object(schedule_guard, "daily_report_succeeded", return_value=False):
                 self.assertFalse(schedule_guard.slot_is_complete("2026-05-31", "08", marker))
 
-    def test_supabase_success_completes_slot_even_without_marker(self) -> None:
+    def test_supabase_report_and_slack_success_complete_slot_even_without_marker(self) -> None:
         with patch.object(schedule_guard, "daily_report_succeeded", return_value=True):
             self.assertTrue(schedule_guard.slot_is_complete("2026-05-31", "08", Path("missing.txt")))
+
+    def test_report_without_slack_success_does_not_complete_slot(self) -> None:
+        rows = [
+            [{"run_key": "daily_report:2026-06-22:13"}],
+            [],
+            [],
+        ]
+        with patch.object(schedule_guard, "supabase_select", side_effect=rows):
+            self.assertFalse(schedule_guard.daily_report_succeeded("2026-06-22", "13"))
+
+    def test_report_with_slack_success_completes_slot(self) -> None:
+        rows = [
+            [{"run_key": "daily_report:2026-06-22:13"}],
+            [],
+            [{"id": 1}],
+        ]
+        with patch.object(schedule_guard, "supabase_select", side_effect=rows):
+            self.assertTrue(schedule_guard.daily_report_succeeded("2026-06-22", "13"))
 
 
 if __name__ == "__main__":

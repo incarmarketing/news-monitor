@@ -130,10 +130,6 @@ def divider() -> dict:
     return {"type": "divider"}
 
 
-def raw_cell(value: object) -> dict:
-    return {"type": "raw_text", "text": str(value or "")[:200]}
-
-
 def metric_table_block(report: dict, metrics: dict) -> dict:
     own_tone = metrics.get("own_by_tone", {}) or {}
     own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
@@ -141,32 +137,16 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
     neutral = own_tone.get("neutral", 0)
     risk = metrics.get("risk_level", "-")
     analyzed = daily_analyzed_count(metrics)
-    return {
-        "type": "table",
-        "column_settings": [
-            {"align": "center"},
-            {"align": "center"},
-            {"align": "center"},
-            {"align": "center"},
-            {"align": "center"},
+    return section(
+        f"*{K['report_basis']}*",
+        [
+            f"*{K['risk']}*\n{risk}",
+            f"*{K['analyzed_short']}*\n{analyzed}",
+            f"*{K['positive_short']}*\n{positive}",
+            f"*{K['neutral_short']}*\n{neutral}",
+            f"*{K['negative_short']}*\n{own_negative}",
         ],
-        "rows": [
-            [
-                raw_cell(K["risk"]),
-                raw_cell(K["analyzed_short"]),
-                raw_cell(K["positive_short"]),
-                raw_cell(K["neutral_short"]),
-                raw_cell(K["negative_short"]),
-            ],
-            [
-                raw_cell(risk),
-                raw_cell(analyzed),
-                raw_cell(positive),
-                raw_cell(neutral),
-                raw_cell(own_negative),
-            ],
-        ],
-    }
+    )
 
 
 def load_latest_daily() -> dict:
