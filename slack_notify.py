@@ -146,11 +146,11 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
         "type": "table",
         "column_settings": [
             {"align": "center"},
-            {"align": "right"},
-            {"align": "right"},
-            {"align": "right"},
-            {"align": "right"},
-            {"align": "right"},
+            {"align": "center"},
+            {"align": "center"},
+            {"align": "center"},
+            {"align": "center"},
+            {"align": "center"},
         ],
         "rows": [
             [

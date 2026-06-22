@@ -44,6 +44,7 @@ class SlackDailyPayloadTests(unittest.TestCase):
 
         self.assertEqual(metric_block["type"], "table")
         self.assertEqual(metric_block["rows"][0][0]["text"], "\ub9ac\uc2a4\ud06c")
+        self.assertTrue(all(setting["align"] == "center" for setting in metric_block["column_settings"]))
         self.assertEqual(metric_block["rows"][1][0]["text"], "LOW")
         self.assertEqual(metric_block["rows"][1][1]["text"], "2")
         self.assertEqual(metric_block["rows"][0][4]["text"], "\uae0d\uc815")
