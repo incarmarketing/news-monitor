@@ -373,14 +373,6 @@
     word-break:keep-all;
     overflow-wrap:anywhere;
   }
-  .article-summary {
-    color:var(--ink-2);
-    font-size:12px;
-    line-height:1.48;
-    font-weight:800;
-    word-break:keep-all;
-    overflow-wrap:anywhere;
-  }
   .article-meta {
     display:flex;
     flex-wrap:wrap;
@@ -575,9 +567,6 @@
     .article-title {
       font-size:13.5px;
     }
-    .article-summary {
-      font-size:12px;
-    }
     .basis-grid div {
       display:grid;
       gap:3px;
@@ -663,7 +652,6 @@
       overflow:hidden;
     }
     .issue-card p,
-    .article-summary,
     .note-text,
     .analysis-note p,
     .analysis-note li,
@@ -683,7 +671,6 @@
     .article-list .article-card:nth-child(n+4),
     .mini-list .side-card:nth-child(n+3) { display:none; }
     .article-tags { gap:2px; }
-    .article-summary { -webkit-line-clamp:2; }
     .keyword { min-height:14px; padding:0 4px; font-size:6.2px; }
     .keyword-row .keyword:nth-child(n+6) { display:none; }
     .basis-grid { gap:2px; }
@@ -717,7 +704,7 @@
       <section class="brief-box">
         <div class="brief-title">
           <span>오늘의 브리프</span>
-          <span>모바일 요약 · 3줄 기준</span>
+          <span>분류 기준 · 3줄</span>
         </div>
         <ul class="brief-lines">
           {% for line in daily_brief %}
@@ -774,9 +761,6 @@
                   <span class="tag tone-{{ a._tone }}">{{ a._tone_label }}</span>
                 </div>
                 <a class="article-title" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
-                {% if a._summary %}
-                <div class="article-summary">{{ a._summary }}</div>
-                {% endif %}
                 <div class="article-meta">
                   <span>{{ a.source }}</span>
                   <span>{{ a.keyword }}</span>
@@ -798,7 +782,7 @@
         <section class="panel analysis-note">
           <div class="panel-head">
             <h2>지표 해석</h2>
-            <span>요약</span>
+            <span>판단</span>
           </div>
           {{ sections.interpretation_html | safe }}
         </section>
@@ -883,7 +867,7 @@
     </section>
 
     <footer class="footer">
-      본 보고서는 수집 기사와 원문 기준의 모니터링 요약입니다. 대외 대응 전 원문, 사실관계, 이해관계자 영향을 별도로 확인하세요.
+      본 보고서는 수집 기사와 원문 기준의 모니터링 자료입니다. 대외 대응 전 원문, 사실관계, 이해관계자 영향을 별도로 확인하세요.
     </footer>
   </main>
 </body>
