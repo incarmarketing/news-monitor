@@ -928,7 +928,8 @@ function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring 
 function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
   const ranked = [...(issues || [])]
     .map(normalizeArticleDisplay)
-    .sort((a, b) => toneRank(b.tone) - toneRank(a.tone))
+    .filter(isMajorIssueCandidate)
+    .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
     .slice(0, 6);
   return (
     <section className="risk-priority-queue">
@@ -7929,6 +7930,7 @@ function buildIssues(articles, fallback) {
   const usableArticles = articles.filter(isUsableArticle);
   const important = buildRelatedArticleGroups(usableArticles)
     .filter((article) => article?.title)
+    .filter(isMajorIssueCandidate)
     .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
   const uniqueIssues = [];
   const seenIssueKeys = new Set();
@@ -7961,7 +7963,7 @@ function buildIssues(articles, fallback) {
     });
     if (uniqueIssues.length >= 5) break;
   }
-  return uniqueIssues.length ? uniqueIssues : fallback;
+  return uniqueIssues.length ? uniqueIssues : [];
 }
 
 function majorIssueDedupeKey(article = {}) {
@@ -7991,10 +7993,41 @@ function dashboardIssueScore(issue = {}) {
   const sponsorship = members.some(isOwnSponsoredSportsArticle) || ["브랜드/스폰서십", "스폰서십"].includes(issue.category);
   const groupToneScore = Math.max(...members.map((item) => ({ 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[item.tone] || 0)));
   const toneScore = Math.max(groupToneScore, { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0);
-  const categoryScore = sponsorship ? 35 : issue.category === "정책/규제" ? 130 : ["GA", "보험사"].includes(issue.category) ? 80 : 0;
+  const priorityScore = majorIssuePriorityScore(issue);
   const ownScore = !sponsorship && members.some(isOwnArticle) ? 520 : 0;
   const relatedScore = Math.min(Number(issue.relatedCount || 1), 6) * 24;
-  return ownScore + toneScore + categoryScore + relatedScore + Number(issue.score || 0);
+  return priorityScore + ownScore + toneScore + relatedScore + Number(issue.score || 0);
+}
+
+function isMajorIssueCandidate(issue = {}) {
+  const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
+  if (!members.length) return false;
+  if (members.every(isNonInsuranceFinancialRegulatoryArticle)) return false;
+  return members.some(isOwnArticle)
+    || members.some(isGaInsuranceMajorIssueArticle)
+    || members.some(isInsurancePolicyMajorIssueArticle);
+}
+
+function majorIssuePriorityScore(issue = {}) {
+  const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
+  if (members.some(isOwnArticle)) return 900;
+  if (members.some(isGaInsuranceMajorIssueArticle)) return 650;
+  if (members.some(isInsurancePolicyMajorIssueArticle)) return 460;
+  return 0;
+}
+
+function isGaInsuranceMajorIssueArticle(article = {}) {
+  return ["GA", "보험사", "경쟁사", "업계동향"].includes(article.category) && hasMaterialInsuranceGaContext(article);
+}
+
+function isInsurancePolicyMajorIssueArticle(article = {}) {
+  if (isNonInsuranceFinancialRegulatoryArticle(article)) return false;
+  const text = originalArticleHaystack(article);
+  const category = String(article.category || "");
+  const source = String(article.source || "");
+  const hasPolicySignal = category === "정책/규제"
+    || /정책|규제|금감원|금융감독원|금융위|금융위원회|감독|제재|검사|제도|법안|시행령/.test(`${category} ${source} ${text}`);
+  return hasPolicySignal && hasMaterialInsuranceGaContext(article);
 }
 
 function buildMediaAnalysisIssues(articles = [], period = "monthly") {
@@ -8700,6 +8733,7 @@ function originalArticleHaystack(item = {}) {
   const raw = item.raw && typeof item.raw === "object" ? item.raw : {};
   return cleanSummaryText([
     item.title,
+    item.summary,
     item.description,
     raw.title,
     raw.description,
@@ -10573,6 +10607,18 @@ function isGeneralFinanceNoiseArticle(article = {}) {
   const hasFinanceNoise = /한양증권|중앙일보|하나은행|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|증권사/.test(text);
   const hasInsuranceGaContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회/.test(text);
   return hasFinanceNoise && !hasInsuranceGaContext;
+}
+
+function hasMaterialInsuranceGaContext(article = {}) {
+  const text = originalArticleHaystack(article);
+  return /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약/.test(text);
+}
+
+function isNonInsuranceFinancialRegulatoryArticle(article = {}) {
+  const text = originalArticleHaystack(article);
+  const hasRegulatorySignal = /금융위|금융위원회|금감원|금융감독원|제재|검사|감독|금융보안|해킹|내부통제|보고의무/.test(text);
+  const hasNonInsuranceSector = /카드사?|롯데카드|은행|증권|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융/.test(text);
+  return hasRegulatorySignal && hasNonInsuranceSector && !hasMaterialInsuranceGaContext(article);
 }
 
 function isAdminAgencyNoiseArticle(article = {}) {
