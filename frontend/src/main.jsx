@@ -738,22 +738,6 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   const historyHealth = operationsHealth.items.find((item) => item.title === "Supabase 기록");
   return (
     <main className="workspace">
-      <PageTitle
-        eyebrow={`${data.label} · ${data.scope}`}
-        title="대시보드"
-        description="검색 키워드 기준 주요 이슈, 당사 리스크, 슬랙 발송, 보고서 생성 상태를 운영 데이터 기준으로 확인합니다."
-        right={(
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => onRefreshOperations?.({ trigger: true, source: "overview_issues" })}
-            disabled={isLoading}
-          >
-            <RefreshCw />갱신
-          </button>
-        )}
-      />
-
       <TerminalCommandBar
         data={data}
         summary={summary}
@@ -792,6 +776,8 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           actionsHealth={actionsHealth}
           historyHealth={historyHealth}
           notifications={notifications}
+          isLoading={isLoading}
+          onRefreshOperations={onRefreshOperations}
         />
       </section>
 
@@ -988,12 +974,24 @@ function OpsStatusRail({
   actionsHealth,
   historyHealth,
   notifications,
+  isLoading,
+  onRefreshOperations,
 }) {
   return (
     <aside className="ops-status-rail">
       <div className="ops-rail-head">
-        <span>OPERATIONS</span>
-        <b>감시 · 발송 · API</b>
+        <div>
+          <span>OPERATIONS</span>
+          <b>감시 · 발송 · API</b>
+        </div>
+        <button
+          type="button"
+          className="ghost-button compact-button ops-refresh-button"
+          onClick={() => onRefreshOperations?.({ trigger: true, source: "overview_operations" })}
+          disabled={isLoading}
+        >
+          <RefreshCw />갱신
+        </button>
       </div>
       <WatchPanel jobs={jobs} risk={summary?.risk} health={watchHealth} />
       <AiUsagePanel status={operations?.aiStatus} />

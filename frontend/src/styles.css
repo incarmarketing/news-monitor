@@ -8496,7 +8496,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail {
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   border: 1px solid #cfd8e6;
   border-radius: 8px;
   background: linear-gradient(180deg, #f8fafc, #eef2f7);
@@ -8506,8 +8507,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-rail-head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.ops-rail-head > div {
+  display: grid;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -8516,6 +8523,257 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-size: 13px;
   font-weight: 950;
   white-space: nowrap;
+}
+
+.ops-refresh-button {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+.ops-refresh-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ops-status-rail > .panel,
+.ops-status-rail .ai-usage-panel,
+.ops-status-rail .watch-panel {
+  padding: 10px;
+  border-radius: 7px;
+  box-shadow: var(--surface-glow), 0 8px 18px rgba(16, 24, 40, .055);
+}
+
+.ops-status-rail .panel-head {
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 9px;
+}
+
+.ops-status-rail .panel-head h2 {
+  gap: 6px;
+  font-size: 13px;
+}
+
+.ops-status-rail .panel-head h2 svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ops-status-rail .panel-head span {
+  min-height: 20px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.ops-status-rail .watch-panel {
+  min-height: 164px;
+  padding-bottom: 12px;
+}
+
+.ops-status-rail .watch-title-row {
+  margin-bottom: 9px;
+}
+
+.ops-status-rail .watch-title-row span {
+  gap: 6px;
+  font-size: 12px;
+}
+
+.ops-status-rail .watch-title-row .health-pill {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.ops-status-rail .watch-top {
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.ops-status-rail .radar-asset {
+  width: 76px;
+  height: 76px;
+  background:
+    repeating-radial-gradient(circle, rgba(215, 226, 255, .35) 0 1px, transparent 1px 17px),
+    radial-gradient(circle, rgba(81, 103, 190, .2) 0, rgba(18, 36, 95, .64) 68%, rgba(9, 22, 68, .1) 100%);
+}
+
+.ops-status-rail .radar-asset svg {
+  width: 26px;
+  height: 26px;
+}
+
+.ops-status-rail .radar-sweep {
+  width: 38px;
+  height: 38px;
+}
+
+.ops-status-rail .radar-ring.r1 { inset: 13px; }
+.ops-status-rail .radar-ring.r2 { inset: 26px; }
+.ops-status-rail .radar-dot { width: 6px; height: 6px; }
+.ops-status-rail .radar-dot.d1 { top: 20px; right: 21px; }
+.ops-status-rail .radar-dot.d2 { left: 20px; bottom: 22px; }
+
+.ops-status-rail .watch-top h2 {
+  margin-bottom: 5px;
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ops-status-rail .watch-top p {
+  margin-bottom: 3px;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ops-status-rail .watch-copy > span {
+  margin-top: 9px;
+  padding: 4px 7px;
+  font-size: 10px;
+}
+
+.ops-status-rail .watch-progress {
+  left: 20px;
+  bottom: 11px;
+  width: 92px;
+  height: 4px;
+}
+
+.ops-status-rail .ai-usage-panel {
+  gap: 8px;
+}
+
+.ops-status-rail .ai-usage-head span {
+  gap: 6px;
+  font-size: 12px;
+}
+
+.ops-status-rail .ai-power-layout {
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.ops-status-rail .ai-power-meter {
+  width: 72px;
+  height: 72px;
+}
+
+.ops-status-rail .ai-power-meter::before {
+  inset: 6px;
+}
+
+.ops-status-rail .ai-power-core strong {
+  font-size: 21px;
+}
+
+.ops-status-rail .ai-power-core span,
+.ops-status-rail .ai-power-copy span,
+.ops-status-rail .ai-backup-strip span {
+  font-size: 10px;
+}
+
+.ops-status-rail .ai-power-copy b {
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.ops-status-rail .ai-meter-bars {
+  gap: 6px;
+}
+
+.ops-status-rail .ai-meter-row {
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.ops-status-rail .ai-meter-track {
+  height: 7px;
+}
+
+.ops-status-rail .ai-backup-strip {
+  gap: 4px 6px;
+}
+
+.ops-status-rail .operation-status-summary {
+  gap: 4px;
+  margin-top: 0;
+  padding: 7px 8px;
+  border-radius: 7px;
+}
+
+.ops-status-rail .operation-status-summary > div {
+  gap: 6px;
+}
+
+.ops-status-rail .operation-status-summary b {
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.ops-status-rail .operation-status-summary span {
+  font-size: 10px;
+}
+
+.ops-status-rail .watch-lines,
+.ops-status-rail .notification-list {
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ops-status-rail .watch-lines div,
+.ops-status-rail .notification-list button {
+  gap: 6px;
+  padding: 7px;
+  border-radius: 7px;
+}
+
+.ops-status-rail .watch-lines span,
+.ops-status-rail .notification-list span,
+.ops-status-rail .watch-lines b,
+.ops-status-rail .notification-list b {
+  font-size: 11px;
+}
+
+.ops-status-rail .notification-more {
+  min-height: 30px;
+  margin-top: 7px;
+  font-size: 11px;
+}
+
+.ops-status-rail .report-automation-status {
+  gap: 8px;
+}
+
+.ops-status-rail .daily-slot-grid {
+  gap: 6px;
+}
+
+.ops-status-rail .daily-slot {
+  gap: 2px;
+  padding: 7px;
+  border-radius: 7px;
+}
+
+.ops-status-rail .daily-slot b,
+.ops-status-rail .daily-slot em,
+.ops-status-rail .automation-foot b,
+.ops-status-rail .automation-foot em {
+  font-size: 10px;
+}
+
+.ops-status-rail .automation-foot {
+  gap: 6px;
+}
+
+.ops-status-rail .automation-foot span {
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 6px;
+  padding: 7px;
+  border-radius: 7px;
 }
 
 .media-intel-board {
