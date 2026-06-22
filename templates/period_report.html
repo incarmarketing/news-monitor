@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ period_label }} 미디어 모니터링 리포트</title>
+<title>{{ period_label }} 언론 동향 리서치 리포트</title>
 <!-- print-layout-version: one-page-20260610 -->
 <style>
   :root {
@@ -68,8 +68,10 @@
     grid-template-columns:minmax(0,1fr) auto;
     gap:16px;
     padding:18px 20px 14px;
-    border-bottom:0;
-    background:linear-gradient(135deg,#101828 0%,#132a63 68%,#2454c6 100%);
+    border-bottom:3px double rgba(255,255,255,.44);
+    background:
+      linear-gradient(135deg,#101828 0%,#132a63 68%,#2454c6 100%),
+      repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 1px,transparent 1px 46px);
     color:#fff;
   }
   .eyebrow {
@@ -94,7 +96,7 @@
   h1 {
     margin:5px 0 4px;
     color:#fff;
-    font-size:27px;
+    font-size:26px;
     line-height:1.14;
     letter-spacing:0;
   }
@@ -109,7 +111,7 @@
   .risk-panel {
     min-width:178px;
     border:1px solid rgba(255,255,255,.28);
-    border-radius:8px;
+    border-radius:7px;
     padding:10px;
     background:rgba(255,255,255,.12);
     display:grid;
@@ -675,12 +677,12 @@
     }
     .report-head {
       grid-template-columns:minmax(0,1fr) 142px;
-      padding:6px 8px;
+      padding:5px 8px;
       gap:8px;
       border-radius:7px;
     }
     .badge { padding:2px 6px; font-size:7.2px; }
-    h1 { margin:2px 0; font-size:17px; }
+    h1 { margin:1px 0 2px; font-size:16.5px; }
     .headline { font-size:8.6px; line-height:1.2; }
     .eyebrow,.risk-meta { font-size:6.9px; }
     .risk-panel { min-width:132px; padding:5px 7px; gap:2px; border-radius:6px; }
@@ -789,7 +791,7 @@
   <header class="report-head">
     <div>
       <div class="eyebrow"><span class="badge">{{ period_badge }}</span><span>{{ company }} · {{ team }}</span><span>{{ period_range }}</span><span>{{ generated_at }}</span></div>
-      <h1>{{ period_label }} 미디어 모니터링 리포트</h1>
+      <h1>{{ period_label }} 언론 동향 리서치 리포트</h1>
       <p class="headline">{{ report_context.headline }}</p>
     </div>
     <aside class="risk-panel">
@@ -810,11 +812,11 @@
 
   <section class="content-grid">
     <div class="panel summary-panel">
-      <h2>요약 분석 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
+      <h2>핵심 판단 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
       <div class="analysis-body">{{ ai_report_html | safe }}</div>
     </div>
     <div class="panel metrics-panel">
-      <h2>누적 지표 <span>관찰 지표 · 반복 노출</span></h2>
+      <h2>리서치 지표 <span>관찰 지표 · 반복 노출</span></h2>
       <div class="density-grid">
         {% for item in report_context.density_rows %}
         <div class="density-item"><b>{{ item.value }}</b><span>{{ item.label }} · {{ item.note }}</span></div>
@@ -849,7 +851,7 @@
 
   <section class="content-grid trend-log-grid">
     <div class="panel">
-      <h2>일자별 노출 흐름 <span>최근 최대 12일</span></h2>
+      <h2>노출 흐름 <span>최근 최대 12일</span></h2>
       <div class="trend">
         {% for d in trend_days %}
         <div class="day">
@@ -965,7 +967,7 @@
   </section>
 
   <footer class="footer">
-    <span>{{ period_label }} 미디어 모니터링 리포트 · 기준: 당사 직접 부정 기사, HIGH/MEDIUM 일자, 반복 노출 키워드</span>
+    <span>{{ period_label }} 언론 동향 리서치 리포트 · 기준: 당사 직접 부정 기사, HIGH/MEDIUM 일자, 반복 노출 키워드</span>
     <span>{{ company }} {{ team }}</span>
   </footer>
 </main>

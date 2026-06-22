@@ -763,6 +763,13 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         onOpenMonitoring={onOpenMonitoring}
       />
 
+      <nav className="dashboard-mobile-home" aria-label="모바일 대시보드 바로가기">
+        <button type="button" onClick={() => setActiveSection("monitoring")}>모니터링</button>
+        <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
+        <button type="button" onClick={() => setActiveSection("clipping")}>클리핑</button>
+        <button type="button" onClick={() => setActiveSection("risk")}>대응센터</button>
+      </nav>
+
       <section className="terminal-dashboard-grid">
         <div className="terminal-main-stack">
           <RiskPriorityQueue issues={data.issues} onOpenMonitoring={onOpenMonitoring} />
@@ -4682,7 +4689,7 @@ function A4ReportSheet({
   const summary = data.summary || {};
   const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
   const isDaily = period === "daily";
-  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope).slice(0, isDaily ? 3 : 4);
+  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope).slice(0, isDaily ? 2 : 4);
   const stats = buildA4ReportStats(summary, articles);
   const pressLimit = isDaily ? 0 : period === "monthly" ? 4 : 5;
   const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, pressLimit);
@@ -4690,7 +4697,7 @@ function A4ReportSheet({
   const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows, scope).slice(0, isDaily ? 2 : 4);
   const toneRows = buildA4ToneLedger(articles);
   const keywordLimit = isDaily ? 0 : period === "monthly" ? 6 : 10;
-  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, isDaily ? 3 : period === "monthly" ? 4 : 5);
+  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, isDaily ? 4 : period === "monthly" ? 5 : 6);
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
@@ -4731,6 +4738,21 @@ function A4ReportSheet({
             )}
           </div>
         </article>
+        {isDaily && (
+          <aside className="a4-insight daily-scope">
+            <span>보고 기준</span>
+            <dl className="a4-basis-list">
+              <div>
+                <dt>구간</dt>
+                <dd>{scope.scopeLabel || data.scope || "-"}</dd>
+              </div>
+              <div>
+                <dt>기준</dt>
+                <dd>{scope.basisLabel}</dd>
+              </div>
+            </dl>
+          </aside>
+        )}
         {!isDaily && (
           <aside className="a4-insight">
             <span>집계 기준</span>
@@ -4764,6 +4786,31 @@ function A4ReportSheet({
           </A4Panel>
         </div>
 
+        {isDaily && (
+          <div className="a4-report-side-column">
+            <A4Panel title="보고 판단" meta="Daily">
+              <div className="a4-comment-list compact">
+                {observationRows.map((row) => (
+                  <article key={row.label}>
+                    <span>{row.label}</span>
+                    <b>{row.body}</b>
+                  </article>
+                ))}
+              </div>
+            </A4Panel>
+            <A4Panel title="논조 분포" meta="분류">
+              <div className="a4-tone-ledger compact">
+                {toneRows.map((row) => (
+                  <span key={row.label} className={row.tone}>
+                    <b>{row.value}</b>
+                    <em>{row.label}</em>
+                  </span>
+                ))}
+              </div>
+            </A4Panel>
+          </div>
+        )}
+
         {!isDaily && (
           <div className="a4-report-side-column">
             <A4Panel title={scope.trendTitle} meta={scope.trendMeta}>
@@ -4791,7 +4838,7 @@ function A4ReportSheet({
         )}
 
         <div className="a4-report-bottom-row">
-          <A4Panel title="관찰 코멘트" meta="요약">
+          <A4Panel title={isDaily ? "핵심 메모" : "관찰 코멘트"} meta="요약">
             <div className="a4-comment-list">
               {observationRows.map((row) => (
                 <article key={row.label}>
@@ -5041,21 +5088,21 @@ function publicationMeta(period, data) {
   const date = scope.scopeLabel || data.scope || data.generatedAt || "";
   const meta = {
     daily: {
-      kicker: "Daily Report",
+      kicker: "일간 브리프",
       title: "일일 언론 동향 보고서",
       subtitle: "당일 수집 기사 기준 핵심 이슈와 즉시 확인할 리스크를 정리합니다.",
       issue: `${date} · 당일 집계`,
     },
     weekly: {
-      kicker: "Weekly Report",
-      title: "주간 언론 동향 보고서",
-      subtitle: "해당 주차의 반복 노출, 논조 변화, 관리 이슈를 한 장으로 요약합니다.",
+      kicker: "주간 리서치",
+      title: "주간 언론 동향 리서치 보고서",
+      subtitle: "해당 주차의 반복 노출, 논조 변화, 관리 이슈를 리서치 형식으로 정리합니다.",
       issue: `${date} · 주차 집계`,
     },
     monthly: {
-      kicker: "Monthly Report",
-      title: "월간 언론 동향 보고서",
-      subtitle: "집계월 기준 누적 기사, 매체 영향도, 키워드 흐름을 정리합니다.",
+      kicker: "월간 리서치",
+      title: "월간 언론 동향 리서치 보고서",
+      subtitle: "집계월 기준 누적 기사, 매체 영향도, 키워드 흐름을 리서치 형식으로 정리합니다.",
       issue: `${scope.month || date} · 집계월`,
     },
   };
