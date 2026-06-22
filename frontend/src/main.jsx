@@ -4913,7 +4913,7 @@ function A4Panel({ title, meta, children }) {
 }
 
 function A4IssueRow({ issue, compact = false }) {
-  const lines = buildArticleSummaryLines(issue).slice(0, compact ? 1 : 2);
+  const lines = buildVisibleArticleSummaryLines(issue).slice(0, compact ? 1 : 2);
   return (
     <article className={compact ? "a4-issue-row compact" : "a4-issue-row"}>
       <div>
@@ -6395,7 +6395,7 @@ function RelatedIssueDetails({ issue = {}, compact = false }) {
 }
 
 function ArticleSummaryBlock({ item, dense = false }) {
-  const lines = buildArticleSummaryLines(item).slice(0, dense ? 3 : 4);
+  const lines = buildVisibleArticleSummaryLines(item).slice(0, dense ? 2 : 3);
   if (!lines.length) return null;
   return (
     <ul className={dense ? "summary-lines dense" : "summary-lines"}>
@@ -6515,8 +6515,8 @@ function KeywordRuleValidation({ validation }) {
 
 function ArticleDecisionNote({ item, hideClippingLabel = false }) {
   const context = item?.aiContext || {};
-  const reason = item?.clippingReason || context.reason || "";
-  const evidence = context.evidence || "";
+  const reason = cleanDecisionNoteLine(item?.clippingReason || context.reason || "");
+  const evidence = cleanDecisionNoteLine(context.evidence || "");
   const confidence = Number(context.confidence || 0);
   const chips = [];
   if (item?.clippingRecommended && !hideClippingLabel) chips.push("클리핑 후보");
@@ -6542,6 +6542,12 @@ function negativeTargetLabel(value = "") {
     competitor: "경쟁사",
     policy: "정책",
   }[String(value).trim()] || String(value || "").trim();
+}
+
+function cleanDecisionNoteLine(value = "") {
+  const text = normalizeSummaryLine(value);
+  if (!text || isLowValueAnalysisLine(text)) return "";
+  return text;
 }
 
 function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onFeedbackSaved, onScrapSaved }) {
@@ -6783,10 +6789,16 @@ function displayTone(value) {
 
 function normalizeArticleDisplay(row = {}) {
   if (!row || typeof row !== "object") return row;
-  const cleanRelatedArticles = filterRelatedArticlesForRepresentative(row);
+  const cleanRelatedArticles = filterRelatedArticlesForRepresentative(row).map((article) => ({
+    ...article,
+    category: displayCategory(article.category),
+    tone: displayTone(article.tone),
+  }));
   const relatedSourceCount = unique(cleanRelatedArticles.map((item) => item.source).filter(Boolean)).length;
   const baseRow = {
     ...row,
+    category: displayCategory(row.category),
+    tone: displayTone(row.tone),
     relatedArticles: cleanRelatedArticles,
     relatedCount: cleanRelatedArticles.length,
     relatedSourceCount,
@@ -8327,6 +8339,7 @@ function buildArticleSummaryLines(item = {}) {
       removeUnsupportedOwnReferences(item, item.summaryLines.map(normalizeSummaryLine).filter(Boolean)),
       titleKeys,
     )
+      .filter((line) => isHighSignalSummaryLine(line, item, titleKeys))
       .slice(0, 4);
     if (explicitLines.length) return explicitLines;
   }
@@ -8336,23 +8349,30 @@ function buildArticleSummaryLines(item = {}) {
     .map(normalizeSummaryLine)
     .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence) && !isSummaryDuplicateOfTitle(sentence, titleKeys));
   const primaryTopic = articlePrimarySummaryTopic(item);
-  const contextLines = removeUnsupportedOwnReferences(item, buildContextualSummaryLines(item));
-  const titleLine = normalizeSummaryLine(headlineBasedSummary(item));
+  const contextLines = removeUnsupportedOwnReferences(item, buildContextualSummaryLines(item))
+    .filter((line) => isHighSignalSummaryLine(line, item, titleKeys));
   if (primaryTopic && contextLines.length) {
     const topicLines = dedupeSummaryLines(
-      removeUnsupportedOwnReferences(item, [...contextLines, titleLine].filter((line) => line && summaryLineMatchesTopic(line, primaryTopic))),
+      removeUnsupportedOwnReferences(item, contextLines.filter((line) => line && summaryLineMatchesTopic(line, primaryTopic))),
       titleKeys,
     )
       .slice(0, primaryTopic === "own-performance" ? 2 : 3);
     if (topicLines.length) return topicLines;
   }
+  const bodySentences = sentences.filter((line) => isHighSignalSummaryLine(line, item, titleKeys));
   const candidates = contextLines.length >= 2
-    ? [...contextLines, ...sentences]
-    : [...contextLines, ...sentences, titleLine];
+    ? [...contextLines, ...bodySentences]
+    : [...contextLines, ...bodySentences];
   const lines = dedupeSummaryLines(removeUnsupportedOwnReferences(item, candidates.filter(Boolean)), titleKeys)
     .slice(0, 3);
   if (lines.length) return lines;
-  return buildLastResortSummaryLines(item, titleKeys);
+  return [];
+}
+
+function buildVisibleArticleSummaryLines(item = {}) {
+  return buildArticleSummaryLines(item)
+    .filter((line) => isHighSignalSummaryLine(line, item, summaryTitleKeys(item)))
+    .slice(0, 3);
 }
 
 function summaryTitleKeys(item = {}) {
@@ -8504,8 +8524,45 @@ function isGenericSummaryLine(value) {
     /핵심 내용을 확인합니다/.test(text) ||
     /분석 대상에서 제외한 노이즈성 기사/.test(text) ||
     /홍보 활용 가능성을 검토/.test(text) ||
-    /소비자 피해, 제재, 사칭, 법적 분쟁/.test(text)
+    /소비자 피해, 제재, 사칭, 법적 분쟁/.test(text) ||
+    isLowValueAnalysisLine(text)
   );
+}
+
+function isLowValueAnalysisLine(value = "") {
+  const text = cleanSummaryText(value).replace(/[.。!?]+$/g, "").trim();
+  if (!text) return true;
+  return (
+    /모니터링 후보/.test(text) ||
+    /원문 근거와 키워드 문맥/.test(text) ||
+    /원문 근거.*확인/.test(text) ||
+    /정책[·\/]규제 흐름/.test(text) ||
+    /영업 영향 여부/.test(text) ||
+    /별도 확인/.test(text) ||
+    /별도 추적/.test(text) ||
+    /분리해.*봅니다/.test(text) ||
+    /확인합니다$/.test(text) ||
+    /확인해야 합니다$/.test(text) ||
+    /필요성을 다룬 기사/.test(text) ||
+    /흐름을 다룬 기사/.test(text) ||
+    /내용을 다룬 기사/.test(text) ||
+    /자료로 봅니다/.test(text) ||
+    /기사입니다$/.test(text) ||
+    /보도입니다$/.test(text)
+  );
+}
+
+function isHighSignalSummaryLine(line = "", item = {}, titleKeys = new Set()) {
+  const text = cleanSummaryText(line).replace(/[.。!?]+$/g, "").trim();
+  if (!text || isGenericSummaryLine(text) || isBrokenSummaryLine(text) || isSummaryDuplicateOfTitle(text, titleKeys)) return false;
+  if (text.length < 18 || text.length > 145) return false;
+  if (!/[가-힣]/.test(text)) return false;
+  if (!/(다|요|음|됨|함|예정|가능성|전망|방침|계획|기록|제재|발표|확대|상향|하락|상승|마무리)$/.test(text)) return false;
+  const rawSource = cleanSummaryText(originalArticleDescription(item) || item.description || item.summary || "");
+  const compare = normalizeSummaryCompareKey(text);
+  const fromOriginal = compare && normalizeSummaryCompareKey(rawSource).includes(compare.slice(0, Math.min(compare.length, 55)));
+  const hasConcreteSignal = /\d|%|원|명|건|억원|조원|분기|상반기|하반기|제재|해킹|수수료|민원|보험사기|불완전판매|정착지원금|브랜드평판|우수인증|공시/.test(text);
+  return fromOriginal || hasConcreteSignal;
 }
 
 function normalizeSummaryLine(value) {
