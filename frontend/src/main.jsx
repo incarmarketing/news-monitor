@@ -4576,6 +4576,7 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
       : data
   ), [period, selectedMonth, reportArticles, reportRuns, data]);
   const edition = publicationMeta(period, reportData);
+  const reportSummary = reportData.summary || {};
   return (
     <main className="workspace report-workspace">
       <PageTitle
@@ -4598,6 +4599,22 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
           </div>
         )}
       />
+      <section className="report-mobile-home no-print">
+        <div className="report-mobile-title">
+          <span>{edition.kicker}</span>
+          <h2>{edition.title}</h2>
+          <p>{reportData.scope || reportData.generatedAt || "최신 수집 기준"}</p>
+        </div>
+        <div className={`report-mobile-risk ${String(reportSummary.risk || "LOW").toLowerCase()}`}>
+          <span>리스크</span>
+          <b>{reportSummary.risk || "LOW"}</b>
+        </div>
+        <div className="report-mobile-kpis">
+          <span><b>{Number(reportSummary.analyzed || reportArticles.length || 0).toLocaleString("ko-KR")}</b>분석</span>
+          <span><b>{Number(reportSummary.ownMentions || 0).toLocaleString("ko-KR")}</b>당사</span>
+          <span><b>{Number(reportSummary.ownNegative || 0).toLocaleString("ko-KR")}</b>부정</span>
+        </div>
+      </section>
       <A4ReportStage
         data={reportData}
         period={period}
