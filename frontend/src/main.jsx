@@ -6298,15 +6298,11 @@ function formatFeedbackStamp(value) {
   }).format(date).replace(/\s/g, "");
 }
 
-function PageTitle({ eyebrow, title, description, right }) {
+function PageTitle({ right }) {
+  if (!right) return null;
   return (
-    <div className="page-title">
-      <div>
-        <span>{eyebrow}</span>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
-      {right ? <div className="page-title-right">{right}</div> : null}
+    <div className="page-title-actions-only">
+      {right}
     </div>
   );
 }

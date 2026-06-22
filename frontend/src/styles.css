@@ -369,6 +369,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   margin-bottom: 14px;
 }
 
+.page-title-actions-only {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .page-title span,
 .panel-kicker {
   color: var(--blue);
