@@ -140,9 +140,11 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
     positive = own_tone.get("positive", 0)
     neutral = own_tone.get("neutral", 0)
     risk = metrics.get("risk_level", "-")
+    analyzed = daily_analyzed_count(metrics)
     return {
         "type": "table",
         "column_settings": [
+            {"align": "center"},
             {"align": "center"},
             {"align": "center"},
             {"align": "center"},
@@ -151,12 +153,14 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
         "rows": [
             [
                 raw_cell(K["risk"]),
+                raw_cell(K["analyzed_short"]),
                 raw_cell(K["positive_short"]),
                 raw_cell(K["neutral_short"]),
                 raw_cell(K["negative_short"]),
             ],
             [
                 raw_cell(risk),
+                raw_cell(analyzed),
                 raw_cell(positive),
                 raw_cell(neutral),
                 raw_cell(own_negative),
