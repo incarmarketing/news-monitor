@@ -281,12 +281,7 @@ def contextual_summary_lines(article: dict, category: str, tone: str) -> list[st
     if analyzer.is_external_geopolitical_shipping_noise_article(article):
         return []
     if analyzer.is_own_sponsored_sports_article(article):
-        if analyzer.is_own_sponsored_sports_brand_article(article):
-            lines.append("인카금융서비스 주최·후원 대회의 브랜드 노출과 사회공헌 메시지를 다룬 기사입니다.")
-            lines.append("리스크 기사와 분리해 스폰서십 성과 트랙으로 보존합니다.")
-        else:
-            lines.append("인카금융 더헤븐 마스터즈 관련 경기·운영 보도입니다.")
-            lines.append("부정 리스크가 아닌 당사 주최 대회의 브랜드 노출 기사로 별도 분류합니다.")
+        return []
     if is_stock_volatility_text(text):
         lines.append("인카금융서비스 주가가 장중 급등해 변동성완화장치가 발동된 단기 시장 신호입니다.")
         lines.append("직접 경영 이슈보다 거래량과 주가 변동성 관찰이 필요한 주가성 기사입니다.")

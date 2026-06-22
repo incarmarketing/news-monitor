@@ -8560,6 +8560,13 @@ function isLowValueAnalysisLine(value = "") {
     /영업 영향 여부/.test(text) ||
     /별도 확인/.test(text) ||
     /별도 추적/.test(text) ||
+    /별도\s*분류/.test(text) ||
+    /부정\s*리스크/.test(text) ||
+    /브랜드\s*노출/.test(text) ||
+    /스폰서십\s*성과/.test(text) ||
+    /성과\s*트랙/.test(text) ||
+    /리스크\s*기사/.test(text) ||
+    /분리.*(?:보존|분류)/.test(text) ||
     /분리해.*봅니다/.test(text) ||
     /확인합니다$/.test(text) ||
     /확인해야 합니다$/.test(text) ||
