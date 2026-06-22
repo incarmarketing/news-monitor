@@ -8022,7 +8022,7 @@ function isGaInsuranceMajorIssueArticle(article = {}) {
 
 function isInsurancePolicyMajorIssueArticle(article = {}) {
   if (isNonInsuranceFinancialRegulatoryArticle(article)) return false;
-  const text = originalArticleHaystack(article);
+  const text = sourceEvidenceHaystack(article);
   const category = String(article.category || "");
   const source = String(article.source || "");
   const hasPolicySignal = category === "정책/규제"
@@ -8747,6 +8747,26 @@ function originalArticleHaystack(item = {}) {
     raw.summary,
     raw.content,
     raw.body,
+    item.keyword,
+    item.source,
+  ].filter(Boolean).join(" "));
+}
+
+function sourceEvidenceHaystack(item = {}) {
+  const raw = item.raw && typeof item.raw === "object" ? item.raw : {};
+  const summary = cleanSummaryText(item.summary || "");
+  const usableSummary = summary && !isLowValueAnalysisLine(summary) && !isGenericSummaryLine(summary)
+    ? summary
+    : "";
+  return cleanSummaryText([
+    item.title,
+    item.description,
+    raw.title,
+    raw.description,
+    raw.summary,
+    raw.content,
+    raw.body,
+    usableSummary,
     item.keyword,
     item.source,
   ].filter(Boolean).join(" "));
@@ -10617,12 +10637,12 @@ function isGeneralFinanceNoiseArticle(article = {}) {
 }
 
 function hasMaterialInsuranceGaContext(article = {}) {
-  const text = originalArticleHaystack(article);
+  const text = sourceEvidenceHaystack(article);
   return /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약/.test(text);
 }
 
 function isNonInsuranceFinancialRegulatoryArticle(article = {}) {
-  const text = originalArticleHaystack(article);
+  const text = sourceEvidenceHaystack(article);
   const hasRegulatorySignal = /금융위|금융위원회|금감원|금융감독원|제재|검사|감독|금융보안|해킹|내부통제|보고의무/.test(text);
   const hasNonInsuranceSector = /카드사?|롯데카드|은행|증권|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융/.test(text);
   return hasRegulatorySignal && hasNonInsuranceSector && !hasMaterialInsuranceGaContext(article);
