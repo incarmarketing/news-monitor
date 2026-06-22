@@ -136,17 +136,13 @@ def raw_cell(value: object) -> dict:
 
 def metric_table_block(report: dict, metrics: dict) -> dict:
     own_tone = metrics.get("own_by_tone", {}) or {}
-    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
     own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
     positive = own_tone.get("positive", 0)
     neutral = own_tone.get("neutral", 0)
     risk = metrics.get("risk_level", "-")
-    analyzed = daily_analyzed_count(metrics)
     return {
         "type": "table",
         "column_settings": [
-            {"align": "center"},
-            {"align": "center"},
             {"align": "center"},
             {"align": "center"},
             {"align": "center"},
@@ -155,19 +151,15 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
         "rows": [
             [
                 raw_cell(K["risk"]),
-                raw_cell(K["analyzed_short"]),
-                raw_cell(K["own_short"]),
-                raw_cell(K["negative_short"]),
                 raw_cell(K["positive_short"]),
                 raw_cell(K["neutral_short"]),
+                raw_cell(K["negative_short"]),
             ],
             [
                 raw_cell(risk),
-                raw_cell(analyzed),
-                raw_cell(own_total),
-                raw_cell(own_negative),
                 raw_cell(positive),
                 raw_cell(neutral),
+                raw_cell(own_negative),
             ],
         ],
     }
@@ -514,7 +506,6 @@ def daily_status_text(report: dict, metrics: dict, window: dict) -> str:
 def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
     metrics = report.get("metrics", {})
     sections = parse_briefing(report.get("briefing", ""))
-    own_total = metrics.get("by_category", {}).get("own", metrics.get("own_total", 0))
     risk = metrics.get("risk_level", "-")
     window = window_label(report.get("window", {}))
     title = daily_title(report)
@@ -524,7 +515,13 @@ def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
     if not issue_text:
         issue_text = f"- {K['check_report_articles']}"
 
-    fallback = f"{title} | {K['risk']} {risk} | {K['own_mentions']} {own_total}{K['count']}"
+    own_tone = metrics.get("own_by_tone", {}) or {}
+    fallback = (
+        f"{title} | {K['risk']} {risk} | "
+        f"{K['positive_short']} {own_tone.get('positive', 0)} · "
+        f"{K['neutral_short']} {own_tone.get('neutral', 0)} · "
+        f"{K['negative_short']} {own_tone.get('negative', metrics.get('own_negative', 0))}"
+    )
     payload = {
         "text": fallback,
         "blocks": [
