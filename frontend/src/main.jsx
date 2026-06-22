@@ -952,8 +952,6 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
                 <span>{formatIssueMeta(issue)}</span>
               </div>
               <h3>{issue.title}</h3>
-              <ArticleSummaryBlock item={issue} dense />
-              <ArticleDecisionNote item={issue} />
             </div>
             {issue.link && issue.link !== "#" && (
               <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
@@ -4092,10 +4090,6 @@ function buildRiskGroupSummaryLines(articles = []) {
   ranked.forEach((article) => {
     buildArticleSummaryLines(article).forEach((line) => lines.push(line));
   });
-  if (!lines.length && ranked[0]) {
-    const fallback = normalizeSummaryLine(headlineBasedSummary(ranked[0]));
-    if (fallback) lines.push(fallback);
-  }
   const seen = new Set();
   const cleaned = lines.filter((line) => {
     const key = normalizeRiskSummaryKey(line);
@@ -6306,7 +6300,6 @@ function MonthlyIssueDigest({ issues, period = "monthly" }) {
         </div>
         <span className="monthly-issue-kicker">{meta.kicker}</span>
         <h3>{lead.title}</h3>
-        <ArticleSummaryBlock item={lead} />
         {lead.link && lead.link !== "#" && (
           <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
             <ExternalLink />기사 열기
@@ -6320,7 +6313,6 @@ function MonthlyIssueDigest({ issues, period = "monthly" }) {
             <div>
               <span>{formatIssueMeta(issue)}</span>
               <h4>{issue.title}</h4>
-              <ArticleSummaryBlock item={issue} dense />
               <RelatedIssueDetails issue={issue} compact />
             </div>
             <Chip tone={issue.tone}>{issue.tone}</Chip>
@@ -8301,10 +8293,6 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
   [...members].sort((a, b) => mediaIssueScore(b) - mediaIssueScore(a) || articleTimeValue(b) - articleTimeValue(a)).forEach((article) => {
     buildArticleSummaryLines(article).forEach((line) => candidates.push(line));
   });
-  if (!candidates.length) {
-    const fallback = normalizeSummaryLine(headlineBasedSummary(representative));
-    if (fallback) candidates.push(fallback);
-  }
   const seen = new Set();
   return candidates.filter((line) => {
     const key = normalizeRiskSummaryKey(line);
@@ -8349,8 +8337,7 @@ function buildArticleSummaryLines(item = {}) {
     .map(normalizeSummaryLine)
     .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence) && !isSummaryDuplicateOfTitle(sentence, titleKeys));
   const primaryTopic = articlePrimarySummaryTopic(item);
-  const contextLines = removeUnsupportedOwnReferences(item, buildContextualSummaryLines(item))
-    .filter((line) => isHighSignalSummaryLine(line, item, titleKeys));
+  const contextLines = [];
   if (primaryTopic && contextLines.length) {
     const topicLines = dedupeSummaryLines(
       removeUnsupportedOwnReferences(item, contextLines.filter((line) => line && summaryLineMatchesTopic(line, primaryTopic))),
@@ -8443,7 +8430,7 @@ function summarySemanticTopicKey(value = "") {
   if (/투자의견|목표가|목표주가|주가|시장 평가|증권가/.test(text)) return "investment";
   if (/금융보안원|해킹|보안|피해 예방/.test(text)) return "security";
   if (/실손|손해율|적자폭|보험 민원|민원/.test(text)) return "insurance-loss";
-  if (/보험사기|진단서|데이터 대응|AI를 활용한 보험사기/.test(text)) return "insurance-fraud";
+  if (/보험사기|진단서|데이터 대응/.test(text)) return "insurance-fraud";
   if (/실손24|팩스 청구|종이 서류|전산화/.test(text)) return "claim-digital";
   if (/금융취약계층|사회공헌|포용금융|ESG|소비자보호/.test(text)) return "csr-consumer";
   return "";
@@ -8588,11 +8575,6 @@ function headlineBasedSummary(item = {}) {
       ? "인카금융서비스가 우수인증설계사 2,262명 배출로 GA업계 최다 기록을 알린 성과성 보도입니다."
       : "인카금융서비스의 우수인증설계사 배출 성과를 다룬 당사 성과성 보도입니다.";
   }
-  if (topic === "incar-theheaven-masters") {
-    return isOwnSponsoredSportsBrandArticle(item)
-      ? "인카금융 더헤븐 마스터즈의 후원·브랜드·사회공헌 메시지를 다룬 스폰서십 기사입니다."
-      : "인카금융 더헤븐 마스터즈 관련 경기·운영 보도로, 리스크가 아닌 브랜드 노출 성과로 분리합니다.";
-  }
   if (topic === "security") {
     return "보도 초점은 해킹 사고 발생이 아니라 금융보안원 가입 확대와 보안 예방 체계 강화입니다.";
   }
@@ -8634,14 +8616,6 @@ function buildContextualSummaryLines(item = {}) {
     lines.push(/2,?262|2262/.test(text)
       ? "인카금융서비스가 우수인증설계사 2,262명을 배출해 GA업계 최다 기록을 낸 성과성 기사입니다."
       : "인카금융서비스의 우수인증설계사 배출 성과를 다룬 당사 성과성 기사입니다.");
-  } else if (topic === "incar-theheaven-masters") {
-    if (isOwnSponsoredSportsBrandArticle(item)) {
-      lines.push("인카금융 더헤븐 마스터즈의 후원·브랜드·사회공헌 메시지가 중심입니다.");
-      lines.push("리스크 기사와 분리해 스폰서십 성과 트랙으로 보존합니다.");
-    } else {
-      lines.push("인카금융 더헤븐 마스터즈 관련 경기·운영 보도입니다.");
-      lines.push("부정 리스크가 아닌 당사 주최 대회의 브랜드 노출 기사로 별도 분류합니다.");
-    }
   } else if (topic === "security") {
     if (isOwnArticle(item)) {
       lines.push("인카금융서비스가 포함된 GA의 금융보안원 가입 확대 내용입니다.");
@@ -8677,9 +8651,6 @@ function buildContextualSummaryLines(item = {}) {
     } else {
       lines.push("GA 리포트성 보도로, 해당 대리점의 조직 현황과 운영 지표를 확인할 수 있는 자료성 기사입니다.");
     }
-  }
-  if (/보험사기|진단서|데이터\s*전쟁|AI로\s*진단서/i.test(text)) {
-    lines.push("AI를 활용한 보험사기 수법 확산과 보험업계 데이터 대응 필요성을 다룬 기사입니다.");
   }
   if (/실손24|팩스\s*청구|종이\s*서류|전산화/i.test(text)) {
     lines.push("실손24 전산화 이후에도 팩스 청구가 병행되는 현장 불편과 제도 안착 과제를 다룬 기사입니다.");
