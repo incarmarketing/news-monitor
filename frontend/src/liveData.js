@@ -97,7 +97,12 @@ async function dashboardApi(config, session, action, payload = {}, options = {})
   const data = text ? JSON.parse(text) : {};
   if (!response.ok) {
     if (response.status === 401) sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
-    throw new Error(data?.error || `dashboard_api_${response.status}`);
+    const pieces = [
+      data?.error || `dashboard_api_${response.status}`,
+      data?.status ? `status_${data.status}` : "",
+      data?.detail ? String(data.detail).slice(0, 220) : "",
+    ].filter(Boolean);
+    throw new Error(pieces.join(" · "));
   }
   return data;
 }

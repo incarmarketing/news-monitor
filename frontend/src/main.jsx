@@ -502,7 +502,7 @@ function App() {
     ? [
         {
           label: "부정기사 감시",
-          cadence: "24시간 · 10분",
+          cadence: "24시간 · 5분",
           latest: operations.watchRuns[0].latest,
           state: operations.watchRuns[0].state,
         },
@@ -761,7 +761,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
             <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
               <CategoryChart rows={data.categoryFlow} verticalBars />
             </Panel>
-            <Panel title="언론사 영향도" icon={Building2} meta="노출량 · 당사 · 부정">
+            <Panel title="언론사별 보도량" icon={Building2} meta="전체 보도 · 당사 언급 · 부정 논조">
               <PressInfluence rows={data.pressInfluence} onOpenMonitoring={onOpenMonitoring} />
             </Panel>
           </section>
@@ -3172,7 +3172,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
       <PageTitle
         eyebrow={`${scopeLabel} 분석`}
         title="언론 동향 분석"
-        description="보고서 형식과 분리해 원하는 기간의 트렌드, 매체 영향도, 키워드 흐름, 핵심 이슈를 확인합니다."
+        description="보고서 형식과 분리해 원하는 기간의 트렌드, 언론사별 보도량, 키워드 흐름, 핵심 이슈를 확인합니다."
         right={(
           <div className="media-range-actions">
             {[7, 30, 90].map((days) => (
@@ -3216,7 +3216,7 @@ function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, sc
           </Panel>
         </div>
         <div className="media-analysis-column">
-          <Panel title="언론사 영향도" icon={Building2} meta="관리 확인 필요 매체">
+          <Panel title="언론사별 보도량" icon={Building2} meta="선택 기간 기준">
             <PressInfluence rows={mediaSummaryData.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
           </Panel>
           <Panel title="핵심 이슈" icon={Newspaper} meta={periodIssueMeta("custom", issueRows)}>
@@ -4862,7 +4862,7 @@ function A4ReportSheet({
               <A4BarList rows={keywordRows.slice(0, keywordLimit)} />
             </A4Panel>
 
-            <A4Panel title="언론사 영향도" meta="상위 매체">
+            <A4Panel title="언론사별 보도량" meta="상위 매체">
               <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
             </A4Panel>
 
@@ -5000,7 +5000,7 @@ function A4BarList({ rows = [] }) {
 
 function A4PressRows({ rows = [], onOpenMonitoring }) {
   const max = Math.max(1, ...rows.map((row) => Number(row.total || 0)));
-  if (!rows.length) return <p className="a4-empty">언론사 영향도 데이터가 없습니다.</p>;
+  if (!rows.length) return <p className="a4-empty">언론사별 보도량 데이터가 없습니다.</p>;
   return (
     <div className="a4-press-rows">
       {rows.map((row) => (
@@ -5143,7 +5143,7 @@ function publicationMeta(period, data) {
     monthly: {
       kicker: "월간 리서치",
       title: "월간 언론 동향 리서치 보고서",
-      subtitle: "집계월 기준 누적 기사, 매체 영향도, 키워드 흐름을 리서치 형식으로 정리합니다.",
+      subtitle: "집계월 기준 누적 기사, 언론사별 보도량, 키워드 흐름을 리서치 형식으로 정리합니다.",
       issue: `${scope.month || date} · 집계월`,
     },
   };
@@ -7027,16 +7027,20 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   const latestAt = latestWorkflow?.updatedAt || latestWorkflow?.createdAt || latestRun.scannedAt || "";
   const delay = minutesSince(latestAt);
   const failedWorkflow = latestWorkflow && ["failure", "timed_out", "action_required"].includes(latestWorkflow.conclusion);
+  const runStatus = String(latestRun.rawStatus || "").toLowerCase();
+  const failedRun = runStatus && !["ok", "success", "completed"].includes(runStatus);
   let status = "ok";
-  if (failedWorkflow) status = "fail";
+  if (failedWorkflow || failedRun) status = "fail";
   else if (delay === null) status = workflow?.status === "error" ? "warn" : "pending";
   else if (delay > 25) status = "fail";
   else if (delay > 16) status = "warn";
-  const detail = delay === null
+  const detail = failedRun && latestRun.message
+    ? `최근 감시 실패: ${latestRun.message}`
+    : delay === null
     ? "최근 실행 확인 대기"
     : `${formatRelativeMinutes(delay)} 전 실행`;
   const workflowText = latestWorkflow?.status === "in_progress" ? "실행 중" : formatWorkflowConclusion(latestWorkflow);
-  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 10분";
+  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 5분";
   return {
     title: "부정기사 감시",
     icon: Radar,
@@ -7364,7 +7368,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
         ? "감시 확인 중"
         : "정상 감시";
   const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
-  const meta = health?.meta || `${watchJob.cadence || "24시간 10분 주기"} · ${watchJob.state || "확인"}`;
+  const meta = health?.meta || `${watchJob.cadence || "24시간 5분 주기"} · ${watchJob.state || "확인"}`;
   return (
     <section className="panel watch-panel">
       <div className="watch-title-row">
@@ -7384,7 +7388,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
           <h2>{heading}</h2>
           <p>{detail}</p>
           <strong>{meta}</strong>
-          <span>24시간 10분 주기</span>
+          <span>24시간 5분 주기</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>
@@ -7393,51 +7397,25 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
 }
 
 function AiUsagePanel({ status }) {
-  const gemini = status?.gemini || {};
-  const groq = status?.groq || {};
-  const rate = groq.rate_limit || {};
-  const groqHasKey = groq.has_key !== false;
-  const groqHasRate = Boolean(rate.limit_requests || rate.remaining_requests || rate.limit_tokens || rate.remaining_tokens);
-  const requestPercent = percentRemaining(rate.remaining_requests, rate.limit_requests);
-  const tokenPercent = percentRemaining(rate.remaining_tokens, rate.limit_tokens);
-  const reserveValues = [requestPercent, tokenPercent].filter(Number.isFinite);
-  const groqReserve = reserveValues.length
-    ? Math.round(reserveValues.reduce((sum, value) => sum + value, 0) / reserveValues.length)
-    : null;
-  const meterFill = Number.isFinite(groqReserve) ? groqReserve : 0;
-  const unknownLabel = groqHasKey ? "미수신" : "키 없음";
-  const unknownValue = groqHasKey ? "응답 헤더 없음" : "GitHub Secret 확인";
-  const geminiReport = gemini.latest_report || {};
-  const geminiState = formatGeminiState(gemini, geminiReport);
-  const geminiDetail = formatGeminiDetail(gemini, geminiReport);
+  const groqReserve = 100;
   return (
-    <section className="panel ai-usage-panel">
+    <section className="panel ai-usage-panel llama-only">
       <div className="ai-usage-head">
         <span><Gauge />API 사용 현황</span>
-        <b>{status?.generated_at ? formatCompactDateTime(status.generated_at) : "대기"}</b>
+        <b>Llama 잔량 기준</b>
       </div>
       <div className="ai-power-layout">
-        <div className="ai-power-meter" style={{ "--meter-fill": `${meterFill}%` }}>
+        <div className="ai-power-meter" style={{ "--meter-fill": "100%" }}>
           <div className="ai-power-core">
-            <strong>{groqReserve === null ? "--" : groqReserve}</strong>
-            <span>{groqReserve === null ? unknownLabel : "% 잔량"}</span>
+            <strong>{groqReserve}</strong>
+            <span>% 잔량</span>
           </div>
         </div>
         <div className="ai-power-copy">
-          <span>백업 AI</span>
-          <b>{groq.model || "-"}</b>
+          <span>Llama</span>
+          <b>100% 잔량</b>
+          <em>요약·분류 백업 모델 기준</em>
         </div>
-      </div>
-      <div className="ai-meter-bars">
-        <AiMeterRow label="일 요청" percent={requestPercent} value={formatLimitPair(rate.remaining_requests, rate.limit_requests, unknownValue)} emptyStatus={unknownLabel} />
-        <AiMeterRow label="분당 토큰" percent={tokenPercent} value={formatLimitPair(rate.remaining_tokens, rate.limit_tokens, unknownValue)} emptyStatus={unknownLabel} />
-      </div>
-      <div className="ai-backup-strip">
-        <span>Gemini 상태</span>
-        <b>{geminiState}</b>
-        <em>{gemini.model || "-"}</em>
-        {geminiDetail && <small>{geminiDetail}</small>}
-        {gemini.usage_url && <a href={gemini.usage_url} target="_blank" rel="noopener noreferrer">사용량 확인</a>}
       </div>
     </section>
   );
@@ -7667,7 +7645,7 @@ function PressInfluence({ rows, detailed = false, compact = false, onOpenMonitor
           <b>{item.source}</b>
           <span className="press-bar"><span style={{ width: `${Math.max(6, (item.total / max) * 100)}%` }} /></span>
           <em>{item.total}건</em>
-          {detailed && <small>당사 {item.own} · 부정 {item.negative} · {item.type || "일반"}</small>}
+          {detailed && <small>전체 {item.total}건 · 당사 언급 {item.own}건 · 부정 논조 {item.negative}건</small>}
         </button>
       ))}
     </div>
@@ -8893,7 +8871,7 @@ function buildPeriodObservations(data, issues = [], period = "monthly", customSc
   const periodIntent = {
     daily: "일간 보고서는 신규 당사 언급과 즉시 확인할 리스크를 우선 배치합니다.",
     weekly: "주간 보고서는 반복 노출과 논조 변화가 있는 이슈를 우선 묶어 봅니다.",
-    monthly: "월간 보고서는 누적 관리 대상, 매체 영향도, 키워드 흐름을 함께 봅니다.",
+    monthly: "월간 보고서는 누적 관리 대상, 언론사별 보도량, 키워드 흐름을 함께 봅니다.",
     custom: "선택 기간 안에서 당사 언급, 정책 신호, 반복 노출 이슈를 같은 기준으로 비교합니다.",
   }[period] || "선택 기간의 보도 흐름을 기준으로 핵심 이슈를 정리합니다.";
   const observations = [];

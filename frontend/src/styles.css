@@ -1771,6 +1771,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   box-shadow: 0 16px 34px rgba(15, 31, 62, .18);
 }
 
+.ai-usage-panel.llama-only {
+  gap: 10px;
+}
+
 .ai-usage-head {
   display: flex;
   align-items: center;
@@ -4539,6 +4543,14 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   padding: 0 9px;
   font-size: 12px;
   white-space: nowrap;
+}
+
+.ai-usage-panel.llama-only .ai-power-copy b {
+  color: #ffffff;
+}
+
+.ai-usage-panel.llama-only .ai-power-copy em {
+  color: rgba(236, 248, 255, .72);
 }
 
 .filter-card.monitoring-filter-card .monitoring-filter-actions svg {
