@@ -470,14 +470,14 @@ def daily_status_text(report: dict, metrics: dict, window: dict) -> str:
     neutral = own_tone.get("neutral", 0)
     risk = metrics.get("risk_level", "-")
     analyzed = daily_analyzed_count(metrics)
-    basis = f"{short_report_date(report.get('date', ''))} {window['name']} \u00b7 {window['range']} \u00b7 {K['risk']} {risk}"
-    summary = (
-        f"{K['analyzed_short']} {analyzed}{K['count']} \u00b7 "
-        f"{K['own_short']} {own_total}{K['count']} \u00b7 "
-        f"{K['negative_short']} {own_negative}{K['count']} \u00b7 "
-        f"{K['positive_neutral_short']} {positive}/{neutral}"
+    basis = f"{short_report_date(report.get('date', ''))} {window['name']} \u00b7 {window['range']}"
+    summary_table = (
+        "```"
+        f"{K['risk']}  {K['analyzed_short']}  {K['own_short']}  {K['negative_short']}  {K['positive_neutral_short']}\n"
+        f"{risk:<5} {analyzed:>4}  {own_total:>4}  {own_negative:>4}  {positive}/{neutral}"
+        "```"
     )
-    return f"{basis}\n{summary}"
+    return f"{basis}\n{summary_table}"
 
 
 def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
