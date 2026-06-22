@@ -4544,6 +4544,7 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
   const reportSourceArticles = allArticles.length ? allArticles : articles || [];
   const monthOptions = useMemo(() => availableReportMonths(reportSourceArticles), [reportSourceArticles]);
   const [reportMonth, setReportMonth] = useState("");
+  const [sendStatus, setSendStatus] = useState({ state: "idle", text: "" });
   useEffect(() => {
     if (period !== "monthly") return;
     if (!monthOptions.length) {
@@ -4572,6 +4573,32 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
   ), [period, selectedMonth, reportArticles, reportRuns, data]);
   const edition = publicationMeta(period, reportData);
   const reportSummary = reportData.summary || {};
+  const handleDashboardReportSend = async () => {
+    const reportSlot = period === "daily" ? currentDailyReportSlot() : "auto";
+    const periodReports = period === "weekly" || period === "monthly" ? period : "none";
+    setSendStatus({ state: "sending", text: "슬랙 발송 요청 중" });
+    try {
+      const result = await triggerNewsCollection({
+        workflow: "news-briefing.yml",
+        period_reports: periodReports,
+        send_slack: true,
+        force_slack_send: true,
+        dashboard_send: true,
+        report_slot: reportSlot,
+        report_month: period === "monthly" ? selectedMonth : "",
+        source: `dashboard_report_send_${period}`,
+      });
+      setSendStatus({
+        state: result?.throttled ? "warn" : "success",
+        text: result?.throttled ? "최근 발송 요청 처리 중" : "슬랙 발송 요청 완료",
+      });
+    } catch (error) {
+      setSendStatus({
+        state: "error",
+        text: `발송 요청 실패: ${String(error?.message || error)}`,
+      });
+    }
+  };
   return (
     <main className="workspace report-workspace">
       <PageTitle
@@ -4588,9 +4615,13 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
                 onChange={setReportMonth}
               />
             )}
+            <button className="ghost-button" type="button" onClick={handleDashboardReportSend} disabled={sendStatus.state === "sending"}>
+              <Bell />{sendStatus.state === "sending" ? "발송 요청 중" : "슬랙 발송"}
+            </button>
             <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${reportData.scope || ""}`)}>
               <Download />인쇄/PDF 저장
             </button>
+            {sendStatus.text && <span className={`report-send-status ${sendStatus.state}`}>{sendStatus.text}</span>}
           </div>
         )}
       />
@@ -4619,6 +4650,13 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
       />
     </main>
   );
+}
+
+function currentDailyReportSlot(now = new Date()) {
+  const hour = new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours();
+  if (hour < 13) return "08";
+  if (hour < 18) return "13";
+  return "18";
 }
 
 function MonthSelect({ months = [], value = "", onChange }) {

@@ -150,7 +150,10 @@ export async function triggerNewsCollection(payload = {}) {
     workflow: payload.workflow || "news-briefing.yml",
     period_reports: payload.period_reports || "none",
     send_slack: payload.send_slack === true,
+    force_slack_send: payload.force_slack_send === true,
+    dashboard_send: payload.dashboard_send === true,
     report_slot: payload.report_slot || "auto",
+    report_month: payload.report_month || "",
     source: payload.source || "dashboard_manual_refresh",
   });
 }

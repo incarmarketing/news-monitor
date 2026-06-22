@@ -200,7 +200,7 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
             "notification_sends",
             "select=id"
             "&channel=eq.slack"
-            "&message_type=eq.daily_report"
+            "&message_type=in.(daily_report,daily_report_manual)"
             f"&title=eq.{quote(daily_notification_title(report_date, slot))}"
             "&status=eq.success"
             "&limit=1",

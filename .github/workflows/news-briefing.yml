@@ -23,6 +23,11 @@ on:
         required: true
         default: false
         type: boolean
+      dashboard_send:
+        description: "Manual Slack send requested from dashboard"
+        required: true
+        default: false
+        type: boolean
       report_slot:
         description: "Daily report slot for external cron calls"
         required: true
@@ -258,6 +263,7 @@ jobs:
           REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
           REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
           FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_slack_send == 'true' && '1' || '' }}
+          DASHBOARD_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dashboard_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
@@ -289,6 +295,7 @@ jobs:
           SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
           REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
           FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_slack_send == 'true' && '1' || '' }}
+          DASHBOARD_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dashboard_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}

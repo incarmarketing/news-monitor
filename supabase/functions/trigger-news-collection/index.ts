@@ -310,7 +310,11 @@ async function dailyReportSucceeded(date: string, slot: string) {
     "job_runs",
     `select=run_key&run_key=eq.${encodeURIComponent(`daily_report:${date}:${slot}`)}&status=eq.success&limit=1`,
   );
-  return reportRows.length > 0 || jobRows.length > 0;
+  const notificationRows = await selectRows(
+    "notification_sends",
+    `select=id&channel=eq.slack&message_type=in.(daily_report,daily_report_manual)&title=eq.${encodeURIComponent(dailyNotificationTitle(date, slot))}&status=eq.success&limit=1`,
+  );
+  return (reportRows.length > 0 || jobRows.length > 0) && notificationRows.length > 0;
 }
 
 async function periodReportSucceeded(period: PeriodReportKind) {
@@ -320,13 +324,17 @@ async function periodReportSucceeded(period: PeriodReportKind) {
   const bounds = kstDayBoundsIso();
   const sendRows = await selectRows(
     "notification_sends",
-    `select=id&channel=eq.slack&message_type=eq.${encodeURIComponent(config.messageType)}&title=eq.${encodeURIComponent(config.title)}&status=eq.success&sent_at=gte.${encodeURIComponent(bounds.start)}&sent_at=lt.${encodeURIComponent(bounds.end)}&limit=1`,
+    `select=id&channel=eq.slack&message_type=in.(${config.messageType},${config.messageType}_manual)&title=eq.${encodeURIComponent(config.title)}&status=eq.success&sent_at=gte.${encodeURIComponent(bounds.start)}&sent_at=lt.${encodeURIComponent(bounds.end)}&limit=1`,
   );
   const jobRows = await selectRows(
     "job_runs",
     `select=run_key&job_type=eq.period_report&report_date=eq.${encodeURIComponent(date)}&report_slot=eq.07&status=eq.success&limit=1`,
   );
   return sendRows.length > 0 || jobRows.length > 0;
+}
+
+function dailyNotificationTitle(reportDate: string, slot: string) {
+  return `언론 동향 ${reportDate} ${slot}`;
 }
 
 async function hasFreshDispatch(runKey: string) {
@@ -491,7 +499,13 @@ function sanitizeInputs(inputs: Record<string, string | boolean>) {
   result.send_slack = sendSlack ? "true" : "false";
   const slot = String(inputs.report_slot || "auto");
   result.report_slot = ["auto", "07", "08", "13", "18"].includes(slot) ? slot : "auto";
+  result.force_slack_send = String(inputs.force_slack_send || "false") === "true" ? "true" : "false";
+  result.dashboard_send = String(inputs.dashboard_send || "false") === "true" ? "true" : "false";
   result.backfill_only = String(inputs.backfill_only || "false") === "true" ? "true" : "false";
+  const reportMonth = String(inputs.report_month || "").trim();
+  if (/^20\d{2}-(0[1-9]|1[0-2])$/.test(reportMonth)) {
+    result.report_month = reportMonth;
+  }
   return result;
 }
 

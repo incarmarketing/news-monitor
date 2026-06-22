@@ -143,16 +143,26 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
   const periodReports = sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
   const sendSlack = payload.send_slack === true
     || String(payload.send_slack || "").toLowerCase() === "true";
-  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "08", "13", "18"], "auto");
+  const forceSlackSend = payload.force_slack_send === true
+    || String(payload.force_slack_send || "").toLowerCase() === "true";
+  const dashboardSend = payload.dashboard_send === true
+    || String(payload.dashboard_send || "").toLowerCase() === "true";
+  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "07", "08", "13", "18"], "auto");
+  const reportMonth = sanitizeReportMonth(payload.report_month);
 
   if (!token) {
     return jsonResponse({ error: "missing_github_dispatch_token" }, 500);
   }
 
-  const cooldownMinutes = authenticated
+  const manualReportSend = dashboardSend && sendSlack && forceSlackSend;
+  const cooldownMinutes = manualReportSend
+    ? 0
+    : authenticated
     ? numberEnv("DASHBOARD_REFRESH_COOLDOWN_MINUTES", 2)
     : numberEnv("DASHBOARD_PUBLIC_REFRESH_COOLDOWN_MINUTES", 5);
-  const runKey = dashboardRefreshRunKey(workflow, periodReports, sendSlack, reportSlot, authenticated);
+  const runKey = manualReportSend
+    ? dashboardReportSendRunKey(workflow, periodReports, reportSlot)
+    : dashboardRefreshRunKey(workflow, periodReports, sendSlack, reportSlot, authenticated);
   const recentDispatch = await hasRecentDashboardDispatch(runKey, cooldownMinutes);
   if (recentDispatch.active) {
     return jsonResponse({
@@ -186,7 +196,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
       },
       body: JSON.stringify({
         ref,
-        inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot),
+        inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot, forceSlackSend, dashboardSend, reportMonth),
       }),
     },
   );
@@ -208,7 +218,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     ok: true,
     workflow,
     ref,
-    inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot),
+    inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot, forceSlackSend, dashboardSend, reportMonth),
     requested_by: session.employee_no || "dashboard_public_refresh",
     requested_at: new Date().toISOString(),
   });
@@ -223,6 +233,10 @@ function dashboardRefreshRunKey(
 ) {
   const scope = authenticated ? "auth" : "public";
   return `dashboard_refresh:${scope}:${workflow}:${periodReports}:${sendSlack ? "send" : "nosend"}:${reportSlot}`;
+}
+
+function dashboardReportSendRunKey(workflow: string, periodReports: string, reportSlot: string) {
+  return `dashboard_report_send:${workflow}:${periodReports}:${reportSlot}:${Date.now()}`;
 }
 
 async function hasRecentDashboardDispatch(runKey: string, cooldownMinutes: number) {
@@ -285,13 +299,25 @@ function sanitizeWorkflow(value: unknown) {
   return ["news-briefing.yml", "pages-dashboard.yml"].includes(workflow) ? workflow : "news-briefing.yml";
 }
 
-function workflowInputs(workflow: string, periodReports: string, sendSlack: boolean, reportSlot: string) {
+function workflowInputs(
+  workflow: string,
+  periodReports: string,
+  sendSlack: boolean,
+  reportSlot: string,
+  forceSlackSend = false,
+  dashboardSend = false,
+  reportMonth = "",
+) {
   if (workflow === "pages-dashboard.yml") return {};
-  return {
+  const inputs: Record<string, string> = {
     period_reports: periodReports,
     send_slack: String(sendSlack),
+    force_slack_send: String(forceSlackSend),
+    dashboard_send: String(dashboardSend),
     report_slot: reportSlot,
   };
+  if (reportMonth) inputs.report_month = reportMonth;
+  return inputs;
 }
 
 function sanitizeChoice(value: unknown, allowed: string[], fallback: string) {
@@ -302,6 +328,11 @@ function sanitizeChoice(value: unknown, allowed: string[], fallback: string) {
 function numberEnv(name: string, fallback: number) {
   const parsed = Number(Deno.env.get(name) || "");
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function sanitizeReportMonth(value: unknown) {
+  const month = String(value || "").trim();
+  return /^20\d{2}-(0[1-9]|1[0-2])$/.test(month) ? month : "";
 }
 
 async function supabaseRpc(functionName: string, body: Record<string, unknown>) {

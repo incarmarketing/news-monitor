@@ -8115,6 +8115,39 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-width: 0;
 }
 
+.report-send-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.report-send-status.success {
+  border-color: #b9ead7;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.report-send-status.warn {
+  border-color: #f6d58b;
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.report-send-status.error {
+  border-color: #ffc1ca;
+  background: var(--red-soft);
+  color: var(--red);
+}
+
 .dashboard-mobile-home {
   display: none;
 }
@@ -9677,7 +9710,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .page-actions .period-control,
   .page-actions .month-select,
-  .page-actions button {
+  .page-actions button,
+  .page-actions .report-send-status {
     flex: 1 1 100%;
     width: 100%;
   }

@@ -235,6 +235,16 @@ def force_send_enabled() -> bool:
     return os.getenv("FORCE_SLACK_SEND", "").strip().lower() in {"1", "true", "yes", "y"}
 
 
+def dashboard_send_enabled() -> bool:
+    return os.getenv("DASHBOARD_SLACK_SEND", "").strip().lower() in {"1", "true", "yes", "y", "dashboard"}
+
+
+def notification_message_type(message_type: str) -> str:
+    if dashboard_send_enabled() and message_type.endswith("_report"):
+        return f"{message_type}_manual"
+    return message_type
+
+
 def notification_log_title(title: str) -> str:
     return title
 
@@ -657,18 +667,20 @@ def send_daily() -> None:
     report = load_latest_daily()
     link = report_link(report)
     title = daily_title(report)
-    if not force_send_enabled() and notification_already_sent("daily_report", title, strict=True, channel="slack"):
+    message_type = "daily_report"
+    log_message_type = notification_message_type(message_type)
+    if not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
         print(f"Slack daily report already sent: {title}")
         maybe_send_ai_usage_alert(report)
         return
     log_title = notification_log_title(title)
-    log_dedupe_key = forced_resend_dedupe_key("daily_report", title)
+    log_dedupe_key = forced_resend_dedupe_key(log_message_type, title)
     fallback, payload = build_daily_payload(report, link)
     try:
         verify_public_report_link(link, label=title)
         result = post_to_slack(payload, kind="report")
         save_notification_send(
-            message_type="daily_report",
+            message_type=log_message_type,
             title=log_title,
             body=fallback,
             link_url=link,
@@ -683,7 +695,7 @@ def send_daily() -> None:
         maybe_send_ai_usage_alert(report)
     except Exception as error:
         save_notification_send(
-            message_type="daily_report",
+            message_type=log_message_type,
             title=log_title,
             body=fallback,
             link_url=link,
@@ -702,15 +714,16 @@ def send_period(period: str, report_month: str = "") -> None:
     report_month = normalize_report_month(report_month)
     title, link, payload = build_period_payload(period, report_month)
     message_type = f"{period}_report"
+    log_message_type = notification_message_type(message_type)
     if not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
         print(f"Slack period report already sent: {title}")
         return
-    log_dedupe_key = forced_resend_dedupe_key(message_type, title)
+    log_dedupe_key = forced_resend_dedupe_key(log_message_type, title)
     try:
         verify_public_report_link(link, label=title)
         result = post_to_slack(payload, kind="report")
         save_notification_send(
-            message_type=message_type,
+            message_type=log_message_type,
             title=title,
             body=payload["text"],
             link_url=link,
@@ -724,7 +737,7 @@ def send_period(period: str, report_month: str = "") -> None:
         print("Period report link:", link)
     except Exception as error:
         save_notification_send(
-            message_type=message_type,
+            message_type=log_message_type,
             title=title,
             body=payload["text"],
             link_url=link,
