@@ -137,16 +137,20 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
     neutral = own_tone.get("neutral", 0)
     risk = metrics.get("risk_level", "-")
     analyzed = daily_analyzed_count(metrics)
-    return section(
-        f"*{K['report_basis']}*",
-        [
-            f"*{K['risk']}*\n{risk}",
-            f"*{K['analyzed_short']}*\n{analyzed}",
-            f"*{K['positive_short']}*\n{positive}",
-            f"*{K['neutral_short']}*\n{neutral}",
-            f"*{K['negative_short']}*\n{own_negative}",
-        ],
-    )
+    headers = [K["risk"], K["analyzed_short"], K["positive_short"], K["neutral_short"], K["negative_short"]]
+    values = [risk, analyzed, positive, neutral, own_negative]
+    widths = [6, 6, 5, 5, 5]
+    header_line = " ".join(center_cell(label, width) for label, width in zip(headers, widths))
+    value_line = " ".join(center_cell(value, width) for value, width in zip(values, widths))
+    return section(f"*{K['report_basis']}*\n```{header_line}\n{value_line}```")
+
+
+def center_cell(value: object, width: int) -> str:
+    text = str(value if value is not None else "-").strip()
+    if len(text) >= width:
+        return text[:width]
+    pad = width - len(text)
+    return (" " * (pad // 2)) + text + (" " * (pad - pad // 2))
 
 
 def load_latest_daily() -> dict:

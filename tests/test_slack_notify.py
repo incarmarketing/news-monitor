@@ -39,19 +39,18 @@ class SlackDailyPayloadTests(unittest.TestCase):
 
         _, payload = slack_notify.build_daily_payload(report, "https://example.com/report.html")
         header_block = payload["blocks"][0]["text"]["text"]
-        metric_block = payload["blocks"][1]
+        metric_block = payload["blocks"][1]["text"]["text"]
         key_issue_block = payload["blocks"][3]["text"]["text"]
 
-        self.assertEqual(metric_block["type"], "section")
-        self.assertEqual(len(metric_block["fields"]), 5)
-        field_text = "\n".join(field["text"] for field in metric_block["fields"])
-        self.assertIn("\ub9ac\uc2a4\ud06c", field_text)
-        self.assertIn("LOW", field_text)
-        self.assertIn("\ubd84\uc11d", field_text)
-        self.assertIn("2", field_text)
-        self.assertIn("\uae0d\uc815", field_text)
-        self.assertIn("\uc911\ub9bd", field_text)
-        self.assertIn("\ubd80\uc815", field_text)
+        self.assertIn("```", metric_block)
+        self.assertNotIn("fields", payload["blocks"][1])
+        self.assertIn("\ub9ac\uc2a4\ud06c", metric_block)
+        self.assertIn("LOW", metric_block)
+        self.assertIn("\ubd84\uc11d", metric_block)
+        self.assertIn("2", metric_block)
+        self.assertIn("\uae0d\uc815", metric_block)
+        self.assertIn("\uc911\ub9bd", metric_block)
+        self.assertIn("\ubd80\uc815", metric_block)
         self.assertNotIn(slack_notify.K["default_conclusion"], header_block)
         self.assertIn("\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4", key_issue_block)
         self.assertNotIn("GA\uc5c5\uacc4 \ucd5c\ub2e4", key_issue_block)
