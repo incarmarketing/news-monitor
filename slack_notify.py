@@ -50,6 +50,8 @@ K = {
     "own_short": "\ub2f9\uc0ac",
     "negative_short": "\ubd80\uc815",
     "positive_neutral_short": "\uae0d/\uc911",
+    "positive_short": "\uae0d\uc815",
+    "neutral_short": "\uc911\ub9bd",
     "own_mentions": "\ub2f9\uc0ac \uc5b8\uae09",
     "own_negative": "\ub2f9\uc0ac \ubd80\uc815",
     "positive_neutral": "\uae0d\uc815/\uc911\ub9bd",
@@ -147,7 +149,8 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
             {"align": "right"},
             {"align": "right"},
             {"align": "right"},
-            {"align": "center"},
+            {"align": "right"},
+            {"align": "right"},
         ],
         "rows": [
             [
@@ -155,14 +158,16 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
                 raw_cell(K["analyzed_short"]),
                 raw_cell(K["own_short"]),
                 raw_cell(K["negative_short"]),
-                raw_cell(K["positive_neutral_short"]),
+                raw_cell(K["positive_short"]),
+                raw_cell(K["neutral_short"]),
             ],
             [
                 raw_cell(risk),
                 raw_cell(analyzed),
                 raw_cell(own_total),
                 raw_cell(own_negative),
-                raw_cell(f"{positive}/{neutral}"),
+                raw_cell(positive),
+                raw_cell(neutral),
             ],
         ],
     }
