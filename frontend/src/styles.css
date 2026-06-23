@@ -298,6 +298,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     linear-gradient(180deg, #0d241e 0%, #111827 72%);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.side-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .side-brand {
@@ -305,9 +310,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   top: 0;
   z-index: 2;
   display: grid;
-  gap: 18px;
-  padding: 28px 8px 18px;
-  margin: 0 -2px 16px;
+  gap: 10px;
+  padding: 20px 8px 12px;
+  margin: 0 -2px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, .14);
   background:
     linear-gradient(180deg, rgba(13, 36, 30, .98), rgba(17, 24, 39, .94));
@@ -317,29 +322,30 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   justify-items: center;
   text-align: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .side-brand-logo {
   display: block;
-  width: 164px;
-  max-width: 86%;
+  width: 142px;
+  max-width: 82%;
   height: auto;
   object-fit: contain;
 }
 
 .side-brand-main strong {
   color: #fff;
-  font-size: 21px;
+  font-size: 18px;
   line-height: 1.18;
   font-weight: 950;
-  letter-spacing: -.03em;
+  letter-spacing: -.04em;
   word-break: keep-all;
+  white-space: nowrap;
 }
 
 .side-brand-main span {
   color: #a8d2c0;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.1;
   font-weight: 900;
   letter-spacing: .1em;
@@ -348,25 +354,31 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .side-brand-user {
   display: grid;
-  gap: 4px;
-  min-height: 34px;
-  padding: 0 4px;
+  justify-items: center;
+  text-align: center;
+  gap: 2px;
+  min-height: 26px;
+  padding: 0;
   color: #f8fafc;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.25;
   font-weight: 900;
 }
 
 .side-brand-user em {
   color: #c6f6d5;
-  font-size: 11px;
+  font-size: 10.5px;
   font-style: normal;
   font-weight: 900;
 }
 
+.side-brand-user span {
+  white-space: nowrap;
+}
+
 .side-group + .side-group {
-  margin-top: 14px;
-  padding-top: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
 }
 
 .side-group-title {
@@ -374,7 +386,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   align-items: center;
   justify-content: center;
   gap: 9px;
-  margin: 2px 4px 9px;
+  margin: 1px 4px 7px;
   color: #aab7c9;
   font-size: 12px;
   font-weight: 950;
@@ -399,8 +411,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .side-nav button {
   width: 100%;
   justify-content: flex-start;
-  min-height: 42px;
-  padding: 9px 10px;
+  min-height: 39px;
+  padding: 8px 10px;
   color: #d7dde8;
   font-size: 13px;
   font-weight: 820;
