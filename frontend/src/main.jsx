@@ -564,8 +564,8 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Header working={working} workLabel={workLabel} />
       <aside className="side-nav" aria-label="주요 메뉴">
+        <Header working={working} workLabel={workLabel} />
         {navSections.map((section) => (
           <div className="side-group" key={section.title}>
             <div className="side-group-title">{section.title}</div>
@@ -631,25 +631,21 @@ function Header({ working = false, workLabel = "" }) {
   const userText = "최진우 1611499 관리자";
 
   return (
-    <header className="app-header">
-      <div className="brand">
+    <div className="side-brand">
+      <div className="side-brand-main">
         <img
-          className="brand-logo"
-          src={`${import.meta.env.BASE_URL || "./"}assets/incar-signature-blue-ko.png`}
+          className="side-brand-logo"
+          src={`${import.meta.env.BASE_URL || "./"}assets/incar-logo-white.png`}
           alt="인카금융서비스"
         />
-        <span className="brand-separator" aria-hidden="true" />
-        <div className="brand-copy">
-          <strong>인카 모니터링 시스템</strong>
-        </div>
+        <strong>인카 모니터링 시스템</strong>
+        <span>Monitoring Workspace</span>
       </div>
-      <div className="header-user-area">
-        {working && <span className="work-status">작업 중{workLabel ? ` · ${workLabel}` : ""}</span>}
-        <div className="user-chip">
-          <span>{userText}</span>
-        </div>
+      <div className="side-brand-user">
+        <span>{userText}</span>
+        {working && <em>작업 중{workLabel ? ` · ${workLabel}` : ""}</em>}
       </div>
-    </header>
+    </div>
   );
 }
 
