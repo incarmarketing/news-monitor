@@ -927,12 +927,11 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
     .map(normalizeArticleDisplay)
     .filter(isMajorIssueCandidate)
     .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
-    .slice(0, 6);
+    .slice(0, 5);
   return (
     <section className="risk-priority-queue">
       <div className="queue-head">
         <div>
-          <span>핵심 관찰</span>
           <h2>주요 이슈</h2>
         </div>
         <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.({})}>
