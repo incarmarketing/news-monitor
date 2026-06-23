@@ -761,7 +761,7 @@ def main() -> None:
             scanned_count=len(articles) + len(db_negatives),
             negative_count=len(all_negatives),
             new_negative_count=0,
-            status="scanned",
+            status="success",
             message="no new negative article",
         )
         save_state(state)

@@ -7030,7 +7030,9 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   const delay = minutesSince(latestAt);
   const failedWorkflow = latestWorkflow && ["failure", "timed_out", "action_required"].includes(latestWorkflow.conclusion);
   const runStatus = String(latestRun.rawStatus || "").toLowerCase();
-  const failedRun = runStatus && !["ok", "success", "completed"].includes(runStatus);
+  const runMessage = String(latestRun.message || "").toLowerCase();
+  const normalEmptyScan = runStatus === "scanned" && runMessage.includes("no new negative article");
+  const failedRun = runStatus && !["ok", "success", "completed", "scanned", "alert_sent"].includes(runStatus) && !normalEmptyScan;
   let status = "ok";
   if (failedWorkflow || failedRun) status = "fail";
   else if (delay === null) status = workflow?.status === "error" ? "warn" : "pending";
@@ -7038,6 +7040,8 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   else if (delay > 25) status = "warn";
   const detail = failedRun && latestRun.message
     ? `최근 감시 실패: ${latestRun.message}`
+    : normalEmptyScan || runMessage.includes("no new negative article")
+    ? "신규 부정기사 없음"
     : delay === null
     ? "최근 실행 확인 대기"
     : `${formatRelativeMinutes(delay)} 전 실행`;
@@ -7115,13 +7119,16 @@ function buildNotificationHealth(notifications = []) {
   const success = scoped.filter(isNotificationSuccess);
   const latest = slackRows[0];
   const latestAge = latest ? minutesSince(latest.sentAt) : null;
-  const status = !scoped.length ? "warn" : failed.length ? "fail" : latestAge !== null && latestAge > 24 * 60 ? "warn" : "ok";
+  const latestScoped = scoped[0] || latest;
+  const latestFailed = latestScoped && !isNotificationSuccess(latestScoped);
+  const status = !scoped.length ? "warn" : latestFailed ? "fail" : latestAge !== null && latestAge > 24 * 60 ? "warn" : "ok";
+  const failText = failed.length ? ` · 이전 실패 ${failed.length}` : "";
   return {
     title: "슬랙",
     icon: Bell,
     status,
     label: healthStatusLabel(status),
-    detail: scoped.length ? `최근 슬랙 성공 ${success.length} · 실패 ${failed.length}` : "슬랙 발송 이력 없음",
+    detail: scoped.length ? `최근 슬랙 성공 ${success.length}${failText}` : "슬랙 발송 이력 없음",
     meta: latest ? `최신 ${latest.time} · ${latest.type}` : "슬랙 기록 확인 필요",
   };
 }
