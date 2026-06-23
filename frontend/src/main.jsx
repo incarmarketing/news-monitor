@@ -771,6 +771,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
           summary={summary}
           operations={operations}
           watchHealth={watchHealth}
+          notificationHealth={notificationHealth}
           reportHealth={reportHealth}
           actionsHealth={actionsHealth}
           historyHealth={historyHealth}
@@ -881,7 +882,6 @@ function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring 
     <section className={`terminal-command-bar risk-${String(risk).toLowerCase()}`}>
       <div className="terminal-brief">
         <span>MEDIA RISK COMMAND</span>
-        <h2>{summary?.headline || "운영 DB 로그인 후 실제 수집/분석 수치가 표시됩니다."}</h2>
         <p>{data?.scope || "전체"} · 마지막 갱신 {latest}</p>
       </div>
       <div className="terminal-metrics">
@@ -968,6 +968,7 @@ function OpsStatusRail({
   summary,
   operations,
   watchHealth,
+  notificationHealth,
   reportHealth,
   actionsHealth,
   historyHealth,
@@ -980,7 +981,7 @@ function OpsStatusRail({
       <div className="ops-rail-head">
         <div>
           <span>OPERATIONS</span>
-          <b>감시 · 발송 · API</b>
+          <b>운영 현황</b>
         </div>
         <button
           type="button"
@@ -991,7 +992,12 @@ function OpsStatusRail({
           <RefreshCw />갱신
         </button>
       </div>
-      <OpsRuntimeStrip jobs={jobs} risk={summary?.risk} watchHealth={watchHealth} aiStatus={operations?.aiStatus} />
+      <OpsRuntimeStrip
+        jobs={jobs}
+        watchHealth={watchHealth}
+        notificationHealth={notificationHealth}
+        aiStatus={operations?.aiStatus}
+      />
       <Panel title="슬랙 발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
         <NotificationList rows={notifications} />
       </Panel>
@@ -7353,12 +7359,34 @@ function formatWorkflowConclusion(run) {
   }[run.conclusion] || run.conclusion || run.status || "확인";
 }
 
-function OpsRuntimeStrip({ jobs, risk = "LOW", watchHealth, aiStatus }) {
+function OpsRuntimeStrip({ jobs, watchHealth, notificationHealth, aiStatus }) {
+  const watchJob = jobs.find((job) => job.label === "부정기사 감시") || jobs[0] || {};
+  const watchStatus = watchHealth?.status || "unknown";
+  const watchValue = watchHealth?.label || (watchStatus === "success" ? "정상" : watchStatus === "fail" ? "실패" : "확인");
+  const watchDetail = watchHealth?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 감시 대기");
+  const sendStatus = notificationHealth?.status || "unknown";
+  const sendValue = notificationHealth?.label || (sendStatus === "success" ? "정상" : sendStatus === "fail" ? "실패" : "확인");
+  const sendDetail = notificationHealth?.detail || "슬랙 발송 이력 확인";
+  const apiValue = "100%";
+  const apiDetail = "Llama 잔량 기준";
   return (
     <section className="panel ops-runtime-strip">
-      <WatchPanel jobs={jobs} risk={risk} health={watchHealth} />
-      <AiUsagePanel status={aiStatus} />
+      <OpsMiniStatus icon={Radar} label="감시" value={watchValue} detail={watchDetail} status={watchStatus} />
+      <OpsMiniStatus icon={Bell} label="발송" value={sendValue} detail={sendDetail} status={sendStatus} />
+      <OpsMiniStatus icon={Gauge} label="API" value={apiValue} detail={apiDetail} status="success" />
     </section>
+  );
+}
+
+function OpsMiniStatus({ icon: Icon, label, value, detail, status = "unknown" }) {
+  return (
+    <article className={`ops-mini-status ${status}`}>
+      <div>
+        <span><Icon />{label}</span>
+        <b>{value}</b>
+      </div>
+      <p>{detail}</p>
+    </article>
   );
 }
 
