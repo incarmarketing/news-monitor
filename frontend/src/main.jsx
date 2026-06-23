@@ -4816,8 +4816,13 @@ function A4ReportSheet({
         <div className="a4-report-main-column">
           <A4Panel title="핵심 이슈와 요약" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
             <div className="a4-issue-list">
-              {reportIssues.map((issue) => (
-                <A4IssueRow key={`${issue.source}-${issue.title}-${issue.time || issue.date}`} issue={issue} compact={period === "daily"} />
+              {reportIssues.map((issue, index) => (
+                <A4IssueRow
+                  key={`${issue.source}-${issue.title}-${issue.time || issue.date}`}
+                  issue={issue}
+                  compact={period === "daily"}
+                  rank={index + 1}
+                />
               ))}
               {!reportIssues.length && <p className="a4-empty">기간 내 핵심 기사 데이터가 없습니다.</p>}
             </div>
@@ -4926,28 +4931,31 @@ function A4Panel({ title, meta, children }) {
     <section className="a4-panel">
       <div className="a4-panel-head">
         <b>{title}</b>
-        <span>{meta}</span>
+        {meta ? <span>{meta}</span> : null}
       </div>
       {children}
     </section>
   );
 }
 
-function A4IssueRow({ issue, compact = false }) {
-  const lines = buildVisibleArticleSummaryLines(issue).slice(0, compact ? 1 : 2);
+function A4IssueRow({ issue, compact = false, rank = 1 }) {
+  const lines = compact ? [] : buildVisibleArticleSummaryLines(issue).slice(0, 1);
   return (
     <article className={compact ? "a4-issue-row compact" : "a4-issue-row"}>
-      <div>
-        <Chip tone={issue.tone}>{issue.tone}</Chip>
-        <Chip>{issue.category || "분류"}</Chip>
-        <span>{formatA4ArticleMeta(issue)}</span>
+      <span className="a4-issue-index">{String(rank).padStart(2, "0")}</span>
+      <div className="a4-issue-content">
+        <div className="a4-issue-meta">
+          <Chip tone={issue.tone}>{issue.tone}</Chip>
+          <Chip>{issue.category || "분류"}</Chip>
+          <span>{formatA4ArticleMeta(issue)}</span>
+        </div>
+        <h4>{issue.title}</h4>
+        {lines.length > 0 && (
+          <ul className="summary-lines dense">
+            {lines.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+        )}
       </div>
-      <h4>{issue.title}</h4>
-      {lines.length > 0 && (
-        <ul className="summary-lines dense">
-          {lines.map((line) => <li key={line}>{line}</li>)}
-        </ul>
-      )}
     </article>
   );
 }

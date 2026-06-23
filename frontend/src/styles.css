@@ -10537,6 +10537,437 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   margin: 6mm;
 }
 
+/* A4 media report redesign: editorial, compact, single-page first */
+.a4-report-sheet {
+  position: relative;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 8mm;
+  border: 0;
+  border-radius: 3px;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, .035) 0 1px, transparent 1px 100%),
+    linear-gradient(180deg, #fffdf7 0%, #ffffff 44%, #f7f9fc 100%);
+  background-size: 14px 14px, auto;
+  box-shadow: 0 26px 70px rgba(15, 23, 42, .16);
+}
+
+.a4-report-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #0f172a, #2440a8 58%, #0f766e);
+}
+
+.a4-report-sheet.weekly,
+.a4-report-sheet.monthly {
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, .035) 0 1px, transparent 1px 100%),
+    linear-gradient(180deg, #fffdf7 0%, #ffffff 48%, #f5f7fb 100%);
+  background-size: 14px 14px, auto;
+}
+
+.a4-report-sheet.daily {
+  gap: 7px;
+  padding: 7mm 8mm;
+}
+
+.a4-masthead {
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #111827;
+}
+
+.a4-topline {
+  padding: 0 0 5px;
+  border-bottom: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 8px;
+  letter-spacing: .08em;
+}
+
+.a4-title-row {
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 16px;
+  align-items: end;
+}
+
+.a4-title-row p {
+  display: inline-flex;
+  margin-bottom: 6px;
+  padding: 3px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: rgba(255, 255, 255, .76);
+  font-size: 8px;
+  letter-spacing: .09em;
+}
+
+.a4-title-row h2 {
+  color: #0f172a;
+  font-size: 27px;
+  letter-spacing: -.01em;
+}
+
+.a4-title-row em {
+  max-width: 560px;
+  color: #334155;
+  font-size: 10px;
+}
+
+.a4-risk-badge {
+  justify-self: end;
+  min-width: 74px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border: 2px solid #10b981;
+  border-radius: 2px;
+  background: rgba(236, 253, 245, .82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .78);
+  text-transform: uppercase;
+}
+
+.a4-risk-badge.medium { border-color: #f59e0b; background: rgba(255, 251, 235, .9); }
+.a4-risk-badge.high { border-color: #ef4444; background: rgba(254, 242, 242, .9); }
+
+.a4-risk-badge span {
+  color: #475569;
+  font-size: 8px;
+  letter-spacing: .08em;
+}
+
+.a4-risk-badge b {
+  margin-top: 2px;
+  color: #047857;
+  font-size: 17px;
+}
+
+.a4-metric-strip {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  background: rgba(255, 255, 255, .72);
+}
+
+.a4-metric-strip button {
+  min-height: 42px;
+  padding: 6px 9px;
+  border: 0;
+  border-right: 1px solid #dbe4ef;
+  border-radius: 0;
+  background: transparent;
+}
+
+.a4-metric-strip button:last-child {
+  border-right: 0;
+}
+
+.a4-metric-strip span {
+  color: #475569;
+  font-size: 8px;
+  letter-spacing: .02em;
+}
+
+.a4-metric-strip b {
+  font-size: 17px;
+}
+
+.a4-metric-strip em {
+  color: #64748b;
+  font-size: 8px;
+}
+
+.a4-front {
+  grid-template-columns: minmax(0, 1.42fr) minmax(172px, .58fr);
+  gap: 8px;
+  min-height: 116px;
+}
+
+.a4-report-sheet.daily .a4-front {
+  grid-template-columns: minmax(0, 1.42fr) minmax(154px, .58fr);
+  min-height: 96px;
+}
+
+.a4-lead {
+  display: grid;
+  align-content: center;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 2px;
+  background: linear-gradient(135deg, #101827 0%, #1f2d5c 72%, #263d9f 100%);
+  color: #ffffff;
+}
+
+.a4-lead > span {
+  color: #93c5fd;
+  font-size: 8px;
+  letter-spacing: .11em;
+}
+
+.a4-lead h3 {
+  margin: 6px 0;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.18;
+}
+
+.a4-report-sheet.daily .a4-lead {
+  padding: 10px 12px;
+}
+
+.a4-report-sheet.daily .a4-lead h3 {
+  font-size: 15px;
+  line-height: 1.16;
+}
+
+.a4-executive-lines {
+  gap: 2px;
+  padding-left: 13px;
+}
+
+.a4-executive-lines li {
+  color: #dbeafe;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.a4-article-meta {
+  margin-top: 5px;
+}
+
+.a4-article-meta > span {
+  color: #cbd5e1;
+  font-size: 8px;
+}
+
+.a4-article-meta a {
+  color: #bfdbfe;
+}
+
+.a4-insight {
+  gap: 6px;
+  padding: 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.a4-insight > span {
+  color: #0f172a;
+  font-size: 8px;
+  letter-spacing: .08em;
+}
+
+.a4-basis-list {
+  gap: 4px;
+}
+
+.a4-basis-list div {
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 6px;
+  padding: 5px 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.a4-basis-list dt {
+  color: #475569;
+  font-size: 8px;
+}
+
+.a4-basis-list dd {
+  color: #0f172a;
+  font-size: 9px;
+}
+
+.a4-report-body {
+  grid-template-columns: minmax(0, 1.26fr) minmax(0, .74fr);
+  gap: 8px;
+}
+
+.a4-report-sheet.daily .a4-report-body {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+  gap: 7px;
+}
+
+.a4-panel {
+  gap: 7px;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-top: 3px solid #172554;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: none;
+}
+
+.a4-report-sheet.daily .a4-panel {
+  gap: 5px;
+  padding: 7px 8px;
+}
+
+.a4-panel-head {
+  align-items: center;
+  padding-bottom: 5px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.a4-panel-head b {
+  color: #0f172a;
+  font-size: 11px;
+  letter-spacing: -.01em;
+}
+
+.a4-panel-head span {
+  color: #64748b;
+  font-size: 8px;
+}
+
+.a4-issue-list {
+  gap: 5px;
+}
+
+.a4-issue-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 7px 8px;
+  border: 0;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.a4-issue-row:last-child {
+  border-bottom: 0;
+}
+
+.a4-issue-row.compact {
+  gap: 7px;
+  padding: 6px 0;
+}
+
+.a4-issue-index {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 2px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.a4-issue-content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.a4-issue-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.a4-issue-meta > span:last-child {
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.a4-issue-row h4 {
+  color: #0f172a;
+  font-size: 10.5px;
+  line-height: 1.24;
+}
+
+.a4-report-sheet.daily .a4-issue-row h4 {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.a4-issue-row .summary-lines li {
+  color: #334155;
+  font-size: 8.4px;
+  line-height: 1.28;
+}
+
+.a4-comment-list {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+}
+
+.a4-comment-list article {
+  padding: 6px 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.a4-comment-list span {
+  color: #475569;
+  font-size: 8px;
+  letter-spacing: .04em;
+}
+
+.a4-comment-list b {
+  color: #0f172a;
+  font-size: 9.2px;
+  line-height: 1.3;
+}
+
+.a4-tone-ledger {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid #dbe4ef;
+}
+
+.a4-report-side-column .a4-tone-ledger,
+.a4-tone-ledger.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.a4-tone-ledger span {
+  min-height: 34px;
+  padding: 6px;
+  border: 0;
+  border-right: 1px solid #dbe4ef;
+  border-radius: 0;
+  background: #fff;
+}
+
+.a4-tone-ledger span:nth-child(2n) {
+  border-right: 0;
+}
+
+.a4-tone-ledger b {
+  font-size: 15px;
+}
+
+.a4-tone-ledger em {
+  font-size: 8px;
+}
+
+.a4-report-bottom-row {
+  gap: 8px;
+}
+
+.a4-footer {
+  padding-top: 6px;
+  border-top: 1px solid #cbd5e1;
+  color: #64748b;
+  font-size: 8px;
+}
+
 @media print {
   body {
     background: #fff;
@@ -10890,6 +11321,150 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   }
   .a4-footer {
     padding-top: 4px;
+  }
+  .a4-report-sheet {
+    width: 198mm;
+    height: 285mm;
+    padding: 5.8mm 6.5mm;
+    background:
+      linear-gradient(90deg, rgba(15, 23, 42, .028) 0 1px, transparent 1px 100%),
+      linear-gradient(180deg, #fffdf8 0%, #fff 46%, #f7f9fc 100%) !important;
+    background-size: 12px 12px, auto !important;
+  }
+  .a4-report-sheet::before {
+    width: 3px;
+  }
+  .a4-masthead {
+    gap: 5px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #111827;
+  }
+  .a4-title-row {
+    grid-template-columns: minmax(0, 1fr) 70px;
+    align-items: end;
+  }
+  .a4-title-row p {
+    margin-bottom: 3px;
+    padding: 2px 6px;
+    font-size: 6.8px;
+  }
+  .a4-title-row h2 {
+    font-size: 18px;
+    line-height: 1.05;
+  }
+  .a4-title-row em {
+    font-size: 7.2px;
+  }
+  .a4-risk-badge {
+    min-width: 58px;
+    min-height: 34px;
+    padding: 4px 5px;
+    border-width: 1.5px;
+  }
+  .a4-risk-badge span {
+    font-size: 6.4px;
+  }
+  .a4-risk-badge b {
+    font-size: 12px;
+  }
+  .a4-metric-strip button {
+    min-height: 30px;
+    padding: 4px 6px;
+  }
+  .a4-metric-strip b {
+    font-size: 11px;
+  }
+  .a4-front {
+    grid-template-columns: minmax(0, 1.36fr) minmax(128px, .64fr);
+    min-height: 78px;
+  }
+  .a4-lead {
+    padding: 7px 8px;
+  }
+  .a4-lead h3 {
+    font-size: 10.5px;
+    line-height: 1.12;
+  }
+  .a4-executive-lines li {
+    font-size: 6.8px;
+    line-height: 1.22;
+  }
+  .a4-insight {
+    display: grid;
+    padding: 6px;
+  }
+  .a4-basis-list div {
+    grid-template-columns: 28px minmax(0, 1fr);
+    padding: 3px 0;
+  }
+  .a4-basis-list dt,
+  .a4-basis-list dd {
+    font-size: 6.4px;
+  }
+  .a4-report-body,
+  .a4-report-sheet.daily .a4-report-body {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    gap: 5px;
+  }
+  .a4-report-sheet.daily .a4-report-side-column,
+  .a4-report-sheet.daily .a4-insight {
+    display: grid;
+  }
+  .a4-panel {
+    gap: 4px;
+    padding: 5px 6px;
+    border-top-width: 2px;
+  }
+  .a4-panel-head b {
+    font-size: 7.5px;
+  }
+  .a4-issue-list {
+    gap: 2px;
+  }
+  .a4-issue-row,
+  .a4-report-sheet.daily .a4-issue-row {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 5px;
+    padding: 4px 0;
+  }
+  .a4-issue-index {
+    width: 20px;
+    height: 20px;
+    font-size: 6.8px;
+  }
+  .a4-issue-meta {
+    gap: 2px;
+  }
+  .a4-issue-meta > span:last-child {
+    font-size: 6px;
+  }
+  .a4-issue-row h4,
+  .a4-report-sheet.daily .a4-issue-row h4,
+  .a4-report-sheet.monthly .a4-issue-row h4 {
+    font-size: 7px;
+    line-height: 1.15;
+  }
+  .a4-issue-row .summary-lines li {
+    font-size: 6.2px;
+    line-height: 1.18;
+  }
+  .a4-comment-list article {
+    padding: 3px 0;
+  }
+  .a4-comment-list span,
+  .a4-comment-list b {
+    font-size: 6.3px;
+    line-height: 1.18;
+  }
+  .a4-tone-ledger span {
+    min-height: 22px;
+    padding: 3px 4px;
+  }
+  .a4-tone-ledger b {
+    font-size: 9px;
+  }
+  .a4-tone-ledger em {
+    font-size: 5.8px;
   }
   .chart-box.mini { height: 90px; }
 }
