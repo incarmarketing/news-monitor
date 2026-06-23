@@ -4575,7 +4575,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   grid-template-columns:
     minmax(220px, 1.35fr)
     repeat(3, minmax(118px, .8fr))
-    repeat(3, 86px);
+    repeat(2, 86px);
   gap: 8px;
   align-items: end;
 }
@@ -4612,7 +4612,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .monitoring-filter-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(76px, 1fr));
+  grid-template-columns: repeat(3, minmax(76px, 1fr));
   gap: 6px;
   align-items: end;
   min-width: 0;

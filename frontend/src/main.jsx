@@ -103,6 +103,7 @@ const GITHUB_REPO = "incarmarketing/news-monitor";
 const WORKFLOW_HEALTH_TARGETS = [
   { id: "negative-watch.yml", label: "부정기사 감시" },
   { id: "news-briefing.yml", label: "보고서 생성·발송" },
+  { id: "regulator-releases.yml", label: "금융당국 보도자료" },
   { id: "pages-dashboard.yml", label: "대시보드 배포" },
 ];
 
@@ -344,8 +345,16 @@ function App() {
 
   const refreshOperations = async (options = {}) => {
     const trigger = options.trigger === true;
-    const label = options.label || (options.workflow === "regulator-releases.yml" ? "금융당국 보도자료 갱신" : "뉴스 수집·분석 갱신");
-    const workflow = options.workflow || "news-briefing.yml";
+    const workflows = Array.isArray(options.workflows) && options.workflows.length
+      ? options.workflows
+      : options.workflow === "all"
+        ? ["news-briefing.yml", "regulator-releases.yml"]
+        : [options.workflow || "news-briefing.yml"];
+    const label = options.label || (workflows.length > 1
+      ? "전체 운영 갱신"
+      : workflows[0] === "regulator-releases.yml"
+        ? "금융당국 보도자료 갱신"
+        : "뉴스 수집·분석 갱신");
     const startedAt = Date.now();
     const generation = refreshGeneration.current + 1;
     refreshGeneration.current = generation;
@@ -362,13 +371,15 @@ function App() {
     let triggerFailed = false;
     if (trigger) {
       try {
-        await triggerNewsCollection({
-          workflow,
-          period_reports: "none",
-          send_slack: false,
-          report_slot: "auto",
-          source: options.source || "dashboard_manual_refresh",
-        });
+        for (const workflow of workflows) {
+          await triggerNewsCollection({
+            workflow,
+            period_reports: "none",
+            send_slack: false,
+            report_slot: "auto",
+            source: options.source || "dashboard_manual_refresh",
+          });
+        }
         triggerMessage = `${label} 요청 완료`;
       } catch (error) {
         triggerMessage = `${label} 요청 실패: ${error?.message || "확인 필요"}`;
@@ -386,8 +397,8 @@ function App() {
       return;
     }
     if (trigger) {
-      const maxAttempts = workflow === "news-briefing.yml" ? 24 : 12;
-      const intervalMs = workflow === "news-briefing.yml" ? 15000 : 10000;
+      const maxAttempts = workflows.includes("news-briefing.yml") ? 24 : 12;
+      const intervalMs = workflows.includes("news-briefing.yml") ? 15000 : 10000;
       let latestData = next;
       let changed = operationsFingerprint(next) !== beforeFingerprint;
       let finishedConclusion = "";
@@ -401,8 +412,12 @@ function App() {
         changed = operationsFingerprint(latestData) !== beforeFingerprint;
         const nextWorkflowHealth = await loadGithubWorkflowHealth();
         setWorkflowHealth(nextWorkflowHealth);
-        finishedConclusion = workflowFinishedAfter(nextWorkflowHealth, workflow, startedAt) || "";
-        if (finishedConclusion && finishedConclusion !== "success") break;
+        const workflowConclusions = workflows
+          .map((workflow) => workflowFinishedAfter(nextWorkflowHealth, workflow, startedAt))
+          .filter(Boolean);
+        const failedConclusion = workflowConclusions.find((item) => item !== "success");
+        finishedConclusion = failedConclusion || (workflowConclusions.length === workflows.length ? "success" : "");
+        if (failedConclusion) break;
         if (finishedConclusion === "success" && attempt >= 2) break;
       }
       if (refreshGeneration.current !== generation) return;
@@ -982,7 +997,7 @@ function OpsStatusRail({
         <button
           type="button"
           className="ghost-button compact-button ops-refresh-button"
-          onClick={() => onRefreshOperations?.({ trigger: true, source: "overview_operations" })}
+          onClick={() => onRefreshOperations?.({ trigger: true, workflow: "all", source: "overview_operations", label: "전체 운영 갱신" })}
           disabled={isLoading}
         >
           <RefreshCw />갱신
@@ -1174,14 +1189,6 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
           }}>
             초기화
           </button>
-          <button
-            type="button"
-            className="ghost-button compact-button"
-            onClick={() => onRefreshOperations?.({ trigger: true, source: "monitoring_feed" })}
-            disabled={isLoading}
-          >
-            <RefreshCw />갱신
-          </button>
           <button type="button" className="primary-button compact-button"><Download />CSV 출력</button>
         </div>
       </section>
@@ -1304,14 +1311,6 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
             {tones.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
-        <button
-          type="button"
-          className="ghost-button filter-action"
-          onClick={() => onRefreshOperations?.({ trigger: true, workflow: "regulator-releases.yml", source: "regulator_releases", label: "금융당국 보도자료 갱신" })}
-          disabled={operations?.status === "loading" || isWorking}
-        >
-          <RefreshCw />갱신
-        </button>
         <button className="primary-button filter-action" onClick={() => setQuery(queryInput)}>
           조회
         </button>
