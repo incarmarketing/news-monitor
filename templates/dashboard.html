@@ -400,6 +400,130 @@
     #page-home > .grid-2 { margin:0 0 24px; }
     #page-home > .grid-2 + .grid-2 { margin-top:4px; }
     #page-home > .grid-2:last-child { margin-bottom:0; }
+    .home-issues-panel { margin-bottom:14px; }
+    .home-bottom-row {
+      display:grid;
+      grid-template-columns:minmax(0,.9fr) minmax(0,1.05fr) minmax(300px,.95fr);
+      gap:14px;
+      align-items:stretch;
+      margin:0 0 24px;
+    }
+    .home-bottom-row > .panel {
+      min-height:310px;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+    }
+    .home-bottom-row .panel-title {
+      margin-bottom:12px;
+      min-height:28px;
+      justify-content:space-between;
+    }
+    .home-bottom-row .panel-title > span:first-child {
+      min-width:0;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .home-bottom-row .panel-title .chip {
+      min-height:24px;
+      padding:3px 8px;
+      font-size:11px;
+      flex:0 0 auto;
+    }
+    .home-category-panel .bars {
+      flex:1;
+      display:grid;
+      align-content:center;
+      min-height:220px;
+    }
+    .home-press-panel .press-influence {
+      flex:1;
+      align-content:stretch;
+    }
+    .home-press-panel .press-influence-list {
+      height:100%;
+      grid-template-rows:repeat(6,minmax(0,1fr));
+      gap:8px;
+    }
+    .home-press-panel .press-influence-row {
+      min-height:0;
+      padding:8px 10px;
+      grid-template-columns:minmax(92px,.58fr) 1fr 38px;
+      gap:9px;
+    }
+    .home-press-panel .press-meta { display:none; }
+    .home-press-panel .press-bar-block { gap:0; }
+    .home-press-panel .press-track { height:8px; }
+    .home-press-panel .press-name,
+    .home-press-panel .press-count { font-size:12px; }
+    .home-report-automation {
+      flex:1;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      gap:10px;
+      min-height:0;
+    }
+    .automation-kpi-strip {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+    }
+    .automation-kpi {
+      border:1px solid #dbe7ff;
+      border-radius:8px;
+      background:#f8fbff;
+      padding:10px;
+      display:grid;
+      gap:5px;
+      align-content:center;
+      min-width:0;
+    }
+    .automation-kpi b {
+      color:var(--incar-dark);
+      font-size:17px;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .automation-kpi span {
+      color:#667085;
+      font-size:11px;
+      font-weight:900;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .automation-slot-row {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+      align-self:end;
+    }
+    .automation-slot {
+      border:1px solid #dbe7ff;
+      border-radius:8px;
+      background:#fff;
+      padding:9px 10px;
+      display:grid;
+      gap:4px;
+      min-width:0;
+    }
+    .automation-slot.done { border-color:#bbf7d0; background:#f0fdf4; }
+    .automation-slot.next { border-color:#fed7aa; background:#fff7ed; }
+    .automation-slot b { color:#101828; font-size:12px; line-height:1; }
+    .automation-slot span { color:#667085; font-size:11px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .automation-note {
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      padding:9px 10px;
+      color:#475467;
+      font-size:12px;
+      font-weight:900;
+      line-height:1.35;
+    }
     .monitor-head {
       display:flex;
       align-items:center;
@@ -2413,7 +2537,10 @@
       }
       .auth-user { width:100%; white-space:normal; }
       .auth-chip { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
-      .hero,.grid-2,.grid-3 { grid-template-columns:1fr; }
+      .hero,.grid-2,.grid-3,.home-bottom-row { grid-template-columns:1fr; }
+      .home-bottom-row > .panel { min-height:auto; }
+      .home-category-panel .bars { min-height:auto; }
+      .home-press-panel .press-influence-list { grid-template-rows:none; height:auto; }
       .release-layout { grid-template-columns:1fr; }
       .scrap-workspace { grid-template-columns:1fr; }
       .scrap-ai-panel { position:static; }
@@ -2984,14 +3111,23 @@
             </div>
           </div>
 
-          <div class="grid-2">
-            <div class="panel">
+          <div class="panel home-issues-panel">
               <h2 class="panel-title" id="issueTitle"><i data-lucide="activity"></i> 주요 이슈</h2>
               <div class="feed" id="topIssues"></div>
-            </div>
-            <div class="panel">
-              <h2 class="panel-title"><i data-lucide="bar-chart-3"></i> 이슈 분포</h2>
+          </div>
+
+          <div class="home-bottom-row">
+            <div class="panel home-category-panel">
+              <h2 class="panel-title"><span><i data-lucide="bar-chart-3"></i> 분류별 기사량</span><span class="chip">기간 기준</span></h2>
               <div class="bars" id="categoryBars"></div>
+            </div>
+            <div class="panel home-press-panel">
+              <h2 class="panel-title"><span><i data-lucide="building-2"></i> 언론사별 보도량</span><span class="chip">상위 6개사</span></h2>
+              <div class="press-influence" id="homePressInfluence"></div>
+            </div>
+            <div class="panel home-report-panel">
+              <h2 class="panel-title"><span><i data-lucide="calendar-check"></i> 보고서 자동화</span><span class="chip">08 · 13 · 18</span></h2>
+              <div class="home-report-automation" id="homeReportAutomation"></div>
             </div>
           </div>
         </section>
@@ -4299,6 +4435,45 @@
       ).join("");
     }
 
+    function renderHomeReportAutomation() {
+      const target = document.getElementById("homeReportAutomation");
+      if (!target) return;
+      const runs = state.reportRuns.slice().sort(reportRunCompare);
+      const latestRun = runs[0];
+      const latestDate = latestRun?.report_date || new Date().toISOString().slice(0,10);
+      const dayRuns = runs.filter(run => run.report_date === latestDate);
+      const slots = ["08", "13", "18"];
+      const doneSlots = new Set(dayRuns.map(run => String(run.report_slot || "").padStart(2, "0")));
+      const nowHour = new Date().getHours();
+      const nextSlot = slots.find(slot => !doneSlots.has(slot) && Number(slot) >= nowHour) || slots.find(slot => !doneSlots.has(slot)) || "";
+      const latestLabel = latestRun
+        ? `${latestRun.report_date || "-"} ${latestRun.report_slot || ""}`.trim()
+        : "실행 이력 없음";
+      const latestTime = latestRun?.timestamp
+        ? formatPublishedAt(new Date(latestRun.timestamp), latestRun.report_date)
+        : (latestRun?.window_label || "-");
+      const slotsHtml = slots.map(slot => {
+        const done = doneSlots.has(slot);
+        const isNext = !done && slot === nextSlot;
+        const label = done ? "완료" : isNext ? "다음" : "대기";
+        return `
+          <div class="automation-slot${done ? " done" : ""}${isNext ? " next" : ""}">
+            <b>${slot}:00</b>
+            <span>${label}</span>
+          </div>
+        `;
+      }).join("");
+      target.innerHTML = `
+        <div class="automation-kpi-strip">
+          <div class="automation-kpi"><b>${doneSlots.size}/3</b><span>오늘 생성</span></div>
+          <div class="automation-kpi"><b>${nextSlot ? `${nextSlot}:00` : "완료"}</b><span>다음 슬롯</span></div>
+          <div class="automation-kpi"><b>${escapeHtml(latestRun?.risk_level || "-")}</b><span>최근 리스크</span></div>
+        </div>
+        <div class="automation-slot-row">${slotsHtml}</div>
+        <div class="automation-note">최근 실행 ${escapeHtml(latestLabel)} · ${escapeHtml(latestTime)}</div>
+      `;
+    }
+
     function reportRunCompare(a, b) {
       const slotOrder = { "08":1, "13":2, "18":3 };
       const aKey = `${a.report_date || ""}-${String(slotOrder[a.report_slot] || 0).padStart(2, "0")}-${a.timestamp || ""}`;
@@ -4821,6 +4996,8 @@
     function renderAnalysis() {
       const dashboardCurrent = dashboardFocusedItems();
       renderCategoryFlow("categoryBars", dashboardCurrent);
+      renderPressInfluence("homePressInfluence", dashboardCurrent, 6);
+      renderHomeReportAutomation();
 
       const items = analysisItems();
       const reportCats = countBy(items,"category");
@@ -4967,7 +5144,7 @@
       target.innerHTML = `<div class="tone-buttons">${rows}</div>`;
     }
 
-    function renderPressInfluence(targetId, items) {
+    function renderPressInfluence(targetId, items, limit = 10) {
       const target = document.getElementById(targetId);
       if (!target) return;
       const pressItems = items.filter(article => isManagedPress(article.press));
@@ -4977,7 +5154,7 @@
       }
 
       const total = Math.max(pressItems.length, 1);
-      const entries = topBy(pressItems, "press", 10);
+      const entries = topBy(pressItems, "press", limit);
       const max = Math.max(...entries.map(([, value]) => value), 1);
 
       const rows = entries.map(([press, value]) => {
