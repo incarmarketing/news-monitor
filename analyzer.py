@@ -245,6 +245,18 @@ GENERAL_FINANCE_NOISE_RE = re.compile(
     r"한양증권|중앙일보|하나은행|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|증권사",
     re.I,
 )
+NON_INSURANCE_FINANCE_DISCLOSURE_NOISE_RE = re.compile(
+    r"두나무|업비트|빗썸|코인원|코빗|가상자산|가상화폐|암호화폐|코인거래소|디지털자산|핀테크|전자금융|PG사|결제대행|전자공시시스템|DART|공시시스템",
+    re.I,
+)
+NON_INSURANCE_FINANCE_DISCLOSURE_CONTEXT_RE = re.compile(
+    r"금융감독원\s*전자공시시스템|전자공시시스템|DART|연결\s*기준\s*매출|영업이익|순이익|거래\s*급감|수수료\s*장사|가상자산|코인",
+    re.I,
+)
+INSURANCE_GA_BUSINESS_KEEP_RE = re.compile(
+    r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|보험GA|GA|보험업법|불완전판매|보험사기|실손|손해율|1200%|정착지원금|부당승환|승환계약|판매수수료",
+    re.I,
+)
 INSURANCE_GA_KEEP_RE = re.compile(
     r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회|금융소비자보호",
     re.I,
@@ -995,6 +1007,32 @@ def is_general_finance_noise_text(text: str) -> bool:
     return bool(GENERAL_FINANCE_NOISE_RE.search(text)) and not bool(INSURANCE_GA_KEEP_RE.search(text))
 
 
+def is_non_insurance_finance_disclosure_noise_text(text: str) -> bool:
+    text = str(text or "")
+    has_non_insurance_signal = bool(NON_INSURANCE_FINANCE_DISCLOSURE_NOISE_RE.search(text))
+    has_disclosure_or_earnings_signal = bool(NON_INSURANCE_FINANCE_DISCLOSURE_CONTEXT_RE.search(text))
+    if not (has_non_insurance_signal and has_disclosure_or_earnings_signal):
+        return False
+    return not bool(INSURANCE_GA_BUSINESS_KEEP_RE.search(text))
+
+
+def is_non_insurance_finance_disclosure_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            raw.get("content"),
+            raw.get("body"),
+        )
+    )
+    return is_non_insurance_finance_disclosure_noise_text(text)
+
+
 def is_general_finance_noise_article(article: dict) -> bool:
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
     text = " ".join(
@@ -1516,6 +1554,8 @@ def context_rule_matches(text: str, rule: dict) -> bool:
 def has_domain_context(text: str) -> bool:
     if is_external_insurance_noise_text(text):
         return False
+    if is_non_insurance_finance_disclosure_noise_text(text):
+        return False
     if is_own_sponsored_sports_noise_text(text):
         return False
     if is_sales_conduct_noise_text(text):
@@ -1583,6 +1623,8 @@ def is_non_business_noise(article: dict) -> bool:
     if is_own_sponsored_sports_article(article):
         return False
     if is_general_finance_noise_article(article):
+        return True
+    if is_non_insurance_finance_disclosure_noise_article(article):
         return True
     if is_admin_agency_noise_article(article):
         return True
