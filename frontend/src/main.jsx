@@ -893,8 +893,8 @@ function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring 
   return (
     <section className={`terminal-command-bar risk-${String(risk).toLowerCase()}`}>
       <div className="terminal-brief">
-        <span>MEDIA RISK COMMAND</span>
-        <p>{data?.scope || "전체"} · 마지막 갱신 {latest}</p>
+        <span className="terminal-command-kicker">MEDIA RISK COMMAND</span>
+        <p className="terminal-command-meta">{data?.scope || "전체"} · 마지막 갱신 {latest}</p>
       </div>
       <div className="terminal-metrics">
         <button type="button" onClick={() => onOpenMonitoring?.({ category: "당사" })}>

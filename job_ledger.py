@@ -64,7 +64,7 @@ def rest_request(method: str, path: str, payload: list[dict] | None = None) -> N
         raise RuntimeError(f"Supabase job ledger write failed: {error.code} {detail}") from error
 
 
-def report_job_row(status: str, *, error: str = "") -> dict:
+def report_job_row(status: str, *, error: str = "", stage: str = "") -> dict:
     current = now_kst()
     slot = os.getenv("REPORT_SLOT", "").strip()
     if slot not in VALID_REPORT_SLOTS:
@@ -84,6 +84,10 @@ def report_job_row(status: str, *, error: str = "") -> dict:
             "expected_at": expected_at,
         }
     )
+    if stage:
+        row["run_key"] = f"{run_key}:{stage}"
+        row["job_type"] = f"{job_type}_{stage}"
+        row["details"] = {**row.get("details", {}), "stage": stage}
     return row
 
 
@@ -152,13 +156,19 @@ def main() -> None:
     load_dotenv()
     parser = argparse.ArgumentParser()
     parser.add_argument("job", choices=["report", "negative"])
-    parser.add_argument("phase", choices=["start", "finish"])
+    parser.add_argument("phase", choices=["start", "generated", "finish"])
     parser.add_argument("--status", default="")
     parser.add_argument("--error", default="")
     args = parser.parse_args()
 
-    status = "started" if args.phase == "start" else normalize_finish_status(args.status or os.getenv("JOB_STATUS"))
-    row = report_job_row(status, error=args.error) if args.job == "report" else negative_job_row(status, error=args.error)
+    if args.phase == "start":
+        status = "started"
+    elif args.phase == "generated":
+        status = "success"
+    else:
+        status = normalize_finish_status(args.status or os.getenv("JOB_STATUS"))
+    stage = "generated" if args.phase == "generated" else ""
+    row = report_job_row(status, error=args.error, stage=stage) if args.job == "report" else negative_job_row(status, error=args.error)
     write_row(row)
 
 

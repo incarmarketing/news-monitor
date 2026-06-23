@@ -238,6 +238,16 @@ jobs:
           REQUIRE_DASHBOARD_HISTORY: "true"
           REQUIRE_DASHBOARD_QUALITY: "false"
 
+      - name: Record report generated
+        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true')
+        run: python job_ledger.py report generated
+        env:
+          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_PROVIDER: github_actions
+
       - name: Configure GitHub Pages
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
         uses: actions/configure-pages@v5
