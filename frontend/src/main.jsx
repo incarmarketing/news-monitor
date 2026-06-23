@@ -7386,6 +7386,7 @@ function OpsRuntimeStrip({ jobs, watchHealth, notificationHealth, aiStatus }) {
 function OpsMiniStatus({ icon: Icon, label, value, detail, status = "unknown" }) {
   return (
     <article className={`ops-mini-status ${status}`}>
+      <Icon className="ops-mini-bg-icon" aria-hidden="true" />
       <div>
         <span><Icon />{label}</span>
         <b>{value}</b>

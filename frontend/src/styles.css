@@ -8683,6 +8683,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-mini-status {
+  position: relative;
   display: grid;
   align-content: center;
   justify-items: center;
@@ -8695,13 +8696,21 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   background: #fff;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 6px 16px rgba(15,23,42,.04);
   text-align: center;
+  overflow: hidden;
 }
 
 .ops-mini-status > div {
+  position: relative;
+  z-index: 1;
   display: grid;
   justify-items: center;
   gap: 6px;
   min-width: 0;
+}
+
+.ops-mini-status > p {
+  position: relative;
+  z-index: 1;
 }
 
 .ops-mini-status span {
@@ -8720,6 +8729,19 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   width: 16px;
   height: 16px;
   color: #315be8;
+}
+
+.ops-mini-status .ops-mini-bg-icon {
+  position: absolute;
+  right: -12px;
+  bottom: -14px;
+  width: 72px;
+  height: 72px;
+  color: #315be8;
+  opacity: .08;
+  stroke-width: 1.7;
+  transform: rotate(-8deg);
+  pointer-events: none;
 }
 
 .ops-mini-status b {
@@ -8753,6 +8775,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   color: #087455;
 }
 
+.ops-mini-status.success .ops-mini-bg-icon {
+  color: #087455;
+  opacity: .1;
+}
+
 .ops-mini-status.warn,
 .ops-mini-status.pending,
 .ops-mini-status.unknown {
@@ -8769,6 +8796,13 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   color: #9a5b00;
 }
 
+.ops-mini-status.warn .ops-mini-bg-icon,
+.ops-mini-status.pending .ops-mini-bg-icon,
+.ops-mini-status.unknown .ops-mini-bg-icon {
+  color: #b77900;
+  opacity: .11;
+}
+
 .ops-mini-status.fail {
   border-color: #ffc9d0;
   background: linear-gradient(180deg, #fff, #fff6f7);
@@ -8777,6 +8811,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 .ops-mini-status.fail svg,
 .ops-mini-status.fail b {
   color: #c92337;
+}
+
+.ops-mini-status.fail .ops-mini-bg-icon {
+  color: #c92337;
+  opacity: .11;
 }
 
 .ops-status-rail .ops-runtime-strip .watch-panel,
