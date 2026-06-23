@@ -6300,7 +6300,7 @@ function Panel({ title, icon: Icon = FileText, meta, children }) {
     <section className="panel">
       <div className="panel-head">
         <h2><Icon />{title}</h2>
-        <span>{meta}</span>
+        {meta ? <span>{meta}</span> : null}
       </div>
       {children}
     </section>
