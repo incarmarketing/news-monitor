@@ -1012,7 +1012,7 @@ function OpsStatusRail({
       <Panel title="슬랙 발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
         <NotificationList rows={notifications} />
       </Panel>
-      <Panel title="보고서 자동화" icon={CalendarDays} meta="08 · 13 · 18">
+      <Panel title="보고서 자동화" icon={CalendarDays}>
         <ReportAutomationStatus reportHealth={reportHealth} actionsHealth={actionsHealth} historyHealth={historyHealth} />
       </Panel>
     </aside>
@@ -7639,7 +7639,7 @@ function ReportAutomationStatus({ reportHealth, actionsHealth, historyHealth }) 
           <HealthStatusPill status={reportHealth?.status || "unknown"} label={reportHealth?.label || "확인"} />
           <b>{reportHealth?.detail || "일일보고서 스케줄 확인 대기"}</b>
         </div>
-        <span>{reportHealth?.progress || reportHealth?.meta || "08 · 13 · 18 스케줄"}</span>
+        <span>{reportHealth?.progress || reportHealth?.meta || "정기 발송 스케줄"}</span>
       </div>
       <div className="daily-slot-grid">
         {slots.map((slot) => (
