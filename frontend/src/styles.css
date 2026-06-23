@@ -4494,7 +4494,12 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .filter-card.regulator-filter {
-  grid-template-columns: minmax(260px, 2fr) repeat(2, minmax(120px, 1fr)) repeat(3, 92px);
+  grid-template-columns:
+    minmax(220px, 1.35fr)
+    repeat(3, minmax(118px, .8fr))
+    repeat(3, 86px);
+  gap: 8px;
+  align-items: end;
 }
 
 .filter-card.regulator-filter .wide-filter {
@@ -4503,10 +4508,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .filter-card.regulator-filter .primary-button,
 .filter-card.regulator-filter .ghost-button {
-  width: 92px;
-  min-width: 92px;
+  width: 86px;
+  min-width: 86px;
   min-height: 38px;
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .filter-card.monitoring-filter-card {
