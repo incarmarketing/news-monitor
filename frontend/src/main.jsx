@@ -773,7 +773,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
             <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
               <CategoryChart rows={data.categoryFlow} verticalBars />
             </Panel>
-            <Panel title="언론사별 보도량" icon={Building2} meta="전체 보도 · 당사 언급 · 부정 논조">
+            <Panel title="언론사별 보도량" icon={Building2} meta="상위 6개사">
               <PressInfluence rows={data.pressInfluence} onOpenMonitoring={onOpenMonitoring} />
             </Panel>
           </section>

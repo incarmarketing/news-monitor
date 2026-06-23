@@ -8590,8 +8590,28 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
   gap: 14px;
-  align-items: start;
+  align-items: stretch;
   min-width: 0;
+}
+
+.terminal-analysis-board .panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 306px;
+}
+
+.terminal-analysis-board .panel > .chart-box,
+.terminal-analysis-board .panel > .press-list {
+  flex: 1 1 auto;
+}
+
+.terminal-analysis-board .press-list {
+  align-content: stretch;
+  gap: 0;
+}
+
+.terminal-analysis-board .press-row {
+  min-height: 38px;
 }
 
 .ops-status-rail {
