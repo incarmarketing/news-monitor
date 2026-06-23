@@ -132,7 +132,8 @@
       min-width:0;
     }
     .sidebar {
-      background:#111827;
+      background:
+        linear-gradient(180deg, #0d241e 0%, #111827 68%);
       color:#fff;
       display:flex;
       flex-direction:column;
@@ -140,23 +141,93 @@
       overflow:auto;
     }
     .brand {
-      padding:22px 20px;
+      padding:28px 18px 18px;
       position:sticky;
       top:0;
-      background:#111827;
+      background:
+        linear-gradient(180deg, rgba(13,36,30,.98), rgba(17,24,39,.97));
       z-index:2;
       border-bottom:1px solid rgba(255,255,255,.08);
     }
-    .brand-row { display:flex; gap:12px; align-items:center; }
-    .brand-mark {
-      width:38px; height:38px; border-radius:8px;
-      background:#fff;
-      color:#111827;
-      display:grid; place-items:center;
-      font-weight:900;
+    .brand-row {
+      display:grid;
+      justify-items:center;
+      text-align:center;
+      gap:10px;
     }
-    .brand-title { font-size:18px; font-weight:900; line-height:1.15; letter-spacing:-.02em; }
-    .brand-sub { margin-top:5px; color:#b8c2d8; font-size:12px; font-weight:900; letter-spacing:0; }
+    .brand-logo {
+      width:164px;
+      max-width:86%;
+      height:auto;
+      display:block;
+      object-fit:contain;
+    }
+    .brand-copy {
+      width:100%;
+      display:grid;
+      gap:3px;
+      justify-items:center;
+    }
+    .brand-title {
+      font-size:21px;
+      font-weight:900;
+      line-height:1.18;
+      letter-spacing:-.02em;
+      color:#fff;
+      word-break:keep-all;
+    }
+    .brand-sub {
+      color:#a8d2c0;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+    }
+    .brand-user {
+      margin-top:22px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      align-items:center;
+      gap:10px;
+    }
+    .brand-user .auth-user {
+      min-height:0;
+      align-content:center;
+      color:#f8fafc;
+      line-height:1.35;
+    }
+    .brand-user .auth-chip {
+      min-height:0;
+      padding:0;
+      border:0;
+      background:transparent;
+      color:#fff;
+      font-size:13px;
+      font-weight:900;
+      white-space:normal;
+      line-height:1.35;
+    }
+    .brand-user .auth-chip b { color:#d4af37; }
+    .brand-logout {
+      min-height:34px;
+      border:1px solid rgba(255,255,255,.28);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      border-radius:8px;
+      padding:7px 11px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      font-size:12px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .brand-logout:hover { background:rgba(255,255,255,.15); }
+    .brand-divider {
+      margin-top:18px;
+      border-top:1px solid rgba(255,255,255,.14);
+    }
     .menu { padding:0 12px 18px; }
     .group-title {
       margin:22px 0 8px;
@@ -193,17 +264,7 @@
       min-width:0;
     }
     .topbar {
-      position:sticky;
-      top:0;
-      z-index:10;
-      background:rgba(255,255,255,.96);
-      backdrop-filter:blur(10px);
-      border-bottom:1px solid var(--line);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      padding:13px 24px;
+      display:none;
     }
     .mobile-menu { display:none; }
     .page-wrap {
@@ -2996,12 +3057,17 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-row">
-          <div class="brand-mark">PR</div>
-          <div>
-            <div class="brand-title">인카금융서비스</div>
-            <div class="brand-sub">마케팅부</div>
+          <img class="brand-logo" src="assets/logo.png" alt="INCAR">
+          <div class="brand-copy">
+            <div class="brand-title">인카 모니터링 시스템</div>
+            <div class="brand-sub">Monitoring Workspace</div>
           </div>
         </div>
+        <div class="brand-user">
+          <span class="auth-user" id="authUser"></span>
+          <button class="brand-logout" id="logoutButton" type="button"><i data-lucide="log-out"></i><span>로그아웃</span></button>
+        </div>
+        <div class="brand-divider"></div>
       </div>
       <nav class="menu" id="desktopNav">
         <button class="nav active" data-page="home"><i data-lucide="layout-dashboard"></i> 통합 대시보드</button>
@@ -3022,13 +3088,7 @@
 
     <main class="main">
       <header class="topbar">
-        <div>
-          <h1 id="pageTitle">통합 대시보드</h1>
-        </div>
-        <div class="actions">
-          <span class="auth-user" id="authUser"></span>
-          <button class="btn" id="logoutButton"><i data-lucide="log-out"></i><span>로그아웃</span></button>
-        </div>
+        <h1 id="pageTitle">통합 대시보드</h1>
       </header>
 
       <div class="page-wrap">
