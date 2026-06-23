@@ -100,6 +100,7 @@ const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
 const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
 const GITHUB_REPO = "incarmarketing/news-monitor";
+const PRESS_INFLUENCE_LIMIT = 6;
 const WORKFLOW_HEALTH_TARGETS = [
   { id: "negative-watch.yml", label: "부정기사 감시" },
   { id: "news-briefing.yml", label: "보고서 생성·발송" },
@@ -9093,7 +9094,7 @@ function expandReportIssues(issues, articles, period) {
 
 function buildPressInfluence(articles) {
   const pressArticles = articles.filter((article) => !isOfficialRegulatorSource(article.source) && !isPortalSource(article.source));
-  return groupArticles(pressArticles, "source").slice(0, 10).map(([source, total]) => {
+  return groupArticles(pressArticles, "source").slice(0, PRESS_INFLUENCE_LIMIT).map(([source, total]) => {
     const scoped = pressArticles.filter((article) => article.source === source);
     return {
       source,
