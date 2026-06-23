@@ -8230,7 +8230,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   display: grid;
   grid-template-columns: minmax(0, 1.34fr) minmax(320px, .66fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
   min-width: 0;
 }
 
@@ -8615,6 +8615,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .ops-status-rail {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  align-content: stretch;
   gap: 10px;
   padding: 10px;
   border: 1px solid #cfd8e6;
@@ -8660,6 +8662,17 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   padding: 10px;
   border-radius: 7px;
   box-shadow: var(--surface-glow), 0 8px 18px rgba(16, 24, 40, .055);
+}
+
+.ops-status-rail > .panel:last-child {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ops-status-rail > .panel:last-child .report-automation-status {
+  flex: 1 1 auto;
+  align-content: stretch;
 }
 
 .ops-status-rail .ops-runtime-strip {
