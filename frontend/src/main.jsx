@@ -7116,19 +7116,22 @@ function buildNotificationHealth(notifications = []) {
   });
   const scoped = latestNotificationRowsByKey(recent.length ? recent : slackRows.slice(0, 12));
   const failed = scoped.filter((item) => !isNotificationSuccess(item));
-  const success = scoped.filter(isNotificationSuccess);
   const latest = slackRows[0];
   const latestAge = latest ? minutesSince(latest.sentAt) : null;
   const latestScoped = scoped[0] || latest;
   const latestFailed = latestScoped && !isNotificationSuccess(latestScoped);
   const status = !scoped.length ? "warn" : latestFailed ? "fail" : latestAge !== null && latestAge > 24 * 60 ? "warn" : "ok";
-  const failText = failed.length ? ` · 이전 실패 ${failed.length}` : "";
+  const detail = !scoped.length
+    ? "슬랙 발송 이력 없음"
+    : latestFailed
+      ? `최근 발송 실패${failed.length > 1 ? ` · 실패 ${failed.length}` : ""}`
+      : "최근 발송 정상";
   return {
     title: "슬랙",
     icon: Bell,
     status,
     label: healthStatusLabel(status),
-    detail: scoped.length ? `최근 슬랙 성공 ${success.length}${failText}` : "슬랙 발송 이력 없음",
+    detail,
     meta: latest ? `최신 ${latest.time} · ${latest.type}` : "슬랙 기록 확인 필요",
   };
 }
