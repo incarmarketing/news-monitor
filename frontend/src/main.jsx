@@ -8248,16 +8248,27 @@ function articlePrimarySummaryTopic(item = {}) {
 function articleEventTopicSignature(item = {}) {
   const text = cleanSummaryText(`${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`);
   if (isOwnSponsoredSportsArticle(item)) return "incar-theheaven-masters";
-  if (isInsuranceFraudRegulatorCampaignText(text)) return "insurance-fraud-regulator-campaign";
+  const insuranceFraudTopic = insuranceFraudEventTopic(text);
+  if (insuranceFraudTopic) return insuranceFraudTopic;
   return "";
 }
 
-function isInsuranceFraudRegulatorCampaignText(value = "") {
+function insuranceFraudEventTopic(value = "") {
   const text = cleanSummaryText(value);
   const hasFraudSignal = /보험사기|고의\s*교통사고|진료비\s*조작|허위\s*진료|보험금\s*편취|사기\s*근절|사전예방|집중\s*홍보|신고\s*포상금/.test(text);
   const hasRegulatorSignal = /금감원|금융감독원|금융위|금융위원회|경찰청|수사|형사처벌|적발|대국민\s*교육|집중\s*홍보/.test(text);
   const hasInsuranceSignal = /보험|손해율|자동차보험|보험금|보험업계|손보|생보/.test(text);
-  return hasFraudSignal && hasRegulatorSignal && hasInsuranceSignal;
+  if (!hasFraudSignal || !hasRegulatorSignal || !hasInsuranceSignal) return "";
+  if (/고의\s*교통사고|교통사고|자동차보험|차\s*보험사기|신고\s*포상금|포상금\s*최대/.test(text)) {
+    return "insurance-fraud-traffic-prevention";
+  }
+  if (/챗gpt|chatgpt|생성형\s*ai|ai\s*보험사기|진료비\s*조작|허위\s*진료|보험금\s*편취|의료비/.test(text)) {
+    return "insurance-fraud-ai-medical-claim";
+  }
+  if (/요양병원|복지부|건강보험|건보|조직화|적발\s*한계|단절/.test(text)) {
+    return "insurance-fraud-hospital-claims";
+  }
+  return "insurance-fraud-regulatory-general";
 }
 
 function isOwnPerformanceSummaryText(value = "") {
@@ -10418,7 +10429,10 @@ function areRelatedArticleSeeds(a, b) {
 function isStrongEventTopic(topic = "") {
   return [
     "event:incar-theheaven-masters",
-    "event:insurance-fraud-regulator-campaign",
+    "event:insurance-fraud-traffic-prevention",
+    "event:insurance-fraud-ai-medical-claim",
+    "event:insurance-fraud-hospital-claims",
+    "event:insurance-fraud-regulatory-general",
   ].includes(String(topic || ""));
 }
 
@@ -10469,7 +10483,8 @@ function articleTopicSignature(article = {}) {
   const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""}`);
   const includesAll = (terms) => terms.every((term) => text.includes(normalizeGroupTitle(term)));
   if (includesAll(["인카금융", "더헤븐", "마스터즈"])) return "event:incar-theheaven-masters";
-  if (isInsuranceFraudRegulatorCampaignText(text)) return "event:insurance-fraud-regulator-campaign";
+  const insuranceFraudTopic = insuranceFraudEventTopic(text);
+  if (insuranceFraudTopic) return `event:${insuranceFraudTopic}`;
   if (text.includes("브랜드평판")) {
     const leader = brandReputationLeaderName(article);
     if (leader) return `브랜드평판-${normalizeGroupTitle(leader)}`;
