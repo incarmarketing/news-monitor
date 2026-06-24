@@ -4532,7 +4532,6 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
   const reportSourceArticles = allArticles.length ? allArticles : articles || [];
   const monthOptions = useMemo(() => availableReportMonths(reportSourceArticles), [reportSourceArticles]);
   const [reportMonth, setReportMonth] = useState("");
-  const [sendStatus, setSendStatus] = useState({ state: "idle", text: "" });
   useEffect(() => {
     if (period !== "monthly") return;
     if (!monthOptions.length) {
@@ -4561,32 +4560,6 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
   ), [period, selectedMonth, reportArticles, reportRuns, data]);
   const edition = publicationMeta(period, reportData);
   const reportSummary = reportData.summary || {};
-  const handleDashboardReportSend = async () => {
-    const reportSlot = period === "daily" ? currentDailyReportSlot() : "auto";
-    const periodReports = period === "weekly" || period === "monthly" ? period : "none";
-    setSendStatus({ state: "sending", text: "슬랙 발송 요청 중" });
-    try {
-      const result = await triggerNewsCollection({
-        workflow: "news-briefing.yml",
-        period_reports: periodReports,
-        send_slack: true,
-        force_slack_send: true,
-        dashboard_send: true,
-        report_slot: reportSlot,
-        report_month: period === "monthly" ? selectedMonth : "",
-        source: `dashboard_report_send_${period}`,
-      });
-      setSendStatus({
-        state: result?.throttled ? "warn" : "success",
-        text: result?.throttled ? "최근 발송 요청 처리 중" : "슬랙 발송 요청 완료",
-      });
-    } catch (error) {
-      setSendStatus({
-        state: "error",
-        text: `발송 요청 실패: ${String(error?.message || error)}`,
-      });
-    }
-  };
   return (
     <main className="workspace report-workspace">
       <section className="report-command-panel no-print">
@@ -4596,7 +4569,10 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
           <p>{periodScopeLabel(period)} 기준 핵심 기사와 분류·언론사 보도량만 압축해 한 장 보고서로 정리합니다.</p>
         </div>
         <div className="report-command-actions">
-          <PeriodControl period={period} setPeriod={setPeriod} compact />
+          <div className="report-period-picker">
+            <span>보고서 유형</span>
+            <PeriodControl period={period} setPeriod={setPeriod} compact />
+          </div>
           {period === "monthly" && (
             <MonthSelect
               months={monthOptions}
@@ -4615,7 +4591,6 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
           <span><em>부정</em><b>{Number(reportSummary.ownNegative || 0).toLocaleString("ko-KR")}</b></span>
           <span><em>주의</em><b>{Number(reportSummary.caution || 0).toLocaleString("ko-KR")}</b></span>
         </div>
-        {sendStatus.text && <span className={`report-send-status ${sendStatus.state}`}>{sendStatus.text}</span>}
       </section>
       <A4ReportStage
         data={reportData}
@@ -4626,13 +4601,6 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
       />
     </main>
   );
-}
-
-function currentDailyReportSlot(now = new Date()) {
-  const hour = new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours();
-  if (hour < 13) return "08";
-  if (hour < 18) return "13";
-  return "18";
 }
 
 function MonthSelect({ months = [], value = "", onChange }) {
@@ -4714,8 +4682,6 @@ function A4ReportSheet({
 }) {
   const summary = data.summary || {};
   const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
-  const isDaily = period === "daily";
-  const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope).slice(0, isDaily ? 2 : 4);
   const stats = buildA4ReportStats(summary, articles);
   const pressRows = (data.pressInfluence?.length ? data.pressInfluence : buildPressInfluence(articles))
     .filter((item) => !isOfficialRegulatorSource(item.source))
@@ -4736,16 +4702,6 @@ function A4ReportSheet({
         </div>
         <A4MetricTable stats={stats} onOpenMonitoring={onOpenMonitoring} />
       </header>
-
-      <section className="a4-front a4-front-solo">
-        <article className="a4-lead">
-          <span>오늘의 판단</span>
-          <h3>{buildA4ReportHeadline(period, data, lead, scope)}</h3>
-          <ul className="a4-executive-lines">
-            {insightLines.map((line) => <li key={line}>{line}</li>)}
-          </ul>
-        </article>
-      </section>
 
       <section className="a4-report-body">
         <div className="a4-report-main-column">

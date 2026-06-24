@@ -13285,3 +13285,55 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     line-height: 1.15 !important;
   }
 }
+
+/* Report v4.1: no judgment block, explicit period selector. */
+.report-period-picker {
+  display: inline-grid;
+  grid-template-columns: auto minmax(246px, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+}
+
+.report-period-picker > span {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.report-period-picker .period-control.compact {
+  width: 270px !important;
+  padding: 4px !important;
+  background: #eef4fb !important;
+}
+
+.report-period-picker .period-control button {
+  min-height: 34px !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+}
+
+.report-period-picker .period-control button.active {
+  color: #1d4ed8 !important;
+  background: #fff !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .11) !important;
+}
+
+.report-workspace .a4-report-body {
+  margin-top: 2px !important;
+}
+
+.report-workspace .a4-report-main-column {
+  grid-template-rows: minmax(0, auto) !important;
+}
+
+@media (max-width: 920px) {
+  .report-period-picker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-period-picker .period-control.compact {
+    width: 100% !important;
+  }
+}
