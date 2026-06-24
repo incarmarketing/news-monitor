@@ -4723,7 +4723,7 @@ function A4ReportSheet({
   const categoryRows = (data.categoryFlow?.length ? data.categoryFlow : buildCategoryFlowRows(articles, 6))
     .filter((row) => Number(row.value || 0) > 0)
     .slice(0, 6);
-  const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, isDaily ? 4 : period === "monthly" ? 5 : 6);
+  const issueGroups = buildA4IssueGroups(lead, issues, articles, period);
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
@@ -4744,33 +4744,13 @@ function A4ReportSheet({
           <ul className="a4-executive-lines">
             {insightLines.map((line) => <li key={line}>{line}</li>)}
           </ul>
-          <div className="a4-article-meta">
-            {lead?.tone && <Chip tone={lead.tone}>{lead.tone}</Chip>}
-            {lead?.category && <Chip>{lead.category}</Chip>}
-            <span>{formatA4ArticleMeta(lead, scope.scopeLabel || data.scope)}</span>
-            {lead?.link && lead.link !== "#" && (
-              <a href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
-                기사 열기
-              </a>
-            )}
-          </div>
         </article>
       </section>
 
       <section className="a4-report-body">
         <div className="a4-report-main-column">
-          <A4Panel title="핵심 기사" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
-            <div className="a4-issue-list">
-              {reportIssues.map((issue, index) => (
-                <A4IssueRow
-                  key={`${issue.source}-${issue.title}-${issue.time || issue.date}`}
-                  issue={issue}
-                  compact={period === "daily"}
-                  rank={index + 1}
-                />
-              ))}
-              {!reportIssues.length && <p className="a4-empty">기간 내 핵심 기사 데이터가 없습니다.</p>}
-            </div>
+          <A4Panel title="핵심 기사" meta="영향 기준 3분류">
+            <A4IssueBuckets groups={issueGroups} period={period} />
           </A4Panel>
         </div>
 
@@ -4853,6 +4833,35 @@ function A4IssueRow({ issue, compact = false, rank = 1 }) {
   );
 }
 
+function A4IssueBuckets({ groups = [], period = "daily" }) {
+  const compact = true;
+  return (
+    <div className="a4-issue-buckets">
+      {groups.map((group) => (
+        <section key={group.key} className={`a4-issue-bucket ${group.key}`}>
+          <header className="a4-issue-bucket-head">
+            <div>
+              <b>{group.title}</b>
+              <span>{group.description}</span>
+            </div>
+            <em>{Number(group.total || 0).toLocaleString("ko-KR")}건</em>
+          </header>
+          <div className="a4-issue-list bucketed">
+            {group.items.length ? group.items.map((issue, index) => (
+              <A4IssueRow
+                key={`${group.key}-${issue.source}-${issue.title}-${issue.time || issue.date}-${index}`}
+                issue={issue}
+                compact={compact}
+                rank={index + 1}
+              />
+            )) : <p className="a4-empty">{group.emptyText}</p>}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 function A4ToneMini({ rows = [] }) {
   const visibleRows = rows.slice(-8);
   const max = Math.max(1, ...visibleRows.map((row) => Number(row.positive || 0) + Number(row.caution || 0) + Number(row.negative || 0)));
@@ -4926,30 +4935,23 @@ function buildA4ReportStats(summary = {}, articles = []) {
 
 function buildA4ReportInsights(period, data, lead, issues = [], articles = [], reportScope = {}) {
   const summary = data.summary || {};
-  const periodLabel = periodScopeLabel(period);
   const ownCount = Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0);
   const negativeCount = Number(summary.ownNegative || articles.filter((item) => item.tone === "부정" && isOwnArticle(item)).length || 0);
   const cautionCount = Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0);
   const policyCount = articles.filter((item) => item.category === "정책/규제").length;
-  const topic = lead ? a4TopicLabel(lead) : "기간 대표 이슈";
-  const scopeLabel = reportScope.scopeLabel || data.scope || periodLabel;
   const lines = [
-    `${scopeLabel} 기준 분석 기사 ${Number(summary.analyzed || articles.length || 0).toLocaleString("ko-KR")}건 중 당사 언급 ${ownCount.toLocaleString("ko-KR")}건을 확인했습니다.`,
     negativeCount > 0
-      ? `당사 부정 ${negativeCount.toLocaleString("ko-KR")}건은 즉시 확인 대상으로 분리하고, 관련 보도 묶음까지 함께 점검합니다.`
-      : `직접 부정은 제한적이며, 당사 언급은 성과·시장성·업계 흐름으로 나눠 봅니다.`,
-    cautionCount > 0
-      ? `주의 ${cautionCount.toLocaleString("ko-KR")}건은 시장 평가, 규제, 영업환경 신호로 별도 추적합니다.`
-      : "주의 신호는 낮고 일반 동향 확인 비중이 높습니다.",
-    lead?.title
-      ? `대표 이슈는 ${topic}이며, 핵심 헤드라인은 "${lead.title}"입니다.`
-      : policyCount > 0
-        ? `정책/규제 기사 ${policyCount.toLocaleString("ko-KR")}건은 영업 환경 변화 관점에서 확인합니다.`
-      : issues[0]?.title
-        ? `핵심 기사 "${issues[0].title}"의 후속 보도 여부를 확인합니다.`
-        : "반복 노출 매체와 키워드 변화는 다음 보고 주기에 이어서 확인합니다.",
+      ? `당사 부정 ${negativeCount.toLocaleString("ko-KR")}건은 원문과 유사 보도 묶음을 우선 확인합니다.`
+      : ownCount > 0
+        ? `당사 언급 ${ownCount.toLocaleString("ko-KR")}건은 평판 영향과 활용 가능성을 나눠 확인합니다.`
+        : "당사 직접 언급은 없으며 업계·정책 흐름 위주로 관찰합니다.",
+    policyCount > 0
+      ? `정책/규제 ${policyCount.toLocaleString("ko-KR")}건은 보험·GA·설계사 문맥만 후속 확인합니다.`
+      : cautionCount > 0
+        ? `주의 ${cautionCount.toLocaleString("ko-KR")}건은 시장성 이슈와 직접 리스크를 분리합니다.`
+        : "주의 신호는 낮고 일반 동향 확인 비중이 높습니다.",
   ];
-  return dedupeSummaryLines(lines).slice(0, 4);
+  return dedupeSummaryLines(lines).slice(0, 2);
 }
 
 function buildA4ObservationRows(period, data, lead, issues = [], articles = [], keywordRows = [], pressRows = [], reportScope = {}) {
@@ -4984,12 +4986,99 @@ function buildA4ReportHeadline(period, data, lead, reportScope = {}) {
   const summary = data.summary || {};
   const ownNegative = Number(summary.ownNegative || 0);
   const caution = Number(summary.caution || 0);
-  const topic = lead ? a4TopicLabel(lead) : "언론 동향";
-  if (ownNegative > 0) return `${reportScope.shortLabel || periodScopeLabel(period)} 당사 리스크 점검`;
-  if (period === "monthly") return `${reportScope.month || reportScope.shortLabel || "월간"} 언론 흐름 요약`;
-  if (period === "weekly") return `${reportScope.shortLabel || "해당 주차"} ${topic} 중심 보도 흐름`;
-  if (caution > 0) return `당일 주의 신호와 당사 언급 점검`;
-  return `당일 언론 동향 핵심 요약`;
+  const ownCount = Number(summary.ownMentions || 0);
+  const topic = lead ? a4TopicLabel(lead) : "업계 동향";
+  if (ownNegative > 0) return `당사 부정 ${ownNegative.toLocaleString("ko-KR")}건은 즉시 확인 대상으로 분리합니다.`;
+  if (ownCount > 0 && caution > 0) return `당사 언급 ${ownCount.toLocaleString("ko-KR")}건과 주의 ${caution.toLocaleString("ko-KR")}건을 분리해 점검합니다.`;
+  if (ownCount > 0) return `당사 언급 ${ownCount.toLocaleString("ko-KR")}건은 평판 영향과 활용 가능성을 확인합니다.`;
+  if (caution > 0) return `${topic} 관련 주의 신호 ${caution.toLocaleString("ko-KR")}건의 확산 여부를 봅니다.`;
+  return `직접 리스크는 낮고 기간 내 보도는 일반 동향 중심입니다.`;
+}
+
+function buildA4IssueGroups(lead, issues = [], articles = [], period = "daily") {
+  const pool = dedupeA4Issues([lead, ...issues, ...articles].filter((item) => item?.title && item.tone !== "제외"));
+  const defs = [
+    {
+      key: "own",
+      title: "당사 영향",
+      description: "당사 언급·평판·활용 후보",
+      emptyText: "당사 직접 언급 기사는 없습니다.",
+    },
+    {
+      key: "policy",
+      title: "정책 리스크",
+      description: "감독·수수료·법안·제재",
+      emptyText: "정책/규제성 핵심 기사는 없습니다.",
+    },
+    {
+      key: "market",
+      title: "업계 흐름",
+      description: "GA·보험사·경쟁사 동향",
+      emptyText: "업계 흐름 핵심 기사는 없습니다.",
+    },
+  ];
+  const limit = period === "daily" ? 2 : 3;
+  return defs.map((def) => {
+    const items = pool
+      .filter((item) => classifyA4IssueBucket(item) === def.key)
+      .map((item) => ({ item, score: scoreA4BucketArticle(item, def.key) }))
+      .sort((a, b) => b.score - a.score || articleTimeValue(b.item) - articleTimeValue(a.item))
+      .map(({ item }) => item);
+    return {
+      ...def,
+      total: items.length,
+      items: items.slice(0, limit),
+    };
+  });
+}
+
+function classifyA4IssueBucket(item = {}) {
+  const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.source || ""} ${item.category || ""}`;
+  if (isOwnArticle(item)) return "own";
+  if (
+    item.category === "정책/규제"
+    || isOfficialRegulatorSource(item.source)
+    || /금감원|금융감독원|금융위|금융위원회|당국|감독|제재|법안|시행령|수수료|1200%|내부통제|불완전판매|부당승환|보험사기/.test(text)
+  ) {
+    return "policy";
+  }
+  return "market";
+}
+
+function scoreA4BucketArticle(item = {}, bucket = "market") {
+  const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.category || ""}`;
+  let score = reportFrontScore(item);
+  if (bucket === "own") {
+    if (item.tone === "부정") score += 900;
+    if (item.tone === "긍정") score += 620;
+    if (item.tone === "주의") score += 460;
+    if (/성과|최다|우수인증|브랜드평판|수상|선정|매출|성장/.test(text)) score += 180;
+  }
+  if (bucket === "policy") {
+    if (item.category === "정책/규제") score += 480;
+    if (item.tone === "주의" || item.tone === "부정") score += 220;
+    if (/수수료|1200%|금감원|금융위|불완전판매|부당승환|제재|감독/.test(text)) score += 160;
+  }
+  if (bucket === "market") {
+    if (["경쟁사", "GA", "보험사", "업계동향", "업계 동향"].includes(item.category)) score += 360;
+    if (/실적|제휴|인수|매각|브랜드평판|설계사|GA|보험사/.test(text)) score += 120;
+  }
+  score += Math.min(Number(item.relatedCount || item.clusterSize || 1) * 8, 120);
+  return score;
+}
+
+function dedupeA4Issues(items = []) {
+  const seen = new Set();
+  const result = [];
+  items.forEach((item) => {
+    const key = item.link && item.link !== "#"
+      ? item.link
+      : normalizeIssueTitle(item.title || "");
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    result.push(item);
+  });
+  return result;
 }
 
 function buildA4ToneLedger(articles = []) {

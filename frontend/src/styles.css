@@ -13143,6 +13143,99 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   line-height: 1.34 !important;
 }
 
+.a4-issue-buckets {
+  display: grid;
+  gap: 9px;
+}
+
+.a4-issue-bucket {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px 4px;
+  border: 1px solid #d6e0ec;
+  border-left: 4px solid #2545ad;
+  background: #fff;
+}
+
+.a4-issue-bucket.own {
+  border-left-color: #1d4ed8;
+}
+
+.a4-issue-bucket.policy {
+  border-left-color: #b45309;
+}
+
+.a4-issue-bucket.market {
+  border-left-color: #0f766e;
+}
+
+.a4-issue-bucket-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.a4-issue-bucket-head div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.a4-issue-bucket-head b {
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.15;
+  font-weight: 950;
+}
+
+.a4-issue-bucket-head span {
+  color: #64748b;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.a4-issue-bucket-head em {
+  color: #1e3a8a;
+  font-size: 10px;
+  line-height: 1.15;
+  font-style: normal;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.a4-issue-list.bucketed {
+  gap: 0 !important;
+}
+
+.a4-issue-list.bucketed .a4-issue-row {
+  padding: 6px 0 !important;
+}
+
+.a4-issue-list.bucketed .a4-issue-index {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 9px !important;
+}
+
+.a4-issue-list.bucketed .a4-issue-row h4 {
+  font-size: 11.5px !important;
+  line-height: 1.28 !important;
+}
+
+.a4-issue-list.bucketed .a4-issue-meta {
+  gap: 4px !important;
+}
+
+.a4-issue-list.bucketed .chip {
+  padding: 2px 6px !important;
+  font-size: 8.5px !important;
+}
+
 .report-workspace .a4-bar-list,
 .report-workspace .a4-press-rows {
   gap: 8px !important;
@@ -13163,5 +13256,27 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .a4-metric-table {
     width: 100% !important;
+  }
+
+  .a4-issue-bucket {
+    padding: 5px 6px 2px !important;
+  }
+
+  .a4-issue-bucket-head b {
+    font-size: 8px !important;
+  }
+
+  .a4-issue-bucket-head span,
+  .a4-issue-bucket-head em {
+    font-size: 6.5px !important;
+  }
+
+  .a4-issue-list.bucketed .a4-issue-row {
+    padding: 3px 0 !important;
+  }
+
+  .a4-issue-list.bucketed .a4-issue-row h4 {
+    font-size: 7.2px !important;
+    line-height: 1.15 !important;
   }
 }
