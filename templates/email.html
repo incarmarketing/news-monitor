@@ -3,27 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>일일 언론 동향 리포트 {{ date_str }}</title>
+<title>언론 동향 리포트 {{ date_str }}</title>
 <style>
   :root {
     --ink:#0b1220;
     --sub:#344054;
     --muted:#667085;
-    --line:#d8e1ee;
-    --paper:#ffffff;
-    --bg:#eef2f7;
+    --line:#d6deea;
+    --line-dark:#14204a;
+    --paper:#fffefa;
+    --bg:#edf1f6;
     --navy:#111c3b;
-    --blue:#2f5ee9;
-    --blue-2:#eaf0ff;
+    --blue:#2855d9;
     --green:#11835c;
-    --green-2:#e8f7ef;
-    --amber:#b45b00;
-    --amber-2:#fff4dc;
-    --red:#c7213a;
-    --red-2:#fff0f2;
-    --violet:#6d45d9;
-    --cyan:#008499;
-    --shadow:0 18px 44px rgba(15,23,42,.14);
+    --amber:#a85600;
+    --red:#c21f35;
+    --soft-blue:#eef4ff;
+    --soft-green:#eaf8f0;
+    --soft-amber:#fff5df;
+    --soft-red:#fff0f2;
+    --shadow:0 18px 45px rgba(15,23,42,.14);
   }
   * { box-sizing:border-box; }
   html, body { max-width:100%; overflow-x:hidden; }
@@ -45,8 +44,8 @@
     justify-content:center;
     gap:8px;
     padding:9px;
-    background:rgba(238,242,247,.93);
     border-bottom:1px solid rgba(148,163,184,.34);
+    background:rgba(237,241,246,.94);
     backdrop-filter:blur(10px);
   }
   .toolbar a,
@@ -56,8 +55,8 @@
     justify-content:center;
     min-height:36px;
     padding:0 14px;
-    border:1px solid #c3d0e4;
-    border-radius:8px;
+    border:1px solid #c4d0e2;
+    border-radius:7px;
     background:#fff;
     color:var(--navy);
     font-size:12px;
@@ -65,300 +64,288 @@
     cursor:pointer;
   }
   .toolbar a:first-child {
-    border-color:#b7c7ff;
-    background:#edf3ff;
+    border-color:#b6c7ff;
+    background:#eef4ff;
     color:#244fd0;
   }
-  .page {
-    width:min(1040px, calc(100% - 28px));
+  .sheet {
+    width:min(1000px, calc(100% - 28px));
     margin:18px auto 36px;
-    overflow:hidden;
+    padding:28px 30px 22px;
     border:1px solid rgba(148,163,184,.42);
-    border-radius:12px;
+    border-radius:8px;
     background:var(--paper);
     box-shadow:var(--shadow);
   }
   .masthead {
     display:grid;
-    grid-template-columns:minmax(0,1fr) 240px;
+    grid-template-columns:minmax(0,1fr) 132px;
     gap:20px;
-    padding:24px 26px 18px;
-    background:
-      linear-gradient(135deg,#101a39 0%,#17285d 58%,#2446a8 100%);
-    color:#fff;
+    align-items:end;
+    padding-bottom:16px;
+    border-bottom:3px solid var(--line-dark);
   }
-  .eyebrow {
-    display:inline-flex;
-    width:max-content;
-    align-items:center;
-    min-height:24px;
-    padding:0 10px;
-    border:1px solid rgba(255,255,255,.32);
-    border-radius:999px;
-    color:#dbe7ff;
-    font-size:10px;
+  .system {
+    color:var(--blue);
+    font-size:11px;
     font-weight:900;
     letter-spacing:.04em;
   }
-  .masthead h1 {
-    margin:12px 0 8px;
-    font-size:31px;
+  h1 {
+    margin:6px 0 8px;
+    color:var(--navy);
+    font-size:34px;
     line-height:1.08;
     font-weight:900;
     word-break:keep-all;
   }
-  .period {
-    color:#d3ddf4;
+  .report-meta {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 12px;
+    color:var(--muted);
     font-size:12px;
+    font-weight:850;
+  }
+  .risk-stamp {
+    display:grid;
+    align-content:center;
+    min-height:102px;
+    padding:12px;
+    border:2px solid var(--navy);
+    border-radius:6px;
+    text-align:center;
+  }
+  .risk-stamp small {
+    color:var(--muted);
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:.04em;
+  }
+  .risk-stamp b {
+    margin-top:5px;
+    color:var(--navy);
+    font-size:30px;
+    line-height:1;
+    font-weight:900;
+  }
+  .risk-stamp b.LOW { color:var(--green); }
+  .risk-stamp b.MEDIUM { color:var(--amber); }
+  .risk-stamp b.HIGH { color:var(--red); }
+  .risk-stamp span {
+    margin-top:7px;
+    color:var(--sub);
+    font-size:11px;
+    font-weight:900;
+  }
+  .summary-band {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 360px;
+    gap:18px;
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .judgement h2,
+  .panel-title {
+    margin:0 0 8px;
+    color:var(--navy);
+    font-size:15px;
+    font-weight:900;
+  }
+  .judgement p {
+    margin:0;
+    color:var(--ink);
+    font-size:14px;
+    line-height:1.55;
     font-weight:850;
     word-break:keep-all;
   }
-  .risk-card {
-    display:grid;
-    align-content:center;
-    min-height:118px;
-    padding:18px;
-    border:1px solid rgba(255,255,255,.2);
-    border-radius:10px;
-    background:rgba(255,255,255,.09);
-  }
-  .risk-label {
-    color:#cbd7ef;
-    font-size:10px;
-    font-weight:900;
-    letter-spacing:.05em;
-  }
-  .risk-value {
-    margin-top:4px;
-    font-size:34px;
-    line-height:1;
-    font-weight:900;
-  }
-  .risk-value.LOW { color:#8ff0c3; }
-  .risk-value.MEDIUM { color:#ffd37a; }
-  .risk-value.HIGH { color:#ff9aaa; }
-  .risk-sub {
-    margin-top:8px;
-    color:#f4f7ff;
-    font-size:12px;
-    font-weight:900;
-  }
-  .decision {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:14px;
-    padding:16px 18px;
-    border-bottom:1px solid var(--line);
-    background:#fbfcff;
-  }
-  .decision-box {
-    min-width:0;
-    padding:14px 16px;
-    border:1px solid #ccd8ea;
-    border-left:5px solid var(--blue);
-    border-radius:9px;
-    background:#fff;
-  }
-  .decision-box strong {
-    display:block;
-    margin-bottom:7px;
-    color:var(--navy);
-    font-size:15px;
-    line-height:1.35;
-    font-weight:900;
-    word-break:keep-all;
-  }
-  .decision-box p {
-    margin:0;
+  .judgement .sub {
+    margin-top:9px;
     color:var(--sub);
     font-size:12px;
-    line-height:1.48;
     font-weight:800;
-    word-break:keep-all;
   }
-  .kpi-strip {
-    display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    border-bottom:1px solid var(--line);
-    background:#fff;
+  .score-table,
+  .tone-table,
+  .ledger-table {
+    width:100%;
+    border-collapse:collapse;
   }
-  .kpi {
-    min-width:0;
-    padding:14px 16px;
-    border-right:1px solid var(--line);
-  }
-  .kpi:last-child { border-right:0; }
-  .kpi small {
-    display:block;
-    color:var(--muted);
-    font-size:10px;
-    font-weight:900;
-  }
-  .kpi b {
-    display:flex;
-    align-items:baseline;
-    gap:3px;
-    margin-top:6px;
-    color:var(--navy);
-    font-size:28px;
-    line-height:1;
-    font-weight:900;
-  }
-  .kpi b span {
-    color:var(--muted);
-    font-size:11px;
-  }
-  .kpi em {
-    display:block;
-    margin-top:7px;
-    color:var(--sub);
-    font-size:10.5px;
-    font-style:normal;
-    font-weight:800;
-    line-height:1.3;
-    word-break:keep-all;
-  }
-  .body-grid {
-    display:grid;
-    grid-template-columns:minmax(0,1.18fr) 330px;
-    gap:16px;
-    padding:18px;
-    background:#f6f8fb;
-  }
-  .panel {
-    min-width:0;
+  .score-table th,
+  .score-table td,
+  .tone-table th,
+  .tone-table td {
     border:1px solid var(--line);
-    border-radius:10px;
-    background:#fff;
-    overflow:hidden;
+    text-align:center;
   }
-  .panel-head {
+  .score-table th,
+  .tone-table th {
+    padding:7px 4px;
+    background:#f7f9fc;
+    color:var(--muted);
+    font-size:10px;
+    font-weight:900;
+  }
+  .score-table td,
+  .tone-table td {
+    padding:9px 4px;
+    color:var(--navy);
+    font-size:20px;
+    line-height:1;
+    font-weight:900;
+  }
+  .score-table td small,
+  .tone-table td small {
+    color:var(--muted);
+    font-size:10px;
+    font-weight:900;
+  }
+  .main-grid {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 285px;
+    gap:18px;
+    padding-top:16px;
+  }
+  .section {
+    min-width:0;
+  }
+  .section-head {
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:10px;
-    padding:12px 14px;
-    border-bottom:1px solid var(--line);
-    background:#fff;
+    gap:12px;
+    margin-bottom:8px;
+    padding-bottom:7px;
+    border-bottom:2px solid var(--navy);
   }
-  .panel-head h2 {
+  .section-head h2 {
     margin:0;
     color:var(--navy);
-    font-size:15px;
+    font-size:16px;
     font-weight:900;
   }
-  .panel-head span {
+  .section-head span {
     color:var(--muted);
     font-size:10.5px;
     font-weight:900;
     white-space:nowrap;
   }
-  .issue-ledger {
-    display:grid;
+  .ledger-table th {
+    padding:8px 7px;
+    border-bottom:1px solid var(--line);
+    background:#f7f9fc;
+    color:var(--muted);
+    font-size:10px;
+    font-weight:900;
+    text-align:left;
   }
-  .issue-row {
-    display:grid;
-    grid-template-columns:42px minmax(0,1fr) 86px;
-    gap:12px;
-    align-items:center;
-    padding:12px 14px;
-    border-bottom:1px solid #e8edf5;
+  .ledger-table th:nth-child(1),
+  .ledger-table th:nth-child(2),
+  .ledger-table th:nth-child(5) {
+    text-align:center;
   }
-  .issue-row:last-child { border-bottom:0; }
-  .rank {
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
+  .ledger-table td {
+    padding:9px 7px;
+    border-bottom:1px solid #e5ebf3;
+    vertical-align:top;
+    font-size:11.5px;
+    font-weight:850;
+  }
+  .ledger-table tr:last-child td { border-bottom:0; }
+  .num {
     width:32px;
-    height:32px;
-    border-radius:8px;
-    background:#111827;
-    color:#fff;
-    font-size:12px;
+    color:var(--navy);
+    text-align:center;
     font-weight:900;
   }
-  .issue-main {
-    min-width:0;
-  }
-  .badge-line {
+  .label-stack {
     display:flex;
-    flex-wrap:wrap;
-    gap:5px;
-    margin-bottom:5px;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
   }
   .pill {
     display:inline-flex;
     align-items:center;
-    min-height:20px;
+    justify-content:center;
+    min-height:19px;
     padding:0 7px;
-    border:1px solid #d2dfef;
+    border:1px solid #d2dcec;
     border-radius:999px;
     background:#fff;
     color:#344054;
-    font-size:10px;
+    font-size:9.5px;
     font-weight:900;
     line-height:1;
+    white-space:nowrap;
   }
-  .tone-negative { background:var(--red-2); color:#ab1028; border-color:#ffc4ce; }
-  .tone-caution { background:var(--amber-2); color:#9a4a00; border-color:#ffd188; }
-  .tone-positive { background:var(--green-2); color:#087344; border-color:#b8ead0; }
-  .tone-neutral { background:var(--blue-2); color:#2352c6; border-color:#c3d2ff; }
+  .tone-negative { border-color:#ffc4ce; background:var(--soft-red); color:#a91329; }
+  .tone-caution { border-color:#ffd188; background:var(--soft-amber); color:#914500; }
+  .tone-positive { border-color:#b8ead0; background:var(--soft-green); color:#087344; }
+  .tone-neutral { border-color:#c3d2ff; background:var(--soft-blue); color:#244fd0; }
   .cat-own { color:#1d4ed8; }
   .cat-regulation { color:#6d28d9; }
   .cat-competitor { color:#a21caf; }
   .cat-industry { color:#0f766e; }
-  .cat-sponsorship { color:#b45b00; }
+  .cat-sponsorship { color:#a85600; }
   .headline {
     display:block;
     color:var(--ink);
-    font-size:14px;
+    font-size:12.5px;
     line-height:1.36;
     font-weight:900;
     word-break:keep-all;
     overflow-wrap:anywhere;
   }
   .meta {
-    margin-top:5px;
+    margin-top:4px;
     color:var(--muted);
-    font-size:10.5px;
+    font-size:10px;
     font-weight:850;
+    white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    white-space:nowrap;
   }
   .open-link {
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    min-height:32px;
-    border:1px solid #bfd0ee;
-    border-radius:8px;
-    background:#f7faff;
-    color:#2452d6;
-    font-size:11px;
+    min-height:28px;
+    padding:0 9px;
+    border:1px solid #c5d3e8;
+    border-radius:6px;
+    background:#fff;
+    color:#244fd0;
+    font-size:10.5px;
     font-weight:900;
   }
-  .side-stack {
+  .side {
     display:grid;
-    gap:12px;
+    gap:14px;
     align-content:start;
   }
-  .meter-list {
-    display:grid;
-    gap:10px;
-    padding:14px;
+  .side-panel {
+    min-width:0;
+    padding-bottom:2px;
+    border-bottom:1px solid var(--line);
   }
-  .meter-row {
+  .side-panel:last-child { border-bottom:0; }
+  .bar-list {
     display:grid;
-    grid-template-columns:78px minmax(0,1fr) 34px;
+    gap:8px;
+  }
+  .bar-row {
+    display:grid;
+    grid-template-columns:68px minmax(0,1fr) 28px;
     gap:8px;
     align-items:center;
     color:var(--ink);
-    font-size:11.5px;
+    font-size:11px;
     font-weight:900;
   }
   .track {
-    height:8px;
+    height:7px;
     border-radius:999px;
     background:#edf2f7;
     overflow:hidden;
@@ -368,38 +355,22 @@
     height:100%;
     min-width:2px;
     border-radius:999px;
-    background:linear-gradient(90deg,#2547b8,#5f7cff);
+    background:linear-gradient(90deg,#2547b8,#6580ff);
   }
-  .bar.own { background:linear-gradient(90deg,#2352d6,#8aa2ff); }
-  .bar.regulation { background:linear-gradient(90deg,#6d28d9,#b794ff); }
+  .bar.reg { background:linear-gradient(90deg,#6d28d9,#b794ff); }
   .bar.market { background:linear-gradient(90deg,#0f766e,#6ee7d2); }
-  .bar.sponsorship { background:linear-gradient(90deg,#b45b00,#f2ad50); }
-  .own-table {
-    width:100%;
-    border-collapse:collapse;
-  }
-  .own-table th,
-  .own-table td {
-    padding:10px 8px;
-    border-bottom:1px solid #e8edf5;
-    text-align:center;
-    font-size:11px;
-    font-weight:900;
-  }
-  .own-table th { color:var(--muted); background:#fbfcff; }
-  .own-table td { color:var(--navy); font-size:16px; }
+  .bar.spon { background:linear-gradient(90deg,#a85600,#f2ad50); }
   .basis {
     display:grid;
-    gap:8px;
-    padding:14px;
+    gap:7px;
   }
   .basis div {
     display:flex;
     justify-content:space-between;
-    gap:12px;
-    padding-bottom:8px;
-    border-bottom:1px solid #e8edf5;
-    font-size:11px;
+    gap:10px;
+    padding-bottom:7px;
+    border-bottom:1px solid #e5ebf3;
+    font-size:10.5px;
     font-weight:850;
   }
   .basis div:last-child {
@@ -408,21 +379,21 @@
   }
   .basis span { color:var(--muted); }
   .basis b { color:var(--ink); text-align:right; }
-  .empty {
-    margin:0;
-    padding:14px;
-    color:var(--muted);
-    font-size:12px;
-    font-weight:800;
-  }
   .footer {
-    padding:12px 18px;
+    margin-top:16px;
+    padding-top:9px;
     border-top:1px solid var(--line);
-    background:#fff;
     color:var(--muted);
     font-size:10.5px;
     font-weight:800;
     word-break:keep-all;
+  }
+  .empty {
+    margin:0;
+    padding:12px 0;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:850;
   }
   @media screen and (max-width:880px) {
     body { background:#fff; }
@@ -437,143 +408,144 @@
       min-height:42px;
       font-size:13px;
     }
-    .page {
+    .sheet {
       width:100%;
       margin:0;
+      padding:18px 14px 22px;
       border:0;
       border-radius:0;
       box-shadow:none;
     }
-    .masthead {
+    .masthead,
+    .summary-band,
+    .main-grid {
       grid-template-columns:1fr;
-      gap:12px;
-      padding:18px 14px;
     }
-    .masthead h1 { font-size:25px; }
-    .risk-card { min-height:auto; padding:14px; }
-    .decision {
-      grid-template-columns:1fr;
-      padding:12px;
-      gap:10px;
+    h1 { font-size:27px; }
+    .risk-stamp {
+      min-height:auto;
+      text-align:left;
     }
-    .kpi-strip {
-      grid-template-columns:repeat(2,minmax(0,1fr));
+    .score-table {
+      table-layout:fixed;
     }
-    .kpi:nth-child(5) { grid-column:1 / -1; }
-    .kpi {
-      padding:12px;
-      border-right:0;
-      border-bottom:1px solid var(--line);
+    .ledger-table,
+    .ledger-table thead,
+    .ledger-table tbody,
+    .ledger-table tr,
+    .ledger-table th,
+    .ledger-table td {
+      display:block;
     }
-    .body-grid {
-      grid-template-columns:1fr;
-      padding:12px;
-      gap:12px;
+    .ledger-table thead { display:none; }
+    .ledger-table tr {
+      padding:12px 0;
+      border-bottom:1px solid #e5ebf3;
     }
-    .issue-row {
-      grid-template-columns:34px minmax(0,1fr);
-      gap:10px;
+    .ledger-table td {
+      padding:2px 0;
+      border-bottom:0;
+    }
+    .num { width:auto; text-align:left; }
+    .label-stack {
+      flex-direction:row;
+      justify-content:flex-start;
+    }
+    .meta {
+      white-space:normal;
     }
     .open-link {
-      grid-column:2;
-      width:max-content;
-      padding:0 12px;
+      margin-top:4px;
     }
-    .meta { white-space:normal; }
   }
   @media screen and (max-width:420px) {
     .toolbar { grid-template-columns:1fr; }
-    .kpi-strip { grid-template-columns:1fr; }
-    .kpi:nth-child(5) { grid-column:auto; }
-    .decision-box strong { font-size:14px; }
+    .score-table th,
+    .score-table td {
+      padding-left:2px;
+      padding-right:2px;
+    }
+    .score-table td { font-size:17px; }
   }
   @page { size:A4 portrait; margin:8mm; }
   @media print {
     * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     html, body { width:194mm; height:281mm; overflow:hidden; background:#fff; }
-    body { font-size:7.2px; line-height:1.15; }
+    body { font-size:7px; line-height:1.14; }
     .toolbar { display:none; }
-    .page {
+    .sheet {
       width:100%;
       height:281mm;
       margin:0;
+      padding:0;
       border:0;
       border-radius:0;
       box-shadow:none;
-      display:grid;
-      grid-template-rows:auto auto auto minmax(0,1fr) auto;
       overflow:hidden;
     }
     .masthead {
-      grid-template-columns:minmax(0,1fr) 34mm;
+      grid-template-columns:minmax(0,1fr) 25mm;
       gap:4mm;
-      padding:0 0 4mm;
+      padding-bottom:3mm;
+      border-bottom-width:1.2mm;
     }
-    .eyebrow { min-height:4mm; padding:0 2mm; font-size:6.2px; }
-    .masthead h1 { margin:2mm 0 1mm; font-size:14.5px; }
-    .period { font-size:6.8px; }
-    .risk-card { min-height:auto; padding:3mm; border-radius:2mm; }
-    .risk-label { font-size:5.8px; }
-    .risk-value { font-size:17px; }
-    .risk-sub { margin-top:1mm; font-size:6.5px; }
-    .decision { gap:2mm; padding:2.2mm 0; }
-    .decision-box { padding:2mm; border-left-width:1mm; border-radius:1.5mm; }
-    .decision-box strong { margin-bottom:1mm; font-size:7.4px; }
-    .decision-box p { font-size:6.3px; line-height:1.18; }
-    .kpi-strip { grid-template-columns:repeat(5,minmax(0,1fr)); }
-    .kpi { padding:2mm; border-right:1px solid var(--line); border-bottom:0; }
-    .kpi small { font-size:5.7px; }
-    .kpi b { margin-top:.8mm; font-size:12px; }
-    .kpi b span { font-size:5.8px; }
-    .kpi em { display:none; }
-    .body-grid {
-      grid-template-columns:minmax(0,1fr) 61mm;
-      gap:2mm;
-      padding:2mm 0 0;
-      background:#fff;
-      min-height:0;
-      overflow:hidden;
+    .system { font-size:5.8px; }
+    h1 { margin:1.5mm 0 1mm; font-size:16px; }
+    .report-meta { gap:1.5mm; font-size:6.2px; }
+    .risk-stamp { min-height:22mm; padding:2mm; border-width:.5mm; }
+    .risk-stamp small { font-size:5.2px; }
+    .risk-stamp b { font-size:13px; }
+    .risk-stamp span { font-size:5.7px; }
+    .summary-band {
+      grid-template-columns:minmax(0,1fr) 69mm;
+      gap:3mm;
+      padding:3mm 0;
     }
-    .panel { border-radius:1.5mm; min-height:0; overflow:hidden; }
-    .panel-head { padding:1.7mm 2mm; }
-    .panel-head h2 { font-size:7.4px; }
-    .panel-head span { font-size:5.8px; }
-    .issue-row {
-      grid-template-columns:7mm minmax(0,1fr) 15mm;
-      gap:1.6mm;
-      padding:1.7mm 2mm;
+    .judgement h2,
+    .panel-title { margin-bottom:1mm; font-size:7.4px; }
+    .judgement p { font-size:7px; line-height:1.22; }
+    .judgement .sub { margin-top:1.2mm; font-size:6px; }
+    .score-table th,
+    .tone-table th { padding:1.4mm .8mm; font-size:5.3px; }
+    .score-table td,
+    .tone-table td { padding:1.6mm .8mm; font-size:10px; }
+    .score-table td small,
+    .tone-table td small { font-size:5px; }
+    .main-grid {
+      grid-template-columns:minmax(0,1fr) 55mm;
+      gap:3mm;
+      padding-top:3mm;
     }
-    .rank { width:6mm; height:6mm; border-radius:1.2mm; font-size:6px; }
-    .badge-line { gap:1mm; margin-bottom:.8mm; }
-    .pill { min-height:3.2mm; padding:0 1.2mm; font-size:5.4px; }
+    .section-head { margin-bottom:1.5mm; padding-bottom:1.2mm; border-bottom-width:.5mm; }
+    .section-head h2 { font-size:7.8px; }
+    .section-head span { font-size:5.6px; }
+    .ledger-table th { padding:1.4mm 1mm; font-size:5.2px; }
+    .ledger-table td { padding:1.5mm 1mm; font-size:5.7px; }
     .headline {
-      font-size:7px;
+      font-size:6.4px;
       line-height:1.15;
       display:-webkit-box;
       -webkit-line-clamp:2;
       -webkit-box-orient:vertical;
       overflow:hidden;
     }
-    .meta { margin-top:.8mm; font-size:5.6px; }
+    .meta { margin-top:.7mm; font-size:5.2px; }
+    .pill { min-height:3mm; padding:0 1mm; font-size:5px; }
     .open-link { display:none; }
-    .side-stack { gap:2mm; min-height:0; overflow:hidden; }
-    .meter-list, .basis { gap:1.4mm; padding:2mm; }
-    .meter-row { grid-template-columns:14mm minmax(0,1fr) 8mm; gap:1mm; font-size:5.8px; }
-    .track { height:1.6mm; }
-    .own-table th,
-    .own-table td { padding:1.5mm 1mm; font-size:5.7px; }
-    .own-table td { font-size:8px; }
-    .basis div { padding-bottom:1.3mm; font-size:5.8px; }
-    .footer { padding:2mm 0 0; font-size:5.6px; }
-    .issue-row:nth-child(n+8) { display:none; }
+    .side { gap:2.4mm; }
+    .side-panel { padding-bottom:2mm; }
+    .bar-list { gap:1.4mm; }
+    .bar-row { grid-template-columns:12mm minmax(0,1fr) 6mm; gap:1mm; font-size:5.7px; }
+    .track { height:1.5mm; }
+    .basis { gap:1.2mm; }
+    .basis div { padding-bottom:1.2mm; font-size:5.5px; }
+    .footer { margin-top:2.5mm; padding-top:1.8mm; font-size:5.5px; }
+    .ledger-table tbody tr:nth-child(n+9) { display:none; }
   }
 </style>
 </head>
 <body>
   {% set evidence_tab = article_tabs[0] %}
-  {% set own_tab = article_tabs[1] %}
-  {% set risk_tab = article_tabs[2] %}
-  {% set market_tab = article_tabs[3] %}
   {% set own_positive = metrics.own_by_tone.positive %}
   {% set own_caution = metrics.own_by_tone.caution %}
   {% set own_neutral = metrics.own_by_tone.neutral %}
@@ -588,102 +560,114 @@
     <button onclick="window.print()">인쇄/PDF 저장</button>
   </div>
 
-  <main class="page">
+  <main class="sheet">
     <header class="masthead">
       <div>
-        <span class="eyebrow">DAILY MEDIA INTELLIGENCE</span>
+        <div class="system">INCAR MEDIA MONITORING SYSTEM</div>
         <h1>언론 동향 리포트</h1>
-        <div class="period">{{ date_str }} 생성 · {{ window.label }} · {{ subject_prefix }}</div>
+        <div class="report-meta">
+          <span>{{ date_str }} 생성</span>
+          <span>{{ window.label }}</span>
+          <span>{{ subject_prefix }}</span>
+        </div>
       </div>
-      <aside class="risk-card">
-        <div class="risk-label">RISK LEVEL</div>
-        <div class="risk-value {{ metrics.risk_level }}">{{ metrics.risk_level }}</div>
-        <div class="risk-sub">{{ risk_message }}</div>
+      <aside class="risk-stamp">
+        <small>RISK</small>
+        <b class="{{ metrics.risk_level }}">{{ metrics.risk_level }}</b>
+        <span>{{ risk_message }}</span>
       </aside>
     </header>
 
-    <section class="decision">
-      <article class="decision-box">
-        <strong>오늘의 판단</strong>
+    <section class="summary-band">
+      <div class="judgement">
+        <h2>오늘의 판단</h2>
         <p>{% if daily_brief %}{{ daily_brief[0] }}{% else %}당일 수집 구간의 기사 흐름을 기준으로 직접 리스크와 업계 변화를 분리해 확인합니다.{% endif %}</p>
-      </article>
-      <article class="decision-box">
-        <strong>확인 우선순위</strong>
-        <p>{% if own_negative > 0 %}당사 부정 {{ own_negative }}건의 원문, 반복 보도 여부, 사실관계를 우선 확인합니다.{% elif metrics.by_category.own > 0 %}당사 언급 {{ metrics.by_category.own }}건은 긍정·중립·주의 흐름을 분리해 활용 가능성을 확인합니다.{% else %}당사 직접 언급은 제한적입니다. 정책/감독과 GA·보험사 동향을 우선 관찰합니다.{% endif %}</p>
-      </article>
+        <p class="sub">{% if own_negative > 0 %}당사 부정 {{ own_negative }}건은 원문, 반복 보도 여부, 사실관계를 우선 확인합니다.{% elif metrics.by_category.own > 0 %}당사 언급 {{ metrics.by_category.own }}건은 긍정·중립·주의 흐름을 나눠 활용 가능성과 평판 영향을 확인합니다.{% else %}당사 직접 언급은 제한적입니다. 정책/감독과 GA·보험사 동향을 별도 관찰합니다.{% endif %}</p>
+      </div>
+      <div>
+        <h2 class="panel-title">핵심 지표</h2>
+        <table class="score-table">
+          <thead><tr><th>분석</th><th>당사</th><th>부정</th><th>정책</th><th>GA/보험</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>{{ metrics.total_after_cluster }}<small>건</small></td>
+              <td>{{ metrics.by_category.own }}<small>건</small></td>
+              <td>{{ own_negative }}<small>건</small></td>
+              <td>{{ regulation_count }}<small>건</small></td>
+              <td>{{ market_total }}<small>건</small></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <section class="kpi-strip">
-      <article class="kpi"><small>분석 기사</small><b>{{ metrics.total_after_cluster }}<span>건</span></b><em>중복 정리 후</em></article>
-      <article class="kpi"><small>당사 언급</small><b>{{ metrics.by_category.own }}<span>건</span></b><em>긍정 {{ own_positive }} · 중립 {{ own_neutral }} · 부정 {{ own_negative }}</em></article>
-      <article class="kpi"><small>당사 부정</small><b>{{ own_negative }}<span>건</span></b><em>직접 리스크 기준</em></article>
-      <article class="kpi"><small>정책/감독</small><b>{{ regulation_count }}<span>건</span></b><em>제도·감독·수수료</em></article>
-      <article class="kpi"><small>GA/보험사</small><b>{{ market_total }}<span>건</span></b><em>경쟁사와 업계 흐름</em></article>
-    </section>
-
-    <section class="body-grid">
-      <section class="panel">
-        <div class="panel-head">
+    <section class="main-grid">
+      <section class="section">
+        <div class="section-head">
           <h2>우선 확인 기사</h2>
-          <span>근거 {{ evidence_tab.articles|length }}건</span>
+          <span>근거 {{ evidence_tab.articles|length }}건 · 제목/원문 기준</span>
         </div>
-        <div class="issue-ledger">
-          {% if evidence_tab.articles %}
-            {% for a in evidence_tab.articles[:7] %}
-            <article class="issue-row">
-              <span class="rank">{{ "%02d"|format(loop.index) }}</span>
-              <div class="issue-main">
-                <div class="badge-line">
+        {% if evidence_tab.articles %}
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>분류</th>
+              <th>헤드라인</th>
+              <th>출처</th>
+              <th>원문</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in evidence_tab.articles[:8] %}
+            <tr>
+              <td class="num">{{ "%02d"|format(loop.index) }}</td>
+              <td>
+                <div class="label-stack">
                   <span class="pill tone-{{ a._tone }}">{{ a._tone_label }}</span>
                   <span class="pill cat-{{ a._category }}">{{ a._category_label }}</span>
-                  {% if a._cluster_size > 1 %}<span class="pill">관련 {{ a._cluster_size }}건</span>{% endif %}
                 </div>
+              </td>
+              <td>
                 <a class="headline" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
-                <div class="meta">{{ a.source }} · {{ a.keyword }} · 영향도 {{ a._impact }}</div>
-              </div>
-              <a class="open-link" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">열기</a>
-            </article>
+                <div class="meta">{{ a.keyword }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</div>
+              </td>
+              <td><div class="meta">{{ a.source }}<br>영향도 {{ a._impact }}</div></td>
+              <td><a class="open-link" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">열기</a></td>
+            </tr>
             {% endfor %}
-          {% else %}
-            <p class="empty">분석 구간 내 우선 확인 기사가 없습니다.</p>
-          {% endif %}
-        </div>
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">분석 구간 내 우선 확인 기사가 없습니다.</p>
+        {% endif %}
       </section>
 
-      <aside class="side-stack">
-        <section class="panel">
-          <div class="panel-head">
-            <h2>분류 구조</h2>
-            <span>기사량 기준</span>
-          </div>
-          <div class="meter-list">
-            <div class="meter-row"><span>당사</span><div class="track"><i class="bar own" style="width:{{ (metrics.by_category.own / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ metrics.by_category.own }}</b></div>
-            <div class="meter-row"><span>정책</span><div class="track"><i class="bar regulation" style="width:{{ (regulation_count / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ regulation_count }}</b></div>
-            <div class="meter-row"><span>GA/보험</span><div class="track"><i class="bar market" style="width:{{ (market_total / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ market_total }}</b></div>
-            <div class="meter-row"><span>스폰서십</span><div class="track"><i class="bar sponsorship" style="width:{{ (sponsorship_count / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ sponsorship_count }}</b></div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <h2>당사 논조</h2>
-            <span>직접 언급 기준</span>
-          </div>
-          <table class="own-table">
+      <aside class="side">
+        <section class="side-panel">
+          <h2 class="panel-title">당사 논조</h2>
+          <table class="tone-table">
             <thead><tr><th>긍정</th><th>중립</th><th>주의</th><th>부정</th></tr></thead>
             <tbody><tr><td>{{ own_positive }}</td><td>{{ own_neutral }}</td><td>{{ own_caution }}</td><td>{{ own_negative }}</td></tr></tbody>
           </table>
         </section>
 
-        <section class="panel">
-          <div class="panel-head">
-            <h2>운영 기준</h2>
-            <span>수집 로그</span>
+        <section class="side-panel">
+          <h2 class="panel-title">분류별 노출</h2>
+          <div class="bar-list">
+            <div class="bar-row"><span>당사</span><div class="track"><i class="bar" style="width:{{ (metrics.by_category.own / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ metrics.by_category.own }}</b></div>
+            <div class="bar-row"><span>정책</span><div class="track"><i class="bar reg" style="width:{{ (regulation_count / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ regulation_count }}</b></div>
+            <div class="bar-row"><span>GA/보험</span><div class="track"><i class="bar market" style="width:{{ (market_total / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ market_total }}</b></div>
+            <div class="bar-row"><span>스폰서십</span><div class="track"><i class="bar spon" style="width:{{ (sponsorship_count / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ sponsorship_count }}</b></div>
           </div>
+        </section>
+
+        <section class="side-panel">
+          <h2 class="panel-title">보고 기준</h2>
           <div class="basis">
-            <div><span>분석 구간</span><b>{{ window.label }}</b></div>
+            <div><span>수집 구간</span><b>{{ window.label }}</b></div>
             <div><span>수집/분석</span><b>{{ metrics.total_collected }} / {{ metrics.total_after_cluster }}건</b></div>
-            <div><span>데이터 출처</span><b>{{ methodology.sources }}</b></div>
+            <div><span>출처</span><b>{{ methodology.sources }}</b></div>
             <div><span>검색 키워드</span><b>{{ methodology.keywords }}개</b></div>
           </div>
         </section>
