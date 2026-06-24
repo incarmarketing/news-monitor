@@ -4604,9 +4604,6 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
               onChange={setReportMonth}
             />
           )}
-          <button className="ghost-button" type="button" onClick={handleDashboardReportSend} disabled={sendStatus.state === "sending"}>
-            <Bell />{sendStatus.state === "sending" ? "요청 중" : "슬랙 발송"}
-          </button>
           <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${reportData.scope || ""}`)}>
             <Download />PDF 저장
           </button>
@@ -4736,8 +4733,8 @@ function A4ReportSheet({
             <h2>{edition.title}</h2>
             <em>{scope.scopeLabel || data.scope || edition.issue} · {data.generatedAt || "-"}</em>
           </div>
-          <A4MetricTable stats={stats} onOpenMonitoring={onOpenMonitoring} />
         </div>
+        <A4MetricTable stats={stats} onOpenMonitoring={onOpenMonitoring} />
       </header>
 
       <section className="a4-front a4-front-solo">

@@ -13023,3 +13023,145 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     width: 220px !important;
   }
 }
+
+/* Report v4: document-first briefing layout. */
+.report-command-panel {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  padding: 9px 11px !important;
+}
+
+.report-command-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.report-command-actions .ghost-button {
+  display: none !important;
+}
+
+.report-workspace .a4-report-stage {
+  padding: 16px !important;
+  background: #eef3f8 !important;
+}
+
+.report-workspace .a4-report-sheet {
+  width: min(205mm, 100%) !important;
+  padding: 12mm !important;
+  gap: 11px !important;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, .012) 0 1px, transparent 1px 100%),
+    #fff !important;
+  background-size: 18px 18px, auto !important;
+}
+
+.report-workspace .a4-masthead {
+  display: grid !important;
+  gap: 9px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 4px solid #0f172a !important;
+}
+
+.report-workspace .a4-title-row {
+  display: block !important;
+}
+
+.report-workspace .a4-title-row h2 {
+  max-width: 100% !important;
+  font-size: 32px !important;
+  line-height: 1.05 !important;
+  letter-spacing: -.035em !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .a4-title-row em {
+  display: block !important;
+  margin-top: 6px !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+}
+
+.a4-metric-table {
+  width: 100% !important;
+  grid-template-columns: 1.05fr repeat(4, minmax(0, 1fr)) !important;
+  border: 1px solid #172033 !important;
+}
+
+.a4-metric-table button {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  min-height: 42px !important;
+  padding: 6px 9px !important;
+  text-align: left !important;
+}
+
+.a4-metric-table span {
+  font-size: 9px !important;
+}
+
+.a4-metric-table b {
+  font-size: 17px !important;
+}
+
+.report-workspace .a4-lead {
+  min-height: 0 !important;
+  padding: 13px 15px !important;
+  border: 1px solid #ccd7e5 !important;
+  border-left: 6px solid #1d4ed8 !important;
+  background: #f9fbff !important;
+}
+
+.report-workspace .a4-lead h3 {
+  font-size: 21px !important;
+  line-height: 1.22 !important;
+}
+
+.report-workspace .a4-executive-lines {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 3px !important;
+  padding-left: 14px !important;
+}
+
+.report-workspace .a4-report-body {
+  grid-template-columns: minmax(0, 1.22fr) minmax(270px, .78fr) !important;
+  gap: 12px !important;
+}
+
+.report-workspace .a4-panel {
+  padding: 11px 12px !important;
+  border: 1px solid #ccd7e5 !important;
+  border-top: 3px solid #0f172a !important;
+  background: rgba(255, 255, 255, .96) !important;
+}
+
+.report-workspace .a4-issue-row {
+  padding: 8px 0 !important;
+}
+
+.report-workspace .a4-issue-row h4 {
+  font-size: 12.5px !important;
+  line-height: 1.34 !important;
+}
+
+.report-workspace .a4-bar-list,
+.report-workspace .a4-press-rows {
+  gap: 8px !important;
+}
+
+.report-workspace .a4-footer {
+  font-size: 9px !important;
+}
+
+@media print {
+  .report-workspace .a4-title-row {
+    display: block !important;
+  }
+
+  .report-workspace .a4-title-row h2 {
+    font-size: 22px !important;
+  }
+
+  .a4-metric-table {
+    width: 100% !important;
+  }
+}
