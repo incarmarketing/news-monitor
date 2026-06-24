@@ -78,8 +78,18 @@
     box-shadow:var(--shadow);
   }
   .masthead {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 392px;
+    gap:18px;
+    align-items:end;
     padding-bottom:16px;
     border-bottom:3px solid var(--line-dark);
+  }
+  .title-block {
+    min-width:0;
+  }
+  .head-score {
+    min-width:0;
   }
   .system {
     color:var(--blue);
@@ -104,36 +114,18 @@
     font-size:12px;
     font-weight:850;
   }
-  .risk-line {
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    min-height:25px;
-    padding:0 9px;
-    border:1px solid #cbd6e7;
-    border-radius:999px;
-    background:#fff;
-    color:var(--navy);
-    font-size:11px;
-    font-weight:900;
-  }
-  .risk-dot {
-    width:7px;
-    height:7px;
-    border-radius:50%;
-    background:var(--green);
-  }
-  .risk-line.MEDIUM .risk-dot { background:var(--amber); }
-  .risk-line.HIGH .risk-dot { background:var(--red); }
   .risk-level-text.LOW { color:var(--green); }
   .risk-level-text.MEDIUM { color:var(--amber); }
   .risk-level-text.HIGH { color:var(--red); }
   .summary-band {
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 360px;
-    gap:18px;
-    padding:16px 0;
+    padding:10px 0;
     border-bottom:1px solid var(--line);
+  }
+  .judgement {
+    display:grid;
+    grid-template-columns:82px minmax(0,1fr);
+    gap:12px;
+    align-items:center;
   }
   .judgement h2,
   .panel-title {
@@ -142,19 +134,16 @@
     font-size:15px;
     font-weight:900;
   }
+  .judgement h2 { margin:0; }
   .judgement p {
     margin:0;
     color:var(--ink);
     font-size:14px;
-    line-height:1.55;
+    line-height:1.35;
     font-weight:850;
-    word-break:keep-all;
-  }
-  .judgement .sub {
-    margin-top:9px;
-    color:var(--sub);
-    font-size:12px;
-    font-weight:800;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .score-table,
   .tone-table,
@@ -406,12 +395,25 @@
       border-radius:0;
       box-shadow:none;
     }
-    .summary-band,
+    .masthead,
     .main-grid {
       grid-template-columns:1fr;
     }
+    .head-score {
+      margin-top:8px;
+    }
+    .summary-band {
+      padding:12px 0;
+    }
+    .judgement {
+      grid-template-columns:1fr;
+      gap:5px;
+    }
+    .judgement p {
+      white-space:normal;
+      overflow:visible;
+    }
     h1 { font-size:27px; }
-    .risk-line { width:max-content; max-width:100%; }
     .score-table {
       table-layout:fixed;
     }
@@ -469,21 +471,22 @@
       box-shadow:none;
       overflow:hidden;
     }
-    .masthead { padding-bottom:3mm; border-bottom-width:1.2mm; }
+    .masthead {
+      grid-template-columns:minmax(0,1fr) 66mm;
+      gap:3mm;
+      padding-bottom:3mm;
+      border-bottom-width:1.2mm;
+    }
     .system { font-size:5.8px; }
     h1 { margin:1.5mm 0 1mm; font-size:16px; }
     .report-meta { gap:1.5mm; font-size:6.2px; }
-    .risk-line { min-height:4mm; padding:0 1.6mm; gap:1mm; font-size:5.8px; }
-    .risk-dot { width:1.5mm; height:1.5mm; }
     .summary-band {
-      grid-template-columns:minmax(0,1fr) 69mm;
-      gap:3mm;
-      padding:3mm 0;
+      padding:2mm 0;
     }
+    .judgement { grid-template-columns:16mm minmax(0,1fr); gap:2mm; }
     .judgement h2,
     .panel-title { margin-bottom:1mm; font-size:7.4px; }
     .judgement p { font-size:7px; line-height:1.22; }
-    .judgement .sub { margin-top:1.2mm; font-size:6px; }
     .score-table th,
     .tone-table th { padding:1.4mm .8mm; font-size:5.3px; }
     .score-table td,
@@ -541,28 +544,22 @@
 
   <main class="sheet">
     <header class="masthead">
-      <div class="system">INCAR MEDIA MONITORING SYSTEM</div>
-      <h1>언론 동향 리포트</h1>
-      <div class="report-meta">
-        <span>{{ date_str }} 생성</span>
-        <span>{{ window.label }}</span>
-        <span>{{ subject_prefix }}</span>
-        <span class="risk-line {{ metrics.risk_level }}"><i class="risk-dot"></i>리스크 <b class="risk-level-text {{ metrics.risk_level }}">{{ metrics.risk_level }}</b> · {{ risk_message }}</span>
+      <div class="title-block">
+        <div class="system">INCAR MEDIA MONITORING SYSTEM</div>
+        <h1>언론 동향 리포트</h1>
+        <div class="report-meta">
+          <span>{{ date_str }} 생성</span>
+          <span>{{ window.label }}</span>
+          <span>{{ subject_prefix }}</span>
+        </div>
       </div>
-    </header>
-
-    <section class="summary-band">
-      <div class="judgement">
-        <h2>오늘의 판단</h2>
-        <p>{% if daily_brief %}{{ daily_brief[0] }}{% else %}당일 수집 구간의 기사 흐름을 기준으로 직접 리스크와 업계 변화를 분리해 확인합니다.{% endif %}</p>
-        <p class="sub">{% if own_negative > 0 %}당사 부정 {{ own_negative }}건은 원문, 반복 보도 여부, 사실관계를 우선 확인합니다.{% elif metrics.by_category.own > 0 %}당사 언급 {{ metrics.by_category.own }}건은 긍정·중립·주의 흐름을 나눠 활용 가능성과 평판 영향을 확인합니다.{% else %}당사 직접 언급은 제한적입니다. 정책/감독과 GA·보험사 동향을 별도 관찰합니다.{% endif %}</p>
-      </div>
-      <div>
+      <div class="head-score">
         <h2 class="panel-title">핵심 지표</h2>
         <table class="score-table">
-          <thead><tr><th>분석</th><th>당사</th><th>부정</th><th>정책</th><th>GA/보험</th></tr></thead>
+          <thead><tr><th>리스크</th><th>분석</th><th>당사</th><th>부정</th><th>정책</th><th>GA/보험</th></tr></thead>
           <tbody>
             <tr>
+              <td><b class="risk-level-text {{ metrics.risk_level }}">{{ metrics.risk_level }}</b></td>
               <td>{{ metrics.total_after_cluster }}<small>건</small></td>
               <td>{{ metrics.by_category.own }}<small>건</small></td>
               <td>{{ own_negative }}<small>건</small></td>
@@ -571,6 +568,13 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </header>
+
+    <section class="summary-band">
+      <div class="judgement">
+        <h2>오늘의 판단</h2>
+        <p>{% if daily_brief %}{{ daily_brief[0] }}{% else %}당일 수집 구간의 기사 흐름을 기준으로 직접 리스크와 업계 변화를 분리해 확인합니다.{% endif %}</p>
       </div>
     </section>
 
