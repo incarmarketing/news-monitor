@@ -308,7 +308,7 @@ async function dailyReportSucceeded(date: string, slot: string) {
   );
   const jobRows = await selectRows(
     "job_runs",
-    `select=run_key&run_key=eq.${encodeURIComponent(`daily_report:${date}:${slot}`)}&status=eq.success&limit=1`,
+    `select=run_key&run_key=in.(${encodeURIComponent(`daily_report:${date}:${slot}`)},${encodeURIComponent(`daily_report:${date}:${slot}:generated`)})&status=eq.success&limit=1`,
   );
   const notificationRows = await selectRows(
     "notification_sends",

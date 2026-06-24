@@ -1,43 +1,62 @@
-# GitHub Actions 자동 실행 설정
+# GitHub Actions 운영 설정
 
-이 방식은 PC가 꺼져 있어도 GitHub 서버에서 08:00, 13:00, 18:00에 보고서를 생성하고, GitHub Pages에 모바일용 HTML 보고서를 올린 뒤 카카오톡으로 링크를 보냅니다.
+이 프로젝트의 운영 기준은 GitHub Actions, cron-job.org, Supabase, GitHub Pages, Slack입니다. PC가 꺼져 있어도 GitHub 서버에서 뉴스 수집, 보고서 생성, Pages 배포, Slack 발송이 진행됩니다.
 
-## 1. 저장소 만들기
+## 1. GitHub Secrets
 
-1. GitHub에서 새 저장소를 만듭니다.
-2. `C:\Users\User\Desktop\COWORK\news-monitor` 폴더 안의 파일들을 저장소 루트로 올립니다.
-3. `.env`, `logs`, `data`, `out`, `__pycache__`는 올리지 않습니다.
+저장소 `Settings > Secrets and variables > Actions > New repository secret`에서 아래 값을 등록합니다.
 
-## 2. GitHub Secrets 등록
+필수:
 
-GitHub 저장소에서 `Settings` > `Secrets and variables` > `Actions` > `New repository secret`로 아래 값을 등록합니다.
+```text
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_ANON_KEY 또는 SUPABASE_PUBLISHABLE_KEY
+SLACK_WEBHOOK_URL
+SLACK_REPORT_WEBHOOK_URL
+SLACK_ALERT_WEBHOOK_URL
+CRON_DISPATCH_TOKEN
+```
 
-- `GEMINI_API_KEY`
-- `NAVER_CLIENT_ID`
-- `NAVER_CLIENT_SECRET`
-- `KAKAO_REST_API_KEY`
-- `KAKAO_REFRESH_TOKEN`
-- `KAKAO_CLIENT_SECRET`는 카카오 Client Secret을 꺼두었으면 등록하지 않아도 됩니다.
+선택:
 
-로컬 `.env`에 있는 값을 그대로 복사하면 됩니다.
+```text
+GEMINI_API_KEY
+GROQ_API_KEY
+NAVER_CLIENT_ID
+NAVER_CLIENT_SECRET
+DART_API_KEY
+DART_CORP_CODE
+```
 
-## 3. GitHub Pages 활성화
+## 2. GitHub Pages
 
-1. 저장소 `Settings` > `Pages`로 갑니다.
-2. `Build and deployment`의 `Source`를 `GitHub Actions`로 설정합니다.
+1. 저장소 `Settings > Pages`로 이동합니다.
+2. `Build and deployment > Source`를 `GitHub Actions`로 설정합니다.
+3. 보고서 URL은 기본적으로 `https://incarmarketing.github.io/news-monitor/`를 사용합니다.
 
-## 4. 테스트 실행
+## 3. 주요 Workflow
 
-1. 저장소 `Actions` 탭으로 갑니다.
-2. `AI News Briefing` 워크플로를 선택합니다.
-3. `Run workflow`를 누릅니다.
-4. 완료되면 카카오톡으로 `보고서 보기` 버튼이 포함된 메시지가 옵니다.
+- `news-briefing.yml`: 일일, 주간, 월간 보고서 생성과 Slack 발송
+- `negative-watch.yml`: 부정/주의 기사 10분 단위 감시
+- `pages-dashboard.yml`: 대시보드와 보고서 Pages 배포
+- `sync-external-cron.yml`: cron-job.org 외부 호출 설정 동기화
+- `regulator-releases.yml`: 금융당국 보도자료 수집
 
-## 주의사항
+## 4. 발송 기준
 
-- GitHub Pages URL을 아는 사람은 보고서를 열 수 있습니다. 민감한 내부 보고서라면 공개 저장소나 공개 Pages에 올리는 방식은 피하는 것이 좋습니다.
-- 자동 실행 시간은 UTC 기준으로 등록되어 있습니다. 현재 기준시각은 한국시간 08:00, 13:00, 18:00입니다.
-- GitHub 예약 실행은 지연/누락될 수 있어 각 기준시각마다 05분, 15분에 백업 실행을 걸어두었습니다. 한 기준시각에서 이미 성공한 경우 `.run-state/` 마커로 중복 발송을 막습니다.
-- 수집 구간은 08시 전일 18:00~당일 08:00, 13시 당일 08:00~13:00, 18시 당일 13:00~18:00 오후 마감 기준입니다.
-- 기존 Windows 작업 스케줄러 방식은 PC가 켜져 있어야만 실행됩니다. PC가 꺼져 있어도 동작하려면 GitHub Actions 같은 클라우드 실행 환경이 필요합니다.
-- 카카오톡 `보고서 보기` 버튼이 `localhost`로 열리면 `KAKAO_LINK_SETUP.md`의 제품 링크 도메인 설정을 확인합니다.
+일일 보고서는 08:00, 13:00, 18:00 KST 기준으로 생성합니다. cron-job.org가 1차 호출을 담당하고, GitHub Actions schedule은 각 기준 시각 15분 뒤 fallback으로 동작합니다.
+
+중복 발송은 Supabase `notification_sends`, `job_runs`, `report_runs`와 `.run-state` 마커를 함께 확인해 막습니다. 수동 재발송이 필요하면 GitHub Actions `Run workflow`에서 `Force resend`를 켭니다.
+
+## 5. 장애 확인 순서
+
+1. Slack 채널에 메시지가 왔는지 확인합니다.
+2. Supabase `notification_sends`에서 `channel=slack`, `status=success` 기록을 확인합니다.
+3. Supabase `job_runs`에서 해당 슬롯의 `daily_report:YYYY-MM-DD:HH` 또는 `daily_report:YYYY-MM-DD:HH:generated` 기록을 확인합니다.
+4. GitHub Actions `AI News Briefing` 실행 로그에서 `Send Slack report link` 단계를 확인합니다.
+5. 보고서 링크가 오래된 화면이면 `Deploy to GitHub Pages` 완료 여부를 확인합니다.
+
+## 6. Legacy
+
+카카오 발송 스크립트는 현재 운영 경로가 아닙니다. 필요할 때만 수동 확인용으로 사용하고, 운영 발송 이력은 Slack 기준으로 관리합니다.

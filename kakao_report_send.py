@@ -355,7 +355,7 @@ def maybe_send_ai_usage_alert(access_token: str, report: dict) -> None:
     if not needs_ai_usage_alert(report):
         return
     title = ai_usage_alert_title(report)
-    if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent("ai_usage_alert", title):
+    if not os.getenv("FORCE_KAKAO_SEND") and notification_already_sent("ai_usage_alert", title, channel="kakao"):
         print(f"AI usage alert already sent: {title}")
         return
     link = os.getenv("GEMINI_USAGE_URL", "").strip() or config.GEMINI_USAGE_URL
@@ -369,6 +369,7 @@ def maybe_send_ai_usage_alert(access_token: str, report: dict) -> None:
             link_url=link,
             status="success",
             provider_response=result,
+            channel="kakao",
         )
         print("AI usage alert result:", result)
     except Exception as error:
@@ -379,6 +380,7 @@ def maybe_send_ai_usage_alert(access_token: str, report: dict) -> None:
             link_url=link,
             status="failed",
             error=str(error),
+            channel="kakao",
         )
         print(f"AI usage alert failed: {error}")
 
@@ -389,7 +391,7 @@ def main() -> None:
     link = report_link(report)
     text = build_message(report)
     title = notification_title(report)
-    if not forced_resend_enabled() and notification_already_sent("daily_report", title, strict=True):
+    if not forced_resend_enabled() and notification_already_sent("daily_report", title, strict=True, channel="kakao"):
         print(f"Kakao daily report already sent: {title}")
         print("Set FORCE_KAKAO_SEND=1 to send again intentionally.")
         if needs_ai_usage_alert(report):
@@ -410,6 +412,7 @@ def main() -> None:
             status="success",
             provider_response=result,
             dedupe_key=log_dedupe_key,
+            channel="kakao",
         )
         print("Kakao send result:", result)
         print("Report link:", link)
@@ -424,6 +427,7 @@ def main() -> None:
             error=str(error),
             dedupe_key=log_dedupe_key,
             require_log=False,
+            channel="kakao",
         )
         raise
     html_path = latest_html_path()

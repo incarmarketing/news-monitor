@@ -26,8 +26,8 @@ class ScheduleGuardTests(unittest.TestCase):
         self.assertTrue(schedule_guard.period_report_due(kst_datetime(2026, 6, 1, 8, 3)))
 
     def test_period_schedule_is_distinct_from_daily_watchdog(self) -> None:
-        self.assertTrue(schedule_guard.is_period_schedule("*/5 22 * * *"))
-        self.assertFalse(schedule_guard.is_period_schedule("*/5 23,0-14 * * *"))
+        self.assertTrue(schedule_guard.is_period_schedule("15 22 * * *"))
+        self.assertFalse(schedule_guard.is_period_schedule("15 23 * * *"))
 
     def test_marker_is_ignored_when_supabase_send_is_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -53,6 +53,15 @@ class ScheduleGuardTests(unittest.TestCase):
         rows = [
             [{"run_key": "daily_report:2026-06-22:13"}],
             [],
+            [{"id": 1}],
+        ]
+        with patch.object(schedule_guard, "supabase_select", side_effect=rows):
+            self.assertTrue(schedule_guard.daily_report_succeeded("2026-06-22", "13"))
+
+    def test_generated_job_with_slack_success_completes_slot(self) -> None:
+        rows = [
+            [],
+            [{"run_key": "daily_report:2026-06-22:13:generated"}],
             [{"id": 1}],
         ]
         with patch.object(schedule_guard, "supabase_select", side_effect=rows):

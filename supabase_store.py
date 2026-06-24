@@ -814,7 +814,7 @@ def save_notification_send(
     status: str,
     error: str = "",
     provider_response: dict | None = None,
-    channel: str = "kakao",
+    channel: str = "slack",
     sent_at: str | None = None,
     dedupe_key: str | None = None,
     require_log: bool | None = None,

@@ -88,6 +88,7 @@ def main() -> None:
             status="success",
             provider_response=result,
             require_log=True,
+            channel="kakao",
         )
         print("Kakao period send result:", result)
         print("Period report link:", link)
@@ -100,6 +101,7 @@ def main() -> None:
             status="failed",
             error=str(error),
             require_log=False,
+            channel="kakao",
         )
         raise
 

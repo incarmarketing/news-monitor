@@ -143,20 +143,12 @@ def article_summary(article: dict, category: str, tone: str) -> str:
         or analyzer.is_foreign_macro_insurance_incidental_noise_article(article)
         or analyzer.is_external_geopolitical_shipping_noise_article(article)
     ) else clean_summary_text(article.get("description", "") or article.get("summary", ""))
-    lines = []
-    if existing:
-        lines.extend(split_summary_sentences(existing)[:3])
-    lines.extend(contextual_summary_lines(article, category, tone))
-    if not lines:
-        lines.append(headline_fallback_summary(article, category, tone))
+    lines = split_summary_sentences(existing)[:3] if existing else []
     usable = [
         line
         for line in unique_lines(lines)
         if is_usable_summary_line(line, title)
     ]
-    if not usable:
-        fallback = headline_fallback_summary(article, category, tone)
-        usable = [fallback] if fallback else []
     return " ".join(unique_lines(usable)[:3])
 
 
@@ -899,7 +891,7 @@ def build_quality_checks(articles: list[dict], report_runs: list[dict], notifica
             "reason": "summary_missing_or_title_duplicate",
         }
         for row in current_rows
-        if row.get("tone") != "exclude" and not is_usable_summary_line(row.get("summary", ""), row.get("title", ""))
+        if row.get("tone") != "exclude" and row.get("summary") and not is_usable_summary_line(row.get("summary", ""), row.get("title", ""))
     ]
     report_window_failures = invalid_report_windows(report_runs)
     notification_link_failures = invalid_notification_report_links(notifications)

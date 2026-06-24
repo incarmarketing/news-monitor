@@ -8416,35 +8416,13 @@ function buildArticleSummaryLines(item = {}) {
   if (isForeignMacroInsuranceIncidentalNoiseArticle(item)) return [];
   if (isExternalGeopoliticalShippingNoiseArticle(item)) return [];
   const titleKeys = summaryTitleKeys(item);
-  if (Array.isArray(item.summaryLines) && item.summaryLines.length) {
-    const explicitLines = dedupeSummaryLines(
-      removeUnsupportedOwnReferences(item, item.summaryLines.map(normalizeSummaryLine).filter(Boolean)),
-      titleKeys,
-    )
-      .filter((line) => isHighSignalSummaryLine(line, item, titleKeys))
-      .slice(0, 4);
-    if (explicitLines.length) return explicitLines;
-  }
   const cleanTitle = cleanSummaryText(item.title || "");
   const text = cleanSummaryText(originalArticleDescription(item) || item.summary || item.description || "");
   const sentences = splitSummarySentences(text)
     .map(normalizeSummaryLine)
     .filter((sentence) => sentence && sentence !== cleanTitle && !isGenericSummaryLine(sentence) && !isBrokenSummaryLine(sentence) && !isSummaryDuplicateOfTitle(sentence, titleKeys));
-  const primaryTopic = articlePrimarySummaryTopic(item);
-  const contextLines = [];
-  if (primaryTopic && contextLines.length) {
-    const topicLines = dedupeSummaryLines(
-      removeUnsupportedOwnReferences(item, contextLines.filter((line) => line && summaryLineMatchesTopic(line, primaryTopic))),
-      titleKeys,
-    )
-      .slice(0, primaryTopic === "own-performance" ? 2 : 3);
-    if (topicLines.length) return topicLines;
-  }
   const bodySentences = sentences.filter((line) => isHighSignalSummaryLine(line, item, titleKeys));
-  const candidates = contextLines.length >= 2
-    ? [...contextLines, ...bodySentences]
-    : [...contextLines, ...bodySentences];
-  const lines = dedupeSummaryLines(removeUnsupportedOwnReferences(item, candidates.filter(Boolean)), titleKeys)
+  const lines = dedupeSummaryLines(removeUnsupportedOwnReferences(item, bodySentences.filter(Boolean)), titleKeys)
     .slice(0, 3);
   if (lines.length) return lines;
   return [];
