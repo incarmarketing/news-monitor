@@ -4729,12 +4729,12 @@ function A4ReportSheet({
   const isDaily = period === "daily";
   const insightLines = buildA4ReportInsights(period, data, lead, issues, articles, scope).slice(0, isDaily ? 2 : 4);
   const stats = buildA4ReportStats(summary, articles);
-  const pressLimit = isDaily ? 0 : period === "monthly" ? 4 : 5;
-  const pressRows = (data.pressInfluence || []).filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, pressLimit);
-  const scrapRows = isDaily || period === "monthly" ? [] : scraps.slice(0, 2);
-  const observationRows = buildA4ObservationRows(period, data, lead, issues, articles, keywordRows, pressRows, scope).slice(0, isDaily ? 2 : 4);
-  const toneRows = buildA4ToneLedger(articles);
-  const keywordLimit = isDaily ? 0 : period === "monthly" ? 6 : 10;
+  const pressRows = (data.pressInfluence?.length ? data.pressInfluence : buildPressInfluence(articles))
+    .filter((item) => !isOfficialRegulatorSource(item.source))
+    .slice(0, 6);
+  const categoryRows = (data.categoryFlow?.length ? data.categoryFlow : buildCategoryFlowRows(articles, 6))
+    .filter((row) => Number(row.value || 0) > 0)
+    .slice(0, 6);
   const reportIssues = [lead, ...issues].filter((item) => item?.title).slice(0, isDaily ? 4 : period === "monthly" ? 5 : 6);
   return (
     <article className={`a4-report-sheet ${period}`}>
@@ -4750,15 +4750,11 @@ function A4ReportSheet({
             <h2>{edition.title}</h2>
             <em>{edition.subtitle}</em>
           </div>
-          <div className={`a4-risk-badge ${String(summary.risk || "LOW").toLowerCase()}`}>
-            <span>리스크</span>
-            <b>{summary.risk || "LOW"}</b>
-          </div>
         </div>
         <A4MetricStrip stats={stats} onOpenMonitoring={onOpenMonitoring} />
       </header>
 
-      <section className="a4-front">
+      <section className="a4-front a4-front-solo">
         <article className="a4-lead">
           <span>핵심 요약</span>
           <h3>{buildA4ReportHeadline(period, data, lead, scope)}</h3>
@@ -4776,45 +4772,11 @@ function A4ReportSheet({
             )}
           </div>
         </article>
-        {isDaily && (
-          <aside className="a4-insight daily-scope">
-            <span>보고 기준</span>
-            <dl className="a4-basis-list">
-              <div>
-                <dt>구간</dt>
-                <dd>{scope.scopeLabel || data.scope || "-"}</dd>
-              </div>
-              <div>
-                <dt>기준</dt>
-                <dd>{scope.basisLabel}</dd>
-              </div>
-            </dl>
-          </aside>
-        )}
-        {!isDaily && (
-          <aside className="a4-insight">
-            <span>집계 기준</span>
-            <dl className="a4-basis-list">
-              <div>
-                <dt>기간</dt>
-                <dd>{scope.scopeLabel || data.scope || "-"}</dd>
-              </div>
-              <div>
-                <dt>방식</dt>
-                <dd>{scope.ruleLabel}</dd>
-              </div>
-              <div>
-                <dt>기준</dt>
-                <dd>{scope.basisLabel}</dd>
-              </div>
-            </dl>
-          </aside>
-        )}
       </section>
 
       <section className="a4-report-body">
         <div className="a4-report-main-column">
-          <A4Panel title="핵심 이슈와 요약" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
+          <A4Panel title="우선 확인 기사" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
             <div className="a4-issue-list">
               {reportIssues.map((issue, index) => (
                 <A4IssueRow
@@ -4829,83 +4791,18 @@ function A4ReportSheet({
           </A4Panel>
         </div>
 
-        {isDaily && (
-          <div className="a4-report-side-column">
-            <A4Panel title="보고 판단" meta="Daily">
-              <div className="a4-comment-list compact">
-                {observationRows.map((row) => (
-                  <article key={row.label}>
-                    <span>{row.label}</span>
-                    <b>{row.body}</b>
-                  </article>
-                ))}
-              </div>
-            </A4Panel>
-            <A4Panel title="논조 분포" meta="분류">
-              <div className="a4-tone-ledger compact">
-                {toneRows.map((row) => (
-                  <span key={row.label} className={row.tone}>
-                    <b>{row.value}</b>
-                    <em>{row.label}</em>
-                  </span>
-                ))}
-              </div>
-            </A4Panel>
-          </div>
-        )}
-
-        {!isDaily && (
-          <div className="a4-report-side-column">
-            <A4Panel title={scope.trendTitle} meta={scope.trendMeta}>
-              <A4ToneMini rows={trendRows} />
-            </A4Panel>
-
-            <A4Panel title="키워드별 기사량" meta="선정 키워드">
-              <A4BarList rows={keywordRows.slice(0, keywordLimit)} />
-            </A4Panel>
-
-            <A4Panel title="언론사별 보도량" meta="상위 매체">
-              <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
-            </A4Panel>
-
-            {scrapRows.length > 0 && (
-              <A4Panel title="스크랩 확인" meta={`${scrapRows.length}건`}>
-                <div className="a4-scrap-list">
-                  {scrapRows.map((item) => (
-                    <span key={`${item.source}-${item.title}`}>{item.title}</span>
-                  ))}
-                </div>
-              </A4Panel>
-            )}
-          </div>
-        )}
-
-        <div className="a4-report-bottom-row">
-          <A4Panel title={isDaily ? "핵심 메모" : "관찰 코멘트"} meta="요약">
-            <div className="a4-comment-list">
-              {observationRows.map((row) => (
-                <article key={row.label}>
-                  <span>{row.label}</span>
-                  <b>{row.body}</b>
-                </article>
-              ))}
-            </div>
+        <div className="a4-report-side-column">
+          <A4Panel title="분류별 기사량" meta="기간 기준">
+            <A4BarList rows={categoryRows} />
           </A4Panel>
-          <A4Panel title="논조 분포" meta="분류">
-            <div className="a4-tone-ledger">
-              {toneRows.map((row) => (
-                <span key={row.label} className={row.tone}>
-                  <b>{row.value}</b>
-                  <em>{row.label}</em>
-                </span>
-              ))}
-            </div>
+          <A4Panel title="언론사 보도량" meta="상위 6개사">
+            <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
           </A4Panel>
         </div>
       </section>
 
       <footer className="a4-footer">
-        <span>보고 기준: {scope.scopeLabel || data.scope || "-"}</span>
+        <span>집계 구간: {scope.scopeLabel || data.scope || "-"}</span>
         <span>{scope.ruleLabel} · 수집 기사와 수동 분류 보정 반영</span>
       </footer>
     </article>
@@ -5020,7 +4917,10 @@ function A4PressRows({ rows = [], onOpenMonitoring }) {
 }
 
 function buildA4ReportStats(summary = {}, articles = []) {
+  const riskValue = String(summary.risk || "LOW").toUpperCase();
+  const riskTone = riskValue === "HIGH" ? "negative" : riskValue === "MEDIUM" ? "caution" : "positive";
   return [
+    { label: "리스크", value: riskValue, detail: "당사 기준", tone: riskTone, preset: {} },
     { label: "분석", value: Number(summary.analyzed || articles.length || 0).toLocaleString("ko-KR"), detail: "기간 기사", preset: {} },
     { label: "당사 언급", value: Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0).toLocaleString("ko-KR"), detail: "필수 확인", preset: { category: "당사" } },
     { label: "주의", value: Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0).toLocaleString("ko-KR"), detail: "관찰 신호", tone: "caution", preset: { tone: "주의" } },
@@ -7675,7 +7575,7 @@ function ReportAutomationStatus({ reportHealth, actionsHealth, historyHealth }) 
 function PressInfluence({ rows, detailed = false, compact = false, onOpenMonitoring }) {
   const pressRows = rows.filter((item) => !isOfficialRegulatorSource(item.source));
   const max = Math.max(1, ...pressRows.map((item) => item.total));
-  const visibleRows = compact ? pressRows.slice(0, 5) : pressRows;
+  const visibleRows = pressRows.slice(0, compact ? 5 : PRESS_INFLUENCE_LIMIT);
   return (
     <div className={detailed ? "press-list detailed" : "press-list"}>
       {visibleRows.map((item) => (

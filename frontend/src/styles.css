@@ -5472,7 +5472,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .a4-title-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-items: center;
 }
@@ -5547,7 +5547,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .a4-metric-strip {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 5px;
 }
 
@@ -5752,6 +5752,10 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   min-height: 0;
   align-content: start;
   overflow: hidden;
+}
+
+.a4-report-side-column {
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .a4-report-bottom-row {
@@ -10665,7 +10669,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .a4-title-row {
-  grid-template-columns: minmax(0, 1fr) 88px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: end;
 }
@@ -10722,7 +10726,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 }
 
 .a4-metric-strip {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0;
   border-top: 1px solid #cbd5e1;
   border-bottom: 1px solid #cbd5e1;
@@ -10761,6 +10765,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   grid-template-columns: minmax(0, 1.42fr) minmax(172px, .58fr);
   gap: 8px;
   min-height: 116px;
+}
+
+.a4-front.a4-front-solo {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 90px;
 }
 
 .a4-report-sheet.daily .a4-front {
@@ -11417,7 +11426,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     border-bottom: 2px solid #111827;
   }
   .a4-title-row {
-    grid-template-columns: minmax(0, 1fr) 70px;
+    grid-template-columns: minmax(0, 1fr);
     align-items: end;
   }
   .a4-title-row p {
@@ -11451,8 +11460,9 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .a4-metric-strip b {
     font-size: 11px;
   }
-  .a4-front {
-    grid-template-columns: minmax(0, 1.36fr) minmax(128px, .64fr);
+  .a4-front,
+  .a4-front.a4-front-solo {
+    grid-template-columns: minmax(0, 1fr);
     min-height: 78px;
   }
   .a4-lead {
