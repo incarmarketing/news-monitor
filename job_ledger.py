@@ -86,7 +86,6 @@ def report_job_row(status: str, *, error: str = "", stage: str = "") -> dict:
     )
     if stage:
         row["run_key"] = f"{run_key}:{stage}"
-        row["job_type"] = f"{job_type}_{stage}"
         row["details"] = {**row.get("details", {}), "stage": stage}
     return row
 
@@ -169,7 +168,13 @@ def main() -> None:
         status = normalize_finish_status(args.status or os.getenv("JOB_STATUS"))
     stage = "generated" if args.phase == "generated" else ""
     row = report_job_row(status, error=args.error, stage=stage) if args.job == "report" else negative_job_row(status, error=args.error)
-    write_row(row)
+    try:
+        write_row(row)
+    except RuntimeError as error:
+        if args.phase == "generated":
+            print(f"job_ledger warning: generated stage was not recorded: {error}")
+            return
+        raise
 
 
 if __name__ == "__main__":

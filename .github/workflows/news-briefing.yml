@@ -242,6 +242,7 @@ jobs:
 
       - name: Record report generated
         if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true')
+        continue-on-error: true
         run: python job_ledger.py report generated
         env:
           REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
