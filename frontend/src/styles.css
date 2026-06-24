@@ -11887,3 +11887,444 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     padding: 12px;
   }
 }
+
+/* Final report workspace pass: make the printable document, not the console, the visual focus. */
+.report-workspace {
+  gap: 12px !important;
+  padding-top: 20px !important;
+  background: #edf2f8 !important;
+}
+
+.report-command-panel {
+  display: grid !important;
+  grid-template-columns: minmax(300px, 1fr) auto !important;
+  gap: 10px 16px !important;
+  align-items: center !important;
+  padding: 14px 16px !important;
+  border: 1px solid #d8e1ee !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(120deg, #10203b 0%, #15285a 52%, #0d625b 100%) !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, .12) !important;
+}
+
+.report-command-copy {
+  gap: 4px !important;
+}
+
+.report-command-copy span {
+  padding: 2px 8px !important;
+  font-size: 10px !important;
+  letter-spacing: .08em !important;
+}
+
+.report-command-copy h1 {
+  font-size: 24px !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+}
+
+.report-command-copy p {
+  max-width: 680px !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+
+.report-command-actions {
+  grid-template-columns: auto auto auto !important;
+  gap: 8px !important;
+}
+
+.report-command-actions .ghost-button,
+.report-command-actions .primary-button {
+  min-height: 38px !important;
+  padding: 0 13px !important;
+  border-radius: 9px !important;
+}
+
+.report-command-actions .period-control button {
+  min-width: 52px !important;
+  min-height: 32px !important;
+}
+
+.report-command-kpis {
+  grid-column: 1 / -1 !important;
+  grid-template-columns: 1.08fr repeat(4, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+
+.report-command-kpis span {
+  min-height: 36px !important;
+  padding: 7px 10px !important;
+  border-radius: 9px !important;
+  background: rgba(255, 255, 255, .09) !important;
+}
+
+.report-command-kpis em {
+  font-size: 10px !important;
+}
+
+.report-command-kpis b {
+  font-size: 17px !important;
+}
+
+.report-workspace .a4-report-stage {
+  display: grid !important;
+  gap: 10px !important;
+  padding: 18px 20px 28px !important;
+  border: 1px solid #d7e0ec !important;
+  border-radius: 12px !important;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(37, 99, 235, .08), transparent 30%),
+    linear-gradient(180deg, #f7faff 0%, #edf3fa 100%) !important;
+}
+
+.report-workspace .a4-report-stage-head {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  color: #64748b !important;
+}
+
+.report-workspace .a4-report-stage-head span {
+  color: #1d4ed8 !important;
+  font-size: 10px !important;
+  letter-spacing: .12em !important;
+}
+
+.report-workspace .a4-report-stage-head b,
+.report-workspace .a4-report-stage-head em {
+  font-size: 11px !important;
+}
+
+.report-workspace .a4-report-sheet {
+  width: min(216mm, 100%) !important;
+  min-height: 292mm !important;
+  padding: 10mm !important;
+  gap: 9px !important;
+  border: 1px solid #ccd6e3 !important;
+  border-radius: 2px !important;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, .018) 0 1px, transparent 1px 100%),
+    linear-gradient(180deg, #fffefa 0%, #ffffff 45%, #f8fafc 100%) !important;
+  background-size: 16px 16px, auto !important;
+  box-shadow: 0 34px 90px rgba(15, 23, 42, .18) !important;
+}
+
+.report-workspace .a4-report-sheet::before {
+  width: 4px !important;
+  background: linear-gradient(180deg, #101827 0%, #2342a4 58%, #0f766e 100%) !important;
+}
+
+.report-workspace .a4-masthead {
+  gap: 8px !important;
+  padding-bottom: 8px !important;
+  border-bottom: 3px solid #111827 !important;
+}
+
+.report-workspace .a4-topline {
+  padding-bottom: 5px !important;
+  color: #475569 !important;
+  font-size: 9px !important;
+  letter-spacing: .08em !important;
+}
+
+.report-workspace .a4-title-row h2 {
+  font-size: 32px !important;
+  line-height: 1.05 !important;
+  color: #0b1220 !important;
+}
+
+.report-workspace .a4-title-row em {
+  max-width: 720px !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+
+.report-workspace .a4-title-row p {
+  margin-bottom: 6px !important;
+  padding: 3px 9px !important;
+  border-color: #bfd0ff !important;
+  background: #f5f8ff !important;
+  color: #1d4ed8 !important;
+  font-size: 9px !important;
+}
+
+.report-workspace .a4-metric-strip {
+  grid-template-columns: 1.05fr repeat(5, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  border: 1px solid #182033 !important;
+  background: #fff !important;
+}
+
+.report-workspace .a4-metric-strip button {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 2px 6px !important;
+  min-height: 46px !important;
+  padding: 7px 9px !important;
+  border: 0 !important;
+  border-right: 1px solid #d7e1ee !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+.report-workspace .a4-metric-strip button:last-child {
+  border-right: 0 !important;
+}
+
+.report-workspace .a4-metric-strip span,
+.report-workspace .a4-metric-strip em {
+  font-size: 9px !important;
+  line-height: 1.15 !important;
+}
+
+.report-workspace .a4-metric-strip b {
+  grid-row: 1 / 3 !important;
+  grid-column: 2 !important;
+  font-size: 17px !important;
+}
+
+.report-workspace .a4-front.a4-front-solo {
+  grid-template-columns: minmax(0, 1fr) !important;
+  min-height: auto !important;
+}
+
+.report-workspace .a4-lead {
+  padding: 16px 18px !important;
+  border: 1px solid #cbd7e8 !important;
+  border-left: 6px solid #19358f !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+  color: #0f172a !important;
+}
+
+.report-workspace .a4-lead > span {
+  color: #1d4ed8 !important;
+  font-size: 10px !important;
+}
+
+.report-workspace .a4-lead h3 {
+  margin: 6px 0 8px !important;
+  color: #0f172a !important;
+  font-size: 22px !important;
+  line-height: 1.22 !important;
+  word-break: keep-all !important;
+}
+
+.report-workspace .a4-executive-lines {
+  gap: 4px !important;
+}
+
+.report-workspace .a4-executive-lines li {
+  color: #243247 !important;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+.report-workspace .a4-article-meta {
+  margin-top: 9px !important;
+}
+
+.report-workspace .a4-article-meta > span {
+  color: #64748b !important;
+  font-size: 10px !important;
+}
+
+.report-workspace .a4-report-body {
+  grid-template-columns: minmax(0, 1.18fr) minmax(258px, .82fr) !important;
+  gap: 12px !important;
+  align-items: stretch !important;
+}
+
+.report-workspace .a4-report-main-column,
+.report-workspace .a4-report-side-column {
+  display: grid !important;
+  gap: 10px !important;
+  align-content: stretch !important;
+}
+
+.report-workspace .a4-report-main-column {
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+.report-workspace .a4-report-side-column {
+  grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.report-workspace .a4-panel {
+  gap: 8px !important;
+  padding: 11px 12px !important;
+  border: 1px solid #cbd7e8 !important;
+  border-top: 4px solid #172554 !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, .92) !important;
+}
+
+.report-workspace .a4-panel-head {
+  padding-bottom: 7px !important;
+  border-bottom: 1px solid #d8e2ef !important;
+}
+
+.report-workspace .a4-panel-head b {
+  color: #0f172a !important;
+  font-size: 13px !important;
+}
+
+.report-workspace .a4-panel-head span {
+  color: #64748b !important;
+  font-size: 10px !important;
+}
+
+.report-workspace .a4-issue-list {
+  gap: 0 !important;
+}
+
+.report-workspace .a4-issue-row {
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  gap: 9px !important;
+  padding: 9px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dbe4ef !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.report-workspace .a4-issue-row:last-child {
+  border-bottom: 0 !important;
+}
+
+.report-workspace .a4-issue-index {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 4px !important;
+  font-size: 10px !important;
+}
+
+.report-workspace .a4-issue-meta {
+  gap: 5px !important;
+}
+
+.report-workspace .a4-issue-meta > span:last-child {
+  color: #64748b !important;
+  font-size: 9px !important;
+}
+
+.report-workspace .a4-issue-row h4 {
+  color: #0f172a !important;
+  font-size: 12px !important;
+  line-height: 1.32 !important;
+}
+
+.report-workspace .a4-bar-list,
+.report-workspace .a4-press-rows {
+  gap: 9px !important;
+  align-content: center !important;
+}
+
+.report-workspace .a4-bar-list > div,
+.report-workspace .a4-press-rows button {
+  grid-template-columns: 72px minmax(0, 1fr) 38px !important;
+  gap: 8px !important;
+}
+
+.report-workspace .a4-bar-list span,
+.report-workspace .a4-press-rows span,
+.report-workspace .a4-bar-list em,
+.report-workspace .a4-press-rows em {
+  font-size: 10px !important;
+}
+
+.report-workspace .a4-bar-list b,
+.report-workspace .a4-press-rows b {
+  height: 9px !important;
+}
+
+@media print {
+  .report-workspace .a4-report-stage {
+    padding: 0 !important;
+    border: 0 !important;
+    background: #fff !important;
+  }
+
+  .report-workspace .a4-report-sheet,
+  .a4-report-sheet {
+    width: 198mm !important;
+    height: 285mm !important;
+    min-height: 0 !important;
+    max-height: 285mm !important;
+    padding: 6mm !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .report-workspace .a4-title-row h2 {
+    font-size: 20px !important;
+  }
+
+  .report-workspace .a4-title-row em {
+    font-size: 8px !important;
+  }
+
+  .report-workspace .a4-lead {
+    padding: 8px 9px !important;
+  }
+
+  .report-workspace .a4-lead h3 {
+    font-size: 12px !important;
+    line-height: 1.16 !important;
+  }
+
+  .report-workspace .a4-executive-lines li {
+    font-size: 7px !important;
+    line-height: 1.25 !important;
+  }
+
+  .report-workspace .a4-panel {
+    padding: 6px !important;
+  }
+
+  .report-workspace .a4-panel-head b {
+    font-size: 8px !important;
+  }
+
+  .report-workspace .a4-issue-row {
+    padding: 4px 0 !important;
+  }
+
+  .report-workspace .a4-issue-row h4 {
+    font-size: 7.5px !important;
+    line-height: 1.17 !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .report-command-panel {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 13px !important;
+  }
+
+  .report-command-actions {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .report-command-actions .period-control,
+  .report-command-actions .month-select {
+    grid-column: 1 / -1 !important;
+  }
+
+  .report-command-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .report-workspace .a4-report-stage {
+    padding: 10px !important;
+    overflow-x: auto !important;
+  }
+
+  .report-workspace .a4-report-sheet {
+    width: 198mm !important;
+  }
+}

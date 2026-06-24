@@ -4592,8 +4592,8 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
       <section className="report-command-panel no-print">
         <div className="report-command-copy">
           <span>{edition.kicker}</span>
-          <h1>언론 동향 리포트 데스크</h1>
-          <p>{periodScopeLabel(period)} 기준으로 핵심 기사, 분류별 기사량, 언론사 보도량만 남겨 PDF와 슬랙 발송용 보고서를 구성합니다.</p>
+          <h1>언론 동향 리포트</h1>
+          <p>{periodScopeLabel(period)} 기준 핵심 기사와 분류·언론사 보도량만 압축해 한 장 보고서로 정리합니다.</p>
         </div>
         <div className="report-command-actions">
           <PeriodControl period={period} setPeriod={setPeriod} compact />
@@ -4681,9 +4681,9 @@ function A4ReportStage({
   return (
     <section className={`a4-report-stage ${embedded ? "embedded" : "standalone"}`}>
       <div className="a4-report-stage-head no-print">
-        <span>A4 세로 출력 미리보기</span>
+        <span>PRINT PREVIEW</span>
         <b>{periodScopeLabel(period)} 보고서</b>
-        <em>인쇄/PDF 저장 시 이 지면만 출력됩니다.</em>
+        <em>아래 지면 기준으로 PDF가 생성됩니다.</em>
       </div>
       <A4ReportSheet
         data={data}
