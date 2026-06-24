@@ -4589,45 +4589,36 @@ function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, 
   };
   return (
     <main className="workspace report-workspace">
-      <PageTitle
-        eyebrow={edition.kicker}
-        title="일간/주간/월간 보고서"
-        description="화면 분석과 분리해 A4 세로 한 장으로 출력할 보고서 기준과 콘텐츠 밀도를 관리합니다."
-        right={(
-          <div className="page-actions">
-            <PeriodControl period={period} setPeriod={setPeriod} compact />
-            {period === "monthly" && (
-              <MonthSelect
-                months={monthOptions}
-                value={selectedMonth}
-                onChange={setReportMonth}
-              />
-            )}
-            <button className="ghost-button" type="button" onClick={handleDashboardReportSend} disabled={sendStatus.state === "sending"}>
-              <Bell />{sendStatus.state === "sending" ? "발송 요청 중" : "슬랙 발송"}
-            </button>
-            <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${reportData.scope || ""}`)}>
-              <Download />인쇄/PDF 저장
-            </button>
-            {sendStatus.text && <span className={`report-send-status ${sendStatus.state}`}>{sendStatus.text}</span>}
-          </div>
-        )}
-      />
-      <section className="report-mobile-home no-print">
-        <div className="report-mobile-title">
+      <section className="report-command-panel no-print">
+        <div className="report-command-copy">
           <span>{edition.kicker}</span>
-          <h2>{edition.title}</h2>
-          <p>{reportData.scope || reportData.generatedAt || "최신 수집 기준"}</p>
+          <h1>언론 동향 리포트 데스크</h1>
+          <p>{periodScopeLabel(period)} 기준으로 핵심 기사, 분류별 기사량, 언론사 보도량만 남겨 PDF와 슬랙 발송용 보고서를 구성합니다.</p>
         </div>
-        <div className={`report-mobile-risk ${String(reportSummary.risk || "LOW").toLowerCase()}`}>
-          <span>리스크</span>
-          <b>{reportSummary.risk || "LOW"}</b>
+        <div className="report-command-actions">
+          <PeriodControl period={period} setPeriod={setPeriod} compact />
+          {period === "monthly" && (
+            <MonthSelect
+              months={monthOptions}
+              value={selectedMonth}
+              onChange={setReportMonth}
+            />
+          )}
+          <button className="ghost-button" type="button" onClick={handleDashboardReportSend} disabled={sendStatus.state === "sending"}>
+            <Bell />{sendStatus.state === "sending" ? "요청 중" : "슬랙 발송"}
+          </button>
+          <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${reportData.scope || ""}`)}>
+            <Download />PDF 저장
+          </button>
         </div>
-        <div className="report-mobile-kpis">
-          <span><b>{Number(reportSummary.analyzed || reportArticles.length || 0).toLocaleString("ko-KR")}</b>분석</span>
-          <span><b>{Number(reportSummary.ownMentions || 0).toLocaleString("ko-KR")}</b>당사</span>
-          <span><b>{Number(reportSummary.ownNegative || 0).toLocaleString("ko-KR")}</b>부정</span>
+        <div className="report-command-kpis">
+          <span className={`risk ${String(reportSummary.risk || "LOW").toLowerCase()}`}><em>리스크</em><b>{reportSummary.risk || "LOW"}</b></span>
+          <span><em>분석</em><b>{Number(reportSummary.analyzed || reportArticles.length || 0).toLocaleString("ko-KR")}</b></span>
+          <span><em>당사</em><b>{Number(reportSummary.ownMentions || 0).toLocaleString("ko-KR")}</b></span>
+          <span><em>부정</em><b>{Number(reportSummary.ownNegative || 0).toLocaleString("ko-KR")}</b></span>
+          <span><em>주의</em><b>{Number(reportSummary.caution || 0).toLocaleString("ko-KR")}</b></span>
         </div>
+        {sendStatus.text && <span className={`report-send-status ${sendStatus.state}`}>{sendStatus.text}</span>}
       </section>
       <A4ReportStage
         data={reportData}

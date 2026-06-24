@@ -11584,3 +11584,306 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Report desk overhaul: keep report controls and the printable sheet visibly different from the old preview. */
+.report-workspace {
+  gap: 18px;
+}
+
+.report-command-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px 18px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid #cdd8e7;
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(15, 31, 61, .96), rgba(30, 48, 107, .94) 58%, rgba(18, 95, 86, .92)),
+    #10204a;
+  color: #fff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .14);
+}
+
+.report-command-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.report-command-copy span {
+  width: fit-content;
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 999px;
+  color: #bfe5ff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.report-command-copy h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.report-command-copy p {
+  margin: 0;
+  max-width: 720px;
+  color: rgba(255, 255, 255, .78);
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 800;
+  word-break: keep-all;
+}
+
+.report-command-actions {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 8px;
+  align-items: center;
+  justify-content: end;
+}
+
+.report-command-actions .period-control {
+  padding: 3px;
+  border-color: rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .08);
+}
+
+.report-command-actions .period-control button {
+  min-width: 54px;
+  min-height: 34px;
+  color: rgba(255, 255, 255, .72);
+}
+
+.report-command-actions .period-control button.active {
+  color: #0f1f3d;
+  background: #fff;
+}
+
+.report-command-actions .ghost-button,
+.report-command-actions .primary-button {
+  min-height: 40px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.report-command-kpis {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.report-command-kpis span {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .1);
+}
+
+.report-command-kpis em {
+  color: rgba(255, 255, 255, .72);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.report-command-kpis b {
+  color: #fff;
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.report-command-kpis .risk.positive b,
+.report-command-kpis .risk.low b {
+  color: #86efac;
+}
+
+.report-command-kpis .risk.caution b,
+.report-command-kpis .risk.medium b {
+  color: #fbbf24;
+}
+
+.report-command-kpis .risk.negative b,
+.report-command-kpis .risk.high b {
+  color: #fecaca;
+}
+
+.report-command-panel .report-send-status {
+  grid-column: 1 / -1;
+  width: fit-content;
+  background: rgba(255, 255, 255, .14);
+  color: #fff;
+}
+
+.report-workspace .a4-report-stage {
+  padding: 26px;
+  border: 1px solid #cdd8e7;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, .06), transparent 34%),
+    linear-gradient(180deg, #eef3f9, #e8eef6);
+}
+
+.report-workspace .a4-report-stage-head {
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.report-workspace .a4-report-stage-head span,
+.report-workspace .a4-report-stage-head b,
+.report-workspace .a4-report-stage-head em {
+  font-size: 12px;
+}
+
+.report-workspace .a4-report-sheet {
+  border: 1px solid #d6deea;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, .026) 0 1px, transparent 1px 100%),
+    #fffdf8 !important;
+  background-size: 13px 13px, auto !important;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, .18);
+}
+
+.report-workspace .a4-masthead {
+  border-bottom: 3px solid #101827;
+}
+
+.report-workspace .a4-title-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.report-workspace .a4-title-row h2 {
+  font-size: 29px;
+}
+
+.report-workspace .a4-metric-strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  border: 1px solid #162033;
+  background: #fff;
+}
+
+.report-workspace .a4-metric-strip button {
+  border-right: 1px solid #d8e1ee;
+  border-radius: 0;
+  min-height: 42px;
+}
+
+.report-workspace .a4-front.a4-front-solo {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: auto;
+}
+
+.report-workspace .a4-lead {
+  padding: 13px 15px;
+  border: 1px solid #cbd5e1;
+  border-left: 5px solid #172554;
+  border-radius: 0;
+  background: rgba(255, 255, 255, .88);
+  color: #0f172a;
+}
+
+.report-workspace .a4-lead > span {
+  color: #1d4ed8;
+}
+
+.report-workspace .a4-lead h3 {
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.report-workspace .a4-executive-lines li {
+  color: #1e293b;
+}
+
+.report-workspace .a4-article-meta > span {
+  color: #64748b;
+}
+
+.report-workspace .a4-article-meta a {
+  color: #1d4ed8;
+}
+
+.report-workspace .a4-report-body {
+  grid-template-columns: minmax(0, 1.44fr) minmax(240px, .56fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.report-workspace .a4-report-main-column,
+.report-workspace .a4-report-side-column {
+  align-content: stretch;
+}
+
+.report-workspace .a4-report-side-column {
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+.report-workspace .a4-panel {
+  border: 1px solid #cbd5e1;
+  border-top: 3px solid #172554;
+  border-radius: 0;
+  background: rgba(255, 255, 255, .9);
+}
+
+.report-workspace .a4-panel-head {
+  border-bottom: 1px solid #d8e1ee;
+}
+
+.report-workspace .a4-issue-row {
+  border: 0;
+  border-bottom: 1px solid #dbe4ef;
+  border-radius: 0;
+  background: transparent;
+}
+
+.report-workspace .a4-issue-row:last-child {
+  border-bottom: 0;
+}
+
+.report-workspace .a4-bar-list,
+.report-workspace .a4-press-rows {
+  gap: 8px;
+}
+
+.report-workspace .a4-bar-list > div,
+.report-workspace .a4-press-rows button {
+  grid-template-columns: 74px minmax(0, 1fr) 34px;
+}
+
+@media (max-width: 920px) {
+  .report-command-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-command-actions {
+    grid-template-columns: 1fr 1fr;
+    justify-content: stretch;
+  }
+
+  .report-command-actions .period-control,
+  .report-command-actions .month-select {
+    grid-column: 1 / -1;
+  }
+
+  .report-command-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-workspace .a4-report-stage {
+    padding: 12px;
+  }
+}
