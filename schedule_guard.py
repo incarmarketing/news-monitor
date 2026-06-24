@@ -192,7 +192,7 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
         job_rows = supabase_select(
             "job_runs",
             "select=run_key"
-            f"&run_key=eq.{quote(f'daily_report:{report_date}:{slot}')}"
+            f"&run_key=in.({quote(f'daily_report:{report_date}:{slot}')},{quote(f'daily_report:{report_date}:{slot}:generated')})"
             "&status=eq.success"
             "&limit=1",
         )

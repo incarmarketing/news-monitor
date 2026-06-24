@@ -50,8 +50,10 @@ on:
         default: ""
         type: string
   schedule:
-    - cron: "*/5 22 * * *" # 07:00-07:59 KST weekly/monthly reports only
-    - cron: "*/5 23,0-14 * * *" # 08:00-23:59 KST daily report watchdog only
+    - cron: "15 22 * * *" # 07:15 KST fallback for weekly/monthly reports; cron-job.org is primary
+    - cron: "15 23 * * *" # 08:15 KST fallback for daily report; cron-job.org is primary
+    - cron: "15 4 * * *" # 13:15 KST fallback for daily report; cron-job.org is primary
+    - cron: "15 9 * * *" # 18:15 KST fallback for daily report; cron-job.org is primary
 
 permissions:
   contents: write
@@ -248,21 +250,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           JOB_PROVIDER: github_actions
 
-      - name: Configure GitHub Pages
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
-
-      - name: Deploy to GitHub Pages
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
-        id: deployment
-        uses: actions/deploy-pages@v4
-
       - name: Send Slack report link
         if: steps.guard.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true') && ((github.event_name == 'schedule' && steps.guard.outputs.should_period != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none' && github.event.inputs.send_slack == 'true') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[send-slack]')))
         run: python slack_notify.py daily
@@ -271,7 +258,8 @@ jobs:
           SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
           SLACK_AI_USAGE_WEBHOOK_URL: ${{ secrets.SLACK_AI_USAGE_WEBHOOK_URL }}
           REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
-          REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
+          REPORT_PUBLIC_URL: https://incarmarketing.github.io/news-monitor/
+          REQUIRE_REPORT_LINK_OK: "false"
           FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_slack_send == 'true' && '1' || '' }}
           DASHBOARD_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dashboard_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
@@ -303,12 +291,28 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
-          REPORT_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
+          REPORT_PUBLIC_URL: https://incarmarketing.github.io/news-monitor/
+          REQUIRE_REPORT_LINK_OK: "false"
           FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_slack_send == 'true' && '1' || '' }}
           DASHBOARD_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dashboard_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Configure GitHub Pages
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Persist run archive
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]'))
