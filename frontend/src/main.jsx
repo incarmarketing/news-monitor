@@ -5012,9 +5012,9 @@ function buildA4IssueGroups(lead, issues = [], articles = [], period = "daily") 
     },
     {
       key: "market",
-      title: "업계 흐름",
+      title: "동향",
       description: "GA·보험사·경쟁사 동향",
-      emptyText: "업계 흐름 핵심 기사는 없습니다.",
+      emptyText: "동향 핵심 기사는 없습니다.",
     },
   ];
   const limit = period === "daily" ? 2 : 3;
