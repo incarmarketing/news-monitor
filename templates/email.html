@@ -78,10 +78,6 @@
     box-shadow:var(--shadow);
   }
   .masthead {
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 132px;
-    gap:20px;
-    align-items:end;
     padding-bottom:16px;
     border-bottom:3px solid var(--line-dark);
   }
@@ -102,42 +98,36 @@
   .report-meta {
     display:flex;
     flex-wrap:wrap;
-    gap:6px 12px;
+    gap:7px 10px;
+    align-items:center;
     color:var(--muted);
     font-size:12px;
     font-weight:850;
   }
-  .risk-stamp {
-    display:grid;
-    align-content:center;
-    min-height:102px;
-    padding:12px;
-    border:2px solid var(--navy);
-    border-radius:6px;
-    text-align:center;
-  }
-  .risk-stamp small {
-    color:var(--muted);
-    font-size:10px;
-    font-weight:900;
-    letter-spacing:.04em;
-  }
-  .risk-stamp b {
-    margin-top:5px;
+  .risk-line {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    min-height:25px;
+    padding:0 9px;
+    border:1px solid #cbd6e7;
+    border-radius:999px;
+    background:#fff;
     color:var(--navy);
-    font-size:30px;
-    line-height:1;
-    font-weight:900;
-  }
-  .risk-stamp b.LOW { color:var(--green); }
-  .risk-stamp b.MEDIUM { color:var(--amber); }
-  .risk-stamp b.HIGH { color:var(--red); }
-  .risk-stamp span {
-    margin-top:7px;
-    color:var(--sub);
     font-size:11px;
     font-weight:900;
   }
+  .risk-dot {
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--green);
+  }
+  .risk-line.MEDIUM .risk-dot { background:var(--amber); }
+  .risk-line.HIGH .risk-dot { background:var(--red); }
+  .risk-level-text.LOW { color:var(--green); }
+  .risk-level-text.MEDIUM { color:var(--amber); }
+  .risk-level-text.HIGH { color:var(--red); }
   .summary-band {
     display:grid;
     grid-template-columns:minmax(0,1fr) 360px;
@@ -416,16 +406,12 @@
       border-radius:0;
       box-shadow:none;
     }
-    .masthead,
     .summary-band,
     .main-grid {
       grid-template-columns:1fr;
     }
     h1 { font-size:27px; }
-    .risk-stamp {
-      min-height:auto;
-      text-align:left;
-    }
+    .risk-line { width:max-content; max-width:100%; }
     .score-table {
       table-layout:fixed;
     }
@@ -483,19 +469,12 @@
       box-shadow:none;
       overflow:hidden;
     }
-    .masthead {
-      grid-template-columns:minmax(0,1fr) 25mm;
-      gap:4mm;
-      padding-bottom:3mm;
-      border-bottom-width:1.2mm;
-    }
+    .masthead { padding-bottom:3mm; border-bottom-width:1.2mm; }
     .system { font-size:5.8px; }
     h1 { margin:1.5mm 0 1mm; font-size:16px; }
     .report-meta { gap:1.5mm; font-size:6.2px; }
-    .risk-stamp { min-height:22mm; padding:2mm; border-width:.5mm; }
-    .risk-stamp small { font-size:5.2px; }
-    .risk-stamp b { font-size:13px; }
-    .risk-stamp span { font-size:5.7px; }
+    .risk-line { min-height:4mm; padding:0 1.6mm; gap:1mm; font-size:5.8px; }
+    .risk-dot { width:1.5mm; height:1.5mm; }
     .summary-band {
       grid-template-columns:minmax(0,1fr) 69mm;
       gap:3mm;
@@ -562,20 +541,14 @@
 
   <main class="sheet">
     <header class="masthead">
-      <div>
-        <div class="system">INCAR MEDIA MONITORING SYSTEM</div>
-        <h1>언론 동향 리포트</h1>
-        <div class="report-meta">
-          <span>{{ date_str }} 생성</span>
-          <span>{{ window.label }}</span>
-          <span>{{ subject_prefix }}</span>
-        </div>
+      <div class="system">INCAR MEDIA MONITORING SYSTEM</div>
+      <h1>언론 동향 리포트</h1>
+      <div class="report-meta">
+        <span>{{ date_str }} 생성</span>
+        <span>{{ window.label }}</span>
+        <span>{{ subject_prefix }}</span>
+        <span class="risk-line {{ metrics.risk_level }}"><i class="risk-dot"></i>리스크 <b class="risk-level-text {{ metrics.risk_level }}">{{ metrics.risk_level }}</b> · {{ risk_message }}</span>
       </div>
-      <aside class="risk-stamp">
-        <small>RISK</small>
-        <b class="{{ metrics.risk_level }}">{{ metrics.risk_level }}</b>
-        <span>{{ risk_message }}</span>
-      </aside>
     </header>
 
     <section class="summary-band">
