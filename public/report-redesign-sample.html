@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>리포트 리디자인 샘플</title>
+<style>
+  :root{--ink:#0b1220;--sub:#344054;--muted:#667085;--line:#d8e1ee;--bg:#eef2f7;--navy:#111c3b;--blue:#2f5ee9;--green:#11835c;--amber:#b45b00;--red:#c7213a;--shadow:0 18px 44px rgba(15,23,42,.14)}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;color:var(--ink);font-size:13px;line-height:1.42} a{text-decoration:none;color:inherit}
+  .toolbar{position:sticky;top:0;z-index:3;display:flex;justify-content:center;gap:8px;padding:9px;background:rgba(238,242,247,.93);border-bottom:1px solid rgba(148,163,184,.34);backdrop-filter:blur(10px)}
+  .toolbar a,.toolbar button{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 14px;border:1px solid #c3d0e4;border-radius:8px;background:#fff;color:var(--navy);font-size:12px;font-weight:900}
+  .page{width:min(1040px,calc(100% - 28px));margin:18px auto 36px;overflow:hidden;border:1px solid rgba(148,163,184,.42);border-radius:12px;background:#fff;box-shadow:var(--shadow)}
+  .masthead{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:20px;padding:24px 26px 18px;background:linear-gradient(135deg,#101a39 0%,#17285d 58%,#2446a8 100%);color:#fff}
+  .eyebrow{display:inline-flex;width:max-content;align-items:center;min-height:24px;padding:0 10px;border:1px solid rgba(255,255,255,.32);border-radius:999px;color:#dbe7ff;font-size:10px;font-weight:900;letter-spacing:.04em}
+  h1{margin:12px 0 8px;font-size:31px;line-height:1.08}.period{color:#d3ddf4;font-size:12px;font-weight:850}.risk-card{display:grid;align-content:center;min-height:118px;padding:18px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.09)}
+  .risk-label{color:#cbd7ef;font-size:10px;font-weight:900}.risk-value{margin-top:4px;color:#8ff0c3;font-size:34px;line-height:1;font-weight:900}.risk-sub{margin-top:8px;color:#f4f7ff;font-size:12px;font-weight:900}
+  .decision{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);background:#fbfcff}.decision-box{padding:14px 16px;border:1px solid #ccd8ea;border-left:5px solid var(--blue);border-radius:9px;background:#fff}.decision-box strong{display:block;margin-bottom:7px;color:var(--navy);font-size:15px}.decision-box p{margin:0;color:var(--sub);font-size:12px;font-weight:800}
+  .kpi-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-bottom:1px solid var(--line)}.kpi{padding:14px 16px;border-right:1px solid var(--line)}.kpi:last-child{border-right:0}.kpi small{display:block;color:var(--muted);font-size:10px;font-weight:900}.kpi b{display:flex;align-items:baseline;gap:3px;margin-top:6px;color:var(--navy);font-size:28px;line-height:1}.kpi b span{color:var(--muted);font-size:11px}.kpi em{display:block;margin-top:7px;color:var(--sub);font-size:10.5px;font-style:normal;font-weight:800}
+  .body-grid{display:grid;grid-template-columns:minmax(0,1.18fr) 330px;gap:16px;padding:18px;background:#f6f8fb}.panel{min-width:0;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}.panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}.panel-head h2{margin:0;color:var(--navy);font-size:15px}.panel-head span{color:var(--muted);font-size:10.5px;font-weight:900}
+  .issue-row{display:grid;grid-template-columns:42px minmax(0,1fr) 86px;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid #e8edf5}.issue-row:last-child{border-bottom:0}.rank{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#111827;color:#fff;font-weight:900}.badge-line{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}.pill{display:inline-flex;align-items:center;min-height:20px;padding:0 7px;border:1px solid #d2dfef;border-radius:999px;background:#fff;color:#344054;font-size:10px;font-weight:900}.caution{background:#fff4dc;color:#9a4a00;border-color:#ffd188}.positive{background:#e8f7ef;color:#087344;border-color:#b8ead0}.neutral{background:#eaf0ff;color:#2352c6;border-color:#c3d2ff}.headline{display:block;font-size:14px;line-height:1.36;font-weight:900;word-break:keep-all}.meta{margin-top:5px;color:var(--muted);font-size:10.5px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.open{display:inline-flex;align-items:center;justify-content:center;min-height:32px;border:1px solid #bfd0ee;border-radius:8px;background:#f7faff;color:#2452d6;font-size:11px;font-weight:900}
+  .side-stack{display:grid;gap:12px;align-content:start}.meter-list,.basis{display:grid;gap:10px;padding:14px}.meter-row{display:grid;grid-template-columns:78px minmax(0,1fr) 34px;gap:8px;align-items:center;font-size:11.5px;font-weight:900}.track{height:8px;border-radius:999px;background:#edf2f7;overflow:hidden}.bar{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#2547b8,#5f7cff)}.bar.reg{background:linear-gradient(90deg,#6d28d9,#b794ff)}.bar.market{background:linear-gradient(90deg,#0f766e,#6ee7d2)}.bar.spon{background:linear-gradient(90deg,#b45b00,#f2ad50)}
+  table{width:100%;border-collapse:collapse}th,td{padding:10px 8px;border-bottom:1px solid #e8edf5;text-align:center;font-weight:900}th{color:var(--muted);background:#fbfcff;font-size:11px}td{color:var(--navy);font-size:16px}.basis div{display:flex;justify-content:space-between;gap:12px;padding-bottom:8px;border-bottom:1px solid #e8edf5;font-size:11px;font-weight:850}.basis span{color:var(--muted)}.basis b{text-align:right}.footer{padding:12px 18px;border-top:1px solid var(--line);background:#fff;color:var(--muted);font-size:10.5px;font-weight:800}
+  @media(max-width:880px){.page{width:100%;margin:0;border:0;border-radius:0;box-shadow:none}.masthead,.decision,.body-grid{grid-template-columns:1fr}.masthead{padding:18px 14px}.kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(5){grid-column:1/-1}.issue-row{grid-template-columns:34px minmax(0,1fr)}.open{grid-column:2;width:max-content;padding:0 12px}.meta{white-space:normal}}
+</style>
+</head>
+<body>
+  <div class="toolbar"><a href="#">통합 대시보드</a><button>인쇄/PDF 저장</button></div>
+  <main class="page">
+    <header class="masthead">
+      <div><span class="eyebrow">DAILY MEDIA INTELLIGENCE</span><h1>언론 동향 리포트</h1><div class="period">2026.06.24 08:15 생성 · 전일 18:00~당일 08:00 · 인카 모니터링 시스템</div></div>
+      <aside class="risk-card"><div class="risk-label">RISK LEVEL</div><div class="risk-value">LOW</div><div class="risk-sub">직접 리스크 낮음</div></aside>
+    </header>
+    <section class="decision">
+      <article class="decision-box"><strong>오늘의 판단</strong><p>당사 직접 부정은 확인되지 않았고, 당사 언급 2건은 긍정 1건과 중립 1건으로 분리됩니다.</p></article>
+      <article class="decision-box"><strong>확인 우선순위</strong><p>정책/감독과 GA·보험사 이슈가 다수 관찰되어, 수수료·설계사·보험사기 관련 반복 보도만 별도 추적합니다.</p></article>
+    </section>
+    <section class="kpi-strip">
+      <article class="kpi"><small>분석 기사</small><b>53<span>건</span></b><em>중복 정리 후</em></article>
+      <article class="kpi"><small>당사 언급</small><b>2<span>건</span></b><em>긍정 1 · 중립 1 · 부정 0</em></article>
+      <article class="kpi"><small>당사 부정</small><b>0<span>건</span></b><em>직접 리스크 기준</em></article>
+      <article class="kpi"><small>정책/감독</small><b>18<span>건</span></b><em>제도·감독·수수료</em></article>
+      <article class="kpi"><small>GA/보험사</small><b>39<span>건</span></b><em>경쟁사와 업계 흐름</em></article>
+    </section>
+    <section class="body-grid">
+      <section class="panel">
+        <div class="panel-head"><h2>우선 확인 기사</h2><span>근거 6건</span></div>
+        <article class="issue-row"><span class="rank">01</span><div><div class="badge-line"><span class="pill positive">긍정</span><span class="pill">당사</span><span class="pill">관련 2건</span></div><a class="headline">인카금융서비스, 신입설계사 영업활동 기본교육 진행</a><div class="meta">보험매일 · 인카금융서비스 · 영향도 중간</div></div><a class="open">열기</a></article>
+        <article class="issue-row"><span class="rank">02</span><div><div class="badge-line"><span class="pill caution">주의</span><span class="pill">정책/규제</span></div><a class="headline">금융위, 롯데카드 제재 절차 마무리</a><div class="meta">newscj.com · 금융감독원 · 영향도 낮음</div></div><a class="open">열기</a></article>
+        <article class="issue-row"><span class="rank">03</span><div><div class="badge-line"><span class="pill caution">주의</span><span class="pill">업계동향</span></div><a class="headline">보험사기 신고 포상금 최대 5000만원…금감원 집중 홍보</a><div class="meta">뉴스1 · 손해보험 · 영향도 중간</div></div><a class="open">열기</a></article>
+        <article class="issue-row"><span class="rank">04</span><div><div class="badge-line"><span class="pill neutral">중립</span><span class="pill">GA/보험</span></div><a class="headline">DB손해보험, 미국 보험사 인수 마무리</a><div class="meta">비즈트리뷴 · 손해보험 · 관련 19건</div></div><a class="open">열기</a></article>
+        <article class="issue-row"><span class="rank">05</span><div><div class="badge-line"><span class="pill caution">주의</span><span class="pill">정책/규제</span></div><a class="headline">1200%룰 시행 앞두고 GA 채널 영업 관행 점검</a><div class="meta">보험저널 · GA 보험 · 영향도 높음</div></div><a class="open">열기</a></article>
+      </section>
+      <aside class="side-stack">
+        <section class="panel"><div class="panel-head"><h2>분류 구조</h2><span>기사량 기준</span></div><div class="meter-list">
+          <div class="meter-row"><span>당사</span><div class="track"><i class="bar" style="width:5%"></i></div><b>2</b></div>
+          <div class="meter-row"><span>정책</span><div class="track"><i class="bar reg" style="width:46%"></i></div><b>18</b></div>
+          <div class="meter-row"><span>GA/보험</span><div class="track"><i class="bar market" style="width:100%"></i></div><b>39</b></div>
+          <div class="meter-row"><span>스폰서십</span><div class="track"><i class="bar spon" style="width:3%"></i></div><b>1</b></div>
+        </div></section>
+        <section class="panel"><div class="panel-head"><h2>당사 논조</h2><span>직접 언급 기준</span></div><table><thead><tr><th>긍정</th><th>중립</th><th>주의</th><th>부정</th></tr></thead><tbody><tr><td>1</td><td>1</td><td>0</td><td>0</td></tr></tbody></table></section>
+        <section class="panel"><div class="panel-head"><h2>운영 기준</h2><span>수집 로그</span></div><div class="basis"><div><span>분석 구간</span><b>전일 18:00~당일 08:00</b></div><div><span>수집/분석</span><b>60 / 53건</b></div><div><span>데이터 출처</span><b>네이버 뉴스, 구글 뉴스, 전문지</b></div><div><span>검색 키워드</span><b>11개</b></div></div></section>
+      </aside>
+    </section>
+    <footer class="footer">본 리포트는 수집 기사 원문과 분류 기준에 따른 모니터링 자료입니다. 외부 대응 전 원문, 사실관계, 이해관계자 영향을 별도로 확인하세요.</footer>
+  </main>
+</body>
+</html>
