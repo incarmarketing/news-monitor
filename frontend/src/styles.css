@@ -12964,3 +12964,62 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Report v3.1: prevent broken Korean title wrapping and tighten KPI table. */
+.report-workspace .a4-title-row {
+  grid-template-columns: minmax(0, 1fr) 250px !important;
+  gap: 14px !important;
+  align-items: end !important;
+}
+
+.report-workspace .a4-title-row > div:first-child {
+  min-width: 0 !important;
+}
+
+.report-workspace .a4-title-row h2 {
+  font-size: 30px !important;
+  line-height: 1.04 !important;
+  letter-spacing: -.045em !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow: visible !important;
+}
+
+.report-workspace .a4-title-row em {
+  margin-top: 6px !important;
+  font-size: 11px !important;
+}
+
+.a4-metric-table {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  width: 250px !important;
+}
+
+.a4-metric-table button {
+  min-height: 50px !important;
+  padding: 7px 4px !important;
+}
+
+.a4-metric-table span {
+  font-size: 8px !important;
+  line-height: 1.1 !important;
+}
+
+.a4-metric-table b {
+  font-size: 17px !important;
+}
+
+@media print {
+  .report-workspace .a4-title-row {
+    grid-template-columns: minmax(0, 1fr) 220px !important;
+  }
+
+  .report-workspace .a4-title-row h2 {
+    font-size: 21px !important;
+    white-space: nowrap !important;
+  }
+
+  .a4-metric-table {
+    width: 220px !important;
+  }
+}
