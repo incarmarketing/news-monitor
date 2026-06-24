@@ -4730,24 +4730,19 @@ function A4ReportSheet({
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
-        <div className="a4-topline">
-          <span>{edition.issue}</span>
-          <span>{scope.scopeLabel || data.scope || "-"}</span>
-          <span>{data.generatedAt || "-"}</span>
-        </div>
         <div className="a4-title-row">
           <div>
             <p>{edition.kicker}</p>
             <h2>{edition.title}</h2>
-            <em>{edition.subtitle}</em>
+            <em>{scope.scopeLabel || data.scope || edition.issue} · {data.generatedAt || "-"}</em>
           </div>
+          <A4MetricTable stats={stats} onOpenMonitoring={onOpenMonitoring} />
         </div>
-        <A4MetricStrip stats={stats} onOpenMonitoring={onOpenMonitoring} />
       </header>
 
       <section className="a4-front a4-front-solo">
         <article className="a4-lead">
-          <span>핵심 요약</span>
+          <span>오늘의 판단</span>
           <h3>{buildA4ReportHeadline(period, data, lead, scope)}</h3>
           <ul className="a4-executive-lines">
             {insightLines.map((line) => <li key={line}>{line}</li>)}
@@ -4767,7 +4762,7 @@ function A4ReportSheet({
 
       <section className="a4-report-body">
         <div className="a4-report-main-column">
-          <A4Panel title="우선 확인 기사" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
+          <A4Panel title="핵심 기사" meta={`${reportIssues.length.toLocaleString("ko-KR")}건`}>
             <div className="a4-issue-list">
               {reportIssues.map((issue, index) => (
                 <A4IssueRow
@@ -4794,9 +4789,22 @@ function A4ReportSheet({
 
       <footer className="a4-footer">
         <span>집계 구간: {scope.scopeLabel || data.scope || "-"}</span>
-        <span>{scope.ruleLabel} · 수집 기사와 수동 분류 보정 반영</span>
+        <span>{scope.ruleLabel}</span>
       </footer>
     </article>
+  );
+}
+
+function A4MetricTable({ stats = [], onOpenMonitoring }) {
+  return (
+    <div className="a4-metric-table" aria-label="리포트 주요 지표">
+      {stats.map((item) => (
+        <button key={item.label} type="button" className={item.tone || ""} onClick={() => onOpenMonitoring?.(item.preset || {})}>
+          <span>{item.label}</span>
+          <b>{item.value}</b>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -4916,7 +4924,6 @@ function buildA4ReportStats(summary = {}, articles = []) {
     { label: "당사 언급", value: Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0).toLocaleString("ko-KR"), detail: "필수 확인", preset: { category: "당사" } },
     { label: "주의", value: Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0).toLocaleString("ko-KR"), detail: "관찰 신호", tone: "caution", preset: { tone: "주의" } },
     { label: "부정", value: Number(summary.ownNegative || articles.filter((item) => item.tone === "부정" && isOwnArticle(item)).length || 0).toLocaleString("ko-KR"), detail: "즉시 확인", tone: "negative", preset: { tone: "부정" } },
-    { label: "GA/보험사", value: Number(summary.gaInsurance || articles.filter((item) => ["GA", "보험사"].includes(item.category)).length || 0).toLocaleString("ko-KR"), detail: "업계 흐름", tone: "positive", preset: { category: "GA" } },
   ];
 }
 
