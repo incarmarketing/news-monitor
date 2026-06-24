@@ -8,10 +8,12 @@ import os
 import re
 import smtplib
 import sys
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
+from urllib.parse import urlparse
 
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -595,6 +597,7 @@ def build_html_report(
         market_count=market_count,
         daily_brief=build_daily_brief(sections, metrics, market_count, window),
         daily_metrics=build_daily_metrics(metrics, market_count),
+        source_rows=build_daily_source_rows(clustered),
         methodology=build_methodology(metrics),
         window=window,
         dashboard_url=public_urls.dashboard_url(),
@@ -604,7 +607,7 @@ def build_html_report(
 def normalize_metrics_for_template(metrics: dict | None) -> dict:
     normalized = dict(metrics or {})
     by_category = dict(normalized.get("by_category") or {})
-    for key in ("own", "regulation", "competitor", "industry", "other"):
+    for key in ("own", "regulation", "competitor", "industry", "sponsorship", "other"):
         by_category.setdefault(key, 0)
     normalized["by_category"] = by_category
 
@@ -914,6 +917,94 @@ def strip_ref_marks(text: str) -> str:
 def compact_text(text: str, limit: int) -> str:
     cleaned = " ".join((text or "").split())
     return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
+
+
+PORTAL_SOURCE_LABELS = {
+    "google",
+    "google news",
+    "news.google.com",
+    "naver",
+    "naver news",
+    "news.naver.com",
+    "n.news.naver.com",
+    "m.sports.naver.com",
+    "구글",
+    "구글뉴스",
+    "네이버",
+    "네이버뉴스",
+}
+
+
+def build_daily_source_rows(clustered: list[dict], limit: int = 6) -> list[dict]:
+    counts: Counter[str] = Counter()
+    for article in clustered:
+        source = report_source_label(article)
+        if not source:
+            continue
+        counts[source] += 1
+
+    top = counts.most_common(limit)
+    max_count = top[0][1] if top else 1
+    return [
+        {
+            "source": source,
+            "count": count,
+            "width": max(8, round(count / max_count * 100)),
+        }
+        for source, count in top
+    ]
+
+
+def report_source_label(article: dict) -> str:
+    raw_source = str(
+        article.get("press")
+        or article.get("publisher")
+        or article.get("media")
+        or article.get("source_name")
+        or article.get("source")
+        or ""
+    ).strip()
+    source = normalize_source_name(raw_source)
+    if is_portal_source(source):
+        source = infer_source_from_title(article.get("title", ""))
+    if not source:
+        source = source_from_link(article.get("link", ""))
+    if is_portal_source(source):
+        source = ""
+    return compact_text(source or "언론사 확인", 12)
+
+
+def normalize_source_name(value: str) -> str:
+    source = (value or "").strip()
+    source = re.sub(r"^https?://", "", source, flags=re.I)
+    source = source.replace("www.", "").strip().strip("/")
+    return source
+
+
+def is_portal_source(value: str) -> bool:
+    source = normalize_source_name(value).lower()
+    return source in PORTAL_SOURCE_LABELS or source.endswith(".google.com") or source.endswith(".naver.com")
+
+
+def infer_source_from_title(title: str) -> str:
+    cleaned = " ".join((title or "").split())
+    parts = [part.strip(" -–|") for part in re.split(r"\s[-–]\s", cleaned) if part.strip()]
+    for candidate in reversed(parts[1:]):
+        candidate = normalize_source_name(candidate)
+        if not candidate or len(candidate) > 18:
+            continue
+        if re.search(r"https?://|rss|기사|속보|뉴스$", candidate, re.I) and "." in candidate:
+            continue
+        return candidate
+    return ""
+
+
+def source_from_link(link: str) -> str:
+    try:
+        host = urlparse(str(link or "")).hostname or ""
+    except ValueError:
+        host = ""
+    return normalize_source_name(host)
 
 
 def enrich_articles(articles: list[dict]) -> list[dict]:

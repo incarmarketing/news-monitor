@@ -146,36 +146,30 @@
     text-overflow:ellipsis;
   }
   .score-table,
-  .tone-table,
   .ledger-table {
     width:100%;
     border-collapse:collapse;
   }
   .score-table th,
-  .score-table td,
-  .tone-table th,
-  .tone-table td {
+  .score-table td {
     border:1px solid var(--line);
     text-align:center;
   }
-  .score-table th,
-  .tone-table th {
+  .score-table th {
     padding:7px 4px;
     background:#f7f9fc;
     color:var(--muted);
     font-size:10px;
     font-weight:900;
   }
-  .score-table td,
-  .tone-table td {
+  .score-table td {
     padding:9px 4px;
     color:var(--navy);
     font-size:20px;
     line-height:1;
     font-weight:900;
   }
-  .score-table td small,
-  .tone-table td small {
+  .score-table td small {
     color:var(--muted);
     font-size:10px;
     font-weight:900;
@@ -314,14 +308,25 @@
     display:grid;
     gap:8px;
   }
-  .bar-row {
+  .bar-row,
+  .press-row {
     display:grid;
-    grid-template-columns:68px minmax(0,1fr) 28px;
+    grid-template-columns:72px minmax(0,1fr) 28px;
     gap:8px;
     align-items:center;
     color:var(--ink);
     font-size:11px;
     font-weight:900;
+  }
+  .press-row {
+    grid-template-columns:86px minmax(0,1fr) 28px;
+  }
+  .bar-row span,
+  .press-row span {
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
   }
   .track {
     height:7px;
@@ -339,25 +344,7 @@
   .bar.reg { background:linear-gradient(90deg,#6d28d9,#b794ff); }
   .bar.market { background:linear-gradient(90deg,#0f766e,#6ee7d2); }
   .bar.spon { background:linear-gradient(90deg,#a85600,#f2ad50); }
-  .basis {
-    display:grid;
-    gap:7px;
-  }
-  .basis div {
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    padding-bottom:7px;
-    border-bottom:1px solid #e5ebf3;
-    font-size:10.5px;
-    font-weight:850;
-  }
-  .basis div:last-child {
-    padding-bottom:0;
-    border-bottom:0;
-  }
-  .basis span { color:var(--muted); }
-  .basis b { color:var(--ink); text-align:right; }
+  .bar.press { background:linear-gradient(90deg,#1d4ed8,#93c5fd); }
   .footer {
     margin-top:16px;
     padding-top:9px;
@@ -487,12 +474,9 @@
     .judgement h2,
     .panel-title { margin-bottom:1mm; font-size:7.4px; }
     .judgement p { font-size:7px; line-height:1.22; }
-    .score-table th,
-    .tone-table th { padding:1.4mm .8mm; font-size:5.3px; }
-    .score-table td,
-    .tone-table td { padding:1.6mm .8mm; font-size:10px; }
-    .score-table td small,
-    .tone-table td small { font-size:5px; }
+    .score-table th { padding:1.4mm .8mm; font-size:5.3px; }
+    .score-table td { padding:1.6mm .8mm; font-size:10px; }
+    .score-table td small { font-size:5px; }
     .main-grid {
       grid-template-columns:minmax(0,1fr) 55mm;
       gap:3mm;
@@ -519,8 +503,6 @@
     .bar-list { gap:1.4mm; }
     .bar-row { grid-template-columns:12mm minmax(0,1fr) 6mm; gap:1mm; font-size:5.7px; }
     .track { height:1.5mm; }
-    .basis { gap:1.2mm; }
-    .basis div { padding-bottom:1.2mm; font-size:5.5px; }
     .footer { margin-top:2.5mm; padding-top:1.8mm; font-size:5.5px; }
     .ledger-table tbody tr:nth-child(n+9) { display:none; }
   }
@@ -528,9 +510,6 @@
 </head>
 <body>
   {% set evidence_tab = article_tabs[0] %}
-  {% set own_positive = metrics.own_by_tone.positive %}
-  {% set own_caution = metrics.own_by_tone.caution %}
-  {% set own_neutral = metrics.own_by_tone.neutral %}
   {% set own_negative = metrics.own_negative %}
   {% set regulation_count = metrics.by_category.regulation %}
   {% set market_total = market_count %}
@@ -622,15 +601,7 @@
 
       <aside class="side">
         <section class="side-panel">
-          <h2 class="panel-title">당사 논조</h2>
-          <table class="tone-table">
-            <thead><tr><th>긍정</th><th>중립</th><th>주의</th><th>부정</th></tr></thead>
-            <tbody><tr><td>{{ own_positive }}</td><td>{{ own_neutral }}</td><td>{{ own_caution }}</td><td>{{ own_negative }}</td></tr></tbody>
-          </table>
-        </section>
-
-        <section class="side-panel">
-          <h2 class="panel-title">분류별 노출</h2>
+          <h2 class="panel-title">분류별 기사량</h2>
           <div class="bar-list">
             <div class="bar-row"><span>당사</span><div class="track"><i class="bar" style="width:{{ (metrics.by_category.own / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ metrics.by_category.own }}</b></div>
             <div class="bar-row"><span>정책</span><div class="track"><i class="bar reg" style="width:{{ (regulation_count / max_category * 100) if max_category else 0 }}%"></i></div><b>{{ regulation_count }}</b></div>
@@ -640,12 +611,13 @@
         </section>
 
         <section class="side-panel">
-          <h2 class="panel-title">보고 기준</h2>
-          <div class="basis">
-            <div><span>수집 구간</span><b>{{ window.label }}</b></div>
-            <div><span>수집/분석</span><b>{{ metrics.total_collected }} / {{ metrics.total_after_cluster }}건</b></div>
-            <div><span>출처</span><b>{{ methodology.sources }}</b></div>
-            <div><span>검색 키워드</span><b>{{ methodology.keywords }}개</b></div>
+          <h2 class="panel-title">언론사 보도량</h2>
+          <div class="bar-list">
+            {% for row in source_rows %}
+            <div class="press-row"><span>{{ row.source }}</span><div class="track"><i class="bar press" style="width:{{ row.width }}%"></i></div><b>{{ row.count }}</b></div>
+            {% else %}
+            <p class="empty">언론사 보도량 데이터가 없습니다.</p>
+            {% endfor %}
           </div>
         </section>
       </aside>

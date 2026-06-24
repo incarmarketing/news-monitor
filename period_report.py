@@ -366,12 +366,6 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         }
         for key, label, value, share, note in risk_items
     ]
-    density_rows = [
-        {"label": "원문/분석", "value": f"{aggregate.get('total_collected', 0):,} / {aggregate.get('total_after_cluster', 0):,}", "note": f"중복 정리 후 {round(aggregate.get('total_after_cluster', 0) / total_collected * 100)}%"},
-        {"label": "모니터링 구간", "value": f"{aggregate.get('period_days', 0)}일 · {aggregate.get('period_windows', 0)}회", "note": f"일평균 {aggregate.get('avg_daily_collected', 0)}건"},
-        {"label": "최대 기사량", "value": f"{aggregate.get('max_daily_total', 0):,}건", "note": "일 단위 최고 수집량"},
-        {"label": "핵심 키워드", "value": top_keyword, "note": "반복 노출 상위 키워드"},
-    ]
     keyword_rows = [
         {
             "keyword": item.get("keyword", "-"),
@@ -466,7 +460,6 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
         "tracking_points": tracking_points,
         "categories": categories,
         "risk_mix": risk_mix,
-        "density_rows": density_rows,
         "keyword_rows": keyword_rows,
         "source_rows": source_rows,
         "interpretation_notes": interpretation_notes,

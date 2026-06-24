@@ -477,38 +477,6 @@
     justify-content:space-between;
     gap:12px;
   }
-  .density-grid {
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:7px;
-    margin-bottom:9px;
-  }
-  .density-item {
-    min-width:0;
-    border:1px solid #e4e9f2;
-    border-radius:7px;
-    padding:9px 10px;
-    background:#fbfdff;
-    min-height:58px;
-  }
-  .density-item b {
-    display:block;
-    color:var(--navy);
-    font-size:13px;
-    line-height:1.18;
-    white-space:normal;
-    overflow-wrap:anywhere;
-  }
-  .density-item span {
-    display:block;
-    margin-top:5px;
-    color:var(--muted);
-    font-size:9.2px;
-    font-weight:900;
-    line-height:1.28;
-    white-space:normal;
-    overflow-wrap:anywhere;
-  }
   .ledger-table,
   .mini-table {
     width:100%;
@@ -738,10 +706,6 @@
     .rank { width:20px; }
     .score { width:30px; }
     .footer { margin-top:2px; padding:2px 0 0; font-size:5.8px; align-self:end; }
-    .density-grid { gap:3px; margin-bottom:3px; grid-template-columns:repeat(3,minmax(0,1fr)); }
-    .density-item { min-height:27px; padding:4px 5px; border-radius:5px; }
-    .density-item b { font-size:7.8px; line-height:1.12; }
-    .density-item span { margin-top:2px; font-size:5.9px; line-height:1.15; }
     .ledger-table,
     .mini-table { font-size:6.6px; }
     .ledger-table th,
@@ -816,30 +780,25 @@
       <div class="analysis-body">{{ ai_report_html | safe }}</div>
     </div>
     <div class="panel metrics-panel">
-      <h2>리서치 지표 <span>관찰 지표 · 반복 노출</span></h2>
-      <div class="density-grid">
-        {% for item in report_context.density_rows %}
-        <div class="density-item"><b>{{ item.value }}</b><span>{{ item.label }} · {{ item.note }}</span></div>
-        {% endfor %}
-      </div>
+      <h2>분류·언론사 보도량 <span>기간 기준</span></h2>
       <div class="rank-wrap">
         <div class="rank-box">
-          <h3>노출 키워드</h3>
+          <h3>분류별 기사량</h3>
           <table class="mini-table">
-            <thead><tr><th>키워드</th><th>건</th><th>부정</th></tr></thead>
+            <thead><tr><th>분류</th><th>건</th><th>비중</th></tr></thead>
             <tbody>
-              {% for item in report_context.keyword_rows[:5] %}
-              <tr><td>{{ item.keyword }}</td><td class="num">{{ item.count }}</td><td class="num">{{ item.risk }}</td></tr>
+              {% for item in report_context.categories %}
+              <tr><td>{{ item.label }}</td><td class="num">{{ item.value }}</td><td class="num">{{ item.share }}%</td></tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
         <div class="rank-box">
-          <h3>영향 매체</h3>
+          <h3>언론사 보도량</h3>
           <table class="mini-table">
-            <thead><tr><th>매체</th><th>건</th><th>비중</th></tr></thead>
+            <thead><tr><th>언론사</th><th>건</th><th>비중</th></tr></thead>
             <tbody>
-              {% for item in report_context.source_rows[:5] %}
+              {% for item in report_context.source_rows[:6] %}
               <tr><td>{{ item.source }}</td><td class="num">{{ item.count }}</td><td class="num">{{ item.share }}%</td></tr>
               {% endfor %}
             </tbody>
@@ -967,7 +926,7 @@
   </section>
 
   <footer class="footer">
-    <span>{{ period_label }} 언론 동향 리서치 리포트 · 기준: 당사 직접 부정 기사, HIGH/MEDIUM 일자, 반복 노출 키워드</span>
+    <span>{{ period_label }} 언론 동향 리서치 리포트</span>
     <span>{{ company }} {{ team }}</span>
   </footer>
 </main>
