@@ -1,6 +1,6 @@
 {
   "status": "credit_depleted",
-  "model": "gemini-2.5-pro",
-  "captured_at": "2026-06-24T10:14:28.780590+00:00",
+  "model": "gemini-2.5-flash",
+  "captured_at": "2026-06-25T23:06:47.129079+00:00",
   "error": "429 Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay."
 }
