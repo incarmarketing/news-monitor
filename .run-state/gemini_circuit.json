@@ -2,7 +2,7 @@
   "status": "open",
   "reason": "credit_depleted",
   "model": "gemini-2.5-flash",
-  "blocked_at": "2026-06-25T23:06:47.129079+00:00",
-  "blocked_until": "2026-06-26T23:06:47.129079+00:00",
+  "blocked_at": "2026-06-26T23:40:40.807283+00:00",
+  "blocked_until": "2026-06-27T23:40:40.807283+00:00",
   "error": "429 Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay."
 }

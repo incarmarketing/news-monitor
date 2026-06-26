@@ -1,0 +1,169 @@
+{
+  "date": "2026-06-27",
+  "timestamp": "2026-06-27T08:40:43.435907+09:00",
+  "window": {
+    "slot": "08",
+    "label": "전일 18:00~당일 08:00",
+    "short_label": "전일 18시 이후",
+    "start": "2026-06-26T18:00:00+09:00",
+    "end": "2026-06-27T08:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 9,
+    "total_after_cluster": 8,
+    "by_category": {
+      "own": 1,
+      "regulation": 1,
+      "competitor": 4,
+      "industry": 3,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 5,
+      "positive": 1,
+      "neutral": 3
+    },
+    "own_negative": 0,
+    "own_total": 1,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 1,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-06-28 08:40 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 신한라이프 5월 GA 생보실적 선두. 직접 부정은 없습니다. ## 핵심 이슈 - 신한라이프 5월 GA 생보실적 M/S - KDB생명 5월 GA 생보실적 M/S ## 지표 해석 전체 수집 9건 중 분석 대상은 8건입니다. ## 분석 키워드 인카금융서비스, 지에이코리아, 에이플러스에셋",
+  "articles": [
+    {
+      "title": "KDB생명 5월 GA 생보실적 M/S…지에이코리아 1위 탈환 속 아이에프에이 9계단 껑충 - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE5Mcmc3bTlMMWVSSDNPUXJMbWVuemZ4aWwtbkE1SmhFcmNvczdKZjBuaGRKclY1c1hPWk9nblhjX2xLN0c1SDNqSU81YlBvVHJGY2poTWZOYTNOQ3RBN29KS1piY29COWdRZ3JZM1c0Yw?oc=5",
+      "source": "보험저널",
+      "keyword": "지에이코리아",
+      "description": "KDB생명 5월 GA 생보실적 M/S…지에이코리아 1위 탈환 속 아이에프에이 9계단 껑충&nbsp;&nbsp;보험저널",
+      "_summary": "KDB생명 5월 GA 생보실적 M/S…지에이코리아 1위 탈환 속 아이에프에이 9계단 껑충 보험저널. KDB생명 5월 GA 생보실적 M/S…지에이코리아 1위 탈환 속 아이에프에이 9계단 껑충 - 보험저널.",
+      "pub_date": "Fri, 26 Jun 2026 15:00:00 GMT",
+      "_report_id": 1,
+      "_score": 19,
+      "_category": "competitor",
+      "_tone": "caution",
+      "_cluster_size": 2
+    },
+    {
+      "title": "IM라이프 5월 GA 생보실적 M/S…에이플러스에셋 1위 탈환 속 상위 3개사 점유율 50% 돌파 - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE0wRE1NX3d0NzhULXQyZi1fRlpQNlF0RGxCVGFSVTZsYXhfYURJUkRVQTRodEc3VlJuak9ublpjN0Jfc2FPcXlKUEFOLUhiUmpRa044RUZVYUpoZDVQTmFkdVpYWnZpZENRMVNxQjFndw?oc=5",
+      "source": "보험저널",
+      "keyword": "에이플러스에셋",
+      "description": "IM라이프 5월 GA 생보실적 M/S…에이플러스에셋 1위 탈환 속 상위 3개사 점유율 50% 돌파&nbsp;&nbsp;보험저널",
+      "_summary": "경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다 IM라이프 5월 GA 생보실적 M/S…에이플러스에셋 1위 탈환 속 상위 3개사 점유율 50% 돌파 보험저널.",
+      "pub_date": "Fri, 26 Jun 2026 15:00:00 GMT",
+      "_report_id": 2,
+      "_score": 19,
+      "_category": "competitor",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "신한라이프 5월 GA 생보실적 M/S…인카금융서비스 선두 굳히기 속 중위권 도약 '눈길' - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE13T2dFRElmZE5PTFZLb3pwc0ZJLWN6dWV0S1AxaHBHOE5PajUtT3JIcmM3c2Z2TnhOUkdNQzZzVEwtcXNoMlM4U2p1YzE4OGwwclBZLTVMaFRtVVZuamd1dzB2Y1RROGNOUnZINWdaSQ?oc=5",
+      "source": "보험저널",
+      "keyword": "인카금융서비스",
+      "description": "신한라이프 5월 GA 생보실적 M/S…인카금융서비스 선두 굳히기 속 중위권 도약 '눈길'&nbsp;&nbsp;보험저널",
+      "_summary": "신한라이프 5월 GA 생보실적 M/S…인카금융서비스 선두 굳히기 속 중위권 도약 '눈길' 보험저널. 신한라이프 5월 GA 생보실적 M/S…인카금융서비스 선두 굳히기 속 중위권 도약 '눈길' - 보험저널.",
+      "pub_date": "Fri, 26 Jun 2026 15:00:00 GMT",
+      "_report_id": 3,
+      "_score": 18,
+      "_category": "own",
+      "_tone": "positive",
+      "_cluster_size": 1
+    },
+    {
+      "title": "반복되는 전산장애에 경고장…금감원, 빅테크 IT 내부통제 강화 주문 : 네이버 블로그 - Naver Blog",
+      "link": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNR0V3YnREWmR1Y2JqQjR0azBRaGpQR3FxRjlNNnVDbzFjajFsN1h5RVZmbnZuVFhEeUIySHZ4b3Y4QXNMOEJycTFLcUpOdlFoS05MdE5iRlhjMklPRVpEc2NSZ0cxTDJha3QwX1BKUU1DYmk0S3dDaEc5VHRhVkgyQ01hSEFWSWpYVjZ6WEMxVQ?oc=5",
+      "source": "google",
+      "keyword": "내부통제",
+      "description": "반복되는 전산장애에 경고장…금감원, 빅테크 IT 내부통제 강화 주문 : 네이버 블로그&nbsp;&nbsp;Naver Blog",
+      "_summary": "반복되는 전산장애에 경고장…금감원, 빅테크 IT 내부통제 강화 주문 : 네이버 블로그 Naver Blog. 반복되는 전산장애에 경고장…금감원, 빅테크 IT 내부통제 강화 주문 : 네이버 블로그 - Naver Blog.",
+      "pub_date": "Fri, 26 Jun 2026 14:32:22 GMT",
+      "_report_id": 4,
+      "_score": 16,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "메트라이프생명 5월 GA 생보실적 M/S…굳건한 사랑모아금융서비스 독주 속 스카이블루에셋 11계단 '껑충' - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTE9jQzdvN2FYUElNRnJKWVFBbDBNbDMxeXZ4SU9TeU9lT25TWkc0aXdtbnZqQlVvZVNlSHJRVGppSHlSdEdOQjRHQ2tfWWROWTg1T2w2VFJKdFByTzBlRDU5MC1ZeDh3TXYzNnBWSXBHbw?oc=5",
+      "source": "보험저널",
+      "keyword": "사랑모아금융서비스",
+      "description": "메트라이프생명 5월 GA 생보실적 M/S…굳건한 사랑모아금융서비스 독주 속 스카이블루에셋 11계단 '껑충'&nbsp;&nbsp;보험저널",
+      "_summary": "메트라이프생명 5월 GA 생보실적 M/S…굳건한 사랑모아금융서비스 독주 속 스카이블루에셋 11계단 '껑충' 보험저널. 메트라이프생명 5월 GA 생보실적 M/S…굳건한 사랑모아금융서비스 독주 속 스카이블루에셋 11계단 '껑충' - 보험저널.",
+      "pub_date": "Fri, 26 Jun 2026 15:00:00 GMT",
+      "_report_id": 5,
+      "_score": 12,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"보험설계사, 사기 연루 잇따라\"…금감원, 보험사 다수 제재 - 비즈월드",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTFBMeHJaWkhRc3dqQ1NrMjg0YVpWdklTbzNqUkFwY3RqTDNqQTZITXVxQko1aVFNaHE1MHAyN0ZRTHZZUzJ4bVY0RWg3ZVRfbkFocXRQUlFnUDA5YlpnWGlKWXM1cENpWDkzOWow?oc=5",
+      "source": "google",
+      "keyword": "보험설계사",
+      "description": "\"보험설계사, 사기 연루 잇따라\"…금감원, 보험사 다수 제재&nbsp;&nbsp;비즈월드",
+      "_summary": "\"보험설계사, 사기 연루 잇따라\"…금감원, 보험사 다수 제재 비즈월드. \"보험설계사, 사기 연루 잇따라\"…금감원, 보험사 다수 제재 - 비즈월드.",
+      "pub_date": "Fri, 26 Jun 2026 10:59:00 GMT",
+      "_report_id": 6,
+      "_score": 12,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "KB손해보험, 의료기관 맞춤형 보험서비스 확대 나서 - 마일드경제",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTE1GOGw1REkwU2tDWWE1V3BVNVZHYWdqM1UzVHVodDlhc0xxZVJpT0F2MGltaWYwZjI1VS0wZUN0Wk5idFlvdGF4UTBnQ2k5S0d2dUtkcXdSN2dRR25mSUduMGpwS0UxemIyOW1N?oc=5",
+      "source": "마일드경제",
+      "keyword": "손해보험",
+      "description": "KB손해보험, 의료기관 맞춤형 보험서비스 확대 나서&nbsp;&nbsp;마일드경제",
+      "_summary": "KB손해보험, 의료기관 맞춤형 보험서비스 확대 나서 마일드경제. KB손해보험, 의료기관 맞춤형 보험서비스 확대 나서 - 마일드경제.",
+      "pub_date": "Fri, 26 Jun 2026 13:27:52 GMT",
+      "_report_id": 7,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "리스이용자의 리스료 미지급으로 인한 보증보험금 청구 사안에서, 보증보험사의 보증책임 부인 주장을 배척시키고 전부 승소 판결을 이끌어 낸 사례 - 법무법인 세종",
+      "link": "https://news.google.com/rss/articles/CBMiXkFVX3lxTE9aMTFhbWFxM3V6VVNCR3BZY0V4TVdMbFN2V2VGV0tmZERSdHdKSnl3R2twUm1BSEx6N3JaZ0JabGtmTzNnVUc0MzAzclg4aC1wXzQ2OHhZVEJyRzN0UFE?oc=5",
+      "source": "google",
+      "keyword": "보험사",
+      "description": "리스이용자의 리스료 미지급으로 인한 보증보험금 청구 사안에서, 보증보험사의 보증책임 부인 주장을 배척시키고 전부 승소 판결을 이끌어 낸 사례&nbsp;&nbsp;법무법인 세종",
+      "_summary": "리스이용자의 리스료 미지급으로 인한 보증보험금 청구 사안에서, 보증보험사의 보증책임 부인 주장을 배척시키고 전부 승소 판결을 이끌어 낸 사례 법무법인 세종. 리스이용자의 리스료 미지급으로 인한 보증보험금 청구 사안에서, 보증보험사의 보증책임 부인 주장을 배척시키고 전부 승소 판결을 이끌어 낸 사례 - 법무법인 세종.",
+      "pub_date": "Fri, 26 Jun 2026 09:04:14 GMT",
+      "_report_id": 8,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
