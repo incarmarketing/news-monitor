@@ -1,0 +1,197 @@
+{
+  "date": "2026-06-27",
+  "timestamp": "2026-06-27T13:07:04.714397+09:00",
+  "window": {
+    "slot": "13",
+    "label": "당일 08:00~13:00",
+    "short_label": "오전 08~13시",
+    "start": "2026-06-27T08:00:00+09:00",
+    "end": "2026-06-27T13:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 11,
+    "total_after_cluster": 10,
+    "by_category": {
+      "own": 0,
+      "regulation": 2,
+      "competitor": 2,
+      "industry": 7,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 2,
+      "positive": 0,
+      "neutral": 9
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-06-28 08:40 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 흐름이 중심입니다. 주요 이슈는 홈플러스와 보험업계입니다. ## 핵심 이슈 - 홈플러스 운명 가결정 - 보험업계 손해율 관리 ## 지표 해석 전체 수집 11건 중 분석 대상은 10건입니다. 정책/규제 2건, 경쟁/업계 8건입니다. ## 분석 키워드 금융감독원, 보험대리점, 손해보험, 홈플러스",
+  "articles": [
+    {
+      "title": "[자본시장포커스] \"피도 눈물도 없는 벼랑 끝 대치\"…홈플러스 운명 가...",
+      "link": "https://weekly.hankooki.com/news/articleView.html?idxno=7171543",
+      "source": "weekly.hankooki.com",
+      "keyword": "금융감독원",
+      "description": "지난해 12월 18일 서울 여의도 금융감독원 앞에서 홈플러스 물품구매전단채피해자 비대위 관계자들이 'MBK파트너스ㆍ김병주 엄중 제재 촉구 기자회견'을 열고 있다. 사진=연합뉴스 국내 인수합병(M&A) 역사상 최대 규모...",
+      "_summary": "지난해 12월 18일 서울 여의도 금융감독원 앞에서 홈플러스 물품구매전단채피해자 비대위 관계자들이 'MBK파트너스ㆍ김병주 엄중 제재 촉구 기자회견'을 열고 있다 사진=연합뉴스 국내 인수합병(M&A) 역사상 최대 규모. [자본시장포커스] \"피도 눈물도 없는 벼랑 끝 대치\"…홈플러스 운명 가.",
+      "pub_date": "Sat, 27 Jun 2026 09:00:00 +0900",
+      "_report_id": 1,
+      "_score": 11,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[아하 인터뷰] 기반 다져준 '소액다건'…보험설계사 생존 키워드는",
+      "link": "https://www.asiatime.co.kr/article/20260626500223",
+      "source": "asiatime.co.kr",
+      "keyword": "보험설계사",
+      "description": "우리 보험설계사는 상품을 팔고자 고객을 만납니다. 그 과정에서 고객과 함께 울고 웃으며, 많은 상품을 파는 기반을 쌓습니다. 한번에 비싼 상품이 아니라, 고객이 필요한 걸 판매하는 설계사야말로 치열한 보험시장에서...",
+      "_summary": "경쟁 보험사의 특약이 출시 이후 누적 가입 성과를 기록한 상품 반응 기사입니다 상품 경쟁력과 보장 수요 흐름을 확인할 수 있는 경쟁사 동향으로 봅니다 우리 보험설계사는 상품을 팔고자 고객을 만납니다",
+      "pub_date": "Sat, 27 Jun 2026 08:46:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 2
+    },
+    {
+      "title": "어센틱금융그룹, 소상공인 온라인 광고 후원사업 본격 시행",
+      "link": "https://www.job-post.co.kr/news/articleView.html?idxno=219330",
+      "source": "job-post.co.kr",
+      "keyword": "보험대리점",
+      "description": "국내 초대형 GA(법인보험대리점) 어센틱금융그룹이 경기 침체로 어려움을 겪는 소기업·소상공인의 경영 부담을 덜기 위해 온라인 광고 후원사업을 본격 시행한다고 밝혔다. 이번 사업은 정부의 소상공인 지원 정책 기조에...",
+      "_summary": "국내 초대형 GA(법인보험대리점) 어센틱금융그룹이 경기 침체로 어려움을 겪는 소기업·소상공인의 경영 부담을 덜기 위해 온라인 광고 후원사업을 본격 시행한다고 밝혔다 이번 사업은 정부의 소상공인 지원 정책 기조에. 어센틱금융그룹, 소상공인 온라인 광고 후원사업 본격 시행.",
+      "pub_date": "Sat, 27 Jun 2026 09:36:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "카카오페이손보, 정보보호·클라우드 보안 국제 인증 동시 취득",
+      "link": "https://www.thepublic.kr/news/articleView.html?idxno=309105",
+      "source": "thepublic.kr",
+      "keyword": "손해보험",
+      "description": "카카오페이손해보험이 정보보호와 클라우드 보안 분야의 국제 인증을 동시에 획득했다. 디지털 기반 보험 서비스 운영 과정에서 사용자 데이터 보호와 보안 관리 체계를 국제 기준에 맞춰 검증받은 것이다....",
+      "_summary": "카카오페이손해보험이 정보보호와 클라우드 보안 분야의 국제 인증을 동시에 획득했다 디지털 기반 보험 서비스 운영 과정에서 사용자 데이터 보호와 보안 관리 체계를 국제 기준에 맞춰 검증받은 것이다 카카오페이손보, 정보보호·클라우드 보안 국제 인증 동시 취득.",
+      "pub_date": "Sat, 27 Jun 2026 09:26:00 +0900",
+      "_report_id": 4,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "ESG·AI·소재 혁신까지…기업들 협약 통해 신사업·사회공헌 확대",
+      "link": "http://www.kdfnews.com/news/articleView.html?idxno=184606",
+      "source": "kdfnews.com",
+      "keyword": "손해보험",
+      "description": "25일 서울 마포구 서울가든호텔에서 박상규 KB손해보험 일반보험부문장(왼쪽), 류은경 대한의료법인연합회장(가운데), 이재은 티피에이코리아 대표(오른쪽)가 의료기관 맞춤형 단체보험 프로그램 운영 업무협약(MOU)을...",
+      "_summary": "25일 서울 마포구 서울가든호텔에서 박상규 KB손해보험 일반보험부문장(왼쪽), 류은경 대한의료법인연합회장(가운데), 이재은 티피에이코리아 대표(오른쪽)가 의료기관 맞춤형 단체보험 프로그램 운영 업무협약(MOU)을. ESG·AI·소재 혁신까지…기업들 협약 통해 신사업·사회공헌 확대.",
+      "pub_date": "Sat, 27 Jun 2026 08:00:00 +0900",
+      "_report_id": 5,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "7월 장마 가능성에…손보업계 대응 준비 ‘분주’",
+      "link": "https://www.etoday.co.kr/news/view/2597725",
+      "source": "etoday.co.kr",
+      "keyword": "손해보험",
+      "description": "이투데이=권현원 기자 | 매년 7~10월 차량 침수 피해 급증 자동차보험 손해율도 덩달아 상승 7월 본격적인 장마로 하반기 자동차보험 손해율 상승이 우려되는 가운데 손해보험업계의 차량 침수 피해 대응 움직임이...",
+      "_summary": "실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다 이투데이=권현원 기자. 매년 7~10월 차량 침수 피해 급증 자동차보험 손해율도 덩달아 상승 7월 본격적인 장마로 하반기 자동차보험 손해율 상승이 우려되는 가운데 손해보험업계의 차량 침수 피해 대응 움직임이.",
+      "pub_date": "Sat, 27 Jun 2026 12:02:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "5월 차보험 적자 '지속'…장마철·8주룰 지연에 손해율 관리 '비상'",
+      "link": "https://www.asiatime.co.kr/article/20260623500380",
+      "source": "asiatime.co.kr",
+      "keyword": "손해보험",
+      "description": "5월 누적 손해율 84.1%…전년동기대비 1.3%p↑ \"연초 차보험료 인상에도 손해율 악화 흐름 지속\" '8주룰' 도입 하반기로 연기…\"실적 악화 불가피\" [아시아타임즈=류홍민 기자] 올해 5월에도 주요 손해보험사들의...",
+      "_summary": "실손보험 계약, 손해율, 적자폭 변화가 중심인 보험업계 지표 기사입니다 5월 누적 손해율 84.1%…전년동기대비 1.3%p↑ \"연초 차보험료 인상에도 손해율 악화 흐름 지속\" '8주룰' 도입 하반기로 연기…\"실적 악화 불가피\" 올해 5월에도 주요 5월 차보험 적자 '지속'…장마철·8주룰 지연에 손해율 관리 '비상'.",
+      "pub_date": "Sat, 27 Jun 2026 08:20:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"협력 모델 만든다\"…보험사와 동맹 맺는 '디지털 헬스'",
+      "link": "https://daily.hankooki.com/news/articleView.html?idxno=1380396",
+      "source": "daily.hankooki.com",
+      "keyword": "손해보험",
+      "description": "오명식 롯데손해보험 코퍼레이트 솔루션 총괄장, 황희 카카오헬스케어 대표. 사진=카카오헬스케어 제공  국내 디지털 헬스케어 기업들이 보험사와의 협력을 확대하고 있다. 보험 가입자를 대상으로 헬스케어 기기를...",
+      "_summary": "오명식 롯데손해보험 코퍼레이트 솔루션 총괄장, 황희 카카오헬스케어 대표. 사진=카카오헬스케어 제공 국내 디지털 헬스케어 기업들이 보험사와의 협력을 확대하고 있다 보험 가입자를 대상으로 헬스케어 기기를.",
+      "pub_date": "Sat, 27 Jun 2026 08:02:00 +0900",
+      "_report_id": 8,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "계열사 정리 끝낸 카카오페이…'AI 금융 플랫폼' 속도 낸다",
+      "link": "https://www.sentv.co.kr/article/view/sentv202606260110",
+      "source": "sentv.co.kr",
+      "keyword": "손해보험",
+      "description": "앞서 카카오페이는 2023년 카카오페이손해보험, 지난해에는 페이민트를 각각 완전자회사로 편입했으며, 이번 카카오페이증권까지 100% 자회사 체제를 구축했다. 완전자회사 체제로 전환되면 소수 주주와 이해관계를...",
+      "_summary": "앞서 카카오페이는 2023년 카카오페이손해보험, 지난해에는 페이민트를 각각 완전자회사로 편입했으며, 이번 카카오페이증권까지 100% 자회사 체제를 구축했다 완전자회사 체제로 전환되면 소수 주주와 이해관계를. 계열사 정리 끝낸 카카오페이…'AI 금융 플랫폼' 속도 낸다",
+      "pub_date": "Sat, 27 Jun 2026 08:02:00 +0900",
+      "_report_id": 9,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "동양생명, 우리금융 전략 연계한 ESG 고도화...지속가능 보고서 공개",
+      "link": "https://www.asiaa.co.kr/news/articleView.html?idxno=253498",
+      "source": "asiaa.co.kr",
+      "keyword": "생명보험",
+      "description": "성대규 동양생명 대표이사는 \"우리금융그룹 편입 이후 금융 생태계 안에서 보험사로서의 역할을 고민하며 지속가능한 성장 기반을 마련해 왔다\"며 \"앞으로도 생명보험 본연의 역할에 충실하면서 고객에게 실질적인...",
+      "_summary": "성대규 동양생명 대표이사는 \"우리금융그룹 편입 이후 금융 생태계 안에서 보험사로서의 역할을 고민하며 지속가능한 성장 기반을 마련해 왔다\"며 \"앞으로도 생명보험 본연의 역할에 충실하면서 고객에게 실질적인. 동양생명, 우리금융 전략 연계한 ESG 고도화...지속가능 보고서 공개.",
+      "pub_date": "Sat, 27 Jun 2026 09:16:00 +0900",
+      "_report_id": 10,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
