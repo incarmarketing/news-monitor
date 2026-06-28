@@ -101,7 +101,7 @@ def run_briefing(articles: list[dict]) -> Path:
     try:
         window = report_window.current_window()
         supabase_store.save_dashboard_articles(
-            articles,
+            clustered,
             report_date=datetime.now(KST).date().isoformat(),
             window={
                 "slot": window["slot"],

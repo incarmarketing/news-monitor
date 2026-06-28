@@ -14,6 +14,7 @@ on:
       - "dashboard_builder.py"
       - "negative_watch.py"
       - "publish_report.py"
+      - "sync_daily_archive_to_supabase.py"
       - "stock_collector.py"
       - "regulator_collector.py"
       - "refresh_regulator_releases.py"
@@ -75,6 +76,14 @@ jobs:
         run: |
           timeout 240s python refresh_ga_competitor_intel.py --stand-mm 202512 --top 10 --revenue-start-year 2021 --revenue-end-year 2025 || \
             echo "::warning::GA competitor refresh did not finish; publishing with last successful data."
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Re-sync recent daily archives to Supabase
+        run: |
+          timeout 180s python sync_daily_archive_to_supabase.py --days 14 || \
+            echo "::warning::Daily archive Supabase sync did not finish; dashboard publish will continue."
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
