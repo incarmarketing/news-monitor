@@ -472,6 +472,8 @@ def article_context_text(article: dict, limit: int = 1800) -> str:
     parts = [
         article.get("title", ""),
         article.get("description", ""),
+        article.get("content", ""),
+        article.get("body", ""),
         article.get("summary", ""),
         article.get("_summary", ""),
         article.get("source", ""),
@@ -1840,6 +1842,8 @@ def is_own_direct_negative_article(article: dict) -> bool:
     if not is_own_article(article):
         return False
     text = article_summary_text(article)
+    if is_own_supervisory_sanction_article(article):
+        return True
     return bool(
         re.search(
             r"인카금융스캔들|불법\s*사채|가로챈|관리\s*부실|불완전판매\s*(?:조사|검사|적발|착수|의혹)|내부통제\s*위반|압수수색|기소|검찰|경찰|과태료|제재|소송|사기|횡령|배임",
@@ -1847,6 +1851,23 @@ def is_own_direct_negative_article(article: dict) -> bool:
             re.I,
         )
     )
+
+
+def is_own_supervisory_sanction_article(article: dict) -> bool:
+    """Own risk when the article body names Incar in sanctions or fraud."""
+    text = article_summary_text(article)
+    own = "(?:\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4|\uc778\uce74\uae08\uc735)"
+    agent = "(?:\uc804\uc9c1\\s*)?\uc124\uacc4\uc0ac"
+    regulator = "(?:\uae08\uac10\uc6d0|\uae08\uc735\uac10\ub3c5\uc6d0|\uae08\uc735\ub2f9\uad6d)"
+    sanction = "(?:\uc81c\uc7ac|\ucc98\ubd84|\ub4f1\ub85d\\s*\ucde8\uc18c|\uc5c5\ubb34\\s*\uc815\uc9c0)"
+    fraud = "(?:\ubcf4\ud5d8\uc0ac\uae30|\uace0\uc758\\s*\uad50\ud1b5\uc0ac\uace0|\ubcf4\ud5d8\uae08|\ud3b8\ucde8|\ud5c8\uc704\\s*\uc785\uc6d0|\ub0b4\ubd80\ud1b5\uc81c|\uad00\ub9ac\\s*\uad6c\uba4d)"
+    patterns = [
+        rf"{regulator}.{{0,240}}{own}.{{0,180}}{agent}.{{0,180}}{sanction}",
+        rf"{own}.{{0,120}}{agent}.{{0,160}}{sanction}",
+        rf"{own}.{{0,180}}{fraud}",
+        rf"{fraud}.{{0,180}}{own}.{{0,180}}{agent}",
+    ]
+    return any(re.search(pattern, text, re.I | re.S) for pattern in patterns)
 
 
 def is_own_caution_article(article: dict) -> bool:
@@ -1871,6 +1892,8 @@ def has_own_evidence(article: dict) -> bool:
         for value in (
             article.get("title", ""),
             article.get("description", ""),
+            article.get("content", ""),
+            article.get("body", ""),
             raw.get("title", ""),
             raw.get("description", ""),
             raw.get("content", ""),
@@ -1982,6 +2005,8 @@ def cluster_articles(articles: list[dict], threshold: float = 0.62) -> list[dict
         for j in range(i + 1, len(articles)):
             if j in used:
                 continue
+            if not can_cluster_articles(article, articles[j]):
+                continue
             other_title = normalize_title(articles[j].get("title", ""))
             if difflib.SequenceMatcher(None, title, other_title).ratio() >= threshold:
                 cluster.append(articles[j])
@@ -1992,6 +2017,14 @@ def cluster_articles(articles: list[dict], threshold: float = 0.62) -> list[dict
         representatives.append(representative)
 
     return representatives
+
+
+def can_cluster_articles(article: dict, other: dict) -> bool:
+    own_sanction_a = is_own_supervisory_sanction_article(article)
+    own_sanction_b = is_own_supervisory_sanction_article(other)
+    if own_sanction_a or own_sanction_b:
+        return own_sanction_a and own_sanction_b
+    return True
 
 
 def normalize_title(title: str) -> str:
@@ -2233,7 +2266,14 @@ def article_summary_text(article: dict) -> str:
         or raw.get("summary")
         or ""
     )
-    return f"{article.get('title', '')} {description}"
+    body = (
+        article.get("content")
+        or article.get("body")
+        or raw.get("content")
+        or raw.get("body")
+        or ""
+    )
+    return f"{article.get('title', '')} {description} {body}"
 
 
 def is_sales_conduct_article(article: dict) -> bool:

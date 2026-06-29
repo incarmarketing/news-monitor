@@ -313,6 +313,7 @@ def collect_news() -> list[dict]:
     articles = apply_exclude_filter(articles)
     after_exclude = len(articles)
     articles = apply_collection_window_filter(articles, window)
+    enrich_sensitive_article_bodies(articles)
     after_window = len(articles)
 
     print_collection_stats(stats, before, after_dedup, after_relevance, after_exclude, after_window, window["label"])
@@ -710,6 +711,107 @@ def fetch_article_html(link: str, timeout: int = 6) -> tuple[str, str]:
         return response.text or "", response.url
     except Exception:
         return "", ""
+
+
+def enrich_sensitive_article_bodies(articles: list[dict]) -> None:
+    """Fetch original article body only for decision-sensitive candidates.
+
+    Portal snippets often omit late paragraphs where company names and
+    supervisory actions appear. Pulling the body for every item would make the
+    collector slow, so this only enriches GA/insurance-fraud/regulatory-risk
+    candidates that can materially change own-risk classification.
+    """
+    limit = int(os.getenv("ARTICLE_BODY_ENRICH_LIMIT", "30"))
+    enriched = 0
+    for article in articles:
+        if enriched >= limit:
+            return
+        if article.get("content") or article.get("body"):
+            continue
+        if not should_enrich_article_body(article):
+            continue
+
+        html, final_url = fetch_article_html(article.get("link", ""), timeout=6)
+        if not html:
+            continue
+
+        source_html = html
+        original_url = extract_original_article_url(html, final_url)
+        if original_url and original_url != article.get("link"):
+            original_html, original_final_url = fetch_article_html(original_url, timeout=6)
+            if original_html:
+                source_html = original_html
+                article["_original_url"] = original_final_url or original_url
+
+        body = extract_article_body_from_html(source_html)
+        if not body:
+            continue
+        article["content"] = body[:5000]
+        article["body"] = body[:5000]
+        article["_body_enriched"] = True
+        enriched += 1
+
+
+def should_enrich_article_body(article: dict) -> bool:
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("keyword"),
+            article.get("keyword_query"),
+            article.get("source"),
+            article.get("link"),
+        )
+    )
+    own_or_ga_signal = re.search(
+        "\uc778\uce74\uae08\uc735|\uc778\uce74|GA|\ubc95\uc778\ubcf4\ud5d8\ub300\ub9ac\uc810|"
+        "\ubcf4\ud5d8\uc124\uacc4\uc0ac|\uc124\uacc4\uc0ac|\uae00\ub85c\ubc8c\uae08\uc735\ud310\ub9e4|"
+        "\uba54\uac00|\uc601\uc9c4\uc5d0\uc14b",
+        text,
+        re.I,
+    )
+    risk_signal = re.search(
+        "\ubcf4\ud5d8\uc0ac\uae30|\uace0\uc758\s*\uad50\ud1b5\uc0ac\uace0|\ubcf4\ud5d8\uae08|"
+        "\ud3b8\ucde8|\ud5c8\uc704\s*\uc785\uc6d0|\uae08\uac10\uc6d0|\uae08\uc735\uac10\ub3c5\uc6d0|"
+        "\uc81c\uc7ac|\ucc98\ubd84|\ub4f1\ub85d\s*\ucde8\uc18c|\uc5c5\ubb34\s*\uc815\uc9c0|"
+        "\ub0b4\ubd80\ud1b5\uc81c|\uad00\ub9ac\s*\uad6c\uba4d|\uacf5\ub8e1\s*GA",
+        text,
+        re.I,
+    )
+    return bool(own_or_ga_signal and risk_signal)
+
+
+def extract_article_body_from_html(html: str) -> str:
+    if not html:
+        return ""
+    candidates: list[str] = []
+    patterns = [
+        r'<div[^>]+id=["\']article-view-content-div["\'][^>]*>(.*?)</div>\s*</div>',
+        r'<div[^>]+class=["\'][^"\']*(?:article-view-content|article-body|view-content|article_cont|article-content|news-article)[^"\']*["\'][^>]*>(.*?)</div>',
+        r'<section[^>]+class=["\'][^"\']*(?:article|news)[^"\']*["\'][^>]*>(.*?)</section>',
+        r'<article[^>]*>(.*?)</article>',
+        r'<div[^>]+itemprop=["\']articleBody["\'][^>]*>(.*?)</div>',
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, html, re.I | re.S):
+            text = clean_html(match.group(1))
+            if len(text) >= 120:
+                candidates.append(text)
+
+    paragraphs = [
+        clean_html(match.group(1))
+        for match in re.finditer(r"<p[^>]*>(.*?)</p>", html, re.I | re.S)
+    ]
+    paragraph_text = " ".join(p for p in paragraphs if len(p) >= 20)
+    if len(paragraph_text) >= 120:
+        candidates.append(paragraph_text)
+
+    if not candidates:
+        return ""
+    body = max(candidates, key=len)
+    body = re.sub(r"\s+", " ", body).strip()
+    return body
 
 
 def parse_article_date_from_html(html: str) -> datetime | None:

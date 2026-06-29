@@ -6806,6 +6806,11 @@ function filterRelatedArticlesForRepresentative(row = {}) {
 
 function articleBelongsToSameIssue(representative = {}, candidate = {}) {
   if (!representative || !candidate) return false;
+  const ownSanctionRep = isOwnSupervisorySanctionArticle(representative);
+  const ownSanctionCandidate = isOwnSupervisorySanctionArticle(candidate);
+  if (ownSanctionRep || ownSanctionCandidate) {
+    return ownSanctionRep && ownSanctionCandidate;
+  }
   const repTopic = articleTopicSignature(representative);
   const candidateTopic = articleTopicSignature(candidate);
   if (repTopic || candidateTopic) {
@@ -6815,6 +6820,33 @@ function articleBelongsToSameIssue(representative = {}, candidate = {}) {
   const repSeed = articleGroupSeed(representative);
   const candidateSeed = articleGroupSeed(candidate);
   return areRelatedArticleSeeds(repSeed, candidateSeed);
+}
+
+function isOwnSupervisorySanctionArticle(article = {}) {
+  const raw = article.raw && typeof article.raw === "object" ? article.raw : {};
+  const text = [
+    article.title,
+    article.description,
+    article.summary,
+    article.content,
+    article.body,
+    raw.title,
+    raw.description,
+    raw.summary,
+    raw.content,
+    raw.body,
+  ].map((value) => String(value || "")).join(" ");
+  const own = /(?:\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735)/i;
+  const agent = /(?:\uC804\uC9C1\s*)?\uC124\uACC4\uC0AC/i;
+  const regulator = /(?:\uAE08\uAC10\uC6D0|\uAE08\uC735\uAC10\uB3C5\uC6D0|\uAE08\uC735\uB2F9\uAD6D)/i;
+  const sanction = /(?:\uC81C\uC7AC|\uCC98\uBD84|\uB4F1\uB85D\s*\uCDE8\uC18C|\uC5C5\uBB34\s*\uC815\uC9C0)/i;
+  const fraud = /(?:\uBCF4\uD5D8\uC0AC\uAE30|\uACE0\uC758\s*\uAD50\uD1B5\uC0AC\uACE0|\uBCF4\uD5D8\uAE08|\uD3B8\uCDE8|\uD5C8\uC704\s*\uC785\uC6D0|\uB0B4\uBD80\uD1B5\uC81C|\uAD00\uB9AC\s*\uAD6C\uBA4D)/i;
+  return (
+    (regulator.test(text) && own.test(text) && agent.test(text) && sanction.test(text))
+    || (own.test(text) && agent.test(text) && sanction.test(text))
+    || (own.test(text) && fraud.test(text))
+    || (fraud.test(text) && own.test(text) && agent.test(text))
+  );
 }
 
 function patchCorrectedArticles(rows = [], article = {}, correction = {}) {
@@ -10307,6 +10339,7 @@ function articleGroupSeed(article) {
   return {
     canonical,
     topic,
+    ownSanction: isOwnSupervisorySanctionArticle(article),
     tokens,
     distinctiveTokens,
     titleKey: relatedTitleKey(canonical, tokens),
@@ -10319,6 +10352,7 @@ function mergeGroupSeed(current, next) {
   return {
     canonical: current.canonical || "",
     topic: current.topic || "",
+    ownSanction: Boolean(current.ownSanction || next?.ownSanction),
     tokens: current.tokens || [],
     distinctiveTokens: current.distinctiveTokens || [],
     titleKey: current.titleKey || "",
@@ -10329,6 +10363,7 @@ function mergeGroupSeed(current, next) {
 
 function areRelatedArticleSeeds(a, b) {
   if (!a.canonical || !b.canonical) return false;
+  if (a.ownSanction || b.ownSanction) return Boolean(a.ownSanction && b.ownSanction);
   const sharedCount = sharedTokenCount(a.tokens, b.tokens);
   const sharedDistinctive = sharedTokenCount(a.distinctiveTokens, b.distinctiveTokens);
   if (a.topic && b.topic && a.topic === b.topic && isStrongEventTopic(a.topic)) return true;
@@ -10600,6 +10635,9 @@ function hasOwnArticleEvidence(article = {}) {
   const text = [
     article.title,
     article.description,
+    article.summary,
+    article.content,
+    article.body,
     raw.title,
     raw.description,
     raw.content,
