@@ -3682,7 +3682,7 @@
     const state = {
       articles: [],
       filtered: [],
-      filters: { q:"", start:"", end:"", category:"", tone:"", risk:"", detail:"" },
+      filters: { q:"", start:"", end:"", category:"", tone:"", risk:"", detail:"", company:"" },
       analysis: { range:"7", start:"", end:"" },
       keywordSource: "Supabase",
       keywordSyncMessage: "",
@@ -4457,13 +4457,14 @@
       const q = state.filters.q.toLowerCase();
       state.filtered = state.articles.filter(article => {
         const haystack = [article.title, article.keyword, article.press, article.category_label, article.category_detail, article.tone_label].join(" ").toLowerCase();
-        return (!q || haystack.includes(q))
+      return (!q || haystack.includes(q))
           && (!state.filters.start || article.date >= state.filters.start)
           && (!state.filters.end || article.date <= state.filters.end)
           && (!state.filters.category || article.category === state.filters.category)
           && (!state.filters.tone || article.tone === state.filters.tone)
           && (!state.filters.risk || article.risk === state.filters.risk)
-          && (!state.filters.detail || article.category_detail === state.filters.detail);
+          && (!state.filters.detail || article.category_detail === state.filters.detail)
+          && (!state.filters.company || isCompanyMentionArticle(article));
       }).sort(latestArticleSort);
     }
 
@@ -4474,11 +4475,12 @@
       const risk = current.find(a => a.risk)?.risk || "-";
       const topKeyword = topBy(current,"keyword",1)[0]?.[0] || "주요 키워드 없음";
       const market = (cats.competitor || 0) + (cats.industry || 0);
+      const ownMentionCount = current.filter(isCompanyMentionArticle).length;
       document.getElementById("headline").textContent = `${topKeyword} 중심으로 ${current.length}건 관찰`;
       document.getElementById("issueTitle").innerHTML = '<i data-lucide="activity"></i> 주요 이슈';
       document.getElementById("judgement").textContent = buildJudgement(current,cats,tones);
       document.getElementById("metricTotal").textContent = current.length.toLocaleString("ko-KR");
-      document.getElementById("metricOwn").textContent = (cats.own || 0).toLocaleString("ko-KR");
+      document.getElementById("metricOwn").textContent = ownMentionCount.toLocaleString("ko-KR");
       document.getElementById("metricNegative").textContent = (tones.negative || 0).toLocaleString("ko-KR");
       document.getElementById("metricMarket").textContent = market.toLocaleString("ko-KR");
       renderHeroMetricNotes(current, cats, tones, market, topKeyword);
@@ -4845,6 +4847,7 @@
         }
       }
       state.filters.detail = detail;
+      state.filters.company = "";
       render();
       switchPage("monitor");
     }
@@ -4863,6 +4866,7 @@
       state.filters.tone = tone || "";
       state.filters.risk = "";
       state.filters.detail = "";
+      state.filters.company = "";
       syncFilterInputs();
       render();
       switchPage("monitor");
@@ -4876,13 +4880,14 @@
       state.filters.tone = tone || "";
       state.filters.risk = "";
       state.filters.detail = "";
+      state.filters.company = "";
       syncFilterInputs();
       render();
       switchPage("monitor");
       setTimeout(() => document.getElementById("articleList")?.scrollIntoView({ behavior:"smooth", block:"start" }), 0);
     }
 
-    function scopeDashboardMonitorFilters({ category = "", tone = "", query = "" } = {}) {
+    function scopeDashboardMonitorFilters({ category = "", tone = "", query = "", company = false } = {}) {
       const latest = latestDate(dashboardFilteredItems());
       state.filters.q = query || "";
       state.filters.start = latest || "";
@@ -4891,6 +4896,7 @@
       state.filters.tone = tone || "";
       state.filters.risk = "";
       state.filters.detail = "";
+      state.filters.company = company ? "1" : "";
       syncFilterInputs();
       render();
       switchPage("monitor");
@@ -4902,6 +4908,10 @@
     }
 
     function openDashboardCategoryArticles(category = "", tone = "") {
+      if (category === "own") {
+        scopeDashboardMonitorFilters({ tone, company: true });
+        return;
+      }
       scopeDashboardMonitorFilters({ category, tone });
     }
 
@@ -4930,6 +4940,7 @@
       state.filters.tone = tone || "";
       state.filters.risk = "";
       state.filters.detail = "";
+      state.filters.company = "";
       syncFilterInputs();
       render();
       switchPage("monitor");
@@ -4938,6 +4949,7 @@
 
     function clearCategoryDetail() {
       state.filters.detail = "";
+      state.filters.company = "";
       applyFilters();
       render();
     }
@@ -4945,6 +4957,14 @@
     function renderFlowFilterBar() {
       const target = document.getElementById("flowFilterBar");
       if (!target) return;
+      if (state.filters.company) {
+        target.classList.add("active");
+        target.innerHTML = `
+          <span>당사언급 조건: 제목·요약·키워드 내 인카 관련 기사</span>
+          <button type="button" onclick="clearCategoryDetail()">조건 해제</button>
+        `;
+        return;
+      }
       if (!state.filters.detail) {
         target.classList.remove("active");
         target.innerHTML = "";
