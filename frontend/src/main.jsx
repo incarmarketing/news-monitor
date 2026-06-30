@@ -7029,14 +7029,18 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   const workflow = findWorkflowHealth(workflowHealth, "negative-watch.yml");
   const latestWorkflow = workflow?.latest || null;
   const latestAt = latestWorkflow?.updatedAt || latestWorkflow?.createdAt || latestRun.scannedAt || "";
+  const latestRunDelay = minutesSince(latestRun.scannedAt);
   const delay = minutesSince(latestAt);
   const failedWorkflow = latestWorkflow && ["failure", "timed_out", "action_required"].includes(latestWorkflow.conclusion);
   const runStatus = String(latestRun.rawStatus || "").toLowerCase();
   const runMessage = String(latestRun.message || "").toLowerCase();
   const normalEmptyScan = runStatus === "scanned" && runMessage.includes("no new negative article");
+  const recentSuccessfulScan = latestRunDelay !== null
+    && latestRunDelay <= 25
+    && (normalEmptyScan || ["ok", "success", "completed", "scanned", "alert_sent"].includes(runStatus));
   const failedRun = runStatus && !["ok", "success", "completed", "scanned", "alert_sent"].includes(runStatus) && !normalEmptyScan;
   let status = "ok";
-  if (failedWorkflow || failedRun) status = "fail";
+  if ((failedWorkflow && !recentSuccessfulScan) || failedRun) status = "fail";
   else if (delay === null) status = workflow?.status === "error" ? "warn" : "pending";
   else if (delay > 45) status = "fail";
   else if (delay > 25) status = "warn";
@@ -8577,6 +8581,7 @@ function splitSummarySentences(value) {
 function isGenericSummaryLine(value) {
   const text = cleanSummaryText(value);
   return (
+    isClassifierTemplateSummaryLine(text) ||
     /키워드 기준으로 수집된 기사입니다/.test(text) ||
     /키워드로 수집됐습니다/.test(text) ||
     /기준 핵심만 요약했습니다/.test(text) ||
@@ -8601,6 +8606,7 @@ function isLowValueAnalysisLine(value = "") {
   const text = cleanSummaryText(value).replace(/[.。!?]+$/g, "").trim();
   if (!text) return true;
   return (
+    isClassifierTemplateSummaryLine(text) ||
     /모니터링 후보/.test(text) ||
     /원문 근거와 키워드 문맥/.test(text) ||
     /원문 근거.*확인/.test(text) ||
@@ -8624,6 +8630,20 @@ function isLowValueAnalysisLine(value = "") {
     /자료로 봅니다/.test(text) ||
     /기사입니다$/.test(text) ||
     /보도입니다$/.test(text)
+  );
+}
+
+function isClassifierTemplateSummaryLine(value = "") {
+  const text = cleanSummaryText(value);
+  return (
+    /경쟁 보험사의 특약이 출시 이후 누적 가입 성과/.test(text) ||
+    /상품 경쟁력과 보장 수요 흐름/.test(text) ||
+    /1200%룰 시행을 앞두고 설계사 영입 경쟁/.test(text) ||
+    /판매수수료 운영 부담이 함께 거론/.test(text) ||
+    /소비자 피해, 불완전판매, 종신보험 판매 관행/.test(text) ||
+    /판매채널 관리 리스크를 확인/.test(text) ||
+    /당사 직접 리스크보다 경쟁사 브랜드 노출/.test(text) ||
+    /보험\/GA\/설계사\/감독 문맥 중심/.test(text)
   );
 }
 
@@ -8823,7 +8843,6 @@ function sourceEvidenceHaystack(item = {}) {
     raw.content,
     raw.body,
     fallbackSummary,
-    item.keyword,
     item.source,
   ].filter(Boolean).join(" "));
 }
@@ -10721,13 +10740,13 @@ function isGeneralSportsNoiseArticle(article = {}) {
 function isGeneralFinanceNoiseArticle(article = {}) {
   const text = sourceEvidenceHaystack(article);
   const hasFinanceNoise = /한양증권|중앙일보|하나은행|은행권|카드사?|롯데카드|신용카드|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융/.test(text);
-  const hasInsuranceGaContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|금감원|금융감독원|금융위|금융위원회/.test(text);
+  const hasInsuranceGaContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|1200%|정착지원금|판매수수료|부당승환|승환계약/.test(text);
   return hasFinanceNoise && !hasInsuranceGaContext;
 }
 
 function hasMaterialInsuranceGaContext(article = {}) {
   const text = sourceEvidenceHaystack(article);
-  return /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|금융소비자|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약/.test(text);
+  return /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약/.test(text);
 }
 
 function isNonInsuranceFinancialRegulatoryArticle(article = {}) {
