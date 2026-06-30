@@ -432,6 +432,9 @@ def load_supabase_articles() -> list[dict]:
                 "category_label": CATEGORY_LABELS.get(category, "기타"),
                 "tone": tone,
                 "tone_label": TONE_LABELS.get(tone, "주의"),
+                "own_mentioned": bool(row.get("own_mentioned")),
+                "negative_target": row.get("negative_target", ""),
+                "classification_reason": row.get("classification_reason", ""),
                 "cluster_size": row.get("cluster_size", 1),
                 "status": row.get("status", "new"),
             }

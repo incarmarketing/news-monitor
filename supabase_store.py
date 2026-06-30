@@ -1234,7 +1234,8 @@ def load_dashboard_articles(limit: int = 50000, page_size: int = 1000) -> list[d
     select = (
         "news_articles?"
         "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
-        "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
+        "keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,"
+        "negative_target,classification_evidence,classification_reason,cluster_size,status"
         "&order=report_date.desc,score.desc"
     )
     for offset in range(0, limit, page_size):

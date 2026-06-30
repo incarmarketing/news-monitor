@@ -3957,7 +3957,16 @@
       return monitoringContextTerms.some(term => text.includes(term));
     }
     const isCompanyMentionArticle = article => {
-      const text = [article.title, article.summary, article.keyword, article.category_label].join(" ");
+      if (article.own_mentioned === true || article.own_mentioned === "true" || article.own_mentioned === 1) return true;
+      const text = [
+        article.title,
+        article.summary,
+        article.description,
+        article.keyword,
+        article.category_label,
+        article.classification_reason,
+        article.negative_target
+      ].join(" ");
       return article.category === "own" || companyMentionTerms.some(term => text.includes(term));
     };
     const articleTimeValue = article => {
@@ -4929,6 +4938,12 @@
       state.filters.company = company ? "1" : "";
       syncFilterInputs();
       render();
+      if (company && state.filtered.length === 0 && (state.filters.start || state.filters.end)) {
+        state.filters.start = "";
+        state.filters.end = "";
+        syncFilterInputs();
+        render();
+      }
       switchPage("monitor");
       setTimeout(() => document.getElementById("articleList")?.scrollIntoView({ behavior:"smooth", block:"start" }), 0);
     }
