@@ -387,6 +387,15 @@
     .metric.negative::before { background:var(--red); }
     .metric.market::before { background:var(--green); }
     .metric.own::before { background:var(--blue); }
+    .metric.is-clickable {
+      cursor:pointer;
+    }
+    .metric.is-clickable:hover,
+    .metric.is-clickable:focus-visible {
+      border-color:#9eb1dc;
+      box-shadow:0 10px 22px rgba(16,24,40,.075);
+      outline:0;
+    }
     .metric-icon {
       width:32px;
       height:32px;
@@ -3100,28 +3109,28 @@
               </div>
               <h2 id="headline">언론 데이터를 불러오는 중입니다.</h2>
               <div class="metric-grid hero-metrics">
-                <div class="metric">
+                <div class="metric is-clickable" role="button" tabindex="0" onclick='openDashboardArticles()' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openDashboardArticles()}'>
                   <div class="metric-icon"><i data-lucide="newspaper"></i></div>
                   <div class="metric-copy">
                     <div class="metric-copy-main"><span>분석기사</span><strong id="metricTotal">0</strong></div>
                     <small id="metricTotalNote">기준일 확인 중 · 핵심 0건</small>
                   </div>
                 </div>
-                <div class="metric own">
+                <div class="metric own is-clickable" role="button" tabindex="0" onclick='openDashboardCategoryArticles("own")' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openDashboardCategoryArticles("own")}'>
                   <div class="metric-icon"><i data-lucide="building-2"></i></div>
                   <div class="metric-copy">
                     <div class="metric-copy-main"><span>당사언급</span><strong id="metricOwn">0</strong></div>
                     <small id="metricOwnNote">당사 부정 0건</small>
                   </div>
                 </div>
-                <div class="metric negative">
+                <div class="metric negative is-clickable" role="button" tabindex="0" onclick='openDashboardToneArticles("negative")' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openDashboardToneArticles("negative")}'>
                   <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
                   <div class="metric-copy">
                     <div class="metric-copy-main"><span>부정기사</span><strong id="metricNegative">0</strong></div>
                     <small id="metricNegativeNote">전체 부정 논조</small>
                   </div>
                 </div>
-                <div class="metric market">
+                <div class="metric market is-clickable" role="button" tabindex="0" onclick='openDashboardMarketArticles()' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();openDashboardMarketArticles()}'>
                   <div class="metric-icon"><i data-lucide="activity"></i></div>
                   <div class="metric-copy">
                     <div class="metric-copy-main"><span>GA/보험사</span><strong id="metricMarket">0</strong></div>
@@ -4871,6 +4880,47 @@
       render();
       switchPage("monitor");
       setTimeout(() => document.getElementById("articleList")?.scrollIntoView({ behavior:"smooth", block:"start" }), 0);
+    }
+
+    function scopeDashboardMonitorFilters({ category = "", tone = "", query = "" } = {}) {
+      const latest = latestDate(dashboardFilteredItems());
+      state.filters.q = query || "";
+      state.filters.start = latest || "";
+      state.filters.end = latest || "";
+      state.filters.category = category || "";
+      state.filters.tone = tone || "";
+      state.filters.risk = "";
+      state.filters.detail = "";
+      syncFilterInputs();
+      render();
+      switchPage("monitor");
+      setTimeout(() => document.getElementById("articleList")?.scrollIntoView({ behavior:"smooth", block:"start" }), 0);
+    }
+
+    function openDashboardArticles() {
+      scopeDashboardMonitorFilters();
+    }
+
+    function openDashboardCategoryArticles(category = "", tone = "") {
+      scopeDashboardMonitorFilters({ category, tone });
+    }
+
+    function openDashboardToneArticles(tone = "") {
+      scopeDashboardMonitorFilters({ tone });
+    }
+
+    function openDashboardMarketArticles() {
+      const latest = latestDate(dashboardFilteredItems());
+      const marketItems = state.articles.filter(article =>
+        (!latest || article.date === latest) && ["competitor", "industry"].includes(article.category)
+      );
+      const firstCategory = marketItems.some(article => article.category === "industry") ? "industry" : "competitor";
+      scopeDashboardMonitorFilters({ category: firstCategory });
+      const bar = document.getElementById("flowFilterBar");
+      if (bar && marketItems.length) {
+        bar.classList.add("active");
+        bar.innerHTML = '<span>GA/보험사 동향은 업계동향과 경쟁사 분류를 함께 확인하세요.</span>';
+      }
     }
 
     function openToneArticles(tone = "") {
