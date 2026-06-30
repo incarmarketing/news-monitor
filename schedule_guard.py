@@ -98,6 +98,10 @@ def begin_period_schedule(now: datetime) -> None:
         github_output("should_run", "false")
         print("Period report slot skipped: not Monday or first day of month.")
         return
+    if period_reports_succeeded(now):
+        github_output("should_run", "false")
+        print("Already completed period report slot in Supabase notification log.")
+        return
     if marker_path.exists():
         github_output("should_run", "false")
         print(f"Already completed period report slot: {marker_path}")
@@ -132,6 +136,9 @@ def begin_manual_or_push(event_name: str) -> None:
         if is_period_dispatch and not period_report_due(now):
             should_run = "false"
             print("Period report dispatch skipped: not Monday or first day of month.")
+        elif is_period_dispatch and not backfill_only and not force_send and period_reports_succeeded(now):
+            should_run = "false"
+            print("Already completed manually dispatched period report in Supabase notification log.")
         elif not backfill_only and not force_send and slot_is_complete(today, manual_slot, marker):
             should_run = "false"
             print(f"Already completed manually dispatched slot: {marker}")
@@ -163,6 +170,38 @@ def due_daily_slots(now: datetime) -> list[str]:
 
 def period_report_due(now: datetime) -> bool:
     return now.isoweekday() == 1 or now.day == 1
+
+
+def due_period_reports(now: datetime) -> list[tuple[str, str]]:
+    reports: list[tuple[str, str]] = []
+    if now.isoweekday() == 1:
+        reports.append(("weekly_report", "주간 언론 동향"))
+    if now.day == 1:
+        reports.append(("monthly_report", "월간 언론 동향"))
+    return reports
+
+
+def period_reports_succeeded(now: datetime) -> bool:
+    due = due_period_reports(now)
+    if not due:
+        return False
+    try:
+        for message_type, title in due:
+            rows = supabase_select(
+                "notification_sends",
+                "select=id"
+                "&channel=eq.slack"
+                f"&message_type=eq.{quote(message_type)}"
+                f"&title=eq.{quote(title)}"
+                "&status=eq.success"
+                "&limit=1",
+            )
+            if not rows:
+                return False
+    except RuntimeError as error:
+        print(f"Supabase period completion check unavailable: {error}")
+        return False
+    return True
 
 
 def slot_is_complete(report_date: str, slot: str, marker_path: Path) -> bool:
