@@ -8247,9 +8247,19 @@ function articlePrimarySummaryTopic(item = {}) {
 function articleEventTopicSignature(item = {}) {
   const text = cleanSummaryText(`${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`);
   if (isOwnSponsoredSportsArticle(item)) return "incar-theheaven-masters";
+  const gaCommissionTopic = gaCommissionRuleEventTopic(text);
+  if (gaCommissionTopic) return gaCommissionTopic;
   const insuranceFraudTopic = insuranceFraudEventTopic(text);
   if (insuranceFraudTopic) return insuranceFraudTopic;
   return "";
+}
+
+function gaCommissionRuleEventTopic(value = "") {
+  const text = cleanSummaryText(value);
+  const hasRuleSignal = /1200\s*%|1200\s*룰|1200\s*퍼센트|초년도\s*수수료|판매수수료|보험\s*판매수수료|수수료\s*(?:등급|순위|공개|공시|규제|개편|지급\s*한도|한도)/i.test(text);
+  const hasGaSalesSignal = /GA|법인보험대리점|보험대리점|보험\s*대리점|보험설계사|설계사|보험\s*영업|보험업계|판매채널|모집채널/i.test(text);
+  const hasPolicySignal = /시행|적용|의무화|공개|공시|등급|순위|다음달|내일부터|D-?\s*1|앞두고|제도|개편|금감원|금융감독원|금융위|금융위원회|금융당국/i.test(text);
+  return hasRuleSignal && hasGaSalesSignal && hasPolicySignal ? "ga-1200-commission-rule" : "";
 }
 
 function insuranceFraudEventTopic(value = "") {
@@ -10409,6 +10419,7 @@ function areRelatedArticleSeeds(a, b) {
 function isStrongEventTopic(topic = "") {
   return [
     "event:incar-theheaven-masters",
+    "event:ga-1200-commission-rule",
     "event:insurance-fraud-traffic-prevention",
     "event:insurance-fraud-ai-medical-claim",
     "event:insurance-fraud-hospital-claims",
@@ -10463,6 +10474,8 @@ function articleTopicSignature(article = {}) {
   const text = normalizeGroupTitle(`${article.title || ""} ${article.summary || article.description || ""}`);
   const includesAll = (terms) => terms.every((term) => text.includes(normalizeGroupTitle(term)));
   if (includesAll(["인카금융", "더헤븐", "마스터즈"])) return "event:incar-theheaven-masters";
+  const gaCommissionTopic = gaCommissionRuleEventTopic(`${article.title || ""} ${article.summary || article.description || ""} ${article.keyword || ""}`);
+  if (gaCommissionTopic) return `event:${gaCommissionTopic}`;
   const insuranceFraudTopic = insuranceFraudEventTopic(text);
   if (insuranceFraudTopic) return `event:${insuranceFraudTopic}`;
   if (text.includes("브랜드평판")) {
