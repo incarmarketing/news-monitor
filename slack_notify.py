@@ -679,7 +679,7 @@ def send_daily() -> None:
     title = daily_title(report)
     message_type = "daily_report"
     log_message_type = notification_message_type(message_type)
-    if not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
+    if not dashboard_send_enabled() and not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
         print(f"Slack daily report already sent: {title}")
         maybe_send_ai_usage_alert(report)
         return
@@ -725,7 +725,7 @@ def send_period(period: str, report_month: str = "") -> None:
     title, link, payload = build_period_payload(period, report_month)
     message_type = f"{period}_report"
     log_message_type = notification_message_type(message_type)
-    if not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
+    if not dashboard_send_enabled() and not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
         print(f"Slack period report already sent: {title}")
         return
     log_dedupe_key = forced_resend_dedupe_key(log_message_type, title)

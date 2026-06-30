@@ -4565,9 +4565,10 @@
     function nextNegativeWatchStart(now = new Date()) {
       const next = new Date(now);
       next.setSeconds(0, 0);
-      const remainder = next.getMinutes() % 5;
-      if (remainder) next.setMinutes(next.getMinutes() + (5 - remainder));
-      if (!remainder && next < now) next.setMinutes(next.getMinutes() + 5);
+      const intervalMinutes = 10;
+      const remainder = next.getMinutes() % intervalMinutes;
+      if (remainder) next.setMinutes(next.getMinutes() + (intervalMinutes - remainder));
+      if (!remainder && next < now) next.setMinutes(next.getMinutes() + intervalMinutes);
       return next;
     }
 
@@ -4575,12 +4576,41 @@
       const now = new Date();
       const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
       const ageMinutes = latestDate ? Math.round((now - latestDate) / 60000) : null;
+      const status = String(latest?.status || "").toLowerCase();
+      const message = String(latest?.message || "").trim();
       if (!latestDate) {
         return {
           tone: "warn",
           title: "감시 대기",
           summary: "실행 로그 없음",
           nextRun: formatDateTime(nextNegativeWatchStart(now)),
+        };
+      }
+      if (status === "success" || status === "scanned") {
+        return {
+          tone: "ok",
+          title: "정상",
+          summary: message === "no new negative article" ? "신규 부정기사 없음" : (message || "감시 완료"),
+          nextRun: "10분 주기",
+          ageMinutes,
+        };
+      }
+      if (status === "alert_sent") {
+        return {
+          tone: "warn",
+          title: "알림 발송",
+          summary: message || "신규 부정기사 감지",
+          nextRun: "10분 주기",
+          ageMinutes,
+        };
+      }
+      if (status === "alert_failed" || status === "failed") {
+        return {
+          tone: "error",
+          title: "확인 필요",
+          summary: message || "최근 감시 실패",
+          nextRun: "즉시 확인 필요",
+          ageMinutes,
         };
       }
       if (ageMinutes !== null && ageMinutes > 35) {
@@ -4605,7 +4635,7 @@
         tone: "ok",
         title: "정상 감시",
         summary: "24시간 감시 중",
-        nextRun: "5분 이내",
+        nextRun: "10분 주기",
         ageMinutes,
       };
     }
@@ -4623,8 +4653,8 @@
         const riskText = riskBadge.querySelector("strong");
         if (riskText) riskText.textContent = risk;
       }
-      const expectedMinutes = 5;
-      const minutesBack = Number(latest?.minutes_back || 5);
+      const expectedMinutes = Number(latest?.minutes_back || 10);
+      const minutesBack = Number(latest?.minutes_back || 10);
       const latestDate = watchDate(latest?.scanned_at || latest?.created_at);
       const latestLabel = latestDate ? formatDateTime(latestDate) : "최근 수행 없음";
       const checkLabel = latest ? `최근 ${minutesBack.toLocaleString("ko-KR")}분 검사 완료` : "최근 수행 기록 대기";
@@ -4664,7 +4694,7 @@
     function renderNotificationHistory() {
       const target = document.getElementById("notificationHistory");
       if (!target) return;
-      const collapsedCount = 2;
+      const collapsedCount = 3;
       const rows = state.notifications.slice(0, collapsedCount);
       target.innerHTML = rows.map((item, index) => {
         const ok = item.status === "success";
@@ -4684,7 +4714,7 @@
     renderNotificationHistory = function() {
       renderNotificationHistoryBase();
       const target = document.getElementById("notificationHistory");
-      const collapsedCount = 2;
+      const collapsedCount = 3;
       if (!target || state.notifications.length <= collapsedCount) return;
       target.insertAdjacentHTML("beforeend", `
         <button class="notification-more" onclick="openNotificationListModal()">
