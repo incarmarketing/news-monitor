@@ -897,7 +897,7 @@ function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring 
         <p className="terminal-command-meta">{data?.scope || "전체"} · 마지막 갱신 {latest}</p>
       </div>
       <div className="terminal-metrics">
-        <button type="button" onClick={() => onOpenMonitoring?.({ category: "당사" })}>
+        <button type="button" onClick={() => onOpenMonitoring?.({ ownOnly: true })}>
           <span>Risk</span>
           <b>{risk}</b>
           <em>당사 기준</em>
@@ -912,7 +912,7 @@ function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring 
           <b>{caution.toLocaleString("ko-KR")}</b>
           <em>분리 관찰</em>
         </button>
-        <button type="button" onClick={() => onOpenMonitoring?.({ category: "당사" })}>
+        <button type="button" onClick={() => onOpenMonitoring?.({ ownOnly: true })}>
           <span>Own</span>
           <b>{ownMentions.toLocaleString("ko-KR")}</b>
           <em>당사 언급</em>
@@ -1032,6 +1032,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   const [tone, setTone] = useState("all");
   const [category, setCategory] = useState("all");
   const [source, setSource] = useState("all");
+  const [ownOnly, setOwnOnly] = useState(false);
   const [viewMode, setViewMode] = useState("related");
   const [visible, setVisible] = useState(30);
   const [startDateInput, setStartDateInput] = useState("");
@@ -1055,6 +1056,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
     setTone(monitoringPreset.tone || "all");
     setCategory(monitoringPreset.category || "all");
     setSource(monitoringPreset.source || "all");
+    setOwnOnly(Boolean(monitoringPreset.ownOnly));
     const range = resolveMonitoringDateRange(deferredRegularArticles, monitoringPreset);
     if (range.start || range.end) {
       setStartDateInput(range.start);
@@ -1083,10 +1085,11 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
         (!endDate || !articleDate || articleDate <= endDate) &&
         (tone === "all" || article.tone === tone) &&
         (category === "all" || article.category === category) &&
+        (!ownOnly || isOwnArticle(article)) &&
         (source === "all" || article.source === source)
       );
     });
-  }, [deferredRegularArticles, category, endDate, monitoringPreset, query, source, startDate, tone]);
+  }, [deferredRegularArticles, category, endDate, monitoringPreset, ownOnly, query, source, startDate, tone]);
   const applyDateFilter = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
@@ -1180,6 +1183,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
             setTone("all");
             setCategory("all");
             setSource("all");
+            setOwnOnly(false);
             setViewMode("related");
             setStartDateInput(latestDate);
             setEndDateInput(latestDate);
@@ -6480,22 +6484,45 @@ function ArticleDecisionNote({ item, hideClippingLabel = false }) {
   const context = item?.aiContext || {};
   const reason = cleanDecisionNoteLine(item?.clippingReason || context.reason || "");
   const evidence = cleanDecisionNoteLine(context.evidence || "");
+  const ownBasis = ownMentionBasis(item);
   const confidence = Number(context.confidence || 0);
   const chips = [];
   if (item?.clippingRecommended && !hideClippingLabel) chips.push("클리핑 후보");
+  if (isOwnArticle(item)) chips.push("당사언급");
   if (context.negativeTarget && context.negativeTarget !== "none") chips.push(`대상 ${negativeTargetLabel(context.negativeTarget)}`);
   if (confidence > 0) chips.push(`신뢰도 ${Math.round(confidence * 100)}%`);
-  if (!reason && !evidence && !chips.length) return null;
+  if (!reason && !evidence && !ownBasis && !chips.length) return null;
   return (
     <div className={item?.clippingRecommended ? "article-decision-note recommended" : "article-decision-note"}>
       <div>
         <b>판단 근거</b>
         {chips.map((chip) => <span key={chip}>{chip}</span>)}
       </div>
-      {reason && <p>{reason}</p>}
+      {(reason || ownBasis) && <p>{reason || ownBasis}</p>}
       {evidence && <em>{evidence}</em>}
     </div>
   );
+}
+
+function ownMentionBasis(item = {}) {
+  if (!item || !isOwnArticle(item)) return "";
+  const raw = item.raw && typeof item.raw === "object" ? item.raw : {};
+  const text = [
+    item.title,
+    item.summary,
+    item.description,
+    raw.title,
+    raw.summary,
+    raw.description,
+    raw.content,
+    raw.body,
+  ].map((value) => String(value || "")).join(" ");
+  if (/인카금융서비스/.test(text)) return "제목 또는 본문에 ‘인카금융서비스’가 직접 포함되어 당사언급으로 분류했습니다.";
+  if (/인카금융/.test(text)) return "제목 또는 본문에 ‘인카금융’이 포함되어 당사언급으로 분류했습니다.";
+  if (/인카/.test(text)) return "제목 또는 본문에 인카 관련 표현이 포함되어 당사언급으로 분류했습니다.";
+  if (/인카/.test(String(item.keyword || ""))) return `검색 키워드 ‘${item.keyword}’ 기준으로 수집됐고 DB 당사언급 판정값으로 포함했습니다.`;
+  if (item?.ownMentioned === true || item?.aiContext?.ownMentioned === true) return "DB의 당사언급 판정값으로 포함했습니다. 원문에서 직접 언급 위치를 추가 확인하세요.";
+  return "";
 }
 
 function negativeTargetLabel(value = "") {
@@ -10627,6 +10654,7 @@ function isOwnArticle(article) {
   if (isForeignMacroInsuranceIncidentalNoiseArticle(article)) return false;
   if (isExternalGeopoliticalShippingNoiseArticle(article)) return false;
   if (isOwnSponsoredSportsNoiseArticle(article)) return false;
+  if (article?.ownMentioned === true || article?.aiContext?.ownMentioned === true) return true;
   return hasOwnArticleEvidence(article);
 }
 
