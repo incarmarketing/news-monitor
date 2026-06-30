@@ -698,6 +698,18 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     result = normalized_ai_context(article, context)
     rule_category = article.get("_category") or categorize(article)
     rule_tone = article.get("_tone") or analyze_tone(article)
+    own_in_title = has_own_name_in_title(article)
+
+    def force_own_direct_negative_context() -> None:
+        result["category"] = "own"
+        result["tone"] = "negative"
+        result["own_mentioned"] = True
+        result["negative_target"] = "own"
+        result["clipping_recommended"] = True
+        if not result.get("evidence"):
+            result["evidence"] = compact_evidence_sentence(article_summary_text(article), 120)
+        if not result.get("clipping_reason"):
+            result["clipping_reason"] = "당사 직접 리스크로 사실관계와 대응 필요성을 우선 확인할 기사입니다."
 
     if is_external_insurance_noise_article(article):
         result["category"] = "other"
@@ -730,10 +742,12 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
 
     if is_own_article(article):
         result["own_mentioned"] = True
-        if result["category"] in {"other", "exclude"}:
+        if own_in_title and result["category"] not in {"sponsorship"}:
+            result["category"] = "own"
+        elif result["category"] in {"other", "exclude"}:
             result["category"] = "own"
 
-    if is_competitor_brand_reputation_against_own(article):
+    if is_competitor_brand_reputation_against_own(article) and not own_in_title:
         result["category"] = "competitor"
         result["tone"] = "caution"
         result["negative_target"] = "none"
@@ -750,6 +764,9 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["tone"] = "neutral"
         result["negative_target"] = "none"
 
+    if is_own_direct_negative_article(article):
+        force_own_direct_negative_context()
+
     if is_relief_support_article(article):
         result["tone"] = "positive" if is_own_positive_focus_article(article) else "neutral"
         result["negative_target"] = "none"
@@ -762,6 +779,9 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["tone"] = "caution"
         if result["negative_target"] == "own":
             result["negative_target"] = "none"
+
+    if is_own_direct_negative_article(article):
+        force_own_direct_negative_context()
 
     if result["tone"] == "positive" and result["category"] != "own":
         result["tone"] = "neutral"
@@ -928,6 +948,20 @@ def contains_own_name(text: object) -> bool:
     text = str(text or "")
     compact = re.sub(r"\s+", "", text)
     return any(name in text or name in compact for name in OWN_NAMES)
+
+
+def has_own_name_in_title(article: dict) -> bool:
+    raw = article.get("_raw") if isinstance(article.get("_raw"), dict) else {}
+    title_text = " ".join(str(value or "") for value in (article.get("title"), raw.get("title")))
+    return contains_own_name(title_text)
+
+
+def compact_evidence_sentence(value: object, limit: int = 120) -> str:
+    text = clean_summary_fragment(value)
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)[0] or text[:limit]
+    return clean_summary_fragment(cut)
 
 
 def contains_competitor_word(text: str) -> bool:
@@ -2105,13 +2139,34 @@ GENERIC_SUMMARY_PHRASES = [
     "분석 대상에서 제외한 노이즈성 기사",
     "홍보 활용 가능성을 검토",
     "소비자 피해, 제재, 사칭, 법적 분쟁",
+    "경쟁사가 GA 브랜드평판 1위",
+    "브랜드평판 순위 변화와 경쟁사 노출",
+    "경쟁 보험사의 특약이 출시 이후",
+    "상품 경쟁력과 보장 수요 흐름",
+    "손해보험사 브랜드평판 순위 변화",
+    "직접 리스크보다 경쟁사 브랜드 노출",
+    "1200%룰 시행을 앞두고",
+    "판매채널 관리 리스크",
+    "주가 판단용으로는",
+    "정책·감독 방향성",
+    "정책·감독 이슈로 영업 환경",
+    "보험 관련 사고·사기 이슈로 소비자 신뢰",
 ]
 
 
 def build_quality_summary(article: dict) -> str:
     """Build a concise, non-generic summary for dashboard/report cards."""
+    raw = article.get("_raw") if isinstance(article.get("_raw"), dict) else {}
     title = clean_summary_fragment(article.get("title", ""))
-    body = "" if is_external_insurance_noise_article(article) else clean_summary_fragment(article.get("description", "") or article.get("summary", ""))
+    body_source = (
+        article.get("description")
+        or raw.get("description")
+        or raw.get("summary")
+        or article.get("content")
+        or raw.get("content")
+        or article.get("summary")
+    )
+    body = "" if is_external_insurance_noise_article(article) else clean_summary_fragment(body_source)
     contextual = [
         sentence
         for sentence in build_contextual_summary_sentences(article)
@@ -2128,7 +2183,7 @@ def build_quality_summary(article: dict) -> str:
         )
     ]
     fallback = "" if is_unsupported_own_reference(article, title) else headline_based_summary(title)
-    candidates = [*contextual, *sentences] if len(contextual) >= 2 else [*contextual, *sentences, fallback]
+    candidates = [*sentences, fallback] if sentences else [fallback, *contextual]
     lines = unique_quality_sentences(candidates)
     return " ".join(ensure_summary_sentence(sentence) for sentence in lines[:3])
 
