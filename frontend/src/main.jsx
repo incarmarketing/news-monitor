@@ -785,7 +785,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   const actionsHealth = operationsHealth.items.find((item) => item.title === "GitHub Actions");
   const historyHealth = operationsHealth.items.find((item) => item.title === "Supabase 기록");
   return (
-    <main className="workspace">
+    <main className="workspace dashboard-workspace">
       <TerminalCommandBar
         data={data}
         summary={summary}
@@ -987,7 +987,7 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
                 <span>관련 {Number(issue.relatedCount || 1).toLocaleString("ko-KR")}건</span>
                 <span>매체 {Number(issue.relatedSourceCount || 1).toLocaleString("ko-KR")}곳</span>
               </div>
-              <IssueGroupPreview issue={issue} />
+              <IssueGroupPreview issue={issue} compact />
             </div>
             <div className="queue-actions">
               <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
@@ -1067,14 +1067,22 @@ function normalizeMajorIssueGroup(issue = {}) {
   };
 }
 
-function IssueGroupPreview({ issue }) {
+function IssueGroupPreview({ issue, compact = false }) {
   const members = (Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue])
-    .map(normalizeArticleDisplay)
-    .slice(0, 3);
+    .map(normalizeArticleDisplay);
   if (members.length <= 1) return null;
+  if (compact) {
+    const sources = unique(members.map((member) => member.source).filter(Boolean));
+    return (
+      <div className="queue-related-summary" aria-label="묶음 기사 요약">
+        <span>관련 {members.length.toLocaleString("ko-KR")}건</span>
+        <span>매체 {sources.length.toLocaleString("ko-KR")}곳</span>
+      </div>
+    );
+  }
   return (
     <div className="queue-related-preview" aria-label="관련 기사 미리보기">
-      {members.map((member, idx) => (
+      {members.slice(0, 3).map((member, idx) => (
         <span key={`${member.link || member.title}-${idx}`}>
           <b>{member.source || "언론사 확인"}</b>
           <em>{shortenTitle(member.title, 44)}</em>
