@@ -42,6 +42,16 @@ export default defineConfig({
   build: {
     target: "es2018",
     cssTarget: "chrome61",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("recharts") || id.includes("d3-") || id.includes("victory-vendor")) return "vendor-charts";
+          if (id.includes("lucide-react") || id.includes("lucide")) return "vendor-icons";
+          return "vendor";
+        },
+      },
+    },
   },
   plugins: [react(), serveProjectData()],
 });
