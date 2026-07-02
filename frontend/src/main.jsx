@@ -74,13 +74,40 @@ import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
 import "./styles.css";
 import "./report.css";
 
-const GACompetitorIntel = React.lazy(() => import("./GACompetitorIntel"));
-const Management = React.lazy(() => import("./Management"));
-const MediaAnalysis = React.lazy(() => import("./MediaAnalysis"));
-const PressReleaseStudio = React.lazy(() => import("./PressReleaseStudio"));
-const Reports = React.lazy(() => import("./Reports"));
-const RiskCenterV2 = React.lazy(() => import("./RiskCenterV2"));
-const StockMarketDashboard = React.lazy(() => import("./StockMarketDashboard"));
+const loadGACompetitorIntel = () => import("./GACompetitorIntel");
+const loadManagement = () => import("./Management");
+const loadMediaAnalysis = () => import("./MediaAnalysis");
+const loadPressReleaseStudio = () => import("./PressReleaseStudio");
+const loadReports = () => import("./Reports");
+const loadRiskCenterV2 = () => import("./RiskCenterV2");
+const loadStockMarketDashboard = () => import("./StockMarketDashboard");
+
+const GACompetitorIntel = React.lazy(loadGACompetitorIntel);
+const Management = React.lazy(loadManagement);
+const MediaAnalysis = React.lazy(loadMediaAnalysis);
+const PressReleaseStudio = React.lazy(loadPressReleaseStudio);
+const Reports = React.lazy(loadReports);
+const RiskCenterV2 = React.lazy(loadRiskCenterV2);
+const StockMarketDashboard = React.lazy(loadStockMarketDashboard);
+
+const featureModuleLoaders = {
+  media: loadMediaAnalysis,
+  reports: loadReports,
+  risk: loadRiskCenterV2,
+  management: loadManagement,
+  stocks: loadStockMarketDashboard,
+  gaIntel: loadGACompetitorIntel,
+  pressRelease: loadPressReleaseStudio,
+};
+
+function preloadFeatureSection(sectionId) {
+  const loader = featureModuleLoaders[sectionId];
+  if (typeof loader === "function") loader();
+}
+
+function preloadFeatureSections(sectionIds = []) {
+  sectionIds.forEach(preloadFeatureSection);
+}
 
 const navIcons = {
   overview: LayoutDashboard,
@@ -202,6 +229,25 @@ function App() {
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
   const workTimers = useRef([]);
   const refreshGeneration = useRef(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const preloadCoreScreens = () => preloadFeatureSections([
+      "media",
+      "reports",
+      "risk",
+      "stocks",
+      "gaIntel",
+      "management",
+      "pressRelease",
+    ]);
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(preloadCoreScreens, { timeout: 1800 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+    const timerId = window.setTimeout(preloadCoreScreens, 700);
+    return () => window.clearTimeout(timerId);
+  }, []);
 
   const clearWorkTimers = () => {
     workTimers.current.forEach((timer) => window.clearTimeout(timer));
@@ -577,6 +623,8 @@ function App() {
                   key={item.id}
                   className={activeSection === item.id ? "active" : ""}
                   data-section={item.id}
+                  onMouseEnter={() => preloadFeatureSection(item.id)}
+                  onFocus={() => preloadFeatureSection(item.id)}
                   onClick={() => setActiveSection(item.id)}
                 >
                   <Icon />
