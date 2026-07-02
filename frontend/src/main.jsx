@@ -71,6 +71,7 @@ import {
   verifyDashboardLogin,
 } from "./liveData";
 import { A4BarList, A4MetricTable, A4Panel, A4PressRows } from "./reportComponents";
+import { buildA4ReportStats, publicationMeta, reportPurposeConfig } from "./reportModel";
 import "./styles.css";
 import "./report.css";
 
@@ -4820,7 +4821,7 @@ function A4ReportSheet({
 }) {
   const summary = data.summary || {};
   const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
-  const stats = buildA4ReportStats(summary, articles);
+  const stats = buildA4ReportStats(summary, articles, { isOwnArticle });
   const pressRows = (data.pressInfluence?.length ? data.pressInfluence : buildPressInfluence(articles))
     .filter((item) => !isOfficialRegulatorSource(item.source))
     .slice(0, 6);
@@ -4867,33 +4868,6 @@ function A4ReportSheet({
   );
 }
 
-function reportPurposeConfig(period = "daily") {
-  const configs = {
-    daily: {
-      focus: "즉시 확인 기사 중심",
-      issueTitle: "즉시 확인 기사",
-      issueMeta: "원문 이동",
-      categoryTitle: "오늘 분류",
-      pressTitle: "오늘 노출 언론사",
-    },
-    weekly: {
-      focus: "반복 이슈와 확산 흐름 중심",
-      issueTitle: "주간 반복 이슈",
-      issueMeta: "묶음 대표 기사",
-      categoryTitle: "주간 분류 흐름",
-      pressTitle: "주간 노출 언론사",
-    },
-    monthly: {
-      focus: "누적 평판·정책·시장 흐름 중심",
-      issueTitle: "월간 핵심 이슈",
-      issueMeta: "누적 대표 기사",
-      categoryTitle: "월간 분류 비중",
-      pressTitle: "월간 노출 언론사",
-    },
-  };
-  return configs[period] || configs.daily;
-}
-
 function A4PriorityArticleCards({ groups = [], period = "daily" }) {
   const limit = period === "daily" ? 5 : 6;
   const cards = [];
@@ -4938,18 +4912,6 @@ function A4PriorityArticleCards({ groups = [], period = "daily" }) {
       })}
     </div>
   );
-}
-
-function buildA4ReportStats(summary = {}, articles = []) {
-  const riskValue = String(summary.risk || "LOW").toUpperCase();
-  const riskTone = riskValue === "HIGH" ? "negative" : riskValue === "MEDIUM" ? "caution" : "positive";
-  return [
-    { label: "리스크", value: riskValue, detail: "당사 기준", tone: riskTone, preset: {} },
-    { label: "분석", value: Number(summary.analyzed || articles.length || 0).toLocaleString("ko-KR"), detail: "기간 기사", preset: {} },
-    { label: "당사", value: Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0).toLocaleString("ko-KR"), detail: "직접 언급", preset: { category: "당사" } },
-    { label: "주의", value: Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0).toLocaleString("ko-KR"), detail: "관찰 신호", tone: "caution", preset: { tone: "주의" } },
-    { label: "부정", value: Number(summary.ownNegative || articles.filter((item) => item.tone === "부정" && isOwnArticle(item)).length || 0).toLocaleString("ko-KR"), detail: "즉시 확인", tone: "negative", preset: { tone: "부정" } },
-  ];
 }
 
 function buildA4IssueGroups(lead, issues = [], articles = [], period = "daily") {
@@ -5038,16 +5000,6 @@ function dedupeA4Issues(items = []) {
   return result;
 }
 
-function buildA4ToneLedger(articles = []) {
-  const count = (tone) => articles.filter((item) => item.tone === tone).length;
-  return [
-    { label: "긍정", value: count("긍정").toLocaleString("ko-KR"), tone: "positive" },
-    { label: "중립", value: count("중립").toLocaleString("ko-KR"), tone: "neutral" },
-    { label: "주의", value: count("주의").toLocaleString("ko-KR"), tone: "caution" },
-    { label: "부정", value: count("부정").toLocaleString("ko-KR"), tone: "negative" },
-  ];
-}
-
 function a4TopicLabel(article = {}) {
   const topic = articlePrimarySummaryTopic(article);
   if (topic === "own-performance") return "당사 성과성 보도";
@@ -5068,32 +5020,6 @@ function formatA4ArticleMeta(item = {}, fallback = "-") {
   const dateTime = [item.date, item.time].filter(Boolean).join(" ") || item.publishedAt || fallback;
   const related = Number(item.relatedCount || item.clusterSize || 1) > 1 ? ` · 관련 ${Number(item.relatedCount || item.clusterSize).toLocaleString("ko-KR")}건` : "";
   return `${source} · ${dateTime}${related}`;
-}
-
-function publicationMeta(period, data) {
-  const scope = data.periodScope || {};
-  const date = scope.scopeLabel || data.scope || data.generatedAt || "";
-  const meta = {
-    daily: {
-      kicker: "일간 브리프",
-      title: "일일 언론 동향 보고서",
-      subtitle: "당일 수집 기사 기준 핵심 이슈와 즉시 확인할 리스크를 정리합니다.",
-      issue: `${date} · 당일 집계`,
-    },
-    weekly: {
-      kicker: "주간 리서치",
-      title: "주간 언론 동향 리서치 보고서",
-      subtitle: "해당 주차의 반복 노출, 논조 변화, 관리 이슈를 리서치 형식으로 정리합니다.",
-      issue: `${date} · 주차 집계`,
-    },
-    monthly: {
-      kicker: "월간 리서치",
-      title: "월간 언론 동향 리서치 보고서",
-      subtitle: "집계월 기준 누적 기사, 언론사별 보도량, 키워드 흐름을 리서치 형식으로 정리합니다.",
-      issue: `${scope.month || date} · 집계월`,
-    },
-  };
-  return meta[period] || meta.daily;
 }
 
 function buildReportLead(period, data, articles, issues) {
@@ -7082,7 +7008,7 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   const failedWorkflow = latestWorkflow && ["failure", "timed_out", "action_required"].includes(latestWorkflow.conclusion);
   const runStatus = String(latestRun.rawStatus || "").toLowerCase();
   const runMessage = String(latestRun.message || "").toLowerCase();
-  const normalEmptyScan = runStatus === "scanned" && runMessage.includes("no new negative article");
+  const normalEmptyScan = runMessage.includes("no new negative article");
   const recentSuccessfulScan = latestRunDelay !== null
     && latestRunDelay <= 25
     && (normalEmptyScan || ["ok", "success", "completed", "scanned", "alert_sent"].includes(runStatus));
@@ -7100,7 +7026,7 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
     ? "최근 실행 확인 대기"
     : `${formatRelativeMinutes(delay)} 전 실행`;
   const workflowText = latestWorkflow?.status === "in_progress" ? "실행 중" : formatWorkflowConclusion(latestWorkflow);
-  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 5분";
+  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 10분";
   return {
     title: "부정기사 감시",
     icon: Radar,
@@ -7173,10 +7099,13 @@ function buildNotificationHealth(notifications = []) {
   const latest = slackRows[0];
   const latestAge = latest ? minutesSince(latest.sentAt) : null;
   const latestScoped = scoped[0] || latest;
+  const latestSuccess = latest && isNotificationSuccess(latest);
   const latestFailed = latestScoped && !isNotificationSuccess(latestScoped);
-  const status = !scoped.length ? "warn" : latestFailed ? "fail" : latestAge !== null && latestAge > 24 * 60 ? "warn" : "ok";
+  const status = !scoped.length ? "warn" : latestSuccess ? "ok" : latestFailed ? "fail" : latestAge !== null && latestAge > 24 * 60 ? "warn" : "ok";
   const detail = !scoped.length
     ? "슬랙 발송 이력 없음"
+    : latestSuccess
+      ? failed.length ? `최근 발송 정상 · 이전 실패 ${failed.length}` : "최근 발송 정상"
     : latestFailed
       ? `최근 발송 실패${failed.length > 1 ? ` · 실패 ${failed.length}` : ""}`
       : "최근 발송 정상";

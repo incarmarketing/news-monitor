@@ -10,7 +10,7 @@ import requests
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
-from kakao_report_send import KAKAO_API, DEFAULT_LINK, refresh_access_token
+from kakao_report_send import KAKAO_API, DEFAULT_REPORT_URL, refresh_access_token
 
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
@@ -61,10 +61,10 @@ def send_feed_to_me(access_token: str, image_url: str, title: str, description: 
             "image_url": image_url,
             "image_width": 900,
             "image_height": 1400,
-            "link": {"web_url": DEFAULT_LINK, "mobile_web_url": DEFAULT_LINK},
+            "link": {"web_url": DEFAULT_REPORT_URL, "mobile_web_url": DEFAULT_REPORT_URL},
         },
         "buttons": [
-            {"title": "관련 뉴스 보기", "link": {"web_url": DEFAULT_LINK, "mobile_web_url": DEFAULT_LINK}},
+            {"title": "관련 뉴스 보기", "link": {"web_url": DEFAULT_REPORT_URL, "mobile_web_url": DEFAULT_REPORT_URL}},
         ],
     }
     response = requests.post(
