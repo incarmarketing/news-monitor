@@ -4247,6 +4247,27 @@ function issueMemberKey(article = {}) {
   return `title:${article.date || ""}:${normalizeGroupTitle(article.title || "").slice(0, 90)}`;
 }
 
+function reportFrontScore(item = {}) {
+  const own = isOwnArticle(item);
+  const sponsorship = isOwnSponsoredSportsArticle(item) || ["브랜드/스폰서십", "스폰서십"].includes(item.category);
+  const text = `${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`;
+  let score = 0;
+  if (own && !sponsorship) score += 1000;
+  if (own && !sponsorship && item.tone === "부정") score += 900;
+  if (own && !sponsorship && item.tone === "긍정") score += 520;
+  if (own && !sponsorship && item.tone === "중립") score += 360;
+  if (own && !sponsorship && item.tone === "주의") score += 240;
+  if (sponsorship) score += isOwnSponsoredSportsBrandArticle(item) ? 170 : 45;
+  if (/우수인증|최다|성과|수상|배출|선정|1위|성장|매출|인증설계사/.test(text)) score += own ? 180 : 40;
+  if (/꺾기|불법|제재|피해|사기|개인정보|금융사고/.test(text)) score += own ? 220 : 80;
+  if (item.category === "정책/규제") score += 45;
+  if (item.tone === "주의") score += 35;
+  if (item.tone === "부정") score += 80;
+  if (item.tone === "긍정") score += 70;
+  if (/브랜드평판|스포츠|골프|행사|문화센터|마이데이터|평판/.test(text) && !own) score -= 300;
+  return score + Math.min(Number(item.score || 0), 100);
+}
+
 function mediaIssueScore(item = {}, period = "monthly") {
   const relatedBoost = Math.min(Number(item.relatedCount || item.clusterSize || 1), 8) * (period === "daily" ? 10 : 18);
   const ownBoost = isOwnArticle(item) ? 420 : 0;
