@@ -220,6 +220,8 @@ function workflowFinishedAfter(workflowHealth = {}, workflowId = "news-briefing.
 function App() {
   const initialRoute = useMemo(() => readInitialRoute(), []);
   const [activeSection, setActiveSection] = useState(initialRoute.section);
+  const [requestedSection, setRequestedSection] = useState(initialRoute.section);
+  const [isRoutePending, startRouteTransition] = useTransition();
   const [period, setPeriod] = useState("daily");
   const [operations, setOperations] = useState({ status: "loading", message: "연결 확인 중", articles: [] });
   const [loginOpen, setLoginOpen] = useState(false);
@@ -229,6 +231,14 @@ function App() {
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
   const workTimers = useRef([]);
   const refreshGeneration = useRef(0);
+
+  const switchSection = (sectionId) => {
+    setRequestedSection(sectionId);
+    preloadFeatureSection(sectionId);
+    startRouteTransition(() => {
+      setActiveSection(sectionId);
+    });
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -406,6 +416,7 @@ function App() {
     const query = window.matchMedia("(max-width: 1240px)");
     const guardReportsOnMobile = () => {
       if (query.matches && activeSection === "reports") {
+        setRequestedSection("overview");
         setActiveSection("overview");
       }
     };
@@ -461,7 +472,7 @@ function App() {
 
   const openMonitoring = (preset = {}) => {
     setMonitoringPreset({ period, ...preset, stamp: Date.now() });
-    setActiveSection("monitoring");
+    switchSection("monitoring");
   };
 
   const handleClassificationFeedbackSaved = async (result, article, correction) => {
@@ -609,9 +620,14 @@ function App() {
   }[activeSection] || Overview;
 
   return (
-    <div className="app-shell">
+    <div className={isRoutePending ? "app-shell route-pending" : "app-shell"}>
       <aside className="side-nav" aria-label="주요 메뉴">
-        <Header working={working} workLabel={workLabel} />
+        <Header
+          working={working || isRoutePending}
+          workLabel={isRoutePending && requestedSection !== activeSection
+            ? `${navItemMap.get(requestedSection)?.label || "화면"} 준비 중`
+            : workLabel}
+        />
         {navSections.map((section) => (
           <div className="side-group" key={section.title}>
             <div className="side-group-title">{section.title}</div>
@@ -621,11 +637,11 @@ function App() {
                 <button
                   type="button"
                   key={item.id}
-                  className={activeSection === item.id ? "active" : ""}
+                  className={requestedSection === item.id ? "active" : ""}
                   data-section={item.id}
                   onMouseEnter={() => preloadFeatureSection(item.id)}
                   onFocus={() => preloadFeatureSection(item.id)}
-                  onClick={() => setActiveSection(item.id)}
+                  onClick={() => switchSection(item.id)}
                 >
                   <Icon />
                   <span>{item.label}</span>
@@ -661,7 +677,7 @@ function App() {
           onFeedbackSaved={handleClassificationFeedbackSaved}
           onScrapSaved={handleArticleScrapSaved}
           onScrapAnalysisSaved={handleScrapAnalysisSaved}
-          setActiveSection={setActiveSection}
+          setActiveSection={switchSection}
           monitoringPreset={monitoringPreset}
           onOpenMonitoring={openMonitoring}
           helpers={dashboardHelpers}
