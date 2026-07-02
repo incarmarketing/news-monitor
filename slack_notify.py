@@ -144,11 +144,11 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
     headers = [
         K["risk"],
         K["analyzed_short"],
-        K["negative_short"],
         K["positive_short"],
         K["neutral_short"],
+        K["negative_short"],
     ]
-    values = [risk, analyzed, own_negative, positive, neutral]
+    values = [risk, analyzed, positive, neutral, own_negative]
     return {
         "type": "table",
         "column_settings": [{"align": "center"} for _ in headers],

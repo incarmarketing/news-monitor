@@ -4905,20 +4905,6 @@ function A4MetricTable({ stats = [], onOpenMonitoring }) {
   );
 }
 
-function A4MetricStrip({ stats = [], onOpenMonitoring }) {
-  return (
-    <div className="a4-metric-strip">
-      {stats.map((item) => (
-        <button key={item.label} type="button" className={item.tone || ""} onClick={() => onOpenMonitoring?.(item.preset || {})}>
-          <span>{item.label}</span>
-          <b>{item.value}</b>
-          <em>{item.detail}</em>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function A4Panel({ title, meta, children }) {
   return (
     <section className="a4-panel">
@@ -4928,57 +4914,6 @@ function A4Panel({ title, meta, children }) {
       </div>
       {children}
     </section>
-  );
-}
-
-function A4IssueRow({ issue, compact = false, rank = 1 }) {
-  const lines = compact ? [] : buildVisibleArticleSummaryLines(issue).slice(0, 1);
-  return (
-    <article className={compact ? "a4-issue-row compact" : "a4-issue-row"}>
-      <span className="a4-issue-index">{String(rank).padStart(2, "0")}</span>
-      <div className="a4-issue-content">
-        <div className="a4-issue-meta">
-          <Chip tone={issue.tone}>{issue.tone}</Chip>
-          <Chip>{issue.category || "분류"}</Chip>
-          <span>{formatA4ArticleMeta(issue)}</span>
-        </div>
-        <h4>{issue.title}</h4>
-        {lines.length > 0 && (
-          <ul className="summary-lines dense">
-            {lines.map((line) => <li key={line}>{line}</li>)}
-          </ul>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function A4IssueBuckets({ groups = [], period = "daily" }) {
-  const compact = true;
-  return (
-    <div className="a4-issue-buckets">
-      {groups.map((group) => (
-        <section key={group.key} className={`a4-issue-bucket ${group.key}`}>
-          <header className="a4-issue-bucket-head">
-            <div>
-              <b>{group.title}</b>
-              <span>{group.description}</span>
-            </div>
-            <em>{Number(group.total || 0).toLocaleString("ko-KR")}건</em>
-          </header>
-          <div className="a4-issue-list bucketed">
-            {group.items.length ? group.items.map((issue, index) => (
-              <A4IssueRow
-                key={`${group.key}-${issue.source}-${issue.title}-${issue.time || issue.date}-${index}`}
-                issue={issue}
-                compact={compact}
-                rank={index + 1}
-              />
-            )) : <p className="a4-empty">{group.emptyText}</p>}
-          </div>
-        </section>
-      ))}
-    </div>
   );
 }
 
@@ -5028,32 +4963,6 @@ function A4PriorityArticleCards({ groups = [], period = "daily" }) {
   );
 }
 
-function A4ToneMini({ rows = [] }) {
-  const visibleRows = rows.slice(-8);
-  const max = Math.max(1, ...visibleRows.map((row) => Number(row.positive || 0) + Number(row.caution || 0) + Number(row.negative || 0)));
-  if (!visibleRows.length) return <p className="a4-empty">논조 추이 데이터가 없습니다.</p>;
-  return (
-    <div className="a4-tone-mini">
-      {visibleRows.map((row) => {
-        const positive = Number(row.positive || 0);
-        const caution = Number(row.caution || 0);
-        const negative = Number(row.negative || 0);
-        return (
-          <div key={row.date}>
-            <span>{row.date}</span>
-            <b>
-              <i className="positive" style={{ width: `${Math.max(positive ? 8 : 0, (positive / max) * 100)}%` }} />
-              <i className="caution" style={{ width: `${Math.max(caution ? 8 : 0, (caution / max) * 100)}%` }} />
-              <i className="negative" style={{ width: `${Math.max(negative ? 8 : 0, (negative / max) * 100)}%` }} />
-            </b>
-            <em>{positive + caution + negative}건</em>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function A4BarList({ rows = [] }) {
   const visibleRows = rows.filter((row) => Number(row.value || 0) > 0).slice(0, 8);
   const max = Math.max(1, ...visibleRows.map((row) => Number(row.value || 0)));
@@ -5093,72 +5002,10 @@ function buildA4ReportStats(summary = {}, articles = []) {
   return [
     { label: "리스크", value: riskValue, detail: "당사 기준", tone: riskTone, preset: {} },
     { label: "분석", value: Number(summary.analyzed || articles.length || 0).toLocaleString("ko-KR"), detail: "기간 기사", preset: {} },
-    { label: "당사 언급", value: Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0).toLocaleString("ko-KR"), detail: "필수 확인", preset: { category: "당사" } },
+    { label: "당사", value: Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0).toLocaleString("ko-KR"), detail: "직접 언급", preset: { category: "당사" } },
     { label: "주의", value: Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0).toLocaleString("ko-KR"), detail: "관찰 신호", tone: "caution", preset: { tone: "주의" } },
     { label: "부정", value: Number(summary.ownNegative || articles.filter((item) => item.tone === "부정" && isOwnArticle(item)).length || 0).toLocaleString("ko-KR"), detail: "즉시 확인", tone: "negative", preset: { tone: "부정" } },
   ];
-}
-
-function buildA4ReportInsights(period, data, lead, issues = [], articles = [], reportScope = {}) {
-  const summary = data.summary || {};
-  const ownCount = Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0);
-  const negativeCount = Number(summary.ownNegative || articles.filter((item) => item.tone === "부정" && isOwnArticle(item)).length || 0);
-  const cautionCount = Number(summary.caution || articles.filter((item) => item.tone === "주의").length || 0);
-  const policyCount = articles.filter((item) => item.category === "정책/규제").length;
-  const lines = [
-    negativeCount > 0
-      ? `당사 부정 ${negativeCount.toLocaleString("ko-KR")}건은 원문과 유사 보도 묶음을 우선 확인합니다.`
-      : ownCount > 0
-        ? `당사 언급 ${ownCount.toLocaleString("ko-KR")}건은 평판 영향과 활용 가능성을 나눠 확인합니다.`
-        : "당사 직접 언급은 없으며 업계·정책 흐름 위주로 관찰합니다.",
-    policyCount > 0
-      ? `정책/규제 ${policyCount.toLocaleString("ko-KR")}건은 보험·GA·설계사 문맥만 후속 확인합니다.`
-      : cautionCount > 0
-        ? `주의 ${cautionCount.toLocaleString("ko-KR")}건은 시장성 이슈와 직접 리스크를 분리합니다.`
-        : "주의 신호는 낮고 일반 동향 확인 비중이 높습니다.",
-  ];
-  return dedupeSummaryLines(lines).slice(0, 2);
-}
-
-function buildA4ObservationRows(period, data, lead, issues = [], articles = [], keywordRows = [], pressRows = [], reportScope = {}) {
-  const summary = data.summary || {};
-  const ownCount = Number(summary.ownMentions || articles.filter(isOwnArticle).length || 0);
-  const riskCount = Number(summary.ownNegative || 0) + Number(summary.caution || 0);
-  const topKeyword = keywordRows.find((row) => Number(row.value || 0) > 0);
-  const topPress = pressRows[0];
-  const periodLabel = reportScope.shortLabel || periodScopeLabel(period);
-  const leadTopic = lead ? a4TopicLabel(lead) : "대표 이슈";
-  return [
-    {
-      label: "기간 기준",
-      body: `${periodLabel} 기준으로만 집계해 이전 기간 기사와 섞이지 않도록 구성했습니다.`,
-    },
-    {
-      label: "당사/리스크",
-      body: `당사 언급 ${ownCount.toLocaleString("ko-KR")}건과 주의·부정 ${riskCount.toLocaleString("ko-KR")}건을 분리해 과잉 경보를 줄입니다.`,
-    },
-    {
-      label: "매체/키워드",
-      body: `${topPress?.source || "상위 매체"}와 ${topKeyword?.name || "선정 키워드"} 흐름을 함께 보며 반복 노출을 추적합니다.`,
-    },
-    {
-      label: "후속 관찰",
-      body: issues[0]?.title ? `${leadTopic} 관련 후속 보도와 같은 이슈 묶음을 이어서 확인합니다.` : "반복 노출 이슈는 다음 보고 주기에 계속 누적합니다.",
-    },
-  ];
-}
-
-function buildA4ReportHeadline(period, data, lead, reportScope = {}) {
-  const summary = data.summary || {};
-  const ownNegative = Number(summary.ownNegative || 0);
-  const caution = Number(summary.caution || 0);
-  const ownCount = Number(summary.ownMentions || 0);
-  const topic = lead ? a4TopicLabel(lead) : "업계 동향";
-  if (ownNegative > 0) return `당사 부정 ${ownNegative.toLocaleString("ko-KR")}건은 즉시 확인 대상으로 분리합니다.`;
-  if (ownCount > 0 && caution > 0) return `당사 언급 ${ownCount.toLocaleString("ko-KR")}건과 주의 ${caution.toLocaleString("ko-KR")}건을 분리해 점검합니다.`;
-  if (ownCount > 0) return `당사 언급 ${ownCount.toLocaleString("ko-KR")}건은 평판 영향과 활용 가능성을 확인합니다.`;
-  if (caution > 0) return `${topic} 관련 주의 신호 ${caution.toLocaleString("ko-KR")}건의 확산 여부를 봅니다.`;
-  return `직접 리스크는 낮고 기간 내 보도는 일반 동향 중심입니다.`;
 }
 
 function buildA4IssueGroups(lead, issues = [], articles = [], period = "daily") {
@@ -7070,12 +6917,40 @@ function articleBelongsToSameIssue(representative = {}, candidate = {}) {
   const repTopic = articleTopicSignature(representative);
   const candidateTopic = articleTopicSignature(candidate);
   if (repTopic || candidateTopic) {
-    if (repTopic && candidateTopic) return repTopic === candidateTopic;
+    if (repTopic && candidateTopic) {
+      if (repTopic !== candidateTopic) return false;
+      if (requiresStrictSameIssueEvidence(repTopic)) {
+        const repSeed = articleGroupSeed(representative);
+        const candidateSeed = articleGroupSeed(candidate);
+        return sharedTokenCount(repSeed.distinctiveTokens, candidateSeed.distinctiveTokens) >= 1
+          || titleHasSharedNamedEntity(representative, candidate);
+      }
+      return true;
+    }
     if (repTopic?.startsWith("브랜드평판-") || candidateTopic?.startsWith("브랜드평판-")) return false;
   }
   const repSeed = articleGroupSeed(representative);
   const candidateSeed = articleGroupSeed(candidate);
   return areRelatedArticleSeeds(repSeed, candidateSeed);
+}
+
+function requiresStrictSameIssueEvidence(topic = "") {
+  return [
+    "event:insurance-fraud-regulatory-general",
+    "event:insurance-fraud-ai-medical-claim",
+    "event:insurance-fraud-hospital-claims",
+  ].includes(String(topic || ""));
+}
+
+function titleHasSharedNamedEntity(a = {}, b = {}) {
+  const aText = normalizeGroupTitle(`${a.title || ""} ${a.summary || ""} ${a.source || ""}`);
+  const bText = normalizeGroupTitle(`${b.title || ""} ${b.summary || ""} ${b.source || ""}`);
+  const entities = [
+    "인카금융서비스", "인카금융", "글로벌금융판매", "지에이코리아", "메가", "한화생명", "한화손해보험",
+    "삼성생명", "삼성화재", "db손해보험", "DB손해보험", "kb손해보험", "KB손해보험", "롯데손해보험",
+    "금융감독원", "금감원", "금융위원회", "금융위", "경찰청", "요양병원", "교통사고",
+  ].map(normalizeGroupTitle);
+  return entities.some((entity) => entity && aText.includes(entity) && bText.includes(entity));
 }
 
 function isOwnSupervisorySanctionArticle(article = {}) {
