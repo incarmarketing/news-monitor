@@ -180,17 +180,24 @@ function workflowFinishedAfter(workflowHealth = {}, workflowId = "news-briefing.
   return latest.conclusion || "unknown";
 }
 
+function isMobileReportViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 1240px)").matches;
+}
+
 function readInitialRoute() {
   const fallback = { section: "overview", monitoringPreset: null };
   if (typeof window === "undefined") return fallback;
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("section") || params.get("view") || "";
   const monitoringPreset = buildMonitoringPresetFromParams(params);
-  const section = navItems.some((item) => item.id === requested)
+  let section = navItems.some((item) => item.id === requested)
     ? requested
     : monitoringPreset
       ? "monitoring"
       : "overview";
+  if (section === "reports" && isMobileReportViewport()) {
+    section = "overview";
+  }
   return { section, monitoringPreset };
 }
 
@@ -481,6 +488,19 @@ function App() {
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   }, [activeSection]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const query = window.matchMedia("(max-width: 1240px)");
+    const guardReportsOnMobile = () => {
+      if (query.matches && activeSection === "reports") {
+        setActiveSection("overview");
+      }
+    };
+    guardReportsOnMobile();
+    query.addEventListener?.("change", guardReportsOnMobile);
+    return () => query.removeEventListener?.("change", guardReportsOnMobile);
+  }, [activeSection]);
+
   const baseData = periodData[period];
   const needsPeriodData = activeSection === "reports";
   const needsRealtimeData = activeSection === "overview";
@@ -518,7 +538,7 @@ function App() {
     ? [
         {
           label: "부정기사 감시",
-          cadence: "24시간 · 10분",
+          cadence: "24시간 · 5분",
           latest: operations.watchRuns[0].latest,
           state: operations.watchRuns[0].state,
         },
@@ -592,6 +612,7 @@ function App() {
                   type="button"
                   key={item.id}
                   className={activeSection === item.id ? "active" : ""}
+                  data-section={item.id}
                   onClick={() => setActiveSection(item.id)}
                 >
                   <Icon />
@@ -761,7 +782,6 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
 
       <nav className="dashboard-mobile-home" aria-label="모바일 대시보드 바로가기">
         <button type="button" onClick={() => setActiveSection("monitoring")}>모니터링</button>
-        <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
         <button type="button" onClick={() => setActiveSection("clipping")}>클리핑</button>
         <button type="button" onClick={() => setActiveSection("risk")}>대응센터</button>
       </nav>
@@ -923,9 +943,7 @@ function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring 
 }
 
 function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
-  const ranked = [...(issues || [])]
-    .map(normalizeArticleDisplay)
-    .filter(isMajorIssueCandidate)
+  const ranked = buildDashboardIssueGroups(issues)
     .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
     .slice(0, 5);
   return (
@@ -949,12 +967,23 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
                 <span>{formatIssueMeta(issue)}</span>
               </div>
               <h3>{issue.title}</h3>
+              <div className="queue-stats">
+                <span>대표 {issue.representativeSource || issue.source || "-"}</span>
+                <span>관련 {Number(issue.relatedCount || 1).toLocaleString("ko-KR")}건</span>
+                <span>매체 {Number(issue.relatedSourceCount || 1).toLocaleString("ko-KR")}곳</span>
+              </div>
+              <IssueGroupPreview issue={issue} />
             </div>
-            {issue.link && issue.link !== "#" && (
-              <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
-                <ExternalLink /> 열기
-              </a>
-            )}
+            <div className="queue-actions">
+              <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
+                묶음 보기
+              </button>
+              {issue.link && issue.link !== "#" && (
+                <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
+                  <ExternalLink /> 대표 기사
+                </a>
+              )}
+            </div>
           </article>
         )) : (
           <article className="queue-empty">
@@ -965,6 +994,101 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
       </div>
     </section>
   );
+}
+
+function buildDashboardIssueGroups(issues = []) {
+  const candidates = [];
+  (issues || []).forEach((issue) => {
+    const normalized = normalizeMajorIssueGroup(issue);
+    const members = Array.isArray(normalized.relatedArticles) && normalized.relatedArticles.length
+      ? normalized.relatedArticles
+      : [normalized];
+    members.map(normalizeArticleDisplay).forEach((member) => {
+      if (!member?.title || !isMajorIssueCandidate(member)) return;
+      candidates.push(member);
+    });
+  });
+
+  const buckets = new Map();
+  candidates.forEach((article) => {
+    const key = majorIssueDedupeKey(article) || `title:${normalizeGroupTitle(article.title || "").slice(0, 80)}`;
+    if (!key) return;
+    const bucket = buckets.get(key) || [];
+    bucket.push(article);
+    buckets.set(key, bucket);
+  });
+
+  return Array.from(buckets.entries()).map(([groupKey, members]) => {
+    const relatedArticles = dedupeIssueMembers(members.map(normalizeArticleDisplay));
+    const representative = [...relatedArticles]
+      .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a))[0] || relatedArticles[0] || {};
+    const sources = unique(relatedArticles.map((item) => item.source).filter(Boolean));
+    return normalizeMajorIssueGroup({
+      ...representative,
+      groupKey,
+      relatedArticles,
+      relatedCount: relatedArticles.length,
+      relatedSourceCount: sources.length,
+      relatedSources: sources,
+      representativeSource: representative.source || sources[0] || "",
+    });
+  });
+}
+
+function normalizeMajorIssueGroup(issue = {}) {
+  const display = normalizeArticleDisplay(issue);
+  const members = dedupeIssueMembers(
+    (Array.isArray(display.relatedArticles) && display.relatedArticles.length ? display.relatedArticles : [display])
+      .map(normalizeArticleDisplay),
+  );
+  const sources = unique(members.map((item) => item.source).filter(Boolean));
+  return {
+    ...display,
+    relatedArticles: members,
+    relatedCount: Math.max(Number(display.relatedCount || 0), members.length || 1),
+    relatedSourceCount: Math.max(Number(display.relatedSourceCount || 0), sources.length || 1),
+    relatedSources: display.relatedSources || sources,
+    representativeSource: display.representativeSource || display.source || sources[0] || "",
+  };
+}
+
+function IssueGroupPreview({ issue }) {
+  const members = (Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue])
+    .map(normalizeArticleDisplay)
+    .slice(0, 3);
+  if (members.length <= 1) return null;
+  return (
+    <div className="queue-related-preview" aria-label="관련 기사 미리보기">
+      {members.map((member, idx) => (
+        <span key={`${member.link || member.title}-${idx}`}>
+          <b>{member.source || "언론사 확인"}</b>
+          <em>{shortenTitle(member.title, 44)}</em>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function shortenTitle(value = "", max = 48) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (text.length <= max) return text;
+  return `${text.slice(0, Math.max(0, max - 1)).trim()}…`;
+}
+
+function issueMonitoringPreset(issue = {}) {
+  const normalized = normalizeMajorIssueGroup(issue);
+  const issueLinks = dedupeIssueMembers(normalized.relatedArticles || [normalized])
+    .map((item) => normalizeRiskUrl(item.link || item.url || ""))
+    .filter(Boolean);
+  return {
+    query: "",
+    tone: "all",
+    category: normalized.category || "all",
+    source: "all",
+    ownOnly: false,
+    issueLinks,
+    issueTitle: normalized.title || "",
+  };
 }
 
 function toneRank(tone = "") {
@@ -1051,8 +1175,9 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   }, [endDate, endDateInput, latestDate, startDate, startDateInput]);
   useEffect(() => {
     if (!monitoringPreset) return;
-    setQuery(monitoringPreset.query || "");
-    setQueryInput(monitoringPreset.query || "");
+    const presetQuery = Array.isArray(monitoringPreset.issueLinks) && monitoringPreset.issueLinks.length ? "" : (monitoringPreset.query || "");
+    setQuery(presetQuery);
+    setQueryInput(presetQuery);
     setTone(monitoringPreset.tone || "all");
     setCategory(monitoringPreset.category || "all");
     setSource(monitoringPreset.source || "all");
@@ -1074,19 +1199,26 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
     const hasFocusTarget = Boolean(focusArticleHash || focusArticleLink || focusArticleTitle);
     const focusTargetAvailable = hasFocusTarget
       && deferredRegularArticles.some((article) => articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle));
+    const issueLinks = Array.isArray(monitoringPreset?.issueLinks)
+      ? monitoringPreset.issueLinks.map((link) => normalizeRiskUrl(link)).filter(Boolean)
+      : [];
+    const issueLinkSet = new Set(issueLinks);
+    const hasIssueTarget = issueLinkSet.size > 0;
     return deferredRegularArticles.filter((article) => {
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
       const articleDate = article.date || "";
       const focusMatched = !focusTargetAvailable || articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle);
+      const issueMatched = !hasIssueTarget || issueLinkSet.has(normalizeRiskUrl(article.link || article.url || ""));
       return (
+        issueMatched &&
         focusMatched &&
-        (!needle || focusTargetAvailable || text.includes(needle)) &&
+        (!needle || focusTargetAvailable || hasIssueTarget || text.includes(needle)) &&
         (!startDate || !articleDate || articleDate >= startDate) &&
         (!endDate || !articleDate || articleDate <= endDate) &&
-        (tone === "all" || article.tone === tone) &&
-        (category === "all" || article.category === category) &&
-        (!ownOnly || isOwnArticle(article)) &&
-        (source === "all" || article.source === source)
+        (hasIssueTarget || tone === "all" || article.tone === tone) &&
+        (hasIssueTarget || category === "all" || article.category === category) &&
+        (hasIssueTarget || !ownOnly || isOwnArticle(article)) &&
+        (hasIssueTarget || source === "all" || article.source === source)
       );
     });
   }, [deferredRegularArticles, category, endDate, monitoringPreset, ownOnly, query, source, startDate, tone]);
@@ -4690,10 +4822,11 @@ function A4ReportSheet({
   const pressRows = (data.pressInfluence?.length ? data.pressInfluence : buildPressInfluence(articles))
     .filter((item) => !isOfficialRegulatorSource(item.source))
     .slice(0, 6);
-  const categoryRows = (data.categoryFlow?.length ? data.categoryFlow : buildCategoryFlowRows(articles, 6))
+  const categoryRows = buildReportCategoryFlowRows(articles, summary, 6)
     .filter((row) => Number(row.value || 0) > 0)
     .slice(0, 6);
   const issueGroups = buildA4IssueGroups(lead, issues, articles, period);
+  const purpose = reportPurposeConfig(period);
   return (
     <article className={`a4-report-sheet ${period}`}>
       <header className="a4-masthead">
@@ -4701,7 +4834,7 @@ function A4ReportSheet({
           <div>
             <p>{edition.kicker}</p>
             <h2>{edition.title}</h2>
-            <em>{scope.scopeLabel || data.scope || edition.issue} · {data.generatedAt || "-"}</em>
+            <em>{scope.scopeLabel || data.scope || edition.issue} · {purpose.focus}</em>
           </div>
         </div>
         <A4MetricTable stats={stats} onOpenMonitoring={onOpenMonitoring} />
@@ -4709,16 +4842,16 @@ function A4ReportSheet({
 
       <section className="a4-report-body">
         <div className="a4-report-main-column">
-          <A4Panel title="핵심 기사" meta="영향 기준 3분류">
-            <A4IssueBuckets groups={issueGroups} period={period} />
+          <A4Panel title={purpose.issueTitle} meta={purpose.issueMeta}>
+            <A4PriorityArticleCards groups={issueGroups} period={period} />
           </A4Panel>
         </div>
 
         <div className="a4-report-side-column">
-          <A4Panel title="분류별 기사량" meta="기간 기준">
+          <A4Panel title={purpose.categoryTitle} meta="기간 기준">
             <A4BarList rows={categoryRows} />
           </A4Panel>
-          <A4Panel title="언론사 보도량" meta="상위 6개사">
+          <A4Panel title={purpose.pressTitle} meta="상위 6개사">
             <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
           </A4Panel>
         </div>
@@ -4730,6 +4863,33 @@ function A4ReportSheet({
       </footer>
     </article>
   );
+}
+
+function reportPurposeConfig(period = "daily") {
+  const configs = {
+    daily: {
+      focus: "즉시 확인 기사 중심",
+      issueTitle: "즉시 확인 기사",
+      issueMeta: "원문 이동",
+      categoryTitle: "오늘 분류",
+      pressTitle: "오늘 노출 언론사",
+    },
+    weekly: {
+      focus: "반복 이슈와 확산 흐름 중심",
+      issueTitle: "주간 반복 이슈",
+      issueMeta: "묶음 대표 기사",
+      categoryTitle: "주간 분류 흐름",
+      pressTitle: "주간 노출 언론사",
+    },
+    monthly: {
+      focus: "누적 평판·정책·시장 흐름 중심",
+      issueTitle: "월간 핵심 이슈",
+      issueMeta: "누적 대표 기사",
+      categoryTitle: "월간 분류 비중",
+      pressTitle: "월간 노출 언론사",
+    },
+  };
+  return configs[period] || configs.daily;
 }
 
 function A4MetricTable({ stats = [], onOpenMonitoring }) {
@@ -4818,6 +4978,52 @@ function A4IssueBuckets({ groups = [], period = "daily" }) {
           </div>
         </section>
       ))}
+    </div>
+  );
+}
+
+function A4PriorityArticleCards({ groups = [], period = "daily" }) {
+  const limit = period === "daily" ? 5 : 6;
+  const cards = [];
+  const seen = new Set();
+  groups.forEach((group) => {
+    (group.items || []).forEach((issue) => {
+      const key = issue.articleHash || issue.article_hash || issue.link || `${issue.source}-${issue.title}`;
+      if (!issue?.title || seen.has(key)) return;
+      seen.add(key);
+      cards.push({ ...issue, bucketTitle: group.title });
+    });
+  });
+  const visibleCards = cards.slice(0, limit);
+  if (!visibleCards.length) return <p className="a4-empty">우선 확인할 기사가 없습니다.</p>;
+  return (
+    <div className="a4-priority-card-grid">
+      {visibleCards.map((issue, index) => {
+        const href = issue.link && issue.link !== "#" ? issue.link : "";
+        return (
+          <a
+            key={`${issue.source}-${issue.title}-${issue.time || issue.date}-${index}`}
+            className="a4-priority-card"
+            href={href || "#"}
+            target={href ? "_blank" : undefined}
+            rel={href ? "noreferrer" : undefined}
+            onClick={(event) => {
+              if (!href) event.preventDefault();
+            }}
+          >
+            <span className="a4-priority-rank">{String(index + 1).padStart(2, "0")}</span>
+            <div className="a4-priority-main">
+              <div className="a4-priority-meta">
+                <Chip tone={issue.tone}>{issue.tone}</Chip>
+                <Chip>{issue.category || issue.bucketTitle || "분류"}</Chip>
+                <em>{formatA4ArticleMeta(issue)}</em>
+              </div>
+              <b>{issue.title}</b>
+            </div>
+            <span className="a4-priority-open">열기</span>
+          </a>
+        );
+      })}
     </div>
   );
 }
@@ -4960,19 +5166,19 @@ function buildA4IssueGroups(lead, issues = [], articles = [], period = "daily") 
   const defs = [
     {
       key: "own",
-      title: "당사 영향",
-      description: "당사 언급·평판·활용 후보",
+      title: "당사",
+      description: "직접 언급·평판·성과 보도",
       emptyText: "당사 직접 언급 기사는 없습니다.",
     },
     {
       key: "policy",
-      title: "정책 리스크",
+      title: "정책/감독",
       description: "감독·수수료·법안·제재",
       emptyText: "정책/규제성 핵심 기사는 없습니다.",
     },
     {
       key: "market",
-      title: "동향",
+      title: "시장 동향",
       description: "GA·보험사·경쟁사 동향",
       emptyText: "동향 핵심 기사는 없습니다.",
     },
@@ -6754,6 +6960,29 @@ function buildCategoryFlowRows(articles = [], limit = 6) {
   }));
 }
 
+function buildReportCategoryFlowRows(articles = [], summary = {}, limit = 6) {
+  const dedupedArticles = dedupeReportCategoryArticles(articles.filter(isUsableArticle));
+  const analyzed = Number(summary?.analyzed || 0);
+  const scopedArticles = analyzed > 0 && dedupedArticles.length > analyzed
+    ? dedupedArticles.slice(0, analyzed)
+    : dedupedArticles;
+  return buildCategoryFlowRows(scopedArticles, limit);
+}
+
+function dedupeReportCategoryArticles(articles = []) {
+  const seen = new Set();
+  return articles.filter((article) => {
+    const titleKey = normalizeKeywordText(article.title || "").slice(0, 96);
+    const linkKey = normalizeKeywordText(article.link || article.url || "");
+    const hashKey = normalizeKeywordText(article.articleHash || article.article_hash || article.hash || "");
+    const key = hashKey || titleKey || linkKey;
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function categoryFlowLabel(value) {
   const canonical = String(value || "").trim().toLowerCase();
   return {
@@ -7052,7 +7281,7 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
     ? "최근 실행 확인 대기"
     : `${formatRelativeMinutes(delay)} 전 실행`;
   const workflowText = latestWorkflow?.status === "in_progress" ? "실행 중" : formatWorkflowConclusion(latestWorkflow);
-  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 10분";
+  const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 5분";
   return {
     title: "부정기사 감시",
     icon: Radar,
@@ -7418,7 +7647,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
         ? "감시 확인 중"
         : "정상 감시";
   const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
-  const meta = health?.meta || `${watchJob.cadence || "10분 주기"} · ${watchJob.state || "확인"}`;
+  const meta = health?.meta || `${watchJob.cadence || "5분 주기"} · ${watchJob.state || "확인"}`;
   return (
     <section className="watch-panel">
       <div className="watch-title-row">
@@ -7438,7 +7667,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
           <h2>{heading}</h2>
           <p>{detail}</p>
           <strong>{meta}</strong>
-          <span>10분 주기</span>
+          <span>5분 주기</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>
@@ -7972,7 +8201,7 @@ function buildHeadline(articles, ownMentions, ownNegative, caution) {
 
 function buildIssues(articles, fallback) {
   const usableArticles = articles.filter(isUsableArticle);
-  const important = buildRelatedArticleGroups(usableArticles)
+  const important = buildDashboardIssueGroups(usableArticles)
     .filter((article) => article?.title)
     .filter(isMajorIssueCandidate)
     .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
@@ -8044,7 +8273,9 @@ function dashboardIssueScore(issue = {}) {
 }
 
 function isMajorIssueCandidate(issue = {}) {
-  const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
+  const members = (Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue])
+    .filter(isUsableArticle)
+    .filter((member) => !isOfficialRegulatorSource(member.source) || isOwnArticle(member));
   if (!members.length) return false;
   if (members.every(isNonInsuranceFinancialRegulatoryArticle)) return false;
   return members.some(isOwnArticle)
@@ -8251,6 +8482,8 @@ function articlePrimarySummaryTopic(item = {}) {
 function articleEventTopicSignature(item = {}) {
   const text = cleanSummaryText(`${item.title || ""} ${item.summary || ""} ${item.description || ""} ${item.keyword || ""}`);
   if (isOwnSponsoredSportsArticle(item)) return "incar-theheaven-masters";
+  const ownSanctionTopic = ownGaAgentSanctionEventTopic(item);
+  if (ownSanctionTopic) return ownSanctionTopic;
   const gaCommissionTopic = gaCommissionRuleEventTopic(text);
   if (gaCommissionTopic) return gaCommissionTopic;
   const insuranceFraudTopic = insuranceFraudEventTopic(text);
@@ -8266,20 +8499,32 @@ function gaCommissionRuleEventTopic(value = "") {
   return hasRuleSignal && hasGaSalesSignal && hasPolicySignal ? "ga-1200-commission-rule" : "";
 }
 
+function ownGaAgentSanctionEventTopic(item = {}) {
+  const text = originalArticleHaystack(item);
+  const hasOwn = /인카금융(?:서비스)?|인카금융/.test(text);
+  const hasGa = /GA|법인보험대리점|보험대리점|공룡\s*GA|대형\s*GA/.test(text);
+  const hasAgent = /전직\s*설계사|보험설계사|설계사/.test(text);
+  const hasSanction = /등록\s*취소|업무\s*정지|제재|처분|무더기\s*제재|금감원|금융감독원/.test(text);
+  const hasFraud = /보험사기|고의\s*교통사고|보험금\s*편취|허위\s*입원|허위\s*진료|내부통제|관리\s*구멍/.test(text);
+  if (hasOwn && hasGa && hasAgent && hasSanction && hasFraud) return "own-ga-agent-fraud-sanction";
+  if (hasGa && hasAgent && hasSanction && hasFraud && /글로벌금융판매|메가|영진에셋|대형\s*GA/.test(text)) return "ga-agent-fraud-sanction";
+  return "";
+}
+
 function insuranceFraudEventTopic(value = "") {
   const text = cleanSummaryText(value);
   const hasFraudSignal = /보험사기|고의\s*교통사고|진료비\s*조작|허위\s*진료|보험금\s*편취|사기\s*근절|사전예방|집중\s*홍보|신고\s*포상금/.test(text);
   const hasRegulatorSignal = /금감원|금융감독원|금융위|금융위원회|경찰청|수사|형사처벌|적발|대국민\s*교육|집중\s*홍보/.test(text);
   const hasInsuranceSignal = /보험|손해율|자동차보험|보험금|보험업계|손보|생보/.test(text);
   if (!hasFraudSignal || !hasRegulatorSignal || !hasInsuranceSignal) return "";
-  if (/고의\s*교통사고|교통사고|자동차보험|차\s*보험사기|신고\s*포상금|포상금\s*최대/.test(text)) {
-    return "insurance-fraud-traffic-prevention";
-  }
   if (/챗gpt|chatgpt|생성형\s*ai|ai\s*보험사기|진료비\s*조작|허위\s*진료|보험금\s*편취|의료비/.test(text)) {
     return "insurance-fraud-ai-medical-claim";
   }
   if (/요양병원|복지부|건강보험|건보|조직화|적발\s*한계|단절/.test(text)) {
     return "insurance-fraud-hospital-claims";
+  }
+  if (/고의\s*교통사고|교통사고|자동차보험|차\s*보험사기|신고\s*포상금|포상금\s*최대|대국민\s*교육|집중\s*홍보|사전예방/.test(text)) {
+    return "insurance-fraud-traffic-prevention-campaign";
   }
   return "insurance-fraud-regulatory-general";
 }
@@ -10438,8 +10683,10 @@ function areRelatedArticleSeeds(a, b) {
 function isStrongEventTopic(topic = "") {
   return [
     "event:incar-theheaven-masters",
+    "event:own-ga-agent-fraud-sanction",
+    "event:ga-agent-fraud-sanction",
     "event:ga-1200-commission-rule",
-    "event:insurance-fraud-traffic-prevention",
+    "event:insurance-fraud-traffic-prevention-campaign",
     "event:insurance-fraud-ai-medical-claim",
     "event:insurance-fraud-hospital-claims",
     "event:insurance-fraud-regulatory-general",
