@@ -104,6 +104,8 @@ const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
 const GITHUB_REPO = "incarmarketing/news-monitor";
 const PRESS_INFLUENCE_LIMIT = 6;
+const NEGATIVE_WATCH_CADENCE_LABEL = "24시간 · 10분";
+const NEGATIVE_WATCH_SHORT_LABEL = "10분 주기";
 const WORKFLOW_HEALTH_TARGETS = [
   { id: "negative-watch.yml", label: "부정기사 감시" },
   { id: "news-briefing.yml", label: "보고서 생성·발송" },
@@ -541,7 +543,7 @@ function App() {
     ? [
         {
           label: "부정기사 감시",
-          cadence: "24시간 · 5분",
+          cadence: NEGATIVE_WATCH_CADENCE_LABEL,
           latest: operations.watchRuns[0].latest,
           state: operations.watchRuns[0].state,
         },
@@ -7395,7 +7397,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
         ? "감시 확인 중"
         : "정상 감시";
   const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
-  const meta = health?.meta || `${watchJob.cadence || "5분 주기"} · ${watchJob.state || "확인"}`;
+  const meta = health?.meta || `${watchJob.cadence || NEGATIVE_WATCH_SHORT_LABEL} · ${watchJob.state || "확인"}`;
   return (
     <section className="watch-panel">
       <div className="watch-title-row">
@@ -7415,7 +7417,7 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
           <h2>{heading}</h2>
           <p>{detail}</p>
           <strong>{meta}</strong>
-          <span>5분 주기</span>
+          <span>{NEGATIVE_WATCH_SHORT_LABEL}</span>
         </div>
       </div>
       <div className="watch-progress"><span /></div>
