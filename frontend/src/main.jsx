@@ -5400,6 +5400,39 @@ function mergeMediaRows(rows = [], aliases = [], localRows = []) {
   });
 }
 
+function buildMediaCrmSignals(rows = [], reporters = []) {
+  const ownMedia = rows.filter((row) => Number(row.own || 0) > 0);
+  const needsContact = ownMedia.filter((row) => !row.contactDate && !row.owner);
+  const riskMedia = rows.filter((row) => Number(row.negative || 0) > 0);
+  const reporterMapped = new Set(reporters.map((row) => row.media || row.outlet).filter(Boolean));
+  return [
+    {
+      label: "당사 보도 매체",
+      value: `${ownMedia.length.toLocaleString("ko-KR")}곳`,
+      detail: "자동 등록/관리 대상",
+      tone: "positive",
+    },
+    {
+      label: "접촉 정보 공백",
+      value: `${needsContact.length.toLocaleString("ko-KR")}곳`,
+      detail: "담당자/접촉일 보강 필요",
+      tone: needsContact.length ? "caution" : "positive",
+    },
+    {
+      label: "부정 보도 이력",
+      value: `${riskMedia.length.toLocaleString("ko-KR")}곳`,
+      detail: "관계 상태 점검 대상",
+      tone: riskMedia.length ? "negative" : "positive",
+    },
+    {
+      label: "기자 매핑",
+      value: `${reporterMapped.size.toLocaleString("ko-KR")}곳`,
+      detail: "기자 프로필 연결 매체",
+      tone: "neutral",
+    },
+  ];
+}
+
 function reporterKey(row = {}) {
   return String(row.id || `${row.name || ""}-${row.outlet || row.media || ""}`).trim();
 }
@@ -5456,6 +5489,39 @@ function mergeReporterRows(rows = [], localState = {}) {
     const contactDiff = String(b.contactDate || "").localeCompare(String(a.contactDate || ""));
     return contactDiff || a.name.localeCompare(b.name, "ko-KR");
   });
+}
+
+function buildReporterCrmSignals(rows = []) {
+  const active = rows.filter((row) => row.name && (row.media || row.outlet));
+  const missingContact = active.filter((row) => !row.contactDate && !row.email && !row.phone);
+  const riskMapped = active.filter((row) => Number(row.mediaNegativeCount || 0) > 0);
+  const ownMapped = active.filter((row) => Number(row.mediaOwnCount || 0) > 0);
+  return [
+    {
+      label: "등록 기자",
+      value: `${active.length.toLocaleString("ko-KR")}명`,
+      detail: "관리 가능한 프로필",
+      tone: "neutral",
+    },
+    {
+      label: "연락처 공백",
+      value: `${missingContact.length.toLocaleString("ko-KR")}명`,
+      detail: "이메일/전화/접촉일 보강",
+      tone: missingContact.length ? "caution" : "positive",
+    },
+    {
+      label: "당사 매체 연결",
+      value: `${ownMapped.length.toLocaleString("ko-KR")}명`,
+      detail: "당사 보도 이력 매체 소속",
+      tone: "positive",
+    },
+    {
+      label: "리스크 매체 연결",
+      value: `${riskMapped.length.toLocaleString("ko-KR")}명`,
+      detail: "부정 보도 이력 매체 소속",
+      tone: riskMapped.length ? "negative" : "positive",
+    },
+  ];
 }
 
 function upsertReporterLocal(state = {}, row = {}, replaceId = "") {
