@@ -7088,7 +7088,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   background: linear-gradient(180deg, #fff 0, #fff7ed 100%);
 }
 
-.keyword-stage-card.tone-제외 {
+.keyword-stage-card.tone-제외,
+.keyword-stage-card.tone-exclude {
   border-color: #cbd5e1;
   background: linear-gradient(180deg, #fff 0, #f8fafc 100%);
 }
@@ -7276,7 +7277,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   border-color: #fed7aa;
 }
 
-.keyword-category-card.tone-제외 {
+.keyword-category-card.tone-제외,
+.keyword-category-card.tone-exclude {
   border-color: #cbd5e1;
   background: #f8fafc;
 }
@@ -7496,7 +7498,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   border-left-color: #f59e0b;
 }
 
-.keyword-manager-row.tone-제외 {
+.keyword-manager-row.tone-제외,
+.keyword-manager-row.tone-exclude {
   border-left-color: #64748b;
 }
 
@@ -7756,7 +7759,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   color: #b45309;
 }
 
-.ledger-category.tone-제외 {
+.ledger-category.tone-제외,
+.ledger-category.tone-exclude {
   border-color: #cbd5e1;
   background: #f8fafc;
   color: #475569;
@@ -7979,7 +7983,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   background: #fff7ed;
 }
 
-.keyword-rule-chip.tone-제외 {
+.keyword-rule-chip.tone-제외,
+.keyword-rule-chip.tone-exclude {
   border-color: #e2e8f0;
   background: #f8fafc;
 }
@@ -10559,7 +10564,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .reporter-data-table td:nth-child(7)::before { content: "메모"; }
   .reporter-data-table td:nth-child(8)::before { content: "관리"; }
 
-  .ad-data-table td:nth-child(1)::before { content: "월"; }
+  .ad-data-table td:nth-child(1)::before { content: "기간"; }
   .ad-data-table td:nth-child(2)::before { content: "매체"; }
   .ad-data-table td:nth-child(3)::before { content: "유형"; }
   .ad-data-table td:nth-child(4)::before { content: "금액"; }
@@ -13544,251 +13549,5 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .report-period-picker .period-control.compact {
     width: 100% !important;
-  }
-}
-
-/* Final report hardening: keep the printable report dense, aligned, and article-led. */
-.report-workspace .a4-report-stage {
-  padding: 18px !important;
-  background: #eaf1f8 !important;
-}
-
-.report-workspace .a4-report-sheet {
-  width: min(204mm, 100%) !important;
-  min-height: 286mm !important;
-  padding: 10mm 10mm 8mm !important;
-  gap: 10px !important;
-  background:
-    linear-gradient(90deg, rgba(15, 23, 42, .022) 0 1px, transparent 1px 100%),
-    #fffef9 !important;
-  background-size: 18px 18px, auto !important;
-}
-
-.report-workspace .a4-masthead {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 365px !important;
-  gap: 18px !important;
-  align-items: end !important;
-  padding-bottom: 10px !important;
-  border-bottom: 4px solid #0f172a !important;
-}
-
-.report-workspace .a4-title-row h2 {
-  margin: 0 !important;
-  max-width: 100% !important;
-  color: #07111f !important;
-  font-size: 31px !important;
-  line-height: 1.05 !important;
-  letter-spacing: -.025em !important;
-  word-break: keep-all !important;
-}
-
-.report-workspace .a4-title-row em {
-  margin-top: 7px !important;
-  color: #334155 !important;
-  font-size: 11px !important;
-  font-weight: 900 !important;
-}
-
-.report-workspace .a4-metric-table {
-  align-self: end !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  min-width: 0 !important;
-  border: 1px solid #0f172a !important;
-  box-shadow: none !important;
-}
-
-.report-workspace .a4-metric-table button {
-  display: grid !important;
-  place-items: center !important;
-  min-height: 50px !important;
-  padding: 6px 4px !important;
-  text-align: center !important;
-}
-
-.report-workspace .a4-metric-table span {
-  color: #64748b !important;
-  font-size: 8.5px !important;
-  font-weight: 950 !important;
-}
-
-.report-workspace .a4-metric-table b {
-  font-size: 18px !important;
-  line-height: 1 !important;
-}
-
-.report-workspace .a4-report-body {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.25fr) minmax(258px, .75fr) !important;
-  gap: 12px !important;
-  align-items: stretch !important;
-}
-
-.report-workspace .a4-report-main-column,
-.report-workspace .a4-report-side-column {
-  display: grid !important;
-  gap: 10px !important;
-  min-width: 0 !important;
-}
-
-.report-workspace .a4-report-side-column {
-  grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
-}
-
-.report-workspace .a4-panel {
-  min-width: 0 !important;
-  padding: 12px !important;
-  border: 1px solid #cbd7e8 !important;
-  border-top: 3px solid #0f172a !important;
-  border-radius: 0 !important;
-  background: rgba(255, 255, 255, .96) !important;
-}
-
-.report-workspace .a4-panel-head {
-  padding-bottom: 8px !important;
-  border-bottom: 1px solid #d8e2ef !important;
-}
-
-.report-workspace .a4-panel-head b {
-  font-size: 14px !important;
-  letter-spacing: -.01em !important;
-}
-
-.report-workspace .a4-panel-head span {
-  font-size: 9.5px !important;
-  white-space: nowrap !important;
-}
-
-.report-workspace .a4-priority-card-grid {
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 8px !important;
-}
-
-.report-workspace .a4-priority-card {
-  grid-template-columns: 32px minmax(0, 1fr) 38px !important;
-  min-height: 58px !important;
-  padding: 8px 9px !important;
-  border-color: #d5dfec !important;
-  border-left-width: 5px !important;
-  border-radius: 4px !important;
-  box-shadow: none !important;
-}
-
-.report-workspace .a4-priority-rank {
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 4px !important;
-  font-size: 10px !important;
-}
-
-.report-workspace .a4-priority-card b {
-  color: #07111f !important;
-  font-size: 12.2px !important;
-  line-height: 1.27 !important;
-  -webkit-line-clamp: 2 !important;
-}
-
-.report-workspace .a4-priority-meta {
-  gap: 4px !important;
-}
-
-.report-workspace .a4-priority-meta .chip {
-  padding: 2px 6px !important;
-  font-size: 8px !important;
-}
-
-.report-workspace .a4-priority-meta em {
-  font-size: 8.5px !important;
-}
-
-.report-workspace .a4-priority-open {
-  width: 34px !important;
-  height: 22px !important;
-  font-size: 8px !important;
-}
-
-.report-workspace .a4-bar-list,
-.report-workspace .a4-press-rows {
-  gap: 9px !important;
-  align-content: center !important;
-}
-
-.report-workspace .a4-bar-list > div,
-.report-workspace .a4-press-rows button {
-  grid-template-columns: 76px minmax(0, 1fr) 34px !important;
-  gap: 8px !important;
-  min-height: 22px !important;
-}
-
-.report-workspace .a4-bar-list span,
-.report-workspace .a4-press-rows span,
-.report-workspace .a4-bar-list em,
-.report-workspace .a4-press-rows em {
-  font-size: 9.5px !important;
-  font-weight: 950 !important;
-}
-
-.report-workspace .a4-footer {
-  padding-top: 7px !important;
-  color: #64748b !important;
-  font-size: 9px !important;
-}
-
-.keyword-ledger-table th,
-.keyword-ledger-table td {
-  text-align: center !important;
-  vertical-align: middle !important;
-}
-
-.keyword-ledger-table th:nth-child(1),
-.keyword-ledger-table td:nth-child(1) {
-  text-align: left !important;
-}
-
-.keyword-ledger-table th:nth-child(10),
-.keyword-ledger-table th:nth-child(11),
-.keyword-ledger-table th:nth-child(12),
-.keyword-ledger-table td:nth-child(10),
-.keyword-ledger-table td:nth-child(11),
-.keyword-ledger-table td:nth-child(12) {
-  text-align: center !important;
-}
-
-.ops-mini-status {
-  align-items: center !important;
-}
-
-.ops-mini-status div {
-  align-items: center !important;
-  text-align: center !important;
-}
-
-.ops-mini-status b {
-  text-align: center !important;
-}
-
-@media print {
-  .report-workspace .a4-report-sheet,
-  .a4-report-sheet {
-    width: 198mm !important;
-    min-height: 281mm !important;
-    padding: 7mm !important;
-  }
-
-  .report-workspace .a4-masthead {
-    grid-template-columns: minmax(0, 1fr) 300px !important;
-    gap: 10px !important;
-  }
-
-  .report-workspace .a4-title-row h2 {
-    font-size: 23px !important;
-  }
-
-  .report-workspace .a4-metric-table button {
-    min-height: 38px !important;
-  }
-
-  .report-workspace .a4-report-body {
-    grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr) !important;
   }
 }

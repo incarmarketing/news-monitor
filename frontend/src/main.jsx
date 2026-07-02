@@ -70,7 +70,9 @@ import {
   triggerNewsCollection,
   verifyDashboardLogin,
 } from "./liveData";
+import { A4BarList, A4MetricTable, A4Panel, A4PressRows } from "./reportComponents";
 import "./styles.css";
+import "./report.css";
 
 const navIcons = {
   overview: LayoutDashboard,
@@ -4892,31 +4894,6 @@ function reportPurposeConfig(period = "daily") {
   return configs[period] || configs.daily;
 }
 
-function A4MetricTable({ stats = [], onOpenMonitoring }) {
-  return (
-    <div className="a4-metric-table" aria-label="리포트 주요 지표">
-      {stats.map((item) => (
-        <button key={item.label} type="button" className={item.tone || ""} onClick={() => onOpenMonitoring?.(item.preset || {})}>
-          <span>{item.label}</span>
-          <b>{item.value}</b>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function A4Panel({ title, meta, children }) {
-  return (
-    <section className="a4-panel">
-      <div className="a4-panel-head">
-        <b>{title}</b>
-        {meta ? <span>{meta}</span> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 function A4PriorityArticleCards({ groups = [], period = "daily" }) {
   const limit = period === "daily" ? 5 : 6;
   const cards = [];
@@ -4959,39 +4936,6 @@ function A4PriorityArticleCards({ groups = [], period = "daily" }) {
           </a>
         );
       })}
-    </div>
-  );
-}
-
-function A4BarList({ rows = [] }) {
-  const visibleRows = rows.filter((row) => Number(row.value || 0) > 0).slice(0, 8);
-  const max = Math.max(1, ...visibleRows.map((row) => Number(row.value || 0)));
-  if (!visibleRows.length) return <p className="a4-empty">선정 키워드 기준 기사량이 없습니다.</p>;
-  return (
-    <div className="a4-bar-list">
-      {visibleRows.map((row, index) => (
-        <div key={row.keyword || row.name}>
-          <span>{row.name}</span>
-          <b><i style={{ width: `${Math.max(5, (Number(row.value || 0) / max) * 100)}%`, background: chartColors[index % chartColors.length] }} /></b>
-          <em>{Number(row.value || 0).toLocaleString("ko-KR")}건</em>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function A4PressRows({ rows = [], onOpenMonitoring }) {
-  const max = Math.max(1, ...rows.map((row) => Number(row.total || 0)));
-  if (!rows.length) return <p className="a4-empty">언론사별 보도량 데이터가 없습니다.</p>;
-  return (
-    <div className="a4-press-rows">
-      {rows.map((row) => (
-        <button key={row.source} type="button" onClick={() => onOpenMonitoring?.({ source: row.source })}>
-          <span>{row.source}</span>
-          <b><i style={{ width: `${Math.max(8, (Number(row.total || 0) / max) * 100)}%` }} /></b>
-          <em>{Number(row.total || 0).toLocaleString("ko-KR")}건</em>
-        </button>
-      ))}
     </div>
   );
 }
