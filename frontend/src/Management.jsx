@@ -27,6 +27,10 @@ function callHelper(name, fallback, ...args) {
   return typeof fn === "function" ? fn(...args) : fallback(...args);
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function HelperComponent({ name, fallback: Fallback = "div", props = {}, children }) {
   const Component = managementHelpers?.[name] || Fallback;
   return <Component {...props}>{children}</Component>;
@@ -142,6 +146,17 @@ const keywordDefaultTones = [
 
 export default function Management({ management, operations, onRefreshOperations, isWorking, helpers = {} }) {
   managementHelpers = helpers;
+  const safeOperations = operations || {};
+  const safeManagement = {
+    ...(management || {}),
+    media: asArray(management?.media),
+    reporters: asArray(management?.reporters),
+    ads: asArray(management?.ads),
+  };
+  const aliases = asArray(safeOperations.aliases);
+  const keywords = asArray(safeOperations.keywords);
+  const articles = asArray(safeOperations.articles);
+  const feedback = asArray(safeOperations.feedback);
   const [tab, setTab] = useState("media");
   const tabs = [
     ["media", "언론사 관리", Building2],
@@ -158,19 +173,19 @@ export default function Management({ management, operations, onRefreshOperations
         description="언론사, 기자, 광고비, 키워드, 분류 피드백을 운영 데이터 기준으로 관리합니다."
         right={(
           <div className="page-actions">
-            <DataSourcePill operations={operations} />
+            <DataSourcePill operations={safeOperations} />
             <button
               type="button"
               className="ghost-button compact-button"
               onClick={() => onRefreshOperations?.({ label: "운영 데이터 갱신" })}
-              disabled={operations?.status === "loading" || isWorking}
+              disabled={safeOperations.status === "loading" || isWorking}
             >
               <RefreshCw />갱신
             </button>
           </div>
         )}
       />
-      <ManagementSummary management={management} operations={operations} />
+      <ManagementSummary management={safeManagement} operations={safeOperations} />
       <section className="admin-crud-panel admin-crud-panel-top-tabs">
         <div className="management-tabs admin-tabs-rail">
           {tabs.map(([id, label, Icon]) => (
@@ -180,14 +195,14 @@ export default function Management({ management, operations, onRefreshOperations
           ))}
         </div>
         <div className="admin-panel-body">
-          {tab === "media" && <MediaManagement rows={management.media} reporters={management.reporters} aliases={operations.aliases || []} />}
-          {tab === "reporters" && <ReporterManagement rows={management.reporters} />}
-          {tab === "ads" && <AdManagement rows={management.ads} />}
-          {tab === "keywords" && <KeywordManagement keywords={operations.keywords || []} articles={operations.articles || []} />}
+          {tab === "media" && <MediaManagement rows={safeManagement.media} reporters={safeManagement.reporters} aliases={aliases} />}
+          {tab === "reporters" && <ReporterManagement rows={safeManagement.reporters} />}
+          {tab === "ads" && <AdManagement rows={safeManagement.ads} />}
+          {tab === "keywords" && <KeywordManagement keywords={keywords} articles={articles} />}
           {tab === "feedback" && (
             <FeedbackManagement
-              feedback={operations.feedback || []}
-              operations={operations}
+              feedback={feedback}
+              operations={safeOperations}
               onRefreshOperations={onRefreshOperations}
               isWorking={isWorking}
             />
@@ -198,15 +213,19 @@ export default function Management({ management, operations, onRefreshOperations
   );
 }
 
-function ManagementSummary({ management, operations }) {
-  const totalAd = management.ads.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+function ManagementSummary({ management = {}, operations = {} }) {
+  const media = asArray(management.media);
+  const reporters = asArray(management.reporters);
+  const ads = asArray(management.ads);
+  const feedback = asArray(operations.feedback);
+  const totalAd = ads.reduce((sum, row) => sum + Number(row.amount || 0), 0);
   return (
     <section className="management-summary">
-      <StatCard icon={Building2} label="관리 언론사" value={`${management.media.length.toLocaleString("ko-KR")}곳`} />
-      <StatCard icon={Users} label="기자 프로필" value={`${management.reporters.length.toLocaleString("ko-KR")}명`} />
+      <StatCard icon={Building2} label="관리 언론사" value={`${media.length.toLocaleString("ko-KR")}곳`} />
+      <StatCard icon={Users} label="기자 프로필" value={`${reporters.length.toLocaleString("ko-KR")}명`} />
       <StatCard icon={WalletCards} label="광고비 누적" value={formatMoney(totalAd)} />
       <StatCard icon={Megaphone} label="문맥 규칙" value={`${keywordGroups.length}개 그룹`} />
-      <StatCard icon={FilePenLine} label="분류 피드백" value={`${(operations?.feedback || []).length.toLocaleString("ko-KR")}건`} />
+      <StatCard icon={FilePenLine} label="분류 피드백" value={`${feedback.length.toLocaleString("ko-KR")}건`} />
     </section>
   );
 }
@@ -290,7 +309,7 @@ function buildReporterCrmSignals(rows = []) {
   ];
 }
 
-function MediaManagement({ rows, reporters = [], aliases = [] }) {
+function MediaManagement({ rows = [], reporters = [], aliases = [] }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
   const [mediaStatus, setMediaStatus] = useState("");
@@ -478,7 +497,7 @@ function MediaManagement({ rows, reporters = [], aliases = [] }) {
   );
 }
 
-function ReporterManagement({ rows }) {
+function ReporterManagement({ rows = [] }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
@@ -659,7 +678,7 @@ function ReporterManagement({ rows }) {
   );
 }
 
-function AdManagement({ rows }) {
+function AdManagement({ rows = [] }) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState("");
   const adData = useMemo(() => buildAdSpendData(rows), [rows]);

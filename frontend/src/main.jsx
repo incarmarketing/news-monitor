@@ -6106,10 +6106,15 @@ function escapeHtml(value) {
 }
 
 function composeManagementData(operations, articles) {
-  const pressStats = new Map(buildPressStatsForManagement(articles).map((row) => [row.source, row]));
-  const ownPressRows = buildOwnPressRelationRows(articles, pressStats);
-  const baseMedia = operations.mediaRelations?.length
-    ? operations.mediaRelations.map((row) => ({ ...row, ...(pressStats.get(row.name) || {}) }))
+  const safeOperations = operations || {};
+  const safeArticles = Array.isArray(articles) ? articles : [];
+  const pressStats = new Map(buildPressStatsForManagement(safeArticles).map((row) => [row.source, row]));
+  const ownPressRows = buildOwnPressRelationRows(safeArticles, pressStats);
+  const mediaRelations = Array.isArray(safeOperations.mediaRelations) ? safeOperations.mediaRelations : [];
+  const reporterRowsSource = Array.isArray(safeOperations.reporters) ? safeOperations.reporters : [];
+  const adRowsSource = Array.isArray(safeOperations.ads) ? safeOperations.ads : [];
+  const baseMedia = mediaRelations.length
+    ? mediaRelations.map((row) => ({ ...row, ...(pressStats.get(row.name) || {}) }))
     : pressRegistry.map((name, index) => ({
         name,
         grade: index < 5 ? "A" : "B",
@@ -6120,9 +6125,9 @@ function composeManagementData(operations, articles) {
         ...(pressStats.get(name) || { total: 0, own: 0, negative: 0 }),
       }));
   const media = mergeRequiredOwnPressRows(baseMedia, ownPressRows);
-  const reporterSource = operations.reporters?.length ? operations.reporters : journalistRows;
+  const reporterSource = reporterRowsSource.length ? reporterRowsSource : journalistRows;
   const reporters = reporterSource.map((row) => enrichReporterWithMediaStats(row, pressStats));
-  const ads = operations.ads?.length ? operations.ads : adRows;
+  const ads = adRowsSource.length ? adRowsSource : adRows;
   return { media, reporters, ads };
 }
 
