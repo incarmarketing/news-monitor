@@ -10,7 +10,10 @@ function callHelper(name, fallback, ...args) {
 
 function HelperComponent({ name, fallback: Fallback = "div", props = {}, children }) {
   const Component = mediaHelpers?.[name] || Fallback;
-  return <Component {...props}>{children}</Component>;
+  const componentProps = { ...props };
+  const resolvedChildren = children ?? componentProps.children;
+  delete componentProps.children;
+  return <Component {...componentProps}>{resolvedChildren}</Component>;
 }
 
 function PageTitle(props) { return <HelperComponent name="PageTitle" props={props} />; }
