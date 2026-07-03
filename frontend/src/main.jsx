@@ -642,7 +642,7 @@ function App() {
           period={period}
           setPeriod={setPeriod}
           articles={
-            activeSection === "monitoring" || activeSection === "regulators" || activeSection === "media"
+            activeSection === "monitoring" || activeSection === "regulators" || needsMediaData
               ? allArticles
               : activeSection === "overview"
                 ? realtimeArticles
