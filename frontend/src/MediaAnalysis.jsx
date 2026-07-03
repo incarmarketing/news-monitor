@@ -39,6 +39,40 @@ function buildMediaAnalysisIssues(...args) { return callHelper("buildMediaAnalys
 function buildPeriodObservations(...args) { return callHelper("buildPeriodObservations", () => [], ...args); }
 function normalizeAnalysisDateRange(...args) { return callHelper("normalizeAnalysisDateRange", (start = "", end = "") => ({ start, end, clamped: false }), ...args); }
 function periodIssueMeta(...args) { return callHelper("periodIssueMeta", () => "", ...args); }
+
+const mediaAnalysisCache = new Map();
+const MEDIA_ANALYSIS_CACHE_LIMIT = 8;
+
+function articleCacheToken(article = {}) {
+  return article.url || article.link || article.id || article.title || "";
+}
+
+function mediaAnalysisCacheKey({ articles = [], start = "", end = "", selectedKeywords = [], scopeLabel = "" }) {
+  const first = articleCacheToken(articles[0]);
+  const last = articleCacheToken(articles[articles.length - 1]);
+  return [start, end, scopeLabel, articles.length, first, last, selectedKeywords.join("|")].join("::");
+}
+
+function getCachedMediaAnalysis(input) {
+  const key = mediaAnalysisCacheKey(input);
+  if (mediaAnalysisCache.has(key)) return mediaAnalysisCache.get(key);
+  const { data, articles, scopeLabel, selectedKeywords, start, end, analysisDays } = input;
+  const mediaSummaryData = composeMediaAnalysisData(data, articles, scopeLabel);
+  const issueRows = buildMediaAnalysisIssues(articles, "custom").slice(0, 6);
+  const value = {
+    mediaSummaryData,
+    dailyTrend: buildDateRangeToneTrend(articles, start, end, Math.min(analysisDays, 90), data.toneTrend),
+    keywordRows: buildKeywordFlow(articles, selectedKeywords),
+    issueRows,
+    observations: buildPeriodObservations(mediaSummaryData, issueRows, "custom", scopeLabel),
+  };
+  mediaAnalysisCache.set(key, value);
+  if (mediaAnalysisCache.size > MEDIA_ANALYSIS_CACHE_LIMIT) {
+    mediaAnalysisCache.delete(mediaAnalysisCache.keys().next().value);
+  }
+  return value;
+}
+
 export default function MediaAnalysis({ data, period, setPeriod, articles = [], allArticles, scraps, onOpenMonitoring, operations, helpers = {} }) {
   mediaHelpers = helpers;
   const mediaSourceArticles = useMemo(
@@ -50,45 +84,51 @@ export default function MediaAnalysis({ data, period, setPeriod, articles = [], 
   const [rangeDraft, setRangeDraft] = useState({ start: "", end: "" });
   const [activeRange, setActiveRange] = useState({ start: "", end: "" });
   const [rangeNotice, setRangeNotice] = useState("");
+  const defaultRange = useMemo(() => {
+    if (!latestDate) return { start: "", end: "" };
+    const start = addDaysToDateKey(latestDate, -29);
+    return { start: start || latestDate, end: latestDate };
+  }, [latestDate]);
+  const effectiveRange = useMemo(
+    () => ({
+      start: activeRange.start || defaultRange.start,
+      end: activeRange.end || defaultRange.end,
+    }),
+    [activeRange.end, activeRange.start, defaultRange.end, defaultRange.start],
+  );
   useEffect(() => {
     if (!latestDate || activeRange.start || activeRange.end || rangeDraft.start || rangeDraft.end) return;
-    const start = addDaysToDateKey(latestDate, -29);
-    const next = { start: start || latestDate, end: latestDate };
-    setRangeDraft(next);
-    setActiveRange(next);
-  }, [activeRange.end, activeRange.start, latestDate, rangeDraft.end, rangeDraft.start]);
+    setRangeDraft(defaultRange);
+    setActiveRange(defaultRange);
+  }, [activeRange.end, activeRange.start, defaultRange, latestDate, rangeDraft.end, rangeDraft.start]);
   const analysisArticles = useMemo(
-    () => filterArticlesByDateRange(deferredMediaSourceArticles, activeRange.start, activeRange.end),
-    [activeRange.end, activeRange.start, deferredMediaSourceArticles],
+    () => {
+      if (!effectiveRange.start || !effectiveRange.end) return [];
+      return filterArticlesByDateRange(deferredMediaSourceArticles, effectiveRange.start, effectiveRange.end);
+    },
+    [effectiveRange.end, effectiveRange.start, deferredMediaSourceArticles],
   );
   const deferredAnalysisArticles = useDeferredValue(analysisArticles);
-  const analysisDays = dateRangeDayCount(activeRange.start, activeRange.end) || 30;
-  const scopeLabel = activeRange.start && activeRange.end
-    ? `${activeRange.start} ~ ${activeRange.end}`
+  const analysisDays = dateRangeDayCount(effectiveRange.start, effectiveRange.end) || 30;
+  const scopeLabel = effectiveRange.start && effectiveRange.end
+    ? `${effectiveRange.start} ~ ${effectiveRange.end}`
     : "선택 기간";
-  const mediaSummaryData = useMemo(
-    () => composeMediaAnalysisData(data, deferredAnalysisArticles, scopeLabel),
-    [data, deferredAnalysisArticles, scopeLabel],
-  );
   const selectedKeywords = useMemo(() => selectDashboardKeywords(operations?.keywords), [operations?.keywords]);
-  const dailyTrend = useMemo(
-    () => buildDateRangeToneTrend(deferredAnalysisArticles, activeRange.start, activeRange.end, Math.min(analysisDays, 90), data.toneTrend),
-    [activeRange.end, activeRange.start, deferredAnalysisArticles, analysisDays, data.toneTrend],
+  const mediaAnalysis = useMemo(
+    () => getCachedMediaAnalysis({
+      data,
+      articles: deferredAnalysisArticles,
+      scopeLabel,
+      selectedKeywords,
+      start: effectiveRange.start,
+      end: effectiveRange.end,
+      analysisDays,
+    }),
+    [analysisDays, data, deferredAnalysisArticles, effectiveRange.end, effectiveRange.start, scopeLabel, selectedKeywords],
   );
-  const keywordRows = useMemo(
-    () => buildKeywordFlow(deferredAnalysisArticles, selectedKeywords),
-    [deferredAnalysisArticles, selectedKeywords],
-  );
-  const issueRows = useMemo(
-    () => buildMediaAnalysisIssues(deferredAnalysisArticles, "custom").slice(0, 6),
-    [deferredAnalysisArticles],
-  );
-  const observations = useMemo(
-    () => buildPeriodObservations(mediaSummaryData, issueRows, "custom", scopeLabel),
-    [issueRows, mediaSummaryData, scopeLabel],
-  );
+  const { mediaSummaryData, dailyTrend, keywordRows, issueRows, observations } = mediaAnalysis;
   const applyRange = (days = null) => {
-    const fallbackEnd = latestDate || activeRange.end || rangeDraft.end;
+    const fallbackEnd = latestDate || effectiveRange.end || rangeDraft.end;
     let nextStart = rangeDraft.start;
     let nextEnd = rangeDraft.end || fallbackEnd;
     if (days && fallbackEnd) {

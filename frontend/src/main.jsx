@@ -6775,10 +6775,39 @@ function selectDashboardKeywords(rows = []) {
 }
 
 function buildKeywordFlow(articles = [], keywords = []) {
-  return keywords.map((keyword) => ({
+  const keywordRules = keywords
+    .map((keyword) => {
+      const normalized = normalizeKeywordText(keyword);
+      return {
+        keyword,
+        normalized,
+        tokens: normalized.split(" ").filter((token) => token.length > 1),
+        own: isOwnDashboardKeyword(keyword),
+        value: 0,
+      };
+    })
+    .filter((rule) => rule.normalized);
+
+  articles.forEach((article) => {
+    const articleKeyword = normalizeKeywordText(article.keyword || "");
+    const haystack = normalizeKeywordText(`${article.title || ""} ${article.summary || ""} ${article.description || ""} ${article.keyword || ""}`);
+    keywordRules.forEach((rule) => {
+      let matched = false;
+      if (rule.own) {
+        matched = isOwnArticle(article) || OWN_DASHBOARD_KEYWORD_ALIASES.some((alias) => haystack.includes(normalizeKeywordText(alias)));
+      } else if (articleKeyword === rule.normalized || haystack.includes(rule.normalized)) {
+        matched = true;
+      } else if (rule.tokens.length > 1 && rule.tokens.every((token) => haystack.includes(token))) {
+        matched = true;
+      }
+      if (matched) rule.value += 1;
+    });
+  });
+
+  return keywordRules.map(({ keyword, value }) => ({
     name: keyword,
     keyword,
-    value: articles.filter((article) => articleMatchesKeyword(article, keyword)).length,
+    value,
   }));
 }
 
