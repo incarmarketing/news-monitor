@@ -249,9 +249,11 @@ def daily_report_succeeded(report_date: str, slot: str) -> bool | None:
         return None
     report_complete = bool(report_rows) or bool(job_rows)
     notification_sent = bool(notification_rows)
+    if notification_sent and not report_complete:
+        print(f"Slack send is confirmed but report completion rows are missing for {report_date} {slot}.")
     if report_complete and not notification_sent:
         print(f"Report exists but Slack send is not confirmed for {report_date} {slot}.")
-    return report_complete and notification_sent
+    return notification_sent
 
 
 def daily_notification_title(report_date: str, slot: str) -> str:

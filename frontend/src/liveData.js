@@ -1,22 +1,25 @@
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
 
+const APP_BASE_URL = import.meta.env.BASE_URL || "/";
+
 const SUPABASE_CONFIG_PATHS = [
+  `${APP_BASE_URL}data/supabase.json`,
+  `${APP_BASE_URL}supabase.json`,
   "/data/supabase.json",
   "/public/data/supabase.json",
-  `${import.meta.env.BASE_URL || "/"}data/supabase.json`,
   "/supabase.json",
 ];
 
 const STATIC_DATA_PATHS = [
+  `${APP_BASE_URL}data/articles.json`,
   "/data/articles.json",
   "/public/data/articles.json",
-  `${import.meta.env.BASE_URL || "/"}data/articles.json`,
 ];
 
 const STOCK_MARKET_DATA_PATHS = [
+  `${APP_BASE_URL}data/stock-market.json`,
   "/data/stock-market.json",
   "/public/data/stock-market.json",
-  `${import.meta.env.BASE_URL || "/"}data/stock-market.json`,
 ];
 
 const ARTICLE_PAGE_SIZE = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_PAGE_SIZE", 1000, 500, 2000);

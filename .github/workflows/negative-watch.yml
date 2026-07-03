@@ -100,6 +100,6 @@ jobs:
 
       - name: Refresh dashboard snapshot
         if: always() && steps.watch.outputs.should_refresh_dashboard == 'true'
-        run: gh workflow run pages-dashboard.yml --ref main || echo "::warning::Dashboard refresh dispatch failed."
+        run: gh workflow run pages-dashboard.yml --ref main -f refresh_external=false || echo "::warning::Dashboard refresh dispatch failed."
         env:
           GH_TOKEN: ${{ github.token }}
