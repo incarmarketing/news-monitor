@@ -33,7 +33,8 @@ function asArray(value) {
 
 function HelperComponent({ name, fallback: Fallback = "div", props = {}, children }) {
   const Component = managementHelpers?.[name] || Fallback;
-  return <Component {...props}>{children}</Component>;
+  const { children: propChildren, ...restProps } = props || {};
+  return <Component {...restProps}>{children ?? propChildren}</Component>;
 }
 
 function PageTitle(props) { return <HelperComponent name="PageTitle" props={props} />; }
