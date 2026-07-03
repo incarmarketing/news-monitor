@@ -22,11 +22,18 @@ const STOCK_MARKET_DATA_PATHS = [
 const ARTICLE_PAGE_SIZE = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_PAGE_SIZE", 1000, 500, 2000);
 const SESSION_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_SESSION_ARTICLE_MAX_ROWS", 20000, 1000, 50000);
 const PUBLIC_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_PUBLIC_ARTICLE_MAX_ROWS", 12000, 1000, 50000);
+const ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_LOOKBACK_DAYS", 90, 14, 365);
 
 function readPositiveEnvInt(name, fallback, min, max) {
   const parsed = Number.parseInt(import.meta.env?.[name] || "", 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, parsed));
+}
+
+function articleLookbackStartDateKey() {
+  const date = new Date();
+  date.setDate(date.getDate() - (ARTICLE_LOOKBACK_DAYS - 1));
+  return date.toISOString().slice(0, 10);
 }
 
 const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/;
@@ -851,6 +858,7 @@ async function loadOperationalDataFromSupabaseSession() {
       "news_articles",
       [
         "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
+        `report_date=gte.${articleLookbackStartDateKey()}`,
         "order=report_date.desc,score.desc",
       ].join("&"),
       ARTICLE_PAGE_SIZE,
@@ -985,6 +993,7 @@ async function loadOperationalDataFromSupabasePublic() {
       "news_articles",
       [
         "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
+        `report_date=gte.${articleLookbackStartDateKey()}`,
         "order=report_date.desc,score.desc",
       ].join("&"),
       ARTICLE_PAGE_SIZE,
