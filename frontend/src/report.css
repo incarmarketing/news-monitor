@@ -1303,3 +1303,61 @@
     padding: 13px 20px 12px !important;
   }
 }
+
+/* Premium report redesign v6: prevent masthead crowding on A4 width */
+.report-workspace .a4-report-sheet.b2b-report-sheet .a4-masthead.b2b-report-header {
+  grid-template-columns: minmax(330px, 1fr) 330px !important;
+  gap: 16px !important;
+  padding: 24px 26px 22px !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block h2 {
+  max-width: 360px !important;
+  font-size: 30px !important;
+  line-height: 1.08 !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block p {
+  margin-bottom: 10px !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block em {
+  margin-top: 9px !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board {
+  gap: 5px !important;
+  padding: 5px !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board button {
+  min-height: 72px !important;
+  padding: 7px 6px !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board b {
+  font-size: 18px !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board span,
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board em {
+  font-size: 8px !important;
+}
+
+@media print {
+  .report-workspace .a4-report-sheet.b2b-report-sheet .a4-masthead.b2b-report-header {
+    grid-template-columns: minmax(305px, 1fr) 315px !important;
+    gap: 12px !important;
+    padding: 18px 20px 16px !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block h2 {
+    max-width: 330px !important;
+    font-size: 27px !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board button {
+    min-height: 60px !important;
+    padding: 6px 5px !important;
+  }
+}
