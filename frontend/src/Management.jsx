@@ -47,9 +47,12 @@ function KeywordManagerTable(props) { return <HelperComponent name="KeywordManag
 function ArticleDecisionNote(props) { return <HelperComponent name="ArticleDecisionNote" fallback="span" props={props} />; }
 
 function mergeMediaRows(...args) { return callHelper("mergeMediaRows", (rows = []) => rows || [], ...args); }
+function mergeAliasRows(...args) { return callHelper("mergeAliasRows", (remoteRows = [], localRows = []) => [...remoteRows, ...localRows], ...args); }
 function normalizeMediaDraft(...args) { return callHelper("normalizeMediaDraft", (row = {}) => row, ...args); }
 function upsertMediaLocal(...args) { return callHelper("upsertMediaLocal", (rows = [], row = {}) => [...rows, row], ...args); }
 function domainsForPressName(...args) { return callHelper("domainsForPressName", () => [], ...args); }
+function canonicalHost(...args) { return callHelper("canonicalHost", (value = "") => String(value || "").trim().toLowerCase(), ...args); }
+function upsertAliasRow(...args) { return callHelper("upsertAliasRow", (rows = [], row = {}) => [...rows, row], ...args); }
 function mergeReporterRows(...args) { return callHelper("mergeReporterRows", (rows = []) => rows || [], ...args); }
 function normalizeReporterDraft(...args) { return callHelper("normalizeReporterDraft", (row = {}) => row, ...args); }
 function reporterDraftFromRemote(...args) { return callHelper("reporterDraftFromRemote", (row = {}) => row, ...args); }
@@ -72,6 +75,8 @@ function keywordEntityTypeLabel(...args) { return callHelper("keywordEntityTypeL
 function keywordMatchTargetLabel(...args) { return callHelper("keywordMatchTargetLabel", (value = "") => value, ...args); }
 function keywordDefaultToneLabel(...args) { return callHelper("keywordDefaultToneLabel", (value = "") => value, ...args); }
 function splitKeywordTerms(...args) { return callHelper("splitKeywordTerms", (value = "") => String(value || "").split(/[,\n]/).map((item) => item.trim()).filter(Boolean), ...args); }
+function normalizeKeywordRow(...args) { return callHelper("normalizeKeywordRow", (row = {}) => row, ...args); }
+function keywordRowIdentity(...args) { return callHelper("keywordRowIdentity", (row = {}) => `${row.category || ""}:${row.keyword || ""}`, ...args); }
 function buildFeedbackRuleCandidates(...args) { return callHelper("buildFeedbackRuleCandidates", () => [], ...args); }
 function formatFeedbackStamp(...args) { return callHelper("formatFeedbackStamp", (value = "") => String(value || "").slice(0, 16), ...args); }
 function openArticleLink(...args) { return callHelper("openArticleLink", () => {}, ...args); }
