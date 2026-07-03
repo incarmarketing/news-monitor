@@ -10,7 +10,7 @@ export function HealthStatusPill({ status = "unknown", label }) {
 export function buildOperationsHealth({ operations, notifications, watchRuns, reportRuns, jobRuns, workflowHealth }) {
   const items = [
     buildWatchHealth(watchRuns, workflowHealth),
-    buildDailyReportHealth(notifications, reportRuns, jobRuns),
+    buildDailyReportHealth(notifications, reportRuns, jobRuns, operations),
     buildNotificationHealth(notifications),
     buildWorkflowActionsHealth(workflowHealth),
     buildHistorySourceHealth(operations, notifications, watchRuns, reportRuns, jobRuns),
@@ -70,43 +70,47 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   };
 }
 
-function buildDailyReportHealth(notifications = [], reportRuns = [], jobRuns = []) {
+function buildDailyReportHealth(notifications = [], reportRuns = [], jobRuns = [], operations = {}) {
   const today = kstDateKey(new Date());
   const currentMinute = kstMinuteOfDay(new Date());
+  const articles = Array.isArray(operations?.articles) ? operations.articles : [];
+  const hasNotificationLedger = notifications.length > 0;
   const slots = ["08", "13", "18"].map((slot) => {
     const dueMinute = Number(slot) * 60 + 15;
     const due = currentMinute >= dueMinute;
     const notificationOk = notifications.some((item) => isDailyReportNotificationForSlot(item, today, slot));
     const reportOk = reportRuns.some((row) => isReportRunForSlot(row, today, slot));
     const jobOk = jobRuns.some((row) => isDailyReportJobForSlot(row, today, slot));
-    const generatedOk = reportOk || jobOk;
+    const articleOk = articles.some((row) => isArticleForReportSlot(row, today, slot));
+    const generatedOk = reportOk || jobOk || articleOk;
+    const confirmedOk = notificationOk || generatedOk;
     let state = "예정";
     let status = "pending";
-    if (due && generatedOk && notificationOk) {
+    if (due && notificationOk) {
       state = "발송완료";
+      status = "ok";
+    } else if (due && generatedOk && !hasNotificationLedger) {
+      state = "생성확인";
       status = "ok";
     } else if (due && generatedOk) {
       state = "생성완료";
-      status = "ok";
-    } else if (due && notificationOk) {
-      state = "발송기록";
       status = "warn";
     } else if (due) {
       state = "미확인";
       status = "fail";
     }
-    return { slot, state, status, notificationOk, reportOk, jobOk, generatedOk, due };
+    return { slot, state, status, notificationOk, reportOk, jobOk, articleOk, generatedOk, confirmedOk, due };
   });
   const status = worstHealthStatus(slots.filter((slot) => slot.due).map((slot) => slot.status));
   const dueCount = slots.filter((slot) => slot.due).length;
   const sentCount = slots.filter((slot) => slot.notificationOk).length;
-  const generatedCount = slots.filter((slot) => slot.generatedOk).length;
-  const completedDueCount = slots.filter((slot) => slot.due && slot.generatedOk).length;
+  const generatedCount = slots.filter((slot) => slot.confirmedOk).length;
+  const completedDueCount = slots.filter((slot) => slot.due && slot.confirmedOk).length;
   const totalSlots = slots.length;
   const progress = dueCount
-    ? `도래 ${dueCount}회 중 생성 ${completedDueCount}회 · 슬랙기록 ${sentCount}회`
+    ? `도래 ${dueCount}회 중 확인 ${completedDueCount}회${hasNotificationLedger ? ` · 슬랙 ${sentCount}회` : ""}`
     : generatedCount
-      ? `오늘 생성 확인 ${generatedCount}회`
+      ? `오늘 확인 ${generatedCount}회`
       : "첫 발송 전";
   const statusLabel = dueCount ? status : generatedCount ? "ok" : "pending";
   return {
@@ -114,7 +118,7 @@ function buildDailyReportHealth(notifications = [], reportRuns = [], jobRuns = [
     icon: CalendarDays,
     status: statusLabel,
     label: dueCount ? healthStatusLabel(status) : generatedCount ? "정상" : "대기",
-    detail: `오늘 ${totalSlots}회 중 생성 ${generatedCount}회`,
+    detail: `오늘 ${totalSlots}회 중 확인 ${generatedCount}회`,
     progress,
     slots,
     meta: `슬랙기록 ${sentCount}회 · 보고서 ${generatedCount}회`,
@@ -365,6 +369,12 @@ function isDailyReportJobForSlot(row = {}, dateKey, slot) {
     || runKey.includes(`daily_report:${dateKey}:${slot}`)
     || kstHour(row.finishedAt || row.startedAt) === slot
   );
+}
+
+function isArticleForReportSlot(row = {}, dateKey, slot) {
+  const rowDate = row.reportDate || row.report_date || row.date || "";
+  const rowSlot = String(row.reportSlot || row.report_slot || row.slot || "").padStart(2, "0");
+  return rowDate === dateKey && (rowSlot === slot || rowSlot.includes(slot));
 }
 
 function isNotificationSuccess(item = {}) {
