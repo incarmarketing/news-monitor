@@ -4083,10 +4083,11 @@ function dashboardIssueScore(issue = {}) {
   const sponsorship = members.some(isOwnSponsoredSportsArticle) || ["브랜드/스폰서십", "스폰서십"].includes(issue.category);
   const groupToneScore = Math.max(...members.map((item) => ({ 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[item.tone] || 0)));
   const toneScore = Math.max(groupToneScore, { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0);
+  const watchScore = members.some(isWatchIssueArticle) ? 1200 : 0;
   const priorityScore = majorIssuePriorityScore(issue);
   const ownScore = !sponsorship && members.some(isOwnArticle) ? 520 : 0;
   const relatedScore = Math.min(Number(issue.relatedCount || 1), 6) * 24;
-  return priorityScore + ownScore + toneScore + relatedScore + Number(issue.score || 0);
+  return watchScore + priorityScore + ownScore + toneScore + relatedScore + Number(issue.score || 0);
 }
 
 function isMajorIssueCandidate(issue = {}) {
@@ -4094,6 +4095,7 @@ function isMajorIssueCandidate(issue = {}) {
     .filter(isUsableArticle)
     .filter((member) => !isOfficialRegulatorSource(member.source) || isOwnArticle(member));
   if (!members.length) return false;
+  if (members.some(isWatchIssueArticle)) return true;
   if (members.every(isNonInsuranceFinancialRegulatoryArticle)) return false;
   return members.some(isOwnArticle)
     || members.some(isGaInsuranceMajorIssueArticle)
@@ -5184,59 +5186,29 @@ function lastNDays(articles, days) {
 }
 
 function selectRealtimeArticles(articles = []) {
-  const latestSlot = latestScheduledReportSlot(articles);
-  const latestWatchDate = latestWatchIssueDate(articles);
-  const anchorDate = [latestSlot?.date, latestWatchDate].filter(Boolean).sort().at(-1);
-  if (anchorDate) {
-    const scheduled = articles.filter((article) => {
-      const dateKey = articleReportDateKey(article);
-      return latestSlot?.date === anchorDate && dateKey === anchorDate && normalizeReportSlot(article) === latestSlot.slot;
-    });
-    const watched = articles.filter((article) => {
-      const dateKey = articleReportDateKey(article);
-      return dateKey === anchorDate
-        && normalizeReportSlot(article) === "watch"
-        && isWatchIssueTone(article.tone);
-    });
-    const scoped = dedupeIssueMembers([...watched, ...scheduled]);
-    if (scoped.length) {
-      return scoped
-        .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
-        .slice(0, 240);
-    }
-  }
-  const recent = lastNDays(articles, 1);
-  return [...(recent.length ? recent : articles)]
-    .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
+  const todayKey = formatKstDateKey(new Date());
+  const todayArticles = articles.filter((article) => articleDashboardDateKey(article) === todayKey);
+  const watched = todayArticles.filter(isWatchIssueArticle);
+  const scoped = dedupeIssueMembers([...watched, ...todayArticles]);
+  return scoped
+    .sort((a, b) => watchIssuePriority(b) - watchIssuePriority(a) || articleTimeValue(b) - articleTimeValue(a))
     .slice(0, 240);
 }
 
-function latestScheduledReportSlot(articles = []) {
-  const candidates = articles
-    .map((article) => ({
-      date: articleReportDateKey(article),
-      slot: normalizeReportSlot(article),
-    }))
-    .filter((item) => item.date && ["08", "13", "18"].includes(item.slot));
-  if (!candidates.length) return null;
-  return candidates.sort((a, b) => b.date.localeCompare(a.date) || Number(b.slot) - Number(a.slot))[0];
+function articleDashboardDateKey(article = {}) {
+  return rowDateKey(article);
 }
 
-function latestWatchIssueDate(articles = []) {
-  const dates = articles
-    .filter((article) => normalizeReportSlot(article) === "watch" && isWatchIssueTone(article.tone))
-    .map(articleReportDateKey)
-    .filter(Boolean)
-    .sort();
-  return dates.at(-1) || "";
+function watchIssuePriority(article = {}) {
+  return isWatchIssueArticle(article) ? 1 : 0;
+}
+
+function isWatchIssueArticle(article = {}) {
+  return normalizeReportSlot(article) === "watch" && isWatchIssueTone(article.tone);
 }
 
 function isWatchIssueTone(tone = "") {
   return ["부정", "주의"].includes(String(tone || ""));
-}
-
-function articleReportDateKey(article = {}) {
-  return normalizeDateKey(article.reportDate || article.report_date || "") || rowDateKey(article);
 }
 
 function normalizeReportSlot(article = {}) {
