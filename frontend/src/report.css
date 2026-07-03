@@ -1363,3 +1363,506 @@
     padding: 6px 5px !important;
   }
 }
+
+/* Premium report redesign v7: landscape executive board */
+.report-workspace .a4-report-stage {
+  max-width: 1320px !important;
+  padding: 20px 18px 34px !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(37, 99, 235, .10), transparent 34%),
+    linear-gradient(180deg, #eef4fb 0%, #e7edf5 100%) !important;
+}
+
+.report-workspace .a4-report-stage-head {
+  margin-bottom: 14px !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet {
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+  width: min(286mm, 100%) !important;
+  min-height: 196mm !important;
+  height: 196mm !important;
+  margin: 0 auto !important;
+  overflow: hidden !important;
+  border: 1px solid #ccd8e8 !important;
+  border-radius: 14px !important;
+  background: #f8fafc !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .18) !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .a4-masthead.b2b-report-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(500px, .95fr) !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  padding: 20px 22px 18px !important;
+  border-bottom: 0 !important;
+  background:
+    linear-gradient(120deg, rgba(8, 20, 42, .98) 0%, rgba(24, 43, 89, .96) 53%, rgba(14, 92, 91, .92) 100%) !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block {
+  min-height: 112px !important;
+  padding: 0 !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block > div {
+  display: grid !important;
+  align-content: center !important;
+  height: 100% !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block p {
+  width: max-content !important;
+  margin: 0 0 10px !important;
+  padding: 5px 10px !important;
+  border: 1px solid rgba(147, 197, 253, .42) !important;
+  border-radius: 999px !important;
+  color: #bfdbfe !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .10em !important;
+  text-transform: uppercase !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block h2 {
+  max-width: none !important;
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: 35px !important;
+  line-height: 1.02 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block em {
+  display: block !important;
+  max-width: 100% !important;
+  margin-top: 10px !important;
+  overflow: hidden !important;
+  color: #dbeafe !important;
+  font-size: 12px !important;
+  font-style: normal !important;
+  font-weight: 750 !important;
+  line-height: 1.35 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  align-content: stretch !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board button {
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important;
+  align-items: center !important;
+  min-height: 112px !important;
+  padding: 12px 10px !important;
+  border: 1px solid rgba(226, 232, 240, .26) !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, .10) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13) !important;
+  text-align: left !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board button.negative {
+  background: rgba(127, 29, 29, .26) !important;
+  border-color: rgba(248, 113, 113, .34) !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board span {
+  overflow: hidden !important;
+  color: #cbd5e1 !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  letter-spacing: .06em !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board b {
+  align-self: center !important;
+  color: #ffffff !important;
+  font-size: 25px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board em {
+  overflow: hidden !important;
+  color: #dbeafe !important;
+  font-size: 8.5px !important;
+  font-style: normal !important;
+  font-weight: 760 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-signal-strip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 1px !important;
+  padding: 0 22px !important;
+  border-top: 1px solid rgba(15, 23, 42, .06) !important;
+  border-bottom: 1px solid #d9e4f1 !important;
+  background: #edf4fb !important;
+}
+
+.report-workspace .b2b-signal-strip > div {
+  display: grid !important;
+  grid-template-columns: minmax(90px, .45fr) minmax(0, .9fr) minmax(0, 1.35fr) !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 58px !important;
+  padding: 9px 12px !important;
+  border: 0 !important;
+  border-left: 1px solid #d7e2f0 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.report-workspace .b2b-signal-strip > div:first-child {
+  border-left: 0 !important;
+}
+
+.report-workspace .b2b-signal-strip span {
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+.report-workspace .b2b-signal-strip b {
+  overflow: hidden !important;
+  color: #07111f !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1.16 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-signal-strip em {
+  overflow: hidden !important;
+  color: #475569 !important;
+  font-size: 10px !important;
+  font-style: normal !important;
+  font-weight: 720 !important;
+  line-height: 1.25 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .a4-report-sheet.b2b-report-sheet .a4-report-body.b2b-report-body {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(370px, .95fr) !important;
+  gap: 14px !important;
+  min-height: 0 !important;
+  padding: 14px 22px 12px !important;
+  overflow: hidden !important;
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, .04) 0 1px, transparent 1px),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  background-size: 18px 18px, auto !important;
+}
+
+.report-workspace .a4-report-main-column,
+.report-workspace .a4-report-side-column {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+.report-workspace .a4-report-side-column {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+}
+
+.report-workspace .a4-panel.b2b-evidence-panel,
+.report-workspace .a4-panel.b2b-chart-panel {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  min-height: 0 !important;
+  padding: 13px 14px !important;
+  overflow: hidden !important;
+  border: 1px solid #d7e2f0 !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .06) !important;
+}
+
+.report-workspace .a4-panel.b2b-evidence-panel {
+  min-height: 0 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-panel-head,
+.report-workspace .b2b-chart-panel .a4-panel-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin: 0 0 10px !important;
+  padding: 0 0 8px !important;
+  border-bottom: 1px solid #dbe5f1 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-panel-head b,
+.report-workspace .b2b-chart-panel .a4-panel-head b {
+  color: #07111f !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-panel-head span,
+.report-workspace .b2b-chart-panel .a4-panel-head span {
+  padding: 3px 8px !important;
+  border: 1px solid #d7e2f0 !important;
+  border-radius: 999px !important;
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) 48px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-height: 58px !important;
+  padding: 8px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e1e9f3 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card:last-child {
+  border-bottom: 0 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-rank {
+  display: grid !important;
+  place-items: center !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 8px !important;
+  background: #07111f !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card b {
+  display: block !important;
+  overflow: hidden !important;
+  color: #07111f !important;
+  font-size: 12.2px !important;
+  font-weight: 900 !important;
+  line-height: 1.32 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card p {
+  display: block !important;
+  margin-top: 4px !important;
+  overflow: hidden !important;
+  color: #475569 !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card a {
+  justify-self: end !important;
+  align-self: center !important;
+  padding: 5px 8px !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 7px !important;
+  color: #1d4ed8 !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list,
+.report-workspace .b2b-chart-panel .a4-press-rows {
+  display: grid !important;
+  gap: 9px !important;
+  align-content: center !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list > div,
+.report-workspace .b2b-chart-panel .a4-press-rows button {
+  display: grid !important;
+  grid-template-columns: 86px minmax(0, 1fr) 34px !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-height: 23px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list span,
+.report-workspace .b2b-chart-panel .a4-press-rows span {
+  overflow: hidden !important;
+  color: #07111f !important;
+  font-size: 9.5px !important;
+  font-weight: 900 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list i,
+.report-workspace .b2b-chart-panel .a4-press-rows i {
+  height: 8px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: #e7eef7 !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list i::before,
+.report-workspace .b2b-chart-panel .a4-press-rows i::before {
+  border-radius: inherit !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list em,
+.report-workspace .b2b-chart-panel .a4-press-rows em {
+  color: #0f172a !important;
+  font-size: 9px !important;
+  font-style: normal !important;
+  font-weight: 950 !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-report-sheet .a4-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: 28px !important;
+  padding: 0 22px !important;
+  border-top: 1px solid #d9e4f1 !important;
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 760 !important;
+  background: #f8fafc !important;
+}
+
+@media (max-width: 1180px) {
+  .report-workspace .a4-report-sheet.b2b-report-sheet {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 720px !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .a4-masthead.b2b-report-header,
+  .report-workspace .a4-report-sheet.b2b-report-sheet .a4-report-body.b2b-report-body {
+    grid-template-columns: 1fr !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block h2 {
+    white-space: normal !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 6mm;
+  }
+
+  .report-workspace .a4-report-stage {
+    max-width: none !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .report-workspace .a4-report-stage-head,
+  .report-workspace .report-command-panel,
+  .report-workspace .report-print-actions {
+    display: none !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet {
+    width: 285mm !important;
+    height: 198mm !important;
+    min-height: 198mm !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .a4-masthead.b2b-report-header {
+    grid-template-columns: minmax(0, 1fr) 500px !important;
+    padding: 18px 20px 16px !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .b2b-title-block h2 {
+    font-size: 32px !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .b2b-metric-board button {
+    min-height: 98px !important;
+    padding: 10px 8px !important;
+  }
+
+  .report-workspace .b2b-signal-strip {
+    padding: 0 20px !important;
+  }
+
+  .report-workspace .b2b-signal-strip > div {
+    min-height: 52px !important;
+    padding: 8px 10px !important;
+  }
+
+  .report-workspace .a4-report-sheet.b2b-report-sheet .a4-report-body.b2b-report-body {
+    grid-template-columns: minmax(0, 1.05fr) minmax(350px, .95fr) !important;
+    gap: 12px !important;
+    padding: 12px 20px 10px !important;
+  }
+
+  .report-workspace .a4-panel.b2b-evidence-panel,
+  .report-workspace .a4-panel.b2b-chart-panel {
+    padding: 11px 12px !important;
+    box-shadow: none !important;
+  }
+
+  .report-workspace .b2b-evidence-panel .a4-priority-card {
+    min-height: 52px !important;
+    padding: 6px 0 !important;
+  }
+}
