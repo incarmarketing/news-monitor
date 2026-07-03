@@ -1403,6 +1403,71 @@ def load_press_alias_rows(limit: int = 1000) -> list[dict]:
     return rows
 
 
+def load_media_relation_rows(limit: int = 1000) -> list[dict]:
+    """Return media CRM rows for the static dashboard operations snapshot."""
+    if not is_enabled():
+        return []
+    try:
+        response = request(
+            "GET",
+            (
+                "media_relations?"
+                "select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden"
+                "&order=name.asc"
+                f"&limit={limit}"
+            ),
+        )
+    except Exception as error:
+        print(f"Supabase media relation rows skipped: {error}")
+        return []
+    rows = response.json()
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if not row.get("hidden")]
+
+
+def load_reporter_rows(limit: int = 500) -> list[dict]:
+    """Return reporter CRM rows for the static dashboard operations snapshot."""
+    if not is_enabled():
+        return []
+    try:
+        response = request(
+            "GET",
+            (
+                "reporters?"
+                "select=id,name,media,beat,status,contact_date,email,phone,request,memo,updated_at"
+                "&order=updated_at.desc"
+                f"&limit={limit}"
+            ),
+        )
+    except Exception as error:
+        print(f"Supabase reporter rows skipped: {error}")
+        return []
+    rows = response.json()
+    return rows if isinstance(rows, list) else []
+
+
+def load_ad_spend_rows(limit: int = 500) -> list[dict]:
+    """Return ad/sponsorship spend rows for the static dashboard operations snapshot."""
+    if not is_enabled():
+        return []
+    try:
+        response = request(
+            "GET",
+            (
+                "ad_spends?"
+                "select=id,media,spend_month,amount,spend_type,memo,updated_at"
+                "&order=spend_month.desc,updated_at.desc"
+                f"&limit={limit}"
+            ),
+        )
+    except Exception as error:
+        print(f"Supabase ad spend rows skipped: {error}")
+        return []
+    rows = response.json()
+    return rows if isinstance(rows, list) else []
+
+
 def load_monitor_profile() -> dict:
     if not is_enabled():
         return {}

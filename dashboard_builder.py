@@ -813,6 +813,30 @@ def load_dashboard_aliases() -> list[dict]:
     return []
 
 
+def load_dashboard_media_relations() -> list[dict]:
+    try:
+        return supabase_store.load_media_relation_rows()
+    except Exception as exc:
+        print(f"Supabase media relation source skipped: {exc}")
+    return []
+
+
+def load_dashboard_reporters() -> list[dict]:
+    try:
+        return supabase_store.load_reporter_rows()
+    except Exception as exc:
+        print(f"Supabase reporter source skipped: {exc}")
+    return []
+
+
+def load_dashboard_ad_spends() -> list[dict]:
+    try:
+        return supabase_store.load_ad_spend_rows()
+    except Exception as exc:
+        print(f"Supabase ad spend source skipped: {exc}")
+    return []
+
+
 def load_dashboard_classification_feedback() -> list[dict]:
     try:
         return supabase_store.load_classification_feedback_rows()
@@ -828,6 +852,9 @@ def publish_dashboard() -> Path:
     report_runs = build_report_runs(archives)
     keywords = load_dashboard_keywords()
     aliases = load_dashboard_aliases()
+    media_relations = load_dashboard_media_relations()
+    reporters = load_dashboard_reporters()
+    ad_spends = load_dashboard_ad_spends()
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
     scraps = load_supabase_scraps()
@@ -846,6 +873,9 @@ def publish_dashboard() -> Path:
                 "tone_labels": TONE_LABELS,
                 "keywords": keywords,
                 "aliases": aliases,
+                "media_relations": media_relations,
+                "reporters": reporters,
+                "ads": ad_spends,
                 "report_runs": report_runs,
                 "notifications": notifications,
                 "watch_runs": watch_runs,
@@ -1290,13 +1320,7 @@ def publish_supabase_public_config() -> None:
     project_ref = os.getenv("SUPABASE_PROJECT_REF", "").strip() or DEFAULT_SUPABASE_PROJECT_REF
     if not url and project_ref:
         url = f"https://{project_ref}.supabase.co"
-    anon_key = (
-        os.getenv("PUBLIC_SUPABASE_ANON_KEY")
-        or os.getenv("SUPABASE_ANON_KEY")
-        or os.getenv("PUBLIC_SUPABASE_PUBLISHABLE_KEY")
-        or os.getenv("SUPABASE_PUBLISHABLE_KEY")
-        or ""
-    )
+    anon_key = public_supabase_key()
     config_path = PUBLIC_DATA_DIR / "supabase.json"
     if not url or not anon_key:
         if config_path.exists():
@@ -1307,6 +1331,49 @@ def publish_supabase_public_config() -> None:
         json.dumps({"url": url, "anon_key": anon_key}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+
+
+def public_supabase_key() -> str:
+    explicit = (
+        os.getenv("PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+        or os.getenv("SUPABASE_PUBLISHABLE_KEY")
+        or public_key_from_json_env("SUPABASE_PUBLISHABLE_KEYS")
+        or public_key_from_json_env("PUBLIC_SUPABASE_PUBLISHABLE_KEYS")
+        or os.getenv("PUBLIC_SUPABASE_ANON_KEY")
+        or os.getenv("SUPABASE_ANON_KEY")
+        or ""
+    )
+    return explicit.strip()
+
+
+def public_key_from_json_env(name: str) -> str:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return ""
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return raw if raw.startswith(("sb_publishable_", "eyJ")) else ""
+    if isinstance(payload, str):
+        return payload.strip()
+    if isinstance(payload, dict):
+        preferred_keys = ("default", "publishable", "anon", "public", "current")
+        for key in preferred_keys:
+            value = payload.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+            if isinstance(value, dict):
+                nested = value.get("key") or value.get("value")
+                if isinstance(nested, str) and nested.strip():
+                    return nested.strip()
+        for value in payload.values():
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+            if isinstance(value, dict):
+                nested = value.get("key") or value.get("value")
+                if isinstance(nested, str) and nested.strip():
+                    return nested.strip()
+    return ""
 
 
 def enrich_issue_summaries(rows: list[dict]) -> list[dict]:

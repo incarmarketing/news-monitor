@@ -614,16 +614,55 @@ export async function loadOperationalData() {
     const session = getStoredSession();
     if (session?.session_token) {
       const remoteData = await loadOperationalDataFromSupabaseSession();
-      if (remoteData?.status === "live") return { ...remoteData, stockMarket };
+      if (remoteData?.status === "live") {
+        const staticFallback = await loadStaticOperationalData();
+        return mergeOperationalData({ ...remoteData, stockMarket }, staticFallback);
+      }
     }
     const publicData = await loadOperationalDataFromSupabasePublic();
-    if (publicData?.status === "live") return { ...publicData, stockMarket };
+    if (publicData?.status === "live") {
+      const staticFallback = await loadStaticOperationalData();
+      return mergeOperationalData({ ...publicData, stockMarket }, staticFallback);
+    }
     const staticData = await loadStaticOperationalData();
     if (staticData) return { ...staticData, stockMarket: staticData.stockMarket || stockMarket };
     return { ...base, stockMarket, status: "empty", message: "누적 데이터 없음" };
   } catch (error) {
     return { ...base, status: "error", message: error?.message || "누적 데이터 연결 실패" };
   }
+}
+
+function mergeOperationalData(primary, fallback) {
+  if (!fallback) return primary;
+  const merged = { ...primary };
+  const arrayFields = [
+    "articles",
+    "notifications",
+    "watchRuns",
+    "reportRuns",
+    "jobRuns",
+    "scraps",
+    "scrapAnalysisReports",
+    "mediaRelations",
+    "reporters",
+    "ads",
+    "aliases",
+    "keywords",
+    "riskDrafts",
+    "feedback",
+  ];
+  arrayFields.forEach((field) => {
+    if ((!Array.isArray(merged[field]) || merged[field].length === 0) && Array.isArray(fallback[field]) && fallback[field].length) {
+      merged[field] = fallback[field];
+    }
+  });
+  if (!merged.feedbackGeneratedAt && fallback.feedbackGeneratedAt) merged.feedbackGeneratedAt = fallback.feedbackGeneratedAt;
+  if (!merged.aiStatus && fallback.aiStatus) merged.aiStatus = fallback.aiStatus;
+  if (!merged.qualityChecks && fallback.qualityChecks) merged.qualityChecks = fallback.qualityChecks;
+  if (!merged.stockMarket && fallback.stockMarket) merged.stockMarket = fallback.stockMarket;
+  if (!merged.gaIntel && fallback.gaIntel) merged.gaIntel = fallback.gaIntel;
+  if (fallback.source && fallback.source !== merged.source) merged.fallbackSource = fallback.source;
+  return merged;
 }
 
 export async function loadStockMarketData() {
