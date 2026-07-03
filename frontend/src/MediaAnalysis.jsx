@@ -11,6 +11,7 @@ function callHelper(name, fallback, ...args) {
 function HelperComponent({ name, fallback: Fallback = "div", props = {}, children }) {
   const Component = mediaHelpers?.[name] || Fallback;
   const componentProps = { ...props };
+  // Lazy helper wrappers receive children through props; keep panel bodies alive.
   const resolvedChildren = children ?? componentProps.children;
   delete componentProps.children;
   return <Component {...componentProps}>{resolvedChildren}</Component>;
