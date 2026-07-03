@@ -3680,14 +3680,24 @@ function NotificationDetail({ item, onClose }) {
 
 function ReportAutomationStatus({ reportHealth, actionsHealth, historyHealth }) {
   const slots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
+  const completedSlots = slots.filter((slot) => ["ok", "warn"].includes(slot.status) || slot.confirmedOk);
+  const latestCompleted = completedSlots[completedSlots.length - 1];
+  const nextSlot = slots.find((slot) => slot.status === "pending");
   return (
     <div className="report-automation-status">
-      <div className={`operation-status-summary ${reportHealth?.status || "unknown"}`}>
-        <div>
-          <HealthStatusPill status={reportHealth?.status || "unknown"} label={reportHealth?.label || "확인"} />
-          <b>{reportHealth?.detail || "일일보고서 스케줄 확인 대기"}</b>
-        </div>
-        <span>{reportHealth?.progress || reportHealth?.meta || "정기 발송 스케줄"}</span>
+      <div className="automation-snapshot-grid">
+        <span>
+          <b>최근 완료</b>
+          <em>{latestCompleted ? `${latestCompleted.slot}:00 ${latestCompleted.state}` : "확인 대기"}</em>
+        </span>
+        <span>
+          <b>다음 발송</b>
+          <em>{nextSlot ? `${nextSlot.slot}:00 예정` : "오늘 일정 종료"}</em>
+        </span>
+        <span>
+          <b>주요이슈</b>
+          <em>보고서+감시 반영</em>
+        </span>
       </div>
       <div className="daily-slot-grid">
         {slots.map((slot) => (
@@ -5174,10 +5184,66 @@ function lastNDays(articles, days) {
 }
 
 function selectRealtimeArticles(articles = []) {
+  const latestSlot = latestScheduledReportSlot(articles);
+  const latestWatchDate = latestWatchIssueDate(articles);
+  const anchorDate = [latestSlot?.date, latestWatchDate].filter(Boolean).sort().at(-1);
+  if (anchorDate) {
+    const scheduled = articles.filter((article) => {
+      const dateKey = articleReportDateKey(article);
+      return latestSlot?.date === anchorDate && dateKey === anchorDate && normalizeReportSlot(article) === latestSlot.slot;
+    });
+    const watched = articles.filter((article) => {
+      const dateKey = articleReportDateKey(article);
+      return dateKey === anchorDate
+        && normalizeReportSlot(article) === "watch"
+        && isWatchIssueTone(article.tone);
+    });
+    const scoped = dedupeIssueMembers([...watched, ...scheduled]);
+    if (scoped.length) {
+      return scoped
+        .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
+        .slice(0, 240);
+    }
+  }
   const recent = lastNDays(articles, 1);
   return [...(recent.length ? recent : articles)]
     .sort((a, b) => articleTimeValue(b) - articleTimeValue(a))
     .slice(0, 240);
+}
+
+function latestScheduledReportSlot(articles = []) {
+  const candidates = articles
+    .map((article) => ({
+      date: articleReportDateKey(article),
+      slot: normalizeReportSlot(article),
+    }))
+    .filter((item) => item.date && ["08", "13", "18"].includes(item.slot));
+  if (!candidates.length) return null;
+  return candidates.sort((a, b) => b.date.localeCompare(a.date) || Number(b.slot) - Number(a.slot))[0];
+}
+
+function latestWatchIssueDate(articles = []) {
+  const dates = articles
+    .filter((article) => normalizeReportSlot(article) === "watch" && isWatchIssueTone(article.tone))
+    .map(articleReportDateKey)
+    .filter(Boolean)
+    .sort();
+  return dates.at(-1) || "";
+}
+
+function isWatchIssueTone(tone = "") {
+  return ["부정", "주의"].includes(String(tone || ""));
+}
+
+function articleReportDateKey(article = {}) {
+  return normalizeDateKey(article.reportDate || article.report_date || "") || rowDateKey(article);
+}
+
+function normalizeReportSlot(article = {}) {
+  const raw = String(article.reportSlot || article.report_slot || article.slot || "").trim().toLowerCase();
+  if (raw === "watch") return "watch";
+  const numeric = raw.match(/(?:^|[^0-9])(0?8|13|18)(?:[^0-9]|$)/)?.[1] || raw;
+  return ["8", "08", "13", "18"].includes(numeric) ? numeric.padStart(2, "0") : raw;
 }
 
 function expandReportIssues(issues, articles, period) {
@@ -7031,7 +7097,7 @@ function composeRealtimeData(base, articles, liveConnected = false) {
   if (!liveConnected) {
     return buildDisconnectedPeriodData(base);
   }
-  const realtimeArticles = filterRowsByPeriod(articles, "daily");
+  const realtimeArticles = articles.filter(Boolean);
   if (!realtimeArticles.length) {
     return buildDisconnectedPeriodData(base, "당일 기준으로 표시할 운영 기사가 없습니다.");
   }

@@ -2167,6 +2167,41 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   gap: 10px;
 }
 
+.automation-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.automation-snapshot-grid span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff, var(--paper-soft));
+}
+
+.automation-snapshot-grid b {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.automation-snapshot-grid em {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.25;
+  font-style: normal;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .daily-slot-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -9285,6 +9320,20 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   gap: 8px;
 }
 
+.ops-status-rail .automation-snapshot-grid {
+  gap: 6px;
+}
+
+.ops-status-rail .automation-snapshot-grid span {
+  padding: 8px;
+  border-radius: 7px;
+}
+
+.ops-status-rail .automation-snapshot-grid b,
+.ops-status-rail .automation-snapshot-grid em {
+  font-size: 11.5px;
+}
+
 .ops-status-rail .daily-slot-grid {
   gap: 6px;
 }
@@ -10427,6 +10476,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   .watch-lines div,
   .notification-list button,
   .operation-status-summary > div,
+  .automation-snapshot-grid,
   .automation-foot span,
   .press-row {
     grid-template-columns: 1fr;
