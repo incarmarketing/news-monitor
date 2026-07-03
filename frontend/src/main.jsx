@@ -417,11 +417,12 @@ function App() {
   const baseData = periodData[period];
   const needsPeriodData = activeSection === "reports";
   const needsRealtimeData = activeSection === "overview";
+  const needsMediaData = activeSection === "media";
   const needsManagementData = activeSection === "management";
   const liveConnected = operations.status === "live";
-  const allArticles = liveConnected ? operations.articles || [] : [];
-  const scraps = liveConnected ? operations.scraps || [] : [];
-  const needsScopedArticles = needsPeriodData || (needsManagementData && !liveConnected);
+  const allArticles = Array.isArray(operations.articles) ? operations.articles : [];
+  const scraps = Array.isArray(operations.scraps) ? operations.scraps : [];
+  const needsScopedArticles = needsPeriodData || needsMediaData || (needsManagementData && !liveConnected);
   const scopedArticles = useMemo(
     () => needsScopedArticles ? filterArticlesByPeriod(operations.articles || [], period) : [],
     [operations.articles, period, needsScopedArticles],
@@ -641,7 +642,7 @@ function App() {
           period={period}
           setPeriod={setPeriod}
           articles={
-            activeSection === "monitoring" || activeSection === "regulators"
+            activeSection === "monitoring" || activeSection === "regulators" || activeSection === "media"
               ? allArticles
               : activeSection === "overview"
                 ? realtimeArticles
