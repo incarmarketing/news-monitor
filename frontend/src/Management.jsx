@@ -152,11 +152,14 @@ const keywordDefaultTones = [
 export default function Management({ management, operations, onRefreshOperations, isWorking, helpers = {} }) {
   managementHelpers = helpers;
   const safeOperations = operations || {};
+  const managementMedia = asArray(management?.media);
+  const managementReporters = asArray(management?.reporters);
+  const managementAds = asArray(management?.ads);
   const safeManagement = {
     ...(management || {}),
-    media: asArray(management?.media),
-    reporters: asArray(management?.reporters),
-    ads: asArray(management?.ads),
+    media: managementMedia.length ? managementMedia : asArray(safeOperations.mediaRelations),
+    reporters: managementReporters.length ? managementReporters : asArray(safeOperations.reporters),
+    ads: managementAds.length ? managementAds : asArray(safeOperations.ads),
   };
   const aliases = asArray(safeOperations.aliases);
   const keywords = asArray(safeOperations.keywords);

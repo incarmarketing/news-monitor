@@ -422,11 +422,10 @@ function App() {
   const needsPeriodData = activeSection === "reports";
   const needsRealtimeData = activeSection === "overview";
   const needsMediaData = activeSection === "media";
-  const needsManagementData = activeSection === "management";
   const liveConnected = operations.status === "live";
   const allArticles = Array.isArray(operations.articles) ? operations.articles : [];
   const scraps = Array.isArray(operations.scraps) ? operations.scraps : [];
-  const needsScopedArticles = needsPeriodData || needsMediaData || (needsManagementData && !liveConnected);
+  const needsScopedArticles = needsPeriodData || needsMediaData;
   const scopedArticles = useMemo(
     () => needsScopedArticles ? filterArticlesByPeriod(operations.articles || [], period) : [],
     [operations.articles, period, needsScopedArticles],
@@ -448,8 +447,8 @@ function App() {
     [realtimeArticles, liveConnected, needsRealtimeData],
   );
   const management = useMemo(
-    () => needsManagementData ? composeManagementData(operations, liveConnected ? operations.articles || [] : scopedArticles) : {},
-    [operations, scopedArticles, liveConnected, needsManagementData],
+    () => composeManagementData(operations, allArticles),
+    [operations, allArticles],
   );
   const notifications = liveConnected ? operations.notifications || [] : [];
   const jobs = liveConnected && operations.watchRuns?.length
