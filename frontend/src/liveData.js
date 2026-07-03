@@ -850,7 +850,7 @@ async function loadOperationalDataFromSupabaseSession() {
       session,
       "news_articles",
       [
-        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size,raw",
+        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
         "order=report_date.desc,score.desc",
       ].join("&"),
       ARTICLE_PAGE_SIZE,
