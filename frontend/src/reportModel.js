@@ -10,13 +10,13 @@ export function publicationMeta(period, data) {
     },
     weekly: {
       kicker: "주간 리서치",
-      title: "주간 언론 동향 리서치 보고서",
+      title: "주간 언론 동향 보고서",
       subtitle: "해당 주차의 반복 노출, 논조 변화, 관리 이슈를 리서치 형식으로 정리합니다.",
       issue: `${date} · 주차 집계`,
     },
     monthly: {
       kicker: "월간 리서치",
-      title: "월간 언론 동향 리서치 보고서",
+      title: "월간 언론 동향 보고서",
       subtitle: "집계월 기준 누적 기사, 언론사별 보도량, 키워드 흐름을 리서치 형식으로 정리합니다.",
       issue: `${scope.month || date} · 집계월`,
     },

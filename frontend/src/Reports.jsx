@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { periodData } from "./data";
-import { A4BarList, A4MetricTable, A4Panel, A4PressRows } from "./reportComponents";
+import { A4BarList, A4Panel, A4PressRows } from "./reportComponents";
 import { buildA4ReportStats, publicationMeta, reportPurposeConfig } from "./reportModel";
 
 let reportHelpers = {};
@@ -209,31 +209,42 @@ function A4ReportSheet({
     .slice(0, 6);
   const issueGroups = buildA4IssueGroups(lead, issues, articles, period);
   const purpose = reportPurposeConfig(period);
+  const signalRows = buildB2BReportSignals(period, stats, categoryRows, pressRows, articles);
   return (
-    <article className={`a4-report-sheet ${period}`}>
-      <header className="a4-masthead">
-        <div className="a4-title-row">
+    <article className={`a4-report-sheet b2b-report-sheet ${period}`}>
+      <header className="a4-masthead b2b-report-header">
+        <div className="a4-title-row b2b-title-block">
           <div>
             <p>{edition.kicker}</p>
             <h2>{edition.title}</h2>
-            <em>{scope.scopeLabel || data.scope || edition.issue} · {purpose.focus}</em>
+            <em>{scope.scopeLabel || data.scope || edition.issue}</em>
           </div>
         </div>
-        <A4MetricTable stats={stats} onOpenMonitoring={onOpenMonitoring} />
+        <B2BMetricBoard stats={stats} onOpenMonitoring={onOpenMonitoring} />
       </header>
 
-      <section className="a4-report-body">
+      <section className="b2b-signal-strip">
+        {signalRows.map((item) => (
+          <div key={item.label} className={item.tone || ""}>
+            <span>{item.label}</span>
+            <b>{item.value}</b>
+            <em>{item.detail}</em>
+          </div>
+        ))}
+      </section>
+
+      <section className="a4-report-body b2b-report-body">
         <div className="a4-report-main-column">
-          <A4Panel title={purpose.issueTitle} meta={purpose.issueMeta}>
+          <A4Panel title={purpose.issueTitle} meta={purpose.issueMeta} className="b2b-evidence-panel">
             <A4PriorityArticleCards groups={issueGroups} period={period} />
           </A4Panel>
         </div>
 
         <div className="a4-report-side-column">
-          <A4Panel title={purpose.categoryTitle} meta="기간 기준">
+          <A4Panel title={purpose.categoryTitle} meta="기간 기준" className="b2b-chart-panel">
             <A4BarList rows={categoryRows} />
           </A4Panel>
-          <A4Panel title={purpose.pressTitle} meta="상위 6개사">
+          <A4Panel title={purpose.pressTitle} meta="상위 6개사" className="b2b-chart-panel">
             <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
           </A4Panel>
         </div>
@@ -245,6 +256,52 @@ function A4ReportSheet({
       </footer>
     </article>
   );
+}
+
+function B2BMetricBoard({ stats = [], onOpenMonitoring }) {
+  return (
+    <div className="b2b-metric-board" aria-label="report metrics">
+      {stats.map((item) => (
+        <button key={item.label} type="button" className={item.tone || ""} onClick={() => onOpenMonitoring?.(item.preset || {})}>
+          <span>{item.label}</span>
+          <b>{item.value}</b>
+          <em>{item.detail}</em>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function buildB2BReportSignals(period = "daily", stats = [], categoryRows = [], pressRows = [], articles = []) {
+  const statValue = (label) => stats.find((item) => item.label === label)?.value || "-";
+  const topCategory = categoryRows[0];
+  const topPress = pressRows[0];
+  const ownArticles = articles.filter(isOwnArticle);
+  const ownNegative = ownArticles.filter((item) => item.tone === "부정").length;
+  const scopeText = period === "daily" ? "당일" : period === "weekly" ? "주간" : "월간";
+  return [
+    {
+      label: "확인 우선순위",
+      value: "당사 · 부정 · 규제 · 반복",
+      detail: `${scopeText} 기사 중 바로 확인할 항목만 상단 배치`,
+    },
+    {
+      label: "상위 분류",
+      value: topCategory ? `${topCategory.name} ${Number(topCategory.value || 0).toLocaleString("ko-KR")}건` : "-",
+      detail: `분석 ${statValue("분석")}건 기준`,
+    },
+    {
+      label: "상위 언론사",
+      value: topPress ? `${topPress.source} ${Number(topPress.total || 0).toLocaleString("ko-KR")}건` : "-",
+      detail: "포털·금융당국 공식 출처 제외",
+    },
+    {
+      label: "분류 기준",
+      value: ownNegative > 0 ? "당사 부정 별도 확인" : "DB 룰 기반",
+      detail: "분류·묶음·우선순위 적용",
+      tone: ownNegative > 0 ? "negative" : "",
+    },
+  ];
 }
 
 function A4PriorityArticleCards({ groups = [], period = "daily" }) {

@@ -15,9 +15,9 @@ export function A4MetricTable({ stats = [], onOpenMonitoring }) {
   );
 }
 
-export function A4Panel({ title, meta, children }) {
+export function A4Panel({ title, meta, children, className = "" }) {
   return (
-    <section className="a4-panel">
+    <section className={`a4-panel ${className}`.trim()}>
       <div className="a4-panel-head">
         <b>{title}</b>
         {meta ? <span>{meta}</span> : null}
