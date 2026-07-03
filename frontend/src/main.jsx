@@ -57,6 +57,7 @@ import {
 import {
   generatePressReleaseWithGemini,
   generateScrapAnalysisWithGemini,
+  getStoredSession,
   loadOperationalData,
   saveArticleScrap,
   saveClassificationFeedback,
@@ -265,7 +266,10 @@ function App() {
   };
 
   const refreshOperations = async (options = {}) => {
-    const trigger = options.trigger === true;
+    const requestedTrigger = options.trigger === true;
+    const session = getStoredSession();
+    const canTriggerWorkflow = Boolean(session?.session_token);
+    const trigger = requestedTrigger && canTriggerWorkflow;
     const workflows = Array.isArray(options.workflows) && options.workflows.length
       ? options.workflows
       : options.workflow === "all"
@@ -288,7 +292,7 @@ function App() {
       status: trigger ? current.status : "loading",
       message: trigger ? `${label} 요청 중` : "연결 확인 중",
     }));
-    let triggerMessage = "";
+    let triggerMessage = requestedTrigger && !canTriggerWorkflow ? `${label} 표시 데이터 새로고침` : "";
     let triggerFailed = false;
     if (trigger) {
       try {
