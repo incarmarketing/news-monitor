@@ -638,6 +638,8 @@
   }
 }
 
+/* pages rebuild marker: report-ui-v6 */
+
 /* Premium report redesign v4: final override */
 .report-workspace .report-command-panel {
   display: grid !important;
