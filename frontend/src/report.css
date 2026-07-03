@@ -637,3 +637,533 @@
     padding: 7px 0 !important;
   }
 }
+
+/* Premium report redesign v4: final override */
+.report-workspace .report-command-panel {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: center !important;
+  margin: 18px auto 10px !important;
+  padding: 12px 14px !important;
+  max-width: 1240px !important;
+  border: 1px solid #d9e2ef !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, .97) !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .06) !important;
+}
+
+.report-workspace .report-command-copy span {
+  display: inline-flex !important;
+  margin: 0 0 3px !important;
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+.report-workspace .report-command-copy h1 {
+  margin: 0 !important;
+  color: #07111f !important;
+  font-size: 21px !important;
+  line-height: 1.12 !important;
+  letter-spacing: 0 !important;
+}
+
+.report-workspace .report-command-copy p {
+  display: none !important;
+}
+
+.report-workspace .report-command-actions {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.report-workspace .report-command-kpis {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin-top: 2px !important;
+}
+
+.report-workspace .report-command-kpis span {
+  min-height: 46px !important;
+  padding: 8px 10px !important;
+  border: 1px solid #dce5f1 !important;
+  border-radius: 8px !important;
+  background: #f8fafc !important;
+}
+
+.report-workspace .report-command-kpis em {
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 850 !important;
+}
+
+.report-workspace .report-command-kpis b {
+  color: #07111f !important;
+  font-size: 18px !important;
+}
+
+.report-workspace .a4-report-stage {
+  max-width: 1240px !important;
+  margin: 0 auto 36px !important;
+  padding: 22px !important;
+  border: 1px solid #d9e2ef !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, #eef4fb 0%, #f8fafc 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8) !important;
+}
+
+.report-workspace .a4-report-stage-head {
+  margin-bottom: 12px !important;
+  color: #334155 !important;
+  font-size: 11px !important;
+}
+
+.report-workspace .b2b-report-sheet {
+  display: grid !important;
+  grid-template-rows: auto auto 1fr auto !important;
+  width: min(198mm, 100%) !important;
+  min-height: 280mm !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid #cbd7e6 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .14) !important;
+}
+
+.report-workspace .b2b-report-sheet::before,
+.report-workspace .b2b-report-sheet::after {
+  display: none !important;
+  content: none !important;
+}
+
+.report-workspace .b2b-report-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 390px !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+  padding: 26px 28px 24px !important;
+  border: 0 !important;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(45, 212, 191, .22), transparent 28%),
+    linear-gradient(135deg, #09111f 0%, #142b62 62%, #0f5f63 100%) !important;
+}
+
+.report-workspace .b2b-title-block {
+  display: flex !important;
+  align-items: flex-end !important;
+  min-width: 0 !important;
+}
+
+.report-workspace .b2b-title-block p {
+  display: inline-flex !important;
+  margin: 0 0 13px !important;
+  padding: 5px 10px !important;
+  border: 1px solid rgba(191, 219, 254, .46) !important;
+  border-radius: 999px !important;
+  color: #dbeafe !important;
+  background: rgba(15, 23, 42, .22) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+.report-workspace .b2b-title-block h2 {
+  max-width: 650px !important;
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: 36px !important;
+  font-weight: 950 !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+  word-break: keep-all !important;
+}
+
+.report-workspace .b2b-title-block em {
+  display: block !important;
+  margin-top: 10px !important;
+  color: #cbd5e1 !important;
+  font-size: 12px !important;
+  font-style: normal !important;
+  font-weight: 800 !important;
+}
+
+.report-workspace .b2b-metric-board {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  align-content: stretch !important;
+  padding: 6px !important;
+  border: 1px solid rgba(226, 232, 240, .28) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, .10) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16) !important;
+}
+
+.report-workspace .b2b-metric-board button {
+  display: grid !important;
+  grid-template-rows: auto 1fr auto !important;
+  align-items: center !important;
+  min-height: 84px !important;
+  padding: 9px 8px !important;
+  border: 1px solid rgba(255, 255, 255, .18) !important;
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, .96) !important;
+  box-shadow: 0 8px 18px rgba(2, 6, 23, .12) !important;
+  text-align: left !important;
+}
+
+.report-workspace .b2b-metric-board span {
+  overflow: hidden !important;
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-metric-board b {
+  color: #07111f !important;
+  font-size: 22px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.report-workspace .b2b-metric-board em {
+  overflow: hidden !important;
+  color: #475569 !important;
+  font-size: 8.8px !important;
+  font-style: normal !important;
+  font-weight: 800 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-metric-board .positive b {
+  color: #047857 !important;
+}
+
+.report-workspace .b2b-metric-board .caution b {
+  color: #b45309 !important;
+}
+
+.report-workspace .b2b-metric-board .negative b {
+  color: #dc2626 !important;
+}
+
+.report-workspace .b2b-signal-strip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 14px 28px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dce5f1 !important;
+  background: #f8fafc !important;
+}
+
+.report-workspace .b2b-signal-strip div {
+  min-height: 62px !important;
+  padding: 11px 12px !important;
+  border: 1px solid #d9e2ef !important;
+  border-left: 4px solid #2563eb !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, .05) !important;
+}
+
+.report-workspace .b2b-signal-strip div.positive {
+  border-left-color: #059669 !important;
+}
+
+.report-workspace .b2b-signal-strip div.negative {
+  border-left-color: #dc2626 !important;
+}
+
+.report-workspace .b2b-signal-strip span {
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  letter-spacing: .04em !important;
+}
+
+.report-workspace .b2b-signal-strip b {
+  display: block !important;
+  margin-top: 5px !important;
+  overflow: hidden !important;
+  color: #07111f !important;
+  font-size: 14px !important;
+  line-height: 1.18 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-signal-strip em {
+  display: block !important;
+  margin-top: 4px !important;
+  overflow: hidden !important;
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-style: normal !important;
+  font-weight: 750 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-report-body {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.22fr) minmax(282px, .78fr) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+  padding: 18px 28px 18px !important;
+  background: #ffffff !important;
+}
+
+.report-workspace .b2b-evidence-panel,
+.report-workspace .b2b-chart-panel {
+  border: 1px solid #d8e2ef !important;
+  border-top: 0 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .045) !important;
+}
+
+.report-workspace .b2b-evidence-panel {
+  min-height: 545px !important;
+  padding: 15px 16px 14px !important;
+}
+
+.report-workspace .b2b-chart-panel {
+  min-height: 265px !important;
+  padding: 15px 14px 14px !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-panel-head,
+.report-workspace .b2b-chart-panel .a4-panel-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding-bottom: 11px !important;
+  border-bottom: 1px solid #dbe4f0 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-panel-head b,
+.report-workspace .b2b-chart-panel .a4-panel-head b {
+  color: #07111f !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-panel-head span,
+.report-workspace .b2b-chart-panel .a4-panel-head span {
+  padding: 4px 8px !important;
+  border: 1px solid #d7e2f0 !important;
+  border-radius: 999px !important;
+  color: #64748b !important;
+  background: #f8fafc !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 9px !important;
+  margin-top: 13px !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card {
+  display: grid !important;
+  grid-template-columns: 36px minmax(0, 1fr) 50px !important;
+  align-items: center !important;
+  min-height: 72px !important;
+  padding: 11px !important;
+  border: 1px solid #dce5f1 !important;
+  border-left: 4px solid #1d4ed8 !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-rank {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-main {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-meta em {
+  overflow: hidden !important;
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-card b {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  color: #07111f !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1.25 !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+.report-workspace .b2b-evidence-panel .a4-priority-open {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 42px !important;
+  height: 28px !important;
+  border: 1px solid #cbd8ea !important;
+  border-radius: 6px !important;
+  color: #1d4ed8 !important;
+  background: #ffffff !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list,
+.report-workspace .b2b-chart-panel .a4-press-rows {
+  display: grid !important;
+  gap: 12px !important;
+  margin-top: 13px !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list > div,
+.report-workspace .b2b-chart-panel .a4-press-rows button {
+  display: grid !important;
+  grid-template-columns: 90px minmax(0, 1fr) 34px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 25px !important;
+  padding: 0 !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list span,
+.report-workspace .b2b-chart-panel .a4-press-rows span {
+  overflow: hidden !important;
+  color: #07111f !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list i,
+.report-workspace .b2b-chart-panel .a4-press-rows i {
+  height: 8px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: #e9eef5 !important;
+}
+
+.report-workspace .b2b-chart-panel .a4-bar-list em,
+.report-workspace .b2b-chart-panel .a4-press-rows em {
+  color: #0f172a !important;
+  font-size: 9.5px !important;
+  font-weight: 950 !important;
+  text-align: right !important;
+}
+
+.report-workspace .b2b-report-sheet .a4-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 11px 28px 16px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 9px !important;
+  font-weight: 750 !important;
+}
+
+@media print {
+  .report-workspace .b2b-report-sheet,
+  .b2b-report-sheet {
+    width: 198mm !important;
+    min-height: 280mm !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .report-workspace .b2b-report-header {
+    grid-template-columns: minmax(0, 1fr) 365px !important;
+    padding: 18px 20px 16px !important;
+  }
+
+  .report-workspace .b2b-title-block h2 {
+    font-size: 29px !important;
+  }
+
+  .report-workspace .b2b-metric-board button {
+    min-height: 66px !important;
+    padding: 7px 6px !important;
+  }
+
+  .report-workspace .b2b-metric-board b {
+    font-size: 18px !important;
+  }
+
+  .report-workspace .b2b-signal-strip {
+    padding: 10px 20px !important;
+    gap: 7px !important;
+  }
+
+  .report-workspace .b2b-signal-strip div {
+    min-height: 52px !important;
+    padding: 8px 9px !important;
+  }
+
+  .report-workspace .b2b-report-body {
+    grid-template-columns: minmax(0, 1.2fr) minmax(255px, .8fr) !important;
+    gap: 10px !important;
+    padding: 13px 20px 12px !important;
+  }
+
+  .report-workspace .b2b-evidence-panel {
+    min-height: 500px !important;
+  }
+
+  .report-workspace .b2b-chart-panel {
+    min-height: 244px !important;
+  }
+
+  .report-workspace .b2b-evidence-panel .a4-priority-card {
+    min-height: 62px !important;
+    padding: 8px 9px !important;
+  }
+}
