@@ -1,0 +1,197 @@
+{
+  "date": "2026-07-05",
+  "timestamp": "2026-07-05T08:07:29.850756+09:00",
+  "window": {
+    "slot": "08",
+    "label": "전일 18:00~당일 08:00",
+    "short_label": "전일 18시 이후",
+    "start": "2026-07-04T18:00:00+09:00",
+    "end": "2026-07-05T08:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 10,
+    "total_after_cluster": 10,
+    "by_category": {
+      "own": 0,
+      "regulation": 1,
+      "competitor": 1,
+      "industry": 8,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 1,
+      "positive": 0,
+      "neutral": 9
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 1,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-05 18:07 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 이슈가 중심이다. 1200%룰 시행 첫 주 안갯속이다. ## 핵심 이슈 - 1200%룰 시행 첫 주, 안갯속 GA 현장 - 한화생명, 선별급여 암특약 배타적사용권 획득 ## 지표 해석 전체 수집 10건 중 분석 대상은 10건이다. 리스크는 LOW이다. ## 분석 키워드 1200%, 생명보험, 보험설계사, 손해보험",
+  "articles": [
+    {
+      "title": "1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+) - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTFBxUHowSkQ5Q3c1ZW1RaW1QTjBvZ3Fzb1JYancycmZta01iSlVCM3NVdEJQeXI3aG16OVVKWjU5TjdaNTNGSHhDb0o0YnloR05keHkxUG9MaF82NUdJcVNkNkZRUmxtVXRleFZxMjdjdw?oc=5",
+      "source": "보험저널",
+      "keyword": "1200%",
+      "description": "1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+)&nbsp;&nbsp;보험저널",
+      "_summary": "1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+) 보험저널. 1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+) - 보험저널.",
+      "pub_date": "Sat, 04 Jul 2026 09:19:45 GMT",
+      "_report_id": 1,
+      "_score": 16,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"보장 공백 메웠다\"…한화생명, 선별급여 암특약 배타적사용권 획득",
+      "link": "https://www.apnews.kr/news/articleView.html?idxno=3049499",
+      "source": "apnews.kr",
+      "keyword": "생명보험",
+      "description": "한화생명은 암환자의 실제 치료비 부담을 줄이기 위해 개발한 '선별급여 암주요치료보장S특약Ⅱ(연1회)'이 생명보험협회로부터 9개월 배타적사용권을 획득했다고 3일 밝혔다. 해당 특약은 '한화생명 시그니처H암보험'과...",
+      "_summary": "한화생명은 암환자의 실제 치료비 부담을 줄이기 위해 개발한 '선별급여 암주요치료보장S특약Ⅱ(연1회)'이 생명보험협회로부터 9개월 배타적사용권을 획득했다고 3일 밝혔다 해당 특약은 '한화생명 시그니처H암보험'과. \"보장 공백 메웠다\"…한화생명, 선별급여 암특약 배타적사용권 획득.",
+      "pub_date": "Sat, 04 Jul 2026 19:04:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "꼭 종신보험이어야 할까? 10분의 1 보험료로 사망보장 받는 법 [재테크 ...",
+      "link": "https://www.thescoop.co.kr/news/articleView.html?idxno=310803",
+      "source": "thescoop.co.kr",
+      "keyword": "보험설계사",
+      "description": "가장 큰 원인은 보험설계사인 지인의 권유로 가입한 보험이다. 남편 상균씨는 현재 사망을 보장해주는 35만원짜리 종신보험에 가입한 상태다. \"건설 현장에서 불의의 사고를 당했을 때를 대비하자\"는 게 가입 당시...",
+      "_summary": "가장 큰 원인은 보험설계사인 지인의 권유로 가입한 보험이다 남편 상균씨는 현재 사망을 보장해주는 35만원짜리 종신보험에 가입한 상태다 \"건설 현장에서 불의의 사고를 당했을 때를 대비하자\"는 게 가입 당시.",
+      "pub_date": "Sat, 04 Jul 2026 19:32:00 +0900",
+      "_report_id": 3,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "'스타'를 연기한 '스타'…데뷔 이래 가장 매운맛 도전",
+      "link": "https://www.obsnews.co.kr/news/articleView.html?idxno=1529465",
+      "source": "obsnews.co.kr",
+      "keyword": "보험설계사",
+      "description": "멤버 중 폭풍 래퍼로 불렸으나 현재는 생계를 위해 보험 설계사로 살아가는 '구상구' 역은 엄태구가 열연했다. 평소 내성적인 성격으로 유명한 엄태구는 낯선 랩과 파격적인 비주얼로 독보적인 캐릭터를 구축해 냈다....",
+      "_summary": "멤버 중 폭풍 래퍼로 불렸으나 현재는 생계를 위해 보험 설계사로 살아가는 '구상구' 역은 엄태구가 열연했다 평소 내성적인 성격으로 유명한 엄태구는 낯선 랩과 파격적인 비주얼로 독보적인 캐릭터를 구축해 냈다 '스타'를 연기한 '스타'…데뷔 이래 가장 매운맛 도전.",
+      "pub_date": "Sat, 04 Jul 2026 18:58:00 +0900",
+      "_report_id": 4,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "낮아진 몸값에 재무 불확실성도 완화…보험사 M&A 재점화",
+      "link": "https://www.shinailbo.co.kr/news/articleView.html?idxno=5037156",
+      "source": "shinailbo.co.kr",
+      "keyword": "손해보험",
+      "description": "5일 보험업계에 따르면, 현재 시장에서는 예별손해보험과 KDB생명, 롯데손해보험 등이 매각을 추진 중이다. 예별손해보험은 최근 본입찰을 마치고 우선협상대상자 선정을 앞두고 있으며 KDB생명도 인수 절차가 진행되고...",
+      "_summary": "5일 보험업계에 따르면, 현재 시장에서는 예별손해보험과 KDB생명, 롯데손해보험 등이 매각을 추진 중이다 예별손해보험은 최근 본입찰을 마치고 우선협상대상자 선정을 앞두고 있으며 KDB생명도 인수 절차가 진행되고. 낮아진 몸값에 재무 불확실성도 완화…보험사 M&A 재점화.",
+      "pub_date": "Sun, 05 Jul 2026 07:00:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "카드사, 생활 패턴 읽는 신상품 잇따라 내놔",
+      "link": "https://it.chosun.com/news/articleView.html?idxno=2023092165087",
+      "source": "it.chosun.com",
+      "keyword": "손해보험",
+      "description": "하나은행, 하나증권, 하나손해보험 등 그룹 계열사 이용 고객에게는 추가 혜택도 제공한다. 업계에서는 카드 상품의 기본 혜택이 상향 평준화되면서 카드사들이 특정 소비 패턴과 결제 경험, 고객 라이프스타일을...",
+      "_summary": "하나은행, 하나증권, 하나손해보험 등 그룹 계열사 이용 고객에게는 추가 혜택도 제공한다 업계에서는 카드 상품의 기본 혜택이 상향 평준화되면서 카드사들이 특정 소비 패턴과 결제 경험, 고객 라이프스타일을. 카드사, 생활 패턴 읽는 신상품 잇따라 내놔.",
+      "pub_date": "Sun, 05 Jul 2026 06:30:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험사 M&A 시장 후끈…예별·롯데손보·KDB생명 새주인 찾기 속도",
+      "link": "https://www.theguru.co.kr/news/article.html?no=103835",
+      "source": "theguru.co.kr",
+      "keyword": "손해보험",
+      "description": "예별손해보험과 롯데손해보험, KDB생명이 새주인 찾기에 속도를 내고 있다. 4일 보험업계에 따르면, 예별손보의 두 번째 본입찰에 흥국화재, OK금융그룹, JC플라워, 한국투자금융지주가 참여했다. 예별손보는 MG손해보험...",
+      "_summary": "예별손해보험과 롯데손해보험, KDB생명이 새주인 찾기에 속도를 내고 있다 4일 보험업계에 따르면, 예별손보의 두 번째 본입찰에 흥국화재, OK금융그룹, JC플라워, 한국투자금융지주가 참여했다 예별손보는 MG손해보험.",
+      "pub_date": "Sun, 05 Jul 2026 00:02:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "호우·태풍 피해 10년간 3.9조…손보협회 \"침수 보장 미리 확인해야\"",
+      "link": "https://www.apnews.kr/news/articleView.html?idxno=3049498",
+      "source": "apnews.kr",
+      "keyword": "손해보험",
+      "description": "손해보험협회는 3일 여름철 침수 피해에 대비해 보험소비자가 활용할 수 있는 손해보험 상품 정보를 안내했다. 협회는 여름마다 집중호우와 태풍으로 자동차, 주택, 동산 침수 피해가 빈번하게 발생하고 있다며...",
+      "_summary": "손해보험협회는 3일 여름철 침수 피해에 대비해 보험소비자가 활용할 수 있는 손해보험 상품 정보를 안내했다 협회는 여름마다 집중호우와 태풍으로 자동차, 주택, 동산 침수 피해가 빈번하게 발생하고 있다며.",
+      "pub_date": "Sat, 04 Jul 2026 18:52:00 +0900",
+      "_report_id": 8,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "생보사 상품 키워드는 '세분화'…치료·간병 담보 강화",
+      "link": "http://www.fins.co.kr/news/articleView.html?idxno=109024",
+      "source": "보험매일",
+      "keyword": "생명보험",
+      "description": "생명보험사들이 7월 상품 개정과 최근 출시 상품을 통해 보장 구조를 세분화하는 모습을 보이고 있다. 과거 건강보험이 주요 질병 진단비 중심이었다면 최근에는 검사·치료·통원·재활·간병 서비스 등 실제 비용이...",
+      "_summary": "생명보험사들이 7월 상품 개정과 최근 출시 상품을 통해 보장 구조를 세분화하는 모습을 보이고 있다 과거 건강보험이 주요 질병 진단비 중심이었다면 최근에는 검사·치료·통원·재활·간병 서비스 등 실제 비용이.",
+      "pub_date": "Sun, 05 Jul 2026 07:28:00 +0900",
+      "_report_id": 9,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“상급병원 권유가 재검사 소견?”…고지의무 위반 기준 제시한 법원 [...",
+      "link": "https://magazine.hankyung.com/business/article/202606305737b",
+      "source": "magazine.hankyung.com",
+      "keyword": "보험사",
+      "description": "다행히 보험사들이 최근 유병력자를 타깃으로 한 상품을 잇달아 내놓고 있다. 그러나 유병자 보험에 가입했다고 해서 마냥 안심할 수 있는 건 아니다. 보험사들이 ‘고지의무’ 위반을 이유로 보험금 미지급을...",
+      "_summary": "다행히 보험사들이 최근 유병력자를 타깃으로 한 상품을 잇달아 내놓고 있다 그러나 유병자 보험에 가입했다고 해서 마냥 안심할 수 있는 건 아니다 보험사들이 ‘고지의무’ 위반을 이유로 보험금 미지급을.",
+      "pub_date": "Sun, 05 Jul 2026 06:04:00 +0900",
+      "_report_id": 10,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
