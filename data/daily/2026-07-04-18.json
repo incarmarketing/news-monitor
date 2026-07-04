@@ -1,0 +1,155 @@
+{
+  "date": "2026-07-04",
+  "timestamp": "2026-07-04T18:07:56.912350+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-07-04T13:00:00+09:00",
+    "end": "2026-07-04T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 8,
+    "total_after_cluster": 7,
+    "by_category": {
+      "own": 0,
+      "regulation": 4,
+      "competitor": 1,
+      "industry": 3,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "negative": 0,
+      "caution": 4,
+      "positive": 0,
+      "neutral": 4
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 2,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-05 18:07 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 이슈가 중심이다. 1200%룰 시행 첫 주 안갯속이다. ## 핵심 이슈 - 1200%룰 시행 첫 주, 안갯속 GA 현장 - 금감원, GA 내부통제 실태평가 일정 공개 ## 지표 해석 전체 수집 8건 중 분석 대상은 7건이다. 정책/규제 4건, 경쟁/업계 4건이다. ## 분석 키워드 1200%, 내부통제, 금융감독원, 손해보험",
+  "articles": [
+    {
+      "title": "1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+) - 보험저널",
+      "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTFBxUHowSkQ5Q3c1ZW1RaW1QTjBvZ3Fzb1JYancycmZta01iSlVCM3NVdEJQeXI3aG16OVVKWjU5TjdaNTNGSHhDb0o0YnloR05keHkxUG9MaF82NUdJcVNkNkZRUmxtVXRleFZxMjdjdw?oc=5",
+      "source": "보험저널",
+      "keyword": "1200%",
+      "description": "1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+)&nbsp;&nbsp;보험저널",
+      "_summary": "1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+) 보험저널. 1200%룰 시행 첫 주, 안갯속 GA 현장… 자본력·지원체계가 생존 변수로 (영상+) - 보험저널.",
+      "pub_date": "Sat, 04 Jul 2026 06:15:35 GMT",
+      "_report_id": 1,
+      "_score": 16,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "금감원, GA 내부통제 실태평가 일정 공개 - 보험매일",
+      "link": "https://news.google.com/rss/articles/CBMiZ0FVX3lxTE94RVhmbXYwbHVEUjd0aXl0OVhndjg5bTlxTHhMeWlQMW9fY3FMZnNqcllwWEMtekZXV1dVYWtFLThCY0paZWQ4NVF0VjljMWpGWDRUdEtnci1JUFF4NXZ4RFBUdlExbWc?oc=5",
+      "source": "보험매일",
+      "keyword": "내부통제",
+      "description": "금감원, GA 내부통제 실태평가 일정 공개&nbsp;&nbsp;보험매일",
+      "_summary": "금감원, GA 내부통제 실태평가 일정 공개 보험매일. 금감원, GA 내부통제 실태평가 일정 공개 - 보험매일.",
+      "pub_date": "Sat, 04 Jul 2026 05:26:33 GMT",
+      "_report_id": 2,
+      "_score": 16,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 2
+    },
+    {
+      "title": "[금상소] “내 소비습관에 딱”⋯카드사, 초맞춤형 상품 잇따라 출시",
+      "link": "https://www.etoday.co.kr/news/view/2600030",
+      "source": "etoday.co.kr",
+      "keyword": "손해보험",
+      "description": "이동통신 요금과 KB손해보험 보험료 할인도 제공한다. 월 통합 할인 한도는 전월 이용 실적에 따라 1만~2만원이며 연회비는 없다. 결제 방식에 따라 혜택을 달리한 카드도 나왔다. 신한카드가 토스와 함께 출시한 ‘Toss...",
+      "_summary": "이동통신 요금과 KB손해보험 보험료 할인도 제공한다 월 통합 할인 한도는 전월 이용 실적에 따라 1만~2만원이며 연회비는 없다 결제 방식에 따라 혜택을 달리한 카드도 나왔다",
+      "pub_date": "Sat, 04 Jul 2026 17:00:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "포항 힐스테이트 더샵 상생공원 1단지, 조망·일조권 논란",
+      "link": "https://www.newsis.com/view/NISX20260704_0003695909",
+      "source": "뉴시스",
+      "keyword": "불완전판매",
+      "description": "협의회는 \"이는 명백한 불완전판매이자 입주민을 기만한 허위 고지\"라며 \"현재 계약자들의 항의와 민원이 극에 달한 상황\"이라고 주장했다. 이어 \"설계 변경을 비롯해 옹벽 및 산지 절취 공정 조정 등 실질적인 대책과...",
+      "_summary": "협의회는 \"이는 명백한 불완전판매이자 입주민을 기만한 허위 고지\"라며 \"현재 계약자들의 항의와 민원이 극에 달한 상황\"이라고 주장했다 이어 \"설계 변경을 비롯해 옹벽 및 산지 절취 공정 조정 등 실질적인 대책과. 포항 힐스테이트 더샵 상생공원 1단지, 조망·일조권 논란.",
+      "pub_date": "Sat, 04 Jul 2026 17:30:00 +0900",
+      "_report_id": 4,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "회생 폐지에 무너진 일터…직원들 사생결단 총력투쟁[홈플러스 운명의...",
+      "link": "https://www.newsis.com/view/NISX20260703_0003695365",
+      "source": "뉴시스",
+      "keyword": "금융감독원",
+      "description": "마트노조는 금융감독원 제재심의위원회가 MBK파트너스에 대해 직무정지 중징계를 결정한 것으로 알려진 데 대해서도 \"늦었지만 당연한 결정\"이라고 평가했다. 노조는 \"이번 결정은 홈플러스 노동자들이 1년 4개월 동안...",
+      "_summary": "마트노조는 금융감독원 제재심의위원회가 MBK파트너스에 대해 직무정지 중징계를 결정한 것으로 알려진 데 대해서도 \"늦었지만 당연한 결정\"이라고 평가했다 노조는 \"이번 결정은 홈플러스 노동자들이 1년 4개월 동안. 회생 폐지에 무너진 일터…직원들 사생결단 총력투쟁[홈플러스 운명의.",
+      "pub_date": "Sat, 04 Jul 2026 13:00:00 +0900",
+      "_report_id": 5,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "4만원 도수치료 안한다는 병원, 환자만 또 성지 찾게 생겼다 [Health&]",
+      "link": "https://www.joongang.co.kr/article/25442416",
+      "source": "joongang.co.kr",
+      "keyword": "보험사",
+      "description": "또 의학적 소견이 명확한데도 심사 불이익을 우려해 병원이 치료를 기피하거나 보험사들이 강화된 규제를... 아울러 도수치료 통제로 민간 보험사들이 반사이익을 얻게 된다면 이를 철저히 감시해 실손보험료 인하 같은...",
+      "_summary": "또 의학적 소견이 명확한데도 심사 불이익을 우려해 병원이 치료를 기피하거나 보험사들이 강화된 규제를. 아울러 도수치료 통제로 민간 보험사들이 반사이익을 얻게 된다면 이를 철저히 감시해 실손보험료 인하 같은. 4만원 도수치료 안한다는 병원, 환자만 또 성지 찾게 생겼다 [Health&].",
+      "pub_date": "Sat, 04 Jul 2026 15:35:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "비급여 정보 따로따로…\"소비자 활용도 높일 통합 체계 필요\"",
+      "link": "https://view.asiae.co.kr/article/2026070310424632026",
+      "source": "아시아경제",
+      "keyword": "보험업계",
+      "description": "4일 보험업계에 따르면 비급여 진료비는 국민 의료비 부담 증가와 실손보험 지속가능성 악화 요인으로 지목되고 있다. 이에 업계에서는 비급여 가격 정보를 소비자가 실제 의료 이용 과정에서 쉽게 확인하고 활용할 수...",
+      "_summary": "4일 보험업계에 따르면 비급여 진료비는 국민 의료비 부담 증가와 실손보험 지속가능성 악화 요인으로 지목되고 있다 이에 업계에서는 비급여 가격 정보를 소비자가 실제 의료 이용 과정에서 쉽게 확인하고 활용할 수. 비급여 정보 따로따로…\"소비자 활용도 높일 통합 체계 필요\".",
+      "pub_date": "Sat, 04 Jul 2026 14:00:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
