@@ -41,8 +41,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: news-monitor-pages
+  cancel-in-progress: false
 
 jobs:
   publish:

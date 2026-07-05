@@ -69,7 +69,7 @@ env:
   GEMINI_CIRCUIT_CREDIT_HOURS: "24"
 
 concurrency:
-  group: news-briefing
+  group: news-monitor-pages
   cancel-in-progress: false
 
 jobs:
