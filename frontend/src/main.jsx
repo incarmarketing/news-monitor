@@ -5196,9 +5196,20 @@ function lastNDays(articles, days) {
 
 function selectRealtimeArticles(articles = []) {
   const todayKey = formatKstDateKey(new Date());
-  const todayArticles = articles.filter((article) => articleDashboardDateKey(article) === todayKey);
-  const watched = todayArticles.filter(isWatchIssueArticle);
-  const scoped = dedupeIssueMembers([...watched, ...todayArticles]);
+  const datedArticles = articles
+    .map((article) => ({ article, dateKey: articleDashboardDateKey(article) }))
+    .filter((row) => row.dateKey);
+  const todayArticles = datedArticles
+    .filter((row) => row.dateKey === todayKey)
+    .map((row) => row.article);
+  const latestAvailableDate = todayArticles.length
+    ? todayKey
+    : lastItem(datedArticles.map((row) => row.dateKey).sort());
+  const visibleArticles = latestAvailableDate
+    ? datedArticles.filter((row) => row.dateKey === latestAvailableDate).map((row) => row.article)
+    : [];
+  const watched = visibleArticles.filter(isWatchIssueArticle);
+  const scoped = dedupeIssueMembers([...watched, ...visibleArticles]);
   return scoped
     .sort((a, b) => watchIssuePriority(b) - watchIssuePriority(a) || articleTimeValue(b) - articleTimeValue(a))
     .slice(0, 240);
