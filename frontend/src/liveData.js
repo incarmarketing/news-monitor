@@ -1042,6 +1042,14 @@ async function loadOperationalDataFromSupabasePublic() {
       PUBLIC_ARTICLE_MAX_ROWS,
     );
     const optionalRequests = {
+      notifications: publicRest(
+        config,
+        "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&channel=eq.slack&order=sent_at.desc&limit=80",
+      ),
+      watchRuns: publicRest(
+        config,
+        "watch_runs?select=id,scanned_at,status,minutes_back,scanned_count,negative_count,new_negative_count,message,created_at&order=scanned_at.desc,created_at.desc&limit=80",
+      ),
       reportRuns: publicRest(
         config,
         "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
@@ -1070,8 +1078,8 @@ async function loadOperationalDataFromSupabasePublic() {
       status: "live",
       message: `운영 DB 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`,
       articles: normalizedArticles,
-      notifications: [],
-      watchRuns: [],
+      notifications: Array.isArray(optionalData.notifications) ? optionalData.notifications.map(normalizeNotification).filter(isSlackNotification) : [],
+      watchRuns: Array.isArray(optionalData.watchRuns) ? optionalData.watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(optionalData.reportRuns) ? optionalData.reportRuns.map(normalizeReportRun) : [],
       jobRuns: Array.isArray(optionalData.jobRuns) ? optionalData.jobRuns.map(normalizeJobRun) : [],
       scraps: [],
