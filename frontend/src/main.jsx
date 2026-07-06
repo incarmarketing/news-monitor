@@ -3613,6 +3613,61 @@ function formatGeminiUsageText(usage = {}) {
   return pieces.join(" · ");
 }
 
+function getNotificationDisplayRow(item = {}) {
+  const sourceTitle = item.type || item.rawTitle || "슬랙";
+  return {
+    label: cleanNotificationLabel(sourceTitle, item.messageType),
+    date: formatNotificationDisplayDate(item.sentAt || item.rawTitle || item.type),
+    time: item.time || formatNotificationDisplayTime(item.sentAt),
+  };
+}
+
+function cleanNotificationLabel(title = "", messageType = "") {
+  const text = String(title || "").trim();
+  const key = `${text} ${messageType || ""}`.toLowerCase();
+  if (/daily_report|일일\s*언론\s*동향|언론\s*동향/.test(key)) return "일일 언론 동향";
+  if (/weekly_report|주간\s*언론\s*동향|주간/.test(key)) return "주간 언론 동향";
+  if (/monthly_report|월간\s*언론\s*동향|월간/.test(key)) return "월간 언론 동향";
+  return text
+    .replace(/\b20\d{2}[-.]\d{2}[-.]\d{2}\b/g, "")
+    .replace(/\b\d{2}[.]\d{2}[.]\d{2}\b/g, "")
+    .replace(/\b\d{2}:\d{2}\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim() || "슬랙";
+}
+
+function formatNotificationDisplayDate(value) {
+  const text = String(value || "");
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(parsed).replace(/-/g, ".");
+  }
+  const full = text.match(/(20\d{2})[-.](\d{2})[-.](\d{2})/);
+  if (full) return `${full[1]}.${full[2]}.${full[3]}`;
+  const compact = text.match(/\b(\d{2})[.](\d{2})[.](\d{2})\b/);
+  if (compact) return `20${compact[1]}.${compact[2]}.${compact[3]}`;
+  return "-";
+}
+
+function formatNotificationDisplayTime(value) {
+  const date = new Date(value || "");
+  if (!Number.isNaN(date.getTime())) {
+    return new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+  }
+  const match = String(value || "").match(/(\d{1,2}):(\d{2})/);
+  return match ? `${match[1].padStart(2, "0")}:${match[2]}` : "-";
+}
+
 function NotificationList({ rows }) {
   const [showAll, setShowAll] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -3624,19 +3679,23 @@ function NotificationList({ rows }) {
   return (
     <>
       <div className="notification-list">
-        {visibleRows.map((item) => (
-          <button
-            key={item.id || `${item.time}-${item.type}`}
-            type="button"
-            className="clickable"
-            title={item.body || item.type}
-            onClick={() => setSelected(item)}
-          >
-            <b>{item.time}</b>
-            <span>{item.type}</span>
-            <Chip tone={item.status}>{item.status}</Chip>
-          </button>
-        ))}
+        {visibleRows.map((item) => {
+          const display = getNotificationDisplayRow(item);
+          return (
+            <button
+              key={item.id || `${display.date}-${display.time}-${display.label}`}
+              type="button"
+              className="clickable"
+              title={item.body || `${display.label} ${display.date} ${display.time}`}
+              onClick={() => setSelected(item)}
+            >
+              <span className="notification-kind">{display.label}</span>
+              <span className="notification-date">{display.date}</span>
+              <b className="notification-time">{display.time}</b>
+              <Chip tone={item.status}>{item.status}</Chip>
+            </button>
+          );
+        })}
       </div>
       {rows.length > collapsedLimit && (
         <button className="ghost-button notification-more" onClick={() => setShowAll((value) => !value)}>

@@ -2297,6 +2297,8 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
 .notification-list button {
   cursor: pointer;
+  grid-template-columns: minmax(112px, 1fr) 92px 52px auto;
+  column-gap: 10px;
 }
 
 .watch-lines span, .notification-list span {
@@ -2316,6 +2318,23 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   font-size: 12px;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.notification-kind {
+  color: var(--ink) !important;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.notification-date,
+.notification-time {
+  justify-self: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.notification-list .chip {
+  justify-self: end;
 }
 
 .notification-more {
@@ -10484,6 +10503,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
 
   .press-row em {
     text-align: left;
+  }
+
+  .notification-list button {
+    grid-template-columns: minmax(104px, 1fr) 86px 48px auto;
+    gap: 6px;
   }
 
   .url-box {
