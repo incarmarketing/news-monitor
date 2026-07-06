@@ -330,7 +330,6 @@ jobs:
 
       - name: Persist run archive
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]'))
-        continue-on-error: true
         run: |
           if [ "${{ steps.guard.outputs.should_mark }}" = "true" ]; then
             python schedule_guard.py mark "${{ steps.guard.outputs.marker_path }}"
@@ -356,6 +355,12 @@ jobs:
           fi
           git pull --rebase
           git push
+
+      - name: Refresh dashboard after Slack logs
+        if: always() && steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]')) && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true')
+        run: gh workflow run pages-dashboard.yml --ref main -f refresh_external=false
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Record report finish
         if: always() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
