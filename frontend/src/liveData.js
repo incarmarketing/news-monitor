@@ -1048,7 +1048,7 @@ async function loadOperationalDataFromSupabasePublic() {
       ),
       watchRuns: publicRest(
         config,
-        "watch_runs?select=id,scanned_at,status,minutes_back,scanned_count,negative_count,new_negative_count,message,created_at&order=scanned_at.desc,created_at.desc&limit=80",
+        "negative_watch_runs?select=run_key,scanned_at,status,minutes_back,scanned_count,negative_count,new_negative_count,message,created_at&order=scanned_at.desc,created_at.desc&limit=80",
       ),
       reportRuns: publicRest(
         config,
