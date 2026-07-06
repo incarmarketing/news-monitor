@@ -165,6 +165,7 @@ def load_latest_daily() -> dict:
         report = load_daily_for_slot(slot)
         if report:
             return report
+        raise FileNotFoundError(f"No daily report archive found for today's {slot} slot.")
     latest = archiver.load_latest()
     if not latest:
         raise FileNotFoundError("No daily report archive found.")
