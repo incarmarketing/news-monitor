@@ -8,6 +8,17 @@ import slack_notify
 
 
 class SlackDailyPayloadTests(unittest.TestCase):
+    def test_requested_daily_slot_requires_matching_archive(self) -> None:
+        with (
+            patch.dict("os.environ", {"REPORT_SLOT": "13"}),
+            patch.object(slack_notify, "load_daily_for_slot", return_value=None),
+            patch.object(slack_notify.archiver, "load_latest") as load_latest,
+        ):
+            with self.assertRaises(FileNotFoundError):
+                slack_notify.load_latest_daily()
+
+        load_latest.assert_not_called()
+
     def test_daily_payload_uses_compact_metrics_and_headline_only(self) -> None:
         report = {
             "date": "2026-06-20",
