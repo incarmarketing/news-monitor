@@ -305,7 +305,7 @@ function buildB2BReportSignals(period = "daily", stats = [], categoryRows = [], 
 }
 
 function A4PriorityArticleCards({ groups = [], period = "daily" }) {
-  const limit = period === "daily" ? 5 : 6;
+  const limit = period === "daily" ? 12 : 10;
   const cards = [];
   const seen = new Set();
   groups.forEach((group) => {
@@ -318,8 +318,9 @@ function A4PriorityArticleCards({ groups = [], period = "daily" }) {
   });
   const visibleCards = cards.slice(0, limit);
   if (!visibleCards.length) return <p className="a4-empty">우선 확인할 기사가 없습니다.</p>;
+  const compactMode = visibleCards.length >= 10;
   return (
-    <div className="a4-priority-card-grid">
+    <div className={`a4-priority-card-grid ${compactMode ? "compact" : "card"}`}>
       {visibleCards.map((issue, index) => {
         const href = issue.link && issue.link !== "#" ? issue.link : "";
         return (
