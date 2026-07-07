@@ -1122,5 +1122,101 @@ class AnalyzerAiContextGuardrailTests(unittest.TestCase):
         self.assertTrue(analyzer.is_direct_own_negative_article(article))
 
 
+class IncidentalInsuranceMentionTests(unittest.TestCase):
+    def test_investment_agent_article_with_incidental_insurance_agent_reference_is_noise(self) -> None:
+        article = {
+            "title": "[단독] 한투증권, 투자권유대행인 6년 연속 0명 부실 공시",
+            "description": "투자권유대행인은 보험설계사와 유사한 직군으로 소개됐지만 기사 본문은 증권사 공시 관리 문제를 다뤘다.",
+            "keyword": "보험설계사",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_incidental_insurance_mention_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_ciso_appointment_article_with_insurer_career_is_noise(self) -> None:
+        article = {
+            "title": "[더벨] SK쉴더스, 이준희 CISO 선임 '푸르덴셜 출신 기용'",
+            "description": "이후 에이스손해보험 최고기술책임자와 동양생명 CISO 등을 역임하며 전문성을 쌓았다.",
+            "keyword": "손해보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_incidental_insurance_mention_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_luxury_dividend_article_with_insurer_list_mention_is_noise(self) -> None:
+        article = {
+            "title": "5대 명품 브랜드, 3년간 해외본사에 2.1조 배당",
+            "description": "메트라이프생명과 라이나생명보험 등이 배당금 상위 기업 목록에 함께 언급됐다.",
+            "keyword": "생명보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_incidental_insurance_mention_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_card_benefit_article_with_insurance_affiliate_mention_is_noise(self) -> None:
+        article = {
+            "title": "[카드 뉴스브리핑] 하나카드 무빙카드 출시",
+            "description": "하나은행, 하나증권, 하나손해보험 상품을 이용할 경우 추가 혜택을 제공하는 우대 서비스도 제공한다.",
+            "keyword": "손해보험",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_incidental_insurance_mention_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_ga_db_and_insurance_payback_article_survives_incidental_filter(self) -> None:
+        article = {
+            "title": "빚투부터 보험 페이백까지…금감원, 소비자 피해 차단 총력",
+            "description": "보험대리점(GA)의 개인정보 DB 거래와 부당승환 영업, 보험 페이백을 점검한다.",
+            "keyword": "금융감독원",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertFalse(analyzer.is_incidental_insurance_mention_noise_article(article))
+        self.assertFalse(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "regulation")
+
+    def test_insurance_ma_article_survives_incidental_filter(self) -> None:
+        article = {
+            "title": "증권·금융 지주사 눈독 롯데손보...JKL, 매각 성사 여부 촉각",
+            "description": "롯데손해보험 매각전이 다시 움직이고 신한금융그룹과 한국투자금융지주가 원매자로 거론된다.",
+            "keyword": "롯데손보",
+            "keyword_category": "industry",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertFalse(analyzer.is_incidental_insurance_mention_noise_article(article))
+        self.assertFalse(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "industry")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -261,6 +261,23 @@ INSURANCE_GA_KEEP_RE = re.compile(
     r"인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|실손|손해율|판매채널|자동차보험|종신보험|보장성보험|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약|보험금\s*(?:제3자|청구|지급|수령|편취|피해|리스크|대리\s*청구|누수)",
     re.I,
 )
+INCIDENTAL_INSURANCE_MENTION_RE = re.compile(
+    r"보험|손해보험|생명보험|보험설계사|보험대리점|법인보험대리점|\bGA\b",
+    re.I,
+)
+INCIDENTAL_INSURANCE_KEEP_RE = re.compile(
+    r"보험금\s*(?:제3자|청구|지급|수령|편취|피해|리스크|대리|누수)|보험\s*페이백|보험대리점|법인보험대리점|\bGA\b|1200\s*%|판매수수료|부당승환|불완전판매|보험사기|정착지원금|모집질서|보험업법|보험상품|보험계약|설계사\s*(?:영입|육성|관리|제재|등록취소|업무정지)|(?:손해보험|생명보험|보험사)\s*(?:상품|출시|보장|보험료|시장|인수|매각|M&A)|(?:롯데손보|KDB생명|DB손해보험|삼성화재|한화생명|한화손보)\s*(?:인수|매각|M&A|상품|출시|보장)",
+    re.I,
+)
+INCIDENTAL_INSURANCE_NOISE_RE = re.compile(
+    r"보험설계사와\s*유사|투자권유대행인|공모주|회사채|채권|ELS|증권사|(?:CISO|CTO|CPO|최고기술책임자|최고개인정보책임자|선임|기용|출신|인사)\s*.*(?:손해보험|생명보험|보험)|(?:명품|루이비통|샤넬|배당|해외본사|배당금)\s*.*(?:생명보험|보험)|(?:마이데이터|슈퍼앱|금융\s*앱|브랜드평판)\s*.*(?:은행|카드|증권)\s*.*(?:손해보험|생명보험|보험)|(?:카드\s*뉴스브리핑|카드.*출시|카드\s*혜택|우대\s*서비스)\s*.*(?:손해보험|보험)|(?:ESG|지속가능경영|지속가능보고서|금융그룹)\s*.*(?:생명보험|손해보험|보험)|(?:노동3권|노무제공자|택배기사|화물차주|배달수수료|소상공인|공정거래법|단체활동)\s*.*보험설계사|(?:법무법인|리걸타임즈|변호사|국제소송|영업비밀|자문)\s*.*(?:생명보험|보험사|보험)",
+    re.I | re.S,
+)
+INCIDENTAL_INSURANCE_OVERRIDE_RE = re.compile(
+    r"투자권유대행인|금투협|증권사.*(?:공시|투자자|불완전판매)|(?:카드\s*뉴스브리핑|카드.*출시|카드\s*혜택|우대\s*서비스)|(?:주간브리핑|오늘의\s*\w+\s*소식)\s*.*(?:손해보험|생명보험|보험)|(?:금융\s*앱|슈퍼앱|마이데이터)\s*.*(?:주식|공모주|카드|은행)",
+    re.I | re.S,
+)
+
 ADMIN_AGENCY_NOISE_RE = re.compile(
     r"선관위|선거관리위원회|정부\s*위원회|위원회\s*수당|셀프증액|공공기관\s*경영평가|금융\s*공공기관\s*경영평가|예금보험공사|주택금융공사|주금공|신용보증기금|신보",
     re.I,
@@ -1085,6 +1102,39 @@ def is_general_finance_noise_article(article: dict) -> bool:
     return is_general_finance_noise_text(text)
 
 
+def is_incidental_insurance_mention_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not INCIDENTAL_INSURANCE_MENTION_RE.search(text):
+        return False
+    if any(name in text for name in OWN_NAMES):
+        return False
+    if INCIDENTAL_INSURANCE_OVERRIDE_RE.search(text):
+        return True
+    if INCIDENTAL_INSURANCE_KEEP_RE.search(text):
+        return False
+    return bool(INCIDENTAL_INSURANCE_NOISE_RE.search(text))
+
+
+def is_incidental_insurance_mention_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("summary"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            raw.get("content"),
+            raw.get("body"),
+            article.get("keyword"),
+            article.get("source"),
+        )
+    )
+    return is_incidental_insurance_mention_noise_text(text)
+
+
 def is_admin_agency_noise_text(text: str) -> bool:
     text = str(text or "")
     return bool(ADMIN_AGENCY_NOISE_RE.search(text)) and not bool(INSURANCE_GA_MATERIAL_KEEP_RE.search(text))
@@ -1592,6 +1642,8 @@ def has_domain_context(text: str) -> bool:
         return False
     if is_non_insurance_finance_disclosure_noise_text(text):
         return False
+    if is_incidental_insurance_mention_noise_text(text):
+        return False
     if is_own_sponsored_sports_noise_text(text):
         return False
     if is_sales_conduct_noise_text(text):
@@ -1661,6 +1713,8 @@ def is_non_business_noise(article: dict) -> bool:
     if is_general_finance_noise_article(article):
         return True
     if is_non_insurance_finance_disclosure_noise_article(article):
+        return True
+    if is_incidental_insurance_mention_noise_article(article):
         return True
     if is_admin_agency_noise_article(article):
         return True
