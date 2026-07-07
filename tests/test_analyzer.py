@@ -572,7 +572,7 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertFalse(analyzer.is_non_business_noise(article))
         self.assertEqual(article["_category"], "regulation")
 
-    def test_general_finance_risk_roundup_with_only_insurance_money_is_noise(self) -> None:
+    def test_insurance_payment_risk_roundup_survives_general_finance_filter(self) -> None:
         article = {
             "title": "'빚투·해킹·보험금 제3자 리스크'…금감원, 소비자피해 대응 방안 논의",
             "description": "금감원은 주식 빚투, 금융권 해킹, 보험금 제3자 리스크 등 금융소비자 위험 요인을 점검했다.",
@@ -583,10 +583,9 @@ class AnalyzerToneTests(unittest.TestCase):
         article["_category"] = analyzer.categorize(article)
         article["_tone"] = analyzer.analyze_tone(article)
 
-        self.assertTrue(analyzer.is_general_finance_noise_article(article))
-        self.assertTrue(analyzer.is_non_business_noise(article))
-        self.assertEqual(article["_category"], "other")
-        self.assertEqual(article["_tone"], "neutral")
+        self.assertFalse(analyzer.is_general_finance_noise_article(article))
+        self.assertFalse(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "regulation")
 
     def test_stock_margin_debt_fss_article_is_noise_without_insurance_context(self) -> None:
         article = {

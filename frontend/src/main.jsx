@@ -7037,7 +7037,7 @@ function isGeneralFinanceNoiseArticle(article = {}) {
 
 function hasStrongInsuranceGaContext(article = {}) {
   const text = sourceEvidenceHaystack(article);
-  return /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|실손|손해율|판매채널|자동차보험|종신보험|보장성보험|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약/.test(text);
+  return /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|실손|손해율|판매채널|자동차보험|종신보험|보장성보험|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약|보험금\s*(?:제3자|청구|지급|수령|편취|피해|리스크|대리\s*청구|누수)/.test(text);
 }
 
 function hasMajorIssueInsuranceGaContext(article = {}) {
