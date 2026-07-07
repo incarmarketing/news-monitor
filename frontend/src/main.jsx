@@ -4360,6 +4360,7 @@ function articlePrimarySummaryTopic(item = {}) {
   if (isOverseasLocalInsuranceNoiseArticle(item)) return "";
   if (isForeignMacroInsuranceIncidentalNoiseArticle(item)) return "";
   if (isExternalGeopoliticalShippingNoiseArticle(item)) return "";
+  if (isIncidentalInsuranceMentionArticle(item)) return "";
   if (eventTopic) return eventTopic;
   if (own && isOwnPerformanceSummaryText(title)) return "own-performance";
   if (isStockVolatilitySummaryText(title)) return "stock-volatility";
@@ -6953,16 +6954,17 @@ function groupArticles(articles, key) {
 }
 
 function isUsableArticle(article) {
-  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article) && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
+  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article) && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isIncidentalInsuranceMentionArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
 }
 
 function isUsableMonitoringArticle(article) {
-  return article && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isStockListingNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
+  return article && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isIncidentalInsuranceMentionArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isStockListingNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
 }
 
 function isOwnArticle(article) {
   if (isStockListingNoiseArticle(article)) return false;
   if (isGeneralFinanceNoiseArticle(article)) return false;
+  if (isIncidentalInsuranceMentionArticle(article)) return false;
   if (isAdminAgencyNoiseArticle(article)) return false;
   if (isPublicHealthInsuranceNoiseArticle(article)) return false;
   if (isNonInsuranceInvestmentMisconductNoiseArticle(article)) return false;
@@ -7033,6 +7035,31 @@ function isGeneralFinanceNoiseArticle(article = {}) {
   const text = sourceEvidenceHaystack(article);
   const hasFinanceNoise = /빚투|반대매매|주식\s*빚투|한양증권|중앙일보|하나은행|은행권|은행업|카드사?|롯데카드|신용카드|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|해킹|정보유출|개인정보\s*유출/.test(text);
   return hasFinanceNoise && !hasStrongInsuranceGaContext(article);
+}
+
+function isIncidentalInsuranceMentionArticle(article = {}) {
+  const text = sourceEvidenceHaystack(article);
+  const title = cleanSummaryText(article.title || "");
+  if (!/(보험|손해보험|생명보험|보험설계사|보험대리점|법인보험대리점|\bGA\b)/i.test(text)) return false;
+  if (hasOwnArticleEvidence(article)) return false;
+
+  const strongIncidentalOverride = /투자권유대행인|금투협|증권사.*(?:공시|투자자|불완전판매)|(?:카드\s*뉴스브리핑|카드.*출시|카드\s*혜택|우대\s*서비스)|(?:주간브리핑|오늘의\s*\w+\s*소식)\s*.*(?:손해보험|생명보험|보험)|(?:금융\s*앱|슈퍼앱|마이데이터)\s*.*(?:주식|공모주|카드|은행)/i;
+  if (strongIncidentalOverride.test(`${title} ${text}`)) return true;
+
+  const keepAsInsuranceBusiness = /보험금\s*(?:제3자|청구|지급|수령|편취|피해|리스크|대리|누수)|보험\s*페이백|보험대리점|법인보험대리점|\bGA\b|1200\s*%|판매수수료|부당승환|불완전판매|보험사기|정착지원금|모집질서|보험업법|보험상품|보험계약|설계사\s*(?:영입|육성|관리|제재|등록취소|업무정지)|(?:손해보험|생명보험|보험사)\s*(?:상품|출시|보장|보험료|시장|인수|매각|M&A)|(?:롯데손보|KDB생명|DB손해보험|삼성화재|한화생명|한화손보)\s*(?:인수|매각|M&A|상품|출시|보장)/i;
+  if (keepAsInsuranceBusiness.test(text)) return false;
+
+  const incidentalPatterns = [
+    /보험설계사와\s*유사|투자권유대행인|공모주|회사채|채권|ELS|증권사/i,
+    /(?:CISO|CTO|CPO|최고기술책임자|최고개인정보책임자|선임|기용|출신|인사)\s*.*(?:손해보험|생명보험|보험)/i,
+    /(?:명품|루이비통|샤넬|배당|해외본사|배당금)\s*.*(?:생명보험|보험)/i,
+    /(?:마이데이터|슈퍼앱|금융\s*앱|브랜드평판)\s*.*(?:은행|카드|증권)\s*.*(?:손해보험|생명보험|보험)/i,
+    /(?:카드\s*뉴스브리핑|카드.*출시|카드\s*혜택|우대\s*서비스)\s*.*(?:손해보험|보험)/i,
+    /(?:ESG|지속가능경영|지속가능보고서|금융그룹)\s*.*(?:생명보험|손해보험|보험)/i,
+    /(?:노동3권|노무제공자|택배기사|화물차주|배달수수료|소상공인|공정거래법|단체활동)\s*.*보험설계사/i,
+    /(?:법무법인|리걸타임즈|변호사|국제소송|영업비밀|자문)\s*.*(?:생명보험|보험사|보험)/i,
+  ];
+  return incidentalPatterns.some((pattern) => pattern.test(`${title} ${text}`));
 }
 
 function hasStrongInsuranceGaContext(article = {}) {
