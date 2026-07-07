@@ -572,6 +572,53 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertFalse(analyzer.is_non_business_noise(article))
         self.assertEqual(article["_category"], "regulation")
 
+    def test_general_finance_risk_roundup_with_only_insurance_money_is_noise(self) -> None:
+        article = {
+            "title": "'빚투·해킹·보험금 제3자 리스크'…금감원, 소비자피해 대응 방안 논의",
+            "description": "금감원은 주식 빚투, 금융권 해킹, 보험금 제3자 리스크 등 금융소비자 위험 요인을 점검했다.",
+            "keyword": "금융감독원",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_general_finance_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_stock_margin_debt_fss_article_is_noise_without_insurance_context(self) -> None:
+        article = {
+            "title": "주식 빚투 6개월새 10조원 증가…금감원, 금융소비자 위험요인 점검",
+            "description": "신용융자와 반대매매, 증권시장 변동성에 따른 소비자 피해 우려가 제기됐다.",
+            "keyword": "금융감독원",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertTrue(analyzer.is_general_finance_noise_article(article))
+        self.assertTrue(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+
+    def test_ga_commission_rule_article_survives_general_finance_filter(self) -> None:
+        article = {
+            "title": "'1200%룰' 시행…보험설계사 '영입'에서 '육성·관리'로 판 바뀐다",
+            "description": "보험 판매수수료 개편 이후 GA와 보험설계사 채널의 육성·관리 경쟁이 강화될 전망이다.",
+            "keyword": "1200%룰",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+
+        self.assertFalse(analyzer.is_general_finance_noise_article(article))
+        self.assertFalse(analyzer.is_non_business_noise(article))
+        self.assertEqual(article["_category"], "regulation")
+
     def test_government_committee_article_with_only_finance_committee_mention_is_noise(self) -> None:
         article = {
             "title": "노태악 4년간 받은 선관위 수당만 1.8억, 셀프증액 논란",

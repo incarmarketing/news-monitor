@@ -4179,7 +4179,7 @@ function majorIssuePriorityScore(issue = {}) {
 }
 
 function isGaInsuranceMajorIssueArticle(article = {}) {
-  return ["GA", "보험사", "경쟁사", "업계동향"].includes(article.category) && hasMaterialInsuranceGaContext(article);
+  return ["GA", "보험사", "경쟁사", "업계동향"].includes(article.category) && hasMajorIssueInsuranceGaContext(article);
 }
 
 function isInsurancePolicyMajorIssueArticle(article = {}) {
@@ -4189,7 +4189,7 @@ function isInsurancePolicyMajorIssueArticle(article = {}) {
   const source = String(article.source || "");
   const hasPolicySignal = category === "정책/규제"
     || /정책|규제|금감원|금융감독원|금융위|금융위원회|감독|제재|검사|제도|법안|시행령/.test(`${category} ${source} ${text}`);
-  return hasPolicySignal && hasMaterialInsuranceGaContext(article);
+  return hasPolicySignal && hasMajorIssueInsuranceGaContext(article);
 }
 
 function buildMediaAnalysisIssues(articles = [], period = "monthly") {
@@ -7031,9 +7031,22 @@ function isGeneralSportsNoiseArticle(article = {}) {
 
 function isGeneralFinanceNoiseArticle(article = {}) {
   const text = sourceEvidenceHaystack(article);
-  const hasFinanceNoise = /한양증권|중앙일보|하나은행|은행권|카드사?|롯데카드|신용카드|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융/.test(text);
-  const hasInsuranceGaContext = /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|보험사기|보험금|보험료|실손|손해율|판매채널|보장|민원|소비자보호|1200%|정착지원금|판매수수료|부당승환|승환계약/.test(text);
-  return hasFinanceNoise && !hasInsuranceGaContext;
+  const hasFinanceNoise = /빚투|반대매매|주식\s*빚투|한양증권|중앙일보|하나은행|은행권|은행업|카드사?|롯데카드|신용카드|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|해킹|정보유출|개인정보\s*유출/.test(text);
+  return hasFinanceNoise && !hasStrongInsuranceGaContext(article);
+}
+
+function hasStrongInsuranceGaContext(article = {}) {
+  const text = sourceEvidenceHaystack(article);
+  return /인카금융|생명보험|손해보험|보험사|보험회사|보험업계|보험상품|보험계약|보험대리점|법인보험대리점|보험설계사|GA|보험GA|설계사|보험업법|불완전판매|보험사기|실손|손해율|판매채널|자동차보험|종신보험|보장성보험|1200%|정착지원금|판매수수료|수수료\s*개편|부당승환|승환계약/.test(text);
+}
+
+function hasMajorIssueInsuranceGaContext(article = {}) {
+  const text = sourceEvidenceHaystack(article);
+  if (hasStrongInsuranceGaContext(article)) return true;
+  if (gaCommissionRuleEventTopic(text)) return true;
+  if (insuranceFraudEventTopic(text)) return true;
+  if (isInsuranceSalesConductSummaryText(text)) return true;
+  return false;
 }
 
 function hasMaterialInsuranceGaContext(article = {}) {
@@ -7044,8 +7057,8 @@ function hasMaterialInsuranceGaContext(article = {}) {
 function isNonInsuranceFinancialRegulatoryArticle(article = {}) {
   const text = sourceEvidenceHaystack(article);
   const hasRegulatorySignal = /금융위|금융위원회|금감원|금융감독원|제재|제재심|검사|감독|금융보안|해킹|내부통제|보고의무|공시제도|개정\s*상법/.test(text);
-  const hasNonInsuranceSector = /카드사?|롯데카드|신용카드|은행권?|은행업|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|PG사|결제대행/.test(text);
-  return hasRegulatorySignal && hasNonInsuranceSector && !hasMaterialInsuranceGaContext(article);
+  const hasNonInsuranceSector = /빚투|반대매매|주식\s*빚투|카드사?|롯데카드|신용카드|은행권?|은행업|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|PG사|결제대행/.test(text);
+  return hasRegulatorySignal && hasNonInsuranceSector && !hasStrongInsuranceGaContext(article);
 }
 
 function isAdminAgencyNoiseArticle(article = {}) {
