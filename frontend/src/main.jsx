@@ -981,29 +981,34 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
         </button>
       </div>
       <div className="queue-list">
-        {ranked.length ? ranked.map((issue, index) => (
-          <article className={`queue-row ${toneCssClass(issue.tone)}`} key={`${issue.source}-${issue.title}-${index}`}>
-            <div className="queue-rank">{String(index + 1).padStart(2, "0")}</div>
-            <div className="queue-body">
-              <div className="queue-meta">
-                <Chip tone={issue.tone}>{issue.tone}</Chip>
-                <Chip>{issue.category}</Chip>
-                <span>{formatIssueMeta(issue)}</span>
+        {ranked.length ? ranked.map((issue, index) => {
+          const bundleCount = issueBundleCount(issue);
+          return (
+            <article className={`queue-row ${toneCssClass(issue.tone)}`} key={`${issue.source}-${issue.title}-${index}`}>
+              <div className="queue-rank">{String(index + 1).padStart(2, "0")}</div>
+              <div className="queue-body">
+                <div className="queue-meta">
+                  <Chip tone={issue.tone}>{issue.tone}</Chip>
+                  <Chip>{issue.category}</Chip>
+                  <span>{formatIssueMeta(issue)}</span>
+                </div>
+                <h3>{issue.title}</h3>
               </div>
-              <h3>{issue.title}</h3>
-            </div>
-            <div className="queue-actions">
-              <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
-                묶음 보기
-              </button>
-              {issue.link && issue.link !== "#" && (
-                <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
-                  <ExternalLink /> 대표 기사
-                </a>
-              )}
-            </div>
-          </article>
-        )) : (
+              <div className="queue-actions">
+                {bundleCount > 1 && (
+                  <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
+                    묶음 {bundleCount.toLocaleString("ko-KR")}건
+                  </button>
+                )}
+                {issue.link && issue.link !== "#" && (
+                  <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
+                    <ExternalLink /> 대표 기사
+                  </a>
+                )}
+              </div>
+            </article>
+          );
+        }) : (
           <article className="queue-empty">
             <b>표시할 주요 이슈가 없습니다.</b>
             <span>운영 DB 연결 후 오늘 기준 주요 이슈가 표시됩니다.</span>
@@ -1068,6 +1073,15 @@ function normalizeMajorIssueGroup(issue = {}) {
     relatedSources: display.relatedSources || sources,
     representativeSource: display.representativeSource || display.source || sources[0] || "",
   };
+}
+
+function issueBundleCount(issue = {}) {
+  const members = dedupeIssueMembers(
+    (Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue])
+      .map(normalizeArticleDisplay)
+      .filter((item) => item?.title || item?.link),
+  );
+  return members.length;
 }
 
 function shortenTitle(value = "", max = 48) {
@@ -4163,11 +4177,13 @@ function isMajorIssueCandidate(issue = {}) {
     .filter(isUsableArticle)
     .filter((member) => !isOfficialRegulatorSource(member.source) || isOwnArticle(member));
   if (!members.length) return false;
-  if (members.some(isWatchIssueArticle)) return true;
-  if (members.every(isNonInsuranceFinancialRegulatoryArticle)) return false;
-  return members.some(isOwnArticle)
-    || members.some(isGaInsuranceMajorIssueArticle)
-    || members.some(isInsurancePolicyMajorIssueArticle);
+  const materialMembers = members.filter((member) => !isLowPriorityMajorIssueArticle(member));
+  if (!materialMembers.length) return false;
+  if (materialMembers.some(isWatchIssueArticle)) return true;
+  if (materialMembers.every(isNonInsuranceFinancialRegulatoryArticle)) return false;
+  return materialMembers.some(isOwnArticle)
+    || materialMembers.some(isGaInsuranceMajorIssueArticle)
+    || materialMembers.some(isInsurancePolicyMajorIssueArticle);
 }
 
 function majorIssuePriorityScore(issue = {}) {
@@ -4176,6 +4192,22 @@ function majorIssuePriorityScore(issue = {}) {
   if (members.some(isGaInsuranceMajorIssueArticle)) return 650;
   if (members.some(isInsurancePolicyMajorIssueArticle)) return 460;
   return 0;
+}
+
+function isLowPriorityMajorIssueArticle(article = {}) {
+  if (isOwnArticle(article)) return false;
+  if (articleEventTopicSignature(article)) return false;
+  const title = cleanSummaryText(article.title || "");
+  const text = sourceEvidenceHaystack(article);
+  const hasHardSignal = /1200\s*%|판매수수료|보험\s*페이백|보험대리점|법인보험대리점|\bGA\b|부당승환|불완전판매|보험사기|보험금\s*(?:제3자|편취|피해|리스크|대리|누수)|금감원|금융감독원|금융위|금융위원회|제재|검사|인수|매각|M&A|정착지원금|모집질서|실손|실손보험|자동차보험|차보험|보험추천|불법|수수료|무단반출|과실비율|침수|손보협회|소비자금융포럼|분쟁|적자|손해율|민원|소비자\s*피해|리스크\s*관리/i.test(text);
+  if (hasHardSignal) return false;
+  if (/(?:카드|금융|보험|더밸류)\s*(?:뉴스)?브리핑|오늘의\s+\w+\s*소식|금융신상|소비자보호의\s*날|KB스타뱅킹|슈퍼SOL|IPO까지|중앙그룹\s*회생|채권\s*개미/i.test(`${title} ${text}`)) {
+    return true;
+  }
+  if (/(상품|출시|보장보험|보험료|이벤트|행사)/i.test(title) && !hasHardSignal) {
+    return true;
+  }
+  return false;
 }
 
 function isGaInsuranceMajorIssueArticle(article = {}) {
