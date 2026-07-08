@@ -318,9 +318,8 @@ function A4PriorityArticleCards({ groups = [], period = "daily" }) {
   });
   const visibleCards = cards.slice(0, limit);
   if (!visibleCards.length) return <p className="a4-empty">우선 확인할 기사가 없습니다.</p>;
-  const compactMode = visibleCards.length >= 10;
   return (
-    <div className={`a4-priority-card-grid ${compactMode ? "compact" : "card"}`}>
+    <div className="a4-priority-card-grid compact">
       {visibleCards.map((issue, index) => {
         const href = issue.link && issue.link !== "#" ? issue.link : "";
         return (

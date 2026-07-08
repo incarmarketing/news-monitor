@@ -224,15 +224,61 @@
   }
   .article-card-list.compact {
     gap:6px;
+    overflow:hidden;
+    border:1px solid #d8e4f2;
+    border-radius:10px;
+    background:#fff;
   }
   .article-card-list.compact .article-card {
-    grid-template-columns:30px minmax(0,1fr) 42px;
-    gap:8px;
-    padding:8px 9px;
+    grid-template-columns:30px 74px minmax(0,1fr) 36px;
+    gap:7px;
+    min-height:44px;
+    padding:7px 9px;
+    border:0;
+    border-bottom:1px solid #e6edf5;
+    border-left:4px solid var(--blue);
+    border-radius:0;
+  }
+  .article-card-list.compact .article-card.tone-negative { border-left-color:var(--red); }
+  .article-card-list.compact .article-card.tone-caution { border-left-color:var(--amber); }
+  .article-card-list.compact .article-card.tone-positive { border-left-color:var(--green); }
+  .article-card-list.compact .article-card.tone-neutral { border-left-color:var(--blue); }
+  .article-card-list.compact .article-card:last-child {
+    border-bottom:0;
+  }
+  .article-card-list.compact .article-body {
+    display:contents;
+  }
+  .article-card-list.compact .article-meta-line {
+    gap:4px;
+    order:0;
+  }
+  .article-card-list.compact .pill {
+    min-height:18px;
+    max-width:34px;
+    padding:0 5px;
+    overflow:hidden;
+    font-size:9px;
+    text-overflow:clip;
   }
   .article-card-list.compact .headline {
-    font-size:12px;
-    line-height:1.24;
+    min-width:0;
+    overflow:hidden;
+    font-size:12.5px;
+    line-height:1.25;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .article-card-list.compact .meta {
+    display:none;
+  }
+  .article-card-list.compact .open-link {
+    min-height:auto;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:#2754d6;
+    font-size:10px;
   }
   .label-stack {
     display:flex;
@@ -417,35 +463,37 @@
     .score-table {
       table-layout:fixed;
     }
-    .article-card-list { gap:7px; }
-    .article-card {
-      grid-template-columns:30px minmax(0,1fr) 42px;
-      gap:8px;
-      padding:9px 8px;
-      border-radius:8px;
+    .article-card-list { gap:0; }
+    .article-card-list.compact .article-card {
+      grid-template-columns:28px 70px minmax(0,1fr) 34px;
+      gap:6px;
+      min-height:42px;
+      padding:7px 8px;
     }
     .num {
-      width:28px;
-      height:28px;
+      width:26px;
+      height:26px;
       font-size:11px;
     }
-    .headline {
-      font-size:13px;
-      line-height:1.28;
+    .article-card-list.compact .headline {
+      font-size:12px;
+      line-height:1.22;
+      white-space:nowrap;
     }
-    .pill {
-      min-height:18px;
-      padding:0 6px;
-      font-size:9px;
+    .article-card-list.compact .pill {
+      max-width:32px;
+      min-height:17px;
+      padding:0 5px;
+      font-size:8.5px;
     }
     .meta {
       white-space:normal;
       line-height:1.3;
       margin-top:0;
     }
-    .open-link {
-      min-height:30px;
-      padding:0 8px;
+    .article-card-list.compact .open-link {
+      min-height:auto;
+      padding:0;
     }
   }
   @media screen and (max-width:420px) {
@@ -495,12 +543,35 @@
     .section-head h2 { font-size:7.8px; }
     .section-head span { font-size:5.6px; }
     .article-card-list { gap:1.4mm; }
-    .article-card {
+    .article-card,
+    .article-card-list.compact .article-card {
       grid-template-columns:7mm minmax(0,1fr) 10mm;
       gap:1.6mm;
       padding:1.4mm 1.5mm;
-      border-radius:1.4mm;
+      min-height:auto;
+      border:1px solid #dce5f1;
       border-left-width:.8mm;
+      border-radius:1.4mm;
+      border-bottom:1px solid #dce5f1;
+    }
+    .article-card-list.compact {
+      gap:1.4mm;
+      border:0;
+      border-radius:0;
+      overflow:visible;
+      background:transparent;
+    }
+    .article-card-list.compact .article-body {
+      display:grid;
+    }
+    .article-card-list.compact .article-meta-line {
+      display:flex;
+    }
+    .article-card-list.compact .meta {
+      display:block;
+    }
+    .article-card-list.compact .pill {
+      max-width:none;
     }
     .num {
       width:6mm;
@@ -508,17 +579,20 @@
       font-size:5.6px;
       border-radius:1mm;
     }
-    .headline {
+    .headline,
+    .article-card-list.compact .headline {
       font-size:6.4px;
       line-height:1.15;
       display:-webkit-box;
       -webkit-line-clamp:2;
       -webkit-box-orient:vertical;
       overflow:hidden;
+      white-space:normal;
     }
     .meta { margin-top:0; font-size:5.2px; white-space:nowrap; }
     .pill { min-height:3mm; padding:0 1mm; font-size:5px; }
-    .open-link { display:none; }
+    .open-link,
+    .article-card-list.compact .open-link { display:none; }
     .side { gap:2.4mm; }
     .side-panel { padding-bottom:2mm; }
     .bar-list { gap:1.4mm; }
@@ -577,7 +651,7 @@
           <span>근거 {{ evidence_tab.articles|length }}건 · 제목/원문 기준</span>
         </div>
         {% if evidence_tab.articles %}
-        <div class="article-card-list{% if evidence_tab.articles|length >= 10 %} compact{% endif %}">
+        <div class="article-card-list compact">
           {% for a in evidence_tab.articles[:12] %}
           <article class="article-card tone-{{ a._tone }}">
             <div class="num">{{ "%02d"|format(loop.index) }}</div>
