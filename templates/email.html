@@ -118,36 +118,13 @@
   .risk-level-text.LOW { color:var(--green); }
   .risk-level-text.MEDIUM { color:var(--amber); }
   .risk-level-text.HIGH { color:var(--red); }
-  .summary-band {
-    padding:10px 0;
-    border-bottom:1px solid var(--line);
-  }
-  .judgement {
-    display:grid;
-    grid-template-columns:82px minmax(0,1fr);
-    gap:12px;
-    align-items:center;
-  }
-  .judgement h2,
   .panel-title {
     margin:0 0 8px;
     color:var(--navy);
     font-size:15px;
     font-weight:900;
   }
-  .judgement h2 { margin:0; }
-  .judgement p {
-    margin:0;
-    color:var(--ink);
-    font-size:14px;
-    line-height:1.35;
-    font-weight:850;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .score-table,
-  .ledger-table {
+  .score-table {
     width:100%;
     border-collapse:collapse;
   }
@@ -180,7 +157,7 @@
     grid-template-columns:minmax(0,1fr) 285px;
     gap:18px;
     align-items:stretch;
-    padding-top:16px;
+    padding-top:14px;
   }
   .section {
     min-width:0;
@@ -206,32 +183,56 @@
     font-weight:900;
     white-space:nowrap;
   }
-  .ledger-table th {
-    padding:8px 7px;
-    border-bottom:1px solid var(--line);
-    background:#f7f9fc;
-    color:var(--muted);
-    font-size:10px;
-    font-weight:900;
-    text-align:left;
+  .article-card-list {
+    display:grid;
+    gap:8px;
   }
-  .ledger-table th:nth-child(1),
-  .ledger-table th:nth-child(4) {
-    text-align:center;
+  .article-card {
+    display:grid;
+    grid-template-columns:34px minmax(0,1fr) 46px;
+    gap:10px;
+    align-items:center;
+    min-width:0;
+    padding:10px 10px;
+    border:1px solid #dce5f1;
+    border-left:4px solid var(--blue);
+    border-radius:7px;
+    background:#fff;
   }
-  .ledger-table td {
-    padding:9px 7px;
-    border-bottom:1px solid #e5ebf3;
-    vertical-align:top;
-    font-size:11.5px;
-    font-weight:850;
-  }
-  .ledger-table tr:last-child td { border-bottom:0; }
+  .article-card.tone-negative { border-left-color:var(--red); }
+  .article-card.tone-caution { border-left-color:var(--amber); }
+  .article-card.tone-positive { border-left-color:var(--green); }
+  .article-card.tone-neutral { border-left-color:var(--blue); }
   .num {
-    width:32px;
-    color:var(--navy);
-    text-align:center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:30px;
+    height:30px;
+    border-radius:6px;
+    background:var(--navy);
+    color:#fff;
+    font-size:12px;
+    line-height:1;
     font-weight:900;
+  }
+  .article-card .num { color:#fff; }
+  .article-body {
+    min-width:0;
+    display:grid;
+    gap:4px;
+  }
+  .article-card-list.compact {
+    gap:6px;
+  }
+  .article-card-list.compact .article-card {
+    grid-template-columns:30px minmax(0,1fr) 42px;
+    gap:8px;
+    padding:8px 9px;
+  }
+  .article-card-list.compact .headline {
+    font-size:12px;
+    line-height:1.24;
   }
   .label-stack {
     display:flex;
@@ -243,7 +244,6 @@
     display:flex;
     align-items:center;
     gap:4px;
-    margin-bottom:4px;
     min-width:0;
     white-space:nowrap;
     overflow:hidden;
@@ -275,8 +275,8 @@
   .headline {
     display:block;
     color:var(--ink);
-    font-size:12.5px;
-    line-height:1.36;
+    font-size:13px;
+    line-height:1.3;
     font-weight:900;
     word-break:keep-all;
     overflow-wrap:anywhere;
@@ -295,7 +295,7 @@
     align-items:center;
     justify-content:center;
     min-height:28px;
-    padding:0 9px;
+    padding:0 10px;
     border:1px solid #c5d3e8;
     border-radius:6px;
     background:#fff;
@@ -413,53 +413,39 @@
     .head-score {
       margin-top:8px;
     }
-    .summary-band {
-      padding:12px 0;
-    }
-    .judgement {
-      grid-template-columns:1fr;
-      gap:5px;
-    }
-    .judgement p {
-      white-space:normal;
-      overflow:visible;
-    }
     h1 { font-size:27px; }
     .score-table {
       table-layout:fixed;
     }
-    .ledger-table,
-    .ledger-table thead,
-    .ledger-table tbody,
-    .ledger-table tr,
-    .ledger-table th,
-    .ledger-table td {
-      display:block;
+    .article-card-list { gap:7px; }
+    .article-card {
+      grid-template-columns:30px minmax(0,1fr) 42px;
+      gap:8px;
+      padding:9px 8px;
+      border-radius:8px;
     }
-    .ledger-table thead { display:none; }
-    .ledger-table tr {
-      padding:12px 0;
-      border-bottom:1px solid #e5ebf3;
+    .num {
+      width:28px;
+      height:28px;
+      font-size:11px;
     }
-    .ledger-table td {
-      padding:2px 0;
-      border-bottom:0;
+    .headline {
+      font-size:13px;
+      line-height:1.28;
     }
-    .num { width:auto; text-align:left; }
-    .label-stack,
-    .article-meta-line {
-      flex-direction:row;
-      justify-content:flex-start;
-    }
-    .ledger-table td:nth-child(3) {
-      display:none;
+    .pill {
+      min-height:18px;
+      padding:0 6px;
+      font-size:9px;
     }
     .meta {
       white-space:normal;
       line-height:1.3;
+      margin-top:0;
     }
     .open-link {
-      margin-top:4px;
+      min-height:30px;
+      padding:0 8px;
     }
   }
   @media screen and (max-width:420px) {
@@ -496,13 +482,7 @@
     .system { font-size:5.8px; }
     h1 { margin:1.5mm 0 1mm; font-size:16px; }
     .report-meta { gap:1.5mm; font-size:6.2px; }
-    .summary-band {
-      padding:2mm 0;
-    }
-    .judgement { grid-template-columns:16mm minmax(0,1fr); gap:2mm; }
-    .judgement h2,
     .panel-title { margin-bottom:1mm; font-size:7.4px; }
-    .judgement p { font-size:7px; line-height:1.22; }
     .score-table th { padding:1.4mm .8mm; font-size:5.3px; }
     .score-table td { padding:1.6mm .8mm; font-size:10px; }
     .score-table td small { font-size:5px; }
@@ -514,8 +494,20 @@
     .section-head { margin-bottom:1.5mm; padding-bottom:1.2mm; border-bottom-width:.5mm; }
     .section-head h2 { font-size:7.8px; }
     .section-head span { font-size:5.6px; }
-    .ledger-table th { padding:1.4mm 1mm; font-size:5.2px; }
-    .ledger-table td { padding:1.5mm 1mm; font-size:5.7px; }
+    .article-card-list { gap:1.4mm; }
+    .article-card {
+      grid-template-columns:7mm minmax(0,1fr) 10mm;
+      gap:1.6mm;
+      padding:1.4mm 1.5mm;
+      border-radius:1.4mm;
+      border-left-width:.8mm;
+    }
+    .num {
+      width:6mm;
+      height:6mm;
+      font-size:5.6px;
+      border-radius:1mm;
+    }
     .headline {
       font-size:6.4px;
       line-height:1.15;
@@ -524,7 +516,7 @@
       -webkit-box-orient:vertical;
       overflow:hidden;
     }
-    .meta { margin-top:.7mm; font-size:5.2px; }
+    .meta { margin-top:0; font-size:5.2px; white-space:nowrap; }
     .pill { min-height:3mm; padding:0 1mm; font-size:5px; }
     .open-link { display:none; }
     .side { gap:2.4mm; }
@@ -533,7 +525,7 @@
     .bar-row { grid-template-columns:12mm minmax(0,1fr) 6mm; gap:1mm; font-size:5.7px; }
     .track { height:1.5mm; }
     .footer { margin-top:2.5mm; padding-top:1.8mm; font-size:5.5px; }
-    .ledger-table tbody tr:nth-child(n+9) { display:none; }
+    .article-card-list .article-card:nth-child(n+9) { display:none; }
   }
 </style>
 </head>
@@ -578,13 +570,6 @@
       </div>
     </header>
 
-    <section class="summary-band">
-      <div class="judgement">
-        <h2>오늘의 판단</h2>
-        <p>{% if daily_brief %}{{ daily_brief[0] }}{% else %}당일 수집 구간의 기사 흐름을 기준으로 직접 리스크와 업계 변화를 분리해 확인합니다.{% endif %}</p>
-      </div>
-    </section>
-
     <section class="main-grid">
       <section class="section">
         <div class="section-head">
@@ -592,33 +577,22 @@
           <span>근거 {{ evidence_tab.articles|length }}건 · 제목/원문 기준</span>
         </div>
         {% if evidence_tab.articles %}
-        <table class="ledger-table">
-          <thead>
-            <tr>
-              <th>No.</th>
-              <th>기사</th>
-              <th>출처</th>
-              <th>원문</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for a in evidence_tab.articles[:8] %}
-            <tr>
-              <td class="num">{{ "%02d"|format(loop.index) }}</td>
-              <td>
-                <div class="article-meta-line">
-                  <span class="pill tone-{{ a._tone }}">{{ a._tone_label }}</span>
-                  <span class="pill cat-{{ a._category }}">{{ a._category_label }}</span>
-                </div>
-                <a class="headline" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
-                <div class="meta">{{ a.source }} · {{ a.keyword }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</div>
-              </td>
-              <td><div class="meta">{{ a.source }} · 영향도 {{ a._impact }}</div></td>
-              <td><a class="open-link" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">열기</a></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="article-card-list{% if evidence_tab.articles|length >= 10 %} compact{% endif %}">
+          {% for a in evidence_tab.articles[:12] %}
+          <article class="article-card tone-{{ a._tone }}">
+            <div class="num">{{ "%02d"|format(loop.index) }}</div>
+            <div class="article-body">
+              <div class="article-meta-line">
+                <span class="pill tone-{{ a._tone }}">{{ a._tone_label }}</span>
+                <span class="pill cat-{{ a._category }}">{{ a._category_label }}</span>
+              </div>
+              <a class="headline" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
+              <div class="meta">{{ a.source }} · {{ a.keyword }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</div>
+            </div>
+            <a class="open-link" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">열기</a>
+          </article>
+          {% endfor %}
+        </div>
         {% else %}
         <p class="empty">분석 구간 내 우선 확인 기사가 없습니다.</p>
         {% endif %}
