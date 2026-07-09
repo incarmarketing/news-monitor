@@ -896,8 +896,9 @@ def extract_article_body_from_html(html: str) -> str:
         return ""
     candidates: list[str] = []
     patterns = [
+        r'<article[^>]+id=["\']article-view-content-div["\'][^>]*>(.*?)</article>',
         r'<div[^>]+id=["\']article-view-content-div["\'][^>]*>(.*?)</div>\s*</div>',
-        r'<div[^>]+class=["\'][^"\']*(?:article-view-content|article-body|view-content|article_cont|article-content|news-article)[^"\']*["\'][^>]*>(.*?)</div>',
+        r'<div[^>]+class=["\'][^"\']*(?:article-view-content|article-body|article-veiw-body|view-content|article_cont|article-content|news-article)[^"\']*["\'][^>]*>(.*?)</div>',
         r'<section[^>]+class=["\'][^"\']*(?:article|news)[^"\']*["\'][^>]*>(.*?)</section>',
         r'<article[^>]*>(.*?)</article>',
         r'<div[^>]+itemprop=["\']articleBody["\'][^>]*>(.*?)</div>',
