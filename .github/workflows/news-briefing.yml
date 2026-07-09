@@ -286,6 +286,8 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
           SLACK_AI_USAGE_WEBHOOK_URL: ${{ secrets.SLACK_AI_USAGE_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TEAMS_REPORT_WEBHOOK_URL: ${{ secrets.TEAMS_REPORT_WEBHOOK_URL }}
           REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
           REPORT_PUBLIC_URL: https://incarmarketing.github.io/news-monitor/
           REQUIRE_REPORT_LINK_OK: "true"
@@ -320,6 +322,8 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_REPORT_WEBHOOK_URL: ${{ secrets.SLACK_REPORT_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TEAMS_REPORT_WEBHOOK_URL: ${{ secrets.TEAMS_REPORT_WEBHOOK_URL }}
           REPORT_PUBLIC_URL: https://incarmarketing.github.io/news-monitor/
           REQUIRE_REPORT_LINK_OK: "true"
           FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_slack_send == 'true' && '1' || '' }}

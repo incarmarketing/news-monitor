@@ -790,7 +790,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   );
   const watchHealth = operationsHealth.items.find((item) => item.title === "부정기사 감시");
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
-  const notificationHealth = operationsHealth.items.find((item) => item.title === "슬랙");
+  const notificationHealth = operationsHealth.items.find((item) => item.title === "발송");
   const actionsHealth = operationsHealth.items.find((item) => item.title === "GitHub Actions");
   const historyHealth = operationsHealth.items.find((item) => item.title === "Supabase 기록");
   return (
@@ -1148,7 +1148,7 @@ function OpsStatusRail({
         notificationHealth={notificationHealth}
         aiStatus={operations?.aiStatus}
       />
-      <Panel title="슬랙 발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
+      <Panel title="발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
         <NotificationList rows={notifications} />
       </Panel>
       <Panel title="보고서 자동화" icon={CalendarDays}>
@@ -3441,7 +3441,7 @@ function OpsRuntimeStrip({ jobs, watchHealth, notificationHealth, aiStatus }) {
   const watchDetail = watchHealth?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 감시 대기");
   const sendStatus = notificationHealth?.status || "unknown";
   const sendValue = notificationHealth?.label || (sendStatus === "success" ? "정상" : sendStatus === "fail" ? "실패" : "확인");
-  const sendDetail = notificationHealth?.detail || "슬랙 발송 이력 확인";
+  const sendDetail = notificationHealth?.detail || "발송 이력 확인";
   const apiValue = "100%";
   const apiDetail = "Llama 잔량 기준";
   return (
@@ -3628,7 +3628,7 @@ function formatGeminiUsageText(usage = {}) {
 }
 
 function getNotificationDisplayRow(item = {}) {
-  const sourceTitle = item.type || item.rawTitle || "슬랙";
+  const sourceTitle = item.type || item.rawTitle || "발송";
   return {
     label: cleanNotificationLabel(sourceTitle, item.messageType),
     date: formatNotificationDisplayDate(item.sentAt || item.rawTitle || item.type),
@@ -3647,7 +3647,7 @@ function cleanNotificationLabel(title = "", messageType = "") {
     .replace(/\b\d{2}[.]\d{2}[.]\d{2}\b/g, "")
     .replace(/\b\d{2}:\d{2}\b/g, "")
     .replace(/\s+/g, " ")
-    .trim() || "슬랙";
+    .trim() || "발송";
 }
 
 function formatNotificationDisplayDate(value) {
@@ -3729,7 +3729,7 @@ function NotificationStatusSummary({ health, total = 0 }) {
     <div className={`operation-status-summary ${health?.status || "unknown"}`}>
       <div>
         <HealthStatusPill status={health?.status || "unknown"} label={health?.label || "확인"} />
-        <b>{health?.detail || "슬랙 이력 확인 대기"}</b>
+        <b>{health?.detail || "발송 이력 확인 대기"}</b>
       </div>
       <span>{health?.meta || `누적 ${Number(total || 0).toLocaleString("ko-KR")}건`}</span>
     </div>
@@ -3743,8 +3743,8 @@ function NotificationDetail({ item, onClose }) {
         <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
           <X />
         </button>
-        <span className="detail-kicker">슬랙 발송 내역</span>
-        <h2>{item.rawTitle || item.type || "슬랙"}</h2>
+        <span className="detail-kicker">발송 내역</span>
+        <h2>{item.rawTitle || item.type || "발송"}</h2>
         <div className="detail-meta">
           <Chip tone={item.status}>{item.status}</Chip>
           <span>{item.time}</span>

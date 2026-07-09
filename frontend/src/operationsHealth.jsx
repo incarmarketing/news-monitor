@@ -108,7 +108,7 @@ function buildDailyReportHealth(notifications = [], reportRuns = [], jobRuns = [
   const completedDueCount = slots.filter((slot) => slot.due && slot.confirmedOk).length;
   const totalSlots = slots.length;
   const progress = dueCount
-    ? `도래 ${dueCount}회 중 확인 ${completedDueCount}회${hasNotificationLedger ? ` · 슬랙 ${sentCount}회` : ""}`
+    ? `도래 ${dueCount}회 중 확인 ${completedDueCount}회${hasNotificationLedger ? ` · 발송 ${sentCount}회` : ""}`
     : generatedCount
       ? `오늘 확인 ${generatedCount}회`
       : "첫 발송 전";
@@ -121,38 +121,41 @@ function buildDailyReportHealth(notifications = [], reportRuns = [], jobRuns = [
     detail: `오늘 ${totalSlots}회 중 확인 ${generatedCount}회`,
     progress,
     slots,
-    meta: `슬랙기록 ${sentCount}회 · 보고서 ${generatedCount}회`,
+    meta: `발송기록 ${sentCount}회 · 보고서 ${generatedCount}회`,
   };
 }
 
 function buildNotificationHealth(notifications = []) {
-  const slackRows = notifications.filter((item) => !item.channel || String(item.channel).toLowerCase() === "slack");
-  const recent = slackRows.filter((item) => {
+  const deliveryRows = notifications.filter((item) => {
+    const channel = String(item.channel || "").toLowerCase();
+    return !channel || channel === "slack" || channel === "teams";
+  });
+  const recent = deliveryRows.filter((item) => {
     const minutes = minutesSince(item.sentAt);
     return minutes !== null && minutes <= 24 * 60;
   });
-  const scoped = latestNotificationRowsByKey(recent.length ? recent : slackRows.slice(0, 12));
+  const scoped = latestNotificationRowsByKey(recent.length ? recent : deliveryRows.slice(0, 12));
   const failed = scoped.filter((item) => !isNotificationSuccess(item));
-  const latest = slackRows[0];
+  const latest = deliveryRows[0];
   const latestAge = latest ? minutesSince(latest.sentAt) : null;
   const latestScoped = scoped[0] || latest;
   const latestSuccess = latest && isNotificationSuccess(latest);
   const latestFailed = latestScoped && !isNotificationSuccess(latestScoped);
   const status = !scoped.length ? "warn" : latestSuccess ? "ok" : latestFailed ? "fail" : latestAge !== null && latestAge > 24 * 60 ? "warn" : "ok";
   const detail = !scoped.length
-    ? "슬랙 발송 이력 없음"
+    ? "발송 이력 없음"
     : latestSuccess
       ? failed.length ? `최근 발송 정상 · 이전 실패 ${failed.length}` : "최근 발송 정상"
       : latestFailed
         ? `최근 발송 실패${failed.length > 1 ? ` · 실패 ${failed.length}` : ""}`
         : "최근 발송 정상";
   return {
-    title: "슬랙",
+    title: "발송",
     icon: Bell,
     status,
     label: healthStatusLabel(status),
     detail,
-    meta: latest ? `최신 ${latest.time} · ${latest.type}` : "슬랙 기록 확인 필요",
+    meta: latest ? `최신 ${latest.time} · ${latest.type}` : "발송 기록 확인 필요",
   };
 }
 
@@ -216,13 +219,16 @@ function buildWorkflowActionsHealth(workflowHealth = {}) {
 }
 
 function buildHistorySourceHealth(operations = {}, notifications = [], watchRuns = [], reportRuns = [], jobRuns = []) {
-  const slackRows = notifications.filter((item) => !item.channel || String(item.channel).toLowerCase() === "slack");
+  const deliveryRows = notifications.filter((item) => {
+    const channel = String(item.channel || "").toLowerCase();
+    return !channel || channel === "slack" || channel === "teams";
+  });
   const reportRecords = reportRuns.length + jobRuns.filter((row) => {
     const status = String(row.status || "").toLowerCase();
     return row.jobType && ["success", "ok", "completed"].includes(status);
   }).length;
   const missing = [];
-  if (!slackRows.length) missing.push("슬랙");
+  if (!deliveryRows.length) missing.push("발송");
   if (!watchRuns.length) missing.push("감시");
   if (!reportRecords) missing.push("보고");
   const status = operations?.status === "error"
@@ -239,7 +245,7 @@ function buildHistorySourceHealth(operations = {}, notifications = [], watchRuns
     status,
     label: healthStatusLabel(status),
     detail: missing.length ? `${missing.join("·")} 기록 확인 필요` : `${source} 정상 반영`,
-    meta: `슬랙 ${slackRows.length} · 감시 ${watchRuns.length} · 보고 ${reportRecords}`,
+    meta: `발송 ${deliveryRows.length} · 감시 ${watchRuns.length} · 보고 ${reportRecords}`,
   };
 }
 

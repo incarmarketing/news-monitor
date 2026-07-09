@@ -57,14 +57,44 @@ class SlackDailyPayloadTests(unittest.TestCase):
         self.assertNotIn("fields", metric_block)
         self.assertEqual(
             [cell["text"] for cell in metric_block["rows"][0]],
-            ["\ub9ac\uc2a4\ud06c", "\ubd84\uc11d", "\ubd80\uc815", "\uae0d\uc815", "\uc911\ub9bd"],
+            ["\ub9ac\uc2a4\ud06c", "\ubd84\uc11d", "\uae0d\uc815", "\uc911\ub9bd", "\ubd80\uc815"],
         )
-        self.assertEqual([cell["text"] for cell in metric_block["rows"][1]], ["LOW", "2", "0", "1", "0"])
+        self.assertEqual([cell["text"] for cell in metric_block["rows"][1]], ["LOW", "2", "1", "0", "0"])
         self.assertTrue(all(setting["align"] == "center" for setting in metric_block["column_settings"]))
         self.assertNotIn(slack_notify.K["default_conclusion"], header_block)
         self.assertIn("\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4", key_issue_block)
         self.assertNotIn("GA\uc5c5\uacc4 \ucd5c\ub2e4", key_issue_block)
         self.assertNotIn(slack_notify.K["check_report_articles"], key_issue_block)
+
+    def test_daily_teams_payload_uses_adaptive_card(self) -> None:
+        report = {
+            "date": "2026-06-20",
+            "window": {"slot": "08", "short_label": "18:00~08:00"},
+            "metrics": {
+                "risk_level": "LOW",
+                "total_after_cluster": 4,
+                "own_by_tone": {"negative": 0, "positive": 1, "neutral": 1},
+            },
+            "briefing": "",
+            "articles": [
+                {
+                    "title": "\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4, \uc6d0\ud0d1\ucd1d\uad04\uc0ac\uc5c5\ub2e8 \uc124\uacc4\uc0ac 1000\uba85 \ub3cc\ud30c",
+                    "_category": "own",
+                    "_tone": "positive",
+                    "_score": 90,
+                }
+            ],
+        }
+
+        payload = slack_notify.build_daily_teams_payload(report, "https://example.com/report.html")
+        attachment = payload["attachments"][0]
+        card = attachment["content"]
+
+        self.assertEqual(payload["type"], "message")
+        self.assertEqual(attachment["contentType"], "application/vnd.microsoft.card.adaptive")
+        self.assertEqual(card["type"], "AdaptiveCard")
+        self.assertTrue(card["actions"])
+        self.assertIn("\uc5b8\ub860 \ub3d9\ud5a5", card["body"][0]["text"])
 
 
 class SlackPeriodNotificationTests(unittest.TestCase):
@@ -73,6 +103,7 @@ class SlackPeriodNotificationTests(unittest.TestCase):
             patch.object(slack_notify, "notification_already_sent", return_value=True) as already_sent,
             patch.object(slack_notify, "verify_public_report_link") as verify_link,
             patch.object(slack_notify, "post_to_slack") as post_to_slack,
+            patch.object(slack_notify, "teams_enabled", return_value=False),
             patch.object(slack_notify, "save_notification_send") as save_send,
         ):
             slack_notify.send_period("weekly")
@@ -87,6 +118,7 @@ class SlackPeriodNotificationTests(unittest.TestCase):
             patch.object(slack_notify, "notification_already_sent", return_value=False),
             patch.object(slack_notify, "verify_public_report_link"),
             patch.object(slack_notify, "post_to_slack", return_value={"ok": True}),
+            patch.object(slack_notify, "teams_enabled", return_value=False),
             patch.object(slack_notify, "save_notification_send") as save_send,
         ):
             slack_notify.send_period("monthly")
