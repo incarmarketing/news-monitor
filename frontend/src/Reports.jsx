@@ -340,7 +340,7 @@ function A4PriorityArticleCards({ groups = [], period = "daily" }) {
                 <Chip>{issue.category || issue.bucketTitle || "분류"}</Chip>
                 <em>{formatA4ArticleMeta(issue)}</em>
               </div>
-              <b>{issue.title}</b>
+              <b>{formatA4ArticleHeadline(issue)}</b>
             </div>
             <span className="a4-priority-open">열기</span>
           </a>
@@ -456,6 +456,21 @@ function formatA4ArticleMeta(item = {}, fallback = "-") {
   const dateTime = [item.date, item.time].filter(Boolean).join(" ") || item.publishedAt || fallback;
   const related = Number(item.relatedCount || item.clusterSize || 1) > 1 ? ` · 관련 ${Number(item.relatedCount || item.clusterSize).toLocaleString("ko-KR")}건` : "";
   return `${source} · ${dateTime}${related}`;
+}
+
+function formatA4ArticleHeadline(item = {}) {
+  const source = cleanA4InlineText(item.source || item.media || item.publisher || "");
+  const title = cleanA4InlineText(item.title || "제목 확인 필요");
+  const relatedCount = Number(item.relatedCount || item.clusterSize || 1);
+  const related = relatedCount > 1 ? ` · 관련 ${relatedCount.toLocaleString("ko-KR")}건` : "";
+  return `${source ? `[${source}] ` : ""}${title}${related}`;
+}
+
+function cleanA4InlineText(value = "") {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,!?…])/g, "$1")
+    .trim();
 }
 
 function buildReportLead(period, data, articles, issues) {
