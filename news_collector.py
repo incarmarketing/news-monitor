@@ -7,7 +7,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime, parsedate_to_datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 import feedparser
 import requests
@@ -160,9 +160,14 @@ DOMAIN_PRESS_MAP = {
     "safetimes.co.kr": "세이프타임즈",
     "xportsnews.com": "엑스포츠뉴스",
     "fnnews.com": "파이낸셜뉴스",
+    "kbanker.co.kr": "대한금융신문",
+    "www.kbanker.co.kr": "대한금융신문",
+    "eroun.net": "이로운넷",
+    "www.eroun.net": "이로운넷",
 }
 
 KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
+MANDATORY_OWN_COLLECTION_KEYWORDS = ["인카금융서비스", "인카금융"]
 AMBIGUOUS_COLLECTION_KEYWORDS = {"인카", "메가", "GA", "브랜드평판", "브랜드 평판", "평판", "글로벌금융"}
 BROAD_REPUTATION_KEYWORDS = {"브랜드평판", "브랜드 평판", "평판"}
 CONTEXTUAL_REPUTATION_QUERIES = [
@@ -177,6 +182,7 @@ CONTEXTUAL_COMPETITOR_QUERIES = {
 STALE_GOOGLE_REEXPOSURE_DAYS = int(os.getenv("STALE_GOOGLE_REEXPOSURE_DAYS", "14"))
 ENABLE_TRADE_PRESS_SOURCES = os.getenv("ENABLE_TRADE_PRESS_SOURCES", "true").lower() not in {"0", "false", "no", "n"}
 TRADE_PRESS_ARTICLES_PER_SOURCE = int(os.getenv("TRADE_PRESS_ARTICLES_PER_SOURCE", "30"))
+OWN_SEARCH_ARTICLES_PER_KEYWORD = int(os.getenv("OWN_SEARCH_ARTICLES_PER_KEYWORD", "80"))
 TRADE_PRESS_SOURCES = [
     {
         "name": "보험저널",
@@ -232,6 +238,19 @@ TRADE_PRESS_SOURCES = [
         ],
         "article_url_patterns": [
             r'https?://(?:www\.)?insweek\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+]
+OWN_PRESS_SEARCH_SOURCES = [
+    {
+        "name": "대한금융신문",
+        "base_url": "https://www.kbanker.co.kr/",
+        "search_url_templates": [
+            "https://www.kbanker.co.kr/news/articleList.html?sc_area=A&view_type=sm&sc_word={query}",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?kbanker\.co\.kr/news/articleView\.html\?idxno=\d+',
             r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
         ],
     },
@@ -292,8 +311,9 @@ def collect_news() -> list[dict]:
             label = row["keyword"]
             category = row["category"]
             progress.update(task, description=f"[cyan]'{label}' 수집 중")
-            naver = fetch_naver_news(query, label, category, row.get("strict_query", False))
-            google = fetch_google_news(query, label, category, row.get("strict_query", False))
+            display_count = row.get("display_count") or config.ARTICLES_PER_KEYWORD
+            naver = fetch_naver_news(query, label, category, row.get("strict_query", False), display_count)
+            google = fetch_google_news(query, label, category, row.get("strict_query", False), display_count)
             apply_keyword_rule_metadata(naver, row)
             apply_keyword_rule_metadata(google, row)
             all_articles.extend(naver + google)
@@ -304,6 +324,10 @@ def collect_news() -> list[dict]:
     if trade_articles:
         all_articles.extend(trade_articles)
         stats.append(("보험전문지 원문", len(trade_articles), 0))
+    own_press_articles = fetch_own_press_search_news()
+    if own_press_articles:
+        all_articles.extend(own_press_articles)
+        stats.append(("당사 원문 검색 보강", len(own_press_articles), 0))
 
     before = len(all_articles)
     articles = deduplicate(all_articles)
@@ -335,6 +359,8 @@ def normalize_collection_keywords(keywords: list[str | dict]) -> list[dict]:
     seen: set[tuple[str, str, str]] = set()
     for item in keywords:
         if isinstance(item, dict):
+            if item.get("is_search_keyword") is False:
+                continue
             keyword = str(item.get("keyword") or "").strip()
             category = normalize_keyword_category(item.get("category"))
             match_mode = normalize_keyword_match_mode(item.get("match_mode"))
@@ -364,6 +390,7 @@ def normalize_collection_keywords(keywords: list[str | dict]) -> list[dict]:
                     "query": query,
                     "category": category,
                     "strict_query": query != keyword and category != "other",
+                    "display_count": collection_display_count(keyword, category),
                     "match_mode": match_mode,
                     "context_terms": context_terms,
                     "exclude_terms": exclude_terms,
@@ -371,7 +398,32 @@ def normalize_collection_keywords(keywords: list[str | dict]) -> list[dict]:
                 }
             )
             seen.add(key)
+    for keyword in MANDATORY_OWN_COLLECTION_KEYWORDS:
+        category = "own"
+        key = (keyword.lower(), keyword.lower(), category)
+        if key in seen:
+            continue
+        normalized.append(
+            {
+                "keyword": keyword,
+                "query": keyword,
+                "category": category,
+                "strict_query": False,
+                "display_count": OWN_SEARCH_ARTICLES_PER_KEYWORD,
+                "match_mode": "keyword",
+                "context_terms": [],
+                "exclude_terms": [],
+                "priority": 1,
+            }
+        )
+        seen.add(key)
     return normalized
+
+
+def collection_display_count(keyword: str, category: str) -> int:
+    if category == "own" or any(name in str(keyword or "") for name in analyzer.OWN_NAMES):
+        return OWN_SEARCH_ARTICLES_PER_KEYWORD
+    return config.ARTICLES_PER_KEYWORD
 
 
 def apply_keyword_rule_metadata(articles: list[dict], row: dict) -> None:
@@ -437,6 +489,7 @@ def fetch_naver_news(
     keyword: str | None = None,
     keyword_category: str = "other",
     strict_query: bool = False,
+    display_count: int | None = None,
 ) -> list[dict]:
     if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
         return []
@@ -447,7 +500,8 @@ def fetch_naver_news(
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
     }
-    params = {"query": query, "display": config.ARTICLES_PER_KEYWORD, "sort": "date"}
+    display_count = max(1, min(int(display_count or config.ARTICLES_PER_KEYWORD), 100))
+    params = {"query": query, "display": display_count, "sort": "date"}
 
     try:
         response = requests.get(url, headers=headers, params=params, timeout=10)
@@ -481,6 +535,7 @@ def fetch_google_news(
     keyword: str | None = None,
     keyword_category: str = "other",
     strict_query: bool = False,
+    display_count: int | None = None,
 ) -> list[dict]:
     keyword = keyword or query
     encoded = requests.utils.quote(query)
@@ -501,7 +556,7 @@ def fetch_google_news(
                 "keyword_strict_query": strict_query,
                 "portal": "google",
             }
-            for entry in feed.entries[:config.ARTICLES_PER_KEYWORD]
+            for entry in feed.entries[: max(1, int(display_count or config.ARTICLES_PER_KEYWORD))]
         ]
     except Exception as exc:
         console.print(f"[red]Google '{query}' 오류:[/] {exc}")
@@ -526,6 +581,60 @@ def fetch_trade_press_news(limit_per_source: int | None = None) -> list[dict]:
             if article:
                 articles.append(article)
     return articles
+
+
+def fetch_own_press_search_news(limit_per_source: int | None = None) -> list[dict]:
+    """Collect own-company articles from publisher search pages.
+
+    Portal APIs can miss publisher articles when many broad insurance results
+    are returned first. This source-level fallback is intentionally limited to
+    exact own-company terms and known publisher search pages.
+    """
+    if not ENABLE_TRADE_PRESS_SOURCES:
+        return []
+    limit = limit_per_source or TRADE_PRESS_ARTICLES_PER_SOURCE
+    articles: list[dict] = []
+    seen_links: set[str] = set()
+    for source in OWN_PRESS_SEARCH_SOURCES:
+        for query in MANDATORY_OWN_COLLECTION_KEYWORDS:
+            for url in collect_source_search_article_urls(source, query, limit):
+                normalized = normalize_url_for_tracking(url)
+                if normalized in seen_links:
+                    continue
+                seen_links.add(normalized)
+                article = fetch_trade_press_article(source, url)
+                if article:
+                    article["keyword"] = query
+                    article["keyword_query"] = query
+                    article["keyword_category"] = "own"
+                    article["portal"] = "source_search"
+                    articles.append(article)
+                if len(articles) >= limit:
+                    return articles
+    return articles
+
+
+def collect_source_search_article_urls(source: dict, query: str, limit: int) -> list[str]:
+    seen: set[str] = set()
+    urls: list[str] = []
+    for template in source.get("search_url_templates", []):
+        search_url = template.format(query=quote(query))
+        html, final_url = fetch_article_html(search_url, timeout=8)
+        if not html:
+            continue
+        base_url = final_url or search_url or source.get("base_url", "")
+        for pattern in source.get("article_url_patterns", []):
+            for match in re.finditer(pattern, html, re.I):
+                raw = match.group(1) if match.groups() else match.group(0)
+                url = urljoin(base_url, raw)
+                normalized = normalize_url_for_tracking(url)
+                if normalized in seen:
+                    continue
+                seen.add(normalized)
+                urls.append(url)
+                if len(urls) >= limit:
+                    return urls
+    return urls
 
 
 def collect_trade_press_article_urls(source: dict, limit: int) -> list[str]:

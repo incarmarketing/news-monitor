@@ -68,6 +68,8 @@ class TradePressCollectorTests(unittest.TestCase):
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["insjournal.co.kr"], "보험저널")
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["insnews.co.kr"], "한국보험신문")
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["insweek.co.kr"], "보험신보")
+        self.assertEqual(news_collector.DOMAIN_PRESS_MAP["kbanker.co.kr"], "대한금융신문")
+        self.assertEqual(news_collector.DOMAIN_PRESS_MAP["eroun.net"], "이로운넷")
 
     def test_trade_press_urls_are_collected_from_rss_and_list_without_duplicates(self) -> None:
         source = {
@@ -96,6 +98,52 @@ class TradePressCollectorTests(unittest.TestCase):
             "https://www.insweek.co.kr/news/articleView.html?idxno=71312",
             "https://www.insweek.co.kr/news/articleView.html?idxno=71311",
         ])
+
+    def test_own_press_search_urls_are_collected_from_publisher_search(self) -> None:
+        source = {
+            "name": "대한금융신문",
+            "base_url": "https://www.kbanker.co.kr/",
+            "search_url_templates": [
+                "https://www.kbanker.co.kr/news/articleList.html?sc_area=A&view_type=sm&sc_word={query}",
+            ],
+            "article_url_patterns": [
+                r'https?://(?:www\.)?kbanker\.co\.kr/news/articleView\.html\?idxno=\d+',
+                r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+            ],
+        }
+        html = """
+        <a href="/news/articleView.html?idxno=225381">금융사 임원 103명</a>
+        <a href="/news/articleView.html?idxno=225384">보험 임원 자사주식</a>
+        """
+
+        with patch.object(news_collector, "fetch_article_html", return_value=(html, "https://www.kbanker.co.kr/news/articleList.html")):
+            urls = news_collector.collect_source_search_article_urls(source, "인카금융서비스", 5)
+
+        self.assertEqual(urls, [
+            "https://www.kbanker.co.kr/news/articleView.html?idxno=225381",
+            "https://www.kbanker.co.kr/news/articleView.html?idxno=225384",
+        ])
+
+
+class CollectionKeywordTests(unittest.TestCase):
+    def test_non_search_rows_are_not_used_as_collection_queries(self) -> None:
+        rows = [
+            {"keyword": "보험", "category": "industry", "is_search_keyword": False},
+            {"keyword": "인카금융서비스", "category": "own", "is_search_keyword": True},
+        ]
+
+        normalized = news_collector.normalize_collection_keywords(rows)
+        queries = {(row["keyword"], row["query"], row["category"]) for row in normalized}
+
+        self.assertNotIn(("보험", "보험", "industry"), queries)
+        self.assertIn(("인카금융서비스", "인카금융서비스", "own"), queries)
+
+    def test_mandatory_own_keywords_are_always_collected(self) -> None:
+        normalized = news_collector.normalize_collection_keywords([])
+        queries = {(row["keyword"], row["query"], row["category"]) for row in normalized}
+
+        self.assertIn(("인카금융서비스", "인카금융서비스", "own"), queries)
+        self.assertIn(("인카금융", "인카금융", "own"), queries)
 
 
 class KeywordContextMatchTests(unittest.TestCase):
