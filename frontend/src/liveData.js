@@ -831,7 +831,7 @@ async function loadStaticOperationalData() {
         status: "live",
         message: `누적 데이터 ${articles.length.toLocaleString("ko-KR")}건`,
         articles,
-        notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification).filter(isSlackNotification) : [],
+        notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification).filter(isDeliveryNotification) : [],
         watchRuns: Array.isArray(payload?.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
         reportRuns,
         jobRuns,
@@ -910,7 +910,7 @@ async function loadOperationalDataFromSupabaseSession() {
       notifications: rest(
         config,
         session,
-        "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&channel=eq.slack&order=sent_at.desc&limit=80",
+        "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=120",
       ),
       watchRuns: rest(
         config,
@@ -995,7 +995,7 @@ async function loadOperationalDataFromSupabaseSession() {
       status: "live",
       message,
       articles: Array.isArray(articles) ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean)) : [],
-      notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification).filter(isSlackNotification) : [],
+      notifications: Array.isArray(notifications) ? notifications.map(normalizeNotification).filter(isDeliveryNotification) : [],
       watchRuns: Array.isArray(watchRuns) ? watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(reportRuns) ? reportRuns.map(normalizeReportRun) : [],
       jobRuns: Array.isArray(jobRuns) ? jobRuns.map(normalizeJobRun) : [],
@@ -1044,7 +1044,7 @@ async function loadOperationalDataFromSupabasePublic() {
     const optionalRequests = {
       notifications: publicRest(
         config,
-        "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&channel=eq.slack&order=sent_at.desc&limit=80",
+        "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=120",
       ),
       watchRuns: publicRest(
         config,
@@ -1078,7 +1078,7 @@ async function loadOperationalDataFromSupabasePublic() {
       status: "live",
       message: `운영 DB 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`,
       articles: normalizedArticles,
-      notifications: Array.isArray(optionalData.notifications) ? optionalData.notifications.map(normalizeNotification).filter(isSlackNotification) : [],
+      notifications: Array.isArray(optionalData.notifications) ? optionalData.notifications.map(normalizeNotification).filter(isDeliveryNotification) : [],
       watchRuns: Array.isArray(optionalData.watchRuns) ? optionalData.watchRuns.map(normalizeWatchRun) : [],
       reportRuns: Array.isArray(optionalData.reportRuns) ? optionalData.reportRuns.map(normalizeReportRun) : [],
       jobRuns: Array.isArray(optionalData.jobRuns) ? optionalData.jobRuns.map(normalizeJobRun) : [],
@@ -1572,7 +1572,7 @@ function shouldReplaceDedupedArticle(current, next) {
 }
 
 function normalizeNotification(row) {
-  const rawTitle = row.title || row.message_type || row.channel || "슬랙";
+  const rawTitle = row.title || row.message_type || row.channel || "발송";
   return {
     id: row.id || `${row.sent_at}-${row.message_type}`,
     sentAt: row.sent_at || row.created_at || "",
@@ -1589,13 +1589,13 @@ function normalizeNotification(row) {
   };
 }
 
-function isSlackNotification(row = {}) {
+function isDeliveryNotification(row = {}) {
   const channel = String(row.channel || "").trim().toLowerCase();
-  return !channel || channel === "slack";
+  return !channel || channel === "slack" || channel === "teams";
 }
 
 function compactNotificationTitle(row) {
-  const rawTitle = String(row?.title || row?.message_type || row?.channel || "슬랙").trim();
+  const rawTitle = String(row?.title || row?.message_type || row?.channel || "발송").trim();
   const dateText = compactNotificationDate(rawTitle) || compactNotificationDate(row?.sent_at || row?.created_at);
   const titleKey = `${rawTitle} ${row?.message_type || ""}`.toLowerCase();
   if (/ai_usage_alert|ai\s*요약\s*사용량|ai.*사용량/.test(titleKey)) {

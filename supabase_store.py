@@ -1304,7 +1304,6 @@ def load_dashboard_notifications(limit: int = 80) -> list[dict]:
         (
             "notification_sends?"
             "select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at"
-            "&channel=eq.slack"
             f"&order=sent_at.desc&limit={limit}"
         ),
     )

@@ -82,6 +82,10 @@ class SlackNotifyError(RuntimeError):
     """Raised when Slack notification delivery cannot proceed."""
 
 
+class TeamsNotifyError(RuntimeError):
+    """Raised when Microsoft Teams notification delivery cannot proceed."""
+
+
 def slack_webhook_url(kind: str = "report") -> str:
     candidates: list[str] = []
     if kind == "alert":
@@ -99,10 +103,41 @@ def slack_webhook_url(kind: str = "report") -> str:
     raise SlackNotifyError("SLACK_WEBHOOK_URL secret is missing.")
 
 
+def teams_webhook_candidates(kind: str = "report") -> list[str]:
+    candidates: list[str] = []
+    if kind == "alert":
+        candidates.extend(["TEAMS_ALERT_WEBHOOK_URL", "TEAMS_NEGATIVE_WEBHOOK_URL"])
+    elif kind == "ai_usage":
+        candidates.append("TEAMS_AI_USAGE_WEBHOOK_URL")
+    else:
+        candidates.append("TEAMS_REPORT_WEBHOOK_URL")
+    candidates.append("TEAMS_WEBHOOK_URL")
+    return candidates
+
+
+def teams_webhook_url(kind: str = "report") -> str:
+    for key in teams_webhook_candidates(kind):
+        value = os.getenv(key, "").strip()
+        if value:
+            return value
+    raise TeamsNotifyError("TEAMS_WEBHOOK_URL secret is missing.")
+
+
+def teams_enabled(kind: str = "report") -> bool:
+    return any(os.getenv(key, "").strip() for key in teams_webhook_candidates(kind))
+
+
 def post_to_slack(payload: dict, *, kind: str = "report") -> dict:
     response = requests.post(slack_webhook_url(kind), json=payload, timeout=15)
     if response.status_code >= 400:
         raise SlackNotifyError(f"Slack webhook failed: HTTP {response.status_code} {response.text[:300]}")
+    return {"ok": True, "status_code": response.status_code, "body": response.text[:200]}
+
+
+def post_to_teams(payload: dict, *, kind: str = "report") -> dict:
+    response = requests.post(teams_webhook_url(kind), json=payload, timeout=15)
+    if response.status_code >= 400:
+        raise TeamsNotifyError(f"Teams webhook failed: HTTP {response.status_code} {response.text[:300]}")
     return {"ok": True, "status_code": response.status_code, "body": response.text[:200]}
 
 
@@ -155,6 +190,89 @@ def metric_table_block(report: dict, metrics: dict) -> dict:
         "rows": [
             [raw_text_obj(value) for value in headers],
             [raw_text_obj(value) for value in values],
+        ],
+    }
+
+
+def teams_text(text: object, *, size: str = "Default", weight: str = "Default", color: str = "Default") -> dict:
+    return {
+        "type": "TextBlock",
+        "text": str(text if text is not None else "-")[:1200],
+        "wrap": True,
+        "size": size,
+        "weight": weight,
+        "color": color,
+    }
+
+
+def teams_metric_column(label: str, value: object, *, color: str = "Default") -> dict:
+    return {
+        "type": "Column",
+        "width": "stretch",
+        "items": [
+            teams_text(label, size="Small", weight="Bolder", color="Accent"),
+            teams_text(value, size="Large", weight="Bolder", color=color),
+        ],
+    }
+
+
+def teams_metric_set(metrics: dict) -> dict:
+    own_tone = metrics.get("own_by_tone", {}) or {}
+    own_negative = own_tone.get("negative", metrics.get("own_negative", 0))
+    risk = metrics.get("risk_level", "-")
+    risk_color = "Good" if str(risk).upper() == "LOW" else "Warning" if str(risk).upper() == "MEDIUM" else "Attention"
+    return {
+        "type": "ColumnSet",
+        "columns": [
+            teams_metric_column(K["risk"], risk, color=risk_color),
+            teams_metric_column(K["analyzed_short"], daily_analyzed_count(metrics)),
+            teams_metric_column(K["positive_short"], own_tone.get("positive", 0), color="Good"),
+            teams_metric_column(K["neutral_short"], own_tone.get("neutral", 0)),
+            teams_metric_column(K["negative_short"], own_negative, color="Attention"),
+        ],
+    }
+
+
+def teams_actions(*buttons: tuple[str, str]) -> list[dict]:
+    actions_list = []
+    for label, url in buttons:
+        if not url:
+            continue
+        actions_list.append({"type": "Action.OpenUrl", "title": str(label)[:75], "url": url})
+    return actions_list[:5]
+
+
+def teams_payload(*, title: str, subtitle: str, metrics: dict | None = None, issue_lines: list[str] | None = None, buttons: list[tuple[str, str]] | None = None) -> dict:
+    body = [
+        teams_text(title, size="Large", weight="Bolder"),
+    ]
+    if subtitle:
+        body.append(teams_text(subtitle, size="Small", color="Accent"))
+    if metrics is not None:
+        body.append(teams_metric_set(metrics))
+    if issue_lines:
+        cleaned_lines = []
+        for line in issue_lines[:5]:
+            cleaned = clean_slack_text(str(line).replace("*", "").lstrip("- ").strip())
+            if cleaned:
+                cleaned_lines.append(f"- {cleaned}")
+        if cleaned_lines:
+            body.extend([teams_text(K["key_issue"], weight="Bolder"), teams_text("\n".join(cleaned_lines))])
+    card = {
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.4",
+        "body": body,
+        "actions": teams_actions(*(buttons or [])),
+    }
+    return {
+        "type": "message",
+        "attachments": [
+            {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "contentUrl": None,
+                "content": card,
+            }
         ],
     }
 
@@ -260,10 +378,10 @@ def notification_log_title(title: str) -> str:
     return title
 
 
-def forced_resend_dedupe_key(message_type: str, title: str) -> str | None:
+def forced_resend_dedupe_key(message_type: str, title: str, *, channel: str = "slack") -> str | None:
     if not force_send_enabled():
         return None
-    return f"slack:{message_type}:{title}:resend:{datetime.now(KST):%Y%m%d%H%M%S}"
+    return f"{channel}:{message_type}:{title}:resend:{datetime.now(KST):%Y%m%d%H%M%S}"
 
 
 def parse_iso_datetime(value: str) -> datetime | None:
@@ -540,6 +658,21 @@ def build_daily_payload(report: dict, link: str) -> tuple[str, dict]:
     return fallback, payload
 
 
+def build_daily_teams_payload(report: dict, link: str) -> dict:
+    metrics = report.get("metrics", {})
+    sections = parse_briefing(report.get("briefing", ""))
+    window = window_label(report.get("window", {}))
+    title = daily_title(report)
+    issues = daily_issue_lines(report, sections)
+    return teams_payload(
+        title=title,
+        subtitle=daily_status_text(report, metrics, window),
+        metrics=metrics,
+        issue_lines=issues,
+        buttons=[(K["open_report"], link), (K["dashboard"], join_public_url(DEFAULT_REPORT_URL, "dashboard.html"))],
+    )
+
+
 PERIODS = {
     "weekly": {
         "label": K["weekly"],
@@ -592,6 +725,16 @@ def build_period_payload(period: str, report_month: str = "") -> tuple[str, str,
     return title, link, payload
 
 
+def build_period_teams_payload(period: str, report_month: str = "", *, title: str = "", link: str = "") -> dict:
+    info = PERIODS[period]
+    date_line = f"{report_month} {K['report_basis']}" if report_month else datetime.now(KST).strftime("%Y-%m-%d")
+    return teams_payload(
+        title=title or info["title"],
+        subtitle=f"{date_line}\n{info['desc']}",
+        buttons=[(K["open_report"], link), (K["dashboard"], join_public_url(DEFAULT_REPORT_URL, "dashboard.html"))],
+    )
+
+
 def build_alert_payload(text: str, link_url: str, *, title: str = K["alert_title"], article_url: str = "") -> dict:
     buttons = [(K["check_monitoring"], link_url)]
     if article_url and article_url != "#":
@@ -606,7 +749,25 @@ def build_alert_payload(text: str, link_url: str, *, title: str = K["alert_title
 
 
 def send_alert(text: str, link_url: str, *, title: str = K["alert_title"], article_url: str = "") -> dict:
-    return post_to_slack(build_alert_payload(text, link_url, title=title, article_url=article_url), kind="alert")
+    payload = build_alert_payload(text, link_url, title=title, article_url=article_url)
+    result = post_to_slack(payload, kind="alert")
+    if teams_enabled("alert"):
+        teams_buttons = [(K["check_monitoring"], link_url)]
+        if article_url and article_url != "#":
+            teams_buttons.insert(0, (K["open_original"], article_url))
+        try:
+            teams_result = post_to_teams(
+                teams_payload(
+                    title=title,
+                    subtitle=compact(text, 700, ellipsis=False),
+                    buttons=teams_buttons,
+                ),
+                kind="alert",
+            )
+            print("Teams alert result:", teams_result)
+        except Exception as error:
+            print(f"Teams alert failed: {error}")
+    return result
 
 
 def needs_ai_usage_alert(report: dict) -> bool:
@@ -680,42 +841,83 @@ def send_daily() -> None:
     title = daily_title(report)
     message_type = "daily_report"
     log_message_type = notification_message_type(message_type)
-    if not dashboard_send_enabled() and not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
-        print(f"Slack daily report already sent: {title}")
+    skip_existing = not dashboard_send_enabled() and not force_send_enabled()
+    slack_already = skip_existing and notification_already_sent(message_type, title, strict=True, channel="slack")
+    teams_should_send = teams_enabled("report")
+    teams_already = (
+        not teams_should_send
+        or (skip_existing and notification_already_sent(message_type, title, strict=True, channel="teams"))
+    )
+    if slack_already and teams_already:
+        print(f"Daily report already sent: {title}")
         maybe_send_ai_usage_alert(report)
         return
     log_title = notification_log_title(title)
-    log_dedupe_key = forced_resend_dedupe_key(log_message_type, title)
+    slack_dedupe_key = forced_resend_dedupe_key(log_message_type, title, channel="slack")
+    teams_dedupe_key = forced_resend_dedupe_key(log_message_type, title, channel="teams")
     fallback, payload = build_daily_payload(report, link)
     try:
         verify_public_report_link(link, label=title)
-        result = post_to_slack(payload, kind="report")
-        save_notification_send(
-            message_type=log_message_type,
-            title=log_title,
-            body=fallback,
-            link_url=link,
-            status="success",
-            provider_response=result,
-            channel="slack",
-            dedupe_key=log_dedupe_key,
-            require_log=True,
-        )
-        print("Slack daily report result:", result)
+        if not slack_already:
+            result = post_to_slack(payload, kind="report")
+            save_notification_send(
+                message_type=log_message_type,
+                title=log_title,
+                body=fallback,
+                link_url=link,
+                status="success",
+                provider_response=result,
+                channel="slack",
+                dedupe_key=slack_dedupe_key,
+                require_log=True,
+            )
+            print("Slack daily report result:", result)
+        else:
+            print(f"Slack daily report already sent: {title}")
+        if teams_should_send and not teams_already:
+            teams_payload_body = build_daily_teams_payload(report, link)
+            try:
+                teams_result = post_to_teams(teams_payload_body, kind="report")
+                save_notification_send(
+                    message_type=log_message_type,
+                    title=log_title,
+                    body=fallback,
+                    link_url=link,
+                    status="success",
+                    provider_response=teams_result,
+                    channel="teams",
+                    dedupe_key=teams_dedupe_key,
+                    require_log=True,
+                )
+                print("Teams daily report result:", teams_result)
+            except Exception as teams_error:
+                save_notification_send(
+                    message_type=log_message_type,
+                    title=log_title,
+                    body=fallback,
+                    link_url=link,
+                    status="failed",
+                    error=str(teams_error),
+                    channel="teams",
+                    dedupe_key=teams_dedupe_key,
+                    require_log=False,
+                )
+                print(f"Teams daily report failed: {teams_error}")
         print("Report link:", link)
         maybe_send_ai_usage_alert(report)
     except Exception as error:
-        save_notification_send(
-            message_type=log_message_type,
-            title=log_title,
-            body=fallback,
-            link_url=link,
-            status="failed",
-            error=str(error),
-            channel="slack",
-            dedupe_key=log_dedupe_key,
-            require_log=False,
-        )
+        if not slack_already:
+            save_notification_send(
+                message_type=log_message_type,
+                title=log_title,
+                body=fallback,
+                link_url=link,
+                status="failed",
+                error=str(error),
+                channel="slack",
+                dedupe_key=slack_dedupe_key,
+                require_log=False,
+            )
         raise
 
 
@@ -726,38 +928,79 @@ def send_period(period: str, report_month: str = "") -> None:
     title, link, payload = build_period_payload(period, report_month)
     message_type = f"{period}_report"
     log_message_type = notification_message_type(message_type)
-    if not dashboard_send_enabled() and not force_send_enabled() and notification_already_sent(message_type, title, strict=True, channel="slack"):
-        print(f"Slack period report already sent: {title}")
+    skip_existing = not dashboard_send_enabled() and not force_send_enabled()
+    slack_already = skip_existing and notification_already_sent(message_type, title, strict=True, channel="slack")
+    teams_should_send = teams_enabled("report")
+    teams_already = (
+        not teams_should_send
+        or (skip_existing and notification_already_sent(message_type, title, strict=True, channel="teams"))
+    )
+    if slack_already and teams_already:
+        print(f"Period report already sent: {title}")
         return
-    log_dedupe_key = forced_resend_dedupe_key(log_message_type, title)
+    slack_dedupe_key = forced_resend_dedupe_key(log_message_type, title, channel="slack")
+    teams_dedupe_key = forced_resend_dedupe_key(log_message_type, title, channel="teams")
     try:
         verify_public_report_link(link, label=title)
-        result = post_to_slack(payload, kind="report")
-        save_notification_send(
-            message_type=log_message_type,
-            title=title,
-            body=payload["text"],
-            link_url=link,
-            status="success",
-            provider_response=result,
-            channel="slack",
-            dedupe_key=log_dedupe_key,
-            require_log=True,
-        )
-        print("Slack period report result:", result)
+        if not slack_already:
+            result = post_to_slack(payload, kind="report")
+            save_notification_send(
+                message_type=log_message_type,
+                title=title,
+                body=payload["text"],
+                link_url=link,
+                status="success",
+                provider_response=result,
+                channel="slack",
+                dedupe_key=slack_dedupe_key,
+                require_log=True,
+            )
+            print("Slack period report result:", result)
+        else:
+            print(f"Slack period report already sent: {title}")
+        if teams_should_send and not teams_already:
+            teams_payload_body = build_period_teams_payload(period, report_month, title=title, link=link)
+            try:
+                teams_result = post_to_teams(teams_payload_body, kind="report")
+                save_notification_send(
+                    message_type=log_message_type,
+                    title=title,
+                    body=payload["text"],
+                    link_url=link,
+                    status="success",
+                    provider_response=teams_result,
+                    channel="teams",
+                    dedupe_key=teams_dedupe_key,
+                    require_log=True,
+                )
+                print("Teams period report result:", teams_result)
+            except Exception as teams_error:
+                save_notification_send(
+                    message_type=log_message_type,
+                    title=title,
+                    body=payload["text"],
+                    link_url=link,
+                    status="failed",
+                    error=str(teams_error),
+                    channel="teams",
+                    dedupe_key=teams_dedupe_key,
+                    require_log=False,
+                )
+                print(f"Teams period report failed: {teams_error}")
         print("Period report link:", link)
     except Exception as error:
-        save_notification_send(
-            message_type=log_message_type,
-            title=title,
-            body=payload["text"],
-            link_url=link,
-            status="failed",
-            error=str(error),
-            channel="slack",
-            dedupe_key=log_dedupe_key,
-            require_log=False,
-        )
+        if not slack_already:
+            save_notification_send(
+                message_type=log_message_type,
+                title=title,
+                body=payload["text"],
+                link_url=link,
+                status="failed",
+                error=str(error),
+                channel="slack",
+                dedupe_key=slack_dedupe_key,
+                require_log=False,
+            )
         raise
 
 
