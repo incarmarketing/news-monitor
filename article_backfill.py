@@ -56,6 +56,19 @@ DIRECT_CAUTION_TERMS = (
     "수수료",
 )
 
+DIRECT_MARKET_CAUTION_TERMS = (
+    "자사주",
+    "자사주식",
+    "주식",
+    "주가",
+    "평가손",
+    "손실",
+    "차손",
+    "수익률",
+    "매수",
+    "큰손",
+)
+
 DIRECT_POSITIVE_TERMS = (
     "성과",
     "최다",
@@ -202,6 +215,8 @@ def forced_tone_for_direct_own(article: dict) -> str:
             raw.get("body", ""),
         )
     )
+    if any(term in text for term in DIRECT_MARKET_CAUTION_TERMS):
+        return "caution"
     if any(term in text for term in DIRECT_NEGATIVE_TERMS):
         return "negative"
     if any(term in text for term in DIRECT_CAUTION_TERMS):
