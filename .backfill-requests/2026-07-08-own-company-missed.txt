@@ -1,4 +1,4 @@
 https://www.eroun.net/news/articleView.html?idxno=84926
 https://www.kbanker.co.kr/news/articleView.html?idxno=225381
 https://www.kbanker.co.kr/news/articleView.html?idxno=225384
-# rerun after kbanker article body extraction fix
+# rerun after manual backfill direct-own cache override
