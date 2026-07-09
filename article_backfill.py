@@ -17,6 +17,56 @@ import supabase_store
 
 KST = timezone(timedelta(hours=9))
 
+DIRECT_OWN_TERMS = (
+    "인카금융서비스",
+    "인카금융",
+    "최병채",
+    "천대권",
+    "김선식",
+)
+
+DIRECT_NEGATIVE_TERMS = (
+    "보험사기",
+    "편취",
+    "불법",
+    "제재",
+    "처분",
+    "등록 취소",
+    "업무 정지",
+    "과태료",
+    "검사",
+    "조사",
+    "관리 구멍",
+)
+
+DIRECT_CAUTION_TERMS = (
+    "자사주",
+    "주가",
+    "평가손",
+    "손실",
+    "차손",
+    "하락",
+    "공시",
+    "시장",
+    "수익률",
+    "금감원",
+    "금융감독원",
+    "금융위",
+    "1200%",
+    "수수료",
+)
+
+DIRECT_POSITIVE_TERMS = (
+    "성과",
+    "최다",
+    "1위",
+    "돌파",
+    "배출",
+    "선정",
+    "수상",
+    "성장",
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Backfill exact article URLs into Supabase news_articles.")
@@ -118,14 +168,91 @@ def fetch_backfill_article(url: str) -> dict | None:
     }
 
 
+def has_direct_own_reference(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title", ""),
+            article.get("description", ""),
+            article.get("content", ""),
+            article.get("body", ""),
+            raw.get("title", ""),
+            raw.get("description", ""),
+            raw.get("content", ""),
+            raw.get("body", ""),
+        )
+    )
+    compact = re.sub(r"\s+", "", text)
+    return any(term in text or term in compact for term in DIRECT_OWN_TERMS)
+
+
+def forced_tone_for_direct_own(article: dict) -> str:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title", ""),
+            article.get("description", ""),
+            article.get("content", ""),
+            article.get("body", ""),
+            raw.get("title", ""),
+            raw.get("description", ""),
+            raw.get("content", ""),
+            raw.get("body", ""),
+        )
+    )
+    if any(term in text for term in DIRECT_NEGATIVE_TERMS):
+        return "negative"
+    if any(term in text for term in DIRECT_CAUTION_TERMS):
+        return "caution"
+    if any(term in text for term in DIRECT_POSITIVE_TERMS):
+        return "positive"
+    return article.get("_tone") or article.get("tone") or "neutral"
+
+
+def force_direct_own_context(article: dict) -> None:
+    if article.get("portal") != "manual_backfill" or not has_direct_own_reference(article):
+        return
+    tone = forced_tone_for_direct_own(article)
+    article["_category"] = "own"
+    article["category"] = "own"
+    article["_tone"] = tone
+    article["tone"] = tone
+    article["keyword"] = "인카금융서비스"
+    article["keyword_query"] = "인카금융서비스"
+    article["keyword_category"] = "own"
+    article["keyword_strict_query"] = True
+    context = article.get("_ai_context") if isinstance(article.get("_ai_context"), dict) else {}
+    try:
+        confidence = float(context.get("confidence") or 0)
+    except (TypeError, ValueError):
+        confidence = 0
+    context = {
+        **context,
+        "category": "own",
+        "tone": tone,
+        "own_mentioned": True,
+        "negative_target": "own" if tone == "negative" else "none",
+        "evidence": "URL 백필 원문에서 당사 또는 당사 임원 직접 언급 확인",
+        "reason": "정확 URL 재수집은 기존 분석 캐시보다 원문 직접 언급을 우선합니다.",
+        "confidence": max(confidence, 0.9),
+        "provider": "manual_backfill_direct_rule",
+    }
+    article["_ai_context"] = context
+
+
 def classify_articles(articles: list[dict]) -> list[dict]:
     feedback_index = supabase_store.load_classification_feedback_index()
     supabase_store.apply_classification_feedback_to_articles(articles, feedback_index)
     supabase_store.apply_cached_analysis_to_articles(articles)
     classified: list[dict] = []
     for article in articles:
+        force_direct_own_context(article)
         clustered, _metrics = analyzer.analyze([article], top_n=1)
-        classified.extend(clustered or [article])
+        for item in clustered or [article]:
+            force_direct_own_context(item)
+            classified.append(item)
     return classified
 
 
