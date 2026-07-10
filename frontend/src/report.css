@@ -2032,9 +2032,9 @@
 /* Final override: mobile report evidence cards use full-width headline rows. */
 .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .a4-priority-card {
   display: grid !important;
-  grid-template-columns: 48px minmax(0, 1fr) !important;
+  grid-template-columns: 44px minmax(0, 1fr) !important;
   align-items: center !important;
-  column-gap: 12px !important;
+  column-gap: 6px !important;
   min-height: 70px !important;
   padding: 8px 12px !important;
   border: 0 !important;
@@ -2046,9 +2046,11 @@
 }
 
 .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .a4-priority-rank {
-  display: grid !important;
-  place-items: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   align-self: center !important;
+  box-sizing: border-box !important;
   width: 42px !important;
   height: 42px !important;
   border-radius: 10px !important;
@@ -2057,13 +2059,15 @@
   font-size: 16px !important;
   font-weight: 950 !important;
   line-height: 1 !important;
+  padding: 0 0 1px !important;
+  text-align: center !important;
 }
 
 .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .a4-priority-main {
   display: grid !important;
-  grid-template-columns: 56px minmax(0, 1fr) !important;
+  grid-template-columns: 50px minmax(0, 1fr) !important;
   align-items: center !important;
-  column-gap: 12px !important;
+  column-gap: 7px !important;
   min-width: 0 !important;
 }
 
@@ -2071,8 +2075,9 @@
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  align-items: stretch !important;
+  align-items: center !important;
   gap: 5px !important;
+  width: 50px !important;
   min-width: 0 !important;
 }
 
@@ -2081,17 +2086,21 @@
 }
 
 .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .chip {
-  display: inline-grid !important;
-  place-items: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
   width: 48px !important;
   max-width: 48px !important;
+  height: 22px !important;
   min-height: 22px !important;
-  padding: 1px 6px !important;
+  padding: 0 6px 1px !important;
   overflow: hidden !important;
   border-radius: 999px !important;
   font-size: 12px !important;
   font-weight: 900 !important;
   line-height: 1.1 !important;
+  text-align: center !important;
   text-overflow: clip !important;
   white-space: nowrap !important;
 }
@@ -2117,10 +2126,10 @@
 
 @media (max-width: 640px) {
   .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .a4-priority-card {
-    grid-template-columns: 46px minmax(0, 1fr) !important;
+    grid-template-columns: 42px minmax(0, 1fr) !important;
     min-height: 68px !important;
     padding: 8px 10px !important;
-    column-gap: 10px !important;
+    column-gap: 5px !important;
   }
 
   .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .a4-priority-rank {
@@ -2130,8 +2139,12 @@
   }
 
   .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .a4-priority-main {
-    grid-template-columns: 52px minmax(0, 1fr) !important;
-    column-gap: 10px !important;
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    column-gap: 6px !important;
+  }
+
+  .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .a4-priority-meta {
+    width: 48px !important;
   }
 
   .report-workspace .b2b-evidence-panel .a4-priority-card-grid.compact .chip {
