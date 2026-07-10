@@ -764,6 +764,15 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         elif result["category"] in {"other", "exclude"}:
             result["category"] = "own"
 
+    if is_own_brand_reputation_leader_article(article):
+        result["category"] = "own"
+        result["tone"] = "positive"
+        result["own_mentioned"] = True
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = True
+        if not result.get("classification_reason"):
+            result["classification_reason"] = "당사가 브랜드평판 1위로 직접 노출된 성과성 보도입니다."
+
     if is_competitor_brand_reputation_against_own(article) and not own_in_title:
         result["category"] = "competitor"
         result["tone"] = "caution"
@@ -796,6 +805,13 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["tone"] = "caution"
         if result["negative_target"] == "own":
             result["negative_target"] = "none"
+
+    if is_own_brand_reputation_leader_article(article):
+        result["category"] = "own"
+        result["tone"] = "positive"
+        result["own_mentioned"] = True
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = True
 
     if is_own_direct_negative_article(article):
         force_own_direct_negative_context()
@@ -928,6 +944,8 @@ def categorize(article: dict) -> str:
         return "sponsorship"
     if is_non_business_noise(article):
         return "other"
+    if is_own_brand_reputation_leader_article(article):
+        return "own"
     rule = matched_context_rule(text)
     rule_category = rule.get("category")
     if rule_category in {"exclude", "other"}:
@@ -971,6 +989,47 @@ def has_own_name_in_title(article: dict) -> bool:
     raw = article.get("_raw") if isinstance(article.get("_raw"), dict) else {}
     title_text = " ".join(str(value or "") for value in (article.get("title"), raw.get("title")))
     return contains_own_name(title_text)
+
+
+def is_own_brand_reputation_leader_article(article: dict) -> bool:
+    """Own-company brand reputation #1 coverage is a positive own article.
+
+    Competitor-led brand reputation articles often mention Incar as 2nd place
+    or as a close follower. Those must stay as competitor/caution, while titles
+    that put Incar before the leading-rank signal should be kept as own-positive.
+    """
+    title = str(article.get("title") or "")
+    text = article_summary_text(article)
+    haystack = f"{title} {text}"
+    if not contains_own_name(haystack):
+        return False
+    if not re.search(r"브랜드평판|평판\s*(?:랭킹|순위)", haystack, re.I):
+        return False
+
+    compact_title = re.sub(r"\s+", "", title)
+    compact_text = re.sub(r"\s+", "", haystack)
+    own_terms = ("인카금융서비스", "인카금융")
+    leader_terms = ("1위", "선두", "정상", "최고", "수성", "탈환")
+    follower_terms = ("2위", "3위", "뒤이어", "초박빙", "추격")
+
+    def positions(source: str, terms: tuple[str, ...]) -> list[int]:
+        return [idx for term in terms for idx in [source.find(term)] if idx >= 0]
+
+    own_positions = positions(compact_title, own_terms)
+    leader_positions = positions(compact_title, leader_terms)
+    if own_positions and leader_positions:
+        own_pos = min(own_positions)
+        leader_pos = min(leader_positions)
+        follower_positions = positions(compact_title, follower_terms)
+        own_is_before_leader = 0 <= own_pos <= leader_pos and leader_pos - own_pos <= 90
+        own_is_follower_before_leader = any(own_pos <= pos < leader_pos for pos in follower_positions)
+        if own_is_before_leader and not own_is_follower_before_leader:
+            return True
+
+    own_leader_pattern = r"(?:인카금융서비스|인카금융).{0,90}(?:브랜드평판|평판).{0,90}(?:1위|선두|정상|최고|수성|탈환)"
+    if re.search(own_leader_pattern, compact_text, re.I):
+        return True
+    return False
 
 
 def compact_evidence_sentence(value: object, limit: int = 120) -> str:
@@ -1788,6 +1847,8 @@ def analyze_tone(article: dict) -> str:
         return "neutral"
     if is_own_direct_negative_article(article):
         return "negative"
+    if is_own_brand_reputation_leader_article(article):
+        return "positive"
     if is_own_caution_article(article):
         return "caution"
     if is_relief_support_article(article):
@@ -1900,6 +1961,8 @@ def is_own_positive_focus_article(article: dict) -> bool:
     """Only direct company-favorable coverage can be counted as positive."""
     if not is_own_article(article):
         return False
+    if is_own_brand_reputation_leader_article(article):
+        return True
     if is_competitor_brand_reputation_against_own(article):
         return False
 
@@ -2430,6 +2493,8 @@ def is_brand_reputation_article(article: dict) -> bool:
 
 
 def is_competitor_brand_reputation_against_own(article: dict) -> bool:
+    if is_own_brand_reputation_leader_article(article):
+        return False
     text = article_summary_text(article)
     if not re.search(r"브랜드평판|평판\s*랭킹|평판\s*순위", text, re.I):
         return False

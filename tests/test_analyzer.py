@@ -338,6 +338,24 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertNotEqual(article["_tone"], "caution")
         self.assertTrue(analyzer.is_own_positive_focus_article(article))
 
+    def test_own_brand_reputation_first_place_with_competitor_second_is_positive(self) -> None:
+        article = {
+            "title": "인카금융서비스, 독립 보험대리점 브랜드평판 7월 1위...한화생명금융서비스 2위 - 빅데이터뉴스",
+            "description": "독립 보험대리점 브랜드평판 분석 결과 인카금융서비스가 1위, 한화생명금융서비스가 2위로 나타났다.",
+            "keyword": "인카금융서비스 브랜드평판",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        analyzer.apply_context_safety_guardrails(article)
+
+        self.assertTrue(analyzer.is_own_brand_reputation_leader_article(article))
+        self.assertFalse(analyzer.is_competitor_brand_reputation_against_own(article))
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_tone"], "positive")
+        self.assertTrue(analyzer.is_own_positive_focus_article(article))
+
     def test_relief_support_for_fraud_victims_is_not_negative(self) -> None:
         article = {
             "title": "생명보험사회공헌위, 전세사기 피해 청년 위해 1억원 지원",
