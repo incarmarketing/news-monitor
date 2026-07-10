@@ -3259,6 +3259,7 @@ function isOwnBrandReputationLeaderText(text = "") {
   const ownPositions = regexPositions(compact, /\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735/gi);
   const leaderPositions = regexPositions(compact, /1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658/gi);
   const followerPositions = regexPositions(compact, /2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9/gi);
+  const competitorNamePattern = /\uD55C\uD654\uC0DD\uBA85\uAE08\uC735\uC11C\uBE44\uC2A4|\uC5D0\uC774\uD50C\uB7EC\uC2A4\uC5D0\uC14B|\uD53C\uD50C\uB77C\uC774\uD504|\uC9C0\uC5D0\uC774\uCF54\uB9AC\uC544|\uAE00\uB85C\uBC8C\uAE08\uC735\uD310\uB9E4|\uBA54\uAC00\uAE08\uC735\uC11C\uBE44\uC2A4|\uB9AC\uCE58\uC564\uCF54|\uD55C\uAD6D\uBCF4\uD5D8\uAE08\uC735|\uD504\uB77C\uC784\uC5D0\uC14B/i;
   return ownPositions.some((ownPos) => leaderPositions.some((leaderPos) => {
     const ownBeforeLeader = leaderPos >= ownPos && leaderPos - ownPos <= 90;
     const leaderBeforeOwn = ownPos > leaderPos && ownPos - leaderPos <= 30;
@@ -3266,6 +3267,8 @@ function isOwnBrandReputationLeaderText(text = "") {
       return !followerPositions.some((followerPos) => followerPos >= ownPos && followerPos < leaderPos);
     }
     if (leaderBeforeOwn) {
+      if (competitorNamePattern.test(compact.slice(Math.max(0, leaderPos - 70), leaderPos))) return false;
+      if (competitorNamePattern.test(compact.slice(leaderPos, ownPos))) return false;
       return !followerPositions.some((followerPos) => followerPos >= leaderPos && followerPos < ownPos);
     }
     return false;
@@ -4582,6 +4585,7 @@ function isCompetitorBrandReputationAgainstOwn(item = {}) {
   const text = summaryHaystack(item);
   if (!/브랜드평판|평판\s*랭킹|평판\s*순위/.test(text)) return false;
   if (!/인카금융/.test(text)) return false;
+  if (isOwnBrandReputationLeaderText(text)) return false;
   const competitorNames = "한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋";
   const competitorFirst = new RegExp(`(?:(${competitorNames})[^.。!?]{0,45}(?:1위|선두|탈환)|(?:1위|선두|탈환)[^.。!?]{0,45}(${competitorNames}))`, "i").test(text);
   if (/인카금융(?:서비스)?[^.。!?]{0,35}(?:1위|선두|최고|최상위)/.test(text) && !competitorFirst) return false;
@@ -4592,13 +4596,23 @@ function isCompetitorBrandReputationAgainstOwn(item = {}) {
 function brandReputationLeaderName(item = {}) {
   const text = summaryHaystack(item);
   const match = text.match(/(한화생명금융서비스|인카금융서비스|인카금융|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋)[^.。!?]{0,35}(?:1위|선두|탈환)/i);
-  return match?.[1] || "";
+  if (match?.[1]) return match[1];
+  const leaderFirstMatch = text.match(/(?:1위|선두|탈환)[^.。!?]{0,28}(인카금융서비스|인카금융|한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋)/i);
+  if (!leaderFirstMatch?.[1]) return "";
+  const beforeLeader = text.slice(Math.max(0, leaderFirstMatch.index - 70), leaderFirstMatch.index);
+  if (/한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|메가금융서비스|리치앤코|한국보험금융|프라임에셋/i.test(beforeLeader)) {
+    return "";
+  }
+  return leaderFirstMatch[1];
 }
 
 function buildBrandReputationDisplayLines(item = {}) {
   const text = summaryHaystack(item);
   const leader = brandReputationLeaderName(item);
   const isGa = /GA|보험대리점|독립\s*보험대리점/.test(text);
+  if (isOwnBrandReputationLeaderDisplayArticle(item)) {
+    return [`인카금융서비스가 ${isGa ? "GA" : "보험"} 브랜드평판 1위로 소개된 당사 성과 보도입니다.`];
+  }
   if (isCompetitorBrandReputationAgainstOwn(item)) {
     return [
       `${leader || "경쟁사"}가 ${isGa ? "GA" : "보험"} 브랜드평판 1위로 소개되고, 인카금융서비스는 후순위 경쟁사로 언급됐습니다.`,

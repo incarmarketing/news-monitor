@@ -1035,13 +1035,25 @@ def is_own_brand_reputation_leader_article(article: dict) -> bool:
                 re.I,
             )
         ]
+        competitor_name_re = re.compile(
+            r"\uD55C\uD654\uC0DD\uBA85\uAE08\uC735\uC11C\uBE44\uC2A4|\uC5D0\uC774\uD50C\uB7EC\uC2A4\uC5D0\uC14B|"
+            r"\uD53C\uD50C\uB77C\uC774\uD504|\uC9C0\uC5D0\uC774\uCF54\uB9AC\uC544|\uAE00\uB85C\uBC8C\uAE08\uC735\uD310\uB9E4|"
+            r"\uBA54\uAC00\uAE08\uC735\uC11C\uBE44\uC2A4|\uB9AC\uCE58\uC564\uCF54|\uD55C\uAD6D\uBCF4\uD5D8\uAE08\uC735|"
+            r"\uD504\uB77C\uC784\uC5D0\uC14B",
+            re.I,
+        )
         for own_pos in own_positions:
             for leader_pos in leader_positions:
                 own_before_leader = leader_pos >= own_pos and leader_pos - own_pos <= 90
                 leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 30
                 if own_before_leader and not any(own_pos <= pos < leader_pos for pos in follower_positions):
                     return True
-                if leader_before_own and not any(leader_pos <= pos < own_pos for pos in follower_positions):
+                if (
+                    leader_before_own
+                    and not any(leader_pos <= pos < own_pos for pos in follower_positions)
+                    and not competitor_name_re.search(unicode_haystack[max(0, leader_pos - 70):leader_pos])
+                    and not competitor_name_re.search(unicode_haystack[leader_pos:own_pos])
+                ):
                     return True
     if not contains_own_name(haystack):
         return False

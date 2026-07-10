@@ -65,6 +65,11 @@ OWN_BRAND_REPUTATION_LEADER_RE = re.compile(
     re.I,
 )
 OWN_FOLLOWER_RE = re.compile(r"(?:인카금융서비스|인카금융).{0,60}(?:2위|3위|뒤이어|초박빙|추격)", re.I)
+COMPETITOR_BRAND_NAME_RE = re.compile(
+    r"한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|"
+    r"메가금융서비스|리치앤코|한국보험금융|프라임에셋",
+    re.I,
+)
 
 
 def upsert_context_rule() -> None:
@@ -179,6 +184,12 @@ def is_own_brand_reputation_leader_text(text: str) -> bool:
                     continue
                 return True
             if leader_before_own:
+                between = compact[leader_pos:own_pos]
+                before_leader = compact[max(0, leader_pos - 70):leader_pos]
+                if COMPETITOR_BRAND_NAME_RE.search(before_leader):
+                    continue
+                if COMPETITOR_BRAND_NAME_RE.search(between):
+                    continue
                 if any(leader_pos <= follower_pos < own_pos for follower_pos in follower_positions):
                     continue
                 return True

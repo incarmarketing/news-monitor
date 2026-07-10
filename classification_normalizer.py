@@ -39,6 +39,13 @@ INSURANCE_CONTEXT_RE = re.compile(
     r"\uBCF4\uD5D8\uB300\uB9AC\uC810|\uC124\uACC4\uC0AC|\uC218\uC218\uB8CC|1200%)",
     re.I,
 )
+COMPETITOR_BRAND_NAME_RE = re.compile(
+    r"\uD55C\uD654\uC0DD\uBA85\uAE08\uC735\uC11C\uBE44\uC2A4|\uC5D0\uC774\uD50C\uB7EC\uC2A4\uC5D0\uC14B|"
+    r"\uD53C\uD50C\uB77C\uC774\uD504|\uC9C0\uC5D0\uC774\uCF54\uB9AC\uC544|\uAE00\uB85C\uBC8C\uAE08\uC735\uD310\uB9E4|"
+    r"\uBA54\uAC00\uAE08\uC735\uC11C\uBE44\uC2A4|\uB9AC\uCE58\uC564\uCF54|\uD55C\uAD6D\uBCF4\uD5D8\uAE08\uC735|"
+    r"\uD504\uB77C\uC784\uC5D0\uC14B",
+    re.I,
+)
 
 
 def article_text(article: dict) -> str:
@@ -93,6 +100,12 @@ def is_own_brand_reputation_leader_text(text: str) -> bool:
                     continue
                 return True
             if leader_before_own:
+                between = compact[leader_pos:own_pos]
+                before_leader = compact[max(0, leader_pos - 70):leader_pos]
+                if COMPETITOR_BRAND_NAME_RE.search(before_leader):
+                    continue
+                if COMPETITOR_BRAND_NAME_RE.search(between):
+                    continue
                 if any(leader_pos <= follower_pos < own_pos for follower_pos in follower_positions):
                     continue
                 return True
