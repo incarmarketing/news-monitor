@@ -3250,9 +3250,24 @@ function isOwnBrandReputationLeaderDisplayArticle(row = {}) {
     row.keyword,
     ...(Array.isArray(row.summaryLines) ? row.summaryLines : []),
   ].filter(Boolean).join(" ");
-  const ownLeader = /(?:\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735).{0,80}(?:\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310).{0,80}(?:1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658)|(?:\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310).{0,80}(?:\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735).{0,80}(?:1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658)/i.test(text);
-  const ownFollower = /(?:\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735).{0,60}(?:2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9)/i.test(text);
-  return ownLeader && !ownFollower;
+  return isOwnBrandReputationLeaderText(text);
+}
+
+function isOwnBrandReputationLeaderText(text = "") {
+  const compact = String(text || "").replace(/\s+/g, "");
+  if (!/\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310/i.test(compact)) return false;
+  const ownPositions = regexPositions(compact, /\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735/gi);
+  const leaderPositions = regexPositions(compact, /1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658/gi);
+  const followerPositions = regexPositions(compact, /2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9/gi);
+  return ownPositions.some((ownPos) => leaderPositions.some((leaderPos) => (
+    leaderPos >= ownPos
+    && leaderPos - ownPos <= 90
+    && !followerPositions.some((followerPos) => followerPos >= ownPos && followerPos < leaderPos)
+  )));
+}
+
+function regexPositions(text = "", pattern) {
+  return Array.from(String(text || "").matchAll(pattern)).map((match) => match.index ?? 0);
 }
 
 function filterRelatedArticlesForRepresentative(row = {}) {

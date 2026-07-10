@@ -24,6 +24,7 @@ from rich.panel import Panel
 
 import analyzer
 import archiver
+import classification_normalizer
 import config
 import gemini_helper
 import groq_helper
@@ -73,6 +74,8 @@ def run_briefing(articles: list[dict]) -> Path:
     supabase_store.apply_classification_feedback_to_articles(articles, feedback_index)
     supabase_store.apply_cached_analysis_to_articles(articles)
     clustered, metrics = analyzer.analyze(articles, top_n=config.TOP_N_FOR_BRIEFING)
+    clustered = classification_normalizer.normalize_articles(clustered)
+    metrics = classification_normalizer.recompute_metrics(metrics, clustered)
     assign_report_ids(clustered)
     yesterday = archiver.load_yesterday()
 
@@ -574,6 +577,8 @@ def build_html_report(
     yesterday: dict | None,
     window_override: dict | None = None,
 ) -> str:
+    clustered = classification_normalizer.normalize_articles(clustered)
+    metrics = classification_normalizer.recompute_metrics(metrics, clustered)
     ensure_report_ids(clustered)
     metrics = normalize_metrics_for_template(metrics)
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
@@ -676,14 +681,15 @@ def validate_report_sections(sections: dict, clustered: list[dict], metrics: dic
     validated = dict(sections or {})
     issues = [dict(issue or {}) for issue in validated.get("issues", [])]
     by_id = {article.get("_report_id"): article for article in clustered if isinstance(article.get("_report_id"), int)}
-    fallback_article = clustered[0] if clustered else None
+    fallback_article = next((article for article in clustered if is_report_evidence_candidate(article)), clustered[0] if clustered else None)
 
     normalized_issues: list[dict] = []
     selected_articles: list[dict] = []
 
     for issue in issues:
         refs = [ref for ref in issue.get("refs", []) if ref in by_id]
-        ref_articles = [by_id[ref] for ref in refs]
+        ref_articles = [by_id[ref] for ref in refs if is_report_evidence_candidate(by_id[ref])]
+        refs = [article.get("_report_id") for article in ref_articles if isinstance(article.get("_report_id"), int)]
         if not ref_articles and fallback_article:
             ref_articles = [fallback_article]
             refs = [fallback_article.get("_report_id")]
@@ -705,6 +711,7 @@ def validate_report_sections(sections: dict, clustered: list[dict], metrics: dic
         selected_articles = [fallback_article]
 
     support_articles = selected_articles or clustered[:1]
+    support_articles = [article for article in support_articles if is_report_evidence_candidate(article)] or support_articles
     validated["issues"] = normalized_issues[:2]
     validated["conclusion"] = sanitize_or_replace_conclusion(validated.get("conclusion", ""), support_articles)
     validated["interpretation_html"] = sanitize_grounded_text(validated.get("interpretation_html", ""), support_articles)
@@ -713,6 +720,14 @@ def validate_report_sections(sections: dict, clustered: list[dict], metrics: dic
         if not extract_unsupported_entities(keyword, support_articles)
     ]
     return validated
+
+
+def is_report_evidence_candidate(article: dict) -> bool:
+    category = article.get("_category") or article.get("category")
+    tone = article.get("_tone") or article.get("tone")
+    if category == "other" and tone in {"neutral", "exclude"} and not article.get("own_mentioned"):
+        return False
+    return True
 
 
 def issue_from_article(article: dict) -> dict:
@@ -797,6 +812,8 @@ def select_evidence_articles(clustered: list[dict], sections: dict, limit: int =
 
     def add_article(article: dict | None) -> None:
         if not article:
+            return
+        if not is_report_evidence_candidate(article):
             return
         link = article.get("link", "")
         key = link or article.get("title", "")

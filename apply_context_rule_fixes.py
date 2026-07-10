@@ -158,7 +158,30 @@ def patch_article(row: dict[str, Any]) -> bool:
 
 def is_own_brand_reputation_leader(row: dict[str, Any]) -> bool:
     text = " ".join(str(row.get(key) or "") for key in ("title", "summary", "source", "keyword"))
-    return bool(OWN_BRAND_REPUTATION_LEADER_RE.search(text)) and not bool(OWN_FOLLOWER_RE.search(text))
+    return is_own_brand_reputation_leader_text(text) or (
+        bool(OWN_BRAND_REPUTATION_LEADER_RE.search(text)) and not bool(OWN_FOLLOWER_RE.search(text))
+    )
+
+
+def is_own_brand_reputation_leader_text(text: str) -> bool:
+    compact = re.sub(r"\s+", "", str(text or ""))
+    if not re.search(r"\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310", compact, re.I):
+        return False
+    own_positions = regex_positions(compact, r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735")
+    leader_positions = regex_positions(compact, r"1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658")
+    follower_positions = regex_positions(compact, r"2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9")
+    for own_pos in own_positions:
+        for leader_pos in leader_positions:
+            if leader_pos < own_pos or leader_pos - own_pos > 90:
+                continue
+            if any(own_pos <= follower_pos < leader_pos for follower_pos in follower_positions):
+                continue
+            return True
+    return False
+
+
+def regex_positions(text: str, pattern: str) -> list[int]:
+    return [match.start() for match in re.finditer(pattern, text, re.I)]
 
 
 def patch_brand_reputation_article(row: dict[str, Any]) -> bool:

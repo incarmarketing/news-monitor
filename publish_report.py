@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import shutil
 import re
-from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import archiver
 import ai_briefing
+import classification_normalizer
 import dashboard_builder
 import period_report
 import stock_collector
@@ -35,8 +35,8 @@ def render_archive_report(payload: dict) -> tuple[str, str | None, str]:
     report_name = f"briefing_{timestamp.strftime('%Y%m%d_%H%M')}.html"
     stable_name = stable_daily_report_name(payload)
     report_md = payload.get("briefing", "")
-    articles = payload.get("articles", [])
-    metrics = payload.get("metrics", {})
+    articles = classification_normalizer.normalize_articles(payload.get("articles", []))
+    metrics = classification_normalizer.recompute_metrics(payload.get("metrics", {}), articles)
     previous_day = archiver.load_day(timestamp.date() - timedelta(days=1))
     html_body = ai_briefing.build_html_report(
         report_md,
@@ -206,7 +206,10 @@ def supabase_run_to_archive(run: dict) -> dict | None:
     except Exception as exc:
         print(f"Supabase report article source skipped for {date_value}-{slot}: {exc}")
         rows = []
-    articles = [supabase_article_to_archive_article(row, index) for index, row in enumerate(rows, 1)]
+    articles = [
+        supabase_article_to_archive_article(row, index)
+        for index, row in enumerate(classification_normalizer.normalize_articles(rows), 1)
+    ]
     metrics = run.get("metrics") if isinstance(run.get("metrics"), dict) else {}
     metrics = ensure_report_metrics(metrics, articles, run)
     briefing = str(run.get("briefing") or "").strip()
@@ -246,30 +249,8 @@ def supabase_article_to_archive_article(row: dict, index: int) -> dict:
 
 
 def ensure_report_metrics(metrics: dict, articles: list[dict], run: dict) -> dict:
-    normalized = dict(metrics or {})
-    categories = Counter(article.get("_category", "other") for article in articles)
-    tones = Counter(article.get("_tone", "neutral") for article in articles)
-    own_by_tone = Counter(
-        article.get("_tone", "neutral")
-        for article in articles
-        if article.get("_category") == "own"
-    )
-    by_category = dict(normalized.get("by_category") or {})
-    for key in ("own", "regulation", "competitor", "industry", "other"):
-        by_category.setdefault(key, categories.get(key, 0))
-    normalized["by_category"] = by_category
-    by_tone = dict(normalized.get("by_tone") or {})
-    for key in ("positive", "caution", "neutral", "negative", "exclude"):
-        by_tone.setdefault(key, tones.get(key, 0))
-    normalized["by_tone"] = by_tone
-    current_own_by_tone = dict(normalized.get("own_by_tone") or {})
-    for key in ("positive", "caution", "neutral", "negative"):
-        current_own_by_tone.setdefault(key, own_by_tone.get(key, 0))
-    normalized["own_by_tone"] = current_own_by_tone
-    normalized.setdefault("own_negative", current_own_by_tone.get("negative", 0))
+    normalized = classification_normalizer.recompute_metrics(metrics, articles)
     normalized.setdefault("risk_level", run.get("risk_level") or "LOW")
-    normalized.setdefault("total_collected", len(articles))
-    normalized.setdefault("total_after_cluster", len(articles))
     return normalized
 
 

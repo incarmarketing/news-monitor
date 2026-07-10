@@ -18,6 +18,7 @@ import config
 import archiver
 import ai_fallback
 import analyzer
+import classification_normalizer
 import gemini_helper
 import groq_helper
 
@@ -79,6 +80,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
         metrics = archive.get("metrics", {})
         archive_articles = archive.get("articles", [])
         supabase_store.apply_classification_feedback_to_articles(archive_articles, feedback_index)
+        archive_articles = classification_normalizer.normalize_articles(archive_articles)
         for index, article in enumerate(archive_articles, 1):
             if analyzer.is_non_business_noise(article):
                 continue
@@ -402,6 +404,7 @@ def load_supabase_articles() -> list[dict]:
         return []
 
     supabase_store.apply_classification_feedback_to_articles(rows)
+    rows = classification_normalizer.normalize_articles(rows)
     articles = []
     for row in rows:
         if analyzer.is_non_business_noise(row):
