@@ -3191,14 +3191,13 @@ function normalizeArticleDisplay(row = {}) {
   if (!row || typeof row !== "object") return row;
   const cleanRelatedArticles = filterRelatedArticlesForRepresentative(row).map((article) => ({
     ...article,
-    category: displayCategory(article.category),
-    tone: displayTone(article.tone),
+    ...normalizeArticleDisplayClassification(article),
   }));
   const relatedSourceCount = unique(cleanRelatedArticles.map((item) => item.source).filter(Boolean)).length;
+  const normalizedClassification = normalizeArticleDisplayClassification(row);
   const baseRow = {
     ...row,
-    category: displayCategory(row.category),
-    tone: displayTone(row.tone),
+    ...normalizedClassification,
     relatedArticles: cleanRelatedArticles,
     relatedCount: cleanRelatedArticles.length,
     relatedSourceCount,
@@ -3221,6 +3220,39 @@ function normalizeArticleDisplay(row = {}) {
     relatedSourceCount,
     clusterSize: Math.max(1, relatedArticles.length),
   };
+}
+
+function normalizeArticleDisplayClassification(row = {}) {
+  if (isOwnBrandReputationLeaderDisplayArticle(row)) {
+    return {
+      category: displayCategory("own"),
+      tone: displayTone("positive"),
+    };
+  }
+  if (isNonInsuranceFinancialLegalNoiseArticle(row)) {
+    return {
+      category: displayCategory("other"),
+      tone: displayTone("neutral"),
+    };
+  }
+  return {
+    category: displayCategory(row.category),
+    tone: displayTone(row.tone),
+  };
+}
+
+function isOwnBrandReputationLeaderDisplayArticle(row = {}) {
+  const text = [
+    row.title,
+    row.summary,
+    row.issueSummary,
+    row.source,
+    row.keyword,
+    ...(Array.isArray(row.summaryLines) ? row.summaryLines : []),
+  ].filter(Boolean).join(" ");
+  const ownLeader = /(?:\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735).{0,80}(?:\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310).{0,80}(?:1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658)|(?:\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310).{0,80}(?:\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735).{0,80}(?:1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658)/i.test(text);
+  const ownFollower = /(?:\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735).{0,60}(?:2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9)/i.test(text);
+  return ownLeader && !ownFollower;
 }
 
 function filterRelatedArticlesForRepresentative(row = {}) {

@@ -59,6 +59,12 @@ INSURANCE_CONTEXT_RE = re.compile(
     r"(인카|인카금융|인카금융서비스|보험|보험사|손해보험|생명보험|GA|보험대리점|설계사|수수료|1200%)",
     re.I,
 )
+OWN_BRAND_REPUTATION_LEADER_RE = re.compile(
+    r"(?:인카금융서비스|인카금융).{0,80}(?:브랜드평판|평판).{0,80}(?:1위|선두|정상|최고|수성|탈환)"
+    r"|(?:브랜드평판|평판).{0,80}(?:인카금융서비스|인카금융).{0,80}(?:1위|선두|정상|최고|수성|탈환)",
+    re.I,
+)
+OWN_FOLLOWER_RE = re.compile(r"(?:인카금융서비스|인카금융).{0,60}(?:2위|3위|뒤이어|초박빙|추격)", re.I)
 
 
 def upsert_context_rule() -> None:
@@ -99,6 +105,29 @@ def fetch_candidate_articles(limit: int = 1000) -> list[dict[str, Any]]:
     return rows if isinstance(rows, list) else []
 
 
+def fetch_brand_reputation_candidates(limit: int = 1000) -> list[dict[str, Any]]:
+    select = "article_hash,title,summary,source,keyword,category,tone,own_mentioned,clipping_recommended"
+    query = (
+        "news_articles?"
+        f"select={quote(select)}"
+        "&or=("
+        "title.ilike.*브랜드평판*,summary.ilike.*브랜드평판*,"
+        "title.ilike.*평판*,summary.ilike.*평판*"
+        ")"
+        f"&limit={limit}"
+    )
+    try:
+        response = supabase_store.request("GET", query)
+    except requests.HTTPError as exc:
+        status = getattr(exc.response, "status_code", None)
+        if status in {400, 404}:
+            print("brand reputation query skipped: required columns/table not available")
+            return []
+        raise
+    rows = response.json()
+    return rows if isinstance(rows, list) else []
+
+
 def is_noise_article(row: dict[str, Any]) -> bool:
     text = " ".join(
         str(row.get(key) or "")
@@ -127,6 +156,31 @@ def patch_article(row: dict[str, Any]) -> bool:
     return True
 
 
+def is_own_brand_reputation_leader(row: dict[str, Any]) -> bool:
+    text = " ".join(str(row.get(key) or "") for key in ("title", "summary", "source", "keyword"))
+    return bool(OWN_BRAND_REPUTATION_LEADER_RE.search(text)) and not bool(OWN_FOLLOWER_RE.search(text))
+
+
+def patch_brand_reputation_article(row: dict[str, Any]) -> bool:
+    article_hash = str(row.get("article_hash") or "").strip()
+    if not article_hash:
+        return False
+    payload = {
+        "category": "own",
+        "tone": "positive",
+        "own_mentioned": True,
+        "negative_target": "none",
+        "classification_reason": "당사가 브랜드평판 1위로 직접 노출된 성과성 보도",
+        "classification_confidence": 0.95,
+        "classification_provider": "rule_own_brand_reputation_leader",
+        "clipping_recommended": True,
+        "clipping_reason": "당사 브랜드평판 1위 직접 노출",
+    }
+    path = f"news_articles?article_hash=eq.{quote(article_hash)}"
+    supabase_store.request("PATCH", path, data=json.dumps(payload, ensure_ascii=False))
+    return True
+
+
 def apply_article_fixes() -> int:
     patched = 0
     for row in fetch_candidate_articles():
@@ -136,12 +190,22 @@ def apply_article_fixes() -> int:
     return patched
 
 
+def apply_brand_reputation_fixes() -> int:
+    patched = 0
+    for row in fetch_brand_reputation_candidates():
+        if is_own_brand_reputation_leader(row):
+            patched += int(patch_brand_reputation_article(row))
+    print(f"brand reputation fixes applied: {patched}")
+    return patched
+
+
 def main() -> None:
     if not supabase_store.is_enabled():
         print("Supabase credentials missing; context rule fix skipped.")
         return
     upsert_context_rule()
     apply_article_fixes()
+    apply_brand_reputation_fixes()
 
 
 if __name__ == "__main__":
