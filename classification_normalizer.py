@@ -86,11 +86,16 @@ def is_own_brand_reputation_leader_text(text: str) -> bool:
     follower_positions = regex_positions(compact, r"2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9")
     for own_pos in own_positions:
         for leader_pos in leader_positions:
-            if leader_pos < own_pos or leader_pos - own_pos > 90:
-                continue
-            if any(own_pos <= follower_pos < leader_pos for follower_pos in follower_positions):
-                continue
-            return True
+            own_before_leader = leader_pos >= own_pos and leader_pos - own_pos <= 90
+            leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 30
+            if own_before_leader:
+                if any(own_pos <= follower_pos < leader_pos for follower_pos in follower_positions):
+                    continue
+                return True
+            if leader_before_own:
+                if any(leader_pos <= follower_pos < own_pos for follower_pos in follower_positions):
+                    continue
+                return True
     return False
 
 

@@ -3259,11 +3259,17 @@ function isOwnBrandReputationLeaderText(text = "") {
   const ownPositions = regexPositions(compact, /\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735/gi);
   const leaderPositions = regexPositions(compact, /1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658/gi);
   const followerPositions = regexPositions(compact, /2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9/gi);
-  return ownPositions.some((ownPos) => leaderPositions.some((leaderPos) => (
-    leaderPos >= ownPos
-    && leaderPos - ownPos <= 90
-    && !followerPositions.some((followerPos) => followerPos >= ownPos && followerPos < leaderPos)
-  )));
+  return ownPositions.some((ownPos) => leaderPositions.some((leaderPos) => {
+    const ownBeforeLeader = leaderPos >= ownPos && leaderPos - ownPos <= 90;
+    const leaderBeforeOwn = ownPos > leaderPos && ownPos - leaderPos <= 30;
+    if (ownBeforeLeader) {
+      return !followerPositions.some((followerPos) => followerPos >= ownPos && followerPos < leaderPos);
+    }
+    if (leaderBeforeOwn) {
+      return !followerPositions.some((followerPos) => followerPos >= leaderPos && followerPos < ownPos);
+    }
+    return false;
+  }));
 }
 
 function regexPositions(text = "", pattern) {

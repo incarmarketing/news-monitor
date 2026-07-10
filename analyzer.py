@@ -1009,6 +1009,40 @@ def is_own_brand_reputation_leader_article(article: dict) -> bool:
     title = str(article.get("title") or "")
     text = article_summary_text(article)
     haystack = f"{title} {text}"
+    unicode_haystack = re.sub(r"\s+", "", haystack)
+    if re.search(r"\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310", unicode_haystack, re.I):
+        own_positions = [
+            match.start()
+            for match in re.finditer(
+                r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735",
+                unicode_haystack,
+                re.I,
+            )
+        ]
+        leader_positions = [
+            match.start()
+            for match in re.finditer(
+                r"1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658",
+                unicode_haystack,
+                re.I,
+            )
+        ]
+        follower_positions = [
+            match.start()
+            for match in re.finditer(
+                r"2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9",
+                unicode_haystack,
+                re.I,
+            )
+        ]
+        for own_pos in own_positions:
+            for leader_pos in leader_positions:
+                own_before_leader = leader_pos >= own_pos and leader_pos - own_pos <= 90
+                leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 30
+                if own_before_leader and not any(own_pos <= pos < leader_pos for pos in follower_positions):
+                    return True
+                if leader_before_own and not any(leader_pos <= pos < own_pos for pos in follower_positions):
+                    return True
     if not contains_own_name(haystack):
         return False
     if not re.search(r"브랜드평판|평판\s*(?:랭킹|순위)", haystack, re.I):
