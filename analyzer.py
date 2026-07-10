@@ -245,6 +245,10 @@ GENERAL_FINANCE_NOISE_RE = re.compile(
     r"빚투|반대매매|주식\s*빚투|한양증권|중앙일보|하나은행|은행권|은행업|카드사?|롯데카드|신용카드|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|어음|최종부도|부도\s*처리|워크아웃|환율|외환시장|코스피|코스닥|사이드카|채권시장|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|해킹|정보유출|개인정보\s*유출",
     re.I,
 )
+NON_INSURANCE_FINANCIAL_LEGAL_NOISE_RE = re.compile(
+    r"\ucc44\uad8c\s*\uc0ac\uae30|\ud22c\uc790\uc790.{0,40}\ubc95\uc801\s*\ub300\uc751|\ubc95\uc801\s*\ub300\uc751.{0,40}\ud22c\uc790\uc790|\uc720\uc0ac\uc218\uc2e0|\ubd88\ubc95\s*\ub9ac\ub529\ubc29|\ucf54\uc778\s*\uc0ac\uae30|\ud22c\uc790\s*\uc0ac\uae30",
+    re.I,
+)
 NON_INSURANCE_FINANCE_DISCLOSURE_NOISE_RE = re.compile(
     r"두나무|업비트|빗썸|코인원|코빗|가상자산|가상화폐|암호화폐|코인거래소|디지털자산|핀테크|전자금융|PG사|결제대행|전자공시시스템|DART|공시시스템",
     re.I,
@@ -789,6 +793,8 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["category"] = "other"
         result["tone"] = "neutral"
         result["negative_target"] = "none"
+        result["clipping_recommended"] = False
+        result["clipping_reason"] = ""
 
     if is_own_direct_negative_article(article):
         force_own_direct_negative_context()
@@ -931,6 +937,8 @@ def score_article(article: dict) -> int:
         score += 5
     if len(title) < 15:
         score -= 2
+    if is_non_insurance_financial_legal_noise_article(article):
+        score -= 30
     if is_non_business_noise(article):
         score -= 20
     return score
@@ -1159,6 +1167,35 @@ def is_general_finance_noise_article(article: dict) -> bool:
         )
     )
     return is_general_finance_noise_text(text)
+
+
+def is_non_insurance_financial_legal_noise_text(text: str) -> bool:
+    text = str(text or "")
+    if not NON_INSURANCE_FINANCIAL_LEGAL_NOISE_RE.search(text):
+        return False
+    if any(name in text for name in OWN_NAMES):
+        return False
+    return not bool(INSURANCE_GA_KEEP_RE.search(text))
+
+
+def is_non_insurance_financial_legal_noise_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("summary"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("summary"),
+            raw.get("content"),
+            raw.get("body"),
+            article.get("keyword"),
+            article.get("source"),
+        )
+    )
+    return is_non_insurance_financial_legal_noise_text(text)
 
 
 def is_incidental_insurance_mention_noise_text(text: str) -> bool:
@@ -1699,6 +1736,8 @@ def context_rule_matches(text: str, rule: dict) -> bool:
 def has_domain_context(text: str) -> bool:
     if is_external_insurance_noise_text(text):
         return False
+    if is_non_insurance_financial_legal_noise_text(text):
+        return False
     if is_non_insurance_finance_disclosure_noise_text(text):
         return False
     if is_incidental_insurance_mention_noise_text(text):
@@ -1770,6 +1809,8 @@ def is_non_business_noise(article: dict) -> bool:
     if is_own_sponsored_sports_article(article):
         return False
     if is_general_finance_noise_article(article):
+        return True
+    if is_non_insurance_financial_legal_noise_article(article):
         return True
     if is_non_insurance_finance_disclosure_noise_article(article):
         return True

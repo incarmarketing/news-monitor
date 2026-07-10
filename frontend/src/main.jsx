@@ -4195,6 +4195,7 @@ function majorIssuePriorityScore(issue = {}) {
 }
 
 function isLowPriorityMajorIssueArticle(article = {}) {
+  if (isNonInsuranceFinancialLegalNoiseArticle(article)) return true;
   if (isOwnArticle(article)) return false;
   if (articleEventTopicSignature(article)) return false;
   const title = cleanSummaryText(article.title || "");
@@ -7117,7 +7118,13 @@ function isNonInsuranceFinancialRegulatoryArticle(article = {}) {
   const text = sourceEvidenceHaystack(article);
   const hasRegulatorySignal = /금융위|금융위원회|금감원|금융감독원|제재|제재심|검사|감독|금융보안|해킹|내부통제|보고의무|공시제도|개정\s*상법/.test(text);
   const hasNonInsuranceSector = /빚투|반대매매|주식\s*빚투|카드사?|롯데카드|신용카드|은행권?|은행업|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|PG사|결제대행/.test(text);
-  return hasRegulatorySignal && hasNonInsuranceSector && !hasStrongInsuranceGaContext(article);
+  return (isNonInsuranceFinancialLegalNoiseArticle(article) || (hasRegulatorySignal && hasNonInsuranceSector)) && !hasStrongInsuranceGaContext(article);
+}
+
+function isNonInsuranceFinancialLegalNoiseArticle(article = {}) {
+  const text = sourceEvidenceHaystack(article);
+  const hasLegalNoise = /\uCC44\uAD8C\s*\uC0AC\uAE30|\uD22C\uC790\uC790.{0,40}\uBC95\uC801\s*\uB300\uC751|\uBC95\uC801\s*\uB300\uC751.{0,40}\uD22C\uC790\uC790|\uC720\uC0AC\uC218\uC2E0|\uBD88\uBC95\s*\uB9AC\uB529\uBC29|\uCF54\uC778\s*\uC0AC\uAE30|\uD22C\uC790\s*\uC0AC\uAE30/i.test(text);
+  return hasLegalNoise && !hasStrongInsuranceGaContext(article) && !isOwnArticle(article);
 }
 
 function isAdminAgencyNoiseArticle(article = {}) {

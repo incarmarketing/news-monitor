@@ -216,6 +216,26 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertTrue(analyzer.contains_unambiguous_competitor_word("글로벌금융판매 GA 동향"))
         self.assertTrue(analyzer.contains_unambiguous_competitor_word("메가금융서비스 설계사 동향"))
 
+    def test_non_insurance_bond_fraud_legal_dispute_is_other_neutral(self) -> None:
+        article = {
+            "title": "\uc911\uc559\uadf8\ub8f9 \ucc44\uad8c\uc0ac\uae30 \ub17c\ub780, \ud22c\uc790\uc790\ub4e4 \ubc95\uc801 \ub300\uc751 \ubcf8\uaca9\ud654",
+            "description": "\ud22c\uc790\uc790\ub4e4\uc774 \ucc44\uad8c \uc0ac\uae30 \ub17c\ub780\uc5d0 \ub300\ud574 \ubc95\uc801 \ub300\uc751\uc5d0 \ub098\uc130\ub2e4.",
+            "source": "tokenpost.kr",
+            "keyword": "\uae08\uc735\uac10\ub3c5\uc6d0",
+            "keyword_category": "regulation",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        context = analyzer.apply_context_safety_guardrails(article)
+
+        self.assertTrue(analyzer.is_non_insurance_financial_legal_noise_article(article))
+        self.assertEqual(article["_category"], "other")
+        self.assertEqual(article["_tone"], "neutral")
+        self.assertEqual(context["category"], "other")
+        self.assertEqual(context["tone"], "neutral")
+        self.assertFalse(context["clipping_recommended"])
+
     def test_non_own_competitor_ranking_is_not_positive(self) -> None:
         article = {
             "title": "지에티코리아, 월 매출 1위 수성",
