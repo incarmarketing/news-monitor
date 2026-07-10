@@ -230,14 +230,16 @@
     background:#fff;
   }
   .article-card-list.compact .article-card {
-    grid-template-columns:30px 74px minmax(0,1fr) 36px;
-    gap:7px;
-    min-height:44px;
-    padding:7px 9px;
+    grid-template-columns:30px 58px minmax(0,1fr);
+    gap:8px;
+    min-height:48px;
+    padding:8px 10px;
     border:0;
     border-bottom:1px solid #e6edf5;
     border-left:4px solid var(--blue);
     border-radius:0;
+    color:inherit;
+    text-decoration:none;
   }
   .article-card-list.compact .article-card.tone-negative { border-left-color:var(--red); }
   .article-card-list.compact .article-card.tone-caution { border-left-color:var(--amber); }
@@ -247,7 +249,8 @@
     border-bottom:0;
   }
   .article-card-list.compact .article-body {
-    display:contents;
+    min-width:0;
+    display:block;
   }
   .article-card-list.compact .article-meta-line {
     gap:4px;
@@ -265,20 +268,17 @@
     min-width:0;
     overflow:hidden;
     font-size:12.5px;
-    line-height:1.25;
-    text-overflow:ellipsis;
-    white-space:nowrap;
+    line-height:1.23;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    white-space:normal;
   }
   .article-card-list.compact .meta {
     display:none;
   }
   .article-card-list.compact .open-link {
-    min-height:auto;
-    padding:0;
-    border:0;
-    background:transparent;
-    color:#2754d6;
-    font-size:10px;
+    display:none;
   }
   .label-stack {
     display:flex;
@@ -465,10 +465,10 @@
     }
     .article-card-list { gap:0; }
     .article-card-list.compact .article-card {
-      grid-template-columns:28px 70px minmax(0,1fr) 34px;
-      gap:6px;
-      min-height:42px;
-      padding:7px 8px;
+      grid-template-columns:28px 58px minmax(0,1fr);
+      gap:7px;
+      min-height:52px;
+      padding:8px 8px;
     }
     .num {
       width:26px;
@@ -478,7 +478,8 @@
     .article-card-list.compact .headline {
       font-size:12px;
       line-height:1.22;
-      white-space:nowrap;
+      -webkit-line-clamp:2;
+      white-space:normal;
     }
     .article-card-list.compact .pill {
       max-width:32px;
@@ -491,10 +492,7 @@
       line-height:1.3;
       margin-top:0;
     }
-    .article-card-list.compact .open-link {
-      min-height:auto;
-      padding:0;
-    }
+    .article-card-list.compact .open-link { display:none; }
   }
   @media screen and (max-width:420px) {
     .toolbar { grid-template-columns:1fr; }
@@ -545,7 +543,7 @@
     .article-card-list { gap:1.4mm; }
     .article-card,
     .article-card-list.compact .article-card {
-      grid-template-columns:7mm minmax(0,1fr) 10mm;
+      grid-template-columns:7mm 14mm minmax(0,1fr);
       gap:1.6mm;
       padding:1.4mm 1.5mm;
       min-height:auto;
@@ -648,23 +646,21 @@
       <section class="section">
         <div class="section-head">
           <h2>우선 확인 기사</h2>
-          <span>근거 {{ evidence_tab.articles|length }}건 · 제목/원문 기준</span>
+          <span>카드를 터치하면 기사 본문으로 이동합니다.</span>
         </div>
         {% if evidence_tab.articles %}
         <div class="article-card-list compact">
           {% for a in evidence_tab.articles[:12] %}
-          <article class="article-card tone-{{ a._tone }}">
+          <a class="article-card tone-{{ a._tone }}" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">
             <div class="num">{{ "%02d"|format(loop.index) }}</div>
-            <div class="article-body">
-              <div class="article-meta-line">
-                <span class="pill tone-{{ a._tone }}">{{ a._tone_label }}</span>
-                <span class="pill cat-{{ a._category }}">{{ a._category_label }}</span>
-              </div>
-              <a class="headline" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a>
-              <div class="meta">{{ a.source }} · {{ a.keyword }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</div>
+            <div class="label-stack">
+              <span class="pill tone-{{ a._tone }}">{{ a._tone_label }}</span>
+              <span class="pill cat-{{ a._category }}">{{ a._category_label }}</span>
             </div>
-            <a class="open-link" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">열기</a>
-          </article>
+            <div class="article-body">
+              <b class="headline">[{{ a.source }}] {{ a.title }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</b>
+            </div>
+          </a>
           {% endfor %}
         </div>
         {% else %}
