@@ -799,6 +799,15 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     if is_own_direct_negative_article(article):
         force_own_direct_negative_context()
 
+    if is_own_certified_agent_performance_article(article):
+        result["category"] = "own"
+        result["tone"] = "positive"
+        result["own_mentioned"] = True
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = True
+        if not result.get("classification_reason"):
+            result["classification_reason"] = "당사 우수인증설계사 성과 또는 임직원 인터뷰 보도"
+
     if is_relief_support_article(article):
         result["tone"] = "positive" if is_own_positive_focus_article(article) else "neutral"
         result["negative_target"] = "none"
@@ -813,6 +822,13 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
             result["negative_target"] = "none"
 
     if is_own_brand_reputation_leader_article(article):
+        result["category"] = "own"
+        result["tone"] = "positive"
+        result["own_mentioned"] = True
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = True
+
+    if is_own_certified_agent_performance_article(article):
         result["category"] = "own"
         result["tone"] = "positive"
         result["own_mentioned"] = True
@@ -1045,7 +1061,7 @@ def is_own_brand_reputation_leader_article(article: dict) -> bool:
         for own_pos in own_positions:
             for leader_pos in leader_positions:
                 own_before_leader = leader_pos >= own_pos and leader_pos - own_pos <= 90
-                leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 30
+                leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 60
                 if own_before_leader and not any(own_pos <= pos < leader_pos for pos in follower_positions):
                     return True
                 if (
@@ -1936,6 +1952,8 @@ def analyze_tone(article: dict) -> str:
         return "negative"
     if is_own_brand_reputation_leader_article(article):
         return "positive"
+    if is_own_certified_agent_performance_article(article):
+        return "positive"
     if is_own_caution_article(article):
         return "caution"
     if is_relief_support_article(article):
@@ -2050,6 +2068,8 @@ def is_own_positive_focus_article(article: dict) -> bool:
         return False
     if is_own_brand_reputation_leader_article(article):
         return True
+    if is_own_certified_agent_performance_article(article):
+        return True
     if is_competitor_brand_reputation_against_own(article):
         return False
 
@@ -2069,6 +2089,38 @@ def is_own_positive_focus_article(article: dict) -> bool:
         if any(name in sentence for name in OWN_NAMES) and any(word in sentence for word in positive_signals):
             return True
     return False
+
+
+def is_own_certified_agent_performance_article(article: dict) -> bool:
+    """Treat own-company certified-agent coverage/interviews as favorable coverage.
+
+    This catches titles such as:
+    "보험GA협회 선정 '2026 우수인증설계사' 인터뷰 [김숙희 인카금융서비스 ... 지점장]"
+    which are own-company reputation/quality articles, not caution or negative alerts.
+    """
+    text = article_summary_text(article)
+    compact = re.sub(r"\s+", "", text)
+    has_own = re.search(r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735", compact, re.I)
+    if not has_own:
+        return False
+    has_certified_agent = re.search(r"\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC|\uC778\uC99D\uC124\uACC4\uC0AC", compact, re.I)
+    if not has_certified_agent:
+        return False
+    favorable_context = re.search(
+        r"\uC120\uC815|\uC778\uD130\uBDF0|\uBC30\uCD9C|\uCD5C\uB2E4|\uC9C0\uC810\uC7A5|"
+        r"\uC0AC\uC5C5\uBD80|\uC131\uACFC|\uC804\uBB38\uC131|\uC2E0\uB8B0",
+        compact,
+        re.I,
+    )
+    if not favorable_context:
+        return False
+    direct_negative_context = re.search(
+        r"\uBD88\uC644\uC804\uD310\uB9E4|\uBD80\uB2F9\uC2B9\uD658|\uBCF4\uD5D8\uC0AC\uAE30|"
+        r"\uC81C\uC7AC|\uCC98\uBD84|\uC870\uC0AC|\uAC80\uC0AC|\uBD88\uBC95|\uC704\uBC18",
+        compact,
+        re.I,
+    )
+    return not bool(direct_negative_context)
 
 
 def is_own_article(article: dict) -> bool:

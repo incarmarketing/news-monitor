@@ -133,6 +133,36 @@ def fetch_brand_reputation_candidates(limit: int = 1000) -> list[dict[str, Any]]
     return rows if isinstance(rows, list) else []
 
 
+def fetch_certified_agent_candidates(limit: int = 1000) -> list[dict[str, Any]]:
+    select = "article_hash,title,summary,source,keyword,category,tone,own_mentioned,clipping_recommended"
+    terms = [
+        "\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC",
+        "\uC778\uC99D\uC124\uACC4\uC0AC",
+        "\uAE40\uC219\uD76C",
+        "\uC11C\uD604\uB85C\uC584",
+    ]
+    filters = []
+    for term in terms:
+        encoded = quote(f"*{term}*", safe="*")
+        filters.extend([f"title.ilike.{encoded}", f"summary.ilike.{encoded}"])
+    query = (
+        "news_articles?"
+        f"select={quote(select)}"
+        f"&or=({','.join(filters)})"
+        f"&limit={limit}"
+    )
+    try:
+        response = supabase_store.request("GET", query)
+    except requests.HTTPError as exc:
+        status = getattr(exc.response, "status_code", None)
+        if status in {400, 404}:
+            print("certified agent query skipped: required columns/table not available")
+            return []
+        raise
+    rows = response.json()
+    return rows if isinstance(rows, list) else []
+
+
 def is_noise_article(row: dict[str, Any]) -> bool:
     text = " ".join(
         str(row.get(key) or "")
@@ -178,7 +208,7 @@ def is_own_brand_reputation_leader_text(text: str) -> bool:
     for own_pos in own_positions:
         for leader_pos in leader_positions:
             own_before_leader = leader_pos >= own_pos and leader_pos - own_pos <= 90
-            leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 30
+            leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 60
             if own_before_leader:
                 if any(own_pos <= follower_pos < leader_pos for follower_pos in follower_positions):
                     continue
@@ -220,6 +250,46 @@ def patch_brand_reputation_article(row: dict[str, Any]) -> bool:
     return True
 
 
+def is_own_certified_agent_performance(row: dict[str, Any]) -> bool:
+    text = " ".join(str(row.get(key) or "") for key in ("title", "summary", "source", "keyword"))
+    compact = re.sub(r"\s+", "", text)
+    has_own = re.search(r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735", compact, re.I)
+    has_certified_agent = re.search(r"\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC|\uC778\uC99D\uC124\uACC4\uC0AC", compact, re.I)
+    has_favorable_context = re.search(
+        r"\uC120\uC815|\uC778\uD130\uBDF0|\uBC30\uCD9C|\uCD5C\uB2E4|\uC9C0\uC810\uC7A5|"
+        r"\uC0AC\uC5C5\uBD80|\uC131\uACFC|\uC804\uBB38\uC131|\uC2E0\uB8B0",
+        compact,
+        re.I,
+    )
+    has_direct_negative = re.search(
+        r"\uBD88\uC644\uC804\uD310\uB9E4|\uBD80\uB2F9\uC2B9\uD658|\uBCF4\uD5D8\uC0AC\uAE30|"
+        r"\uC81C\uC7AC|\uCC98\uBD84|\uC870\uC0AC|\uAC80\uC0AC|\uBD88\uBC95|\uC704\uBC18",
+        compact,
+        re.I,
+    )
+    return bool(has_own and has_certified_agent and has_favorable_context and not has_direct_negative)
+
+
+def patch_certified_agent_article(row: dict[str, Any]) -> bool:
+    article_hash = str(row.get("article_hash") or "").strip()
+    if not article_hash:
+        return False
+    payload = {
+        "category": "own",
+        "tone": "positive",
+        "own_mentioned": True,
+        "negative_target": "none",
+        "classification_reason": "\uB2F9\uC0AC \uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC \uC131\uACFC \uB610\uB294 \uC784\uC9C1\uC6D0 \uC778\uD130\uBDF0 \uBCF4\uB3C4",
+        "classification_confidence": 0.95,
+        "classification_provider": "rule_own_certified_agent_performance",
+        "clipping_recommended": True,
+        "clipping_reason": "\uB2F9\uC0AC \uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC \uC131\uACFC/\uC778\uD130\uBDF0",
+    }
+    path = f"news_articles?article_hash=eq.{quote(article_hash)}"
+    supabase_store.request("PATCH", path, data=json.dumps(payload, ensure_ascii=False))
+    return True
+
+
 def apply_article_fixes() -> int:
     patched = 0
     for row in fetch_candidate_articles():
@@ -238,6 +308,15 @@ def apply_brand_reputation_fixes() -> int:
     return patched
 
 
+def apply_certified_agent_fixes() -> int:
+    patched = 0
+    for row in fetch_certified_agent_candidates():
+        if is_own_certified_agent_performance(row):
+            patched += int(patch_certified_agent_article(row))
+    print(f"certified agent fixes applied: {patched}")
+    return patched
+
+
 def main() -> None:
     if not supabase_store.is_enabled():
         print("Supabase credentials missing; context rule fix skipped.")
@@ -245,6 +324,7 @@ def main() -> None:
     upsert_context_rule()
     apply_article_fixes()
     apply_brand_reputation_fixes()
+    apply_certified_agent_fixes()
 
 
 if __name__ == "__main__":

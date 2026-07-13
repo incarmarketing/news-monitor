@@ -42,12 +42,17 @@ function articlePrimarySummaryTopic(...args) { return callHelper("articlePrimary
 function groupArticles(...args) { return callHelper("groupArticles", () => [], ...args); }
 function buildArticleSummaryLines(...args) { return callHelper("buildArticleSummaryLines", () => [], ...args); }
 function compactArticleSummary(...args) { return callHelper("compactArticleSummary", () => "", ...args); }
+function normalizeArticleDisplay(...args) { return callHelper("normalizeArticleDisplay", (row = {}) => row, ...args); }
 function unique(...args) { return callHelper("unique", (values = []) => Array.from(new Set(values)), ...args); }
 function isOwnSponsoredSportsArticle(...args) { return callHelper("isOwnSponsoredSportsArticle", () => false, ...args); }
 function isOwnSponsoredSportsBrandArticle(...args) { return callHelper("isOwnSponsoredSportsBrandArticle", () => false, ...args); }
 export default function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, onOpenMonitoring, operations, helpers = {} }) {
   reportHelpers = helpers;
   const reportSourceArticles = allArticles.length ? allArticles : articles || [];
+  const normalizedReportSourceArticles = useMemo(
+    () => reportSourceArticles.map((article) => normalizeArticleDisplay(article)),
+    [reportSourceArticles, helpers]
+  );
   const monthOptions = useMemo(() => availableReportMonths(reportSourceArticles), [reportSourceArticles]);
   const [reportMonth, setReportMonth] = useState("");
   useEffect(() => {
@@ -63,9 +68,9 @@ export default function Reports({ data, period, setPeriod, articles, allArticles
   const selectedMonth = period === "monthly" ? reportMonth || monthOptions[0] || "" : "";
   const reportArticles = useMemo(() => (
     period === "monthly" && selectedMonth
-      ? filterRowsByMonth(reportSourceArticles, selectedMonth)
-      : articles || []
-  ), [period, selectedMonth, reportSourceArticles, articles]);
+      ? filterRowsByMonth(normalizedReportSourceArticles, selectedMonth)
+      : (articles || []).map((article) => normalizeArticleDisplay(article))
+  ), [period, selectedMonth, normalizedReportSourceArticles, articles, helpers]);
   const reportRuns = useMemo(() => (
     period === "monthly" && selectedMonth
       ? filterRowsByMonth(operations?.reportRuns || [], selectedMonth)

@@ -20,6 +20,7 @@ import requests
 from dotenv import load_dotenv
 
 import analyzer
+import classification_normalizer
 import config
 import news_collector
 import slack_notify
@@ -215,6 +216,7 @@ def is_within_minutes(article: dict, minutes_back: int) -> bool:
 def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
     apply_classification_feedback_to_articles(articles)
     apply_cached_analysis_to_articles(articles)
+    articles = classification_normalizer.normalize_articles(articles)
     analyzed, metrics = analyzer.analyze(articles, top_n=max(len(articles), 1))
     negatives = [
         article
@@ -249,7 +251,7 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
                 "_ai_context": (row.get("raw") or {}).get("_ai_context") or (row.get("raw") or {}).get("ai_context") or {},
             }
         )
-    return articles
+    return classification_normalizer.normalize_articles(articles)
 
 
 def merge_negative_candidates(*groups: list[dict]) -> list[dict]:

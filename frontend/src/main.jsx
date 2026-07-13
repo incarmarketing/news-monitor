@@ -580,6 +580,7 @@ function App() {
     mergeMediaRows,
     mergeReporterRows,
     normalizeMediaDraft,
+    normalizeArticleDisplay,
     normalizeKeywordRow,
     normalizeReporterDraft,
     periodScopeLabel,
@@ -3229,6 +3230,12 @@ function normalizeArticleDisplayClassification(row = {}) {
       tone: displayTone("positive"),
     };
   }
+  if (isOwnCertifiedAgentPerformanceDisplayArticle(row)) {
+    return {
+      category: displayCategory("own"),
+      tone: displayTone("positive"),
+    };
+  }
   if (isNonInsuranceFinancialLegalNoiseArticle(row)) {
     return {
       category: displayCategory("other"),
@@ -3253,6 +3260,22 @@ function isOwnBrandReputationLeaderDisplayArticle(row = {}) {
   return isOwnBrandReputationLeaderText(text);
 }
 
+function isOwnCertifiedAgentPerformanceDisplayArticle(row = {}) {
+  const compact = [
+    row.title,
+    row.summary,
+    row.description,
+    row.issueSummary,
+    row.source,
+    row.keyword,
+    ...(Array.isArray(row.summaryLines) ? row.summaryLines : []),
+  ].filter(Boolean).join(" ").replace(/\s+/g, "");
+  if (!/\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735/i.test(compact)) return false;
+  if (!/\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC|\uC778\uC99D\uC124\uACC4\uC0AC/i.test(compact)) return false;
+  if (!/\uC120\uC815|\uC778\uD130\uBDF0|\uBC30\uCD9C|\uCD5C\uB2E4|\uC9C0\uC810\uC7A5|\uC0AC\uC5C5\uBD80|\uC131\uACFC|\uC804\uBB38\uC131|\uC2E0\uB8B0/i.test(compact)) return false;
+  return !/\uBD88\uC644\uC804\uD310\uB9E4|\uBD80\uB2F9\uC2B9\uD658|\uBCF4\uD5D8\uC0AC\uAE30|\uC81C\uC7AC|\uCC98\uBD84|\uC870\uC0AC|\uAC80\uC0AC|\uBD88\uBC95|\uC704\uBC18/i.test(compact);
+}
+
 function isOwnBrandReputationLeaderText(text = "") {
   const compact = String(text || "").replace(/\s+/g, "");
   if (!/\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310/i.test(compact)) return false;
@@ -3262,7 +3285,7 @@ function isOwnBrandReputationLeaderText(text = "") {
   const competitorNamePattern = /\uD55C\uD654\uC0DD\uBA85\uAE08\uC735\uC11C\uBE44\uC2A4|\uC5D0\uC774\uD50C\uB7EC\uC2A4\uC5D0\uC14B|\uD53C\uD50C\uB77C\uC774\uD504|\uC9C0\uC5D0\uC774\uCF54\uB9AC\uC544|\uAE00\uB85C\uBC8C\uAE08\uC735\uD310\uB9E4|\uBA54\uAC00\uAE08\uC735\uC11C\uBE44\uC2A4|\uB9AC\uCE58\uC564\uCF54|\uD55C\uAD6D\uBCF4\uD5D8\uAE08\uC735|\uD504\uB77C\uC784\uC5D0\uC14B/i;
   return ownPositions.some((ownPos) => leaderPositions.some((leaderPos) => {
     const ownBeforeLeader = leaderPos >= ownPos && leaderPos - ownPos <= 90;
-    const leaderBeforeOwn = ownPos > leaderPos && ownPos - leaderPos <= 30;
+    const leaderBeforeOwn = ownPos > leaderPos && ownPos - leaderPos <= 60;
     if (ownBeforeLeader) {
       return !followerPositions.some((followerPos) => followerPos >= ownPos && followerPos < leaderPos);
     }

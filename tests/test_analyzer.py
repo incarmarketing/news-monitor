@@ -1256,5 +1256,41 @@ class IncidentalInsuranceMentionTests(unittest.TestCase):
         self.assertEqual(article["_category"], "industry")
 
 
+class OwnPositiveReputationRegressionTests(unittest.TestCase):
+    def test_own_brand_reputation_leader_first_phrase_is_positive(self) -> None:
+        article = {
+            "title": "\ub3c5\ub9bd \ubcf4\ud5d8\ub300\ub9ac\uc810 (GA) 2026\ub144 7\uc6d4 \ube0c\ub79c\ub4dc\ud3c9\ud310 1\uc704 \uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4, 2\uc704 \ud55c\ud654\uc0dd\uba85\uae08\uc735\uc11c\ube44\uc2a4, 3\uc704 \uc5d0\uc774\ud50c\ub7ec\uc2a4\uc5d0\uc14b",
+            "description": "\ube0c\ub79c\ub4dc\ud3c9\ud310 \ube45\ub370\uc774\ud130 \ubd84\uc11d \uacb0\uacfc \uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4\uac00 1\uc704\ub97c \ucc28\uc9c0\ud588\ub2e4.",
+            "keyword": "\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4 \ube0c\ub79c\ub4dc\ud3c9\ud310",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        analyzer.apply_context_safety_guardrails(article)
+
+        self.assertTrue(analyzer.is_own_brand_reputation_leader_article(article))
+        self.assertFalse(analyzer.is_competitor_brand_reputation_against_own(article))
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_tone"], "positive")
+
+    def test_own_certified_agent_interview_is_positive_not_negative(self) -> None:
+        article = {
+            "title": "\ud2b9\uc9d1-\ubcf4\ud5d8GA\ud611\ud68c \uc120\uc815 \u20182026 \uc6b0\uc218\uc778\uc99d\uc124\uacc4\uc0ac\u2019 \uc778\ud130\ubdf0 [\uae40\uc219\ud76c \uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4 \uc11c\ud604\ub85c\uc584\uc0ac\uc5c5\ubd80 8\uc9c0\uc810 \uc9c0\uc810\uc7a5]",
+            "description": "\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4 \uc11c\ud604\ub85c\uc584\uc0ac\uc5c5\ubd80 \uc9c0\uc810\uc7a5\uc758 \uc6b0\uc218\uc778\uc99d\uc124\uacc4\uc0ac \uc778\ud130\ubdf0 \uae30\uc0ac\uc785\ub2c8\ub2e4.",
+            "source": "\ubcf4\ud5d8\uc2e0\ubcf4",
+            "keyword": "\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        analyzer.apply_context_safety_guardrails(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_tone"], "positive")
+        self.assertFalse(analyzer.is_direct_own_negative_article(article))
+
+
 if __name__ == "__main__":
     unittest.main()
