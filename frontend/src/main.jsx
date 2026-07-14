@@ -1220,6 +1220,8 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
       : [];
     const issueLinkSet = new Set(issueLinks);
     const hasIssueTarget = issueLinkSet.size > 0;
+    const hasResolvedTarget = hasIssueTarget || focusTargetAvailable;
+    const bypassDateFilter = hasResolvedTarget || Boolean(needle);
     return deferredRegularArticles.filter((article) => {
       const text = `${article.title} ${article.source} ${article.keyword} ${article.summary}`.toLowerCase();
       const articleDate = article.date || "";
@@ -1229,12 +1231,12 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
         issueMatched &&
         focusMatched &&
         (!needle || focusTargetAvailable || hasIssueTarget || text.includes(needle)) &&
-        (!startDate || !articleDate || articleDate >= startDate) &&
-        (!endDate || !articleDate || articleDate <= endDate) &&
-        (hasIssueTarget || tone === "all" || article.tone === tone) &&
-        (hasIssueTarget || category === "all" || article.category === category) &&
-        (hasIssueTarget || !ownOnly || isOwnArticle(article)) &&
-        (hasIssueTarget || source === "all" || article.source === source)
+        (bypassDateFilter || !startDate || !articleDate || articleDate >= startDate) &&
+        (bypassDateFilter || !endDate || !articleDate || articleDate <= endDate) &&
+        (hasResolvedTarget || tone === "all" || article.tone === tone) &&
+        (hasResolvedTarget || category === "all" || article.category === category) &&
+        (hasResolvedTarget || !ownOnly || isOwnArticle(article)) &&
+        (hasResolvedTarget || source === "all" || article.source === source)
       );
     });
   }, [deferredRegularArticles, category, endDate, monitoringPreset, ownOnly, query, source, startDate, tone]);
