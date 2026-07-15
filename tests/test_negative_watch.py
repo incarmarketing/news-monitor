@@ -43,9 +43,9 @@ class NegativeWatchRefreshTests(unittest.TestCase):
 
 
 class NegativeWatchDelayedExposureTests(unittest.TestCase):
-    def test_risk_query_window_defaults_to_48_hours(self) -> None:
+    def test_risk_query_window_defaults_to_24_hours(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
-            self.assertEqual(negative_watch.risk_query_minutes_back(10), 2880)
+            self.assertEqual(negative_watch.risk_query_minutes_back(10), 1440)
 
     def test_risk_query_window_never_smaller_than_base_window(self) -> None:
         with patch.dict(os.environ, {"NEGATIVE_WATCH_RISK_QUERY_MINUTES": "60"}, clear=True):
@@ -54,6 +54,14 @@ class NegativeWatchDelayedExposureTests(unittest.TestCase):
     def test_specific_risk_query_article_is_marked_for_wide_window(self) -> None:
         article = {
             "keyword_query": "인카금융서비스 과제 직면",
+            "portal": "naver",
+        }
+
+        self.assertTrue(negative_watch.is_own_risk_query_article(article))
+
+    def test_company_name_query_article_is_marked_for_wide_window(self) -> None:
+        article = {
+            "keyword_query": "인카금융서비스",
             "portal": "naver",
         }
 

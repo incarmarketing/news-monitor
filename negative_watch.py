@@ -210,18 +210,17 @@ def article_key(article: dict) -> str:
 
 
 def risk_query_minutes_back(default_minutes: int) -> int:
-    """Use a wider window for risk-specific searches.
+    """Use a wider window for own-company delayed-exposure searches.
 
     Portal search can surface an article hours after its original published
-    timestamp. The regular watch stays at 10 minutes, but risk queries should
-    inspect recent published articles broadly and rely on sent-key dedupe to
-    avoid repeated alerts.
+    timestamp. The watch should inspect recent own-company articles broadly
+    and rely on sent-key dedupe to avoid repeated alerts.
     """
-    raw_value = os.getenv("NEGATIVE_WATCH_RISK_QUERY_MINUTES", "2880")
+    raw_value = os.getenv("NEGATIVE_WATCH_RISK_QUERY_MINUTES", "1440")
     try:
         value = int(raw_value)
     except (TypeError, ValueError):
-        value = 2880
+        value = 1440
     return max(default_minutes, value)
 
 
@@ -275,7 +274,11 @@ def collect_recent_company_news(minutes_back: int) -> list[dict]:
 
 def is_own_risk_query_article(article: dict) -> bool:
     query = str(article.get("keyword_query") or "")
-    return any(query == item for item in OWN_RISK_WATCH_QUERIES) or article.get("portal") == "source_search"
+    return (
+        query in set(analyzer.OWN_NAMES)
+        or any(query == item for item in OWN_RISK_WATCH_QUERIES)
+        or article.get("portal") == "source_search"
+    )
 
 
 def is_within_minutes(article: dict, minutes_back: int) -> bool:
