@@ -44,6 +44,19 @@ STATE_PATH = STATE_DIR / "negative_alerts.json"
 DASHBOARD_REFRESH_STATE_PATH = STATE_DIR / "dashboard_refresh.json"
 MAX_SENT_KEYS = 500
 GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+OWN_RISK_WATCH_QUERIES = [
+    "인카금융서비스 그늘",
+    "인카금융서비스 과제",
+    "인카금융서비스 리스크",
+    "인카금융서비스 논란",
+    "인카금융서비스 부실",
+    "인카금융서비스 내부통제",
+    "인카금융서비스 불완전판매",
+    "인카금융서비스 보험사기",
+    "인카금융서비스 정착지원금",
+    "인카금융서비스 제재",
+    "인카금융서비스 소송",
+]
 
 
 def github_output(name: str, value: str) -> None:
@@ -198,11 +211,54 @@ def collect_recent_company_news(minutes_back: int) -> list[dict]:
         articles.extend(news_collector.fetch_naver_news(keyword))
         articles.extend(news_collector.fetch_google_news(keyword))
 
-    articles = news_collector.deduplicate(articles)
+    risk_minutes_back = max(
+        minutes_back,
+        int(os.getenv("NEGATIVE_WATCH_RISK_QUERY_MINUTES", "360")),
+    )
+    risk_articles: list[dict] = []
+    risk_display_count = int(os.getenv("NEGATIVE_WATCH_RISK_QUERY_LIMIT", "30"))
+    for query in OWN_RISK_WATCH_QUERIES:
+        risk_articles.extend(
+            news_collector.fetch_naver_news(
+                query,
+                keyword="인카금융서비스",
+                keyword_category="own",
+                strict_query=True,
+                display_count=risk_display_count,
+            )
+        )
+        risk_articles.extend(
+            news_collector.fetch_google_news(
+                query,
+                keyword="인카금융서비스",
+                keyword_category="own",
+                strict_query=True,
+                display_count=risk_display_count,
+            )
+        )
+    risk_articles.extend(
+        news_collector.fetch_own_press_search_news(
+            limit_per_source=int(os.getenv("NEGATIVE_WATCH_OWN_PRESS_SEARCH_LIMIT", "20"))
+        )
+    )
+
+    articles = news_collector.deduplicate([*articles, *risk_articles])
     articles = news_collector.apply_exclude_filter(articles)
-    articles = news_collector.apply_recency_filter(articles, max(1, (minutes_back + 59) // 60))
-    articles = [article for article in articles if is_within_minutes(article, minutes_back)]
+    articles = news_collector.apply_recency_filter(articles, max(1, (risk_minutes_back + 59) // 60))
+    articles = [
+        article
+        for article in articles
+        if is_within_minutes(
+            article,
+            risk_minutes_back if is_own_risk_query_article(article) else minutes_back,
+        )
+    ]
     return articles
+
+
+def is_own_risk_query_article(article: dict) -> bool:
+    query = str(article.get("keyword_query") or "")
+    return any(query == item for item in OWN_RISK_WATCH_QUERIES) or article.get("portal") == "source_search"
 
 
 def is_within_minutes(article: dict, minutes_back: int) -> bool:
