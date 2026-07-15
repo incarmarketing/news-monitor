@@ -45,6 +45,10 @@ DASHBOARD_REFRESH_STATE_PATH = STATE_DIR / "dashboard_refresh.json"
 MAX_SENT_KEYS = 500
 GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 OWN_RISK_WATCH_QUERIES = [
+    "인카금융서비스 외형 성장",
+    "인카금융서비스 성장 그늘",
+    "인카금융서비스 가려진 그늘",
+    "인카금융서비스 과제 직면",
     "인카금융서비스 그늘",
     "인카금융서비스 과제",
     "인카금융서비스 리스크",
@@ -205,16 +209,29 @@ def article_key(article: dict) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
 
 
+def risk_query_minutes_back(default_minutes: int) -> int:
+    """Use a wider window for risk-specific searches.
+
+    Portal search can surface an article hours after its original published
+    timestamp. The regular watch stays at 10 minutes, but risk queries should
+    inspect recent published articles broadly and rely on sent-key dedupe to
+    avoid repeated alerts.
+    """
+    raw_value = os.getenv("NEGATIVE_WATCH_RISK_QUERY_MINUTES", "2880")
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        value = 2880
+    return max(default_minutes, value)
+
+
 def collect_recent_company_news(minutes_back: int) -> list[dict]:
     articles: list[dict] = []
     for keyword in analyzer.OWN_NAMES:
         articles.extend(news_collector.fetch_naver_news(keyword))
         articles.extend(news_collector.fetch_google_news(keyword))
 
-    risk_minutes_back = max(
-        minutes_back,
-        int(os.getenv("NEGATIVE_WATCH_RISK_QUERY_MINUTES", "360")),
-    )
+    risk_minutes_back = risk_query_minutes_back(minutes_back)
     risk_articles: list[dict] = []
     risk_display_count = int(os.getenv("NEGATIVE_WATCH_RISK_QUERY_LIMIT", "30"))
     for query in OWN_RISK_WATCH_QUERIES:
