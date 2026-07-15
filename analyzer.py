@@ -2127,12 +2127,42 @@ def is_own_article(article: dict) -> bool:
     return has_own_evidence(article)
 
 
+def is_own_reputational_risk_article(article: dict) -> bool:
+    """Catch direct own-company reputation-risk coverage without hardcoding one headline.
+
+    Some material risk articles do not use sanction/fraud words. Headlines like
+    "external growth shadow" or "tasks facing Incar" should still trigger the
+    direct-risk watch when the company is the subject of the criticism.
+    """
+    if not is_own_article(article):
+        return False
+    if is_own_brand_reputation_leader_article(article) or is_own_certified_agent_performance_article(article):
+        return False
+
+    text = article_summary_text(article)
+    compact = re.sub(r"\s+", "", text)
+    own = r"(?:인카금융서비스|인카금융)"
+    risk_words = (
+        r"그늘|과제직면|과제\s*직면|위기|논란|리스크|악재|압박|우려|문제|한계|"
+        r"부실|취약|취약점|비판|경고|급락|추락|하락|감소|손실|적자|부담"
+    )
+    patterns = [
+        rf"{own}.{{0,140}}(?:{risk_words})",
+        rf"(?:{risk_words}).{{0,140}}{own}",
+        rf"(?:외형성장|성장세|급성장|외형\s*성장).{{0,100}}(?:그늘|과제|리스크|부담|한계|우려).{{0,160}}{own}?",
+        rf"{own}.{{0,160}}(?:외형성장|성장세|급성장).{{0,100}}(?:그늘|과제|리스크|부담|한계|우려)",
+    ]
+    return any(re.search(pattern, compact, re.I | re.S) for pattern in patterns)
+
+
 def is_own_direct_negative_article(article: dict) -> bool:
     """Directly negative only when the article alleges own-company misconduct."""
     if not is_own_article(article):
         return False
     text = article_summary_text(article)
     if is_own_supervisory_sanction_article(article):
+        return True
+    if is_own_reputational_risk_article(article):
         return True
     return bool(
         re.search(

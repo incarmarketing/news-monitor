@@ -1291,6 +1291,23 @@ class OwnPositiveReputationRegressionTests(unittest.TestCase):
         self.assertEqual(article["_tone"], "positive")
         self.assertFalse(analyzer.is_direct_own_negative_article(article))
 
+    def test_own_growth_shadow_article_triggers_negative_watch(self) -> None:
+        article = {
+            "title": "외형 성장 뒤에 가려진 그늘, 과제 직면한 인카금융서비스",
+            "description": "인카금융서비스가 설계사 수와 매출 외형을 키웠지만 내부통제와 영업 관리 과제가 부각됐다는 보도입니다.",
+            "source": "테스트신문",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        analyzer.apply_context_safety_guardrails(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_tone"], "negative")
+        self.assertTrue(analyzer.is_direct_own_negative_article(article))
+
 
 if __name__ == "__main__":
     unittest.main()
