@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import os
 import re
 from collections import Counter
 
@@ -412,22 +413,34 @@ def configure_context_rules(rows: list[dict] | None) -> None:
 def ai_context_budget() -> int:
     """Limit per-run AI classification calls so scheduled jobs stay predictable."""
     try:
-        return max(0, int(__import__("os").getenv("AI_CONTEXT_MAX_ARTICLES", "18")))
+        return max(0, int(os.getenv("AI_CONTEXT_MAX_ARTICLES", "18")))
     except ValueError:
         return 18
 
 
-def ai_context_enabled() -> bool:
-    value = __import__("os").getenv("AI_CONTEXT_CLASSIFICATION", "auto").strip().lower()
+def ai_context_provider_mode() -> str:
+    """Return the provider used for contextual article classification."""
+    value = os.getenv("AI_CONTEXT_CLASSIFICATION", "auto").strip().lower()
     if value in {"0", "false", "no", "off", "rules"}:
-        return False
-    if value in {"1", "true", "yes", "on", "auto", "gemini"}:
-        return bool(__import__("os").getenv("GEMINI_API_KEY", "").strip())
-    return False
+        return ""
+    if value in {"groq", "llama"}:
+        return "groq" if os.getenv("GROQ_API_KEY", "").strip() else ""
+    if value == "gemini":
+        return "gemini" if os.getenv("GEMINI_API_KEY", "").strip() else ""
+    if value in {"1", "true", "yes", "on", "auto"}:
+        if os.getenv("GEMINI_API_KEY", "").strip():
+            return "gemini"
+        if os.getenv("GROQ_API_KEY", "").strip():
+            return "groq"
+    return ""
+
+
+def ai_context_enabled() -> bool:
+    return bool(ai_context_provider_mode())
 
 
 def ai_context_pro_review_enabled() -> bool:
-    return __import__("os").getenv("AI_CONTEXT_PRO_REVIEW", "true").strip().lower() in {
+    return os.getenv("AI_CONTEXT_PRO_REVIEW", "true").strip().lower() in {
         "1",
         "true",
         "yes",
@@ -580,18 +593,7 @@ negative_target: own | industry | competitor | policy | none
 
 def apply_ai_context_classification(article: dict) -> bool:
     prompt = build_ai_context_prompt(article)
-    try:
-        from ai_fallback import generate_gemini_text
-    except Exception:
-        apply_context_safety_guardrails(article)
-        return False
-
-    text, provider = generate_gemini_text(
-        prompt,
-        max_tokens=720,
-        temperature=0.0,
-        purpose="article_context_classification",
-    )
+    text, provider = generate_ai_context_text(prompt, purpose="article_context_classification", max_tokens=720)
     context = parse_ai_context_response(text)
     if not context:
         apply_context_safety_guardrails(article)
@@ -599,11 +601,10 @@ def apply_ai_context_classification(article: dict) -> bool:
     context["provider"] = provider
 
     if should_pro_review_ai_context(article, context):
-        pro_text, pro_provider = generate_gemini_text(
+        pro_text, pro_provider = generate_ai_context_text(
             prompt,
-            max_tokens=900,
-            temperature=0.0,
             purpose="article_context_pro_review",
+            max_tokens=900,
         )
         pro_context = parse_ai_context_response(pro_text)
         if pro_context:
@@ -614,6 +615,53 @@ def apply_ai_context_classification(article: dict) -> bool:
     article["_ai_context"] = apply_context_safety_guardrails(article, context)
     article["_ai_context_reviewed"] = True
     return True
+
+
+def generate_ai_context_text(prompt: str, *, purpose: str, max_tokens: int) -> tuple[str, str]:
+    provider_mode = ai_context_provider_mode()
+    if provider_mode == "groq":
+        try:
+            import groq_helper
+        except Exception:
+            return "", ""
+        model = (
+            os.getenv("GROQ_CONTEXT_MODEL")
+            or os.getenv("GROQ_MODEL")
+            or "llama-3.3-70b-versatile"
+        ).strip()
+        text = groq_helper.chat_completion(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "너는 언론 모니터링 문맥 분류 담당자다. "
+                        "요약하지 말고 기사 1건이 당사 직접 부정인지, 업계 주의인지, 무관인지 판정한다. "
+                        "반드시 JSON 하나만 반환한다."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=max_tokens,
+            temperature=0.0,
+            retries=1,
+            purpose=purpose,
+            model=model,
+        )
+        return text, f"groq:{model}" if text else ""
+
+    if provider_mode == "gemini":
+        try:
+            from ai_fallback import generate_gemini_text
+        except Exception:
+            return "", ""
+        return generate_gemini_text(
+            prompt,
+            max_tokens=max_tokens,
+            temperature=0.0,
+            purpose=purpose,
+        )
+
+    return "", ""
 
 
 def parse_ai_context_response(text: object) -> dict:

@@ -1309,5 +1309,49 @@ class OwnPositiveReputationRegressionTests(unittest.TestCase):
         self.assertTrue(analyzer.is_direct_own_negative_article(article))
 
 
+class AIContextProviderTests(unittest.TestCase):
+    def test_groq_context_provider_is_enabled_with_api_key(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {"AI_CONTEXT_CLASSIFICATION": "groq", "GROQ_API_KEY": "test-key"},
+            clear=True,
+        ):
+            self.assertEqual(analyzer.ai_context_provider_mode(), "groq")
+            self.assertTrue(analyzer.ai_context_enabled())
+
+    def test_llama_context_classification_sets_context_without_summary(self) -> None:
+        article = {
+            "title": "인카금융서비스 내부통제 부실 논란",
+            "description": "인카금융서비스가 내부통제 부실과 소비자 피해 우려의 대상으로 지목됐다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+        payload = {
+            "category": "own",
+            "tone": "negative",
+            "own_mentioned": True,
+            "negative_target": "own",
+            "evidence": "인카금융서비스가 내부통제 부실과 소비자 피해 우려의 대상으로 지목됐다.",
+            "reason": "당사가 직접 리스크 대상으로 언급됨",
+            "clipping_recommended": True,
+            "clipping_reason": "당사 직접 부정 기사",
+            "confidence": 0.93,
+        }
+
+        with patch.dict(
+            "os.environ",
+            {"AI_CONTEXT_CLASSIFICATION": "groq", "GROQ_API_KEY": "test-key"},
+            clear=True,
+        ), patch("groq_helper.chat_completion", return_value=__import__("json").dumps(payload, ensure_ascii=False)):
+            article["_category"] = analyzer.categorize(article)
+            article["_tone"] = analyzer.analyze_tone(article)
+            self.assertTrue(analyzer.apply_ai_context_classification(article))
+
+        self.assertTrue(article["_ai_context_reviewed"])
+        self.assertEqual(article["_ai_context"]["provider"], "groq:llama-3.3-70b-versatile")
+        self.assertEqual(article["_ai_context"]["negative_target"], "own")
+        self.assertTrue(analyzer.is_direct_own_negative_article(article))
+
+
 if __name__ == "__main__":
     unittest.main()
