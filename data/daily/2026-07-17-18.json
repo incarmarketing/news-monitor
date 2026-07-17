@@ -1,0 +1,184 @@
+{
+  "date": "2026-07-17",
+  "timestamp": "2026-07-17T18:07:08.983786+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-07-17T13:00:00+09:00",
+    "end": "2026-07-17T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 9,
+    "total_after_cluster": 9,
+    "by_category": {
+      "own": 0,
+      "regulation": 1,
+      "competitor": 0,
+      "industry": 8,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 1,
+      "neutral": 8,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 1,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-18 18:07 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 흐름이 중심이다. 금융감독원과 손해보험 관련 이슈가 있다. ## 핵심 이슈 - 우리금융, 동양생명 편입 마무리 - 손보사, 보험사기 공동대응 ## 지표 해석 전체 수집 9건 중 분석 대상은 9건이다. 전체 주의 1건과 부정 0건은 별도 관찰한다. ## 분석 키워드 금융감독원, 손해보험, 보험사기",
+  "articles": [
+    {
+      "title": "우리금융, 동양생명 편입 마무리 수순…보험 경쟁력 강화 본궤도",
+      "link": "https://www.bloter.net/news/articleView.html?idxno=668297",
+      "source": "블로터",
+      "keyword": "금융감독원",
+      "description": "금융감독원이 정정 증권신고서의 효력을 인정하면서다. 우리금융은 완전자회사 편입을 마친 뒤 ABL생명과의 통합 작업에 속도를 내며 보험 부문에 대한 경쟁력을 강화하는 데 힘쓸 전망이다. 17일 금융감독원...",
+      "_summary": "금융감독원이 정정 증권신고서의 효력을 인정하면서다 우리금융은 완전자회사 편입을 마친 뒤 ABL생명과의 통합 작업에 속도를 내며 보험 부문에 대한 경쟁력을 강화하는 데 힘쓸 전망이다 17일 금융감독원.",
+      "pub_date": "Fri, 17 Jul 2026 14:00:00 +0900",
+      "_report_id": 1,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "OK금융 상상인 '역손절' 아픔 예별손보로 '전화위복'",
+      "link": "https://www.asiatime.co.kr/article/20260713500345",
+      "source": "asiatime.co.kr",
+      "keyword": "손해보험",
+      "description": "'사세 확장' 전략 채택…저축은행·보험사 매물 '도전' 2024년 상상인저축은행 M&A 시도…작년 7월 결렬 '상처' 딛고 중장기 목표 달성…\"금융지주 전환 속도\" [아시아타임즈=신도 기자] OK금융그룹이 예별손해보험 인수를...",
+      "_summary": "'사세 확장' 전략 채택…저축은행·보험사 매물 '도전' 2024년 상상인저축은행 M&A 시도…작년 7월 결렬 '상처' 딛고 중장기 목표 달성…\"금융지주 전환 속도\" OK금융그룹이 예별손해보험 인수를. OK금융 상상인 '역손절' 아픔 예별손보로 '전화위복'.",
+      "pub_date": "Fri, 17 Jul 2026 15:48:00 +0900",
+      "_report_id": 2,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "기준금리 등 인상영향, 증권-저축은행-신용카드-캐피탈-리츠업종 '부정...",
+      "link": "http://www.newsfc.co.kr/news/articleView.html?idxno=79972",
+      "source": "newsfc.co.kr",
+      "keyword": "손해보험",
+      "description": "금리 50bp 상승 시 경과조치 전 K-ICS 비율은 생명보험업 평균 7.8%p, 손해보험업 평균 0.7%p 하락하는 등 업권 전반의 변동 수준은 제한적인 것으로 나타났다. ▲시중금리 및 기준금리 추이(나신평 정리) 저축은행 업계는 금리...",
+      "_summary": "금리 50bp 상승 시 경과조치 전 K-ICS 비율은 생명보험업 평균 7.8%p, 손해보험업 평균 0.7%p 하락하는 등 업권 전반의 변동 수준은 제한적인 것으로 나타났다 ▲시중금리 및 기준금리 추이(나신평 정리) 저축은행 업계는 금리. 기준금리 등 인상영향, 증권-저축은행-신용카드-캐피탈-리츠업종 '부정.",
+      "pub_date": "Fri, 17 Jul 2026 14:10:00 +0900",
+      "_report_id": 3,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "공장 멈추면 손실은 눈덩이...왜 집중호우 피해 82%는 보전되지 못할까",
+      "link": "https://www.sedaily.com/article/20068887?ref=naver",
+      "source": "서울경제",
+      "keyword": "손해보험",
+      "description": "현재와 같은 손해보험 침투율 증가 추세가 유지되면 재난 규모와 자산 증가 속도를 따라가기 어려워 2045년에는 보장 공백이 지금보다 더욱 커질 수 있다는 것이다. 2020~2024년 연평균 4992억 원에서 2045년 2조5827억 원으로...",
+      "_summary": "현재와 같은 손해보험 침투율 증가 추세가 유지되면 재난 규모와 자산 증가 속도를 따라가기 어려워 2045년에는 보장 공백이 지금보다 더욱 커질 수 있다는 것이다 공장 멈추면 손실은 눈덩이...왜 집중호우 피해 82%는 보전되지 못할까.",
+      "pub_date": "Fri, 17 Jul 2026 14:04:00 +0900",
+      "_report_id": 4,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "재점화된 '한방 과잉진료' 논란···손보사, 보험사기 공동대응 확대되...",
+      "link": "https://www.seoulfn.com/news/articleView.html?idxno=633365",
+      "source": "seoulfn.com",
+      "keyword": "손해보험",
+      "description": "삼성화재와 현대해상, KB손해보험, DB손해보험 등 주요 손해보험사들이 자생한방병원과 자생의료재단 관계자들을 보험사기 혐의로 공동 고소했다. 보험업계는 이번 사건을 계기로 보험사 특별조사팀(SIU·Special...",
+      "_summary": "삼성화재와 현대해상, KB손해보험, DB손해보험 등 주요 손해보험사들이 자생한방병원과 자생의료재단 관계자들을 보험사기 혐의로 공동 고소했다 보험업계는 이번 사건을 계기로 보험사 특별조사팀(SIU·Special.",
+      "pub_date": "Fri, 17 Jul 2026 13:00:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "송춘수 NH농협손보 대표, '적과후착과수 조사' 현장 점검",
+      "link": "https://www.newsis.com/view/NISX20260716_0003712065",
+      "source": "뉴시스",
+      "keyword": "손해보험",
+      "description": "송춘수 NH농협손해보험 대표이사가 냉해 피해 사과 농가를 피해 규모 정밀 파악을 위한 조사 현장에 직접 나섰다. 농협손보는 최근 경남 밀양시 일대 사과 농가를 방문해 적과후착과수 조사 현장을 점검했다고 17일 밝혔다....",
+      "_summary": "송춘수 NH농협손해보험 대표이사가 냉해 피해 사과 농가를 피해 규모 정밀 파악을 위한 조사 현장에 직접 나섰다 농협손보는 최근 경남 밀양시 일대 사과 농가를 방문해 적과후착과수 조사 현장을 점검했다고 17일 밝혔다 송춘수 NH농협손보 대표, '적과후착과수 조사' 현장 점검.",
+      "pub_date": "Fri, 17 Jul 2026 13:00:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[금상소] \"치매부터 자산까지\"…생보사, 시니어 보험 영역 확장",
+      "link": "https://www.etoday.co.kr/news/view/2604549",
+      "source": "etoday.co.kr",
+      "keyword": "생명보험",
+      "description": "이투데이=권현원 기자 | 기본 보장+부가 서비스 결합 상품 출시 상속 등 시니어 맞춤 정보 제공까지 확장 생명보험사들이 단순한 질병 보장을 넘어 치매 예방과 자산관리, 상속·증여까지 시니어 보험 사업 영역을...",
+      "_summary": "이투데이=권현원 기자. 기본 보장+부가 서비스 결합 상품 출시 상속 등 시니어 맞춤 정보 제공까지 확장 생명보험사들이 단순한 질병 보장을 넘어 치매 예방과 자산관리, 상속·증여까지 시니어 보험 사업 영역을. [금상소] \"치매부터 자산까지\"…생보사, 시니어 보험 영역 확장.",
+      "pub_date": "Fri, 17 Jul 2026 17:00:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "엔화 약세에도 설 자리 잃는 일본 자동차주…중국 공세에 토요타 독주 ...",
+      "link": "https://www.g-enews.com/view.php?ud=202607171412119355e7e8286d56_1",
+      "source": "g-enews.com",
+      "keyword": "생명보험",
+      "description": "사토 아쓰시 후국생명보험 유가증권부장은 \"현재 자동차 업종은 굳이 무리해서 포트폴리오에 담을 만한 매력적인 섹터가 아니다\"라고 잘라 말하며, \"중국 메이커들에 밀려 판매 대수를 늘리거나 수익 마진을 개선할 수...",
+      "_summary": "사토 아쓰시 후국생명보험 유가증권부장은 \"현재 자동차 업종은 굳이 무리해서 포트폴리오에 담을 만한 매력적인 섹터가 아니다\"라고 잘라 말하며, \"중국 메이커들에 밀려 판매 대수를 늘리거나 수익 마진을 개선할 수. 엔화 약세에도 설 자리 잃는 일본 자동차주…중국 공세에 토요타 독주.",
+      "pub_date": "Fri, 17 Jul 2026 14:14:00 +0900",
+      "_report_id": 8,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "29대 회장 경선…줄리아 김 선출",
+      "link": "https://www.koreadaily.com/article/20260716210523513",
+      "source": "koreadaily.com",
+      "keyword": "보험업계",
+      "description": "김 신임 회장은 17년간 보험업계에 종사해 왔으며, 한인 보험·재정 전문가들의 권익 향상을 위해 협회에서 활동해 왔다. 그는 선출 직후 “KAIFPA가 쌓아온 전통과 성과를 계승하고 회원 간 협력을 더욱 강화하겠다”...",
+      "_summary": "김 신임 회장은 17년간 보험업계에 종사해 왔으며, 한인 보험·재정 전문가들의 권익 향상을 위해 협회에서 활동해 왔다 그는 선출 직후 “KAIFPA가 쌓아온 전통과 성과를 계승하고 회원 간 협력을 더욱 강화하겠다”. 29대 회장 경선…줄리아 김 선출.",
+      "pub_date": "Fri, 17 Jul 2026 13:06:00 +0900",
+      "_report_id": 9,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
