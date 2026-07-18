@@ -1,0 +1,170 @@
+{
+  "date": "2026-07-19",
+  "timestamp": "2026-07-19T08:07:25.976087+09:00",
+  "window": {
+    "slot": "08",
+    "label": "전일 18:00~당일 08:00",
+    "short_label": "전일 18시 이후",
+    "start": "2026-07-18T18:00:00+09:00",
+    "end": "2026-07-19T08:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 9,
+    "total_after_cluster": 8,
+    "by_category": {
+      "own": 0,
+      "regulation": 2,
+      "competitor": 0,
+      "industry": 6,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 3,
+      "neutral": 5,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-20 08:07 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 보험사 사기 적발 강화. 업계 흐름 중심. ## 핵심 이슈 - 보험사 사기 적발 - 보이스피싱 규제 ## 지표 해석 전체 9건 중 분석 8건. 주의 3건. ## 분석 키워드 보험사, 내부통제, 보이스피싱",
+  "articles": [
+    {
+      "title": "보험사에 자생한방병원 고소 독려한 금감원… 보험 사기 적발 총력 - Chosunbiz",
+      "link": "https://news.google.com/rss/articles/CBMigAFBVV95cUxNc1BDcDZ2T2laX093OUtaNXJ3cEEwbmdRODRfQ2ZsN0JDclBVUnBUZTkxM3ZuSjRueUFMU2R0azE1T29hNkNqZXZWTzZTbWVSbjFnWHhhZkVQZDgxV3NHdjdqVjY1RFRKOVRsUjZpanNTWWpDZnZVTnhHOGFhaEk3VA?oc=5",
+      "source": "google",
+      "keyword": "보험사",
+      "description": "보험사에 자생한방병원 고소 독려한 금감원… 보험 사기 적발 총력&nbsp;&nbsp;Chosunbiz",
+      "_summary": "보험사에 자생한방병원 고소 독려한 금감원… 보험 사기 적발 총력 Chosunbiz. 보험사에 자생한방병원 고소 독려한 금감원… 보험 사기 적발 총력 - Chosunbiz.",
+      "pub_date": "Sat, 18 Jul 2026 21:00:00 GMT",
+      "_report_id": 1,
+      "_score": 12,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 2
+    },
+    {
+      "title": "보이스피싱 규제 강화...“기업 대응 못하면 고위 경영진 책임 발생 가...",
+      "link": "https://www.sedaily.com/article/20069012?ref=naver",
+      "source": "서울경제",
+      "keyword": "내부통제",
+      "description": "법무법인 태평양은 자금세탁방지(AML) 내부통제 체계를 신종 스캠 유형까지 확대하라고 조언했다. 또 금융회사 등은 계좌 거래정지 및 해제 절차의 운영 체계를 사전에 정비해 선의의 고객 피해를 최소화하고 규제 리스크...",
+      "_summary": "법무법인 태평양은 자금세탁방지(AML) 내부통제 체계를 신종 스캠 유형까지 확대하라고 조언했다 또 금융회사 등은 계좌 거래정지 및 해제 절차의 운영 체계를 사전에 정비해 선의의 고객 피해를 최소화하고 규제 리스크. 보이스피싱 규제 강화...“기업 대응 못하면 고위 경영진 책임 발생 가.",
+      "pub_date": "Sun, 19 Jul 2026 07:00:00 +0900",
+      "_report_id": 2,
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "농협손해보험, AI 시대 소비자보호 강화…'공정성·설명가능성' 점검 나...",
+      "link": "http://www.youngnong.co.kr/news/articleView.html?idxno=60938",
+      "source": "youngnong.co.kr",
+      "keyword": "손해보험",
+      "description": "인공지능(AI) 기반 금융서비스가 빠르게 확산하는 가운데 NH농협손해보험이 AI 서비스의 공정성과 투명성, 설명 가능성을 강화하기 위한 소비자 권익 보호 체계를 점검하고 디지털 환경에 맞는 소비자 중심 경영 강화에...",
+      "_summary": "인공지능(AI) 기반 금융서비스가 빠르게 확산하는 가운데 NH농협손해보험이 AI 서비스의 공정성과 투명성, 설명 가능성을 강화하기 위한 소비자 권익 보호 체계를 점검하고 디지털 환경에 맞는 소비자 중심 경영 강화에. 농협손해보험, AI 시대 소비자보호 강화…'공정성·설명가능성' 점검 나.",
+      "pub_date": "Sat, 18 Jul 2026 23:22:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[주간금융이슈] 우체국에서 4대 은행 대출 받는다…최대 1억원 가능",
+      "link": "https://www.newspim.com/news/view/20260716000759",
+      "source": "주간금융이슈",
+      "keyword": "불완전판매",
+      "description": "금융위원회는 불완전판매 등으로 소비자 피해가 발생할 경우 기본적인 법적 책임을 상품을 공급한 은행이 부담하도록 했다. 은행이 은행대리업 운영을 명분으로 인근 영업점을 추가 폐쇄하는 것도 제한했다. 시중...",
+      "_summary": "금융위원회는 불완전판매 등으로 소비자 피해가 발생할 경우 기본적인 법적 책임을 상품을 공급한 은행이 부담하도록 했다 은행이 은행대리업 운영을 명분으로 인근 영업점을 추가 폐쇄하는 것도 제한했다 [주간금융이슈] 우체국에서 4대 은행 대출 받는다…최대 1억원 가능.",
+      "pub_date": "Sun, 19 Jul 2026 07:00:00 +0900",
+      "_report_id": 4,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[단독]보험업 달고 의료관광 여행사 제동…서울시 \"의료법 위반\"",
+      "link": "https://www.mt.co.kr/culture/2026/07/19/2026071515323892848",
+      "source": "머니투데이",
+      "keyword": "보험설계사",
+      "description": "현행 의료법 제27조 제4항은 보험업법상 보험회사와 보험설계사, 보험대리점, 보험중개사의 외국인 환자 유치 행위를 금지하고 있다. 간단손해보험대리점 역시 보험업법상 보험대리점의 한 유형이다. 서울시는 실제 보험...",
+      "_summary": "현행 의료법 제27조 제4항은 보험업법상 보험회사와 보험설계사, 보험대리점, 보험중개사의 외국인 환자 유치 행위를 금지하고 있다 간단손해보험대리점 역시 보험업법상 보험대리점의 한 유형이다 서울시는 실제 보험.",
+      "pub_date": "Sun, 19 Jul 2026 08:00:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"우리도, 꿈이 있어요...\" 초고령사회 생존법, 일터로 나가는 '노인들' ...",
+      "link": "http://www.fnnews.com/news/202607171455010177",
+      "source": "파이낸셜뉴스",
+      "keyword": "손해보험",
+      "description": "젊은 시절 손해보험회사 임원으로 재직했던 김씨는 은퇴 후 평소 관심이 많았던 커피 공부를 했다. 그는 \"2년 동안 공부하며 꾸준히 실력을 쌓았다. 지금도 좋아서 하는 일\"이라며 웃으며 말했다. 취미로 시작한 배움은...",
+      "_summary": "젊은 시절 손해보험회사 임원으로 재직했던 김씨는 은퇴 후 평소 관심이 많았던 커피 공부를 했다 그는 \"2년 동안 공부하며 꾸준히 실력을 쌓았다 지금도 좋아서 하는 일\"이라며 웃으며 말했다",
+      "pub_date": "Sun, 19 Jul 2026 05:00:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[월드 프리즘] 유타주 국립공원 절벽에서 20년 전 추락사한 아내의 '비극...",
+      "link": "http://www.wikileaks-kr.org/news/articleView.html?idxno=189913",
+      "source": "wikileaks-kr.org",
+      "keyword": "생명보험",
+      "description": "여행 전, 버나뎃은 생명보험 사망보험금을 각각 15만 달러에서 60만 달러로 상향한 사실을 어머니에게 알리려고 컴퓨터 문서를 열려 했지만, 비밀번호가 바뀌어 있었다. 그녀는 어머니를 돌아보며 \"데이비드가...",
+      "_summary": "여행 전, 버나뎃은 생명보험 사망보험금을 각각 15만 달러에서 60만 달러로 상향한 사실을 어머니에게 알리려고 컴퓨터 문서를 열려 했지만, 비밀번호가 바뀌어 있었다 그녀는 어머니를 돌아보며 \"데이비드가. [월드 프리즘] 유타주 국립공원 절벽에서 20년 전 추락사한 아내의 '비극.",
+      "pub_date": "Sun, 19 Jul 2026 06:08:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보이스피싱 당하면 1000만원 보상…은행이 월 5000원 보험료 대신 내주는...",
+      "link": "https://biz.heraldcorp.com/article/10812462?ref=naver",
+      "source": "헤럴드경제",
+      "keyword": "보험사",
+      "description": "다만 피해자가 보이스피싱 보상보험에 가입한 경우에는 보험사가 먼저 보험금을 지급하기 때문에 은행의 실제 배상 부담은 줄어들게 된다. 예를 들어 2000만원의 보이스피싱 피해를 입은 가입자의 경우 보험사가 먼저...",
+      "_summary": "다만 피해자가 보이스피싱 보상보험에 가입한 경우에는 보험사가 먼저 보험금을 지급하기 때문에 은행의 실제 배상 부담은 줄어들게 된다 예를 들어 2000만원의 보이스피싱 피해를 입은 가입자의 경우 보험사가 먼저. 보이스피싱 당하면 1000만원 보상…은행이 월 5000원 보험료 대신 내주는.",
+      "pub_date": "Sun, 19 Jul 2026 06:31:00 +0900",
+      "_report_id": 8,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
