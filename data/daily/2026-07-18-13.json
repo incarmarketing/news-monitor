@@ -1,0 +1,128 @@
+{
+  "date": "2026-07-18",
+  "timestamp": "2026-07-18T13:07:04.744159+09:00",
+  "window": {
+    "slot": "13",
+    "label": "당일 08:00~13:00",
+    "short_label": "오전 08~13시",
+    "start": "2026-07-18T08:00:00+09:00",
+    "end": "2026-07-18T13:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 5,
+    "total_after_cluster": 5,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 0,
+      "industry": 5,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 5,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 1,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-18 18:07 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 흐름이 중심입니다. 메트라이프생명의 맞춤 케어가 대표적입니다. ## 핵심 이슈 - 메트라이프생명 '위드유' 프로그램 - 보험업계 AI 데이터센터 구축 ## 지표 해석 전체 수집 5건 중 분석 대상은 5건입니다. 경쟁/업계 5건입니다. ## 분석 키워드 보험대리점, 생명보험, 보험사, AI 데이터센터",
+  "articles": [
+    {
+      "title": "출산부터 은퇴까지…메트라이프생명, '위드유'로 맞춤 케어",
+      "link": "https://www.newsis.com/view/NISX20260716_0003712434",
+      "source": "뉴시스",
+      "keyword": "보험대리점",
+      "description": "위드유 프로그램은 지난해 2월 전속 영업 채널에서 시범 운영으로 시작해 자회사형 법인보험대리점(GA) 메트라이프금융서비스, 협약 GA, 고객 서비스 애플리케이션 '메트라이프 원'을 통한 일반 소비자까지 대상을...",
+      "_summary": "위드유 프로그램은 지난해 2월 전속 영업 채널에서 시범 운영으로 시작해 자회사형 법인보험대리점(GA) 메트라이프금융서비스, 협약 GA, 고객 서비스 애플리케이션 '메트라이프 원'을 통한 일반 소비자까지 대상을. 출산부터 은퇴까지…메트라이프생명, '위드유'로 맞춤 케어.",
+      "pub_date": "Sat, 18 Jul 2026 08:00:00 +0900",
+      "_report_id": 1,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험업계 AI 데이터센터 구축 관심…'새 먹거리' 등장하나",
+      "link": "https://www.asiatime.co.kr/article/20260714500430",
+      "source": "asiatime.co.kr",
+      "keyword": "손해보험",
+      "description": "이밖에 현대해상과 한화손해보험도 AI 데이터센터 보장에 대한 내부 검토에 착수한 것으로 알려졌다. 단 보험업계는 데이터센터 관련 문제가 해소되기 위해서는 보험요율을 산출하는 등 데이터가 쌓여야 한다는 반응을...",
+      "_summary": "이밖에 현대해상과 한화손해보험도 AI 데이터센터 보장에 대한 내부 검토에 착수한 것으로 알려졌다 단 보험업계는 데이터센터 관련 문제가 해소되기 위해서는 보험요율을 산출하는 등 데이터가 쌓여야 한다는 반응을. 보험업계 AI 데이터센터 구축 관심…'새 먹거리' 등장하나.",
+      "pub_date": "Sat, 18 Jul 2026 10:10:00 +0900",
+      "_report_id": 2,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "고환율이 보험산업에 미치는 영향과 대응 과제",
+      "link": "http://www.ifs.or.kr/bbs/board.php?bo_table=News&wr_id=55922",
+      "source": "ifs.or.kr",
+      "keyword": "생명보험",
+      "description": "8) 또한, 일본 생명보험회사들은 시장 환경과 무관하게 환헤지 비율을 100%로 고정하는 패시브 전략이 비용의 증가를 초래할 수 있음을 인식하고 엔화 약세기에 환헤지 비용이 급등할 경우 일시적으로 환헤지 비율을...",
+      "_summary": "8) 또한, 일본 생명보험회사들은 시장 환경과 무관하게 환헤지 비율을 100%로 고정하는 패시브 전략이 비용의 증가를 초래할 수 있음을 인식하고 엔화 약세기에 환헤지 비용이 급등할 경우 일시적으로 환헤지 비율을. 고환율이 보험산업에 미치는 영향과 대응 과제.",
+      "pub_date": "Sat, 18 Jul 2026 12:10:00 +0900",
+      "_report_id": 3,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "중국 RX, 실생활 어떻게 달라졌나",
+      "link": "https://www.mk.co.kr/article/12095244",
+      "source": "매일경제",
+      "keyword": "보험사",
+      "description": "2021년 베이징에서 처음 도로 운행 허가를 받았고, 같은 해부터 보험사들이 진출해 보험 청구도 가능하다. 현재 300개 이상 도시에 도입돼 있다. 무인차 사고 보험금은 사람이 낸 사고의 10분의 1도 안 된다. 음주운전...",
+      "_summary": "2021년 베이징에서 처음 도로 운행 허가를 받았고, 같은 해부터 보험사들이 진출해 보험 청구도 가능하다 현재 300개 이상 도시에 도입돼 있다 무인차 사고 보험금은 사람이 낸 사고의 10분의 1도 안 된다",
+      "pub_date": "Sat, 18 Jul 2026 09:01:00 +0900",
+      "_report_id": 4,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "'아파트' 관리비로 보험료 내지만…또 개인 화재보험?[영화in 보험산책...",
+      "link": "https://www.news1.kr/finance/insurance-card/6230846",
+      "source": "뉴스1",
+      "keyword": "보험사",
+      "description": "다만 가재도구 보장 여부와 보상 범위는 보험사 및 특약별로 다를 수 있어 가입 전 약관을 확인해야 한다. 정부가 보험료 일부를 지원하는 풍수해·지진재해보험도 활용할 수 있다. 주택 가입자가 동산 특약을 추가하면...",
+      "_summary": "다만 가재도구 보장 여부와 보상 범위는 보험사 및 특약별로 다를 수 있어 가입 전 약관을 확인해야 한다 정부가 보험료 일부를 지원하는 풍수해·지진재해보험도 활용할 수 있다 주택 가입자가 동산 특약을 추가하면.",
+      "pub_date": "Sat, 18 Jul 2026 09:00:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
