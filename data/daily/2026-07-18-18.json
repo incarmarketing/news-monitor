@@ -1,0 +1,128 @@
+{
+  "date": "2026-07-18",
+  "timestamp": "2026-07-18T18:05:30.663755+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-07-18T13:00:00+09:00",
+    "end": "2026-07-18T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 5,
+    "total_after_cluster": 5,
+    "by_category": {
+      "own": 0,
+      "regulation": 2,
+      "competitor": 0,
+      "industry": 3,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 2,
+      "neutral": 3,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-18 18:07 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 흐름이 중심이다. 토스 금융복합기업집단 지정이다. ## 핵심 이슈 - 토스, 금융복합기업집단 지정 - 영풍, 회계처리 위반 ## 지표 해석 전체 수집 5건 중 분석 대상은 5건이다. 정책/규제 2건, 경쟁/업계 3건이다. ## 분석 키워드 내부통제, 금감원, 보험사, 손해보험",
+  "articles": [
+    {
+      "title": "토스, 빅테크 최초 금융복합기업집단 지정…내부통제·자본적정성 관리...",
+      "link": "https://bizhankook.com/articles/139307.html",
+      "source": "bizhankook.com",
+      "keyword": "내부통제",
+      "description": "토스는 이번 지정 이후 내부통제, 위험관리, 자본적정성, 내부거래 등에 관한 엄격한 관리·감독을 받게 된다. 빅테크에서 전산장애, 금융사고가 이어진 가운데 토스의 금융복합기업집단 지정을 계기로 빅테크 금융사의...",
+      "_summary": "토스는 이번 지정 이후 내부통제, 위험관리, 자본적정성, 내부거래 등에 관한 엄격한 관리·감독을 받게 된다 빅테크에서 전산장애, 금융사고가 이어진 가운데 토스의 금융복합기업집단 지정을 계기로 빅테크 금융사의. 토스, 빅테크 최초 금융복합기업집단 지정…내부통제·자본적정성 관리.",
+      "pub_date": "Sat, 18 Jul 2026 17:18:00 +0900",
+      "_report_id": 1,
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "영풍, 회계처리 위반 역대 최대수준 금융위 과징금 204억",
+      "link": "https://www.inthenews.co.kr/news/article.html?no=89460",
+      "source": "inthenews.co.kr",
+      "keyword": "금감원",
+      "description": "앞서 영풍측은 이번 제재와 관련 \"금감원이 지적한 충당부채 관련 회계처리는 한국채택국제회계기준(K-IFRS)의 적용 및 해석 과정에서 전문가들 사이에서도 다양한 견해가 존재할 수 있는 '추정의 영역'에 해당한다\"고...",
+      "_summary": "앞서 영풍측은 이번 제재와 관련 \"금감원이 지적한 충당부채 관련 회계처리는 한국채택국제회계기준(K-IFRS)의 적용 및 해석 과정에서 전문가들 사이에서도 다양한 견해가 존재할 수 있는 '추정의 영역'에 해당한다\"고. 영풍, 회계처리 위반 역대 최대수준 금융위 과징금 204억.",
+      "pub_date": "Sat, 18 Jul 2026 14:38:00 +0900",
+      "_report_id": 2,
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "손해보험주 주가 강세 확산…삼성화재·현대해상 오르고 롯데손해보험...",
+      "link": "https://www.cbci.co.kr/news/articleView.html?idxno=590089",
+      "source": "cbci.co.kr",
+      "keyword": "손해보험",
+      "description": "국내 손해보험 관련주가 지난장에서 대체로 상승 흐름을 나타냈다. 삼성화재와 현대해상, 한화손해보험이 강세를 보인 반면 롯데손해보험은 6% 넘게 하락하며 종목별 희비가 엇갈렸다. 지난 16일 장에서...",
+      "_summary": "국내 손해보험 관련주가 지난장에서 대체로 상승 흐름을 나타냈다 삼성화재와 현대해상, 한화손해보험이 강세를 보인 반면 롯데손해보험은 6% 넘게 하락하며 종목별 희비가 엇갈렸다 지난 16일 장에서.",
+      "pub_date": "Sat, 18 Jul 2026 14:56:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“반복 입원했다가 보험사기범 몰렸어요”…경찰 판단은 어떻게? [어쩌...",
+      "link": "https://www.mk.co.kr/article/12101436",
+      "source": "매일경제",
+      "keyword": "보험사",
+      "description": "보험금 많이 타면 의심부터 하는 보험사 경찰, 의심 만으론 증거불충분…“혐의 없음” 보험업계는 보험사기 의심 사건을 다룰 때 종종 개인의 보험 가입 형태나 청구 이력만으로 고의성을 단정 짓는 경향이 있습니다....",
+      "_summary": "보험금 많이 타면 의심부터 하는 보험사 경찰, 의심 만으론 증거불충분…“혐의 없음” 보험업계는 보험사기 의심 사건을 다룰 때 종종 개인의 보험 가입 형태나 청구 이력만으로 고의성을 단정 짓는 경향이 있습니다 “반복 입원했다가 보험사기범 몰렸어요”…경찰 판단은 어떻게? [어쩌.",
+      "pub_date": "Sat, 18 Jul 2026 17:00:00 +0900",
+      "_report_id": 4,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“도수치료 실손 끊긴다고?”…보험금 안 밀리려면 ‘이 서류’부터 챙...",
+      "link": "https://biz.heraldcorp.com/article/10812252?ref=naver",
+      "source": "헤럴드경제",
+      "keyword": "보험사",
+      "description": "실손보험사가 부담하는 도수치료비만 연간 1조4000억원 규모로, 그 손실은 결국 전체 가입자의 보험료... 병원이 치료계획에 따라 여러 회차의 도수치료비를 한꺼번에 결제하도록 했더라도 보험사는 실제 치료가 이뤄진...",
+      "_summary": "실손보험사가 부담하는 도수치료비만 연간 1조4000억원 규모로, 그 손실은 결국 전체 가입자의 보험료. 병원이 치료계획에 따라 여러 회차의 도수치료비를 한꺼번에 결제하도록 했더라도 보험사는 실제 치료가 이뤄진. “도수치료 실손 끊긴다고?”…보험금 안 밀리려면 ‘이 서류’부터 챙.",
+      "pub_date": "Sat, 18 Jul 2026 17:01:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
