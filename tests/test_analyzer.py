@@ -278,6 +278,24 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertTrue(analyzer.is_own_positive_focus_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "positive")
 
+    def test_own_company_mention_in_body_is_categorized_and_positive(self) -> None:
+        article = {
+            "title": "상위권 GA, 상반기 마지막 달 호실적 마감",
+            "description": "지에이코리아와 글로벌금융판매도 빅3에 어울리는 실적을 거뒀다.",
+            "body": (
+                "지에이코리아와 인카금융서비스가 양호한 실적으로 상반기 마지막 달을 마감했다. "
+                "양사는 4월~5월 매출이 저조했으나 6월 매출이 급증하며 존재감을 회복했다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_own_positive_focus_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "positive")
+
     def test_own_name_in_competitor_list_does_not_make_positive(self) -> None:
         article = {
             "title": "KDB생명, GA 생보실적 1위 수성",

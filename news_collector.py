@@ -244,6 +244,50 @@ TRADE_PRESS_SOURCES = [
 ]
 OWN_PRESS_SEARCH_SOURCES = [
     {
+        "name": "보험저널",
+        "base_url": "https://www.insjournal.co.kr/",
+        "search_url_templates": [
+            "https://www.insjournal.co.kr/news/articleList.html?sc_area=A&view_type=sm&sc_word={query}",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?insjournal\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+    {
+        "name": "보험매일",
+        "base_url": "https://www.fins.co.kr/",
+        "search_url_templates": [
+            "https://www.fins.co.kr/news/articleList.html?sc_area=A&view_type=sm&sc_word={query}",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?fins\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+    {
+        "name": "한국보험신문",
+        "base_url": "https://www.insnews.co.kr/",
+        "search_url_templates": [
+            "https://www.insnews.co.kr/news/articleList.html?sc_area=A&view_type=sm&sc_word={query}",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?insnews\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+    {
+        "name": "보험신보",
+        "base_url": "https://www.insweek.co.kr/",
+        "search_url_templates": [
+            "https://www.insweek.co.kr/news/articleList.html?sc_area=A&view_type=sm&sc_word={query}",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?insweek\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+    },
+    {
         "name": "대한금융신문",
         "base_url": "https://www.kbanker.co.kr/",
         "search_url_templates": [
@@ -592,10 +636,11 @@ def fetch_own_press_search_news(limit_per_source: int | None = None) -> list[dic
     """
     if not ENABLE_TRADE_PRESS_SOURCES:
         return []
-    limit = limit_per_source or TRADE_PRESS_ARTICLES_PER_SOURCE
+    limit = limit_per_source or OWN_SEARCH_ARTICLES_PER_KEYWORD
     articles: list[dict] = []
     seen_links: set[str] = set()
     for source in OWN_PRESS_SEARCH_SOURCES:
+        source_count = 0
         for query in MANDATORY_OWN_COLLECTION_KEYWORDS:
             for url in collect_source_search_article_urls(source, query, limit):
                 normalized = normalize_url_for_tracking(url)
@@ -609,8 +654,11 @@ def fetch_own_press_search_news(limit_per_source: int | None = None) -> list[dic
                     article["keyword_category"] = "own"
                     article["portal"] = "source_search"
                     articles.append(article)
-                if len(articles) >= limit:
-                    return articles
+                    source_count += 1
+                if source_count >= limit:
+                    break
+            if source_count >= limit:
+                break
     return articles
 
 
@@ -714,15 +762,18 @@ def fetch_trade_press_article(source: dict, url: str) -> dict | None:
     link = final_url or url
     title = extract_article_title_from_html(html)
     description = extract_article_description_from_html(html)
+    body = extract_article_body_from_html(html)
     published = parse_article_date_from_html(html) or parse_korean_datetime_from_html(html)
     if not title:
         return None
-    text = f"{title} {description}"
+    text = f"{title} {description} {body}"
     category = infer_trade_press_category(text)
     return {
         "title": title,
         "link": link,
         "description": description,
+        "body": body[:5000],
+        "content": body[:5000],
         "pub_date": format_pub_date(published) if published else "",
         "source": source.get("name", "보험전문지"),
         "keyword": "보험",
@@ -1190,7 +1241,7 @@ def apply_exclude_filter(articles: list[dict]) -> list[dict]:
     for article in articles:
         if is_excluded_press_article(article):
             continue
-        text = article.get("title", "") + " " + article.get("description", "")
+        text = article_filter_text(article)
         if not any(word in text for word in config.EXCLUDE_KEYWORDS):
             result.append(article)
     return result
@@ -1200,8 +1251,25 @@ def apply_relevance_filter(articles: list[dict]) -> list[dict]:
     return [article for article in articles if is_relevant_article(article)]
 
 
+def article_filter_text(article: dict) -> str:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    return " ".join(
+        str(value or "")
+        for value in (
+            article.get("title"),
+            article.get("description"),
+            article.get("content"),
+            article.get("body"),
+            raw.get("title"),
+            raw.get("description"),
+            raw.get("content"),
+            raw.get("body"),
+        )
+    )
+
+
 def is_relevant_article(article: dict) -> bool:
-    text = f"{article.get('title', '')} {article.get('description', '')}"
+    text = article_filter_text(article)
     keyword = str(article.get("keyword", "")).strip()
     query = str(article.get("keyword_query") or keyword).strip()
     category = normalize_keyword_category(article.get("keyword_category"))

@@ -124,6 +124,30 @@ class TradePressCollectorTests(unittest.TestCase):
             "https://www.kbanker.co.kr/news/articleView.html?idxno=225384",
         ])
 
+    def test_own_press_search_includes_insurance_trade_media(self) -> None:
+        names = {source["name"] for source in news_collector.OWN_PRESS_SEARCH_SOURCES}
+
+        self.assertIn("보험매일", names)
+        self.assertIn("보험저널", names)
+        self.assertIn("한국보험신문", names)
+        self.assertIn("보험신보", names)
+
+    def test_trade_press_body_can_make_article_relevant_to_own_company(self) -> None:
+        article = {
+            "title": "상위권 GA, 상반기 마지막 달 호실적 마감",
+            "description": "지에이코리아와 글로벌금융판매가 상반기 마지막 달 실적을 회복했다.",
+            "body": (
+                "지에이코리아와 인카금융서비스가 양호한 실적으로 상반기 마지막 달을 마감했다. "
+                "양사는 4월~5월 매출이 저조했으나 6월 매출이 급증하며 존재감을 회복했다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_query": "인카금융서비스",
+            "keyword_category": "own",
+            "portal": "source_search",
+        }
+
+        self.assertTrue(news_collector.is_relevant_article(article))
+
 
 class CollectionKeywordTests(unittest.TestCase):
     def test_non_search_rows_are_not_used_as_collection_queries(self) -> None:

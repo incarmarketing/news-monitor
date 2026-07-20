@@ -104,7 +104,8 @@ POSITIVE_WORDS = [
     "성장", "증가", "수상", "최고", "1위", "흑자", "강세", "신기록",
     "상승", "혁신", "급증", "호조", "개선", "안정", "개척", "돌파",
     "사회공헌", "기부", "후원", "지원", "협약", "최다", "우수", "인증",
-    "배출", "완전판매", "전문성", "성과", "선도", "기록",
+    "배출", "완전판매", "전문성", "성과", "선도", "기록", "호실적", "양호",
+    "회복",
 ]
 
 CSR_CONTEXT_WORDS = ["사회공헌", "기부", "후원", "봉사", "지원", "캠페인", "협약"]
@@ -1009,7 +1010,7 @@ def score_article(article: dict) -> int:
 
 
 def categorize(article: dict) -> str:
-    text = article.get("title", "") + " " + article.get("description", "")
+    text = article_summary_text(article)
     if is_external_insurance_noise_article(article):
         return "other"
     if is_own_sponsored_sports_article(article):
@@ -1028,7 +1029,7 @@ def categorize(article: dict) -> str:
         return "competitor"
     if is_settlement_support_list_article(article):
         return "regulation"
-    if contains_own_name(text):
+    if has_own_evidence(article):
         return "own"
     if is_sales_conduct_context_text(text):
         return "regulation"
