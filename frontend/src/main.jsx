@@ -1350,13 +1350,16 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
   const [keyword, setKeyword] = useState("all");
   const [source, setSource] = useState("all");
   const [tone, setTone] = useState("all");
+  const [visible, setVisible] = useState(60);
   const [selected, setSelected] = useState(() => new Set());
-  const regulatorRows = useMemo(() => selectRegulatorRows(articles), [articles]);
+  const safeArticles = Array.isArray(articles) ? articles : [];
+  const deferredArticles = useDeferredValue(safeArticles);
+  const regulatorRows = useMemo(() => selectRegulatorRows(deferredArticles).slice(0, 1000), [deferredArticles]);
   const keywords = useMemo(() => REGULATOR_KEYWORD_LABELS, []);
-  const sources = useMemo(() => unique(regulatorRows.map((article) => article.source)).slice(0, 40), [regulatorRows]);
-  const tones = useMemo(() => sortToneLabels(regulatorRows.map((article) => article.tone)).slice(0, 8), [regulatorRows]);
+  const sources = useMemo(() => unique(regulatorRows.map((article) => String(article.source || "").trim())).slice(0, 40), [regulatorRows]);
+  const tones = useMemo(() => sortToneLabels(regulatorRows.map((article) => String(article.tone || "").trim())).slice(0, 8), [regulatorRows]);
   const filteredRows = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = String(query || "").trim().toLowerCase();
     return regulatorRows.filter((article) => {
       const text = `${article.title || ""} ${article.source || ""} ${article.summary || ""} ${article.regulatorKeyword || ""}`.toLowerCase();
       return (
@@ -1367,12 +1370,16 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
       );
     });
   }, [keyword, query, regulatorRows, source, tone]);
+  useEffect(() => {
+    setVisible(60);
+  }, [keyword, query, regulatorRows, source, tone]);
+  const visibleRows = useMemo(() => filteredRows.slice(0, visible), [filteredRows, visible]);
   const selectedRows = useMemo(
     () => filteredRows.filter((article) => selected.has(articleSelectionKey(article))),
     [filteredRows, selected],
   );
-  const analysisRows = selectedRows.length ? selectedRows : filteredRows.slice(0, 5);
-  const allVisibleSelected = filteredRows.length > 0 && filteredRows.every((article) => selected.has(articleSelectionKey(article)));
+  const analysisRows = selectedRows.length ? selectedRows.slice(0, 10) : filteredRows.slice(0, 5);
+  const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((article) => selected.has(articleSelectionKey(article)));
   const resetFilters = () => {
     setQuery("");
     setQueryInput("");
@@ -1393,9 +1400,9 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
     setSelected((current) => {
       const next = new Set(current);
       if (allVisibleSelected) {
-        filteredRows.forEach((article) => next.delete(articleSelectionKey(article)));
+        visibleRows.forEach((article) => next.delete(articleSelectionKey(article)));
       } else {
-        filteredRows.forEach((article) => next.add(articleSelectionKey(article)));
+        visibleRows.forEach((article) => next.add(articleSelectionKey(article)));
       }
       return next;
     });
@@ -1456,7 +1463,15 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
           </button>
           <span>{selectedRows.length ? `${selectedRows.length.toLocaleString("ko-KR")}건 선택` : "선택 기준 분류"}</span>
         </div>
-        <RegulatorReleaseFeed rows={filteredRows} selected={selected} onToggle={toggleSelected} />
+        <RegulatorReleaseFeed rows={visibleRows} selected={selected} onToggle={toggleSelected} />
+        {!filteredRows.length && (
+          <div className="empty-list-note">조건에 맞는 금융당국 보도자료가 없습니다.</div>
+        )}
+        {filteredRows.length > visible && (
+          <button className="ghost-button full" type="button" onClick={() => setVisible((count) => count + 60)}>
+            {Math.min(filteredRows.length - visible, 60).toLocaleString("ko-KR")}건 더보기
+          </button>
+        )}
       </Panel>
     </main>
   );
