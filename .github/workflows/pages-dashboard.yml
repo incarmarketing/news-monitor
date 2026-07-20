@@ -16,6 +16,7 @@ on:
       - "analyzer.py"
       - "classification_normalizer.py"
       - "negative_watch.py"
+      - "article_backfill.py"
       - "publish_report.py"
       - "sync_daily_archive_to_supabase.py"
       - "stock_collector.py"
@@ -25,6 +26,7 @@ on:
       - "slack_notify.py"
       - "supabase_store.py"
       - "supabase/migrations/**"
+      - ".backfill-requests/**"
       - ".github/workflows/pages-dashboard.yml"
       - ".github/workflows/ga-revenue-sync.yml"
   workflow_dispatch:
