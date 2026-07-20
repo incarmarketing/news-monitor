@@ -1,2 +1,3 @@
 http://www.fins.co.kr/news/articleView.html?idxno=109221
 # rerun after manual backfill tone preservation fix
+# rerun after adding own sales positive title terms

@@ -71,6 +71,11 @@ DIRECT_MARKET_CAUTION_TERMS = (
 
 DIRECT_POSITIVE_TERMS = (
     "성과",
+    "호실적",
+    "양호",
+    "양호한 실적",
+    "회복",
+    "급증",
     "최다",
     "1위",
     "돌파",
