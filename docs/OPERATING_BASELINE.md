@@ -7,6 +7,9 @@
 - 기본 부정기사 감시 주기: 24시간, 10분 기준
 - 기본 검사 범위: `minutes_back=10`
 - 부정기사 감시 workflow: `.github/workflows/negative-watch.yml`
+- 주 스케줄러: cron-job.org 10분 주기
+- 복구 스케줄러: Supabase Cron 10분 확인, 마지막 정상 완료가 25분 이상 없을 때만 재호출
+- GitHub Actions 자체 감시 예약: 사용하지 않음
 - 감시 실행 코드: `negative_watch.py`
 - 감시 로그 테이블: `negative_watch_runs`
 - 최신 운영 문구: `10분 주기`, `검사 10분`

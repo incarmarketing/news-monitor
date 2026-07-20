@@ -138,8 +138,8 @@ AI/룰 기반 분석
 
 - 로컬 PC는 개발, 테스트, 화면 확인용입니다.
 - GitHub Actions는 실제 운영 실행자입니다.
-- cron-job.org는 GitHub Actions 예약 지연을 줄이는 외부 호출 장치입니다.
-- Supabase Cron은 cron-job.org까지 놓쳤을 때 DB 내부에서 주기적으로 감시 함수를 다시 확인하는 보조 백업입니다.
+- cron-job.org는 부정기사 감시를 10분마다 깨우는 단일 주 스케줄러입니다.
+- Supabase Cron은 마지막 정상 감시가 25분 넘게 없을 때만 GitHub Actions를 복구 호출하는 보조 백업입니다.
 - Supabase는 수집 자료, 키워드, 스크랩, 언론사, 기자, 광고비, 발송 이력, 부정기사 감시 로그를 저장합니다.
 - GitHub Pages는 최신 대시보드와 보고서를 보여줍니다.
 
@@ -266,17 +266,17 @@ GitHub Actions는 `.github/workflows`에 있습니다.
 - `pages-dashboard.yml`: 기존 아카이브 기준 정적 대시보드 배포
 - `sync-external-cron.yml`: cron-job.org 외부 호출 설정 동기화
 
-GitHub Actions의 `schedule`은 지연될 수 있습니다. 그래서 cron-job.org가 GitHub workflow를 직접 깨우도록 보조 장치를 둡니다.
-Supabase Cron은 여기에 한 번 더 붙는 백업입니다. DB 안의 `news-monitor-supabase-watchdog` 작업이 주기적으로 `trigger-news-collection` Edge Function의 `watchdog` 경로를 호출하고, 일일 보고서, 주간/월간 보고서, 부정기사 감시가 늦어졌을 때만 GitHub Actions를 다시 깨웁니다.
+GitHub Actions의 `schedule`은 지연될 수 있으므로 부정기사 감시는 cron-job.org가 GitHub workflow를 10분마다 직접 깨웁니다. 같은 감시를 GitHub 자체 예약으로 중복 실행하지 않습니다.
+Supabase Cron은 여기에 한 번 더 붙는 복구 장치입니다. DB 안의 `news-monitor-supabase-watchdog` 작업이 주기적으로 `trigger-news-collection` Edge Function의 `watchdog` 경로를 호출하고, 마지막 정상 감시가 25분 넘게 없을 때만 GitHub Actions를 다시 깨웁니다.
 
 ### 10. 부정기사 감시 만들기
 
 1. `negative_watch.py`는 최근 `minutes_back=10` 범위의 기사를 검사합니다.
-2. GitHub Actions `Negative Article Watch`는 클라우드 러너 안에서 10분마다 검사합니다.
-3. 러너는 1시간 단위로 다음 실행을 직접 예약하고, GitHub hourly schedule은 복구용 안전장치로 둡니다.
-4. 실행이 늦어지면 Supabase의 마지막 성공 시각을 보고 누락 구간을 자동으로 보정 검사합니다.
-5. cron-job.org의 `news-monitor negative watch`는 이 workflow를 10분마다 한 번 더 깨우는 보조 장치입니다.
-6. Supabase Cron의 `news-monitor-supabase-watchdog`은 최신 성공 시각을 확인하는 마지막 백업입니다.
+2. cron-job.org의 `news-monitor negative watch`가 GitHub Actions `Negative Article Watch`를 10분마다 한 번 호출합니다.
+3. GitHub Actions에는 같은 작업을 깨우는 별도 예약을 두지 않아 중복 실행을 막습니다.
+4. 실행이 늦어지면 Supabase의 마지막 정상 완료 시각을 보고 누락 구간을 자동으로 보정 검사합니다.
+5. Supabase Cron의 `news-monitor-supabase-watchdog`은 10분마다 상태를 확인하되 25분 이상 정상 완료가 없을 때만 복구 호출합니다.
+6. 실패·취소 로그는 최신 정상 완료 시각을 덮어쓰지 않습니다.
 7. 실행 결과는 Supabase `negative_watch_runs`에 저장하며, 저장 실패는 workflow 실패로 처리합니다.
 8. 대시보드에는 마지막 수행 시각, 상태, 최근 검사 결과만 간결하게 보여줍니다.
 
@@ -511,7 +511,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\preflight.ps1
 
 - 운영 목표: 24시간 10분마다
 - 검사 범위: 매 실행 시 최근 10분 기사
-- 실행 위치: GitHub Actions와 cron-job.org
+- 실행 위치: cron-job.org가 호출하는 GitHub Actions, Supabase Cron 복구 감시
 - 저장 위치: Supabase `negative_watch_runs`
 
 ## 품질 관리 기준

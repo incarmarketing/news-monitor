@@ -251,11 +251,11 @@ async function ensurePeriodReport(period: PeriodReportKind, source: string) {
 async function ensureNegativeWatch(source: string) {
   const latest = await selectRows(
     "negative_watch_runs",
-    "select=scanned_at,status&order=scanned_at.desc,created_at.desc&limit=1",
+    "select=scanned_at,status&status=in.(success,alert_sent)&order=scanned_at.desc,created_at.desc&limit=1",
   );
   const latestAt = latest[0]?.scanned_at ? new Date(String(latest[0].scanned_at)) : null;
-  const rawThreshold = Number(Deno.env.get("WATCHDOG_NEGATIVE_MAX_AGE_MINUTES") || "7");
-  const threshold = Number.isFinite(rawThreshold) && rawThreshold > 0 ? rawThreshold : 7;
+  const rawThreshold = Number(Deno.env.get("WATCHDOG_NEGATIVE_MAX_AGE_MINUTES") || "25");
+  const threshold = Number.isFinite(rawThreshold) ? Math.max(25, rawThreshold) : 25;
   const stale = !latestAt || Date.now() - latestAt.getTime() > threshold * 60 * 1000;
   if (!stale) {
     return { job: "negative_watch", dispatched: false, reason: "recent_success", latest_at: latestAt?.toISOString() || "" };
@@ -541,8 +541,8 @@ function expectedAtIso(slot: string) {
 
 function watchBucketKey() {
   const p = kstNowParts();
-  const rawBucketMinutes = Number(Deno.env.get("WATCHDOG_NEGATIVE_BUCKET_MINUTES") || "5");
-  const bucketMinutes = Number.isFinite(rawBucketMinutes) && rawBucketMinutes > 0 ? rawBucketMinutes : 5;
+  const rawBucketMinutes = Number(Deno.env.get("WATCHDOG_NEGATIVE_BUCKET_MINUTES") || "10");
+  const bucketMinutes = Number.isFinite(rawBucketMinutes) ? Math.max(10, rawBucketMinutes) : 10;
   const minute = Math.floor(p.minute / bucketMinutes) * bucketMinutes;
   return `${p.year}${String(p.month).padStart(2, "0")}${String(p.day).padStart(2, "0")}${String(p.hour).padStart(2, "0")}${String(minute).padStart(2, "0")}`;
 }

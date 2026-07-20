@@ -13,8 +13,6 @@ on:
   repository_dispatch:
     types:
       - negative-watch
-  schedule:
-    - cron: "*/10 * * * *"
 
 permissions:
   actions: write
@@ -46,6 +44,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
