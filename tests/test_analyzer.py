@@ -296,6 +296,29 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertTrue(analyzer.is_own_positive_focus_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "positive")
 
+    def test_own_sales_performance_rebound_is_not_direct_negative(self) -> None:
+        article = {
+            "title": "\uc0c1\uc704\uad8c GA, \uc0c1\ubc18\uae30 \ub9c8\uc9c0\ub9c9 \ub2ec \ud638\uc2e4\uc801 \ub9c8\uac10",
+            "description": (
+                "\uc9c0\uc5d0\uc774\ucf54\ub9ac\uc544\uc640 \uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4\uac00 "
+                "\uc591\ud638\ud55c \uc2e4\uc801\uc73c\ub85c \uc0c1\ubc18\uae30 \ub9c8\uc9c0\ub9c9 \ub2ec\uc744 "
+                "\ub9c8\uac10\ud588\ub2e4. \uc591\uc0ac\ub294 4\uc6d4~5\uc6d4 \ub9e4\ucd9c\uc774 "
+                "\uc800\uc870\ud588\uc73c\ub098 6\uc6d4 \ub9e4\ucd9c\uc774 \uae09\uc99d\ud558\uba70 "
+                "\uc874\uc7ac\uac10\uc744 \ud68c\ubcf5\ud588\ub2e4."
+            ),
+            "keyword": "\uc778\uce74\uae08\uc735\uc11c\ube44\uc2a4",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+
+        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_own_sales_performance_positive_article(article))
+        self.assertTrue(analyzer.is_own_positive_focus_article(article))
+        self.assertEqual(analyzer.analyze_tone(article), "positive")
+        self.assertFalse(analyzer.is_own_direct_negative_article(article))
+        self.assertFalse(analyzer.is_direct_own_negative_article(article))
+
     def test_own_name_in_competitor_list_does_not_make_positive(self) -> None:
         article = {
             "title": "KDB생명, GA 생보실적 1위 수성",

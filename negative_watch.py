@@ -337,6 +337,8 @@ def merge_negative_candidates(*groups: list[dict]) -> list[dict]:
         for article in group:
             if analyzer.is_relief_support_article(article):
                 continue
+            if not analyzer.is_direct_own_negative_article(article):
+                continue
             key = article_key(article)
             if key in seen:
                 continue

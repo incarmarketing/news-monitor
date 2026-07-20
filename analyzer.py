@@ -845,6 +845,13 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["clipping_recommended"] = False
         result["clipping_reason"] = ""
 
+    if is_own_sales_performance_positive_article(article):
+        result["category"] = "own"
+        result["tone"] = "positive"
+        result["own_mentioned"] = True
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = True
+
     if is_own_direct_negative_article(article):
         force_own_direct_negative_context()
 
@@ -2115,6 +2122,8 @@ def is_own_positive_focus_article(article: dict) -> bool:
     """Only direct company-favorable coverage can be counted as positive."""
     if not is_own_article(article):
         return False
+    if is_own_sales_performance_positive_article(article):
+        return True
     if is_own_brand_reputation_leader_article(article):
         return True
     if is_own_certified_agent_performance_article(article):
@@ -2138,6 +2147,65 @@ def is_own_positive_focus_article(article: dict) -> bool:
         if any(name in sentence for name in OWN_NAMES) and any(word in sentence for word in positive_signals):
             return True
     return False
+
+
+def is_own_sales_performance_positive_article(article: dict) -> bool:
+    """Treat own-company sales rebound/performance coverage as favorable, not risk.
+
+    A headline can contain weak words such as "sluggish" while still saying the
+    company recovered with strong monthly sales. That should never be sent as a
+    direct negative alert unless the same article also alleges misconduct.
+    """
+    if not is_own_article(article):
+        return False
+    text = article_summary_text(article)
+    compact = re.sub(r"\s+", "", text)
+
+    positive_terms = (
+        "\ud638\uc2e4\uc801",  # 호실적
+        "\uc591\ud638\ud55c\uc2e4\uc801",  # 양호한 실적
+        "\uc591\ud638",  # 양호
+        "\ub9e4\ucd9c\uae09\uc99d",  # 매출 급증
+        "\uae09\uc99d",  # 급증
+        "\uc874\uc7ac\uac10\ud68c\ubcf5",  # 존재감 회복
+        "\ud68c\ubcf5",  # 회복
+        "\ud638\uc870",  # 호조
+    )
+    performance_terms = (
+        "\ub9e4\ucd9c",  # 매출
+        "\uc2e4\uc801",  # 실적
+        "\uc0c1\ubc18\uae30",  # 상반기
+        "\ub9c8\uc9c0\ub9c9\ub2ec",  # 마지막 달
+        "6\uc6d4",  # 6월
+        "\ube453",  # 빅3
+        "\ub9c8\uac10",  # 마감
+    )
+    severe_terms = (
+        "\uc81c\uc7ac",  # 제재
+        "\ucc98\ubd84",  # 처분
+        "\uac80\uc0ac",  # 검사
+        "\uc870\uc0ac",  # 조사
+        "\ubd88\uc644\uc804\ud310\ub9e4",  # 불완전판매
+        "\ubcf4\ud5d8\uc0ac\uae30",  # 보험사기
+        "\ubd80\ub2f9\uc2b9\ud658",  # 부당승환
+        "\ubd88\ubc95",  # 불법
+        "\uc704\ubc18",  # 위반
+        "\ubbfc\uc6d0",  # 민원
+        "\uc18c\uc1a1",  # 소송
+        "\uc555\uc218\uc218\uc0c9",  # 압수수색
+        "\ub4f1\ub85d\ucde8\uc18c",  # 등록 취소
+        "\uc5c5\ubb34\uc815\uc9c0",  # 업무 정지
+        "\uad00\ub9ac\uad6c\uba4d",  # 관리 구멍
+        "\uc2a4\uce94\ub4e4",  # 스캔들
+        "\uc0ac\ucc44",  # 사채
+        "\uacfc\ud0dc\ub8cc",  # 과태료
+        "\ub0b4\ubd80\ud1b5\uc81c",  # 내부통제
+    )
+    if any(term in compact for term in severe_terms):
+        return False
+    return any(term in compact for term in positive_terms) and any(
+        term in compact for term in performance_terms
+    )
 
 
 def is_own_certified_agent_performance_article(article: dict) -> bool:
@@ -2185,6 +2253,8 @@ def is_own_reputational_risk_article(article: dict) -> bool:
     """
     if not is_own_article(article):
         return False
+    if is_own_sales_performance_positive_article(article):
+        return False
     if is_own_brand_reputation_leader_article(article) or is_own_certified_agent_performance_article(article):
         return False
 
@@ -2207,6 +2277,8 @@ def is_own_reputational_risk_article(article: dict) -> bool:
 def is_own_direct_negative_article(article: dict) -> bool:
     """Directly negative only when the article alleges own-company misconduct."""
     if not is_own_article(article):
+        return False
+    if is_own_sales_performance_positive_article(article):
         return False
     text = article_summary_text(article)
     if is_own_supervisory_sanction_article(article):
