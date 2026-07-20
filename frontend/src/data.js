@@ -9,12 +9,9 @@ export const navItems = [
   { id: "monitoring", label: "모니터링" },
   { id: "regulators", label: "금융당국" },
   { id: "media", label: "언론동향" },
-  { id: "pressRelease", label: "보도자료" },
   { id: "stocks", label: "주가/시장" },
-  { id: "gaIntel", label: "업계 동향" },
   { id: "clipping", label: "클리핑" },
   { id: "scraps", label: "스크랩" },
-  { id: "risk", label: "대응센터" },
   { id: "reports", label: "리포트" },
   { id: "management", label: "운영 관리" },
 ];
@@ -664,7 +661,7 @@ export const contextRules = [
   {
     label: "부정",
     body: "사기, 불법, 제재, 고객 피해, 개인정보, 금융사고처럼 즉시 대응이 필요한 직접 리스크",
-    action: "슬랙 알림 + 대응센터",
+    action: "슬랙 알림 + 긴급 검토",
   },
   {
     label: "제외",

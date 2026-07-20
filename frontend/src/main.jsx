@@ -16,13 +16,11 @@ import {
   LayoutDashboard,
   LineChart,
   LogIn,
-  Megaphone,
   Newspaper,
   Radar,
   RefreshCw,
   Search,
   Settings,
-  ShieldCheck,
   TrendingDown,
   Users,
   WalletCards,
@@ -44,7 +42,6 @@ import {
 import {
   adRows,
   contextRules,
-  gaCompetitorSeed,
   journalistRows,
   keywordGroups,
   navItems,
@@ -55,7 +52,6 @@ import {
   watchJobs,
 } from "./data";
 import {
-  generatePressReleaseWithGemini,
   generateScrapAnalysisWithGemini,
   getStoredSession,
   loadOperationalData,
@@ -75,30 +71,21 @@ import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
 import "./styles.css";
 import "./report.css";
 
-const loadGACompetitorIntel = () => import("./GACompetitorIntel");
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
-const loadPressReleaseStudio = () => import("./PressReleaseStudio");
 const loadReports = () => import("./Reports");
-const loadRiskCenterV2 = () => import("./RiskCenterV2");
 const loadStockMarketDashboard = () => import("./StockMarketDashboard");
 
-const GACompetitorIntel = React.lazy(loadGACompetitorIntel);
 const Management = React.lazy(loadManagement);
 const MediaAnalysis = React.lazy(loadMediaAnalysis);
-const PressReleaseStudio = React.lazy(loadPressReleaseStudio);
 const Reports = React.lazy(loadReports);
-const RiskCenterV2 = React.lazy(loadRiskCenterV2);
 const StockMarketDashboard = React.lazy(loadStockMarketDashboard);
 
 const featureModuleLoaders = {
   media: loadMediaAnalysis,
   reports: loadReports,
-  risk: loadRiskCenterV2,
   management: loadManagement,
   stocks: loadStockMarketDashboard,
-  gaIntel: loadGACompetitorIntel,
-  pressRelease: loadPressReleaseStudio,
 };
 
 function preloadFeatureSection(sectionId) {
@@ -115,20 +102,16 @@ const navIcons = {
   monitoring: Search,
   regulators: FileText,
   media: LineChart,
-  pressRelease: Megaphone,
   stocks: WalletCards,
-  gaIntel: Building2,
   clipping: Bookmark,
   scraps: Bookmark,
-  risk: ShieldCheck,
   reports: FileText,
   management: Settings,
 };
 
 const navSections = [
-  { title: "언론·PR", ids: ["overview", "monitoring", "media", "regulators", "pressRelease", "clipping", "scraps", "risk", "reports"] },
+  { title: "언론·PR", ids: ["overview", "monitoring", "media", "regulators", "clipping", "scraps", "reports"] },
   { title: "시장·공시", ids: ["stocks"] },
-  { title: "GA·채널", ids: ["gaIntel"] },
   { title: "운영관리", ids: ["management"] },
 ];
 
@@ -236,11 +219,8 @@ function App() {
     const preloadCoreScreens = () => preloadFeatureSections([
       "media",
       "reports",
-      "risk",
       "stocks",
-      "gaIntel",
       "management",
-      "pressRelease",
     ]);
     if (typeof window.requestIdleCallback === "function") {
       const idleId = window.requestIdleCallback(preloadCoreScreens, { timeout: 1800 });
@@ -608,12 +588,9 @@ function App() {
     monitoring: Monitoring,
     regulators: Regulators,
     media: MediaAnalysis,
-    pressRelease: PressReleaseStudio,
     stocks: StockMarketDashboard,
-    gaIntel: GACompetitorIntel,
     clipping: Clipping,
     scraps: Scraps,
-    risk: RiskCenterV2,
     reports: Reports,
     management: Management,
   }[activeSection] || Overview;
@@ -664,7 +641,6 @@ function App() {
           management={management}
           operations={operations}
           stockMarket={operations.stockMarket}
-          gaIntel={operations.gaIntel || gaCompetitorSeed}
           workflowHealth={workflowHealth}
           isWorking={working}
           onRefreshOperations={refreshOperations}
@@ -808,7 +784,7 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
       <nav className="dashboard-mobile-home" aria-label="모바일 대시보드 바로가기">
         <button type="button" onClick={() => setActiveSection("monitoring")}>모니터링</button>
         <button type="button" onClick={() => setActiveSection("clipping")}>클리핑</button>
-        <button type="button" onClick={() => setActiveSection("risk")}>대응센터</button>
+        <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
       </nav>
 
       <section className="terminal-dashboard-grid">
