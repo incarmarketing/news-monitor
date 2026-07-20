@@ -226,9 +226,17 @@ def risk_query_minutes_back(default_minutes: int) -> int:
 
 def collect_recent_company_news(minutes_back: int) -> list[dict]:
     articles: list[dict] = []
+    own_display_count = int(os.getenv("NEGATIVE_WATCH_OWN_QUERY_LIMIT", "100"))
     for keyword in analyzer.OWN_NAMES:
-        articles.extend(news_collector.fetch_naver_news(keyword))
-        articles.extend(news_collector.fetch_google_news(keyword))
+        articles.extend(
+            news_collector.fetch_naver_news(
+                keyword,
+                keyword=keyword,
+                keyword_category="own",
+                display_count=own_display_count,
+            )
+        )
+        articles.extend(news_collector.fetch_google_news(keyword, keyword=keyword, keyword_category="own"))
 
     risk_minutes_back = risk_query_minutes_back(minutes_back)
     risk_articles: list[dict] = []
@@ -289,18 +297,69 @@ def is_within_minutes(article: dict, minutes_back: int) -> bool:
     return parsed >= cutoff
 
 
-def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
+def analyze_watch_articles(articles: list[dict]) -> tuple[list[dict], dict]:
     apply_classification_feedback_to_articles(articles)
     apply_cached_analysis_to_articles(articles)
     articles = classification_normalizer.normalize_articles(articles)
-    analyzed, metrics = analyzer.analyze(articles, top_n=max(len(articles), 1))
+    return analyzer.analyze(articles, top_n=max(len(articles), 1))
+
+
+def direct_negative_articles(articles: list[dict]) -> list[dict]:
     negatives = [
         article
-        for article in analyzed
+        for article in articles
         if analyzer.is_direct_own_negative_article(article)
     ]
     negatives.sort(key=lambda item: item.get("_score", 0), reverse=True)
-    return negatives, metrics
+    return negatives
+
+
+def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
+    analyzed, metrics = analyze_watch_articles(articles)
+    return direct_negative_articles(analyzed), metrics
+
+
+def should_persist_watch_article(article: dict) -> bool:
+    if str(article.get("_tone") or article.get("tone") or "").lower() == "exclude":
+        return False
+    if article.get("_watch_source") == "db":
+        return False
+    if analyzer.is_own_article(article):
+        return True
+    if str(article.get("keyword_category") or article.get("category") or article.get("_category") or "") == "own":
+        return True
+    return is_own_risk_query_article(article)
+
+
+def persist_watch_articles(articles: list[dict], metrics: dict, scanned_at: str, minutes_back: int) -> int:
+    if os.getenv("NEGATIVE_WATCH_PERSIST_SCANNED_ARTICLES", "true").lower() in {"0", "false", "no", "off"}:
+        return 0
+    candidates = []
+    seen = set()
+    for article in articles:
+        if not should_persist_watch_article(article):
+            continue
+        key = article_key(article)
+        if key in seen:
+            continue
+        seen.add(key)
+        article["_discovered_at"] = scanned_at
+        candidates.append(article)
+    if not candidates:
+        return 0
+    try:
+        save_dashboard_articles(
+            candidates,
+            report_date=scanned_at[:10],
+            window=build_watch_window(scanned_at, minutes_back),
+            metrics=metrics,
+        )
+        print(f"Persisted watch-discovered company articles: {len(candidates)}")
+    except Exception as error:
+        if os.getenv("NEGATIVE_WATCH_REQUIRE_ARTICLE_PERSIST", "").lower() in {"1", "true", "yes", "y"}:
+            raise
+        print(f"Watch-discovered article persistence skipped: {error}")
+    return len(candidates)
 
 
 def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
@@ -810,7 +869,9 @@ def main() -> None:
         return
 
     articles = collect_recent_company_news(minutes_back)
-    negatives, metrics = find_negative_articles(articles)
+    analyzed_articles, metrics = analyze_watch_articles(articles)
+    negatives = direct_negative_articles(analyzed_articles)
+    persisted_watch_count = persist_watch_articles(analyzed_articles, metrics, scanned_at, minutes_back)
     db_negatives = collect_recent_db_negatives(minutes_back)
     if apply_classification_feedback_to_articles(db_negatives):
         db_negatives = [
@@ -831,7 +892,8 @@ def main() -> None:
 
     print(
         f"Negative watcher scanned {len(articles)} company articles; "
-        f"rss_negative={len(negatives)}, db_negative={len(db_negatives)}, new={len(new_negatives)}"
+        f"rss_negative={len(negatives)}, db_negative={len(db_negatives)}, "
+        f"persisted_watch={persisted_watch_count}, new={len(new_negatives)}"
     )
 
     if not new_negatives:

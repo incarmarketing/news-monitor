@@ -32,6 +32,7 @@ ARTICLE_COLUMNS = (
     "source",
     "keyword",
     "summary",
+    "discovered_at",
     "pub_date",
     "pub_date_raw",
     "score",
@@ -62,6 +63,7 @@ LEGACY_ARTICLE_COLUMNS = tuple(
         "classification_provider",
         "clipping_recommended",
         "clipping_reason",
+        "discovered_at",
     }
 )
 
@@ -1114,6 +1116,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
         "summary": article.get("_summary", "") or analyzer.build_quality_summary(article),
+        "discovered_at": article.get("discovered_at") or article.get("_discovered_at") or datetime.now(KST).isoformat(),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),
@@ -1171,6 +1174,7 @@ def save_news_article_rows(rows: list[dict]) -> None:
             or "clipping_recommended" in detail
             or "own_mentioned" in detail
             or "negative_target" in detail
+            or "discovered_at" in detail
         )
         if not missing_column:
             raise
@@ -1231,21 +1235,33 @@ def load_dashboard_articles(limit: int = 50000, page_size: int = 1000) -> list[d
     if not is_enabled():
         return []
     rows: list[dict] = []
-    select = (
-        "news_articles?"
-        "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
+
+    def load_pages(select_fields: str) -> list[dict]:
+        loaded: list[dict] = []
+        select = f"news_articles?select={select_fields}&order=report_date.desc,score.desc"
+        for offset in range(0, limit, page_size):
+            response = request("GET", f"{select}&limit={page_size}&offset={offset}")
+            page = response.json()
+            if not isinstance(page, list) or not page:
+                break
+            loaded.extend(page)
+            if len(page) < page_size:
+                break
+        return loaded
+
+    base_fields = (
+        "article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
         "keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,"
         "negative_target,classification_evidence,classification_reason,cluster_size,status"
-        "&order=report_date.desc,score.desc"
     )
-    for offset in range(0, limit, page_size):
-        response = request("GET", f"{select}&limit={page_size}&offset={offset}")
-        page = response.json()
-        if not isinstance(page, list) or not page:
-            break
-        rows.extend(page)
-        if len(page) < page_size:
-            break
+    try:
+        rows = load_pages(f"{base_fields},discovered_at")
+    except requests.HTTPError as error:
+        detail = str(error)
+        if "discovered_at" not in detail:
+            raise
+        print("Supabase news_articles discovered_at column missing; dashboard article load retried without it.")
+        rows = load_pages(base_fields)
     if rows:
         save_own_media_relations(rows)
     return rows
@@ -1282,18 +1298,30 @@ def load_report_run_archives(limit: int = 60) -> list[dict]:
 def load_articles_for_report_slot(report_date: str, report_slot: str, limit: int = 5000) -> list[dict]:
     if not is_enabled() or not report_date or not report_slot:
         return []
-    response = request(
-        "GET",
-        (
-            "news_articles?"
-            "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
-            "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
-            f"&report_date=eq.{quote(report_date, safe='')}"
-            f"&report_slot=eq.{quote(str(report_slot).zfill(2), safe='')}"
-            f"&order=score.desc&limit={limit}"
-        ),
+    base_fields = (
+        "article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
+        "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status"
     )
-    return response.json()
+
+    def fetch(select_fields: str) -> list[dict]:
+        response = request(
+            "GET",
+            (
+                "news_articles?"
+                f"select={select_fields}"
+                f"&report_date=eq.{quote(report_date, safe='')}"
+                f"&report_slot=eq.{quote(str(report_slot).zfill(2), safe='')}"
+                f"&order=score.desc&limit={limit}"
+            ),
+        )
+        return response.json()
+
+    try:
+        return fetch(f"{base_fields},discovered_at")
+    except requests.HTTPError as error:
+        if "discovered_at" not in str(error):
+            raise
+        return fetch(base_fields)
 
 
 def load_dashboard_notifications(limit: int = 80) -> list[dict]:

@@ -7,6 +7,20 @@ import supabase_store
 
 
 class ClassificationFeedbackTests(unittest.TestCase):
+    def test_normalize_article_records_discovery_time(self) -> None:
+        row = supabase_store.normalize_article(
+            {
+                "title": "sample article",
+                "link": "https://example.com/sample",
+                "_category": "own",
+                "_tone": "neutral",
+                "_discovered_at": "2026-07-20T09:20:00+09:00",
+            },
+            {"date": "2026-07-20", "window": {}, "metrics": {}},
+        )
+
+        self.assertEqual(row["discovered_at"], "2026-07-20T09:20:00+09:00")
+
     def test_feedback_matches_article_by_normalized_link(self) -> None:
         article = {
             "title": "인카금융서비스 기사",

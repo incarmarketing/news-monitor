@@ -6,6 +6,33 @@ from unittest.mock import patch
 import analyzer
 
 
+class AnalyzerRuleVersionTests(unittest.TestCase):
+    def tearDown(self) -> None:
+        analyzer.configure_context_rules([])
+
+    def test_classification_ruleset_version_changes_with_context_rules(self) -> None:
+        analyzer.configure_context_rules([])
+        default_version = analyzer.classification_ruleset_version()
+
+        analyzer.configure_context_rules(
+            [
+                {
+                    "rule_key": "sample",
+                    "category": "industry",
+                    "tone": "neutral",
+                    "keyword": "sample keyword",
+                    "required_context": "",
+                    "excluded_context": "",
+                    "priority": 20,
+                }
+            ]
+        )
+        ruleset_version = analyzer.classification_ruleset_version()
+
+        self.assertNotEqual(default_version, ruleset_version)
+        self.assertTrue(ruleset_version.startswith(analyzer.CLASSIFICATION_RULESET_BASE_VERSION))
+
+
 class AnalyzerToneTests(unittest.TestCase):
     def test_own_investment_opinion_downgrade_is_caution(self) -> None:
         article = {

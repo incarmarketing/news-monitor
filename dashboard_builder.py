@@ -429,6 +429,7 @@ def load_supabase_articles() -> list[dict]:
                 "source": row.get("source", ""),
                 "keyword": row.get("keyword", ""),
                 "summary": article_summary(row, category, tone),
+                "discovered_at": row.get("discovered_at", ""),
                 "pub_date": row.get("pub_date") or row.get("pub_date_raw", ""),
                 "score": row.get("score", 0),
                 "category": category,
@@ -934,6 +935,7 @@ def build_quality_checks(articles: list[dict], report_runs: list[dict], notifica
     notification_action_failures = invalid_notification_action_links(notifications)
     notification_history_failures = invalid_notification_report_history(notifications, report_runs)
     duplicate_notification_failures = invalid_duplicate_success_notifications(notifications)
+    classification_guardrail_failures = invalid_classification_guardrails(current_rows)
     checks = [
         {
             "name": "current_day_summaries",
@@ -971,6 +973,12 @@ def build_quality_checks(articles: list[dict], report_runs: list[dict], notifica
             "total": len(notifications),
             "failures": duplicate_notification_failures[:10],
         },
+        {
+            "name": "classification_guardrails",
+            "status": "ok" if not classification_guardrail_failures else "fail",
+            "total": len(current_rows),
+            "failures": classification_guardrail_failures[:10],
+        },
     ]
     failed = [check for check in checks if check["status"] != "ok"]
     status = "fail" if failed else "ok"
@@ -981,6 +989,42 @@ def build_quality_checks(articles: list[dict], report_runs: list[dict], notifica
         "summary": summary,
         "checks": checks,
     }
+
+
+def invalid_classification_guardrails(rows: list[dict]) -> list[dict]:
+    failures = []
+    for row in rows:
+        article = {
+            "title": row.get("title", ""),
+            "description": row.get("summary", ""),
+            "summary": row.get("summary", ""),
+            "source": row.get("source", ""),
+            "keyword": row.get("keyword", ""),
+            "keyword_category": row.get("category", ""),
+        }
+        tone = str(row.get("tone") or "").lower()
+        category = str(row.get("category") or "").lower()
+        if analyzer.is_own_brand_reputation_leader_article(article) and tone != "positive":
+            failures.append(
+                {
+                    "title": row.get("title", ""),
+                    "source": row.get("source", ""),
+                    "reason": "own_brand_reputation_leader_not_positive",
+                    "category": category,
+                    "tone": tone,
+                }
+            )
+        if analyzer.is_non_insurance_financial_legal_noise_article(article) and category not in {"other", "exclude"}:
+            failures.append(
+                {
+                    "title": row.get("title", ""),
+                    "source": row.get("source", ""),
+                    "reason": "non_insurance_financial_noise_not_excluded",
+                    "category": category,
+                    "tone": tone,
+                }
+            )
+    return failures
 
 
 def invalid_report_windows(report_runs: list[dict]) -> list[dict]:

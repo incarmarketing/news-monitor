@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 import dashboard_builder
 
@@ -93,6 +94,43 @@ class DashboardQualityTests(unittest.TestCase):
         quality = dashboard_builder.build_quality_checks(articles, report_runs, notifications)
 
         self.assertEqual(quality["status"], "ok")
+
+    def test_quality_checks_catch_classification_guardrail_failures(self) -> None:
+        articles = [
+            {
+                "date": "2026-06-06",
+                "title": "Own company brand reputation leader article",
+                "source": "sample",
+                "category": "own",
+                "tone": "caution",
+                "summary": "The article says the company ranked first in brand reputation.",
+            }
+        ]
+
+        with patch("dashboard_builder.analyzer.is_own_brand_reputation_leader_article", return_value=True), \
+            patch("dashboard_builder.analyzer.is_non_insurance_financial_legal_noise_article", return_value=False), \
+            patch("dashboard_builder.analyzer.is_own_article", return_value=True):
+            quality = dashboard_builder.build_quality_checks(articles, [], [])
+
+        failed_names = {check["name"] for check in quality["checks"] if check["status"] != "ok"}
+        self.assertIn("classification_guardrails", failed_names)
+
+    def test_classification_guardrails_accept_positive_own_brand_reputation(self) -> None:
+        rows = [
+            {
+                "date": "2026-06-06",
+                "title": "Own company brand reputation leader article",
+                "source": "sample",
+                "category": "own",
+                "tone": "positive",
+                "summary": "The article says the company ranked first in brand reputation.",
+            }
+        ]
+
+        with patch("dashboard_builder.analyzer.is_own_brand_reputation_leader_article", return_value=True), \
+            patch("dashboard_builder.analyzer.is_non_insurance_financial_legal_noise_article", return_value=False), \
+            patch("dashboard_builder.analyzer.is_own_article", return_value=True):
+            self.assertEqual(dashboard_builder.invalid_classification_guardrails(rows), [])
 
     def test_duplicate_success_notifications_only_flags_latest_daily_date(self) -> None:
         notifications = [

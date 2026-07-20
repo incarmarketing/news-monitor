@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import difflib
+import hashlib
 import json
 import os
 import re
@@ -385,6 +386,7 @@ AI_CONTEXT_CATEGORIES = {"own", "regulation", "competitor", "industry", "sponsor
 AI_CONTEXT_TONES = {"positive", "neutral", "caution", "negative", "exclude"}
 AI_NEGATIVE_TARGETS = {"own", "industry", "competitor", "policy", "none"}
 CONTEXT_RULES: list[dict] = []
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-tree-2026-07-20"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -409,6 +411,19 @@ def configure_context_rules(rows: list[dict] | None) -> None:
             }
         )
     CONTEXT_RULES = sorted(cleaned, key=lambda item: item.get("priority", 100))
+
+
+def classification_ruleset_version() -> str:
+    if not CONTEXT_RULES:
+        return f"{CLASSIFICATION_RULESET_BASE_VERSION}:code-default"
+    payload = json.dumps(
+        CONTEXT_RULES,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+    return f"{CLASSIFICATION_RULESET_BASE_VERSION}:{digest}"
 
 
 def ai_context_budget() -> int:
@@ -2518,6 +2533,7 @@ def build_metrics(all_articles: list[dict], clustered: list[dict]) -> dict:
         "analysis_cache_hits": analysis_cache_hits,
         "ai_context_reviews": ai_context_reviews,
         "ai_context_budget": ai_context_budget(),
+        "classification_ruleset_version": classification_ruleset_version(),
     }
 
 

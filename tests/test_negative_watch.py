@@ -67,6 +67,50 @@ class NegativeWatchDelayedExposureTests(unittest.TestCase):
 
         self.assertTrue(negative_watch.is_own_risk_query_article(article))
 
+class NegativeWatchPersistenceTests(unittest.TestCase):
+    def test_company_name_search_uses_max_naver_display_window(self) -> None:
+        with (
+            patch.object(negative_watch.analyzer, "OWN_NAMES", ["인카금융서비스"]),
+            patch.object(negative_watch.news_collector, "fetch_naver_news", return_value=[]) as naver,
+            patch.object(negative_watch.news_collector, "fetch_google_news", return_value=[]),
+            patch.object(negative_watch.news_collector, "fetch_own_press_search_news", return_value=[]),
+            patch.object(negative_watch.news_collector, "deduplicate", side_effect=lambda rows: rows),
+            patch.object(negative_watch.news_collector, "apply_exclude_filter", side_effect=lambda rows: rows),
+            patch.object(negative_watch.news_collector, "apply_recency_filter", side_effect=lambda rows, _hours: rows),
+            patch.dict(os.environ, {"NEGATIVE_WATCH_OWN_QUERY_LIMIT": "100"}, clear=False),
+        ):
+            negative_watch.collect_recent_company_news(10)
+
+        naver.assert_any_call(
+            "인카금융서비스",
+            keyword="인카금융서비스",
+            keyword_category="own",
+            display_count=100,
+        )
+
+    def test_watch_discovered_company_articles_are_persisted_without_alert(self) -> None:
+        article = {
+            "title": "인카금융서비스, 상반기 마지막 달 호실적 마감",
+            "link": "https://example.com/own-positive",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "positive",
+        }
+        with patch.object(negative_watch, "save_dashboard_articles") as save:
+            count = negative_watch.persist_watch_articles(
+                [article],
+                {"risk_level": "LOW"},
+                "2026-07-20T09:10:00+09:00",
+                10,
+            )
+
+        self.assertEqual(count, 1)
+        self.assertEqual(article["_discovered_at"], "2026-07-20T09:10:00+09:00")
+        save.assert_called_once()
+        self.assertEqual(save.call_args.kwargs["report_date"], "2026-07-20")
+        self.assertEqual(save.call_args.kwargs["window"]["slot"], "watch")
+
 
 if __name__ == "__main__":
     unittest.main()
