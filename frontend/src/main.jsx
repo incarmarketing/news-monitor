@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Search,
   Settings,
+  ShieldCheck,
   TrendingDown,
   Users,
   WalletCards,
