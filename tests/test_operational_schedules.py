@@ -27,9 +27,14 @@ class OperationalScheduleTests(unittest.TestCase):
         source = (
             ROOT / "supabase/functions/trigger-news-collection/index.ts"
         ).read_text(encoding="utf-8")
+        schedule_migration = (
+            ROOT
+            / "supabase/migrations/20260720082300_watchdog_ten_minute_schedule.sql"
+        ).read_text(encoding="utf-8")
         self.assertIn("status=in.(success,alert_sent)", source)
         self.assertIn("Math.max(25, rawThreshold)", source)
         self.assertIn("Math.max(10, rawBucketMinutes)", source)
+        self.assertIn("schedule := '*/10 * * * *'", schedule_migration)
 
     def test_report_archive_does_not_trigger_duplicate_pages_deploy(self) -> None:
         pages = (ROOT / ".github/workflows/pages-dashboard.yml").read_text(encoding="utf-8")
