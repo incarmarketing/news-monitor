@@ -11,6 +11,7 @@ const rootHost = rootUrl.host;
 const rootPath = rootUrl.pathname.endsWith("/") ? rootUrl.pathname : `${rootUrl.pathname}/`;
 const failures = [];
 const checks = [];
+const fetchRetryDelays = [1500, 3000, 6000, 10000];
 
 function normalizeRootUrl(value) {
   const url = new URL(value);
@@ -61,13 +62,29 @@ function normalizeLink(value, currentUrl = rootUrl.toString()) {
   return new URL(String(value || ""), currentUrl).toString();
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function fetchText(url, label) {
-  const response = await fetch(cacheBust(url), { redirect: "follow" });
-  checks.push({ label, url, status: response.status });
-  if (!response.ok) {
-    throw new Error(`${label} returned ${response.status}`);
+  let lastError = null;
+  for (let attempt = 0; attempt <= fetchRetryDelays.length; attempt += 1) {
+    try {
+      const response = await fetch(cacheBust(url), { redirect: "follow" });
+      checks.push({ label, url, status: response.status, attempt: attempt + 1 });
+      if (response.ok) {
+        return response.text();
+      }
+      lastError = new Error(`${label} returned ${response.status}`);
+    } catch (error) {
+      lastError = error;
+      checks.push({ label, url, status: "network_error", attempt: attempt + 1, error: error?.message || String(error) });
+    }
+    if (attempt < fetchRetryDelays.length) {
+      await sleep(fetchRetryDelays[attempt]);
+    }
   }
-  return response.text();
+  throw lastError || new Error(`${label} fetch failed`);
 }
 
 async function fetchJson(url, label) {
