@@ -204,7 +204,7 @@ function buildWorkflowActionsHealth(workflowHealth = {}) {
     };
   }
   const latestFailures = workflows.filter((item) => item.latest && ["failure", "timed_out", "action_required"].includes(item.latest.conclusion));
-  const latestWarnings = workflows.filter((item) => item.status === "error" || item.latest?.conclusion === "cancelled");
+  const latestWarnings = workflows.filter((item) => item.status === "error");
   const running = workflows.filter((item) => item.latest?.status === "in_progress" || item.latest?.status === "queued").length;
   const status = latestFailures.length ? "fail" : latestWarnings.length ? "warn" : "ok";
   const recoveredFailures = workflows.reduce((sum, item) => sum + Number(item.previousFailures || 0), 0);

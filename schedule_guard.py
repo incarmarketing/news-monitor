@@ -293,7 +293,9 @@ def slot_recently_failed(report_date: str, slot: str, now: datetime) -> bool:
         )
         return True
 
-    if status not in {"failed", "cancelled"}:
+    # A cancelled run is usually an overlap cleanup in GitHub Actions, not a
+    # failed delivery attempt. Do not let it block the next valid slot.
+    if status != "failed":
         return False
     if age_minutes <= cooldown:
         print(

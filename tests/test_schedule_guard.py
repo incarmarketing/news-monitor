@@ -67,6 +67,30 @@ class ScheduleGuardTests(unittest.TestCase):
         with patch.object(schedule_guard, "supabase_select", side_effect=rows):
             self.assertTrue(schedule_guard.daily_report_succeeded("2026-06-22", "13"))
 
+    def test_cancelled_report_does_not_activate_failure_cooldown(self) -> None:
+        rows = [[{
+            "status": "cancelled",
+            "last_seen_at": "2026-06-22T13:05:00+09:00",
+            "finished_at": "2026-06-22T13:05:00+09:00",
+        }]]
+        with (
+            patch.object(schedule_guard, "supabase_select", side_effect=rows),
+            patch.dict("os.environ", {"REPORT_FAILURE_COOLDOWN_MINUTES": "30"}, clear=False),
+        ):
+            self.assertFalse(schedule_guard.slot_recently_failed("2026-06-22", "13", kst_datetime(2026, 6, 22, 13, 10)))
+
+    def test_failed_report_activates_failure_cooldown(self) -> None:
+        rows = [[{
+            "status": "failed",
+            "last_seen_at": "2026-06-22T13:05:00+09:00",
+            "finished_at": "2026-06-22T13:05:00+09:00",
+        }]]
+        with (
+            patch.object(schedule_guard, "supabase_select", side_effect=rows),
+            patch.dict("os.environ", {"REPORT_FAILURE_COOLDOWN_MINUTES": "30"}, clear=False),
+        ):
+            self.assertTrue(schedule_guard.slot_recently_failed("2026-06-22", "13", kst_datetime(2026, 6, 22, 13, 10)))
+
 
 if __name__ == "__main__":
     unittest.main()

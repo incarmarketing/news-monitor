@@ -346,6 +346,17 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
+      - name: Record report finish after notification
+        if: always() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: python job_ledger.py report finish --status "$JOB_STATUS"
+        env:
+          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_PROVIDER: github_actions
+          JOB_STATUS: ${{ job.status }}
+
       - name: Persist run archive
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]'))
         run: |
@@ -379,14 +390,3 @@ jobs:
         run: gh workflow run pages-dashboard.yml --ref main -f refresh_external=false
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Record report finish
-        if: always() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
-        run: python job_ledger.py report finish --status "$JOB_STATUS"
-        env:
-          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
-          REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          JOB_PROVIDER: github_actions
-          JOB_STATUS: ${{ job.status }}
