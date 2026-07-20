@@ -202,6 +202,13 @@ def has_direct_own_reference(article: dict) -> bool:
 
 def forced_tone_for_direct_own(article: dict) -> str:
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    title_text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("title", ""),
+            raw.get("title", ""),
+        )
+    )
     text = " ".join(
         str(value or "")
         for value in (
@@ -215,6 +222,12 @@ def forced_tone_for_direct_own(article: dict) -> str:
             raw.get("body", ""),
         )
     )
+    if any(term in title_text for term in DIRECT_NEGATIVE_TERMS):
+        return "negative"
+    if any(term in title_text for term in DIRECT_MARKET_CAUTION_TERMS):
+        return "caution"
+    if any(term in title_text for term in DIRECT_POSITIVE_TERMS):
+        return "positive"
     if any(term in text for term in DIRECT_MARKET_CAUTION_TERMS):
         return "caution"
     if any(term in text for term in DIRECT_NEGATIVE_TERMS):
@@ -226,8 +239,13 @@ def forced_tone_for_direct_own(article: dict) -> str:
     return article.get("_tone") or article.get("tone") or "neutral"
 
 
+def is_manual_backfill_article(article: dict) -> bool:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    return article.get("portal") == "manual_backfill" or raw.get("portal") == "manual_backfill"
+
+
 def force_direct_own_context(article: dict) -> None:
-    if article.get("portal") != "manual_backfill" or not has_direct_own_reference(article):
+    if not is_manual_backfill_article(article) or not has_direct_own_reference(article):
         return
     tone = forced_tone_for_direct_own(article)
     article["_category"] = "own"
