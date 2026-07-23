@@ -868,7 +868,7 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         if not result.get("classification_reason"):
             result["classification_reason"] = "당사가 브랜드평판 1위로 직접 노출된 성과성 보도입니다."
 
-    if is_competitor_brand_reputation_against_own(article) and not own_in_title:
+    if is_competitor_brand_reputation_against_own(article):
         result["category"] = "competitor"
         result["tone"] = "caution"
         result["negative_target"] = "none"
@@ -2352,6 +2352,8 @@ def is_own_reputational_risk_article(article: dict) -> bool:
     if not is_own_article(article):
         return False
     if is_routine_ga_channel_performance_article(article):
+        return False
+    if is_competitor_brand_reputation_against_own(article):
         return False
     if is_own_sales_performance_positive_article(article):
         return False
