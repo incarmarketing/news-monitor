@@ -2,12 +2,32 @@ from __future__ import annotations
 
 import hashlib
 import unittest
+from unittest.mock import patch
 
 import analyzer
 import supabase_store
 
 
 class ClassificationFeedbackTests(unittest.TestCase):
+    def test_recent_negative_lookup_uses_final_alert_contract(self) -> None:
+        class Response:
+            @staticmethod
+            def json() -> list[dict]:
+                return []
+
+        with (
+            patch.object(supabase_store, "is_enabled", return_value=True),
+            patch.object(supabase_store, "request", return_value=Response()) as request,
+        ):
+            supabase_store.load_recent_negative_articles(30)
+
+        query = request.call_args.args[1]
+        self.assertIn("&alert_eligible=eq.true", query)
+        self.assertIn("classification_ruleset_version", query)
+        self.assertIn("document_type", query)
+        self.assertIn("own_role", query)
+        self.assertIn("risk_event_type", query)
+
     def test_normalize_article_records_discovery_time(self) -> None:
         row = supabase_store.normalize_article(
             {

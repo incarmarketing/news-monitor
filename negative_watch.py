@@ -367,6 +367,23 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
     rows = load_recent_negative_articles(lookback)
     articles = []
     for row in rows:
+        stored_context = (row.get("raw") or {}).get("_ai_context") or (row.get("raw") or {}).get("ai_context") or {}
+        contract_context = {
+            "category": row.get("category", "own"),
+            "tone": row.get("tone", "negative"),
+            "own_mentioned": bool(row.get("own_mentioned")),
+            "negative_target": row.get("negative_target", "none"),
+            "evidence": row.get("classification_evidence", ""),
+            "reason": row.get("classification_reason", ""),
+            "confidence": row.get("classification_confidence", 0),
+            "provider": row.get("classification_provider", ""),
+            "classification_ruleset_version": row.get("classification_ruleset_version", ""),
+            "document_type": row.get("document_type", "other"),
+            "own_role": row.get("own_role", "absent"),
+            "risk_event_type": row.get("risk_event_type", "none"),
+            "alert_eligible": row.get("alert_eligible") is True,
+            "classification_decision_path": row.get("classification_decision_path") or {},
+        }
         articles.append(
             {
                 "article_hash": row.get("article_hash", ""),
@@ -383,7 +400,13 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
                 "_score": row.get("score", 0),
                 "_cluster_size": row.get("cluster_size", 1),
                 "_watch_source": "db",
-                "_ai_context": (row.get("raw") or {}).get("_ai_context") or (row.get("raw") or {}).get("ai_context") or {},
+                "classification_ruleset_version": contract_context["classification_ruleset_version"],
+                "document_type": contract_context["document_type"],
+                "own_role": contract_context["own_role"],
+                "risk_event_type": contract_context["risk_event_type"],
+                "alert_eligible": contract_context["alert_eligible"],
+                "classification_decision_path": contract_context["classification_decision_path"],
+                "_ai_context": {**stored_context, **contract_context},
             }
         )
     return classification_normalizer.normalize_articles(articles)

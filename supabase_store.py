@@ -1097,10 +1097,12 @@ def load_latest_negative_watch_run() -> dict | None:
 
 
 def load_recent_negative_articles(minutes_back: int, limit: int = 20) -> list[dict]:
-    """Load company-negative articles recently inserted into the shared DB.
+    """Load contract-approved negative alerts recently inserted into the shared DB.
 
     This catches articles discovered by scheduled reports even when the portal
-    RSS published time is older than the watcher's short polling window.
+    RSS published time is older than the watcher's short polling window.  The
+    alert eligibility flag is the authoritative boundary: category/tone alone
+    may contain legacy or intermediate classifications that must never alert.
     """
     if not is_enabled():
         return []
@@ -1108,7 +1110,11 @@ def load_recent_negative_articles(minutes_back: int, limit: int = 20) -> list[di
     query = (
         "news_articles?"
         "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
-        "keyword,summary,pub_date,pub_date_raw,score,category,tone,cluster_size,status,created_at,raw"
+        "keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,"
+        "classification_evidence,classification_reason,classification_confidence,classification_provider,"
+        "classification_ruleset_version,document_type,own_role,risk_event_type,alert_eligible,"
+        "classification_decision_path,cluster_size,status,created_at,raw"
+        "&alert_eligible=eq.true"
         "&category=eq.own"
         "&tone=eq.negative"
         f"&created_at=gte.{quote(since, safe='')}"

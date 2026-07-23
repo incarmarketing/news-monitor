@@ -68,6 +68,41 @@ class NegativeWatchDelayedExposureTests(unittest.TestCase):
         self.assertTrue(negative_watch.is_own_risk_query_article(article))
 
 class NegativeWatchPersistenceTests(unittest.TestCase):
+    def test_recent_db_alert_preserves_classification_contract(self) -> None:
+        row = {
+            "article_hash": "alert-hash",
+            "title": "인카금융서비스 전직 설계사 보험사기 제재",
+            "link": "https://example.com/alert",
+            "category": "own",
+            "tone": "negative",
+            "own_mentioned": True,
+            "negative_target": "own",
+            "classification_ruleset_version": "classification-contract-v2:test",
+            "document_type": "risk_event",
+            "own_role": "primary",
+            "risk_event_type": "fraud",
+            "alert_eligible": True,
+            "classification_decision_path": {"decision": "alert"},
+            "raw": {"_ai_context": {"provider": "legacy-cache"}},
+        }
+        with (
+            patch.object(negative_watch, "load_recent_negative_articles", return_value=[row]),
+            patch.object(
+                negative_watch.classification_normalizer,
+                "normalize_articles",
+                side_effect=lambda articles: articles,
+            ),
+        ):
+            articles = negative_watch.collect_recent_db_negatives(10)
+
+        self.assertEqual(len(articles), 1)
+        context = articles[0]["_ai_context"]
+        self.assertTrue(context["alert_eligible"])
+        self.assertEqual(context["document_type"], "risk_event")
+        self.assertEqual(context["own_role"], "primary")
+        self.assertEqual(context["risk_event_type"], "fraud")
+        self.assertEqual(context["provider"], "")
+
     def test_company_name_search_uses_max_naver_display_window(self) -> None:
         with (
             patch.object(negative_watch.analyzer, "OWN_NAMES", ["인카금융서비스"]),
