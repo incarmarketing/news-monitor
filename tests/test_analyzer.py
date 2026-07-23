@@ -346,9 +346,9 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertFalse(analyzer.is_own_direct_negative_article(article))
         self.assertFalse(analyzer.is_direct_own_negative_article(article))
 
-    def test_own_name_in_competitor_list_does_not_make_positive(self) -> None:
+    def test_own_name_in_routine_ga_performance_table_is_industry_neutral(self) -> None:
         article = {
-            "title": "KDB생명, GA 생보실적 1위 수성",
+            "title": "KDB생명 6월 GA 생보실적 M/S… 지에이코리아 제친 사랑모아, 상위권 판도 요동",
             "description": "인카금융서비스는 일부 지표에서 2위를 유지했다.",
             "keyword": "KDB생명",
             "keyword_category": "competitor",
@@ -356,9 +356,54 @@ class AnalyzerToneTests(unittest.TestCase):
 
         article["_category"] = analyzer.categorize(article)
 
-        self.assertEqual(article["_category"], "own")
+        self.assertTrue(analyzer.is_routine_ga_channel_performance_article(article))
+        self.assertEqual(article["_category"], "industry")
         self.assertFalse(analyzer.is_own_positive_focus_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "neutral")
+
+    def test_stale_negative_cache_is_overridden_for_routine_ga_performance(self) -> None:
+        article = {
+            "title": "동양생명 6월 GA 생보실적 M/S… 영진에셋 22.6%로 1위 탈환",
+            "description": (
+                "동양생명 GA 채널 실적이 늘었다. 인카금융서비스는 점유율 5.0%로 "
+                "한 계단 상승해 4위를 기록했다."
+            ),
+            "source": "보험저널",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_analysis_cache_applied": True,
+            "_category": "own",
+            "_tone": "negative",
+            "_ai_context": {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "과거 오분류 캐시",
+                "provider": "news_articles_cache",
+            },
+        }
+
+        context = analyzer.apply_context_safety_guardrails(article, article["_ai_context"])
+
+        self.assertEqual(context["category"], "industry")
+        self.assertEqual(context["tone"], "neutral")
+        self.assertTrue(context["own_mentioned"])
+        self.assertEqual(context["negative_target"], "none")
+        self.assertFalse(context["clipping_recommended"])
+        self.assertEqual(context["provider"], "rules:routine_ga_channel_performance_v1")
+        self.assertFalse(analyzer.is_direct_own_negative_article(article))
+
+    def test_direct_sanction_article_is_not_hidden_by_performance_rule(self) -> None:
+        article = {
+            "title": "인카금융서비스 GA 6월 실적 관련 불완전판매 제재 착수",
+            "description": "금융감독원이 인카금융서비스의 불완전판매 위반을 검사한다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        self.assertFalse(analyzer.is_routine_ga_channel_performance_article(article))
+        self.assertTrue(analyzer.is_own_direct_negative_article(article))
 
     def test_competitor_brand_reputation_first_is_not_own_positive(self) -> None:
         article = {

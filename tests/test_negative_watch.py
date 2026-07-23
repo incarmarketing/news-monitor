@@ -111,6 +111,32 @@ class NegativeWatchPersistenceTests(unittest.TestCase):
         self.assertEqual(save.call_args.kwargs["report_date"], "2026-07-20")
         self.assertEqual(save.call_args.kwargs["window"]["slot"], "watch")
 
+    def test_routine_ga_market_share_article_never_enters_negative_alerts(self) -> None:
+        article = {
+            "title": "푸본현대생명 6월 GA 생보실적 M/S… 글로벌금융 1위 굳히기",
+            "description": (
+                "인카금융서비스는 점유율 11.4%로 두 계단 상승해 3위를 기록했다."
+            ),
+            "source": "보험저널",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "negative",
+            "_ai_context": {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "과거 오분류 캐시",
+            },
+        }
+
+        negatives, _metrics = negative_watch.find_negative_articles([article])
+
+        self.assertEqual(negatives, [])
+        self.assertEqual(article["_category"], "industry")
+        self.assertEqual(article["_tone"], "neutral")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -148,7 +148,35 @@ def is_non_insurance_financial_legal_noise(article: dict) -> bool:
 
 def normalize_article(article: dict, *, inplace: bool = False) -> dict:
     row = article if inplace else dict(article)
-    if is_own_brand_reputation_leader(row):
+    if analyzer.is_routine_ga_channel_performance_article(row):
+        category = analyzer.routine_ga_channel_performance_category(row)
+        tone = analyzer.routine_ga_channel_performance_tone(row)
+        row["category"] = category
+        row["_category"] = category
+        row["tone"] = tone
+        row["_tone"] = tone
+        row["own_mentioned"] = analyzer.is_own_article(row)
+        row["negative_target"] = "none"
+        row["clipping_recommended"] = category == "own" and tone == "positive"
+        row["classification_provider"] = "rules:routine_ga_channel_performance_v1"
+        row["classification_reason"] = (
+            "보험사별 월간 GA 채널 실적·점유율 순위 통계로, 당사 직접 리스크와 분리"
+        )
+        context = dict(row.get("_ai_context") or {})
+        context.update(
+            {
+                "category": category,
+                "tone": tone,
+                "own_mentioned": row["own_mentioned"],
+                "negative_target": "none",
+                "clipping_recommended": row["clipping_recommended"],
+                "confidence": 1.0,
+                "provider": row["classification_provider"],
+                "reason": row["classification_reason"],
+            }
+        )
+        row["_ai_context"] = context
+    elif is_own_brand_reputation_leader(row):
         row["category"] = "own"
         row["_category"] = "own"
         row["tone"] = "positive"

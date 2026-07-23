@@ -825,6 +825,33 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         article["_ai_context"] = result
         return result
 
+    if is_routine_ga_channel_performance_article(article):
+        result["category"] = routine_ga_channel_performance_category(article)
+        result["tone"] = routine_ga_channel_performance_tone(article)
+        result["own_mentioned"] = is_own_article(article)
+        result["negative_target"] = "none"
+        result["clipping_recommended"] = (
+            result["category"] == "own" and result["tone"] == "positive"
+        )
+        result["clipping_reason"] = (
+            "당사가 제목에서 우수한 GA 채널 실적으로 직접 부각된 정기 통계 보도입니다."
+            if result["clipping_recommended"]
+            else ""
+        )
+        result["evidence"] = "보험사별 월간 GA 채널 신계약 실적·점유율·순위 통계"
+        result["reason"] = (
+            "정기 실적 통계의 순위 상승·하락은 제재·위법·소비자 피해와 다른 시장 지표이므로 "
+            "당사 직접 부정으로 판정하지 않습니다."
+        )
+        result["confidence"] = 1.0
+        result["provider"] = "rules:routine_ga_channel_performance_v1"
+        article["_category"] = result["category"]
+        article["_tone"] = result["tone"]
+        article["category"] = result["category"]
+        article["tone"] = result["tone"]
+        article["_ai_context"] = result
+        return result
+
     if is_own_article(article):
         result["own_mentioned"] = True
         if own_in_title and result["category"] not in {"sponsorship"}:
@@ -1001,6 +1028,8 @@ def score_article(article: dict) -> int:
 
     if article.get("_category") == "sponsorship":
         score += 2
+    elif is_routine_ga_channel_performance_article(article):
+        score += 4
     elif is_own_article(article):
         score += 14
     elif article.get("_category") in {"regulation", "competitor"}:
@@ -1041,6 +1070,8 @@ def categorize(article: dict) -> str:
         return "other"
     if is_own_brand_reputation_leader_article(article):
         return "own"
+    if is_routine_ga_channel_performance_article(article):
+        return routine_ga_channel_performance_category(article)
     rule = matched_context_rule(text)
     rule_category = rule.get("category")
     if rule_category in {"exclude", "other"}:
@@ -2017,6 +2048,8 @@ def analyze_tone(article: dict) -> str:
         return "positive" if is_own_sponsored_sports_brand_article(article) else "neutral"
     if is_non_business_noise(article):
         return "neutral"
+    if is_routine_ga_channel_performance_article(article):
+        return routine_ga_channel_performance_tone(article)
     if is_preventive_security_article(article):
         return "neutral"
     if is_own_direct_negative_article(article):
@@ -2164,6 +2197,53 @@ def is_own_positive_focus_article(article: dict) -> bool:
     return False
 
 
+def is_routine_ga_channel_performance_article(article: dict) -> bool:
+    """Identify recurring insurer-by-insurer GA channel sales statistics.
+
+    These articles may mention Incar in a long ranking table. Rank movement and
+    insurer-wide sales changes are market statistics, not evidence of company
+    misconduct or reputational harm.
+    """
+    title = re.sub(r"\s+", " ", str(article.get("title") or "")).strip()
+    compact = re.sub(r"\s+", "", title)
+    if not compact:
+        return False
+    has_period = bool(re.search(r"(?:20\d{2}년)?\d{1,2}월|상반기|하반기|\d분기", compact, re.I))
+    has_ga_channel = bool(re.search(r"GA|보험대리점", compact, re.I))
+    has_sales_metric = bool(
+        re.search(
+            r"생보실적|손보실적|신계약실적|판매실적|실적M/?S|M/?S|시장점유율|점유율",
+            compact,
+            re.I,
+        )
+    )
+    direct_risk_in_title = bool(
+        re.search(
+            r"제재|처분|검사|조사|수사|압수수색|기소|소송|불완전판매|부당승환|"
+            r"보험사기|횡령|배임|불법|위반|내부통제|소비자피해|민원|스캔들|사채",
+            compact,
+            re.I,
+        )
+    )
+    return has_period and has_ga_channel and has_sales_metric and not direct_risk_in_title
+
+
+def routine_ga_channel_performance_tone(article: dict) -> str:
+    """Tone for a recurring GA performance table, based on title-level focus."""
+    if not has_own_name_in_title(article):
+        return "neutral"
+    compact = re.sub(r"\s+", "", str(article.get("title") or ""))
+    if re.search(r"하락|밀려|내려앉|후퇴|부진|감소|급감|추락|최하위", compact, re.I):
+        return "caution"
+    if re.search(r"1위|선두|수성|탈환|도약|상승|껑충|굳히기|호실적|증가|회복", compact, re.I):
+        return "positive"
+    return "neutral"
+
+
+def routine_ga_channel_performance_category(article: dict) -> str:
+    return "own" if has_own_name_in_title(article) else "industry"
+
+
 def is_own_sales_performance_positive_article(article: dict) -> bool:
     """Treat own-company sales rebound/performance coverage as favorable, not risk.
 
@@ -2268,6 +2348,8 @@ def is_own_reputational_risk_article(article: dict) -> bool:
     """
     if not is_own_article(article):
         return False
+    if is_routine_ga_channel_performance_article(article):
+        return False
     if is_own_sales_performance_positive_article(article):
         return False
     if is_own_brand_reputation_leader_article(article) or is_own_certified_agent_performance_article(article):
@@ -2292,6 +2374,8 @@ def is_own_reputational_risk_article(article: dict) -> bool:
 def is_own_direct_negative_article(article: dict) -> bool:
     """Directly negative only when the article alleges own-company misconduct."""
     if not is_own_article(article):
+        return False
+    if is_routine_ga_channel_performance_article(article):
         return False
     if is_own_sales_performance_positive_article(article):
         return False
