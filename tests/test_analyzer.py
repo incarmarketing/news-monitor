@@ -32,6 +32,109 @@ class AnalyzerRuleVersionTests(unittest.TestCase):
         self.assertNotEqual(default_version, ruleset_version)
         self.assertTrue(ruleset_version.startswith(analyzer.CLASSIFICATION_RULESET_BASE_VERSION))
 
+    def test_context_rule_supports_all_term_matching(self) -> None:
+        rule = {
+            "trigger_terms": ["인카금융서비스", "제재"],
+            "required_terms": ["금융감독원", "등록 취소"],
+            "trigger_mode": "all",
+            "required_mode": "all",
+            "exclude_terms": [],
+        }
+
+        self.assertTrue(
+            analyzer.context_rule_matches(
+                "금융감독원이 인카금융서비스 설계사 등록 취소 제재를 통보했다.",
+                rule,
+            )
+        )
+        self.assertFalse(analyzer.context_rule_matches("인카금융서비스 제재 기사", rule))
+
+
+class ClassificationContractTests(unittest.TestCase):
+    def test_incidental_career_mention_cannot_become_direct_negative(self) -> None:
+        article = {
+            "title": "헥사곤파트너스 신철우 대표, 금융교육 확대",
+            "description": (
+                "신 대표는 인카금융서비스 본부장을 거쳐 현재 금융교육 사업을 운영하고 있다. "
+                "교육 시장의 과제와 성장 방향을 설명했다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "negative",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "과거 자동 분류 결과",
+            },
+        )
+
+        self.assertEqual(context["own_role"], "incidental")
+        self.assertEqual(context["document_type"], "company_profile")
+        self.assertEqual(context["tone"], "neutral")
+        self.assertFalse(context["alert_eligible"])
+
+    def test_true_own_sanction_passes_alert_contract(self) -> None:
+        article = {
+            "title": "고의사고로 보험금 편취…대형 GA 설계사 무더기 제재",
+            "description": (
+                "금융감독원은 인카금융서비스 전직 설계사 3명의 등록을 취소하고 "
+                "다른 3명의 업무를 180일간 정지했다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "negative",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "인카금융서비스 전직 설계사 등록 취소 및 업무 정지",
+            },
+        )
+
+        self.assertEqual(context["own_role"], "primary")
+        self.assertEqual(context["document_type"], "risk_event")
+        self.assertEqual(context["risk_event_type"], "sanction")
+        self.assertTrue(context["alert_eligible"])
+
+    def test_market_decline_is_caution_but_not_negative_alert(self) -> None:
+        article = {
+            "title": "인카금융서비스 주가 52주 최저가",
+            "description": "인카금융서비스 주가가 하락해 시장의 주의가 필요하다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "negative",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "주가가 52주 최저가를 기록했다.",
+            },
+        )
+
+        self.assertEqual(context["risk_event_type"], "market")
+        self.assertEqual(context["tone"], "caution")
+        self.assertEqual(context["negative_target"], "none")
+        self.assertFalse(context["alert_eligible"])
+
 
 class AnalyzerToneTests(unittest.TestCase):
     def test_own_investment_opinion_downgrade_is_caution(self) -> None:
@@ -360,6 +463,18 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertEqual(article["_category"], "industry")
         self.assertFalse(analyzer.is_own_positive_focus_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "neutral")
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "negative",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "evidence": "과거 오분류",
+            },
+        )
+        self.assertEqual(context["document_type"], "routine_statistics")
+        self.assertFalse(context["alert_eligible"])
 
     def test_insurer_monthly_ga_market_share_series_is_industry_neutral(self) -> None:
         titles = [

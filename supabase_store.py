@@ -44,6 +44,12 @@ ARTICLE_COLUMNS = (
     "classification_reason",
     "classification_confidence",
     "classification_provider",
+    "classification_ruleset_version",
+    "document_type",
+    "own_role",
+    "risk_event_type",
+    "alert_eligible",
+    "classification_decision_path",
     "clipping_recommended",
     "clipping_reason",
     "cluster_size",
@@ -61,6 +67,12 @@ LEGACY_ARTICLE_COLUMNS = tuple(
         "classification_reason",
         "classification_confidence",
         "classification_provider",
+        "classification_ruleset_version",
+        "document_type",
+        "own_role",
+        "risk_event_type",
+        "alert_eligible",
+        "classification_decision_path",
         "clipping_recommended",
         "clipping_reason",
         "discovered_at",
@@ -499,7 +511,9 @@ def load_article_analysis_cache(articles: list[dict], batch_size: int = 80) -> d
     columns = (
         "article_hash,title,link,source,keyword,summary,score,category,tone,"
         "own_mentioned,negative_target,classification_evidence,classification_reason,"
-        "classification_confidence,classification_provider,clipping_recommended,clipping_reason,"
+        "classification_confidence,classification_provider,classification_ruleset_version,"
+        "document_type,own_role,risk_event_type,alert_eligible,classification_decision_path,"
+        "clipping_recommended,clipping_reason,"
         "raw,created_at"
     )
     fallback_columns = "article_hash,title,link,source,keyword,summary,score,category,tone,raw,created_at"
@@ -547,6 +561,16 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
     if not row:
         return False
 
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    cached_context = raw.get("_ai_context") if isinstance(raw.get("_ai_context"), dict) else raw.get("ai_context")
+    cached_context = cached_context if isinstance(cached_context, dict) else {}
+    current_ruleset = analyzer.classification_ruleset_version()
+    cached_ruleset = str(
+        row.get("classification_ruleset_version")
+        or cached_context.get("classification_ruleset_version")
+        or ""
+    ).strip()
+
     category = str(row.get("category") or "").strip()
     tone = str(row.get("tone") or "").strip()
     summary = str(row.get("summary") or "").strip()
@@ -557,9 +581,14 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
     if not category and not tone and not summary:
         return False
 
-    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
-    cached_context = raw.get("_ai_context") if isinstance(raw.get("_ai_context"), dict) else raw.get("ai_context")
-    cached_context = cached_context if isinstance(cached_context, dict) else {}
+    if summary:
+        article["_summary"] = summary
+    if cached_ruleset != current_ruleset:
+        article["_analysis_cache_stale"] = True
+        article["_analysis_cache_stored_ruleset"] = cached_ruleset or "legacy"
+        article["_analysis_cache_current_ruleset"] = current_ruleset
+        return False
+
     context = {
         **cached_context,
         "category": category or cached_context.get("category") or article.get("_category") or article.get("category") or "",
@@ -570,6 +599,14 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
         "reason": row.get("classification_reason") or cached_context.get("reason") or "",
         "confidence": row.get("classification_confidence") or cached_context.get("confidence") or 0,
         "provider": row.get("classification_provider") or cached_context.get("provider") or "news_articles_cache",
+        "classification_ruleset_version": cached_ruleset,
+        "document_type": row.get("document_type") or cached_context.get("document_type") or "other",
+        "own_role": row.get("own_role") or cached_context.get("own_role") or "absent",
+        "risk_event_type": row.get("risk_event_type") or cached_context.get("risk_event_type") or "none",
+        "alert_eligible": bool(row.get("alert_eligible") or cached_context.get("alert_eligible")),
+        "classification_decision_path": row.get("classification_decision_path")
+        or cached_context.get("classification_decision_path")
+        or {},
         "clipping_recommended": row.get("clipping_recommended", cached_context.get("clipping_recommended")),
         "clipping_reason": row.get("clipping_reason") or cached_context.get("clipping_reason") or "",
     }
@@ -579,8 +616,6 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
     if tone:
         article["_tone"] = tone
         article["tone"] = tone
-    if summary:
-        article["_summary"] = summary
     if row.get("score") is not None:
         article["_cached_score"] = row.get("score")
     article["_ai_context"] = context
@@ -1128,6 +1163,12 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "classification_reason": context.get("reason", ""),
         "classification_confidence": context.get("confidence", 0),
         "classification_provider": context.get("provider", ""),
+        "classification_ruleset_version": context.get("classification_ruleset_version", ""),
+        "document_type": context.get("document_type", "other"),
+        "own_role": context.get("own_role", "absent"),
+        "risk_event_type": context.get("risk_event_type", "none"),
+        "alert_eligible": context.get("alert_eligible", False),
+        "classification_decision_path": context.get("classification_decision_path", {}),
         "clipping_recommended": context.get("clipping_recommended", False),
         "clipping_reason": context.get("clipping_reason", ""),
         "cluster_size": article.get("_cluster_size", 1),
@@ -1143,6 +1184,16 @@ def normalized_article_context(article: dict) -> dict:
     own_mentioned = context.get("own_mentioned")
     if own_mentioned is None:
         own_mentioned = analyzer.is_own_article(article)
+    contract = analyzer.build_classification_contract(
+        article,
+        {
+            **context,
+            "category": context.get("category") or article.get("_category") or article.get("category") or "other",
+            "tone": context.get("tone") or article.get("_tone") or article.get("tone") or "neutral",
+            "own_mentioned": bool(own_mentioned),
+            "negative_target": context.get("negative_target") or article.get("negative_target") or "none",
+        },
+    )
     return {
         "own_mentioned": bool(own_mentioned),
         "negative_target": str(context.get("negative_target") or "none").strip() or "none",
@@ -1150,6 +1201,12 @@ def normalized_article_context(article: dict) -> dict:
         "reason": str(context.get("reason") or "").strip(),
         "confidence": safe_float(context.get("confidence"), 0),
         "provider": str(context.get("provider") or "").strip(),
+        "classification_ruleset_version": str(contract.get("classification_ruleset_version") or "").strip(),
+        "document_type": str(contract.get("document_type") or "other"),
+        "own_role": str(contract.get("own_role") or "absent"),
+        "risk_event_type": str(contract.get("risk_event_type") or "none"),
+        "alert_eligible": bool(contract.get("alert_eligible")),
+        "classification_decision_path": contract.get("classification_decision_path") or {},
         "clipping_recommended": bool(context.get("clipping_recommended") or False),
         "clipping_reason": str(context.get("clipping_reason") or "").strip(),
     }
@@ -1174,6 +1231,12 @@ def save_news_article_rows(rows: list[dict]) -> None:
             or "clipping_recommended" in detail
             or "own_mentioned" in detail
             or "negative_target" in detail
+            or "classification_ruleset_version" in detail
+            or "document_type" in detail
+            or "own_role" in detail
+            or "risk_event_type" in detail
+            or "alert_eligible" in detail
+            or "classification_decision_path" in detail
             or "discovered_at" in detail
         )
         if not missing_column:
@@ -1522,7 +1585,8 @@ def load_monitor_context_rules() -> list[dict]:
             "GET",
             (
                 "monitor_context_rules?"
-                "select=rule_key,label,category,tone,trigger_terms,required_terms,exclude_terms,priority,enabled"
+                "select=rule_key,label,category,tone,trigger_terms,required_terms,exclude_terms,"
+                "trigger_mode,required_mode,priority,enabled"
                 "&enabled=eq.true&order=priority.asc,rule_key.asc"
             ),
         )
@@ -1544,6 +1608,8 @@ def load_monitor_context_rules() -> list[dict]:
                 "trigger_terms": row.get("trigger_terms") if isinstance(row.get("trigger_terms"), list) else [],
                 "required_terms": row.get("required_terms") if isinstance(row.get("required_terms"), list) else [],
                 "exclude_terms": row.get("exclude_terms") if isinstance(row.get("exclude_terms"), list) else [],
+                "trigger_mode": str(row.get("trigger_mode") or "any").strip().lower(),
+                "required_mode": str(row.get("required_mode") or "any").strip().lower(),
                 "priority": row.get("priority") or 100,
                 "enabled": row.get("enabled", True) is not False,
             }

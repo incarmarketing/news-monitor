@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import unittest
 
+import analyzer
 import supabase_store
 
 
@@ -103,6 +104,7 @@ class ClassificationFeedbackTests(unittest.TestCase):
                 "negative_target": "none",
                 "classification_evidence": "인카금융서비스 우수인증설계사 배출",
                 "classification_provider": "gemini-2.5-flash",
+                "classification_ruleset_version": analyzer.classification_ruleset_version(),
             }
         }
 
@@ -113,6 +115,29 @@ class ClassificationFeedbackTests(unittest.TestCase):
         self.assertEqual(article["_category"], "own")
         self.assertEqual(article["_tone"], "positive")
         self.assertIn("우수인증설계사", article["_summary"])
+
+    def test_stale_article_analysis_cache_reuses_summary_but_not_classification(self) -> None:
+        link = "https://example.com/stale-negative"
+        article = {"title": "인카금융서비스 정기 GA 판매실적", "link": link}
+        article_hash = hashlib.sha256(link.encode("utf-8")).hexdigest()
+        cache = {
+            article_hash: {
+                "article_hash": article_hash,
+                "summary": "기존에 생성한 기사 요약입니다.",
+                "category": "own",
+                "tone": "negative",
+                "classification_provider": "news_articles_cache",
+                "classification_ruleset_version": "classification-contract-v1:legacy",
+            }
+        }
+
+        applied = supabase_store.apply_article_analysis_cache(article, cache)
+
+        self.assertFalse(applied)
+        self.assertTrue(article["_analysis_cache_stale"])
+        self.assertNotIn("_analysis_cache_applied", article)
+        self.assertNotIn("_category", article)
+        self.assertEqual(article["_summary"], "기존에 생성한 기사 요약입니다.")
 
 
 if __name__ == "__main__":

@@ -385,8 +385,38 @@ KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "sponsorshi
 AI_CONTEXT_CATEGORIES = {"own", "regulation", "competitor", "industry", "sponsorship", "other", "exclude"}
 AI_CONTEXT_TONES = {"positive", "neutral", "caution", "negative", "exclude"}
 AI_NEGATIVE_TARGETS = {"own", "industry", "competitor", "policy", "none"}
+CLASSIFICATION_DOCUMENT_TYPES = {
+    "risk_event",
+    "routine_statistics",
+    "brand_reputation",
+    "certified_agent",
+    "sponsorship",
+    "regulatory",
+    "industry_news",
+    "company_profile",
+    "other",
+}
+CLASSIFICATION_OWN_ROLES = {"primary", "secondary", "incidental", "absent"}
+CLASSIFICATION_RISK_EVENTS = {
+    "sanction",
+    "fraud",
+    "consumer_harm",
+    "legal",
+    "governance",
+    "reputational",
+    "market",
+    "none",
+}
+DIRECT_ALERT_RISK_EVENTS = {
+    "sanction",
+    "fraud",
+    "consumer_harm",
+    "legal",
+    "governance",
+    "reputational",
+}
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-tree-2026-07-20"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v2-2026-07-23"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -407,6 +437,8 @@ def configure_context_rules(rows: list[dict] | None) -> None:
                 "trigger_terms": triggers,
                 "required_terms": [str(item).strip() for item in row.get("required_terms") or [] if str(item).strip()],
                 "exclude_terms": [str(item).strip() for item in row.get("exclude_terms") or [] if str(item).strip()],
+                "trigger_mode": str(row.get("trigger_mode") or "any").strip().lower(),
+                "required_mode": str(row.get("required_mode") or "any").strip().lower(),
                 "priority": int(row.get("priority") or 100),
             }
         )
@@ -532,6 +564,209 @@ def article_context_text(article: dict, limit: int = 1800) -> str:
     return text[:limit]
 
 
+def original_article_text(article: dict, limit: int = 12000) -> str:
+    """Return only source text, excluding generated summaries and search keywords."""
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    parts = [
+        article.get("title", ""),
+        article.get("description", ""),
+        article.get("content", ""),
+        article.get("body", ""),
+        article.get("summary", ""),
+        raw.get("title", ""),
+        raw.get("description", ""),
+        raw.get("content", ""),
+        raw.get("body", ""),
+    ]
+    return re.sub(r"\s+", " ", " ".join(str(part or "") for part in parts)).strip()[:limit]
+
+
+def original_article_title(article: dict) -> str:
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    return re.sub(
+        r"\s+",
+        " ",
+        " ".join(str(value or "") for value in (article.get("title"), raw.get("title"))),
+    ).strip()
+
+
+def own_reference_windows(article: dict, radius: int = 220) -> list[str]:
+    text = original_article_text(article)
+    windows: list[str] = []
+    for match in re.finditer(r"인카금융서비스|인카금융", text, re.I):
+        start = max(0, match.start() - radius)
+        end = min(len(text), match.end() + radius)
+        windows.append(text[start:end])
+    return windows
+
+
+def direct_own_risk_relation_text(article: dict) -> str:
+    """Return source spans where the company is grammatically close to a risk event."""
+    own = r"(?:인카금융서비스|인카금융)"
+    direct_risk = (
+        r"(?:제재|처분|등록\s*취소|업무\s*정지|과태료|검사\s*(?:착수|대상)|"
+        r"조사\s*(?:착수|대상)|불완전판매|부당승환|보험사기|편취|불법\s*사채|"
+        r"횡령|배임|압수수색|기소|소송|내부통제|관리\s*(?:부실|구멍)|"
+        r"스캔들|약탈\s*영업|그늘|과제\s*직면|논란|의혹|비판)"
+    )
+    matches: list[str] = []
+    for window in own_reference_windows(article):
+        if re.search(rf"{own}.{{0,180}}{direct_risk}|{direct_risk}.{{0,180}}{own}", window, re.I | re.S):
+            matches.append(window)
+    return " ".join(matches)
+
+
+def classify_own_role(article: dict) -> str:
+    """Describe whether Incar is the subject, a comparison member, or a career footnote."""
+    text = original_article_text(article)
+    if not contains_own_name(text):
+        return "absent"
+    title = original_article_title(article)
+    if contains_own_name(title):
+        return "primary"
+    relation_text = direct_own_risk_relation_text(article)
+    if relation_text:
+        return "primary"
+    incidental = re.search(
+        r"(?:인카금융서비스|인카금융).{0,90}(?:출신|거쳐|역임|근무|재직|경력|본부장\s*등을\s*거쳐)|"
+        r"(?:출신|거쳐|역임|근무|재직|경력).{0,90}(?:인카금융서비스|인카금융)",
+        text,
+        re.I | re.S,
+    )
+    if incidental:
+        return "incidental"
+    return "secondary"
+
+
+def classify_risk_event_type(article: dict, own_role: str | None = None) -> str:
+    own_role = own_role or classify_own_role(article)
+    if own_role in {"absent", "incidental"}:
+        return "none"
+    relation_text = direct_own_risk_relation_text(article)
+    if not relation_text and contains_own_name(original_article_title(article)):
+        relation_text = " ".join([original_article_title(article), *own_reference_windows(article)])
+    if not relation_text:
+        return "none"
+    patterns = (
+        ("sanction", r"제재|처분|등록\s*취소|업무\s*정지|과태료|검사\s*(?:착수|대상)|조사\s*(?:착수|대상)"),
+        ("fraud", r"보험사기|편취|고의\s*교통사고|허위\s*입원|불법\s*사채|횡령|배임|사기"),
+        ("consumer_harm", r"불완전판매|부당승환|소비자\s*피해|보험\s*꺾기|민원"),
+        ("legal", r"압수수색|기소|검찰|경찰\s*수사|소송"),
+        ("governance", r"내부통제|관리\s*(?:부실|구멍)|영업\s*관리\s*부실"),
+        ("reputational", r"스캔들|약탈\s*영업|그늘|과제\s*직면|논란|의혹|비판"),
+        ("market", r"주가.{0,30}(?:하락|급락)|52주\s*최저가|목표가\s*하향|투자의견\s*하향|실적\s*감소"),
+    )
+    for event_type, pattern in patterns:
+        if re.search(pattern, relation_text, re.I | re.S):
+            return event_type
+    return "none"
+
+
+def classify_document_type(article: dict, own_role: str | None = None, risk_event_type: str | None = None) -> str:
+    if is_routine_ga_channel_performance_article(article):
+        return "routine_statistics"
+    if is_own_brand_reputation_leader_article(article) or is_competitor_brand_reputation_against_own(article):
+        return "brand_reputation"
+    if is_own_certified_agent_performance_article(article):
+        return "certified_agent"
+    if is_own_sponsored_sports_article(article):
+        return "sponsorship"
+    own_role = own_role or classify_own_role(article)
+    risk_event_type = risk_event_type or classify_risk_event_type(article, own_role)
+    if risk_event_type != "none":
+        return "risk_event"
+    if own_role == "incidental":
+        return "company_profile"
+    category = str(article.get("_category") or article.get("category") or "").strip()
+    if category == "regulation":
+        return "regulatory"
+    if category in {"competitor", "industry", "own"}:
+        return "industry_news"
+    return "other"
+
+
+def build_classification_contract(article: dict, context: dict | None = None) -> dict:
+    """Build a durable decision contract separate from category and tone labels."""
+    context = dict(context or {})
+    own_role = classify_own_role(article)
+    risk_event_type = classify_risk_event_type(article, own_role)
+    document_type = classify_document_type(article, own_role, risk_event_type)
+    source_evidence = direct_own_risk_relation_text(article)
+    context_evidence = str(context.get("evidence") or "").strip()
+    evidence_present = bool(source_evidence or context_evidence)
+    negative_shape = (
+        context.get("category") == "own"
+        and context.get("tone") == "negative"
+        and context.get("own_mentioned") is True
+        and context.get("negative_target") == "own"
+    )
+    alert_eligible = bool(
+        negative_shape
+        and own_role == "primary"
+        and document_type == "risk_event"
+        and risk_event_type in DIRECT_ALERT_RISK_EVENTS
+        and evidence_present
+    )
+    return {
+        "classification_ruleset_version": classification_ruleset_version(),
+        "document_type": document_type,
+        "own_role": own_role,
+        "risk_event_type": risk_event_type,
+        "alert_eligible": alert_eligible,
+        "classification_decision_path": {
+            "negative_shape": negative_shape,
+            "own_is_primary": own_role == "primary",
+            "direct_risk_event": risk_event_type in DIRECT_ALERT_RISK_EVENTS,
+            "source_evidence": bool(source_evidence),
+        },
+    }
+
+
+def apply_classification_contract(article: dict, context: dict) -> dict:
+    """Enforce alert gates and downgrade stale/ambiguous direct-negative labels."""
+    result = dict(context or {})
+    contract = build_classification_contract(article, result)
+    direct_negative_shape = (
+        result.get("category") == "own"
+        and result.get("tone") == "negative"
+        and result.get("negative_target") == "own"
+    )
+    if direct_negative_shape and not contract["alert_eligible"]:
+        if contract["own_role"] == "incidental":
+            result["category"] = "other"
+            result["tone"] = "neutral"
+            result["clipping_recommended"] = False
+        elif contract["document_type"] in {
+            "routine_statistics",
+            "brand_reputation",
+            "certified_agent",
+            "sponsorship",
+            "company_profile",
+        }:
+            result["tone"] = "neutral"
+        else:
+            result["tone"] = "caution"
+        result["negative_target"] = "none"
+        result["provider"] = "rules:classification_contract_v2"
+        result["reason"] = (
+            "당사 직접 리스크 경보 요건(당사 주체·구체적 사건·원문 근거)을 모두 충족하지 않아 경보에서 제외"
+        )
+        contract = build_classification_contract(article, result)
+    result.update(contract)
+    article["_category"] = result.get("category") or article.get("_category") or "other"
+    article["_tone"] = result.get("tone") or article.get("_tone") or "neutral"
+    article["category"] = article["_category"]
+    article["tone"] = article["_tone"]
+    article["_ai_context"] = result
+    article["classification_ruleset_version"] = result["classification_ruleset_version"]
+    article["document_type"] = result["document_type"]
+    article["own_role"] = result["own_role"]
+    article["risk_event_type"] = result["risk_event_type"]
+    article["alert_eligible"] = result["alert_eligible"]
+    article["classification_decision_path"] = result["classification_decision_path"]
+    return result
+
+
 def should_ai_context_review(article: dict) -> bool:
     """Send only decision-sensitive articles to Gemini.
 
@@ -541,6 +776,14 @@ def should_ai_context_review(article: dict) -> bool:
     if article.get("_feedback_applied"):
         return False
     if is_non_business_noise(article):
+        return False
+    if (
+        is_routine_ga_channel_performance_article(article)
+        or is_own_brand_reputation_leader_article(article)
+        or is_own_certified_agent_performance_article(article)
+        or is_own_sponsored_sports_article(article)
+        or classify_own_role(article) == "incidental"
+    ):
         return False
     category = article.get("_category") or categorize(article)
     tone = article.get("_tone") or analyze_tone(article)
@@ -807,8 +1050,7 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         article["_tone"] = result["tone"]
         article["category"] = result["category"]
         article["tone"] = result["tone"]
-        article["_ai_context"] = result
-        return result
+        return apply_classification_contract(article, result)
 
     if is_own_sponsored_sports_article(article):
         result["category"] = "sponsorship"
@@ -822,8 +1064,7 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         article["_tone"] = result["tone"]
         article["category"] = result["category"]
         article["tone"] = result["tone"]
-        article["_ai_context"] = result
-        return result
+        return apply_classification_contract(article, result)
 
     if is_routine_ga_channel_performance_article(article):
         result["category"] = routine_ga_channel_performance_category(article)
@@ -849,8 +1090,7 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         article["_tone"] = result["tone"]
         article["category"] = result["category"]
         article["tone"] = result["tone"]
-        article["_ai_context"] = result
-        return result
+        return apply_classification_contract(article, result)
 
     if is_own_article(article):
         result["own_mentioned"] = True
@@ -968,8 +1208,7 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     article["_tone"] = result["tone"]
     article["category"] = result["category"]
     article["tone"] = result["tone"]
-    article["_ai_context"] = result
-    return result
+    return apply_classification_contract(article, result)
 
 
 def should_recommend_clipping(article: dict, context: dict) -> bool:
@@ -1011,13 +1250,7 @@ def build_clipping_reason(article: dict, context: dict) -> str:
 
 def is_direct_own_negative_article(article: dict) -> bool:
     context = apply_context_safety_guardrails(article, article.get("_ai_context"))
-    return (
-        context.get("category") == "own"
-        and context.get("tone") == "negative"
-        and context.get("own_mentioned") is True
-        and context.get("negative_target") == "own"
-        and bool(context.get("evidence"))
-    )
+    return context.get("alert_eligible") is True
 
 
 def score_article(article: dict) -> int:
@@ -1891,9 +2124,13 @@ def context_rule_matches(text: str, rule: dict) -> bool:
     excluded = rule.get("exclude_terms") or []
     if excluded and any(term in text for term in excluded):
         return False
-    if triggers and not any(term in text for term in triggers):
+    trigger_mode = str(rule.get("trigger_mode") or "any").lower()
+    required_mode = str(rule.get("required_mode") or "any").lower()
+    trigger_matched = all(term in text for term in triggers) if trigger_mode == "all" else any(term in text for term in triggers)
+    required_matched = all(term in text for term in required) if required_mode == "all" else any(term in text for term in required)
+    if triggers and not trigger_matched:
         return False
-    if required and not any(term in text for term in required):
+    if required and not required_matched:
         return False
     return True
 

@@ -849,6 +849,7 @@ def finish_watch_run(
 
 def main() -> None:
     load_dotenv()
+    news_collector.configure_context_rules_from_supabase()
     base_minutes_back = int(os.getenv("NEGATIVE_WATCH_MINUTES", "10"))
     minutes_back = effective_minutes_back(base_minutes_back)
     scanned_at = now_kst().isoformat()
