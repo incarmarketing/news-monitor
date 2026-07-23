@@ -172,6 +172,45 @@ class NegativeWatchPersistenceTests(unittest.TestCase):
         self.assertEqual(article["_category"], "industry")
         self.assertEqual(article["_tone"], "neutral")
 
+    def test_insjournal_monthly_market_share_series_never_alerts(self) -> None:
+        titles = [
+            "동양생명 6월 GA 생보실적 M/S… 영진에셋 22.6%로 1위 탈환, 상위 3개사 44.4% 점유",
+            "푸본현대생명 6월 GA 생보실적 M/S… 글로벌금융 1위 굳히기, 메가인포에셋 2위",
+            "메트라이프생명 6월 GA 생보실적 M/S… 상위 3사 점유율 30.4%, 뉴니케 2위",
+            "IM라이프 6월 GA 생보실적 M/S… 에이플러스 선두 수성 속 아너스금융 탑5 진입",
+            "KDB생명 6월 GA 생보실적 M/S… 지에이코리아 제친 사랑모아, 상위권 판도 요동",
+            "DB생명 6월 GA 생보실적 M/S… 스카이블루에셋 36.4%",
+        ]
+        for title in titles:
+            with self.subTest(title=title):
+                article = {
+                    "title": title,
+                    "description": (
+                        "월간 GA 채널별 판매실적과 시장점유율을 비교한 통계 기사이며 "
+                        "인카금융서비스 순위와 점유율도 표에 함께 기재됐다."
+                    ),
+                    "source": "보험저널",
+                    "keyword": "인카금융서비스",
+                    "keyword_category": "own",
+                    "_category": "own",
+                    "_tone": "negative",
+                    "_ai_context": {
+                        "category": "own",
+                        "tone": "negative",
+                        "own_mentioned": True,
+                        "negative_target": "own",
+                        "provider": "legacy-cache",
+                    },
+                }
+
+                negatives, _metrics = negative_watch.find_negative_articles([article])
+
+                self.assertEqual(negatives, [])
+                self.assertEqual(article["_category"], "industry")
+                self.assertEqual(article["_tone"], "neutral")
+                self.assertFalse(article["alert_eligible"])
+                self.assertEqual(article["document_type"], "routine_statistics")
+
 
 if __name__ == "__main__":
     unittest.main()
