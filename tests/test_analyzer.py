@@ -20,9 +20,9 @@ class AnalyzerRuleVersionTests(unittest.TestCase):
                     "rule_key": "sample",
                     "category": "industry",
                     "tone": "neutral",
-                    "keyword": "sample keyword",
-                    "required_context": "",
-                    "excluded_context": "",
+                    "trigger_terms": ["sample keyword"],
+                    "required_terms": [],
+                    "exclude_terms": [],
                     "priority": 20,
                 }
             ]
@@ -360,6 +360,28 @@ class AnalyzerToneTests(unittest.TestCase):
         self.assertEqual(article["_category"], "industry")
         self.assertFalse(analyzer.is_own_positive_focus_article(article))
         self.assertEqual(analyzer.analyze_tone(article), "neutral")
+
+    def test_insurer_monthly_ga_market_share_series_is_industry_neutral(self) -> None:
+        titles = [
+            "동양생명 6월 GA 생보실적 M/S… 영진에셋 22.6%로 1위 탈환, 상위 3개사 44.4% 점유",
+            "푸본현대생명 6월 GA 생보실적 M/S… 글로벌금융 1위 굳히기, 메가인포에셋 2위",
+            "메트라이프생명 6월 GA 생보실적 M/S… 상위 3사 점유율 30.4%, 뉴니케 2위",
+            "IM라이프 6월 GA 생보실적 M/S… 에이플러스 선두 수성 속 아너스금융 탑5 진입",
+            "KDB생명 6월 GA 생보실적 M/S… 지에이코리아 제친 사랑모아, 상위권 판도 요동",
+            "DB생명 6월 GA 생보실적 M/S… 스카이블루에셋 36.4%",
+        ]
+        for title in titles:
+            with self.subTest(title=title):
+                article = {
+                    "title": title,
+                    "description": "인카금융서비스도 GA 판매실적 순위에 포함됐다.",
+                    "keyword": "인카금융서비스",
+                    "keyword_category": "own",
+                }
+                self.assertTrue(analyzer.is_routine_ga_channel_performance_article(article))
+                self.assertEqual(analyzer.categorize(article), "industry")
+                self.assertEqual(analyzer.analyze_tone(article), "neutral")
+                self.assertFalse(analyzer.is_direct_own_negative_article(article))
 
     def test_stale_negative_cache_is_overridden_for_routine_ga_performance(self) -> None:
         article = {

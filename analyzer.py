@@ -1126,82 +1126,83 @@ def is_own_brand_reputation_leader_article(article: dict) -> bool:
     """
     title = str(article.get("title") or "")
     text = article_summary_text(article)
-    haystack = f"{title} {text}"
-    unicode_haystack = re.sub(r"\s+", "", haystack)
-    if re.search(r"\uBE0C\uB79C\uB4DC\uD3C9\uD310|\uD3C9\uD310", unicode_haystack, re.I):
+    if not contains_own_name(text):
+        return False
+    if not re.search(r"브랜드평판|평판\s*(?:랭킹|순위)", text, re.I):
+        return False
+
+    competitor_name_re = re.compile(
+        r"한화생명금융서비스|에이플러스에셋|피플라이프|지에이코리아|글로벌금융판매|"
+        r"메가금융서비스|리치앤코|한국보험금융|프라임에셋",
+        re.I,
+    )
+
+    def segment_has_own_leader(segment: str) -> bool:
+        compact = re.sub(r"\s+", "", str(segment or ""))
+        if not compact or not re.search(r"브랜드평판|평판", compact, re.I):
+            return False
         own_positions = [
             match.start()
             for match in re.finditer(
-                r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735",
-                unicode_haystack,
+                r"인카금융서비스|인카금융",
+                compact,
                 re.I,
             )
         ]
         leader_positions = [
             match.start()
             for match in re.finditer(
-                r"1\uC704|\uC120\uB450|\uC815\uC0C1|\uCD5C\uACE0|\uC218\uC131|\uD0C8\uD658",
-                unicode_haystack,
+                r"1위|선두|정상|최고|수성|탈환",
+                compact,
                 re.I,
             )
         ]
         follower_positions = [
             match.start()
             for match in re.finditer(
-                r"2\uC704|3\uC704|\uB4A4\uC774\uC5B4|\uCD08\uBC15\uBE59|\uCD94\uACA9",
-                unicode_haystack,
+                r"2위|3위|뒤이어|초박빙|추격",
+                compact,
                 re.I,
             )
         ]
-        competitor_name_re = re.compile(
-            r"\uD55C\uD654\uC0DD\uBA85\uAE08\uC735\uC11C\uBE44\uC2A4|\uC5D0\uC774\uD50C\uB7EC\uC2A4\uC5D0\uC14B|"
-            r"\uD53C\uD50C\uB77C\uC774\uD504|\uC9C0\uC5D0\uC774\uCF54\uB9AC\uC544|\uAE00\uB85C\uBC8C\uAE08\uC735\uD310\uB9E4|"
-            r"\uBA54\uAC00\uAE08\uC735\uC11C\uBE44\uC2A4|\uB9AC\uCE58\uC564\uCF54|\uD55C\uAD6D\uBCF4\uD5D8\uAE08\uC735|"
-            r"\uD504\uB77C\uC784\uC5D0\uC14B",
-            re.I,
-        )
         for own_pos in own_positions:
             for leader_pos in leader_positions:
                 own_before_leader = leader_pos >= own_pos and leader_pos - own_pos <= 90
                 leader_before_own = own_pos > leader_pos and own_pos - leader_pos <= 60
-                if own_before_leader and not any(own_pos <= pos < leader_pos for pos in follower_positions):
+                between = compact[min(own_pos, leader_pos):max(own_pos, leader_pos)]
+                if (
+                    own_before_leader
+                    and not any(own_pos <= pos < leader_pos for pos in follower_positions)
+                    and not competitor_name_re.search(between)
+                ):
                     return True
                 if (
                     leader_before_own
                     and not any(leader_pos <= pos < own_pos for pos in follower_positions)
-                    and not competitor_name_re.search(unicode_haystack[max(0, leader_pos - 70):leader_pos])
-                    and not competitor_name_re.search(unicode_haystack[leader_pos:own_pos])
+                    and not competitor_name_re.search(compact[max(0, leader_pos - 70):leader_pos])
+                    and not competitor_name_re.search(between)
                 ):
                     return True
-    if not contains_own_name(haystack):
-        return False
-    if not re.search(r"브랜드평판|평판\s*(?:랭킹|순위)", haystack, re.I):
         return False
 
-    compact_title = re.sub(r"\s+", "", title)
-    compact_text = re.sub(r"\s+", "", haystack)
-    own_terms = ("인카금융서비스", "인카금융")
-    leader_terms = ("1위", "선두", "정상", "최고", "수성", "탈환")
-    follower_terms = ("2위", "3위", "뒤이어", "초박빙", "추격")
-
-    def positions(source: str, terms: tuple[str, ...]) -> list[int]:
-        return [idx for term in terms for idx in [source.find(term)] if idx >= 0]
-
-    own_positions = positions(compact_title, own_terms)
-    leader_positions = positions(compact_title, leader_terms)
-    if own_positions and leader_positions:
-        own_pos = min(own_positions)
-        leader_pos = min(leader_positions)
-        follower_positions = positions(compact_title, follower_terms)
-        own_is_before_leader = 0 <= own_pos <= leader_pos and leader_pos - own_pos <= 90
-        own_is_follower_before_leader = any(own_pos <= pos < leader_pos for pos in follower_positions)
-        if own_is_before_leader and not own_is_follower_before_leader:
-            return True
-
-    own_leader_pattern = r"(?:인카금융서비스|인카금융).{0,90}(?:브랜드평판|평판).{0,90}(?:1위|선두|정상|최고|수성|탈환)"
-    if re.search(own_leader_pattern, compact_text, re.I):
+    if segment_has_own_leader(title):
         return True
-    return False
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    supporting_text = " ".join(
+        str(value or "")
+        for value in (
+            article.get("description"),
+            article.get("content"),
+            article.get("body"),
+            raw.get("description"),
+            raw.get("content"),
+            raw.get("body"),
+        )
+    )
+    return any(
+        segment_has_own_leader(segment)
+        for segment in re.split(r"[.!?。！？\n]+", supporting_text)
+    )
 
 
 def compact_evidence_sentence(value: object, limit: int = 120) -> str:
@@ -2054,6 +2055,8 @@ def analyze_tone(article: dict) -> str:
         return "neutral"
     if is_own_direct_negative_article(article):
         return "negative"
+    if is_own_sales_performance_positive_article(article):
+        return "positive"
     if is_own_brand_reputation_leader_article(article):
         return "positive"
     if is_own_certified_agent_performance_article(article):
@@ -2378,6 +2381,8 @@ def is_own_direct_negative_article(article: dict) -> bool:
     if is_routine_ga_channel_performance_article(article):
         return False
     if is_own_sales_performance_positive_article(article):
+        return False
+    if is_investment_downgrade_article(article) or is_stock_decline_article(article):
         return False
     text = article_summary_text(article)
     if is_own_supervisory_sanction_article(article):

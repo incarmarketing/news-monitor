@@ -300,7 +300,7 @@ def is_within_minutes(article: dict, minutes_back: int) -> bool:
 def analyze_watch_articles(articles: list[dict]) -> tuple[list[dict], dict]:
     apply_classification_feedback_to_articles(articles)
     apply_cached_analysis_to_articles(articles)
-    articles = classification_normalizer.normalize_articles(articles)
+    articles = classification_normalizer.normalize_articles(articles, inplace=True)
     return analyzer.analyze(articles, top_n=max(len(articles), 1))
 
 
