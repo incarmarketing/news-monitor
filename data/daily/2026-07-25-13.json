@@ -1,0 +1,185 @@
+{
+  "date": "2026-07-25",
+  "timestamp": "2026-07-25T13:10:55.750735+09:00",
+  "window": {
+    "slot": "13",
+    "label": "당일 08:00~13:00",
+    "short_label": "오전 08~13시",
+    "start": "2026-07-25T08:00:00+09:00",
+    "end": "2026-07-25T13:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 9,
+    "total_after_cluster": 9,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 1,
+      "industry": 8,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 3,
+      "neutral": 6,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "classification_ruleset_version": "classification-contract-v2-2026-07-23:9ba593df647a",
+    "ai_model_used": "rules_fallback",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-26 13:10 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론\n당사 직접 이슈보다 \"EU, 한국의 러시아산 LNG 수입 제재 면제…잔여 물량 2…\" 등 업계 흐름이 중심입니다.\n\n## 핵심 이슈\n- [2] EU, 한국의 러시아산 LNG 수입 제재 면제…잔여…: 이에 따라 한국가스공사는 EU 소재 보험사와 재보험사 등의 서비스를 이용해 러시아산 LNG를 국내로 들…\n- [3] 자동차보험 민원·소송 증가…\"보험금 산정 기준 손질해…: 금융감독원이 발표한 2025년 손해보험권 민원은 4만 8281건으로 전년 대비 19.6% 증가했다 과실…\n\n## 지표 해석\n전체 수집 9건 중 분석 대상은 9건입니다. 당사 0건은 긍정 0, 주의 0, 중립 0, 부정 0건으로 나눕니다. 정책/규제 0건, 경쟁/업계 9건이며 전체 주의 3건과 부정 0건은 별도 관찰합니다.\n\n\n## 분석 키워드\n보험사, 손해보험",
+  "articles": [
+    {
+      "title": "KB금융, 유튜브 인기 콘텐츠 '별방' 첫 오프라인 무대로… 26일 '수면 콘...",
+      "link": "http://www.worktoday.co.kr/news/articleView.html?idxno=87128",
+      "source": "worktoday.co.kr",
+      "keyword": "손해보험",
+      "description": "앞으로는 콘텐츠 차원을 넘어 KB손해보험, KB라이프생명 등 보험 계열사와 연계해 청년 고객의 건강한 삶을 지원하는 상품·서비스로 영역을 넓혀갈 계획이라고 덧붙였다. KB금융은 그동안 '별방'에 일반인 출연자를...",
+      "_summary": "앞으로는 콘텐츠 차원을 넘어 KB손해보험, KB라이프생명 등 보험 계열사와 연계해 청년 고객의 건강한 삶을 지원하는 상품·서비스로 영역을 넓혀갈 계획이라고 덧붙였다 KB금융은 그동안 '별방'에 일반인 출연자를. KB금융, 유튜브 인기 콘텐츠 '별방' 첫 오프라인 무대로… 26일 '수면 콘.",
+      "pub_date": "Sat, 25 Jul 2026 10:54:00 +0900",
+      "_report_id": 1,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "EU, 한국의 러시아산 LNG 수입 제재 면제…잔여 물량 200만t 도입 전망",
+      "link": "https://www.sentv.co.kr/article/view/sentv202607250008",
+      "source": "sentv.co.kr",
+      "keyword": "보험사",
+      "description": "이에 따라 한국가스공사는 EU 소재 보험사와 재보험사 등의 서비스를 이용해 러시아산 LNG를 국내로 들여올 수 있게 됐다. 가스공사는 사할린Ⅱ 프로젝트와 체결한 장기계약에 따라 2008년 4월부터 2028년 3월까지...",
+      "_summary": "이에 따라 한국가스공사는 EU 소재 보험사와 재보험사 등의 서비스를 이용해 러시아산 LNG를 국내로 들여올 수 있게 됐다 가스공사는 사할린Ⅱ 프로젝트와 체결한 장기계약에 따라 2008년 4월부터 2028년 3월까지. EU, 한국의 러시아산 LNG 수입 제재 면제…잔여 물량 200만t 도입 전망.",
+      "pub_date": "Sat, 25 Jul 2026 12:06:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "자동차보험 민원·소송 증가…\"보험금 산정 기준 손질해야\"",
+      "link": "https://www.edaily.co.kr/news/newspath.asp?newsid=02102486645518128",
+      "source": "이데일리",
+      "keyword": "손해보험",
+      "description": "금융감독원이 발표한 2025년 손해보험권 민원은 4만 8281건으로 전년 대비 19.6% 증가했다. 과실비율 분쟁심의 청구 건수도 2019년 10만 2456건에서 2024년 15만 6812건으로 연평균 8.9% 늘었다. 자동차보험 수리 건수 대비...",
+      "_summary": "금융감독원이 발표한 2025년 손해보험권 민원은 4만 8281건으로 전년 대비 19.6% 증가했다 과실비율 분쟁심의 청구 건수도 2019년 10만 2456건에서 2024년 15만 6812건으로 연평균 8.9% 늘었다 자동차보험 수리 건수 대비.",
+      "pub_date": "Sat, 25 Jul 2026 11:02:00 +0900",
+      "_report_id": 3,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "롯데손보 매각전 다시 꿈틀…신한금융 발언에 '기대감'",
+      "link": "https://www.ntoday.co.kr/news/articleView.html?idxno=128384",
+      "source": "ntoday.co.kr",
+      "keyword": "손해보험",
+      "description": "롯데손해보험 매각전이 다시 수면 위로 올랐다. 신한금융그룹이 롯데손보를 포함한 인수·합병(M&A) 가능성을 공식 언급하면서 가격과 거래 조건을 둘러싼 시각차로 소강상태에 접어들었던 매각 작업에도 다시 온기가...",
+      "_summary": "롯데손해보험 매각전이 다시 수면 위로 올랐다 신한금융그룹이 롯데손보를 포함한 인수·합병(M&A) 가능성을 공식 언급하면서 가격과 거래 조건을 둘러싼 시각차로 소강상태에 접어들었던 매각 작업에도 다시 온기가. 롯데손보 매각전 다시 꿈틀…신한금융 발언에 '기대감'.",
+      "pub_date": "Sat, 25 Jul 2026 10:34:00 +0900",
+      "_report_id": 4,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "‘8주 룰’ 멈춘 사이 한방 진료비 껑충…손보업계, 자생 ‘보험사기 혐...",
+      "link": "https://www.ddaily.co.kr/page/view/2026072115221228744",
+      "source": "ddaily.co.kr",
+      "keyword": "손해보험",
+      "description": "그 사이 한방 진료비는 가파르게 늘었고, 4대 손해보험사는 자생의료재단과 자생한방병원 등을 보험사기 혐의로 고소했다. 경찰 수사까지 시작되면서 자동차보험 제도 개선 논의가 다시 속도를 낼지 주목된다. 25일...",
+      "_summary": "그 사이 한방 진료비는 가파르게 늘었고, 4대 손해보험사는 자생의료재단과 자생한방병원 등을 보험사기 혐의로 고소했다 경찰 수사까지 시작되면서 자동차보험 제도 개선 논의가 다시 속도를 낼지 주목된다 ‘8주 룰’ 멈춘 사이 한방 진료비 껑충…손보업계, 자생 ‘보험사기 혐.",
+      "pub_date": "Sat, 25 Jul 2026 09:00:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "몸값 반토막에도…신한금융, 롯데손보 인수 신중한 이유",
+      "link": "https://www.edaily.co.kr/news/newspath.asp?newsid=01915526645518128",
+      "source": "이데일리",
+      "keyword": "손해보험",
+      "description": "신한금융그룹이 롯데손해보험(000400) 인수를 두고 셈법 고심을 이어가고 있다. 롯데손보 예상 매각 가격이 과거 대비 반토막 밑으로 떨어졌지만, 신한금융의 밸류업 기준을 충족하는 동시에 인수 후 자본확충...",
+      "_summary": "신한금융그룹이 롯데손해보험(000400) 인수를 두고 셈법 고심을 이어가고 있다 롯데손보 예상 매각 가격이 과거 대비 반토막 밑으로 떨어졌지만, 신한금융의 밸류업 기준을 충족하는 동시에 인수 후 자본확충. 몸값 반토막에도…신한금융, 롯데손보 인수 신중한 이유.",
+      "pub_date": "Sat, 25 Jul 2026 08:32:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "고환율 장기화에 보험사 헤지 비용 비상…\"환헤지 탄력적으로 가야\"",
+      "link": "https://www.edaily.co.kr/news/newspath.asp?newsid=01886006645518128",
+      "source": "이데일리",
+      "keyword": "손해보험",
+      "description": "25일 한국금융연권이 발간한 ‘고환율이 보험산업에 미치는 영향과 대응 과제’ 논단에 따르면 지난해 말 기준 국내 보험업권의 외화자산은 약 172조 5000억원(생명보험사 127조원, 손해보험사 46조원)으로 전체...",
+      "_summary": "25일 한국금융연권이 발간한 ‘고환율이 보험산업에 미치는 영향과 대응 과제’ 논단에 따르면 지난해 말 기준 국내 보험업권의 외화자산은 약 172조 5000억원(생명보험사 127조원, 손해보험사 46조원)으로 전체. 고환율 장기화에 보험사 헤지 비용 비상…\"환헤지 탄력적으로 가야\".",
+      "pub_date": "Sat, 25 Jul 2026 08:03:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "하나금융, 밸류업 2.0 공개…\"연내 주주환원율 50% 달성\"",
+      "link": "https://www.econovill.com/news/articleView.html?idxno=746123",
+      "source": "이코노믹리뷰",
+      "keyword": "생명보험",
+      "description": "상반기 기준 하나은행의 ROE는 11.84%인 반면 증권과 카드사는 8%대, 생명보험 등 다른 계열사는 8% 미만에 머물렀다. 박 CFO는 \"그룹의 ROE는 10.62%이지만 경상적인 체력은 11% 가까이 된다고 판단한다\"며 \"비은행...",
+      "_summary": "상반기 기준 하나은행의 ROE는 11.84%인 반면 증권과 카드사는 8%대, 생명보험 등 다른 계열사는 8% 미만에 머물렀다 박 CFO는 \"그룹의 ROE는 10.62%이지만 경상적인 체력은 11% 가까이 된다고 판단한다\"며 \"비은행. 하나금융, 밸류업 2.0 공개…\"연내 주주환원율 50% 달성\".",
+      "pub_date": "Sat, 25 Jul 2026 08:36:00 +0900",
+      "_report_id": 8,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "\"자식 물려줄 돈 없다\"…美 세대 간 자산 이전 ‘균열’",
+      "link": "https://www.edaily.co.kr/news/newspath.asp?newsid=01859766645518128",
+      "source": "이데일리",
+      "keyword": "생명보험",
+      "description": "오하이오주에 거주하는 빌 로건캠프는 치매를 앓는 96세 어머니의 월 1만5000달러(약 2000만원)에 이르는 시설 이용료를 마련하기 위해 가족들과 생명보험을 담보로 대출을 받았다. 대출금이 바닥나면 수십 년째...",
+      "_summary": "오하이오주에 거주하는 빌 로건캠프는 치매를 앓는 96세 어머니의 월 1만5000달러(약 2000만원)에 이르는 시설 이용료를 마련하기 위해 가족들과 생명보험을 담보로 대출을 받았다 대출금이 바닥나면 수십 년째. \"자식 물려줄 돈 없다\"…美 세대 간 자산 이전 ‘균열’.",
+      "pub_date": "Sat, 25 Jul 2026 08:01:00 +0900",
+      "_report_id": 9,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
