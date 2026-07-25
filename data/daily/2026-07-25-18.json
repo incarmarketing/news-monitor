@@ -1,0 +1,101 @@
+{
+  "date": "2026-07-25",
+  "timestamp": "2026-07-25T18:10:06.474497+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-07-25T13:00:00+09:00",
+    "end": "2026-07-25T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 3,
+    "total_after_cluster": 3,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 0,
+      "industry": 3,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 3,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "classification_ruleset_version": "classification-contract-v2-2026-07-23:9ba593df647a",
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-07-26 13:10 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 흐름이 중심이다. 보험금 청구가 간편해졌다. ## 핵심 이슈 - 보험금 청구 간편화 - 금융사 실적 변동 ## 지표 해석 전체 수집 3건 중 분석 대상은 3건이다. 경쟁/업계 3건이다. ## 분석 키워드 손해보험, 생명보험, 보험금",
+  "articles": [
+    {
+      "title": "“보험금 청구 간편해졌네”…지급 속도 빨라지고 서류 절차도 축소",
+      "link": "https://www.mk.co.kr/article/12107329",
+      "source": "매일경제",
+      "keyword": "손해보험",
+      "description": "협회·신용정보원, 마이데이터 활용 정부, 실손24 병원 연계율 높이기로 손해보험사 보험금 신속 지급도↑ 최근 보험금 청구 절차를 줄이고 가입자에게 보험금을 신속하게 지급하는 등 소비자 편의성을 높이려는...",
+      "_summary": "협회·신용정보원, 마이데이터 활용 정부, 실손24 병원 연계율 높이기로 손해보험사 보험금 신속 지급도↑ 최근 보험금 청구 절차를 줄이고 가입자에게 보험금을 신속하게 지급하는 등 소비자 편의성을 높이려는. “보험금 청구 간편해졌네”…지급 속도 빨라지고 서류 절차도 축소.",
+      "pub_date": "Sat, 25 Jul 2026 17:20:00 +0900",
+      "_report_id": 1,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "[5대 금융 상반기] 은행만 잘해서는 부족···KB·신한 선두, 보험 실적...",
+      "link": "https://www.womaneconomy.co.kr/news/articleView.html?idxno=256549",
+      "source": "womaneconomy.co.kr",
+      "keyword": "손해보험",
+      "description": "KB국민카드와 KB캐피탈도 각각 20.7%, 11.3% 늘었지만 KB손해보험은 14.2%, KB라이프생명은 20.4% 감소했다. 은행과 카드가 실적을 받친 가운데 증권 부문이 그룹의 성장 폭을 결정한 셈이다. 신한, 은행 성장 위에 증권...",
+      "_summary": "KB국민카드와 KB캐피탈도 각각 20.7%, 11.3% 늘었지만 KB손해보험은 14.2%, KB라이프생명은 20.4% 감소했다 은행과 카드가 실적을 받친 가운데 증권 부문이 그룹의 성장 폭을 결정한 셈이다 신한, 은행 성장 위에 증권.",
+      "pub_date": "Sat, 25 Jul 2026 17:20:00 +0900",
+      "_report_id": 2,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "삼성생명, 자회사 실적이 끌었다…2분기 순익 8000억원대 전망",
+      "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=471474",
+      "source": "핀포인트뉴스",
+      "keyword": "생명보험",
+      "description": "시장에서는 삼성생명이 대형 생명보험사로서 안정적인 자본력과 투자 역량을 바탕으로 업황 변화에 대응하고 있다는 점에 주목하고 있다. 금리 환경 변화와 금융시장 회복은 보험사의 투자 수익 개선에 긍정적인 영향을...",
+      "_summary": "시장에서는 삼성생명이 대형 생명보험사로서 안정적인 자본력과 투자 역량을 바탕으로 업황 변화에 대응하고 있다는 점에 주목하고 있다 금리 환경 변화와 금융시장 회복은 보험사의 투자 수익 개선에 긍정적인 영향을. 삼성생명, 자회사 실적이 끌었다…2분기 순익 8000억원대 전망.",
+      "pub_date": "Sat, 25 Jul 2026 16:14:00 +0900",
+      "_report_id": 3,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
