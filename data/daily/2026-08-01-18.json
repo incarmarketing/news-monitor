@@ -1,0 +1,101 @@
+{
+  "date": "2026-08-01",
+  "timestamp": "2026-08-01T18:09:27.314036+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-08-01T13:00:00+09:00",
+    "end": "2026-08-01T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 3,
+    "total_after_cluster": 3,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 0,
+      "industry": 2,
+      "sponsorship": 0,
+      "other": 1
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 3,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "classification_ruleset_version": "classification-contract-v2-2026-07-23:9ba593df647a",
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-08-02 13:10 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 이슈가 중심이다. 손해보험과 생명보험 관련 뉴스가 있다. ## 핵심 이슈 - '8주룰' 시행 예정 - 생명보험사회공헌재단 활동 ## 지표 해석 전체 수집 3건 중 분석 대상은 3건이다. 당사 관련 이슈는 없다. ## 분석 키워드 손해보험, 생명보험, 보험사, 자동차보험",
+  "articles": [
+    {
+      "title": "'나이롱 환자' 막는 8주룰 9월 시행 추진…손보업계 한숨 돌릴까",
+      "link": "https://www.mediapen.com/news/view/1113709",
+      "source": "mediapen.com",
+      "keyword": "손해보험",
+      "description": "자동차사고 경상환자의 장기 치료를 관리하기 위한 이른바 ‘8주룰’이 내달 시행될 가능성이 커지면서 손해보험업계가 자동차보험 손해율 개선을 기대하고 있다. 1일 보험업계 등에 따르면 국토교통부는 지난달 30일...",
+      "_summary": "자동차사고 경상환자의 장기 치료를 관리하기 위한 이른바 ‘8주룰’이 내달 시행될 가능성이 커지면서 손해보험업계가 자동차보험 손해율 개선을 기대하고 있다 1일 보험업계 등에 따르면 국토교통부는 지난달 30일. '나이롱 환자' 막는 8주룰 9월 시행 추진…손보업계 한숨 돌릴까.",
+      "pub_date": "Sat, 01 Aug 2026 14:02:00 +0900",
+      "_report_id": 1,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "도움받던 홀몸 어르신, 이웃의 한 끼 챙긴다…‘실버셰프’의 선순환",
+      "link": "https://biz.heraldcorp.com/article/10827808?ref=naver",
+      "source": "헤럴드경제",
+      "keyword": "생명보험",
+      "description": "생명보험사회공헌재단이 운영하는 요리나눔 프로그램 ‘안부를 묻는 할로(hallo) 실버셰프’는 홀몸 어르신의 자립을 지역사회 나눔으로 이어주는 선순환 복지 모델로 주목받고 있다. 1일 보건복지부에 따르면 올해 4월...",
+      "_summary": "생명보험사회공헌재단이 운영하는 요리나눔 프로그램 ‘안부를 묻는 할로(hallo) 실버셰프’는 홀몸 어르신의 자립을 지역사회 나눔으로 이어주는 선순환 복지 모델로 주목받고 있다 1일 보건복지부에 따르면 올해 4월. 도움받던 홀몸 어르신, 이웃의 한 끼 챙긴다…‘실버셰프’의 선순환.",
+      "pub_date": "Sat, 01 Aug 2026 16:01:00 +0900",
+      "_report_id": 2,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "자기 왼팔 자르고 “산재”…5억7000만원 노린 30대의 최후",
+      "link": "https://www.joongang.co.kr/article/25450061",
+      "source": "joongang.co.kr",
+      "keyword": "보험사",
+      "description": "당시 A씨는 보험사 여러 곳으로부터 5억7000만원을 타내려다 보험사기를 의심한 각 회사로부터 거절당해 일부 보험금 편취는 미수에 그쳤다. 재판부는 “범행을 인정하며 반성하고 있고, 같은 사고로 민간...",
+      "_summary": "당시 A씨는 보험사 여러 곳으로부터 5억7000만원을 타내려다 보험사기를 의심한 각 회사로부터 거절당해 일부 보험금 편취는 미수에 그쳤다 재판부는 “범행을 인정하며 반성하고 있고, 같은 사고로 민간.",
+      "pub_date": "Sat, 01 Aug 2026 14:49:00 +0900",
+      "_report_id": 3,
+      "_score": 0,
+      "_category": "other",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
