@@ -1,0 +1,171 @@
+{
+  "date": "2026-08-08",
+  "timestamp": "2026-08-08T18:09:58.643041+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-08-08T13:00:00+09:00",
+    "end": "2026-08-08T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 8,
+    "total_after_cluster": 8,
+    "by_category": {
+      "own": 0,
+      "regulation": 1,
+      "competitor": 1,
+      "industry": 5,
+      "sponsorship": 1,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 1,
+      "neutral": 7,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 1,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 1,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "classification_ruleset_version": "classification-contract-v2-2026-07-23:9ba593df647a",
+    "ai_model_used": "groq:llama-3.3-70b-versatile",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-08-09 08:11 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론 업계 이슈가 중심이다. 보험사 갑질 논란이 제기됐다. ## 핵심 이슈 - 보험사 갑질 논란 - AI 거버넌스 자율성 ## 지표 해석 전체 8건 중 분석 대상은 8건이다. 정책/규제 1건, 경쟁/업계 6건이다. ## 분석 키워드 보험사, 내부통제, 손해보험",
+  "articles": [
+    {
+      "title": "또다시 제기된 보험사의 '갑질' 논란 - 금융감독원 민원 조사중 - mediatoday.asia",
+      "link": "https://news.google.com/rss/articles/CBMiSkFVX3lxTE5CaTNWOGdlWG1LYU13RF9uZ1JPUGtvTlpQdTZwcmNOc05samNMOV9TU2o2LUtyUHp2LVVkNkxVY1ZwOXdEVWtaYkJR?oc=5",
+      "source": "google",
+      "keyword": "보험사",
+      "description": "또다시 제기된 보험사의 '갑질' 논란 - 금융감독원 민원 조사중&nbsp;&nbsp;mediatoday.asia",
+      "_summary": "또다시 제기된 보험사의 '갑질' 논란 - 금융감독원 민원 조사중 mediatoday.asia. 또다시 제기된 보험사의 '갑질' 논란 - 금융감독원 민원 조사중 - mediatoday.asia.",
+      "pub_date": "Sat, 08 Aug 2026 05:30:00 GMT",
+      "_report_id": 1,
+      "_score": 12,
+      "_category": "industry",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "금융硏 \"AI 거버넌스는 자율적으로…금융당국, 원칙 중심 감독해야\"",
+      "link": "https://news.einfomax.co.kr/news/articleView.html?idxno=4429263",
+      "source": "news.einfomax.co.kr",
+      "keyword": "내부통제",
+      "description": "AI 모델에 대한 사전 검증과 승인 절차가 복잡해질수록 AI 기반 서비스 출시가 늦어지고, 감독당국이 요구하는 체크리스트만 따르는 형식적인 내부통제 문화가 자리 잡을 가능성이 있다는 것이다. 내부 승인 절차를...",
+      "_summary": "AI 모델에 대한 사전 검증과 승인 절차가 복잡해질수록 AI 기반 서비스 출시가 늦어지고, 감독당국이 요구하는 체크리스트만 따르는 형식적인 내부통제 문화가 자리 잡을 가능성이 있다는 것이다 내부 승인 절차를. 금융硏 \"AI 거버넌스는 자율적으로…금융당국, 원칙 중심 감독해야\".",
+      "pub_date": "Sat, 08 Aug 2026 14:44:00 +0900",
+      "_report_id": 2,
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“진단비 15만원 지급”…폭염으로 피해 봤다면 보험이 보장한다는데",
+      "link": "https://www.mk.co.kr/article/12121727",
+      "source": "매일경제",
+      "keyword": "손해보험",
+      "description": "KB손해보험은 여행보험에 온열질환·한랭질환 진단비 특약을 추가해 보장하고 있다. 또 동양생명도 여름철 폭염으로 인한 온열질환(열사병·일사병·열탈진 등) 및 겨울철 한파로 인한 한랭질환(동상·저체온증 등)을...",
+      "_summary": "KB손해보험은 여행보험에 온열질환·한랭질환 진단비 특약을 추가해 보장하고 있다 또 동양생명도 여름철 폭염으로 인한 온열질환(열사병·일사병·열탈진 등) 및 겨울철 한파로 인한 한랭질환(동상·저체온증 등)을. “진단비 15만원 지급”…폭염으로 피해 봤다면 보험이 보장한다는데.",
+      "pub_date": "Sat, 08 Aug 2026 15:42:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“10년이면 된다더니 30년” 바뀐 세법에 당황한 사장님…보험사에서 계...",
+      "link": "https://biz.heraldcorp.com/article/10834782?ref=naver",
+      "source": "헤럴드경제",
+      "keyword": "설계사",
+      "description": "상담은 재무설계사가 진행합니다. 다만 세금이나 부동산처럼 깊이 들어가야 하는 대목에서는 국세청에서 근무한 경력이 있는 세무 전문가와 부동산 전문가가 자리에 함께 들어옵니다. 외부 세무법인·부동산 법인과...",
+      "_summary": "상담은 재무설계사가 진행합니다 다만 세금이나 부동산처럼 깊이 들어가야 하는 대목에서는 국세청에서 근무한 경력이 있는 세무 전문가와 부동산 전문가가 자리에 함께 들어옵니다 외부 세무법인·부동산 법인과.",
+      "pub_date": "Sat, 08 Aug 2026 17:01:00 +0900",
+      "_report_id": 4,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "케이타 향후 거취 영향 있나…베로나, 모지치와 계약 연장",
+      "link": "https://www.mydaily.co.kr/page/view/2026080813115189657",
+      "source": "mydaily.co.kr",
+      "keyword": "손해보험",
+      "description": "베로나 구단 움직임에 V-리그 KB손해보험은 신경을 쓸 수 밖에 없다. V-리그는 2026-27시즌을 마치면 외국인 선수 영입이 구단 별 자유선발로 바뀐다. 케이타는 2020-21시즌부터 2021-22시즌까지 KB손해보험에서 뛰며 당시 V...",
+      "_summary": "베로나 구단 움직임에 V-리그 KB손해보험은 신경을 쓸 수 밖에 없다 V-리그는 2026-27시즌을 마치면 외국인 선수 영입이 구단 별 자유선발로 바뀐다 케이타는 2020-21시즌부터 2021-22시즌까지 KB손해보험에서 뛰며 당시 V.",
+      "pub_date": "Sat, 08 Aug 2026 13:13:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“1998년 이후 처음”…美·日, 엔화 방어 나선 이유[주末머니]",
+      "link": "https://view.asiae.co.kr/article/2026080616241095185",
+      "source": "아시아경제",
+      "keyword": "생명보험",
+      "description": "일본 국채 금리와 달러-엔 환율이 폭등하면 일본 생명보험사와 연기금 등 기관투자자의 해외 자산(미국채 등) 투자 메리트가 약화된다. 또한 일본 정부가 국채 금리를 잡기 위해 연금투자펀드(GPIF)의 자국 내 투자...",
+      "_summary": "일본 국채 금리와 달러-엔 환율이 폭등하면 일본 생명보험사와 연기금 등 기관투자자의 해외 자산(미국채 등) 투자 메리트가 약화된다 또한 일본 정부가 국채 금리를 잡기 위해 연금투자펀드(GPIF)의 자국 내 투자. “1998년 이후 처음”…美·日, 엔화 방어 나선 이유[주末머니].",
+      "pub_date": "Sat, 08 Aug 2026 17:00:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "보험금 노리고 회사 건물에 불 지른 60대…항소심서도 실형",
+      "link": "https://www.dailian.co.kr/news/view/1676124/?sc=Naver",
+      "source": "데일리안",
+      "keyword": "보험사",
+      "description": "보험사 2곳으로부터 화재에 따른 보험금을 챙기려 한 혐의도 있다. 화재 이후 보험사 2곳은 A씨의 방화 혐의가 있는 점을 고려해 보험금 지급 보류 결정을 내린 것으로 전해졌다. A씨는 범행 전 보험사 2곳과 각각 보험금...",
+      "_summary": "보험사 2곳으로부터 화재에 따른 보험금을 챙기려 한 혐의도 있다 화재 이후 보험사 2곳은 A씨의 방화 혐의가 있는 점을 고려해 보험금 지급 보류 결정을 내린 것으로 전해졌다 A씨는 범행 전 보험사 2곳과 각각 보험금.",
+      "pub_date": "Sat, 08 Aug 2026 14:32:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "생애 첫 승 노리는 강채연·서어진·장은수, 제주삼다수 FR 챔피언 조 격...",
+      "link": "http://www.stoo.com/article.php?aid=108214927913",
+      "source": "stoo.com",
+      "keyword": "인카금융",
+      "description": "이 중 하나는 올해 6월 인카금융 더헤븐 마스터즈였다. 우승이 없는 세 선수가 챔피언 조에서 마지막 날 경기를 펼치게 된 가운데, 생애 첫 승을 거머쥘 선수는 누구일지 관심이 쏠린다. 김민주와 신다인은 중간합계...",
+      "_summary": "이 중 하나는 올해 6월 인카금융 더헤븐 마스터즈였다 우승이 없는 세 선수가 챔피언 조에서 마지막 날 경기를 펼치게 된 가운데, 생애 첫 승을 거머쥘 선수는 누구일지 관심이 쏠린다 김민주와 신다인은 중간합계.",
+      "pub_date": "Sat, 08 Aug 2026 16:40:00 +0900",
+      "_report_id": 8,
+      "_score": 2,
+      "_category": "sponsorship",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
