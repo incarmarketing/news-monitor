@@ -3488,7 +3488,7 @@ function feedbackErrorMessage(error) {
 function formatFeedMeta(row = {}, hasRelated = false) {
   const parts = [
     row.source,
-    row.keyword || row.category,
+    row.category ? displayCategory(row.category) : "",
     [row.date || row.slot || "", row.time || ""].filter(Boolean).join(" "),
   ].filter(Boolean);
   if (hasRelated) {

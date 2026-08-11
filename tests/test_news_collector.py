@@ -138,6 +138,66 @@ class TradePressCollectorTests(unittest.TestCase):
         self.assertIn("한국보험신문", names)
         self.assertIn("보험신보", names)
 
+    def test_own_press_search_rejects_result_without_company_mention(self) -> None:
+        source = {
+            "name": "보험매일",
+            "base_url": "https://www.fins.co.kr/",
+            "search_url_templates": ["https://www.fins.co.kr/news/search?keyword={query}"],
+            "article_url_patterns": [r'https?://www\.fins\.co\.kr/news/articleView\.html\?idxno=\d+'],
+        }
+        unrelated = {
+            "title": "설계사 근로자성 분쟁 대비해야",
+            "description": "GA업계의 노무관리 부담을 다룬 기사입니다.",
+            "body": "보험설계사의 근로자성을 둘러싼 입법 논의가 본격화했습니다.",
+            "source": "보험매일",
+            "link": "https://www.fins.co.kr/news/articleView.html?idxno=109567",
+        }
+
+        with (
+            patch.object(news_collector, "OWN_PRESS_SEARCH_SOURCES", [source]),
+            patch.object(news_collector, "MANDATORY_OWN_COLLECTION_KEYWORDS", ["인카금융서비스"]),
+            patch.object(
+                news_collector,
+                "collect_source_search_article_urls",
+                return_value=[unrelated["link"]],
+            ),
+            patch.object(news_collector, "fetch_trade_press_article", return_value=unrelated),
+        ):
+            rows = news_collector.fetch_own_press_search_news(limit_per_source=5)
+
+        self.assertEqual(rows, [])
+
+    def test_own_press_search_keeps_result_with_company_mention(self) -> None:
+        source = {
+            "name": "보험매일",
+            "base_url": "https://www.fins.co.kr/",
+            "search_url_templates": ["https://www.fins.co.kr/news/search?keyword={query}"],
+            "article_url_patterns": [r'https?://www\.fins\.co\.kr/news/articleView\.html\?idxno=\d+'],
+        }
+        own_article = {
+            "title": "인카금융서비스, 설계사 교육체계 개편",
+            "description": "인카금융서비스가 교육체계를 개편했습니다.",
+            "body": "인카금융서비스는 현장 지원을 강화한다고 밝혔습니다.",
+            "source": "보험매일",
+            "link": "https://www.fins.co.kr/news/articleView.html?idxno=109568",
+        }
+
+        with (
+            patch.object(news_collector, "OWN_PRESS_SEARCH_SOURCES", [source]),
+            patch.object(news_collector, "MANDATORY_OWN_COLLECTION_KEYWORDS", ["인카금융서비스"]),
+            patch.object(
+                news_collector,
+                "collect_source_search_article_urls",
+                return_value=[own_article["link"]],
+            ),
+            patch.object(news_collector, "fetch_trade_press_article", return_value=own_article),
+        ):
+            rows = news_collector.fetch_own_press_search_news(limit_per_source=5)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["keyword"], "인카금융서비스")
+        self.assertEqual(rows[0]["keyword_category"], "own")
+
     def test_trade_press_body_can_make_article_relevant_to_own_company(self) -> None:
         article = {
             "title": "상위권 GA, 상반기 마지막 달 호실적 마감",

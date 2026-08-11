@@ -648,7 +648,7 @@ def fetch_own_press_search_news(limit_per_source: int | None = None) -> list[dic
                     continue
                 seen_links.add(normalized)
                 article = fetch_trade_press_article(source, url)
-                if article:
+                if article and analyzer.is_own_article(article):
                     article["keyword"] = query
                     article["keyword_query"] = query
                     article["keyword_category"] = "own"
