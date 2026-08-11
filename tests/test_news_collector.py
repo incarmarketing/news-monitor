@@ -12,6 +12,12 @@ KST = timezone(timedelta(hours=9))
 
 
 class CollectionWindowFilterTests(unittest.TestCase):
+    def test_iso_original_timestamp_is_parsed(self) -> None:
+        parsed = news_collector.parse_pub_date("2026-04-30T04:00:00+09:00")
+
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.isoformat(), "2026-04-29T19:00:00+00:00")
+
     def test_missing_pub_date_is_excluded_from_scheduled_window(self) -> None:
         window = {
             "start": datetime(2026, 6, 5, 8, 0, tzinfo=KST),

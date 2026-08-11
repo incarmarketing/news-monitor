@@ -8,6 +8,7 @@ article appears.
 from __future__ import annotations
 
 import hashlib
+import html
 import json
 import math
 import os
@@ -203,10 +204,76 @@ def dashboard_refresh_due(scanned_at: str, *, negative_count: int, new_negative_
     return should_refresh
 
 
-def article_key(article: dict) -> str:
+def legacy_article_key(article: dict) -> str:
     raw = article.get("link") or article.get("article_hash") or article.get("title", "")
-    normalized = re.sub(r"\s+", " ", raw).strip().lower()
+    normalized = re.sub(r"\s+", " ", str(raw)).strip().lower()
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
+
+
+def article_key(article: dict) -> str:
+    # Portal RSS links are regenerated even when the underlying article is the
+    # same.  Alerts therefore use the headline as their stable identity and
+    # only fall back to a URL/hash when a usable headline is unavailable.
+    title = html.unescape(str(article.get("title") or ""))
+    title = re.sub(r"\s+-\s+(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*$", "", title, flags=re.I)
+    normalized_title = re.sub(r"[^0-9a-zA-Z가-힣]+", "", title).lower()
+    raw = normalized_title or article.get("_original_url") or article.get("link") or article.get("article_hash") or ""
+    normalized = re.sub(r"\s+", " ", str(raw)).strip().lower()
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
+
+
+def original_publish_date(article: dict) -> datetime | None:
+    """Return the publisher timestamp, resolving portal wrappers when needed."""
+    cached = news_collector.parse_pub_date(article.get("_original_pub_date", ""))
+    if cached:
+        return cached
+
+    html_text, final_url = news_collector.fetch_article_html(article.get("link", ""), timeout=8)
+    if not html_text:
+        return None
+
+    source_html = html_text
+    original_url = news_collector.extract_original_article_url(html_text, final_url)
+    if original_url and original_url != final_url:
+        original_html, original_final_url = news_collector.fetch_article_html(original_url, timeout=8)
+        if original_html:
+            source_html = original_html
+            article["_original_url"] = original_final_url or original_url
+    elif final_url:
+        article["_original_url"] = final_url
+
+    published = (
+        news_collector.parse_article_date_from_html(source_html)
+        or news_collector.parse_korean_datetime_from_html(source_html)
+    )
+    if published:
+        article["_original_pub_date"] = published.isoformat()
+    return published
+
+
+def filter_stale_negative_reexposures(
+    articles: list[dict],
+    *,
+    max_age_minutes: int = 1440,
+    now: datetime | None = None,
+) -> list[dict]:
+    """Reject old originals that portals present again with a fresh RSS time."""
+    current = now or datetime.now(timezone.utc)
+    cutoff = current - timedelta(minutes=max(1, max_age_minutes))
+    result = []
+    for article in articles:
+        published = original_publish_date(article)
+        if published and published < cutoff:
+            article["_stale_reexposure"] = True
+            article["_excluded_reason"] = "original_article_older_than_negative_watch_window"
+            print(
+                "Negative watcher excluded stale re-exposure:",
+                published.isoformat(),
+                article.get("title", ""),
+            )
+            continue
+        result.append(article)
+    return result
 
 
 def risk_query_minutes_back(default_minutes: int) -> int:
@@ -320,6 +387,8 @@ def find_negative_articles(articles: list[dict]) -> tuple[list[dict], dict]:
 
 
 def should_persist_watch_article(article: dict) -> bool:
+    if article.get("_stale_reexposure"):
+        return False
     if str(article.get("_tone") or article.get("tone") or "").lower() == "exclude":
         return False
     if article.get("_watch_source") == "db":
@@ -774,7 +843,13 @@ def alert_title_for_article(article: dict) -> str:
 
 def notification_already_sent_for_article(article: dict) -> bool:
     try:
-        return notification_already_sent("negative_alert", alert_title_for_article(article), channel="slack")
+        current_title = alert_title_for_article(article)
+        if notification_already_sent("negative_alert", current_title, channel="slack"):
+            return True
+        legacy_title = f"부정기사 감지 {legacy_article_key(article)}"
+        return legacy_title != current_title and notification_already_sent(
+            "negative_alert", legacy_title, channel="slack"
+        )
     except Exception as error:
         print("Negative alert notification lookup skipped:", error)
         return False
@@ -784,7 +859,8 @@ def filter_unsent_negative_articles(articles: list[dict], sent_keys: set[str]) -
     result = []
     for article in articles:
         key = article_key(article)
-        if key in sent_keys:
+        legacy_key = legacy_article_key(article)
+        if key in sent_keys or legacy_key in sent_keys:
             continue
         if notification_already_sent_for_article(article):
             sent_keys.add(key)
@@ -894,7 +970,10 @@ def main() -> None:
 
     articles = collect_recent_company_news(minutes_back)
     analyzed_articles, metrics = analyze_watch_articles(articles)
-    negatives = direct_negative_articles(analyzed_articles)
+    negatives = filter_stale_negative_reexposures(
+        direct_negative_articles(analyzed_articles),
+        max_age_minutes=risk_query_minutes_back(minutes_back),
+    )
     persisted_watch_count = persist_watch_articles(analyzed_articles, metrics, scanned_at, minutes_back)
     db_negatives = collect_recent_db_negatives(minutes_back)
     if apply_classification_feedback_to_articles(db_negatives):
@@ -905,6 +984,10 @@ def main() -> None:
         ]
     else:
         db_negatives = [article for article in db_negatives if analyzer.is_direct_own_negative_article(article)]
+    db_negatives = filter_stale_negative_reexposures(
+        db_negatives,
+        max_age_minutes=risk_query_minutes_back(minutes_back),
+    )
     if db_negatives:
         metrics["own_total"] = max(metrics.get("own_total", 0), len(db_negatives))
 

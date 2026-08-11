@@ -1432,12 +1432,20 @@ def apply_collection_window_filter(articles: list[dict], window: dict) -> list[d
 def parse_pub_date(value: str) -> datetime | None:
     if not value:
         return None
+    normalized = str(value).strip()
     try:
-        parsed = parsedate_to_datetime(value)
+        parsed = parsedate_to_datetime(normalized)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
         return parsed.astimezone(timezone.utc)
     except Exception:
+        pass
+    try:
+        parsed = datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=KST)
+        return parsed.astimezone(timezone.utc)
+    except (TypeError, ValueError):
         return None
 
 

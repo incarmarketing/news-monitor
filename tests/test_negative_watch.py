@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import negative_watch
@@ -66,6 +67,55 @@ class NegativeWatchDelayedExposureTests(unittest.TestCase):
         }
 
         self.assertTrue(negative_watch.is_own_risk_query_article(article))
+
+    def test_alert_identity_is_stable_when_portal_link_changes(self) -> None:
+        first = {
+            "title": "[인카금융스캔들] 불법 사채놀이까지 - wikyung.com",
+            "link": "https://news.google.com/rss/articles/first",
+        }
+        second = {
+            "title": "[인카금융스캔들] 불법 사채놀이까지 - wikyung.com",
+            "link": "https://news.google.com/rss/articles/second",
+        }
+
+        self.assertEqual(negative_watch.article_key(first), negative_watch.article_key(second))
+
+    def test_old_original_is_rejected_even_with_recent_rss_timestamp(self) -> None:
+        now = datetime(2026, 8, 12, 10, 0, tzinfo=timezone.utc)
+        article = {
+            "title": "[인카금융스캔들] 불법 사채놀이까지",
+            "link": "https://news.google.com/rss/articles/reexposed",
+            "pub_date": "Wed, 12 Aug 2026 09:50:00 +0000",
+        }
+        with patch.object(
+            negative_watch,
+            "original_publish_date",
+            return_value=now - timedelta(days=60),
+        ):
+            filtered = negative_watch.filter_stale_negative_reexposures(
+                [article], max_age_minutes=1440, now=now
+            )
+
+        self.assertEqual(filtered, [])
+        self.assertTrue(article["_stale_reexposure"])
+        self.assertEqual(
+            article["_excluded_reason"],
+            "original_article_older_than_negative_watch_window",
+        )
+
+    def test_recent_original_remains_eligible(self) -> None:
+        now = datetime(2026, 8, 12, 10, 0, tzinfo=timezone.utc)
+        article = {"title": "인카금융서비스 신규 리스크 기사", "link": "https://example.com/current"}
+        with patch.object(
+            negative_watch,
+            "original_publish_date",
+            return_value=now - timedelta(hours=2),
+        ):
+            filtered = negative_watch.filter_stale_negative_reexposures(
+                [article], max_age_minutes=1440, now=now
+            )
+
+        self.assertEqual(filtered, [article])
 
 class NegativeWatchPersistenceTests(unittest.TestCase):
     def test_recent_db_alert_preserves_classification_contract(self) -> None:
