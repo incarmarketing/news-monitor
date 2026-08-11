@@ -78,24 +78,7 @@ def is_own_brand_reputation_leader(article: dict) -> bool:
 
 
 def is_own_certified_agent_performance(article: dict) -> bool:
-    if analyzer.is_own_certified_agent_performance_article(article):
-        return True
-    compact = re.sub(r"\s+", "", article_text(article))
-    has_own = re.search(r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735", compact, re.I)
-    has_certified_agent = re.search(r"\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC|\uC778\uC99D\uC124\uACC4\uC0AC", compact, re.I)
-    has_favorable_context = re.search(
-        r"\uC120\uC815|\uC778\uD130\uBDF0|\uBC30\uCD9C|\uCD5C\uB2E4|\uC9C0\uC810\uC7A5|"
-        r"\uC0AC\uC5C5\uBD80|\uC131\uACFC|\uC804\uBB38\uC131|\uC2E0\uB8B0",
-        compact,
-        re.I,
-    )
-    has_direct_negative = re.search(
-        r"\uBD88\uC644\uC804\uD310\uB9E4|\uBD80\uB2F9\uC2B9\uD658|\uBCF4\uD5D8\uC0AC\uAE30|"
-        r"\uC81C\uC7AC|\uCC98\uBD84|\uC870\uC0AC|\uAC80\uC0AC|\uBD88\uBC95|\uC704\uBC18",
-        compact,
-        re.I,
-    )
-    return bool(has_own and has_certified_agent and has_favorable_context and not has_direct_negative)
+    return analyzer.is_own_certified_agent_performance_article(article)
 
 
 def is_own_brand_reputation_leader_text(text: str) -> bool:
@@ -195,11 +178,23 @@ def normalize_article(article: dict, *, inplace: bool = False) -> dict:
         row["_tone"] = "positive"
         row["own_mentioned"] = True
         row["negative_target"] = "none"
-        row["classification_provider"] = row.get("classification_provider") or "display_context_rule"
-        row["classification_reason"] = row.get("classification_reason") or (
-            "\uB2F9\uC0AC \uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC "
-            "\uC131\uACFC \uB610\uB294 \uC784\uC9C1\uC6D0 \uC778\uD130\uBDF0 \uBCF4\uB3C4"
+        row["clipping_recommended"] = True
+        row["classification_provider"] = "rules:own_certified_agent_performance_v2"
+        row["classification_reason"] = "당사 우수인증설계사 인증·성과 보도로 직접 리스크와 분리"
+        context = dict(row.get("_ai_context") or {})
+        context.update(
+            {
+                "category": "own",
+                "tone": "positive",
+                "own_mentioned": True,
+                "negative_target": "none",
+                "clipping_recommended": True,
+                "confidence": 1.0,
+                "provider": row["classification_provider"],
+                "reason": row["classification_reason"],
+            }
         )
+        row["_ai_context"] = context
     elif is_non_insurance_financial_legal_noise(row):
         row["category"] = "other"
         row["_category"] = "other"

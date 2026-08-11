@@ -1137,15 +1137,6 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     if is_own_direct_negative_article(article):
         force_own_direct_negative_context()
 
-    if is_own_certified_agent_performance_article(article):
-        result["category"] = "own"
-        result["tone"] = "positive"
-        result["own_mentioned"] = True
-        result["negative_target"] = "none"
-        result["clipping_recommended"] = True
-        if not result.get("classification_reason"):
-            result["classification_reason"] = "당사 우수인증설계사 성과 또는 임직원 인터뷰 보도"
-
     if is_relief_support_article(article):
         result["tone"] = "positive" if is_own_positive_focus_article(article) else "neutral"
         result["negative_target"] = "none"
@@ -1172,6 +1163,9 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["own_mentioned"] = True
         result["negative_target"] = "none"
         result["clipping_recommended"] = True
+        result["confidence"] = 1.0
+        result["provider"] = "rules:own_certified_agent_performance_v2"
+        result["reason"] = "당사 우수인증설계사 인증·성과 보도로 직접 리스크와 분리"
 
     if is_own_direct_negative_article(article):
         force_own_direct_negative_context()
@@ -2558,17 +2552,12 @@ def is_own_certified_agent_performance_article(article: dict) -> bool:
     has_certified_agent = re.search(r"\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC|\uC778\uC99D\uC124\uACC4\uC0AC", compact, re.I)
     if not has_certified_agent:
         return False
-    favorable_context = re.search(
-        r"\uC120\uC815|\uC778\uD130\uBDF0|\uBC30\uCD9C|\uCD5C\uB2E4|\uC9C0\uC810\uC7A5|"
-        r"\uC0AC\uC5C5\uBD80|\uC131\uACFC|\uC804\uBB38\uC131|\uC2E0\uB8B0",
-        compact,
-        re.I,
-    )
-    if not favorable_context:
-        return False
+    # "우수인증설계사" 자체가 협회 인증 성과를 뜻한다. 수집 제목이
+    # 말줄임표로 잘려도 선정/배출 같은 보조 단어를 추가로 요구하지 않는다.
     direct_negative_context = re.search(
         r"\uBD88\uC644\uC804\uD310\uB9E4|\uBD80\uB2F9\uC2B9\uD658|\uBCF4\uD5D8\uC0AC\uAE30|"
-        r"\uC81C\uC7AC|\uCC98\uBD84|\uC870\uC0AC|\uAC80\uC0AC|\uBD88\uBC95|\uC704\uBC18",
+        r"\uC81C\uC7AC|\uCC98\uBD84|\uC870\uC0AC|\uAC80\uC0AC|\uBD88\uBC95|\uC704\uBC18|"
+        r"\uC778\uC99D\s*\uCDE8\uC18C|\uC790\uACA9\s*\uCDE8\uC18C|\uBC15\uD0C8|\uD5C8\uC704|\uB17C\uB780|\uC9D5\uACC4|\uC0AC\uCE6D",
         compact,
         re.I,
     )

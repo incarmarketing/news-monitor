@@ -1541,6 +1541,46 @@ class OwnPositiveReputationRegressionTests(unittest.TestCase):
         self.assertEqual(article["_tone"], "positive")
         self.assertFalse(analyzer.is_direct_own_negative_article(article))
 
+    def test_truncated_own_certified_agent_performance_overrides_ai_caution(self) -> None:
+        article = {
+            "title": "[2026 GA 우수인증설계사] 인카금융서비스, 규모·실적으로 초대형 GA 증...",
+            "description": "",
+            "source": "한국보험신문",
+            "keyword": "인카금융",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "caution",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "caution",
+                "own_mentioned": True,
+                "negative_target": "none",
+                "provider": "groq:llama-3.3-70b-versatile",
+                "reason": "긍정적인 기사로 판단했지만 응답 필드는 주의로 반환",
+            },
+        )
+
+        self.assertTrue(analyzer.is_own_certified_agent_performance_article(article))
+        self.assertEqual(article["_category"], "own")
+        self.assertEqual(article["_tone"], "positive")
+        self.assertEqual(context["provider"], "rules:own_certified_agent_performance_v2")
+        self.assertFalse(context["alert_eligible"])
+
+    def test_certified_agent_revocation_remains_risk_eligible_for_analysis(self) -> None:
+        article = {
+            "title": "인카금융서비스 우수인증설계사 자격 취소 논란",
+            "description": "협회가 허위 신청을 조사해 인증 취소 여부를 검토한다.",
+            "source": "테스트신문",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        self.assertFalse(analyzer.is_own_certified_agent_performance_article(article))
+
     def test_own_growth_shadow_article_triggers_negative_watch(self) -> None:
         article = {
             "title": "외형 성장 뒤에 가려진 그늘, 과제 직면한 인카금융서비스",
