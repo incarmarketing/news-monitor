@@ -69,6 +69,7 @@ import {
   NEGATIVE_WATCH_SHORT_LABEL,
 } from "./operationsHealth";
 import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
+import slackMarkUrl from "./assets/slack-mark.png";
 import "./styles.css";
 import "./report.css";
 
@@ -674,7 +675,7 @@ function Header({ working = false, workLabel = "" }) {
       <div className="side-brand-main">
         <img
           className="side-brand-logo"
-          src={`${import.meta.env.BASE_URL || "./"}assets/incar-logo-white.png`}
+          src={`${import.meta.env.BASE_URL || "./"}assets/incar-signature-blue-ko.png`}
           alt="인카금융서비스"
         />
         <strong>인카 모니터링 시스템</strong>
@@ -752,7 +753,7 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, jobs, notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations }) {
+function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations }) {
   const { summary } = data;
   const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
@@ -769,18 +770,29 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
   const watchHealth = operationsHealth.items.find((item) => item.title === "부정기사 감시");
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
   const notificationHealth = operationsHealth.items.find((item) => item.title === "발송");
-  const actionsHealth = operationsHealth.items.find((item) => item.title === "GitHub Actions");
-  const historyHealth = operationsHealth.items.find((item) => item.title === "Supabase 기록");
+  const momentumRows = useMemo(() => buildDashboardMomentum(allArticles.length ? allArticles : articles), [allArticles, articles]);
+  const issueRows = useMemo(
+    () => buildDashboardIssueGroups(data.issues)
+      .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
+      .slice(0, 5),
+    [data.issues],
+  );
+  const refreshDashboard = () => onRefreshOperations?.({
+    trigger: true,
+    workflow: "all",
+    source: "overview_operations",
+    label: "전체 운영 갱신",
+  });
   return (
-    <main className="workspace dashboard-workspace">
-      <TerminalCommandBar
+    <main className="workspace dashboard-workspace dashboard-v3">
+      <DashboardEditorialHeader
         data={data}
-        summary={summary}
-        operationsHealth={operationsHealth}
-        notificationHealth={notificationHealth}
-        reportHealth={reportHealth}
         onOpenMonitoring={onOpenMonitoring}
+        onRefresh={refreshDashboard}
+        isLoading={isLoading}
       />
+
+      <DashboardKpiStrip summary={summary} onOpenMonitoring={onOpenMonitoring} />
 
       <nav className="dashboard-mobile-home" aria-label="모바일 대시보드 바로가기">
         <button type="button" onClick={() => setActiveSection("monitoring")}>모니터링</button>
@@ -788,35 +800,318 @@ function Overview({ data, articles, jobs, notifications, setActiveSection, onOpe
         <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
       </nav>
 
-      <section className="terminal-dashboard-grid">
-        <div className="terminal-main-stack">
-          <RiskPriorityQueue issues={data.issues} onOpenMonitoring={onOpenMonitoring} />
-          <section className="terminal-analysis-board">
-            <Panel title="분류별 기사량" icon={LineChart} meta="기간 기준">
-              <CategoryChart rows={data.categoryFlow} verticalBars />
-            </Panel>
-            <Panel title="언론사별 보도량" icon={Building2} meta="상위 6개사">
-              <PressInfluence rows={data.pressInfluence} onOpenMonitoring={onOpenMonitoring} />
-            </Panel>
-          </section>
-        </div>
-        <OpsStatusRail
-          jobs={jobs}
+      <section className="editorial-dashboard-grid">
+        <EditorialIssueDesk
+          issues={issueRows}
+          momentumRows={momentumRows}
+          onOpenMonitoring={onOpenMonitoring}
+        />
+        <EditorialEvidenceRail
           summary={summary}
-          operations={operations}
+          categoryFlow={data.categoryFlow}
+          pressInfluence={data.pressInfluence}
           watchHealth={watchHealth}
           notificationHealth={notificationHealth}
           reportHealth={reportHealth}
-          actionsHealth={actionsHealth}
-          historyHealth={historyHealth}
-          notifications={notifications}
-          isLoading={isLoading}
-          onRefreshOperations={onRefreshOperations}
+          onOpenMonitoring={onOpenMonitoring}
         />
       </section>
 
+      <section className="editorial-analysis-grid">
+        <IssueMomentumChart rows={momentumRows} />
+        <TodayComposition rows={data.categoryFlow} />
+      </section>
+
+      <DashboardSlackFooter rows={notifications} onOpenHistory={() => setActiveSection("management")} />
     </main>
   );
+}
+
+function DashboardEditorialHeader({ data, onOpenMonitoring, onRefresh, isLoading = false }) {
+  return (
+    <header className="editorial-dashboard-header">
+      <div>
+        <span>MEDIA INTELLIGENCE DESK</span>
+        <h1>오늘의 언론 상황</h1>
+      </div>
+      <p>{formatDashboardScopeDate(data?.scope)}<br />{data?.generatedAt || "-"} 업데이트</p>
+      <div className="editorial-header-actions">
+        <button type="button" onClick={() => onOpenMonitoring?.({})}><Search />검색</button>
+        <button type="button" onClick={onRefresh} disabled={isLoading}><RefreshCw />{isLoading ? "갱신 중" : "새로고침"}</button>
+        <button type="button" onClick={() => onOpenMonitoring?.({ tone: "주의" })}><Bell />알림</button>
+      </div>
+    </header>
+  );
+}
+
+function DashboardKpiStrip({ summary = {}, onOpenMonitoring }) {
+  const rows = [
+    { label: "리스크", value: summary.risk || "LOW", className: `risk-${String(summary.risk || "low").toLowerCase()}`, preset: { ownOnly: true } },
+    { label: "분석", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), preset: {} },
+    { label: "당사", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), preset: { ownOnly: true } },
+    { label: "부정", value: Number(summary.ownNegative || 0).toLocaleString("ko-KR"), className: "negative", preset: { tone: "부정" } },
+    { label: "주의", value: Number(summary.caution || 0).toLocaleString("ko-KR"), className: "caution", preset: { tone: "주의" } },
+  ];
+  return (
+    <section className="editorial-kpi-strip" aria-label="오늘의 주요 지표">
+      {rows.map((item) => (
+        <button type="button" key={item.label} className={item.className || ""} onClick={() => onOpenMonitoring?.(item.preset)}>
+          <span>{item.label}</span><b>{item.value}</b>
+        </button>
+      ))}
+    </section>
+  );
+}
+
+function EditorialIssueDesk({ issues = [], momentumRows = [], onOpenMonitoring }) {
+  const [lead, ...rest] = issues;
+  return (
+    <section className="editorial-issue-desk">
+      <div className="editorial-section-title"><i />오늘의 이슈 흐름</div>
+      {lead ? (
+        <article className="editorial-lead-issue">
+          <div className="editorial-lead-copy">
+            <div className="editorial-lead-labels">
+              <b>1</b>
+              <Chip>{displayDashboardCategory(lead.category)}</Chip>
+              <span>{lead.tone === "부정" ? "즉시 확인" : lead.tone === "주의" ? "관찰 강화" : "상승"}</span>
+            </div>
+            <button type="button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(lead))}>
+              <h2>{lead.title}</h2>
+              <p>{formatDashboardLeadMeta(lead)}</p>
+              <em>관련 기사 {issueBundleCount(lead).toLocaleString("ko-KR")}건 · 당사 직접 부정 {lead.tone === "부정" && isOwnArticle(lead) ? 1 : 0}건</em>
+            </button>
+          </div>
+          <DashboardLeadSparkline rows={momentumRows} />
+        </article>
+      ) : (
+        <article className="editorial-issue-empty">오늘 기준으로 표시할 주요 이슈가 없습니다.</article>
+      )}
+      <div className="editorial-issue-list">
+        {rest.map((issue, index) => (
+          <button type="button" key={`${issue.source}-${issue.title}`} onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
+            <span className="editorial-issue-rank">{index + 2}</span>
+            <i className={`tone-dot ${toneCssClass(issue.tone)}`} />
+            <b>{issue.title}</b>
+            <em>{displayDashboardCategory(issue.category)} · 기사 {issueBundleCount(issue).toLocaleString("ko-KR")}건</em>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DashboardLeadSparkline({ rows = [] }) {
+  const chartRows = rows.slice(-7).map((row) => ({ ...row, total: row.own + row.ga + row.insurance + row.regulation }));
+  if (chartRows.length < 2) return null;
+  return (
+    <div className="editorial-lead-sparkline" aria-label="최근 이슈 흐름">
+      <span>7일 모멘텀</span>
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsLineChart data={chartRows} margin={{ top: 8, right: 5, bottom: 5, left: 5 }}>
+          <Line type="monotone" dataKey="total" stroke="#07956d" strokeWidth={2.4} dot={{ r: 3, fill: "#fff", strokeWidth: 2 }} />
+        </RechartsLineChart>
+      </ResponsiveContainer>
+      <em>{chartRows[0]?.dateLabel} <b>{chartRows.at(-1)?.dateLabel}</b></em>
+    </div>
+  );
+}
+
+function EditorialEvidenceRail({ summary = {}, categoryFlow = [], pressInfluence = [], watchHealth, notificationHealth, reportHealth, onOpenMonitoring }) {
+  const policyCount = Number(categoryFlow.find((item) => /정책|규제/.test(item.name))?.value || 0);
+  const mediaCount = pressInfluence.filter((item) => !isOfficialRegulatorSource(item.source)).slice(0, PRESS_INFLUENCE_LIMIT).length;
+  const nextReport = nextReportLabel(reportHealth);
+  return (
+    <aside className="editorial-evidence-rail">
+      <div className="editorial-section-title"><i />판단 근거</div>
+      <div className="evidence-list">
+        <EditorialEvidenceRow icon={FileText} label="직접 언급" value={`${Number(summary.ownMentions || 0).toLocaleString("ko-KR")}건`} detail="당사 관련 직접 언급 기사 수" />
+        <EditorialEvidenceRow icon={Building2} label="정책 신호" value={`${policyCount.toLocaleString("ko-KR")}건`} detail="제도·정책 변화 및 당국 메시지" />
+        <EditorialEvidenceRow icon={Newspaper} label="업계 확산" value={`${mediaCount.toLocaleString("ko-KR")}개 매체`} detail="주요 매체의 후속 보도 범위" />
+      </div>
+      <button type="button" className="editorial-evidence-button" onClick={() => onOpenMonitoring?.({})}>근거 기사 보기 <ChevronRight /></button>
+      <div className="editorial-ops-block">
+        <div className="editorial-section-title"><i />운영 상태</div>
+        <EditorialStatusRow label="감시" health={watchHealth} />
+        <EditorialStatusRow label="발송" health={notificationHealth} />
+        <EditorialStatusRow label="다음 보고" value={nextReport} />
+      </div>
+    </aside>
+  );
+}
+
+function EditorialEvidenceRow({ icon: Icon, label, value, detail }) {
+  return (
+    <div>
+      <Icon />
+      <span><b>{label}</b><em>{detail}</em></span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function EditorialStatusRow({ label, health, value }) {
+  const ok = health?.status === "success" || health?.status === "ok" || (!health && Boolean(value));
+  return (
+    <div className="editorial-status-row">
+      <i className={ok ? "ok" : health?.status === "fail" ? "fail" : "warn"} />
+      <span>{label}</span>
+      <b>{value || health?.label || "확인"}</b>
+    </div>
+  );
+}
+
+function IssueMomentumChart({ rows = [] }) {
+  return (
+    <section className="editorial-momentum-panel">
+      <div className="editorial-section-title"><i />이슈 모멘텀</div>
+      <div className="editorial-momentum-chart">
+        {rows.length ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsLineChart data={rows} margin={{ left: -12, right: 54, top: 12, bottom: 0 }}>
+              <CartesianGrid stroke="#d8dde5" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="dateLabel" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#596273" }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#596273" }} width={34} />
+              <Tooltip formatter={(value, name) => [`${Number(value || 0).toLocaleString("ko-KR")}건`, dashboardSeriesLabel(name)]} />
+              <Line type="monotone" dataKey="own" stroke="#1d5bd7" strokeWidth={2.4} dot={{ r: 2.8 }} name="당사" />
+              <Line type="monotone" dataKey="ga" stroke="#0d8f67" strokeWidth={2.4} dot={{ r: 2.8 }} name="GA" />
+              <Line type="monotone" dataKey="insurance" stroke="#e04a3f" strokeWidth={2.4} dot={{ r: 2.8 }} name="보험사" />
+              <Line type="monotone" dataKey="regulation" stroke="#8e1434" strokeWidth={2.4} dot={{ r: 2.8 }} name="정책/규제" />
+            </RechartsLineChart>
+          </ResponsiveContainer>
+        ) : <div className="editorial-chart-empty">집계 가능한 기사 데이터가 없습니다.</div>}
+      </div>
+      <div className="editorial-chart-legend">
+        {[["own", "당사"], ["ga", "GA"], ["insurance", "보험사"], ["regulation", "정책/규제"]].map(([key, label]) => <span key={key} className={key}><i />{label}</span>)}
+      </div>
+    </section>
+  );
+}
+
+function TodayComposition({ rows = [] }) {
+  const normalized = rows
+    .map((item) => ({ name: displayDashboardCategory(item.name), value: Number(item.value || 0) }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+  const total = normalized.reduce((sum, item) => sum + item.value, 0);
+  const denominator = total || 1;
+  return (
+    <section className="editorial-composition-panel">
+      <div className="editorial-section-title"><i />오늘의 구성 <em>총 {total.toLocaleString("ko-KR")}건</em></div>
+      <div className="editorial-composition-list">
+        {normalized.map((item, index) => {
+          const percent = Math.round((item.value / denominator) * 100);
+          return (
+            <div key={item.name}>
+              <span>{index + 1}</span><b>{item.name}</b>
+              <i><em style={{ width: `${Math.max(6, percent)}%` }} /></i>
+              <strong>{percent}%</strong>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function SlackMark({ className = "" }) {
+  return <img className={`slack-mark ${className}`.trim()} src={slackMarkUrl} alt="Slack" />;
+}
+
+function DashboardSlackFooter({ rows = [], onOpenHistory }) {
+  const [selected, setSelected] = useState(null);
+  const latestRows = rows.slice(0, 2);
+  return (
+    <footer className="editorial-slack-footer">
+      <div className="editorial-slack-title"><SlackMark /><b>최근 Slack 발송</b></div>
+      {latestRows.map((item) => {
+        const display = getNotificationDisplayRow(item);
+        const succeeded = /^(성공|success|ok)$/i.test(String(item.status || ""));
+        return (
+          <button type="button" key={item.id || `${display.date}-${display.time}-${display.label}`} onClick={() => setSelected(item)}>
+            <span>{display.time}</span><b>{display.label}</b><em className={succeeded ? "success" : ""}>{item.status}</em>
+          </button>
+        );
+      })}
+      {!latestRows.length && <div className="editorial-slack-empty">최근 발송 이력이 없습니다.</div>}
+      <button type="button" className="editorial-slack-more" onClick={onOpenHistory}>전체 이력 <ChevronRight /></button>
+      {selected && <NotificationDetail item={selected} onClose={() => setSelected(null)} />}
+    </footer>
+  );
+}
+
+function formatDashboardScopeDate(scope = "") {
+  const match = String(scope || "").match(/(20\d{2})-(\d{2})-(\d{2})/);
+  if (!match) return scope || "오늘 기준";
+  const date = new Date(`${match[1]}-${match[2]}-${match[3]}T00:00:00+09:00`);
+  const weekday = new Intl.DateTimeFormat("ko-KR", { weekday: "long", timeZone: "Asia/Seoul" }).format(date);
+  return `${match[1]}년 ${Number(match[2])}월 ${Number(match[3])}일 ${weekday}`;
+}
+
+function formatDashboardLeadMeta(issue = {}) {
+  const sourceCount = Number(issue.relatedSourceCount || 1);
+  const source = String(issue.source || issue.press || issue.publisher || displayDashboardCategory(issue.category) || "언론사").trim();
+  const mediaLabel = sourceCount > 1 ? `${source} 외 ${sourceCount - 1}개 매체` : source;
+  return `${mediaLabel} · ${formatRelativeArticleTime(issue)}`;
+}
+
+function formatRelativeArticleTime(issue = {}) {
+  const time = articleTimeValue(issue);
+  if (!Number.isFinite(time) || time <= 0) return issue.time || issue.date || "최근 수집";
+  const diffHours = Math.max(0, Math.floor((Date.now() - time) / (60 * 60 * 1000)));
+  if (diffHours < 1) return "최근 1시간";
+  if (diffHours < 24) return `최근 ${diffHours}시간`;
+  return issue.date || "최근 수집";
+}
+
+function nextReportLabel(reportHealth = {}) {
+  const slots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
+  const next = slots.find((slot) => slot.status === "pending");
+  return next ? `${next.slot}:00` : "오늘 완료";
+}
+
+function buildDashboardMomentum(articles = []) {
+  const dated = articles.filter((article) => rowDateKey(article));
+  const dates = unique(dated.map(rowDateKey)).sort().slice(-7);
+  const buckets = new Map(dates.map((date) => [date, {
+    date,
+    dateLabel: formatDashboardChartDate(date),
+    own: 0,
+    ga: 0,
+    insurance: 0,
+    regulation: 0,
+  }]));
+  dated.forEach((article) => {
+    const bucket = buckets.get(rowDateKey(article));
+    if (!bucket) return;
+    bucket[dashboardArticleSeries(article)] += 1;
+  });
+  return Array.from(buckets.values());
+}
+
+function dashboardArticleSeries(article = {}) {
+  if (isOwnArticle(article) || /당사/.test(String(article.category || ""))) return "own";
+  if (/정책|규제|금융당국/.test(String(article.category || ""))) return "regulation";
+  if (/GA|경쟁/.test(String(article.category || ""))) return "ga";
+  return "insurance";
+}
+
+function displayDashboardCategory(value = "") {
+  if (/업계동향|보험사/.test(value)) return "보험사";
+  if (/경쟁사|GA/.test(value)) return "GA";
+  if (/정책|규제/.test(value)) return "정책/규제";
+  if (/스폰서/.test(value)) return "스폰서십";
+  return value || "기타";
+}
+
+function formatDashboardChartDate(value = "") {
+  const match = String(value).match(/^\d{4}-(\d{2})-(\d{2})$/);
+  return match ? `${Number(match[1])}/${Number(match[2])}` : value;
+}
+
+function dashboardSeriesLabel(value = "") {
+  return { own: "당사", ga: "GA", insurance: "보험사", regulation: "정책/규제" }[value] || value;
 }
 
 function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, onOpenMonitoring }) {
