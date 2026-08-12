@@ -1387,6 +1387,8 @@ def categorize(article: dict) -> str:
         return "own"
     if is_routine_ga_channel_performance_article(article):
         return routine_ga_channel_performance_category(article)
+    if is_settlement_support_list_article(article):
+        return "regulation"
     own_role = classify_own_role(article)
     if own_role == "primary":
         return "own"
@@ -1401,8 +1403,6 @@ def categorize(article: dict) -> str:
         return rule_category
     if is_competitor_brand_reputation_against_own(article):
         return "competitor"
-    if is_settlement_support_list_article(article):
-        return "regulation"
     if is_sales_conduct_context_text(text):
         return "regulation"
     if preferred in {"regulation", "competitor", "industry"} and has_domain_context(text):
