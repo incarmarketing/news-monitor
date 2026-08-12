@@ -145,13 +145,6 @@ jobs:
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-      - name: Apply context rule fixes before briefing
-        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-slack]'))
-        run: python apply_context_rule_fixes.py
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
       - name: Generate briefing
         if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-slack]'))
         run: python run_once.py
@@ -181,13 +174,6 @@ jobs:
           GROQ_MAX_ISSUE_SUMMARIES: ${{ secrets.GROQ_MAX_ISSUE_SUMMARIES || '20' }}
           AI_MAX_ISSUE_SUMMARIES: ${{ secrets.AI_MAX_ISSUE_SUMMARIES || '5' }}
           REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
-
-      - name: Apply context rule fixes after briefing
-        if: steps.guard.outputs.should_run == 'true' && steps.guard.outputs.should_period != 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none') || contains(github.event.head_commit.message, '[send-slack]'))
-        run: python apply_context_rule_fixes.py
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Generate period reports
         if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none'))

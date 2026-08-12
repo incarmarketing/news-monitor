@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import unittest
 from unittest.mock import patch
 
 import analyzer
+import requests
 import supabase_store
 
 
@@ -41,6 +43,47 @@ class ClassificationFeedbackTests(unittest.TestCase):
         )
 
         self.assertEqual(row["discovered_at"], "2026-07-20T09:20:00+09:00")
+
+    def test_normalize_article_leaves_discovery_time_to_database_for_regular_runs(self) -> None:
+        row = supabase_store.normalize_article(
+            {
+                "title": "sample article",
+                "link": "https://example.com/sample",
+                "_category": "industry",
+                "_tone": "neutral",
+            },
+            {"date": "2026-08-12", "window": {}, "metrics": {}},
+        )
+
+        self.assertNotIn("discovered_at", row)
+
+    def test_missing_discovered_at_retry_preserves_classification_contract(self) -> None:
+        error = requests.HTTPError("column discovered_at does not exist")
+        row = {
+            "article_hash": "sample-hash",
+            "title": "인카금융서비스 우수인증설계사 배출",
+            "discovered_at": "2026-08-12T09:00:00+09:00",
+            "classification_provider": "rules:test",
+            "classification_ruleset_version": "ruleset-v2",
+            "classification_decision_path": {"own_is_primary": True},
+            "own_role": "primary",
+        }
+
+        with patch.object(supabase_store, "request", side_effect=[error, object()]) as request:
+            supabase_store.save_news_article_rows([row])
+
+        retry_payload = json.loads(request.call_args_list[1].kwargs["data"])
+        self.assertNotIn("discovered_at", retry_payload[0])
+        self.assertEqual(retry_payload[0]["classification_provider"], "rules:test")
+        self.assertEqual(retry_payload[0]["classification_ruleset_version"], "ruleset-v2")
+        self.assertEqual(retry_payload[0]["own_role"], "primary")
+
+    def test_schema_error_does_not_silently_drop_classification_contract(self) -> None:
+        error = requests.HTTPError("column classification_ruleset_version does not exist")
+
+        with patch.object(supabase_store, "request", side_effect=error):
+            with self.assertRaises(requests.HTTPError):
+                supabase_store.save_news_article_rows([{"article_hash": "sample-hash"}])
 
     def test_feedback_matches_article_by_normalized_link(self) -> None:
         article = {

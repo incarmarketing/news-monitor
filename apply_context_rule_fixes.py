@@ -14,6 +14,7 @@ from urllib.parse import quote
 
 import requests
 
+import analyzer
 import supabase_store
 
 
@@ -164,10 +165,7 @@ def fetch_certified_agent_candidates(limit: int = 1000) -> list[dict[str, Any]]:
 
 
 def is_noise_article(row: dict[str, Any]) -> bool:
-    text = " ".join(
-        str(row.get(key) or "")
-        for key in ("title", "summary", "source", "keyword", "category", "tone")
-    )
+    text = analyzer.original_article_text(row)
     return bool(NOISE_RE.search(text)) and not bool(INSURANCE_CONTEXT_RE.search(text))
 
 
@@ -192,7 +190,7 @@ def patch_article(row: dict[str, Any]) -> bool:
 
 
 def is_own_brand_reputation_leader(row: dict[str, Any]) -> bool:
-    text = " ".join(str(row.get(key) or "") for key in ("title", "summary", "source", "keyword"))
+    text = analyzer.original_article_text(row)
     return is_own_brand_reputation_leader_text(text) or (
         bool(OWN_BRAND_REPUTATION_LEADER_RE.search(text)) and not bool(OWN_FOLLOWER_RE.search(text))
     )
@@ -251,23 +249,7 @@ def patch_brand_reputation_article(row: dict[str, Any]) -> bool:
 
 
 def is_own_certified_agent_performance(row: dict[str, Any]) -> bool:
-    text = " ".join(str(row.get(key) or "") for key in ("title", "summary", "source", "keyword"))
-    compact = re.sub(r"\s+", "", text)
-    has_own = re.search(r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735", compact, re.I)
-    has_certified_agent = re.search(r"\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC|\uC778\uC99D\uC124\uACC4\uC0AC", compact, re.I)
-    has_favorable_context = re.search(
-        r"\uC120\uC815|\uC778\uD130\uBDF0|\uBC30\uCD9C|\uCD5C\uB2E4|\uC9C0\uC810\uC7A5|"
-        r"\uC0AC\uC5C5\uBD80|\uC131\uACFC|\uC804\uBB38\uC131|\uC2E0\uB8B0",
-        compact,
-        re.I,
-    )
-    has_direct_negative = re.search(
-        r"\uBD88\uC644\uC804\uD310\uB9E4|\uBD80\uB2F9\uC2B9\uD658|\uBCF4\uD5D8\uC0AC\uAE30|"
-        r"\uC81C\uC7AC|\uCC98\uBD84|\uC870\uC0AC|\uAC80\uC0AC|\uBD88\uBC95|\uC704\uBC18",
-        compact,
-        re.I,
-    )
-    return bool(has_own and has_certified_agent and has_favorable_context and not has_direct_negative)
+    return analyzer.is_own_certified_agent_performance_article(row)
 
 
 def patch_certified_agent_article(row: dict[str, Any]) -> bool:

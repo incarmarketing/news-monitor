@@ -49,21 +49,7 @@ COMPETITOR_BRAND_NAME_RE = re.compile(
 
 
 def article_text(article: dict) -> str:
-    return " ".join(
-        str(article.get(key) or "")
-        for key in (
-            "title",
-            "summary",
-            "description",
-            "_summary",
-            "source",
-            "keyword",
-            "category",
-            "_category",
-            "tone",
-            "_tone",
-        )
-    )
+    return analyzer.original_article_text(article)
 
 
 def is_own_brand_reputation_leader(article: dict) -> bool:

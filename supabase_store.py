@@ -56,29 +56,6 @@ ARTICLE_COLUMNS = (
     "raw",
 )
 
-LEGACY_ARTICLE_COLUMNS = tuple(
-    column
-    for column in ARTICLE_COLUMNS
-    if column
-    not in {
-        "own_mentioned",
-        "negative_target",
-        "classification_evidence",
-        "classification_reason",
-        "classification_confidence",
-        "classification_provider",
-        "classification_ruleset_version",
-        "document_type",
-        "own_role",
-        "risk_event_type",
-        "alert_eligible",
-        "classification_decision_path",
-        "clipping_recommended",
-        "clipping_reason",
-        "discovered_at",
-    }
-)
-
 NOTIFICATION_COLUMNS = (
     "sent_at",
     "channel",
@@ -1144,6 +1121,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
     window = archive_payload.get("window", {})
     metrics = archive_payload.get("metrics", {})
     context = normalized_article_context(article)
+    discovered_at = article.get("discovered_at") or article.get("_discovered_at")
     row = {
         "article_hash": article_hash(article),
         "report_date": archive_payload.get("date"),
@@ -1157,7 +1135,6 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
         "summary": article.get("_summary", "") or analyzer.build_quality_summary(article),
-        "discovered_at": article.get("discovered_at") or article.get("_discovered_at") or datetime.now(KST).isoformat(),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),
@@ -1180,7 +1157,10 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "cluster_size": article.get("_cluster_size", 1),
         "raw": article,
     }
-    return {key: row.get(key) for key in ARTICLE_COLUMNS}
+    normalized = {key: row.get(key) for key in ARTICLE_COLUMNS if key != "discovered_at"}
+    if discovered_at:
+        normalized["discovered_at"] = discovered_at
+    return normalized
 
 
 def normalized_article_context(article: dict) -> dict:
@@ -1227,29 +1207,24 @@ def safe_float(value: object, default: float = 0) -> float:
 
 
 def save_news_article_rows(rows: list[dict]) -> None:
-    """Persist articles with a legacy fallback while migration rolls out."""
+    """Persist articles without silently discarding classification metadata."""
     try:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
     except requests.HTTPError as error:
         detail = str(error)
-        missing_column = (
-            "classification_evidence" in detail
-            or "clipping_recommended" in detail
-            or "own_mentioned" in detail
-            or "negative_target" in detail
-            or "classification_ruleset_version" in detail
-            or "document_type" in detail
-            or "own_role" in detail
-            or "risk_event_type" in detail
-            or "alert_eligible" in detail
-            or "classification_decision_path" in detail
-            or "discovered_at" in detail
-        )
-        if not missing_column:
+        if "discovered_at" not in detail:
             raise
-        legacy_rows = [{column: row.get(column) for column in LEGACY_ARTICLE_COLUMNS} for row in rows]
-        print("Supabase news_articles context columns missing; retried with legacy article payload.")
-        request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(legacy_rows, ensure_ascii=False))
+
+        compatible_rows = [
+            {column: value for column, value in row.items() if column != "discovered_at"}
+            for row in rows
+        ]
+        print("Supabase news_articles discovered_at column missing; retried without that field only.")
+        request(
+            "POST",
+            "news_articles?on_conflict=article_hash",
+            data=json.dumps(compatible_rows, ensure_ascii=False),
+        )
 
 
 def save_own_media_relations(article_rows: list[dict]) -> None:
