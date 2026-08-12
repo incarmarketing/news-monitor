@@ -47,6 +47,21 @@ jobs:
           tests.test_context_rule_fixes
           tests.test_supabase_store_feedback
 
+      - name: Validate reviewed classification gold set
+        run: >-
+          python tools/validate_classification_gold.py
+          --sample-limit 40
+          --min-alert-precision 0.99
+          --min-alert-recall 0.90
+          --output "${RUNNER_TEMP}/classification-gold-validation.json"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AI_CONTEXT_ENABLED: "false"
+          AI_CONTEXT_PRO_REVIEW: "false"
+          AI_CONTEXT_CLASSIFICATION: "rules"
+
       - name: Run read-only aggregate classification audit
         run: >-
           python tools/audit_classification_drift.py

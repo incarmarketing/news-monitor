@@ -162,6 +162,8 @@ def run(rows: list[dict[str, Any]], sample_limit: int) -> tuple[dict[str, Any], 
     decisions = Counter()
     changed_fields = Counter()
     validation_errors = Counter()
+    deferred_reasons = Counter()
+    deferred_samples: list[dict[str, Any]] = []
     repairs: list[dict[str, Any]] = []
     samples: list[dict[str, Any]] = []
     alert_count = 0
@@ -173,6 +175,18 @@ def run(rows: list[dict[str, Any]], sample_limit: int) -> tuple[dict[str, Any], 
         deterministic = deterministic_risk.classify(article)
         repair = build_repair(row, context, deterministic)
         errors = validate_repair(article, repair, deterministic)
+        if feedback_applied and errors == ["company_category_without_source_evidence"]:
+            deferred_reasons["manual_company_feedback_missing_source_evidence"] += 1
+            if len(deferred_samples) < max(20, sample_limit):
+                deferred_samples.append(
+                    {
+                        "id": row.get("id"),
+                        "title": row.get("title"),
+                        "source": row.get("source"),
+                        "reason": "manual_company_feedback_missing_source_evidence",
+                    }
+                )
+            continue
         for error in errors:
             validation_errors[error] += 1
         if errors:
@@ -220,6 +234,9 @@ def run(rows: list[dict[str, Any]], sample_limit: int) -> tuple[dict[str, Any], 
             if old != new
         ],
         "validation_errors": dict(validation_errors.most_common()),
+        "deferred_rows": sum(deferred_reasons.values()),
+        "deferred_reasons": dict(deferred_reasons.most_common()),
+        "deferred_samples": deferred_samples,
         "samples": samples,
     }
     return report, repairs
@@ -283,6 +300,8 @@ def main() -> int:
         "changed_fields",
         "tone_transitions",
         "validation_errors",
+        "deferred_rows",
+        "deferred_reasons",
         "apply_requested",
         "affected_rows",
     )
