@@ -624,6 +624,25 @@ def has_primary_own_lead(article: dict) -> bool:
     )
 
 
+def has_own_subject_clause(article: dict) -> bool:
+    """True when the company is a grammatical subject outside a comparison list."""
+    if is_competitor_brand_reputation_against_own(article):
+        return False
+    if is_routine_ga_channel_performance_article(article):
+        return False
+    text = original_article_text(article)
+    return bool(
+        re.search(
+            r"(?:인카금융서비스|인카금융)(?:은|는|이|가)\s*.{0,180}"
+            r"(?:밝혔|발표했|기록했|선정됐|선정되|수상했|배출했|증가했|성장했|"
+            r"개선했|강화했|가입했|체결했|출시했|마감했|회복했|유지했|"
+            r"하락했|감소했|낮아졌|상향됐|하향됐|제재|조사|검사|논란|의혹)",
+            text,
+            re.I | re.S,
+        )
+    )
+
+
 def own_reference_windows(article: dict, radius: int = 220) -> list[str]:
     text = original_article_text(article)
     windows: list[str] = []
@@ -662,6 +681,8 @@ def classify_own_role(article: dict) -> str:
     if relation_text:
         return "primary"
     if has_primary_own_lead(article):
+        return "primary"
+    if has_own_subject_clause(article):
         return "primary"
     incidental = re.search(
         r"(?:인카금융서비스|인카금융).{0,90}(?:출신|거쳐|역임|근무|재직|경력|본부장\s*등을\s*거쳐)|"
@@ -1366,6 +1387,12 @@ def categorize(article: dict) -> str:
         return "own"
     if is_routine_ga_channel_performance_article(article):
         return routine_ga_channel_performance_category(article)
+    own_role = classify_own_role(article)
+    if own_role == "primary":
+        return "own"
+    preferred = normalize_keyword_category(article.get("keyword_category"))
+    if preferred == "own" and own_role == "secondary":
+        return "own"
     rule = matched_context_rule(text)
     rule_category = rule.get("category")
     if rule_category in {"exclude", "other"}:
@@ -1376,11 +1403,8 @@ def categorize(article: dict) -> str:
         return "competitor"
     if is_settlement_support_list_article(article):
         return "regulation"
-    if classify_own_role(article) == "primary":
-        return "own"
     if is_sales_conduct_context_text(text):
         return "regulation"
-    preferred = normalize_keyword_category(article.get("keyword_category"))
     if preferred in {"regulation", "competitor", "industry"} and has_domain_context(text):
         return preferred
     if preferred == "other":
