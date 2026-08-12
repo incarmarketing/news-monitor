@@ -166,6 +166,7 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
     by_month: dict[str, Counter] = defaultdict(Counter)
     category_transitions = Counter()
     tone_transitions = Counter()
+    source_evidence_mismatch = Counter()
     samples: list[dict[str, Any]] = []
 
     for row in rows:
@@ -177,6 +178,20 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         else:
             cohort = "older_versioned"
         cohort_rows[cohort] += 1
+
+        article = article_from_row(row)
+        source_own = analyzer.has_own_evidence(article)
+        stored_own = normalize_value("own_mentioned", row.get("own_mentioned")) is True
+        if source_own != stored_own:
+            source_evidence_mismatch["own_mentioned"] += 1
+        if not source_own and str(row.get("category") or "") in {"own", "sponsorship"}:
+            source_evidence_mismatch["unsupported_company_category"] += 1
+        if not source_own and str(row.get("tone") or "") == "positive":
+            source_evidence_mismatch["unsupported_positive_tone"] += 1
+        if not source_own and str(row.get("negative_target") or "") == "own":
+            source_evidence_mismatch["unsupported_company_negative_target"] += 1
+        if not source_own and bool(row.get("alert_eligible")):
+            source_evidence_mismatch["unsupported_alert"] += 1
 
         context, feedback_applied = current_classification(row, feedback_index)
         feedback_applied_count += int(feedback_applied)
@@ -242,6 +257,7 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         "contract_drift_rows": contract_row_drift,
         "contract_drift_pct": round((contract_row_drift / total * 100) if total else 0, 3),
         "field_drift": dict(field_drift.most_common()),
+        "source_evidence_mismatch": dict(source_evidence_mismatch.most_common()),
         "cohorts": {
             cohort: {
                 "rows": count,
@@ -296,6 +312,7 @@ def main() -> int:
         "contract_drift_rows",
         "contract_drift_pct",
         "field_drift",
+        "source_evidence_mismatch",
         "cohorts",
         "category_transitions",
         "tone_transitions",

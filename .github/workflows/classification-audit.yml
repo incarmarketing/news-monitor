@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - "analyzer.py"
+      - "supabase_store.py"
+      - "tests/test_analyzer.py"
       - "tools/audit_classification_drift.py"
       - ".github/workflows/classification-audit.yml"
 

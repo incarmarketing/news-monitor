@@ -416,7 +416,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v3-2026-08-12"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v4-2026-08-12"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -589,6 +589,41 @@ def original_article_title(article: dict) -> str:
     ).strip()
 
 
+def original_article_lead(article: dict, limit: int = 480) -> str:
+    """Return the source lead without generated summaries or retrieval metadata."""
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    lead = next(
+        (
+            str(value).strip()
+            for value in (
+                article.get("description"),
+                raw.get("description"),
+                article.get("content"),
+                raw.get("content"),
+                article.get("body"),
+                raw.get("body"),
+            )
+            if str(value or "").strip()
+        ),
+        "",
+    )
+    return re.sub(r"\s+", " ", lead).strip()[:limit]
+
+
+def has_primary_own_lead(article: dict) -> bool:
+    """True when the source lead starts with the company as the article subject."""
+    lead = original_article_lead(article)
+    if not lead:
+        return False
+    return bool(
+        re.match(
+            r"^(?:\[[^\]]{1,80}\]\s*)?(?:인카금융서비스|인카금융)(?:은|는|이|가|의|에서|,|\s)",
+            lead,
+            re.I,
+        )
+    )
+
+
 def own_reference_windows(article: dict, radius: int = 220) -> list[str]:
     text = original_article_text(article)
     windows: list[str] = []
@@ -625,6 +660,8 @@ def classify_own_role(article: dict) -> str:
         return "primary"
     relation_text = direct_own_risk_relation_text(article)
     if relation_text:
+        return "primary"
+    if has_primary_own_lead(article):
         return "primary"
     incidental = re.search(
         r"(?:인카금융서비스|인카금융).{0,90}(?:출신|거쳐|역임|근무|재직|경력|본부장\s*등을\s*거쳐)|"
@@ -1034,6 +1071,7 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     source_rule_article["_category"] = rule_category
     rule_tone = analyze_tone(source_rule_article)
     source_own_mentioned = is_own_article(article)
+    source_own_role = classify_own_role(article)
     own_in_title = has_own_name_in_title(article)
 
     def force_own_direct_negative_context() -> None:
@@ -1121,10 +1159,12 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
 
     if is_own_article(article):
         result["own_mentioned"] = True
-        if own_in_title and result["category"] not in {"sponsorship"}:
+        if source_own_role == "primary" and own_in_title and result["category"] not in {"sponsorship"}:
             result["category"] = "own"
-        elif result["category"] in {"other", "exclude"}:
+        elif source_own_role == "primary" and result["category"] in {"other", "exclude"}:
             result["category"] = "own"
+        elif source_own_role in {"secondary", "incidental"} and result["category"] in {"own", "sponsorship"}:
+            result["category"] = rule_category if rule_category not in {"own", "sponsorship"} else "other"
 
     if is_own_brand_reputation_leader_article(article):
         result["category"] = "own"
@@ -1336,7 +1376,7 @@ def categorize(article: dict) -> str:
         return "competitor"
     if is_settlement_support_list_article(article):
         return "regulation"
-    if has_own_evidence(article):
+    if classify_own_role(article) == "primary":
         return "own"
     if is_sales_conduct_context_text(text):
         return "regulation"
@@ -2408,6 +2448,8 @@ def is_own_positive_focus_article(article: dict) -> bool:
     """Only direct company-favorable coverage can be counted as positive."""
     if not is_own_article(article):
         return False
+    if classify_own_role(article) != "primary":
+        return False
     if is_own_sales_performance_positive_article(article):
         return True
     if is_own_brand_reputation_leader_article(article):
@@ -2491,6 +2533,8 @@ def is_own_sales_performance_positive_article(article: dict) -> bool:
     """
     if not is_own_article(article):
         return False
+    if classify_own_role(article) != "primary":
+        return False
     text = article_summary_text(article)
     compact = re.sub(r"\s+", "", text)
 
@@ -2552,6 +2596,8 @@ def is_own_certified_agent_performance_article(article: dict) -> bool:
     compact = re.sub(r"\s+", "", text)
     has_own = re.search(r"\uC778\uCE74\uAE08\uC735\uC11C\uBE44\uC2A4|\uC778\uCE74\uAE08\uC735", compact, re.I)
     if not has_own:
+        return False
+    if classify_own_role(article) != "primary":
         return False
     has_certified_agent = re.search(r"\uC6B0\uC218\uC778\uC99D\uC124\uACC4\uC0AC|\uC778\uC99D\uC124\uACC4\uC0AC", compact, re.I)
     if not has_certified_agent:

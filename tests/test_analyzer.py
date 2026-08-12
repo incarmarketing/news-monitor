@@ -1676,6 +1676,89 @@ class OwnPositiveReputationRegressionTests(unittest.TestCase):
         self.assertTrue(analyzer.is_direct_own_negative_article(article))
 
 
+class SourceEvidenceClassificationPolicyTests(unittest.TestCase):
+    def test_retrieval_keyword_alone_cannot_create_company_scope(self) -> None:
+        article = {
+            "title": "지에이코리아, 우수인증설계사 인터뷰",
+            "description": "지에이코리아 소속 설계사의 현장 활동을 소개한다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "positive",
+                "own_mentioned": True,
+                "negative_target": "own",
+            },
+        )
+
+        self.assertEqual(analyzer.classify_own_role(article), "absent")
+        self.assertFalse(context["own_mentioned"])
+        self.assertNotEqual(context["category"], "own")
+        self.assertNotEqual(context["tone"], "positive")
+        self.assertFalse(context["alert_eligible"])
+
+    def test_company_at_start_of_source_lead_is_primary_subject(self) -> None:
+        article = {
+            "title": "GA 업계 상반기 실적 점검",
+            "description": "인카금융서비스는 상반기 매출과 설계사 수가 함께 증가했다고 밝혔다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        context = analyzer.apply_context_safety_guardrails(article)
+
+        self.assertEqual(context["own_role"], "primary")
+        self.assertTrue(context["own_mentioned"])
+        self.assertEqual(context["category"], "own")
+
+    def test_comparison_list_mention_is_secondary_not_company_positive(self) -> None:
+        article = {
+            "title": "한화생명금융서비스, 7월 GA 브랜드평판 1위",
+            "description": (
+                "한화생명금융서비스가 1위를 기록했고 인카금융서비스는 2위, "
+                "에이플러스에셋은 3위로 집계됐다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        context = analyzer.apply_context_safety_guardrails(article)
+
+        self.assertEqual(context["own_role"], "secondary")
+        self.assertTrue(context["own_mentioned"])
+        self.assertEqual(context["category"], "competitor")
+        self.assertNotEqual(context["tone"], "positive")
+        self.assertFalse(context["alert_eligible"])
+
+    def test_competitor_certified_agent_article_with_body_list_is_not_company_positive(self) -> None:
+        article = {
+            "title": "지에이코리아, 우수인증설계사 배출 확대",
+            "description": (
+                "지에이코리아가 우수인증설계사 성과를 발표했다. "
+                "업계 비교표에는 인카금융서비스도 포함됐다."
+            ),
+            "keyword": "인카금융서비스",
+            "keyword_category": "competitor",
+        }
+
+        article["_category"] = analyzer.categorize(article)
+        article["_tone"] = analyzer.analyze_tone(article)
+        context = analyzer.apply_context_safety_guardrails(article)
+
+        self.assertFalse(analyzer.is_own_certified_agent_performance_article(article))
+        self.assertEqual(context["own_role"], "secondary")
+        self.assertEqual(context["category"], "competitor")
+        self.assertNotEqual(context["tone"], "positive")
+
+
 class AIContextProviderTests(unittest.TestCase):
     def test_groq_context_provider_is_enabled_with_api_key(self) -> None:
         with patch.dict(
