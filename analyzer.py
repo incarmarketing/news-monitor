@@ -9,6 +9,8 @@ import os
 import re
 from collections import Counter
 
+import deterministic_risk
+
 
 OWN_NAMES = ["인카금융", "인카금융서비스"]
 SHORT_INCAR_PATTERN = re.compile(r"(?<![0-9A-Za-z가-힣])인카(?![0-9A-Za-z가-힣])", re.I)
@@ -416,7 +418,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v4-2026-08-12"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v5-deterministic-2026-08-12"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -440,9 +442,18 @@ def configure_context_rules(rows: list[dict] | None) -> None:
                 "trigger_mode": str(row.get("trigger_mode") or "any").strip().lower(),
                 "required_mode": str(row.get("required_mode") or "any").strip().lower(),
                 "priority": int(row.get("priority") or 100),
+                "rule_group": str(row.get("rule_group") or "").strip(),
+                "rule_type": str(row.get("rule_type") or "classify").strip(),
+                "decision": str(row.get("decision") or "").strip(),
+                "dashboard_visible": row.get("dashboard_visible", True) is not False,
+                "body_requirement": str(row.get("body_requirement") or "").strip(),
+                "match_target": str(row.get("match_target") or "").strip(),
+                "entity_type": str(row.get("entity_type") or "").strip(),
+                "analysis_excluded": row.get("analysis_excluded", False) is True,
             }
         )
     CONTEXT_RULES = sorted(cleaned, key=lambda item: item.get("priority", 100))
+    deterministic_risk.configure_rules(CONTEXT_RULES)
 
 
 def classification_ruleset_version() -> str:
@@ -468,7 +479,7 @@ def ai_context_budget() -> int:
 
 def ai_context_provider_mode() -> str:
     """Return the provider used for contextual article classification."""
-    value = os.getenv("AI_CONTEXT_CLASSIFICATION", "auto").strip().lower()
+    value = os.getenv("AI_CONTEXT_CLASSIFICATION", "rules").strip().lower()
     if value in {"0", "false", "no", "off", "rules"}:
         return ""
     if value in {"groq", "llama"}:
@@ -654,84 +665,25 @@ def own_reference_windows(article: dict, radius: int = 220) -> list[str]:
 
 
 def direct_own_risk_relation_text(article: dict) -> str:
-    """Return source spans where the company is grammatically close to a risk event."""
-    own = r"(?:인카금융서비스|인카금융)"
-    direct_risk = (
-        r"(?:제재|처분|등록\s*취소|업무\s*정지|과태료|검사\s*(?:착수|대상)|"
-        r"조사\s*(?:착수|대상)|불완전판매|부당승환|보험사기|편취|불법\s*사채|"
-        r"횡령|배임|압수수색|기소|소송|내부통제|관리\s*(?:부실|구멍)|"
-        r"스캔들|약탈\s*영업|그늘|과제\s*직면|논란|의혹|비판)"
-    )
-    matches: list[str] = []
-    for window in own_reference_windows(article):
-        if re.search(rf"{own}.{{0,180}}{direct_risk}|{direct_risk}.{{0,180}}{own}", window, re.I | re.S):
-            matches.append(window)
-    return " ".join(matches)
+    """Return only source-backed, same-sentence company-risk evidence."""
+    return str(deterministic_risk.classify(article).get("evidence") or "")
 
 
 def classify_own_role(article: dict) -> str:
-    """Describe whether Incar is the subject, a comparison member, or a career footnote."""
-    text = original_article_text(article)
-    if not contains_own_name(text):
-        return "absent"
-    title = original_article_title(article)
-    if contains_own_name(title):
-        return "primary"
-    relation_text = direct_own_risk_relation_text(article)
-    if relation_text:
-        return "primary"
-    if has_primary_own_lead(article):
-        return "primary"
-    if has_own_subject_clause(article):
-        return "primary"
-    incidental = re.search(
-        r"(?:인카금융서비스|인카금융).{0,90}(?:출신|거쳐|역임|근무|재직|경력|본부장\s*등을\s*거쳐)|"
-        r"(?:출신|거쳐|역임|근무|재직|경력).{0,90}(?:인카금융서비스|인카금융)",
-        text,
-        re.I | re.S,
-    )
-    if incidental:
-        return "incidental"
-    return "secondary"
+    """Return the source-only company role from the deterministic contract."""
+    return str(deterministic_risk.classify(article).get("own_role") or "absent")
 
 
 def classify_risk_event_type(article: dict, own_role: str | None = None) -> str:
-    own_role = own_role or classify_own_role(article)
-    if own_role in {"absent", "incidental"}:
-        return "none"
-    relation_text = direct_own_risk_relation_text(article)
-    if not relation_text and contains_own_name(original_article_title(article)):
-        relation_text = " ".join([original_article_title(article), *own_reference_windows(article)])
-    if not relation_text:
-        return "none"
-    patterns = (
-        ("sanction", r"제재|처분|등록\s*취소|업무\s*정지|과태료|검사\s*(?:착수|대상)|조사\s*(?:착수|대상)"),
-        ("fraud", r"보험사기|편취|고의\s*교통사고|허위\s*입원|불법\s*사채|횡령|배임|사기"),
-        ("consumer_harm", r"불완전판매|부당승환|소비자\s*피해|보험\s*꺾기|민원"),
-        ("legal", r"압수수색|기소|검찰|경찰\s*수사|소송"),
-        ("governance", r"내부통제|관리\s*(?:부실|구멍)|영업\s*관리\s*부실"),
-        ("reputational", r"스캔들|약탈\s*영업|그늘|과제\s*직면|논란|의혹|비판"),
-        ("market", r"주가.{0,30}(?:하락|급락)|52주\s*최저가|목표가\s*하향|투자의견\s*하향|실적\s*감소"),
-    )
-    for event_type, pattern in patterns:
-        if re.search(pattern, relation_text, re.I | re.S):
-            return event_type
-    return "none"
+    return str(deterministic_risk.classify(article).get("risk_event_type") or "none")
 
 
 def classify_document_type(article: dict, own_role: str | None = None, risk_event_type: str | None = None) -> str:
-    if is_routine_ga_channel_performance_article(article):
-        return "routine_statistics"
-    if is_own_brand_reputation_leader_article(article) or is_competitor_brand_reputation_against_own(article):
-        return "brand_reputation"
-    if is_own_certified_agent_performance_article(article):
-        return "certified_agent"
-    if is_own_sponsored_sports_article(article):
-        return "sponsorship"
-    own_role = own_role or classify_own_role(article)
-    risk_event_type = risk_event_type or classify_risk_event_type(article, own_role)
-    if risk_event_type != "none":
-        return "risk_event"
+    decision = deterministic_risk.classify(article)
+    document_type = str(decision.get("document_type") or "other")
+    if document_type != "other":
+        return document_type
+    own_role = own_role or str(decision.get("own_role") or "absent")
     if own_role == "incidental":
         return "company_profile"
     category = str(article.get("_category") or article.get("category") or "").strip()
@@ -745,25 +697,22 @@ def classify_document_type(article: dict, own_role: str | None = None, risk_even
 def build_classification_contract(article: dict, context: dict | None = None) -> dict:
     """Build a durable decision contract separate from category and tone labels."""
     context = dict(context or {})
-    own_role = classify_own_role(article)
-    risk_event_type = classify_risk_event_type(article, own_role)
-    document_type = classify_document_type(article, own_role, risk_event_type)
-    source_evidence = direct_own_risk_relation_text(article)
-    context_evidence = str(context.get("evidence") or "").strip()
-    evidence_present = bool(source_evidence or context_evidence)
+    deterministic = deterministic_risk.classify(article)
+    own_role = str(deterministic.get("own_role") or "absent")
+    risk_event_type = str(deterministic.get("risk_event_type") or "none")
+    document_type = str(deterministic.get("document_type") or "other")
+    source_evidence = str(deterministic.get("evidence") or "")
     negative_shape = (
         context.get("category") == "own"
         and context.get("tone") == "negative"
         and context.get("own_mentioned") is True
         and context.get("negative_target") == "own"
     )
-    alert_eligible = bool(
-        negative_shape
-        and own_role == "primary"
-        and document_type == "risk_event"
-        and risk_event_type in DIRECT_ALERT_RISK_EVENTS
-        and evidence_present
+    feedback_suppressed = bool(
+        article.get("_feedback_applied")
+        and context.get("tone") not in {"negative"}
     )
+    alert_eligible = bool(deterministic.get("alert_eligible") and not feedback_suppressed)
     return {
         "classification_ruleset_version": classification_ruleset_version(),
         "document_type": document_type,
@@ -773,8 +722,13 @@ def build_classification_contract(article: dict, context: dict | None = None) ->
         "classification_decision_path": {
             "negative_shape": negative_shape,
             "own_is_primary": own_role == "primary",
-            "direct_risk_event": risk_event_type in DIRECT_ALERT_RISK_EVENTS,
+            "direct_risk_event": bool(deterministic.get("alert_eligible")),
             "source_evidence": bool(source_evidence),
+            "review_required": bool(deterministic.get("review_required")),
+            "decision": deterministic.get("decision") or "no_alert",
+            "confidence": deterministic.get("confidence") or 0,
+            "matched_rule_keys": deterministic.get("matched_rule_keys") or [],
+            "feedback_suppressed": feedback_suppressed,
         },
     }
 
@@ -1096,13 +1050,15 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
     own_in_title = has_own_name_in_title(article)
 
     def force_own_direct_negative_context() -> None:
+        deterministic = deterministic_risk.classify(article)
         result["category"] = "own"
         result["tone"] = "negative"
         result["own_mentioned"] = True
         result["negative_target"] = "own"
         result["clipping_recommended"] = True
-        if not result.get("evidence"):
-            result["evidence"] = compact_evidence_sentence(article_summary_text(article), 120)
+        result["evidence"] = str(deterministic.get("evidence") or "")
+        result["provider"] = "rules:deterministic-risk-v1"
+        result["confidence"] = deterministic.get("confidence") or 0.995
         if not result.get("clipping_reason"):
             result["clipping_reason"] = "당사 직접 리스크로 사실관계와 대응 필요성을 우선 확인할 기사입니다."
 
@@ -2677,27 +2633,8 @@ def is_own_reputational_risk_article(article: dict) -> bool:
 
 
 def is_own_direct_negative_article(article: dict) -> bool:
-    """Directly negative only when the article alleges own-company misconduct."""
-    if not is_own_article(article):
-        return False
-    if is_routine_ga_channel_performance_article(article):
-        return False
-    if is_own_sales_performance_positive_article(article):
-        return False
-    if is_investment_downgrade_article(article) or is_stock_decline_article(article):
-        return False
-    text = article_summary_text(article)
-    if is_own_supervisory_sanction_article(article):
-        return True
-    if is_own_reputational_risk_article(article):
-        return True
-    return bool(
-        re.search(
-            r"인카금융스캔들|불법\s*사채|가로챈|관리\s*부실|불완전판매\s*(?:조사|검사|적발|착수|의혹)|내부통제\s*위반|압수수색|기소|검찰|경찰|과태료|제재|소송|사기|횡령|배임",
-            text,
-            re.I,
-        )
-    )
+    """True only for a source-backed deterministic company-risk alert."""
+    return deterministic_risk.classify(article).get("alert_eligible") is True
 
 
 def is_own_supervisory_sanction_article(article: dict) -> bool:

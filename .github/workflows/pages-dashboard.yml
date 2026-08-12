@@ -12,6 +12,7 @@ on:
       - "dashboard_builder.py"
       - "ai_briefing.py"
       - "analyzer.py"
+      - "deterministic_risk.py"
       - "apply_context_rule_fixes.py"
       - "classification_normalizer.py"
       - "negative_watch.py"
@@ -25,6 +26,8 @@ on:
       - "slack_notify.py"
       - "supabase_store.py"
       - "tests/test_analyzer.py"
+      - "tests/test_deterministic_risk.py"
+      - "tools/reclassify_deterministic.py"
       - "tests/test_context_rule_fixes.py"
       - "tests/test_negative_watch.py"
       - "tests/test_supabase_store_feedback.py"
@@ -81,7 +84,7 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Run classification regression tests
-        run: python -m unittest tests.test_analyzer tests.test_negative_watch tests.test_news_collector tests.test_supabase_store_feedback tests.test_context_rule_fixes
+        run: python -m unittest tests.test_deterministic_risk tests.test_analyzer tests.test_negative_watch tests.test_news_collector tests.test_supabase_store_feedback tests.test_context_rule_fixes
 
       - name: Refresh official regulator releases
         if: github.event_name == 'workflow_dispatch' && inputs.refresh_external == true

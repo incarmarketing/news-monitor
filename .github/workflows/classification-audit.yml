@@ -2,12 +2,21 @@ name: Classification Audit
 
 on:
   workflow_dispatch:
+    inputs:
+      apply_repairs:
+        description: "Apply validated deterministic repairs to Supabase"
+        required: false
+        default: false
+        type: boolean
   push:
     paths:
       - "analyzer.py"
+      - "deterministic_risk.py"
       - "supabase_store.py"
       - "tests/test_analyzer.py"
+      - "tests/test_deterministic_risk.py"
       - "tools/audit_classification_drift.py"
+      - "tools/reclassify_deterministic.py"
       - ".github/workflows/classification-audit.yml"
 
 permissions:
@@ -32,6 +41,7 @@ jobs:
       - name: Run classification regression tests
         run: >-
           python -m unittest
+          tests.test_deterministic_risk
           tests.test_analyzer
           tests.test_negative_watch
           tests.test_context_rule_fixes
@@ -48,3 +58,17 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           AI_CONTEXT_ENABLED: "false"
           AI_CONTEXT_PRO_REVIEW: "false"
+
+      - name: Build deterministic reclassification plan
+        run: >-
+          python tools/reclassify_deterministic.py
+          --sample-limit 0
+          --output "${RUNNER_TEMP}/deterministic-reclassification.json"
+          ${{ github.event_name == 'workflow_dispatch' && inputs.apply_repairs && '--apply' || '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AI_CONTEXT_ENABLED: "false"
+          AI_CONTEXT_PRO_REVIEW: "false"
+          AI_CONTEXT_CLASSIFICATION: "rules"

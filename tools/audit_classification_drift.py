@@ -27,7 +27,9 @@ import supabase_store
 SELECT_FIELDS = (
     "id,article_hash,report_date,title,link,source,keyword,pub_date,category,tone,"
     "own_mentioned,negative_target,document_type,own_role,risk_event_type,"
-    "alert_eligible,classification_provider,classification_ruleset_version,raw"
+    "alert_eligible,classification_evidence,classification_confidence,"
+    "classification_provider,classification_ruleset_version,"
+    "classification_decision_path,raw"
 )
 SEMANTIC_FIELDS = ("category", "tone", "own_mentioned", "negative_target")
 CONTRACT_FIELDS = ("document_type", "own_role", "risk_event_type", "alert_eligible")
@@ -167,6 +169,11 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
     category_transitions = Counter()
     tone_transitions = Counter()
     source_evidence_mismatch = Counter()
+    decision_counts = Counter()
+    alert_transitions = Counter()
+    current_alert_count = 0
+    review_required_count = 0
+    unsupported_current_alert_count = 0
     samples: list[dict[str, Any]] = []
 
     for row in rows:
@@ -195,6 +202,16 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
 
         context, feedback_applied = current_classification(row, feedback_index)
         feedback_applied_count += int(feedback_applied)
+        decision_path = context.get("classification_decision_path")
+        decision_path = decision_path if isinstance(decision_path, dict) else {}
+        decision = str(decision_path.get("decision") or "no_alert")
+        decision_counts[decision] += 1
+        current_alert = bool(context.get("alert_eligible"))
+        current_alert_count += int(current_alert)
+        review_required_count += int(bool(decision_path.get("review_required")))
+        alert_transitions[(bool(row.get("alert_eligible")), current_alert)] += 1
+        if current_alert and not str(context.get("classification_evidence") or context.get("evidence") or "").strip():
+            unsupported_current_alert_count += 1
         stored = {
             field: normalize_value(field, row.get(field))
             for field in (*SEMANTIC_FIELDS, *CONTRACT_FIELDS)
@@ -252,6 +269,14 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         "context_rule_count": len(context_rules),
         "feedback_rule_count": len(feedback_index),
         "feedback_applied_rows": feedback_applied_count,
+        "deterministic_alert_rows": current_alert_count,
+        "deterministic_review_rows": review_required_count,
+        "unsupported_current_alert_rows": unsupported_current_alert_count,
+        "decision_counts": dict(decision_counts.most_common()),
+        "alert_transitions": [
+            {"from": old, "to": new, "count": count}
+            for (old, new), count in alert_transitions.most_common()
+        ],
         "semantic_drift_rows": semantic_row_drift,
         "semantic_drift_pct": round((semantic_row_drift / total * 100) if total else 0, 3),
         "contract_drift_rows": contract_row_drift,
@@ -307,6 +332,11 @@ def main() -> int:
         "current_ruleset",
         "context_rule_count",
         "feedback_applied_rows",
+        "deterministic_alert_rows",
+        "deterministic_review_rows",
+        "unsupported_current_alert_rows",
+        "decision_counts",
+        "alert_transitions",
         "semantic_drift_rows",
         "semantic_drift_pct",
         "contract_drift_rows",

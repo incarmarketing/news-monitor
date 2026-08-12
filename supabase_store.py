@@ -1578,9 +1578,10 @@ def load_monitor_context_rules() -> list[dict]:
         response = request(
             "GET",
             (
-                "monitor_context_rules?"
-                "select=rule_key,label,category,tone,trigger_terms,required_terms,exclude_terms,"
-                "trigger_mode,required_mode,priority,enabled"
+                  "monitor_context_rules?"
+                  "select=rule_key,label,category,tone,trigger_terms,required_terms,exclude_terms,"
+                  "trigger_mode,required_mode,priority,enabled,rule_group,rule_type,decision,"
+                  "dashboard_visible,test_note"
                 "&enabled=eq.true&order=priority.asc,rule_key.asc"
             ),
         )
@@ -1604,9 +1605,14 @@ def load_monitor_context_rules() -> list[dict]:
                 "exclude_terms": row.get("exclude_terms") if isinstance(row.get("exclude_terms"), list) else [],
                 "trigger_mode": str(row.get("trigger_mode") or "any").strip().lower(),
                 "required_mode": str(row.get("required_mode") or "any").strip().lower(),
-                "priority": row.get("priority") or 100,
-                "enabled": row.get("enabled", True) is not False,
-            }
+                  "priority": row.get("priority") or 100,
+                  "enabled": row.get("enabled", True) is not False,
+                  "rule_group": str(row.get("rule_group") or "").strip(),
+                  "rule_type": str(row.get("rule_type") or "classify").strip(),
+                  "decision": str(row.get("decision") or "").strip(),
+                  "dashboard_visible": row.get("dashboard_visible", True) is not False,
+                  "test_note": str(row.get("test_note") or "").strip(),
+              }
         )
     return rows
 
