@@ -153,8 +153,13 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
     context_rules = supabase_store.load_monitor_context_rules()
     analyzer.configure_context_rules(context_rules)
     feedback_index = supabase_store.load_classification_feedback_index()
+    current_ruleset = analyzer.classification_ruleset_version()
 
     field_drift = Counter()
+    cohort_rows = Counter()
+    cohort_semantic_drift = Counter()
+    cohort_contract_drift = Counter()
+    cohort_field_drift: dict[str, Counter] = defaultdict(Counter)
     semantic_row_drift = 0
     contract_row_drift = 0
     feedback_applied_count = 0
@@ -164,6 +169,15 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
     samples: list[dict[str, Any]] = []
 
     for row in rows:
+        stored_ruleset = str(row.get("classification_ruleset_version") or "").strip()
+        if not stored_ruleset:
+            cohort = "legacy_unversioned"
+        elif stored_ruleset == current_ruleset:
+            cohort = "current_ruleset"
+        else:
+            cohort = "older_versioned"
+        cohort_rows[cohort] += 1
+
         context, feedback_applied = current_classification(row, feedback_index)
         feedback_applied_count += int(feedback_applied)
         stored = {
@@ -182,12 +196,15 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         month = month_key(row)
         if semantic_diff:
             semantic_row_drift += 1
+            cohort_semantic_drift[cohort] += 1
             by_month[month]["semantic"] += 1
         if contract_diff:
             contract_row_drift += 1
+            cohort_contract_drift[cohort] += 1
             by_month[month]["contract"] += 1
         for field in (*semantic_diff, *contract_diff):
             field_drift[field] += 1
+            cohort_field_drift[cohort][field] += 1
             by_month[month][field] += 1
         if "category" in semantic_diff:
             category_transitions[(stored["category"], current["category"])] += 1
@@ -215,7 +232,7 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
     return {
         "generated_at": datetime.now().astimezone().isoformat(),
         "mode": "read_only_deterministic_no_ai",
-        "current_ruleset": analyzer.classification_ruleset_version(),
+        "current_ruleset": current_ruleset,
         "row_count": total,
         "context_rule_count": len(context_rules),
         "feedback_rule_count": len(feedback_index),
@@ -225,6 +242,23 @@ def run_audit(rows: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         "contract_drift_rows": contract_row_drift,
         "contract_drift_pct": round((contract_row_drift / total * 100) if total else 0, 3),
         "field_drift": dict(field_drift.most_common()),
+        "cohorts": {
+            cohort: {
+                "rows": count,
+                "semantic_drift_rows": cohort_semantic_drift[cohort],
+                "semantic_drift_pct": round(
+                    cohort_semantic_drift[cohort] / count * 100 if count else 0,
+                    3,
+                ),
+                "contract_drift_rows": cohort_contract_drift[cohort],
+                "contract_drift_pct": round(
+                    cohort_contract_drift[cohort] / count * 100 if count else 0,
+                    3,
+                ),
+                "field_drift": dict(cohort_field_drift[cohort].most_common()),
+            }
+            for cohort, count in cohort_rows.most_common()
+        },
         "category_transitions": [
             {"from": old, "to": new, "count": count}
             for (old, new), count in category_transitions.most_common()
@@ -262,6 +296,10 @@ def main() -> int:
         "contract_drift_rows",
         "contract_drift_pct",
         "field_drift",
+        "cohorts",
+        "category_transitions",
+        "tone_transitions",
+        "by_month",
     )}, ensure_ascii=False, indent=2))
     print(f"audit_file={output.resolve()}")
     return 0
