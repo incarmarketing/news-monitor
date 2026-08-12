@@ -416,7 +416,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v2-2026-07-23"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v3-2026-08-12"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -572,7 +572,6 @@ def original_article_text(article: dict, limit: int = 12000) -> str:
         article.get("description", ""),
         article.get("content", ""),
         article.get("body", ""),
-        article.get("summary", ""),
         raw.get("title", ""),
         raw.get("description", ""),
         raw.get("content", ""),
@@ -986,8 +985,12 @@ def normalized_ai_context(article: dict, context: dict | None = None) -> dict:
     context = context if isinstance(context, dict) else {}
     category = normalize_ai_context_category(context.get("category")) or article.get("_category") or categorize(article)
     tone = normalize_ai_context_tone(context.get("tone")) or article.get("_tone") or analyze_tone(article)
-    own_mentioned = bool(context.get("own_mentioned")) or is_own_article(article)
+    # Retrieval keywords and cached model output are not evidence.  A company
+    # mention is valid only when it is present in the current source fields.
+    own_mentioned = is_own_article(article)
     negative_target = normalize_ai_negative_target(context.get("negative_target"))
+    if not own_mentioned and negative_target == "own":
+        negative_target = "none"
     evidence = str(context.get("evidence") or "").strip()
     reason = str(context.get("reason") or "").strip()
     clipping_recommended = normalize_ai_bool(context.get("clipping_recommended"))
@@ -1024,8 +1027,13 @@ def normalize_ai_bool(value: object) -> bool | None:
 def apply_context_safety_guardrails(article: dict, context: dict | None = None) -> dict:
     """Apply non-negotiable company-risk rules after rules or AI classification."""
     result = normalized_ai_context(article, context)
-    rule_category = article.get("_category") or categorize(article)
-    rule_tone = article.get("_tone") or analyze_tone(article)
+    source_rule_article = dict(article)
+    for key in ("_category", "category", "_tone", "tone", "_ai_context", "ai_context"):
+        source_rule_article.pop(key, None)
+    rule_category = categorize(source_rule_article)
+    source_rule_article["_category"] = rule_category
+    rule_tone = analyze_tone(source_rule_article)
+    source_own_mentioned = is_own_article(article)
     own_in_title = has_own_name_in_title(article)
 
     def force_own_direct_negative_context() -> None:
@@ -1038,6 +1046,25 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
             result["evidence"] = compact_evidence_sentence(article_summary_text(article), 120)
         if not result.get("clipping_reason"):
             result["clipping_reason"] = "당사 직접 리스크로 사실관계와 대응 필요성을 우선 확인할 기사입니다."
+
+    cached_own_scope = (
+        result.get("own_mentioned") is True
+        or result.get("category") in {"own", "sponsorship"}
+        or result.get("negative_target") == "own"
+    )
+    if not source_own_mentioned:
+        result["own_mentioned"] = False
+        if result.get("negative_target") == "own":
+            result["negative_target"] = "none"
+        if result.get("category") in {"own", "sponsorship"}:
+            result["category"] = rule_category if rule_category not in {"own", "sponsorship"} else "other"
+        if result.get("tone") == "positive":
+            result["tone"] = rule_tone if rule_tone != "positive" else "neutral"
+        if cached_own_scope:
+            result["provider"] = "rules:source_evidence_guard_v1"
+            result["reason"] = "제목·본문 원문에 당사명이 없어 과거 캐시의 당사 판정을 폐기"
+            result["clipping_recommended"] = False
+            result["clipping_reason"] = ""
 
     if is_external_insurance_noise_article(article):
         result["category"] = "other"

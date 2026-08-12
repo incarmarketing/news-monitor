@@ -202,6 +202,61 @@ class ClassificationFeedbackTests(unittest.TestCase):
         self.assertNotIn("_category", article)
         self.assertEqual(article["_summary"], "기존에 생성한 기사 요약입니다.")
 
+    def test_current_cache_with_unsupported_own_scope_is_rejected(self) -> None:
+        link = "https://example.com/competitor-certified-agent"
+        article = {
+            "title": "글로벌금융판매, 2026 GA 우수인증설계사 배출",
+            "description": "글로벌금융판매의 인증 성과를 다룬 기사입니다.",
+            "keyword": "인카금융서비스",
+            "link": link,
+        }
+        article_hash = hashlib.sha256(link.encode("utf-8")).hexdigest()
+        cache = {
+            article_hash: {
+                "article_hash": article_hash,
+                "summary": "기존 기사 요약입니다.",
+                "category": "own",
+                "tone": "positive",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "classification_ruleset_version": analyzer.classification_ruleset_version(),
+            }
+        }
+
+        applied = supabase_store.apply_article_analysis_cache(article, cache)
+
+        self.assertFalse(applied)
+        self.assertTrue(article["_analysis_cache_source_mismatch"])
+        self.assertNotIn("_category", article)
+        self.assertEqual(article["_summary"], "기존 기사 요약입니다.")
+
+    def test_persistence_context_ignores_cached_own_without_source_evidence(self) -> None:
+        article = {
+            "title": "교보생명, 꿈나무체육대회 마무리",
+            "description": "교보생명의 스포츠 사회공헌 행사입니다.",
+            "link": "https://example.com/kyobo-event",
+            "keyword": "인카금융서비스",
+            "_category": "sponsorship",
+            "_tone": "positive",
+            "_ai_context": {
+                "category": "sponsorship",
+                "tone": "positive",
+                "own_mentioned": True,
+                "negative_target": "own",
+            },
+        }
+        archive = {
+            "date": "2026-08-12",
+            "window": {"slot": "watch", "label": "test"},
+            "metrics": {"risk_level": "LOW"},
+        }
+
+        row = supabase_store.normalize_article(article, archive)
+
+        self.assertFalse(row["own_mentioned"])
+        self.assertEqual(row["negative_target"], "none")
+        self.assertFalse(row["alert_eligible"])
+
 
 if __name__ == "__main__":
     unittest.main()

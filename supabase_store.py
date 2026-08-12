@@ -566,6 +566,18 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
         article["_analysis_cache_current_ruleset"] = current_ruleset
         return False
 
+    cached_own_scope = (
+        category in {"own", "sponsorship"}
+        or row.get("own_mentioned") is True
+        or cached_context.get("own_mentioned") is True
+        or str(row.get("negative_target") or cached_context.get("negative_target") or "").strip() == "own"
+    )
+    if cached_own_scope and not analyzer.is_own_article(article):
+        article["_analysis_cache_source_mismatch"] = True
+        article["_analysis_cache_stored_ruleset"] = cached_ruleset
+        article["_analysis_cache_current_ruleset"] = current_ruleset
+        return False
+
     context = {
         **cached_context,
         "category": category or cached_context.get("category") or article.get("_category") or article.get("category") or "",
@@ -1167,9 +1179,10 @@ def normalized_article_context(article: dict) -> dict:
     context = article.get("_ai_context") if isinstance(article.get("_ai_context"), dict) else {}
     if not context and isinstance(article.get("ai_context"), dict):
         context = article.get("ai_context")
-    own_mentioned = context.get("own_mentioned")
-    if own_mentioned is None:
-        own_mentioned = analyzer.is_own_article(article)
+    own_mentioned = analyzer.is_own_article(article)
+    negative_target = str(context.get("negative_target") or "none").strip() or "none"
+    if not own_mentioned and negative_target == "own":
+        negative_target = "none"
     contract = analyzer.build_classification_contract(
         article,
         {
@@ -1177,12 +1190,12 @@ def normalized_article_context(article: dict) -> dict:
             "category": context.get("category") or article.get("_category") or article.get("category") or "other",
             "tone": context.get("tone") or article.get("_tone") or article.get("tone") or "neutral",
             "own_mentioned": bool(own_mentioned),
-            "negative_target": context.get("negative_target") or article.get("negative_target") or "none",
+            "negative_target": negative_target,
         },
     )
     return {
         "own_mentioned": bool(own_mentioned),
-        "negative_target": str(context.get("negative_target") or "none").strip() or "none",
+        "negative_target": negative_target,
         "evidence": str(context.get("evidence") or "").strip(),
         "reason": str(context.get("reason") or "").strip(),
         "confidence": safe_float(context.get("confidence"), 0),

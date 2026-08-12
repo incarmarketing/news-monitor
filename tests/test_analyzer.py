@@ -1317,6 +1317,83 @@ class AnalyzerToneTests(unittest.TestCase):
 
 
 class AnalyzerAiContextGuardrailTests(unittest.TestCase):
+    def test_cached_own_context_without_source_evidence_is_discarded(self) -> None:
+        article = {
+            "title": "[2026 GA 우수인증설계사] 글로벌금융판매, 사람 중심 GA로 신뢰 키운다",
+            "description": "글로벌금융판매가 우수인증설계사를 배출하며 고객 신뢰 경쟁력을 입증했다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "own",
+            "_tone": "positive",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "positive",
+                "own_mentioned": True,
+                "negative_target": "own",
+                "clipping_recommended": True,
+                "provider": "legacy-cache",
+            },
+        )
+
+        self.assertFalse(context["own_mentioned"])
+        self.assertNotEqual(context["category"], "own")
+        self.assertEqual(context["tone"], "neutral")
+        self.assertEqual(context["negative_target"], "none")
+        self.assertFalse(context["alert_eligible"])
+        self.assertFalse(context["clipping_recommended"])
+        self.assertEqual(context["provider"], "rules:source_evidence_guard_v1")
+
+    def test_external_sponsorship_cache_cannot_become_own_sponsorship(self) -> None:
+        article = {
+            "title": "교보생명, 제42회 꿈나무체육대회 성료",
+            "description": "교보생명이 유소년 체육대회를 마무리했다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+            "_category": "sponsorship",
+            "_tone": "positive",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "sponsorship",
+                "tone": "positive",
+                "own_mentioned": True,
+                "negative_target": "none",
+                "clipping_recommended": True,
+            },
+        )
+
+        self.assertFalse(context["own_mentioned"])
+        self.assertNotIn(context["category"], {"own", "sponsorship"})
+        self.assertEqual(context["tone"], "neutral")
+        self.assertFalse(context["clipping_recommended"])
+
+    def test_source_body_mention_remains_authoritative(self) -> None:
+        article = {
+            "title": "GA 업계 상반기 실적 점검",
+            "description": "인카금융서비스가 상반기 GA 실적 상위권을 기록했다.",
+            "keyword": "인카금융서비스",
+            "keyword_category": "own",
+        }
+
+        context = analyzer.apply_context_safety_guardrails(
+            article,
+            {
+                "category": "own",
+                "tone": "neutral",
+                "own_mentioned": False,
+                "negative_target": "none",
+            },
+        )
+
+        self.assertTrue(context["own_mentioned"])
+        self.assertEqual(context["category"], "own")
+
     def test_ai_context_non_own_positive_is_downgraded_to_neutral(self) -> None:
         article = {
             "title": "경쟁 GA 월 매출 1위 수성",
