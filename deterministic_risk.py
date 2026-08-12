@@ -75,7 +75,9 @@ EVENT_PATTERNS: tuple[tuple[str, str, re.Pattern[str]], ...] = (
         "risk_alert_reputational",
         re.compile(
             r"스캔들|약탈\s*영업|불법\s*영업|그늘|과제\s*직면|도덕적\s*해이|"
-            r"평판\s*훼손|신뢰\s*추락",
+            r"평판\s*훼손|신뢰\s*추락|막차\s*리크루팅|영입\s*경쟁\s*과열|"
+            r"정착지원금.{0,35}(?:급증|과열|논란)|관리\s*부실\s*논란|"
+            r"수만\s*늘렸나|외형\s*성장\s*뒤",
             re.I,
         ),
     ),

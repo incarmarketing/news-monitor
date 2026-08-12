@@ -44,6 +44,22 @@ class ClassificationFeedbackTests(unittest.TestCase):
 
         self.assertEqual(row["discovered_at"], "2026-07-20T09:20:00+09:00")
 
+    def test_normalize_article_records_stable_identity_and_source_time(self) -> None:
+        row = supabase_store.normalize_article(
+            {
+                "title": "[단독] 인카금융서비스 제재 기사 - example.com",
+                "link": "https://news.google.com/rss/articles/current-wrapper",
+                "pub_date": "2026-08-12T09:50:00+00:00",
+                "_original_pub_date": "2026-04-20T04:00:00+00:00",
+                "_category": "own",
+                "_tone": "negative",
+            },
+            {"date": "2026-08-12", "window": {}, "metrics": {}},
+        )
+
+        self.assertEqual(row["alert_identity"], "인카금융서비스제재기사")
+        self.assertEqual(row["source_published_at"], "2026-04-20T04:00:00+00:00")
+
     def test_normalize_article_leaves_discovery_time_to_database_for_regular_runs(self) -> None:
         row = supabase_store.normalize_article(
             {

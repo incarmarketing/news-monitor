@@ -117,6 +117,61 @@ class NegativeWatchDelayedExposureTests(unittest.TestCase):
 
         self.assertEqual(filtered, [article])
 
+    def test_old_first_discovery_rejects_reexposure_when_source_date_is_unavailable(self) -> None:
+        now = datetime(2026, 8, 12, 10, 0, tzinfo=timezone.utc)
+        article = {
+            "title": "[인카금융스캔들] 불법 사채놀이까지",
+            "link": "https://news.google.com/rss/articles/new-wrapper",
+            "pub_date": "Wed, 12 Aug 2026 09:50:00 +0000",
+        }
+        observation = {
+            negative_watch.article_alert_identity(article): {
+                "discovered_at": (now - timedelta(days=60)).isoformat(),
+                "pub_date": (now - timedelta(days=60)).isoformat(),
+            }
+        }
+        with patch.object(negative_watch, "original_publish_date", return_value=None):
+            filtered = negative_watch.filter_stale_negative_reexposures(
+                [article], max_age_minutes=1440, now=now, observations=observation
+            )
+
+        self.assertEqual(filtered, [])
+        self.assertEqual(
+            article["_excluded_reason"],
+            "article_previously_discovered_outside_alert_window",
+        )
+        self.assertFalse(article["_alert_freshness"]["eligible"])
+
+    def test_old_feed_timestamp_is_rejected_when_source_date_is_unavailable(self) -> None:
+        now = datetime(2026, 8, 12, 10, 0, tzinfo=timezone.utc)
+        article = {
+            "title": "인카금융서비스 과거 제재 기사",
+            "link": "https://example.com/old",
+            "pub_date": (now - timedelta(days=3)).isoformat(),
+        }
+        with patch.object(negative_watch, "original_publish_date", return_value=None):
+            filtered = negative_watch.filter_stale_negative_reexposures(
+                [article], max_age_minutes=1440, now=now
+            )
+
+        self.assertEqual(filtered, [])
+        self.assertEqual(article["_excluded_reason"], "feed_article_older_than_negative_watch_window")
+
+    def test_recent_feed_with_new_identity_remains_eligible_without_source_date(self) -> None:
+        now = datetime(2026, 8, 12, 10, 0, tzinfo=timezone.utc)
+        article = {
+            "title": "인카금융서비스 신규 제재 기사",
+            "link": "https://example.com/new",
+            "pub_date": (now - timedelta(minutes=5)).isoformat(),
+        }
+        with patch.object(negative_watch, "original_publish_date", return_value=None):
+            filtered = negative_watch.filter_stale_negative_reexposures(
+                [article], max_age_minutes=1440, now=now
+            )
+
+        self.assertEqual(filtered, [article])
+        self.assertTrue(article["_alert_freshness"]["eligible"])
+
 class NegativeWatchPersistenceTests(unittest.TestCase):
     def test_recent_db_alert_preserves_classification_contract(self) -> None:
         row = {
@@ -172,6 +227,29 @@ class NegativeWatchPersistenceTests(unittest.TestCase):
             keyword_category="own",
             display_count=100,
         )
+
+    def test_risk_watch_enriches_sensitive_bodies_before_classification(self) -> None:
+        article = {
+            "title": "대형 GA 전직 설계사 무더기 제재",
+            "description": "보험사기 연루 설계사가 적발됐다.",
+            "keyword_query": "인카금융서비스",
+            "keyword_category": "own",
+            "pub_date": datetime.now(timezone.utc).isoformat(),
+        }
+        with (
+            patch.object(negative_watch.analyzer, "OWN_NAMES", ["인카금융서비스"]),
+            patch.object(negative_watch.news_collector, "fetch_naver_news", return_value=[article]),
+            patch.object(negative_watch.news_collector, "fetch_google_news", return_value=[]),
+            patch.object(negative_watch.news_collector, "fetch_own_press_search_news", return_value=[]),
+            patch.object(negative_watch.news_collector, "deduplicate", side_effect=lambda rows: rows),
+            patch.object(negative_watch.news_collector, "apply_exclude_filter", side_effect=lambda rows: rows),
+            patch.object(negative_watch.news_collector, "apply_recency_filter", side_effect=lambda rows, _hours: rows),
+            patch.object(negative_watch.news_collector, "enrich_sensitive_article_bodies") as enrich,
+        ):
+            negative_watch.collect_recent_company_news(10)
+
+        enrich.assert_called_once()
+        self.assertIn(article, enrich.call_args.args[0])
 
     def test_watch_discovered_company_articles_are_persisted_without_alert(self) -> None:
         article = {

@@ -299,6 +299,45 @@ class DeterministicRiskPrecisionTests(unittest.TestCase):
         self.assertEqual(result["own_role"], "primary")
         self.assertFalse(result["alert_eligible"])
 
+    def test_direct_recruiting_criticism_is_a_reputational_alert(self) -> None:
+        article = {
+            "title": "정착지원금 경쟁 막차 리크루팅 논란",
+            "description": (
+                "인카금융서비스의 정착지원금은 지난해 1분기 35억원에서 "
+                "올해 1분기 65억원으로 급증해 과열 영입 논란이 제기됐다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertTrue(result["alert_eligible"])
+        self.assertEqual(result["risk_event_type"], "reputational")
+
+    def test_peer_comparison_does_not_hide_direct_company_sanctions_in_body(self) -> None:
+        article = {
+            "title": "고의사고로 보험금 편취…대형 GA 설계사 무더기 제재",
+            "description": "대형 GA 소속 설계사들의 보험사기 행위가 적발됐다.",
+            "body": (
+                "금융감독원은 인카금융서비스, 글로벌금융판매, 메가 등 전직 설계사에게 "
+                "제재 조치를 통보했다. 특히 인카금융서비스 전직 설계사 3명의 등록을 "
+                "취소하고 다른 3명의 업무를 180일간 정지했다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertTrue(result["alert_eligible"])
+        self.assertEqual(result["risk_event_type"], "sanction")
+
+    def test_comparative_sales_commission_inspection_stays_review_only(self) -> None:
+        article = {
+            "title": "금감원, 대형 GA 판매수수료 제도 안착 점검",
+            "description": (
+                "인카금융서비스 등 대형 GA의 1200%룰 이행 여부와 "
+                "정착지원금 지급 관행을 점검한다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertFalse(result["alert_eligible"])
+        self.assertTrue(result["review_required"])
+        self.assertEqual(result["suggested_tone"], "caution")
+
 
 if __name__ == "__main__":
     unittest.main()

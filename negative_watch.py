@@ -8,7 +8,6 @@ article appears.
 from __future__ import annotations
 
 import hashlib
-import html
 import json
 import math
 import os
@@ -28,7 +27,9 @@ import slack_notify
 from supabase_store import (
     apply_classification_feedback_to_articles,
     apply_cached_analysis_to_articles,
+    article_alert_identity,
     article_hash as supabase_article_hash,
+    load_article_observation_index,
     load_latest_negative_watch_run,
     load_recent_negative_articles,
     notification_already_sent,
@@ -214,9 +215,7 @@ def article_key(article: dict) -> str:
     # Portal RSS links are regenerated even when the underlying article is the
     # same.  Alerts therefore use the headline as their stable identity and
     # only fall back to a URL/hash when a usable headline is unavailable.
-    title = html.unescape(str(article.get("title") or ""))
-    title = re.sub(r"\s+-\s+(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*$", "", title, flags=re.I)
-    normalized_title = re.sub(r"[^0-9a-zA-Z가-힣]+", "", title).lower()
+    normalized_title = article_alert_identity(article)
     raw = normalized_title or article.get("_original_url") or article.get("link") or article.get("article_hash") or ""
     normalized = re.sub(r"\s+", " ", str(raw)).strip().lower()
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:24]
@@ -224,7 +223,9 @@ def article_key(article: dict) -> str:
 
 def original_publish_date(article: dict) -> datetime | None:
     """Return the publisher timestamp, resolving portal wrappers when needed."""
-    cached = news_collector.parse_pub_date(article.get("_original_pub_date", ""))
+    cached = news_collector.parse_pub_date(
+        article.get("_original_pub_date", "") or article.get("source_published_at", "")
+    )
     if cached:
         return cached
 
@@ -251,27 +252,113 @@ def original_publish_date(article: dict) -> datetime | None:
     return published
 
 
+def _earliest_timestamp(*values: object) -> datetime | None:
+    parsed = [news_collector.parse_pub_date(str(value or "")) for value in values]
+    valid = [value for value in parsed if value is not None]
+    return min(valid) if valid else None
+
+
+def _record_alert_freshness(
+    article: dict,
+    *,
+    eligible: bool,
+    status: str,
+    source_published_at: datetime | None,
+    feed_published_at: datetime | None,
+    first_seen_at: datetime | None,
+    max_age_minutes: int,
+) -> None:
+    evidence = {
+        "eligible": eligible,
+        "status": status,
+        "max_age_minutes": max_age_minutes,
+        "source_published_at": source_published_at.isoformat() if source_published_at else None,
+        "feed_published_at": feed_published_at.isoformat() if feed_published_at else None,
+        "first_seen_at": first_seen_at.isoformat() if first_seen_at else None,
+    }
+    article["_alert_freshness"] = evidence
+    decision_path = article.get("classification_decision_path")
+    if not isinstance(decision_path, dict):
+        decision_path = {}
+    decision_path = {**decision_path, "alert_freshness": evidence}
+    article["classification_decision_path"] = decision_path
+    context = article.get("_ai_context")
+    if isinstance(context, dict):
+        context["classification_decision_path"] = decision_path
+
+
 def filter_stale_negative_reexposures(
     articles: list[dict],
     *,
     max_age_minutes: int = 1440,
     now: datetime | None = None,
+    observations: dict[str, dict] | None = None,
 ) -> list[dict]:
-    """Reject old originals that portals present again with a fresh RSS time."""
+    """Gate alert delivery with source, feed, and first-seen timestamps."""
     current = now or datetime.now(timezone.utc)
     cutoff = current - timedelta(minutes=max(1, max_age_minutes))
+    observations = observations or {}
     result = []
     for article in articles:
-        published = original_publish_date(article)
-        if published and published < cutoff:
+        observation = observations.get(article_alert_identity(article), {})
+        source_published_at = original_publish_date(article) or _earliest_timestamp(
+            observation.get("source_published_at")
+        )
+        feed_published_at = _earliest_timestamp(
+            article.get("pub_date"),
+            observation.get("pub_date"),
+        )
+        first_seen_at = _earliest_timestamp(
+            article.get("discovered_at"),
+            article.get("_discovered_at"),
+            article.get("created_at"),
+            observation.get("discovered_at"),
+            observation.get("created_at"),
+        )
+
+        excluded_reason = ""
+        if first_seen_at and first_seen_at < cutoff:
+            excluded_reason = "article_previously_discovered_outside_alert_window"
+        elif source_published_at and source_published_at < cutoff:
+            excluded_reason = "original_article_older_than_negative_watch_window"
+        elif feed_published_at and feed_published_at < cutoff:
+            excluded_reason = "feed_article_older_than_negative_watch_window"
+        elif source_published_at and source_published_at > current + timedelta(hours=2):
+            excluded_reason = "source_timestamp_is_in_the_future"
+        elif not source_published_at and not feed_published_at:
+            excluded_reason = "missing_publish_timestamps"
+
+        if excluded_reason:
             article["_stale_reexposure"] = True
-            article["_excluded_reason"] = "original_article_older_than_negative_watch_window"
+            article["_excluded_reason"] = excluded_reason
+            _record_alert_freshness(
+                article,
+                eligible=False,
+                status=excluded_reason,
+                source_published_at=source_published_at,
+                feed_published_at=feed_published_at,
+                first_seen_at=first_seen_at,
+                max_age_minutes=max_age_minutes,
+            )
             print(
                 "Negative watcher excluded stale re-exposure:",
-                published.isoformat(),
+                excluded_reason,
                 article.get("title", ""),
             )
             continue
+
+        status = "dual_timestamp_verified" if source_published_at and feed_published_at else (
+            "source_timestamp_verified" if source_published_at else "feed_timestamp_and_first_seen_verified"
+        )
+        _record_alert_freshness(
+            article,
+            eligible=True,
+            status=status,
+            source_published_at=source_published_at,
+            feed_published_at=feed_published_at,
+            first_seen_at=first_seen_at or current,
+            max_age_minutes=max_age_minutes,
+        )
         result.append(article)
     return result
 
@@ -344,6 +431,7 @@ def collect_recent_company_news(minutes_back: int) -> list[dict]:
             risk_minutes_back if is_own_risk_query_article(article) else minutes_back,
         )
     ]
+    news_collector.enrich_sensitive_article_bodies(articles)
     return articles
 
 
@@ -462,7 +550,9 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
                 "summary": row.get("summary", ""),
                 "source": row.get("source", ""),
                 "keyword": row.get("keyword", ""),
-                "pub_date": row.get("pub_date_raw") or row.get("pub_date", ""),
+                "pub_date": row.get("source_published_at") or row.get("pub_date") or row.get("pub_date_raw", ""),
+                "source_published_at": row.get("source_published_at", ""),
+                "discovered_at": row.get("discovered_at", ""),
                 "created_at": row.get("created_at", ""),
                 "_category": row.get("category", "own"),
                 "_tone": row.get("tone", "negative"),
@@ -970,9 +1060,11 @@ def main() -> None:
 
     articles = collect_recent_company_news(minutes_back)
     analyzed_articles, metrics = analyze_watch_articles(articles)
+    rss_negative_candidates = direct_negative_articles(analyzed_articles)
     negatives = filter_stale_negative_reexposures(
-        direct_negative_articles(analyzed_articles),
+        rss_negative_candidates,
         max_age_minutes=risk_query_minutes_back(minutes_back),
+        observations=load_article_observation_index(rss_negative_candidates),
     )
     persisted_watch_count = persist_watch_articles(analyzed_articles, metrics, scanned_at, minutes_back)
     db_negatives = collect_recent_db_negatives(minutes_back)
@@ -987,6 +1079,7 @@ def main() -> None:
     db_negatives = filter_stale_negative_reexposures(
         db_negatives,
         max_age_minutes=risk_query_minutes_back(minutes_back),
+        observations=load_article_observation_index(db_negatives),
     )
     if db_negatives:
         metrics["own_total"] = max(metrics.get("own_total", 0), len(db_negatives))

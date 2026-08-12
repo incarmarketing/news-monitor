@@ -21,6 +21,7 @@ KST = timezone(timedelta(hours=9))
 
 ARTICLE_COLUMNS = (
     "article_hash",
+    "alert_identity",
     "report_date",
     "report_slot",
     "window_label",
@@ -34,6 +35,7 @@ ARTICLE_COLUMNS = (
     "summary",
     "discovered_at",
     "pub_date",
+    "source_published_at",
     "pub_date_raw",
     "score",
     "category",
@@ -282,6 +284,15 @@ def request(method: str, path: str, **kwargs: Any) -> requests.Response:
 def article_hash(article: dict) -> str:
     seed = article.get("link") or f"{article.get('title', '')}|{article.get('pub_date', '')}"
     return hashlib.sha256(seed.encode("utf-8")).hexdigest()
+
+
+def article_alert_identity(article: dict) -> str:
+    """Return a stable title identity across regenerated portal URLs."""
+    title = str(article.get("title") or "")
+    title = re.sub(r"<[^>]+>", " ", title)
+    title = re.sub(r"^\s*\[[^\]]{1,40}\]\s*", "", title)
+    title = re.sub(r"\s+-\s+(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}\s*$", "", title, flags=re.I)
+    return re.sub(r"[^0-9a-zA-Z가-힣]+", "", title).lower()[:300]
 
 
 def normalize_feedback_link(value: object) -> str:
@@ -1098,8 +1109,8 @@ def load_recent_negative_articles(minutes_back: int, limit: int = 20) -> list[di
     since = (datetime.now(timezone.utc) - timedelta(minutes=max(1, minutes_back))).isoformat()
     query = (
         "news_articles?"
-        "select=article_hash,report_date,report_slot,window_label,risk_level,title,link,source,"
-        "keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,"
+        "select=article_hash,alert_identity,report_date,report_slot,window_label,risk_level,title,link,source,"
+        "keyword,summary,discovered_at,pub_date,source_published_at,pub_date_raw,score,category,tone,own_mentioned,negative_target,"
         "classification_evidence,classification_reason,classification_confidence,classification_provider,"
         "classification_ruleset_version,document_type,own_role,risk_event_type,alert_eligible,"
         "classification_decision_path,cluster_size,status,created_at,raw"
@@ -1115,6 +1126,45 @@ def load_recent_negative_articles(minutes_back: int, limit: int = 20) -> list[di
     except Exception as error:
         print(f"Supabase recent negative article lookup skipped: {error}")
         return []
+
+
+def load_article_observation_index(articles: list[dict], chunk_size: int = 40) -> dict[str, dict]:
+    """Load the earliest stored observation for each stable title identity."""
+    if not is_enabled() or not articles:
+        return {}
+    identities = sorted(
+        {
+            identity
+            for article in articles
+            if (identity := article_alert_identity(article))
+        }
+    )
+    if not identities:
+        return {}
+
+    index: dict[str, dict] = {}
+    try:
+        for offset in range(0, len(identities), max(1, chunk_size)):
+            batch = identities[offset : offset + max(1, chunk_size)]
+            encoded = quote(",".join(batch), safe=",")
+            response = request(
+                "GET",
+                (
+                    "news_articles?"
+                    "select=alert_identity,discovered_at,created_at,pub_date,source_published_at,title,link"
+                    f"&alert_identity=in.({encoded})"
+                    "&order=discovered_at.asc"
+                    f"&limit={max(100, len(batch) * 10)}"
+                ),
+            )
+            for row in response.json() or []:
+                identity = str(row.get("alert_identity") or "")
+                if identity and identity not in index:
+                    index[identity] = row
+    except Exception as error:
+        print(f"Supabase article observation lookup skipped: {error}")
+        return {}
+    return index
 
 
 def article_risk_level(article: dict, metrics: dict | None = None) -> str:
@@ -1136,6 +1186,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
     discovered_at = article.get("discovered_at") or article.get("_discovered_at")
     row = {
         "article_hash": article_hash(article),
+        "alert_identity": article_alert_identity(article),
         "report_date": archive_payload.get("date"),
         "report_slot": window.get("slot", ""),
         "window_label": window.get("label", ""),
@@ -1148,6 +1199,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "keyword": article.get("keyword", ""),
         "summary": article.get("_summary", "") or analyzer.build_quality_summary(article),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
+        "source_published_at": parse_pub_date(article.get("_original_pub_date", "")),
         "pub_date_raw": article.get("pub_date", ""),
         "score": article.get("_score", 0),
         "category": article.get("_category", "other"),
@@ -1225,14 +1277,26 @@ def save_news_article_rows(rows: list[dict]) -> None:
         request("POST", "news_articles?on_conflict=article_hash", data=json.dumps(rows, ensure_ascii=False))
     except requests.HTTPError as error:
         detail = str(error)
-        if "discovered_at" not in detail:
+        compatibility_columns = {
+            column
+            for column in ("discovered_at", "alert_identity", "source_published_at")
+            if column in detail
+        }
+        if not compatibility_columns:
             raise
 
         compatible_rows = [
-            {column: value for column, value in row.items() if column != "discovered_at"}
+            {
+                column: value
+                for column, value in row.items()
+                if column not in compatibility_columns
+            }
             for row in rows
         ]
-        print("Supabase news_articles discovered_at column missing; retried without that field only.")
+        print(
+            "Supabase news_articles observation columns missing; retried without: "
+            + ", ".join(sorted(compatibility_columns))
+        )
         request(
             "POST",
             "news_articles?on_conflict=article_hash",
