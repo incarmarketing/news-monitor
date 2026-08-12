@@ -2007,20 +2007,9 @@ def is_general_sports_noise_article(article: dict) -> bool:
 
 
 def own_sponsored_sports_text(article: dict) -> str:
-    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
-    return " ".join(
-        str(value or "")
-        for value in (
-            article.get("title"),
-            article.get("description"),
-            article.get("source"),
-            raw.get("title"),
-            raw.get("description"),
-            raw.get("summary"),
-            article.get("summary"),
-            article.get("keyword"),
-        )
-    )
+    # Own sponsorship is an entity claim, so retrieval keywords and generated
+    # summaries must never be allowed to create it.
+    return original_article_text(article)
 
 
 def is_own_sponsored_sports_article(article: dict) -> bool:
@@ -2054,19 +2043,7 @@ def is_own_sponsored_sports_brand_article(article: dict) -> bool:
 def is_own_sponsored_sports_preview_noise_article(article: dict) -> bool:
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
     title = " ".join(str(value or "") for value in (article.get("title"), raw.get("title")))
-    text = " ".join(
-        str(value or "")
-        for value in (
-            article.get("title"),
-            article.get("description"),
-            article.get("source"),
-            raw.get("title"),
-            raw.get("description"),
-            raw.get("summary"),
-            article.get("summary"),
-            article.get("keyword"),
-        )
-    )
+    text = original_article_text(article)
     if not (contains_own_name(text) or re.search(r"인카금융[^\s]*\s*더\s*헤븐|인카금융[^\s]*\s*더헤븐|더헤븐CC", text)):
         return False
     if re.search(r"인카금융|인카금융서비스", title) and re.search(r"후원|스폰서|주최|브랜드|마케팅|기부|사회공헌|ESG", title):
