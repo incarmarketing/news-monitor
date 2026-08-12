@@ -206,9 +206,11 @@ def _title(article: dict[str, Any]) -> str:
     return _clean_text(article.get("title") or raw.get("title"))
 
 
-def _source_lead(article: dict[str, Any]) -> str:
-    """Return the first original body lead without title, keyword, or generated text."""
+def _source_leads(article: dict[str, Any]) -> list[str]:
+    """Return original body leads without title, keyword, or generated text."""
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    leads: list[str] = []
+    seen: set[str] = set()
     for value in (
         article.get("description"),
         article.get("content"),
@@ -218,9 +220,10 @@ def _source_lead(article: dict[str, Any]) -> str:
         raw.get("body"),
     ):
         cleaned = _clean_text(value)
-        if cleaned:
-            return cleaned[:500]
-    return ""
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            leads.append(cleaned[:500])
+    return leads
 
 
 def _own_is_primary_subject(article: dict[str, Any]) -> bool:
@@ -229,19 +232,27 @@ def _own_is_primary_subject(article: dict[str, Any]) -> bool:
     if OWN_PATTERN.search(title):
         return True
 
-    lead = _source_lead(article)
-    if not lead or INCIDENTAL_PATTERN.search(lead):
-        return False
-
-    first_sentence = re.split(r"(?<=[.!?。！？])\s+|[\r\n]+", lead, maxsplit=1)[0]
-    return bool(
-        re.search(
+    for lead in _source_leads(article):
+        first_sentence = re.split(r"(?<=[.!?。！？])\s+|[\r\n]+", lead, maxsplit=1)[0]
+        if INCIDENTAL_PATTERN.search(first_sentence):
+            continue
+        if re.search(
             r"^(?:\[[^\]]{1,60}\]\s*)?"
             r"(?:인카금융서비스|인카금융)(?:은|는|이|가|의|에서|도|측|\s)",
             first_sentence,
             re.I,
-        )
-    )
+        ):
+            return True
+        if re.search(
+            r"(?:인카금융서비스|인카금융)(?:은|는|이|가)\s*.{0,180}"
+            r"(?:밝혔|발표했|기록했|선정됐|선정되|수상했|배출했|증가했|성장했|"
+            r"개선했|강화했|가입했|체결했|출시했|마감했|회복했|유지했|"
+            r"하락했|감소했|낮아졌|상향됐|하향됐)",
+            first_sentence,
+            re.I,
+        ):
+            return True
+    return False
 
 
 def _infer_own_role(article: dict[str, Any], *, own_mentioned: bool | None = None) -> str:

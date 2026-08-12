@@ -286,6 +286,19 @@ class DeterministicRiskPrecisionTests(unittest.TestCase):
         self.assertEqual(result["own_role"], "secondary")
         self.assertFalse(result["alert_eligible"])
 
+    def test_company_is_primary_when_it_is_a_coordinated_subject(self) -> None:
+        article = {
+            "title": "상위권 GA, 상반기 마지막 달 호실적 마감",
+            "description": "지에이코리아와 글로벌금융판매도 빅3에 어울리는 실적을 거뒀다.",
+            "body": (
+                "지에이코리아와 인카금융서비스가 양호한 실적으로 상반기 마지막 달을 "
+                "마감했다. 양사는 6월 매출이 급증하며 존재감을 회복했다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertEqual(result["own_role"], "primary")
+        self.assertFalse(result["alert_eligible"])
+
 
 if __name__ == "__main__":
     unittest.main()
