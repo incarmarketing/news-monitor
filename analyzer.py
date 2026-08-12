@@ -1051,13 +1051,15 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
 
     def force_own_direct_negative_context() -> None:
         deterministic = deterministic_risk.classify(article)
+        explicit_provider = str(result.get("provider") or "")
         result["category"] = "own"
         result["tone"] = "negative"
         result["own_mentioned"] = True
         result["negative_target"] = "own"
         result["clipping_recommended"] = True
         result["evidence"] = str(deterministic.get("evidence") or "")
-        result["provider"] = "rules:deterministic-risk-v1"
+        if not explicit_provider.startswith(("groq:", "gemini:")):
+            result["provider"] = "rules:deterministic-risk-v1"
         result["confidence"] = deterministic.get("confidence") or 0.995
         if not result.get("clipping_reason"):
             result["clipping_reason"] = "당사 직접 리스크로 사실관계와 대응 필요성을 우선 확인할 기사입니다."

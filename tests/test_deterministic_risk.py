@@ -253,6 +253,39 @@ class DeterministicRiskPrecisionTests(unittest.TestCase):
         self.assertTrue(result["alert_eligible"])
         self.assertEqual(result["suggested_tone"], "negative")
 
+    def test_korean_case_particles_do_not_hide_a_sanction(self) -> None:
+        article = {
+            "title": "대형 GA 전직 설계사 무더기 제재",
+            "description": (
+                "금융감독원은 인카금융서비스 전직 설계사 3명의 등록을 취소하고 "
+                "다른 3명의 업무를 정지했다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertTrue(result["alert_eligible"])
+        self.assertEqual(result["risk_event_type"], "sanction")
+
+    def test_company_at_start_of_source_lead_is_primary_without_title_mention(self) -> None:
+        article = {
+            "title": "GA 업계 상반기 실적 평가",
+            "description": "인카금융서비스는 상반기 매출과 설계사 수가 함께 증가했다고 밝혔다.",
+        }
+        result = deterministic_risk.classify(article)
+        self.assertEqual(result["own_role"], "primary")
+        self.assertFalse(result["alert_eligible"])
+
+    def test_peer_list_mention_in_source_lead_stays_secondary(self) -> None:
+        article = {
+            "title": "상위 GA 설계사 수 비교",
+            "description": (
+                "한화생명금융서비스가 1위를 기록했고 인카금융서비스와 "
+                "지에이코리아가 뒤를 이었다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertEqual(result["own_role"], "secondary")
+        self.assertFalse(result["alert_eligible"])
+
 
 if __name__ == "__main__":
     unittest.main()

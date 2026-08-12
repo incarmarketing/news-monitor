@@ -29,8 +29,8 @@ EVENT_PATTERNS: tuple[tuple[str, str, re.Pattern[str]], ...] = (
         "sanction",
         "risk_alert_sanction",
         re.compile(
-            r"제재|처분|등록\s*취소|업무\s*정지|기관\s*(?:주의|경고)|"
-            r"과징금|과태료|시정\s*명령|영업\s*정지",
+            r"제재|처분|등록(?:을)?\s*취소|업무(?:를)?\s*정지|기관\s*(?:주의|경고)|"
+            r"과징금|과태료|시정\s*명령|영업(?:을)?\s*정지",
             re.I,
         ),
     ),
@@ -206,6 +206,54 @@ def _title(article: dict[str, Any]) -> str:
     return _clean_text(article.get("title") or raw.get("title"))
 
 
+def _source_lead(article: dict[str, Any]) -> str:
+    """Return the first original body lead without title, keyword, or generated text."""
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    for value in (
+        article.get("description"),
+        article.get("content"),
+        article.get("body"),
+        raw.get("description"),
+        raw.get("content"),
+        raw.get("body"),
+    ):
+        cleaned = _clean_text(value)
+        if cleaned:
+            return cleaned[:500]
+    return ""
+
+
+def _own_is_primary_subject(article: dict[str, Any]) -> bool:
+    """Recognize the company as a grammatical subject in the title or source lead."""
+    title = _title(article)
+    if OWN_PATTERN.search(title):
+        return True
+
+    lead = _source_lead(article)
+    if not lead or INCIDENTAL_PATTERN.search(lead):
+        return False
+
+    first_sentence = re.split(r"(?<=[.!?。！？])\s+|[\r\n]+", lead, maxsplit=1)[0]
+    return bool(
+        re.search(
+            r"^(?:\[[^\]]{1,60}\]\s*)?"
+            r"(?:인카금융서비스|인카금융)(?:은|는|이|가|의|에서|도|측|\s)",
+            first_sentence,
+            re.I,
+        )
+    )
+
+
+def _infer_own_role(article: dict[str, Any], *, own_mentioned: bool | None = None) -> str:
+    if own_mentioned is None:
+        own_mentioned = contains_own_source(article)
+    if not own_mentioned:
+        return "absent"
+    if INCIDENTAL_PATTERN.search(source_text(article)) and not OWN_PATTERN.search(_title(article)):
+        return "incidental"
+    return "primary" if _own_is_primary_subject(article) else "secondary"
+
+
 def _positive_document_override(article: dict[str, Any]) -> tuple[str, str] | None:
     title = _title(article)
     text = source_text(article)
@@ -274,7 +322,7 @@ def _is_peer_list(sentence: str) -> bool:
         return False
     direct_subject = re.search(
         r"(?:인카금융서비스|인카금융)(?:의|는|가|에서|소속|\s+전직).{0,90}"
-        r"(?:제재|처분|등록\s*취소|업무\s*정지|사기|편취|횡령|배임|압수\s*수색|"
+        r"(?:제재|처분|등록(?:을)?\s*취소|업무(?:를)?\s*정지|사기|편취|횡령|배임|압수\s*수색|"
         r"내부\s*통제\s*부실|관리\s*(?:부실|구멍))",
         sentence,
         re.I,
@@ -343,7 +391,7 @@ def _is_direct_binding(sentence: str, event_match: re.Match[str], *, is_title: b
         re.search(
             r"(?:금감원|금융감독원|금융당국|경찰|검찰).{0,100}"
             r"(?:인카금융서비스|인카금융).{0,140}"
-            r"(?:제재|처분|등록\s*취소|업무\s*정지|고발|압수\s*수색|기소)",
+            r"(?:제재|처분|등록(?:을)?\s*취소|업무(?:를)?\s*정지|고발|압수\s*수색|기소)",
             sentence,
             re.I,
         )
@@ -355,9 +403,10 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
     text = source_text(article)
     title = _title(article)
     own_mentioned = bool(OWN_PATTERN.search(text))
+    inferred_role = _infer_own_role(article, own_mentioned=own_mentioned)
     base = {
         "own_mentioned": own_mentioned,
-        "own_role": "absent" if not own_mentioned else "secondary",
+        "own_role": inferred_role,
         "document_type": "other",
         "risk_event_type": "none",
         "alert_eligible": False,
@@ -406,7 +455,7 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
     if positive_override:
         document_type, tone = positive_override
         base.update(
-            own_role="primary" if OWN_PATTERN.search(title) else "secondary",
+            own_role=inferred_role,
             document_type=document_type,
             confidence=0.995,
             suggested_tone=tone,
@@ -419,7 +468,7 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
     if db_suppression:
         rule_key, decision = db_suppression
         base.update(
-            own_role="primary" if OWN_PATTERN.search(title) else "secondary",
+            own_role=inferred_role,
             confidence=0.995,
             decision=decision,
             matched_rule_keys=[rule_key],
@@ -447,7 +496,7 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
         evidence = review_sentence or unbound_event
         event = _event_in_sentence(evidence)
         base.update(
-            own_role="primary" if OWN_PATTERN.search(title) else "secondary",
+            own_role=inferred_role,
             document_type="risk_event" if event else "regulatory",
             risk_event_type=event[0] if event else "none",
             review_required=True,
@@ -461,7 +510,7 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
 
     if MARKET_ONLY_PATTERN.search(text):
         base.update(
-            own_role="primary" if OWN_PATTERN.search(title) else "secondary",
+            own_role=inferred_role,
             document_type="industry_news",
             risk_event_type="market",
             confidence=0.98,
@@ -471,7 +520,7 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
         return base
 
     base.update(
-        own_role="primary" if OWN_PATTERN.search(title) else "secondary",
+        own_role=inferred_role,
         document_type="industry_news",
         confidence=0.95,
     )
