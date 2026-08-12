@@ -1,0 +1,39 @@
+name: Classification Audit
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "tools/audit_classification_drift.py"
+      - ".github/workflows/classification-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run read-only aggregate classification audit
+        run: >-
+          python tools/audit_classification_drift.py
+          --sample-limit 0
+          --output "${RUNNER_TEMP}/classification-audit.json"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AI_CONTEXT_ENABLED: "false"
+          AI_CONTEXT_PRO_REVIEW: "false"
