@@ -835,22 +835,21 @@ function App() {
           </div>
         ))}
       </aside>
-      {activeSection === "overview" && (
-        <Overview
-          data={realtimeData}
-          articles={realtimeArticles}
-          allArticles={dashboardContextArticles}
-          notifications={notifications}
-          setActiveSection={navigateSection}
-          onOpenMonitoring={openMonitoring}
-          operations={operations}
-          workflowHealth={workflowHealth}
-          isWorking={working}
-          onRefreshOperations={refreshOperations}
-          theme={theme}
-          onToggleTheme={() => setTheme((current) => current === "dim" ? "light" : "dim")}
-        />
-      )}
+      <Overview
+        hidden={activeSection !== "overview"}
+        data={realtimeData}
+        articles={realtimeArticles}
+        allArticles={dashboardContextArticles}
+        notifications={notifications}
+        setActiveSection={navigateSection}
+        onOpenMonitoring={openMonitoring}
+        operations={operations}
+        workflowHealth={workflowHealth}
+        isWorking={working}
+        onRefreshOperations={refreshOperations}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => current === "dim" ? "light" : "dim")}
+      />
       {activeSection === "monitoring" && (
         <Monitoring
           data={data}
