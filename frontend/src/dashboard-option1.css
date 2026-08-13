@@ -469,7 +469,8 @@
 .dashboard-v5 .signal-panel-tools > span.negative::before { background: #dc2626; }
 .dashboard-v5 .signal-panel-tools > span.caution::before { background: #d97706; }
 
-.dashboard-v5 .signal-panel-tools > button {
+.dashboard-v5 .signal-panel-tools > button,
+.dashboard-v5 .signal-panel-tools > select {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -481,6 +482,12 @@
   color: #475569;
   font-size: 10px;
   font-weight: 850;
+}
+
+.dashboard-v5 .signal-panel-tools > select {
+  min-width: 112px;
+  padding-right: 27px;
+  cursor: pointer;
 }
 
 .dashboard-v5 .signal-panel-tools > button svg {
@@ -1131,6 +1138,7 @@ html[data-theme="dim"] .dashboard-workspace.dashboard-v5 {
 
 html[data-theme="dim"] .dashboard-v5 .editorial-header-actions button,
 html[data-theme="dim"] .dashboard-v5 .signal-panel-tools > button,
+html[data-theme="dim"] .dashboard-v5 .signal-panel-tools > select,
 html[data-theme="dim"] .dashboard-v5 .signal-operation-card.slack > button,
 html[data-theme="dim"] .dashboard-v5 .signal-all-issues {
   background: #f3f6f9;
@@ -1855,6 +1863,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
   }
 
   .dashboard-v5 .signal-panel-tools > button,
+  .dashboard-v5 .signal-panel-tools > select,
   .dashboard-v5 .editorial-lead-labels .chip {
     font-size: 11px;
   }

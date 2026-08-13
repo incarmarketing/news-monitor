@@ -1046,6 +1046,7 @@ const MemoizedOverview = React.memo(Overview);
 
 function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
   const { summary } = data;
+  const [issueSort, setIssueSort] = useState("risk");
   const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
     () => buildOperationsHealth({
@@ -1064,7 +1065,29 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   // composePeriodData already returns a ranked, deduplicated issue list.
   // Re-grouping it here repeated the most expensive classification path on
   // every dashboard mount and made route changes appear frozen.
-  const issueRows = useMemo(() => (data.issues || []).slice(0, 5), [data.issues]);
+  const issueRows = useMemo(() => {
+    const rows = [...(data.issues || [])];
+    const issueHasOwnMention = (issue) => [
+      issue,
+      ...(Array.isArray(issue?.relatedArticles) ? issue.relatedArticles : []),
+    ].some(isOwnArticle);
+    if (issueSort === "latest") {
+      rows.sort((a, b) => {
+        const latestTime = (issue) => Math.max(
+          articleTimeValue(issue),
+          ...(Array.isArray(issue?.relatedArticles) ? issue.relatedArticles.map(articleTimeValue) : [0]),
+        );
+        return latestTime(b) - latestTime(a) || dashboardIssueScore(b) - dashboardIssueScore(a);
+      });
+    } else if (issueSort === "own") {
+      rows.sort((a, b) => Number(issueHasOwnMention(b)) - Number(issueHasOwnMention(a)) || dashboardIssueScore(b) - dashboardIssueScore(a));
+    } else if (issueSort === "spread") {
+      rows.sort((a, b) => issueBundleCount(b) - issueBundleCount(a) || dashboardIssueScore(b) - dashboardIssueScore(a));
+    } else {
+      rows.sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
+    }
+    return rows.slice(0, 5);
+  }, [data.issues, issueSort]);
   const refreshDashboard = () => onRefreshOperations?.({
     trigger: true,
     workflow: "all",
@@ -1097,7 +1120,16 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
             <h2>우선 이슈 TOP 5</h2>
             <div className="signal-panel-tools">
               <span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span>
-              <button type="button" onClick={() => onOpenMonitoring?.({})}>정렬: 리스크순 <ChevronDown /></button>
+              <select
+                aria-label="우선 이슈 정렬"
+                value={issueSort}
+                onChange={(event) => setIssueSort(event.target.value)}
+              >
+                <option value="risk">정렬: 리스크순</option>
+                <option value="latest">정렬: 최신순</option>
+                <option value="own">정렬: 당사 우선</option>
+                <option value="spread">정렬: 확산순</option>
+              </select>
             </div>
           </div>
           <EditorialLeadIssue
