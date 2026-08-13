@@ -251,7 +251,6 @@ function App() {
   const initialCachedCore = useMemo(() => loadCachedCoreSnapshot(), []);
   const [activeSection, setActiveSection] = useState(initialRoute.section);
   const [pendingSection, setPendingSection] = useState("");
-  const [monitoringMounted, setMonitoringMounted] = useState(initialRoute.section === "monitoring");
   const [period, setPeriod] = useState("daily");
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
@@ -627,7 +626,6 @@ function App() {
 
   const navigateSection = (sectionId) => {
     if (!sectionId) return;
-    if (sectionId === "monitoring") setMonitoringMounted(true);
     if (sectionId === activeSection) {
       routeGeneration.current += 1;
       setPendingSection("");
@@ -837,24 +835,24 @@ function App() {
           </div>
         ))}
       </aside>
-      <Overview
-        hidden={activeSection !== "overview"}
-        data={realtimeData}
-        articles={realtimeArticles}
-        allArticles={dashboardContextArticles}
-        notifications={notifications}
-        setActiveSection={navigateSection}
-        onOpenMonitoring={openMonitoring}
-        operations={operations}
-        workflowHealth={workflowHealth}
-        isWorking={working}
-        onRefreshOperations={refreshOperations}
-        theme={theme}
-        onToggleTheme={() => setTheme((current) => current === "dim" ? "light" : "dim")}
-      />
-      {monitoringMounted && (
+      {activeSection === "overview" && (
+        <Overview
+          data={realtimeData}
+          articles={realtimeArticles}
+          allArticles={dashboardContextArticles}
+          notifications={notifications}
+          setActiveSection={navigateSection}
+          onOpenMonitoring={openMonitoring}
+          operations={operations}
+          workflowHealth={workflowHealth}
+          isWorking={working}
+          onRefreshOperations={refreshOperations}
+          theme={theme}
+          onToggleTheme={() => setTheme((current) => current === "dim" ? "light" : "dim")}
+        />
+      )}
+      {activeSection === "monitoring" && (
         <Monitoring
-          hidden={activeSection !== "monitoring"}
           data={data}
           articles={allArticles}
           scraps={scraps}
@@ -1796,7 +1794,6 @@ function OpsStatusRail({
 }
 
 function Monitoring({
-  hidden = false,
   data,
   articles,
   scraps = [],
@@ -1824,7 +1821,7 @@ function Monitoring({
   const [source, setSource] = useState("all");
   const [ownOnly, setOwnOnly] = useState(false);
   const [viewMode, setViewMode] = useState("related");
-  const [visible, setVisible] = useState(30);
+  const [visible, setVisible] = useState(20);
   const [startDateInput, setStartDateInput] = useState(latestDate);
   const [endDateInput, setEndDateInput] = useState(latestDate);
   const [startDate, setStartDate] = useState(latestDate);
@@ -1894,7 +1891,7 @@ function Monitoring({
         onLoadMonitoringRange?.({ startDate: range.start, endDate: range.end });
       }
     }
-    setVisible(30);
+    setVisible(20);
     appliedPresetStamp.current = presetStamp;
   }, [monitoringPreset, deferredRegularArticles, latestDate, onLoadMonitoringRange]);
   const filtered = useMemo(() => {
@@ -1940,7 +1937,7 @@ function Monitoring({
     }
     setStartDate(nextStart);
     setEndDate(nextEnd);
-    setVisible(30);
+    setVisible(20);
   };
   const deferredFiltered = useDeferredValue(filtered);
   const grouped = useMemo(
@@ -1959,7 +1956,7 @@ function Monitoring({
     startFilterTransition(() => {
       applyDateFilter();
       setQuery(queryInput);
-      setVisible(30);
+      setVisible(20);
     });
     if ((nextStart && nextStart !== latestDate) || (nextEnd && nextEnd !== latestDate)) {
       onLoadMonitoringRange?.({ startDate: nextStart, endDate: nextEnd });
@@ -1981,11 +1978,11 @@ function Monitoring({
     setEndDateInput(latestDate);
     setStartDate(latestDate);
     setEndDate(latestDate);
-    setVisible(30);
+    setVisible(20);
   };
 
   return (
-    <main className="workspace" hidden={hidden}>
+    <main className="workspace">
       <section className="filter-card monitoring-filter-card">
         <label>
           <span>시작 기준일</span>
@@ -2004,7 +2001,7 @@ function Monitoring({
         </label>
         <label className="sort-filter">
           <span>정렬</span>
-          <select value={viewMode} onChange={(event) => { setViewMode(event.target.value); setVisible(30); }}>
+          <select value={viewMode} onChange={(event) => { setViewMode(event.target.value); setVisible(20); }}>
             <option value="related">관련순</option>
             <option value="latest">최신순</option>
           </select>
@@ -2031,7 +2028,7 @@ function Monitoring({
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 setQuery(queryInput);
-                setVisible(30);
+                setVisible(20);
               }
             }}
             placeholder="제목, 언론사, 키워드 검색"
@@ -2056,7 +2053,7 @@ function Monitoring({
             onScrapSaved={onScrapSaved}
           />
           {visibleRows.length > visible && (
-            <button className="ghost-button full" onClick={() => setVisible((count) => count + 30)}>
+            <button className="ghost-button full" onClick={() => setVisible((count) => count + 20)}>
               더보기
             </button>
           )}
@@ -3642,6 +3639,37 @@ function cleanDecisionNoteLine(value = "") {
   return text;
 }
 
+function RelatedArticleDisclosure({ rows = [] }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <details
+      className="related-details"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary>묶인 기사 보기</summary>
+      {open && (
+        <div>
+          {rows.slice(0, 8).map((item) => (
+            <a
+              key={`${item.id || item.link || item.title}-${item.source}`}
+              href={item.link && item.link !== "#" ? item.link : undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(event) => item.link && item.link !== "#" ? openArticleLink(event, item.link) : undefined}
+            >
+              <span>{item.source}</span>
+              <b>{item.title}</b>
+              <em>{item.time || item.date || "-"}</em>
+            </a>
+          ))}
+        </div>
+      )}
+    </details>
+  );
+}
+
 function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onFeedbackSaved, onScrapSaved }) {
   return (
     <div className={compact ? "feed-table compact" : "feed-table"}>
@@ -3660,26 +3688,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
               <span className="feed-meta">{formatFeedMeta(displayRow, hasRelated)}</span>
               {!compact && <ArticleSummaryBlock item={displayRow} dense />}
               {!compact && <ArticleDecisionNote item={displayRow} />}
-              {!compact && hasRelated && (
-                <details className="related-details">
-                  <summary>묶인 기사 보기</summary>
-                  <div>
-                    {related.slice(0, 8).map((item) => (
-                      <a
-                        key={`${item.id || item.link || item.title}-${item.source}`}
-                        href={item.link && item.link !== "#" ? item.link : undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => item.link && item.link !== "#" ? openArticleLink(event, item.link) : undefined}
-                      >
-                        <span>{item.source}</span>
-                        <b>{item.title}</b>
-                        <em>{item.time || item.date || "-"}</em>
-                      </a>
-                    ))}
-                  </div>
-                </details>
-              )}
+              {!compact && hasRelated && <RelatedArticleDisclosure rows={related} />}
             </div>
             {!compact && (
               <div className="feed-actions">
