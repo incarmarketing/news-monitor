@@ -29,19 +29,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  LabelList,
-  Line,
-  LineChart as RechartsLineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   adRows,
   contextRules,
   journalistRows,
@@ -78,11 +65,15 @@ const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
 const loadReports = () => import("./Reports");
 const loadStockMarketDashboard = () => import("./StockMarketDashboard");
+const loadChartPrimitives = () => import("./ChartPrimitives");
 
 const Management = React.lazy(loadManagement);
 const MediaAnalysis = React.lazy(loadMediaAnalysis);
 const Reports = React.lazy(loadReports);
 const StockMarketDashboard = React.lazy(loadStockMarketDashboard);
+const HorizontalBarPrimitive = React.lazy(() => loadChartPrimitives().then((module) => ({ default: module.HorizontalBarPrimitive })));
+const CategoryBarPrimitive = React.lazy(() => loadChartPrimitives().then((module) => ({ default: module.CategoryBarPrimitive })));
+const ToneTrendPrimitive = React.lazy(() => loadChartPrimitives().then((module) => ({ default: module.ToneTrendPrimitive })));
 
 const featureModuleLoaders = {
   media: loadMediaAnalysis,
@@ -93,11 +84,7 @@ const featureModuleLoaders = {
 
 function preloadFeatureSection(sectionId) {
   const loader = featureModuleLoaders[sectionId];
-  if (typeof loader === "function") loader();
-}
-
-function preloadFeatureSections(sectionIds = []) {
-  sectionIds.forEach(preloadFeatureSection);
+  return typeof loader === "function" ? loader() : Promise.resolve();
 }
 
 const navIcons = {
@@ -194,6 +181,55 @@ function operationsFingerprint(data = {}) {
   return `${articles.length}:${latest}`;
 }
 
+function mergeOperationalSnapshots(current = {}, next = {}, preserveFull = false) {
+  if (!preserveFull) return next;
+  const articles = dedupeIssueMembers([
+    ...(Array.isArray(next.articles) ? next.articles : []),
+    ...(Array.isArray(current.articles) ? current.articles : []),
+  ]).sort((a, b) => articleTimeValue(b) - articleTimeValue(a));
+  const fullOnlyFields = [
+    "notifications",
+    "watchRuns",
+    "reportRuns",
+    "jobRuns",
+    "scraps",
+    "scrapAnalysisReports",
+    "mediaRelations",
+    "reporters",
+    "ads",
+    "aliases",
+    "keywords",
+    "riskDrafts",
+    "feedback",
+  ];
+  const merged = { ...current, ...next, articles };
+  fullOnlyFields.forEach((field) => {
+    if (!Array.isArray(next[field]) || next[field].length === 0) merged[field] = current[field] || [];
+  });
+  merged.stockMarket = next.stockMarket || current.stockMarket || null;
+  merged.gaIntel = next.gaIntel || current.gaIntel || null;
+  return merged;
+}
+
+const ARTICLE_PROFILE_LIMITS = {
+  core: 2000,
+  history: 8000,
+  engagement: 4000,
+};
+
+function mergeArticleProfileRows(freshRows = [], storedRows = [], limit = 2000) {
+  const rows = [];
+  const seen = new Set();
+  [...freshRows, ...storedRows].forEach((article) => {
+    const key = issueMemberKey(article);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    rows.push(article);
+  });
+  rows.sort((left, right) => articleTimeValue(right) - articleTimeValue(left));
+  return rows.slice(0, limit);
+}
+
 function workflowFinishedAfter(workflowHealth = {}, workflowId = "news-briefing.yml", startedAt = 0) {
   const workflow = (workflowHealth.workflows || []).find((item) => item.id === workflowId);
   const latest = workflow?.latest;
@@ -207,12 +243,14 @@ function workflowFinishedAfter(workflowHealth = {}, workflowId = "news-briefing.
 function App() {
   const initialRoute = useMemo(() => readInitialRoute(), []);
   const [activeSection, setActiveSection] = useState(initialRoute.section);
+  const [pendingSection, setPendingSection] = useState("");
   const [period, setPeriod] = useState("daily");
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
     return window.localStorage.getItem("incar-dashboard-theme") === "dim" ? "dim" : "light";
   });
   const [operations, setOperations] = useState({ status: "loading", message: "연결 확인 중", articles: [] });
+  const [articleProfiles, setArticleProfiles] = useState({});
   const [loginOpen, setLoginOpen] = useState(false);
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [working, setWorking] = useState(false);
@@ -220,22 +258,29 @@ function App() {
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
   const workTimers = useRef([]);
   const refreshGeneration = useRef(0);
+  const routeGeneration = useRef(0);
+  const loadedDataProfiles = useRef(new Set());
+  const loadingDataProfiles = useRef(new Set());
 
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const preloadCoreScreens = () => preloadFeatureSections([
-      "media",
-      "reports",
-      "stocks",
-      "management",
-    ]);
-    if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(preloadCoreScreens, { timeout: 1800 });
-      return () => window.cancelIdleCallback?.(idleId);
-    }
-    const timerId = window.setTimeout(preloadCoreScreens, 700);
-    return () => window.clearTimeout(timerId);
-  }, []);
+  const rememberArticleProfile = (profile, snapshot) => {
+    const rows = Array.isArray(snapshot?.articles) ? snapshot.articles : [];
+    if (!profile || !rows.length) return;
+    setArticleProfiles((current) => {
+      if (current[profile] === rows) return current;
+      const next = { ...current, [profile]: rows };
+      if (profile === "core") {
+        ["history", "engagement"].forEach((storedProfile) => {
+          if (!Array.isArray(current[storedProfile]) || !current[storedProfile].length) return;
+          next[storedProfile] = mergeArticleProfileRows(
+            rows,
+            current[storedProfile],
+            ARTICLE_PROFILE_LIMITS[storedProfile],
+          );
+        });
+      }
+      return next;
+    });
+  };
 
   const clearWorkTimers = () => {
     workTimers.current.forEach((timer) => window.clearTimeout(timer));
@@ -298,8 +343,13 @@ function App() {
         triggerFailed = true;
       }
     }
-    const next = await loadOperationalData();
-    setOperations(triggerMessage ? { ...next, message: `${triggerMessage} · ${next.message}` } : next);
+    const next = await loadOperationalData({ profile: "core" });
+    rememberArticleProfile("core", next);
+    setOperations((current) => mergeOperationalSnapshots(
+      current,
+      triggerMessage ? { ...next, message: `${triggerMessage} · ${next.message}` } : next,
+      true,
+    ));
     if (trigger && triggerFailed) {
       setWorkLabel(triggerMessage);
       workTimers.current.push(window.setTimeout(() => {
@@ -319,8 +369,13 @@ function App() {
         setWorkLabel(`${label} 반영 확인 중 · ${attempt}/${maxAttempts}`);
         await wait(intervalMs);
         if (refreshGeneration.current !== generation) return;
-        latestData = await loadOperationalData();
-        setOperations({ ...latestData, message: `${label} 반영 확인 중 · ${latestData.message}` });
+        latestData = await loadOperationalData({ profile: "core" });
+        rememberArticleProfile("core", latestData);
+        setOperations((current) => mergeOperationalSnapshots(
+          current,
+          { ...latestData, message: `${label} 반영 확인 중 · ${latestData.message}` },
+          true,
+        ));
         changed = operationsFingerprint(latestData) !== beforeFingerprint;
         const nextWorkflowHealth = await loadGithubWorkflowHealth();
         setWorkflowHealth(nextWorkflowHealth);
@@ -333,7 +388,8 @@ function App() {
         if (finishedConclusion === "success" && attempt >= 2) break;
       }
       if (refreshGeneration.current !== generation) return;
-      const finalData = await loadOperationalData();
+      const finalData = await loadOperationalData({ profile: "core" });
+      rememberArticleProfile("core", finalData);
       const finalChanged = operationsFingerprint(finalData) !== beforeFingerprint;
       const suffix = finalChanged
         ? "신규 데이터 반영 완료"
@@ -342,7 +398,11 @@ function App() {
           : finishedConclusion
             ? `수집 종료 상태 확인 필요: ${finishedConclusion}`
             : "수집 요청 완료 · GitHub Actions 지연 가능";
-      setOperations({ ...finalData, message: `${suffix} · ${finalData.message}` });
+      setOperations((current) => mergeOperationalSnapshots(
+        current,
+        { ...finalData, message: `${suffix} · ${finalData.message}` },
+        true,
+      ));
       finishWorkStatus(label, `${label} ${suffix}`);
       return;
     }
@@ -352,8 +412,12 @@ function App() {
   useEffect(() => {
     let active = true;
     const load = async () => {
-      const next = await loadOperationalData();
-      if (active) setOperations(next);
+      const next = await loadOperationalData({ profile: "core" });
+      if (active) {
+        if (next?.status === "live") loadedDataProfiles.current.add("core");
+        rememberArticleProfile("core", next);
+        setOperations((current) => mergeOperationalSnapshots(current, next, true));
+      }
     };
     load();
     const timer = window.setInterval(load, 5 * 60 * 1000);
@@ -362,6 +426,48 @@ function App() {
       window.clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    const preloadFrequentViews = () => {
+      preloadFeatureSection("media");
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(preloadFrequentViews, { timeout: 3000 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+    const timer = window.setTimeout(preloadFrequentViews, 2200);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const profile = {
+      monitoring: "history",
+      regulators: "history",
+      media: "history",
+      reports: "history",
+      clipping: "engagement",
+      scraps: "engagement",
+      management: "management",
+      stocks: "stocks",
+    }[activeSection];
+    if (!profile || loadedDataProfiles.current.has(profile) || loadingDataProfiles.current.has(profile)) return undefined;
+    let active = true;
+    loadingDataProfiles.current.add(profile);
+    loadOperationalData({ profile })
+      .then((next) => {
+        if (!active) return;
+        if (next?.status === "live") loadedDataProfiles.current.add(profile);
+        rememberArticleProfile(profile, next);
+        const operationalSnapshot = profile === "core" ? next : { ...next, articles: [] };
+        setOperations((current) => mergeOperationalSnapshots(current, operationalSnapshot, true));
+      })
+      .finally(() => {
+        loadingDataProfiles.current.delete(profile);
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeSection]);
 
   useEffect(() => {
     let active = true;
@@ -413,15 +519,33 @@ function App() {
 
   const baseData = periodData[period];
   const needsPeriodData = activeSection === "reports";
-  const needsRealtimeData = activeSection === "overview";
   const needsMediaData = activeSection === "media";
   const liveConnected = operations.status === "live";
-  const allArticles = Array.isArray(operations.articles) ? operations.articles : [];
+  const activeArticleProfile = {
+    overview: "core",
+    monitoring: "history",
+    regulators: "history",
+    media: "history",
+    reports: "history",
+    clipping: "engagement",
+    scraps: "engagement",
+  }[activeSection] || "core";
+  const fallbackArticles = Array.isArray(operations.articles) ? operations.articles : [];
+  const allArticles = Array.isArray(articleProfiles[activeArticleProfile]) && articleProfiles[activeArticleProfile].length
+    ? articleProfiles[activeArticleProfile]
+    : fallbackArticles;
+  const coreArticles = Array.isArray(articleProfiles.core) && articleProfiles.core.length
+    ? articleProfiles.core
+    : fallbackArticles;
   const scraps = Array.isArray(operations.scraps) ? operations.scraps : [];
+  const dashboardContextArticles = useMemo(
+    () => lastNDays(coreArticles, 8).slice(0, 500),
+    [coreArticles],
+  );
   const needsScopedArticles = needsPeriodData || needsMediaData;
   const scopedArticles = useMemo(
-    () => needsScopedArticles ? filterArticlesByPeriod(operations.articles || [], period) : [],
-    [operations.articles, period, needsScopedArticles],
+    () => needsScopedArticles ? filterArticlesByPeriod(allArticles, period) : [],
+    [allArticles, period, needsScopedArticles],
   );
   const scopedReportRuns = useMemo(
     () => needsPeriodData ? filterRowsByPeriod(operations.reportRuns || [], period) : [],
@@ -432,16 +556,18 @@ function App() {
     [baseData, scopedArticles, scopedReportRuns, liveConnected, period, needsPeriodData],
   );
   const realtimeArticles = useMemo(
-    () => needsRealtimeData ? selectRealtimeArticles(allArticles) : [],
-    [allArticles, needsRealtimeData],
+    () => selectRealtimeArticles(dashboardContextArticles),
+    [dashboardContextArticles],
   );
   const realtimeData = useMemo(
-    () => needsRealtimeData ? composeRealtimeData(periodData.daily, realtimeArticles, liveConnected) : periodData.daily,
-    [realtimeArticles, liveConnected, needsRealtimeData],
+    () => composeRealtimeData(periodData.daily, realtimeArticles, liveConnected),
+    [realtimeArticles, liveConnected],
   );
   const management = useMemo(
-    () => composeManagementData(operations, allArticles),
-    [operations, allArticles],
+    () => activeSection === "management"
+      ? composeManagementData(operations, allArticles)
+      : { media: [], reporters: [], ads: [] },
+    [activeSection, operations, allArticles],
   );
   const notifications = liveConnected ? operations.notifications || [] : [];
   const jobs = liveConnected && operations.watchRuns?.length
@@ -456,9 +582,28 @@ function App() {
       ]
     : [];
 
+  const navigateSection = (sectionId) => {
+    if (!sectionId) return;
+    if (sectionId === activeSection) {
+      routeGeneration.current += 1;
+      setPendingSection("");
+      return;
+    }
+    const generation = routeGeneration.current + 1;
+    routeGeneration.current = generation;
+    setPendingSection(sectionId);
+    preloadFeatureSection(sectionId)
+      .catch(() => null)
+      .finally(() => {
+        if (routeGeneration.current !== generation) return;
+        setActiveSection(sectionId);
+        setPendingSection("");
+      });
+  };
+
   const openMonitoring = (preset = {}) => {
     setMonitoringPreset({ period, ...preset, stamp: Date.now() });
-    setActiveSection("monitoring");
+    navigateSection("monitoring");
   };
 
   const handleClassificationFeedbackSaved = async (result, article, correction) => {
@@ -611,7 +756,7 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="side-nav" aria-label="주요 메뉴">
-        <Header working={working} workLabel={workLabel} />
+        <Header working={working || Boolean(pendingSection)} workLabel={pendingSection ? "화면 준비 중" : workLabel} />
         {navSections.map((section) => (
           <div className="side-group" key={section.title}>
             <div className="side-group-title">{section.title}</div>
@@ -621,11 +766,11 @@ function App() {
                 <button
                   type="button"
                   key={item.id}
-                  className={activeSection === item.id ? "active" : ""}
+                  className={(pendingSection || activeSection) === item.id ? "active" : ""}
                   data-section={item.id}
                   onMouseEnter={() => preloadFeatureSection(item.id)}
                   onFocus={() => preloadFeatureSection(item.id)}
-                  onClick={() => setActiveSection(item.id)}
+                  onClick={() => navigateSection(item.id)}
                 >
                   <Icon />
                   <span>{item.label}</span>
@@ -647,7 +792,7 @@ function App() {
                 ? realtimeArticles
                 : scopedArticles
           }
-          allArticles={allArticles}
+          allArticles={activeSection === "overview" ? dashboardContextArticles : allArticles}
           scraps={scraps}
           jobs={jobs}
           notifications={notifications}
@@ -662,7 +807,7 @@ function App() {
           onFeedbackSaved={handleClassificationFeedbackSaved}
           onScrapSaved={handleArticleScrapSaved}
           onScrapAnalysisSaved={handleScrapAnalysisSaved}
-          setActiveSection={setActiveSection}
+          setActiveSection={navigateSection}
           monitoringPreset={monitoringPreset}
           onOpenMonitoring={openMonitoring}
           helpers={dashboardHelpers}
@@ -787,7 +932,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   const issueRows = useMemo(
     () => buildDashboardIssueGroups(data.issues)
       .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
-      .slice(0, 5),
+      .slice(0, 10),
     [data.issues],
   );
   const refreshDashboard = () => onRefreshOperations?.({
@@ -797,7 +942,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     label: "전체 운영 갱신",
   });
   return (
-    <main className="workspace dashboard-workspace dashboard-v3">
+    <main className="workspace dashboard-workspace dashboard-v5">
       <DashboardEditorialHeader
         data={data}
         onOpenMonitoring={onOpenMonitoring}
@@ -815,17 +960,26 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
       </nav>
 
-      <section className="editorial-command-grid">
-        <EditorialLeadIssue
-          issue={issueRows[0]}
-          allArticles={allArticles.length ? allArticles : articles}
-          onOpenMonitoring={onOpenMonitoring}
-        />
-        <EditorialIssueList issues={issueRows.slice(1)} onOpenMonitoring={onOpenMonitoring} />
-        <EditorialSlackStatus
+      <section className="signal-command-grid">
+        <section className="signal-priority-board">
+          <div className="signal-panel-heading">
+            <h2>우선 이슈 TOP 10</h2>
+            <div><span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span></div>
+          </div>
+          <EditorialLeadIssue
+            issue={issueRows[0]}
+            allArticles={allArticles.length ? allArticles : articles}
+            onOpenMonitoring={onOpenMonitoring}
+          />
+          <EditorialIssueList issues={issueRows.slice(1)} onOpenMonitoring={onOpenMonitoring} />
+          <button type="button" className="signal-all-issues" onClick={() => onOpenMonitoring?.({})}>전체 기사 보기 <ChevronRight /></button>
+        </section>
+        <EditorialOperationsRail
+          operationsHealth={operationsHealth}
           watchHealth={watchHealth}
           notificationHealth={notificationHealth}
           reportHealth={reportHealth}
+          analyzed={summary.analyzed}
           onOpenHistory={() => setActiveSection("management")}
         />
       </section>
@@ -871,17 +1025,18 @@ function DashboardEditorialHeader({ data, onOpenMonitoring, onRefresh, isLoading
 
 function DashboardKpiStrip({ summary = {}, onOpenMonitoring }) {
   const rows = [
-    { label: "리스크", value: summary.risk || "LOW", className: `risk-${String(summary.risk || "low").toLowerCase()}`, preset: { ownOnly: true } },
-    { label: "분석", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), preset: {} },
-    { label: "당사", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), preset: { ownOnly: true } },
-    { label: "부정", value: Number(summary.ownNegative || 0).toLocaleString("ko-KR"), className: "negative", preset: { tone: "부정" } },
-    { label: "주의", value: Number(summary.caution || 0).toLocaleString("ko-KR"), className: "caution", preset: { tone: "주의" } },
+    { label: "리스크", value: summary.risk || "LOW", meta: "당사 기준", Icon: ShieldCheck, className: `risk-${String(summary.risk || "low").toLowerCase()}`, preset: { ownOnly: true } },
+    { label: "분석", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), meta: "오늘 기사", Icon: Gauge, preset: {} },
+    { label: "당사", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), meta: "직접 언급", Icon: Newspaper, className: "own", preset: { ownOnly: true } },
+    { label: "부정", value: Number(summary.ownNegative || 0).toLocaleString("ko-KR"), meta: "즉시 확인", Icon: TrendingDown, className: "negative", preset: { tone: "부정" } },
+    { label: "주의", value: Number(summary.caution || 0).toLocaleString("ko-KR"), meta: "관찰 기사", Icon: AlertTriangle, className: "caution", preset: { tone: "주의" } },
   ];
   return (
     <section className="editorial-kpi-strip" aria-label="오늘의 주요 지표">
-      {rows.map((item) => (
+      {rows.map(({ Icon, ...item }) => (
         <button type="button" key={item.label} className={item.className || ""} onClick={() => onOpenMonitoring?.(item.preset)}>
-          <span>{item.label}</span><b>{item.value}</b>
+          <Icon aria-hidden="true" />
+          <span><small>{item.label}</small><b>{item.value}</b><em>{item.meta}</em></span>
         </button>
       ))}
     </section>
@@ -946,47 +1101,58 @@ function DashboardLeadSparkline({ rows = [] }) {
         <strong>최근 {latest.toLocaleString("ko-KR")}건</strong>
       </div>
       <div className="editorial-lead-sparkline-chart">
-        {chartRows.length ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsLineChart data={chartRows} margin={{ top: 22, right: 12, bottom: 0, left: -20 }}>
-              <CartesianGrid stroke="#d9e0e7" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="dateLabel" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#536171" }} />
-              <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#536171" }} width={34} />
-              <Tooltip formatter={(value) => [`${Number(value || 0).toLocaleString("ko-KR")}건`, "관련 보도"]} />
-              <Line type="monotone" dataKey="total" stroke="#1766df" strokeWidth={2.8} dot={{ r: 4, fill: "#fff", strokeWidth: 2.4 }} activeDot={{ r: 5 }}>
-                <LabelList dataKey="total" position="top" fill="#172033" fontSize={10} fontWeight={900} />
-              </Line>
-            </RechartsLineChart>
-          </ResponsiveContainer>
-        ) : <div className="editorial-chart-empty">집계 가능한 관련 보도가 없습니다.</div>}
+        {chartRows.length
+          ? <DashboardSvgLineChart rows={chartRows} series={[{ key: "total", color: "#1766df", label: "관련 보도" }]} compact />
+          : <div className="editorial-chart-empty">집계 가능한 관련 보도가 없습니다.</div>}
       </div>
     </div>
   );
 }
 
-function EditorialSlackStatus({ watchHealth, notificationHealth, reportHealth, onOpenHistory }) {
-  const nextReport = nextReportLabel(reportHealth);
+function EditorialOperationsRail({ operationsHealth, watchHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
+  const systemOk = operationsHealth?.status === "ok";
+  const reportSlots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
   return (
-    <aside className="editorial-slack-status">
-      <div className="editorial-slack-status-title"><SlackMark /><b>Slack 운영 현황</b></div>
-      <div className="editorial-slack-status-list">
-        <EditorialStatusRow label="감시" health={watchHealth} />
-        <EditorialStatusRow label="발송" health={notificationHealth} />
-        <EditorialStatusRow label="다음 보고" value={nextReport} />
-      </div>
-      <button type="button" className="editorial-slack-history" onClick={onOpenHistory}>전체 이력 <ChevronRight /></button>
+    <aside className="signal-operations-rail">
+      <section className="signal-operation-card system">
+        <div className="signal-operation-title">
+          <ShieldCheck />
+          <b>시스템 상태</b>
+          <HealthStatusPill status={operationsHealth?.status || "pending"} />
+        </div>
+        <strong>{systemOk ? "정상 운영 중" : operationsHealth?.headline || "상태 확인 중"}</strong>
+        <div className="signal-system-metrics">
+          <span><small>모니터링</small><b>{Number(analyzed || 0).toLocaleString("ko-KR")}건</b></span>
+          <span><small>감시 주기</small><b>{NEGATIVE_WATCH_SHORT_LABEL}</b></span>
+          <span><small>이상 알림</small><b>{operationsHealth?.status === "fail" ? "확인" : "0건"}</b></span>
+        </div>
+      </section>
+      <section className="signal-operation-card slack">
+        <div className="signal-operation-title"><SlackMark /><b>Slack 발송 현황</b></div>
+        <div className="signal-slack-summary">
+          <strong>{notificationHealth?.status === "ok" ? "정상 발송" : notificationHealth?.label || "확인 중"}</strong>
+          <span>{notificationHealth?.meta || "최근 발송 이력 확인 중"}</span>
+        </div>
+        <div className="signal-system-metrics compact">
+          <span><small>감시</small><b>{watchHealth?.label || "확인"}</b></span>
+          <span><small>발송</small><b>{notificationHealth?.label || "확인"}</b></span>
+          <span><small>실패</small><b>{notificationHealth?.status === "fail" ? "1건+" : "0건"}</b></span>
+        </div>
+        <button type="button" onClick={onOpenHistory}>발송 로그 보기 <ChevronRight /></button>
+      </section>
+      <section className="signal-operation-card reports">
+        <div className="signal-operation-title"><CalendarDays /><b>다음 보고서</b></div>
+        <div className="signal-report-slots">
+          {reportSlots.slice(0, 3).map((slot) => (
+            <div key={slot.slot}>
+              <span>{slot.slot}:00</span>
+              <b>{slot.status === "ok" ? "완료" : slot.state || "예정"}</b>
+            </div>
+          ))}
+          {!reportSlots.length && <div><span>일일 언론 동향</span><b>{nextReportLabel(reportHealth)}</b></div>}
+        </div>
+      </section>
     </aside>
-  );
-}
-
-function EditorialStatusRow({ label, health, value }) {
-  const ok = health?.status === "success" || health?.status === "ok" || (!health && Boolean(value));
-  return (
-    <div className="editorial-status-row">
-      <i className={ok ? "ok" : health?.status === "fail" ? "fail" : "warn"} />
-      <span>{label}</span>
-      <b>{value || health?.label || "확인"}</b>
-    </div>
   );
 }
 
@@ -995,20 +1161,9 @@ function IssueMomentumChart({ rows = [] }) {
     <section className="editorial-momentum-panel">
       <div className="editorial-section-title"><i />이슈 모멘텀</div>
       <div className="editorial-momentum-chart">
-        {rows.length ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsLineChart data={rows} margin={{ left: -12, right: 54, top: 12, bottom: 0 }}>
-              <CartesianGrid stroke="#d8dde5" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="dateLabel" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#596273" }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#596273" }} width={34} />
-              <Tooltip formatter={(value, name) => [`${Number(value || 0).toLocaleString("ko-KR")}건`, dashboardSeriesLabel(name)]} />
-              <Line type="monotone" dataKey="own" stroke="#1d5bd7" strokeWidth={2.4} dot={{ r: 2.8 }} name="당사" />
-              <Line type="monotone" dataKey="ga" stroke="#0d8f67" strokeWidth={2.4} dot={{ r: 2.8 }} name="GA" />
-              <Line type="monotone" dataKey="insurance" stroke="#e04a3f" strokeWidth={2.4} dot={{ r: 2.8 }} name="보험사" />
-              <Line type="monotone" dataKey="regulation" stroke="#8e1434" strokeWidth={2.4} dot={{ r: 2.8 }} name="정책/규제" />
-            </RechartsLineChart>
-          </ResponsiveContainer>
-        ) : <div className="editorial-chart-empty">집계 가능한 기사 데이터가 없습니다.</div>}
+        {rows.length
+          ? <DashboardSvgLineChart rows={rows} series={dashboardMomentumSeries} />
+          : <div className="editorial-chart-empty">집계 가능한 기사 데이터가 없습니다.</div>}
       </div>
       <div className="editorial-chart-legend">
         {[["own", "당사"], ["ga", "GA"], ["insurance", "보험사"], ["regulation", "정책/규제"]].map(([key, label]) => <span key={key} className={key}><i />{label}</span>)}
@@ -1025,22 +1180,77 @@ function TodayComposition({ rows = [] }) {
     .slice(0, 5);
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   const denominator = total || 1;
+  const palette = ["#1d5bd7", "#0d8f67", "#e04a3f", "#8e1434", "#dc9800"];
+  let cursor = 0;
+  const gradient = normalized.map((item, index) => {
+    const start = cursor;
+    cursor += (item.value / denominator) * 100;
+    return `${palette[index]} ${start}% ${cursor}%`;
+  }).join(", ");
   return (
     <section className="editorial-composition-panel">
       <div className="editorial-section-title"><i />오늘의 구성 <em>총 {total.toLocaleString("ko-KR")}건</em></div>
-      <div className="editorial-composition-list">
+      <div className="editorial-composition-body">
+        <div className="editorial-composition-donut" style={{ background: normalized.length ? `conic-gradient(${gradient})` : "#e8edf4" }}>
+          <span><small>총</small><b>{total.toLocaleString("ko-KR")}</b><em>건</em></span>
+        </div>
+        <div className="editorial-composition-list">
         {normalized.map((item, index) => {
           const percent = Math.round((item.value / denominator) * 100);
           return (
             <div key={item.name}>
-              <span>{index + 1}</span><b>{item.name}</b>
-              <i><em style={{ width: `${Math.max(6, percent)}%` }} /></i>
-              <strong>{percent}%</strong>
+              <span style={{ background: palette[index] }} /><b>{item.name}</b>
+              <em>{item.value.toLocaleString("ko-KR")}건</em><strong>{percent}%</strong>
             </div>
           );
         })}
+        </div>
       </div>
     </section>
+  );
+}
+
+const dashboardMomentumSeries = [
+  { key: "own", color: "#1d5bd7", label: "당사" },
+  { key: "ga", color: "#0d8f67", label: "GA" },
+  { key: "insurance", color: "#e04a3f", label: "보험사" },
+  { key: "regulation", color: "#8e1434", label: "정책/규제" },
+];
+
+function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, compact = false }) {
+  const width = compact ? 320 : 760;
+  const height = compact ? 118 : 220;
+  const padding = compact ? { top: 18, right: 14, bottom: 24, left: 12 } : { top: 18, right: 24, bottom: 34, left: 38 };
+  const values = rows.flatMap((row) => series.map((item) => Number(row[item.key] || 0)));
+  const maxValue = Math.max(1, ...values);
+  const x = (index) => padding.left + (index * (width - padding.left - padding.right)) / Math.max(1, rows.length - 1);
+  const y = (value) => padding.top + (1 - Number(value || 0) / maxValue) * (height - padding.top - padding.bottom);
+  const gridValues = compact ? [0.5] : [0, 0.33, 0.66, 1];
+  return (
+    <svg className="dashboard-svg-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label="기사량 추이">
+      {gridValues.map((ratio) => {
+        const gridY = padding.top + ratio * (height - padding.top - padding.bottom);
+        return <line key={ratio} x1={padding.left} x2={width - padding.right} y1={gridY} y2={gridY} className="dashboard-chart-grid" />;
+      })}
+      {series.map((item) => {
+        const points = rows.map((row, index) => `${x(index)},${y(row[item.key])}`).join(" ");
+        return (
+          <g key={item.key}>
+            <polyline points={points} fill="none" stroke={item.color} strokeWidth={compact ? 3 : 2.5} strokeLinejoin="round" strokeLinecap="round" />
+            {rows.map((row, index) => (
+              <circle key={`${item.key}-${index}`} cx={x(index)} cy={y(row[item.key])} r={compact ? 3.2 : 2.8} fill="#fff" stroke={item.color} strokeWidth="2">
+                <title>{`${row.dateLabel || row.date || index + 1} ${item.label} ${Number(row[item.key] || 0).toLocaleString("ko-KR")}건`}</title>
+              </circle>
+            ))}
+          </g>
+        );
+      })}
+      {rows.map((row, index) => (
+        <text key={`label-${index}`} x={x(index)} y={height - 7} textAnchor="middle" className="dashboard-chart-label">
+          {row.dateLabel || row.date || ""}
+        </text>
+      ))}
+    </svg>
   );
 }
 
@@ -1081,14 +1291,20 @@ function nextReportLabel(reportHealth = {}) {
 function buildLeadIssueMomentum(issue, articles = []) {
   if (!issue) return [];
   const related = Array.isArray(issue.relatedArticles) ? issue.relatedArticles : [];
-  const sourceRows = dedupeIssueMembers([...articles, ...related, issue].map(normalizeArticleDisplay));
+  const sourceRows = [...articles, ...related, issue];
   const endDate = rowDateKey(issue) || latestArticleDate(related) || latestArticleDate(sourceRows);
   if (!endDate) return [];
   const dates = Array.from({ length: 7 }, (_, index) => addDaysToDateKey(endDate, index - 6));
   const buckets = new Map(dates.map((date) => [date, { date, dateLabel: formatDashboardChartDate(date), total: 0 }]));
+  const issueSeed = articleGroupSeed(issue);
+  const seen = new Set();
   sourceRows.forEach((article) => {
     const date = rowDateKey(article);
-    if (!buckets.has(date) || !articleBelongsToSameIssue(issue, article)) return;
+    if (!buckets.has(date)) return;
+    const memberKey = issueMemberKey(article);
+    if (memberKey && seen.has(memberKey)) return;
+    if (!areRelatedArticleSeeds(issueSeed, articleGroupSeed(article))) return;
+    if (memberKey) seen.add(memberKey);
     buckets.get(date).total += 1;
   });
   return Array.from(buckets.values());
@@ -1114,7 +1330,7 @@ function buildDashboardMomentum(articles = []) {
 }
 
 function dashboardArticleSeries(article = {}) {
-  if (isOwnArticle(article) || /당사/.test(String(article.category || ""))) return "own";
+  if (article?.ownMentioned === true || article?.aiContext?.ownMentioned === true || /당사/.test(String(article.category || ""))) return "own";
   if (/정책|규제|금융당국/.test(String(article.category || ""))) return "regulation";
   if (/GA|경쟁/.test(String(article.category || ""))) return "ga";
   return "insurance";
@@ -1456,12 +1672,10 @@ function OpsStatusRail({
 
 function Monitoring({ data, articles, scraps = [], monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved, onScrapSaved }) {
   const [isFilterPending, startFilterTransition] = useTransition();
-  const regularArticles = useMemo(
-    () => articles.filter((article) => !isOfficialRegulatorSource(article.source) && isUsableMonitoringArticle(article)),
+  const latestDate = useMemo(
+    () => latestArticleDate(articles.filter((article) => !isOfficialRegulatorSource(article.source))),
     [articles],
   );
-  const deferredRegularArticles = useDeferredValue(regularArticles);
-  const latestDate = useMemo(() => latestArticleDate(deferredRegularArticles), [deferredRegularArticles]);
   const [query, setQuery] = useState("");
   const [queryInput, setQueryInput] = useState("");
   const [tone, setTone] = useState("all");
@@ -1470,10 +1684,41 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   const [ownOnly, setOwnOnly] = useState(false);
   const [viewMode, setViewMode] = useState("related");
   const [visible, setVisible] = useState(30);
-  const [startDateInput, setStartDateInput] = useState("");
-  const [endDateInput, setEndDateInput] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDateInput, setStartDateInput] = useState(latestDate);
+  const [endDateInput, setEndDateInput] = useState(latestDate);
+  const [startDate, setStartDate] = useState(latestDate);
+  const [endDate, setEndDate] = useState(latestDate);
+  const [focusPreset, setFocusPreset] = useState({});
+  const appliedPresetStamp = useRef(null);
+
+  const regularArticles = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const focusArticleHash = String(focusPreset?.articleHash || "").trim();
+    const focusArticleLink = String(focusPreset?.articleLink || "").trim();
+    const focusArticleTitle = String(focusPreset?.articleTitle || "").trim();
+    const hasFocusTarget = Boolean(focusArticleHash || focusArticleLink || focusArticleTitle);
+    const issueLinks = new Set(
+      (Array.isArray(focusPreset?.issueLinks) ? focusPreset.issueLinks : [])
+        .map((link) => normalizeRiskUrl(link))
+        .filter(Boolean),
+    );
+    const hasResolvedTarget = hasFocusTarget || issueLinks.size > 0;
+    return articles.filter((article) => {
+      if (isOfficialRegulatorSource(article.source)) return false;
+      if (hasFocusTarget && !articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle)) return false;
+      if (issueLinks.size && !issueLinks.has(normalizeRiskUrl(article.link || article.url || ""))) return false;
+      if (needle) {
+        const text = `${article.title || ""} ${article.source || ""} ${article.keyword || ""} ${article.summary || ""}`.toLowerCase();
+        if (!text.includes(needle)) return false;
+      } else if (!hasResolvedTarget) {
+        const articleDate = article.date || "";
+        if (startDate && articleDate && articleDate < startDate) return false;
+        if (endDate && articleDate && articleDate > endDate) return false;
+      }
+      return isUsableMonitoringArticle(article);
+    });
+  }, [articles, endDate, focusPreset, query, startDate]);
+  const deferredRegularArticles = useDeferredValue(regularArticles);
 
   const sources = useMemo(() => unique(deferredRegularArticles.map((article) => article.source)).slice(0, 80), [deferredRegularArticles]);
   const categories = useMemo(() => unique(deferredRegularArticles.map((article) => article.category)).slice(0, 40), [deferredRegularArticles]);
@@ -1486,6 +1731,9 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   }, [endDate, endDateInput, latestDate, startDate, startDateInput]);
   useEffect(() => {
     if (!monitoringPreset) return;
+    const presetStamp = monitoringPreset.stamp || monitoringPreset;
+    if (appliedPresetStamp.current === presetStamp) return;
+    setFocusPreset(monitoringPreset);
     const presetQuery = Array.isArray(monitoringPreset.issueLinks) && monitoringPreset.issueLinks.length ? "" : (monitoringPreset.query || "");
     setQuery(presetQuery);
     setQueryInput(presetQuery);
@@ -1501,17 +1749,18 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
       setEndDate(range.end);
     }
     setVisible(30);
+    appliedPresetStamp.current = presetStamp;
   }, [monitoringPreset, deferredRegularArticles]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const focusArticleHash = String(monitoringPreset?.articleHash || "").trim();
-    const focusArticleLink = String(monitoringPreset?.articleLink || "").trim();
-    const focusArticleTitle = String(monitoringPreset?.articleTitle || "").trim();
+    const focusArticleHash = String(focusPreset?.articleHash || "").trim();
+    const focusArticleLink = String(focusPreset?.articleLink || "").trim();
+    const focusArticleTitle = String(focusPreset?.articleTitle || "").trim();
     const hasFocusTarget = Boolean(focusArticleHash || focusArticleLink || focusArticleTitle);
     const focusTargetAvailable = hasFocusTarget
       && deferredRegularArticles.some((article) => articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle));
-    const issueLinks = Array.isArray(monitoringPreset?.issueLinks)
-      ? monitoringPreset.issueLinks.map((link) => normalizeRiskUrl(link)).filter(Boolean)
+    const issueLinks = Array.isArray(focusPreset?.issueLinks)
+      ? focusPreset.issueLinks.map((link) => normalizeRiskUrl(link)).filter(Boolean)
       : [];
     const issueLinkSet = new Set(issueLinks);
     const hasIssueTarget = issueLinkSet.size > 0;
@@ -1534,7 +1783,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
         (hasResolvedTarget || source === "all" || article.source === source)
       );
     });
-  }, [deferredRegularArticles, category, endDate, monitoringPreset, ownOnly, query, source, startDate, tone]);
+  }, [deferredRegularArticles, category, endDate, focusPreset, ownOnly, query, source, startDate, tone]);
   const applyDateFilter = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
@@ -1563,6 +1812,21 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
       setQuery(queryInput);
       setVisible(30);
     });
+  };
+  const resetMonitoringFilters = () => {
+    setFocusPreset({});
+    setQuery("");
+    setQueryInput("");
+    setTone("all");
+    setCategory("all");
+    setSource("all");
+    setOwnOnly(false);
+    setViewMode("related");
+    setStartDateInput(latestDate);
+    setEndDateInput(latestDate);
+    setStartDate(latestDate);
+    setEndDate(latestDate);
+    setVisible(30);
   };
 
   return (
@@ -1622,20 +1886,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
           <button className="primary-button filter-action" onClick={applyFilters}>
             조회/검색
           </button>
-          <button className="ghost-button compact-button" onClick={() => {
-            setQuery("");
-            setQueryInput("");
-            setTone("all");
-            setCategory("all");
-            setSource("all");
-            setOwnOnly(false);
-            setViewMode("related");
-            setStartDateInput(latestDate);
-            setEndDateInput(latestDate);
-            setStartDate(latestDate);
-            setEndDate(latestDate);
-            setVisible(30);
-          }}>
+          <button className="ghost-button compact-button" onClick={resetMonitoringFilters}>
             초기화
           </button>
           <button type="button" className="primary-button compact-button"><Download />CSV 출력</button>
@@ -2904,23 +3155,19 @@ function formatRiskDraft(sections = []) {
     .join("\n\n");
 }
 
+function ChartLoadingState() {
+  return <div className="chart-loading-state" aria-label="차트 준비 중"><i /><i /><i /></div>;
+}
+
 function AdSpendChart({ rows, color = "#2855d9", compact = false }) {
   if (!rows.length) {
     return <div className="chart-empty">광고비 집행 데이터가 없습니다.</div>;
   }
   return (
     <div className={`ad-chart-box ${compact ? "compact" : ""}`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 18, left: 0, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-          <XAxis type="number" hide />
-          <YAxis dataKey="name" type="category" width={compact ? 76 : 92} tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 800 }} />
-          <Tooltip formatter={(value) => formatMoney(value)} />
-          <Bar dataKey="value" radius={[0, 7, 7, 0]}>
-            {rows.map((row, index) => <Cell key={row.name} fill={index === 0 ? color : chartColors[index % chartColors.length]} />)}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <React.Suspense fallback={<ChartLoadingState />}>
+        <HorizontalBarPrimitive rows={rows} compact={compact} color={color} colors={chartColors} valueFormatter={formatMoney} />
+      </React.Suspense>
     </div>
   );
 }
@@ -4226,29 +4473,9 @@ function CategoryChart({ rows, tall = false, mini = false, verticalBars = false,
   return (
     <div className={className}>
       <div className="chart-canvas">
-        <ResponsiveContainer width="100%" height="100%">
-          {verticalBars ? (
-            <BarChart data={rows} margin={{ left: 4, right: 6, top: 26, bottom: 4 }} barCategoryGap={18}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 11, fontWeight: 900 }} />
-              <YAxis type="number" hide />
-              <Tooltip formatter={(value) => [`${Number(value || 0).toLocaleString("ko-KR")}건`, "기사량"]} />
-              <Bar dataKey="value" radius={[7, 7, 0, 0]} maxBarSize={46}>
-                <LabelList dataKey="value" position="top" formatter={(value) => `${Number(value || 0).toLocaleString("ko-KR")}건`} fill="#0f1f3d" fontSize={11} fontWeight={900} />
-                {rows.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
-              </Bar>
-            </BarChart>
-          ) : (
-            <BarChart data={rows} layout="vertical" margin={{ left: 0, right: 12, top: 4, bottom: 8 }}>
-              <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" width={labelWidth} tickLine={false} axisLine={false} />
-              <Tooltip formatter={(value) => [`${Number(value || 0).toLocaleString("ko-KR")}건`, "기사량"]} />
-              <Bar dataKey="value" radius={[0, 7, 7, 0]}>
-                {rows.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
-              </Bar>
-            </BarChart>
-          )}
-        </ResponsiveContainer>
+        <React.Suspense fallback={<ChartLoadingState />}>
+          <CategoryBarPrimitive rows={rows} verticalBars={verticalBars} colors={chartColors} labelWidth={labelWidth} />
+        </React.Suspense>
       </div>
       {onOpenMonitoring && (
         <div className="chart-drill-buttons">
@@ -4264,17 +4491,9 @@ function CategoryChart({ rows, tall = false, mini = false, verticalBars = false,
 function ToneTrend({ rows, compact = false }) {
   return (
     <div className={compact ? "chart-box report-trend" : "chart-box tall"}>
-      <ResponsiveContainer width="100%" height="100%">
-        <RechartsLineChart data={rows} margin={{ left: 8, right: 12, top: 12, bottom: 2 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={compact ? 8 : 14} tick={{ fontSize: compact ? 9 : 12, fontWeight: 800 }} />
-          <YAxis hide />
-          <Tooltip />
-          <Line type="monotone" dataKey="positive" stroke="#14805f" strokeWidth={2.5} dot={false} name="긍정" />
-          <Line type="monotone" dataKey="caution" stroke="#b45309" strokeWidth={2.5} dot={false} name="주의" />
-          <Line type="monotone" dataKey="negative" stroke="#c92337" strokeWidth={2.5} dot={false} name="부정" />
-        </RechartsLineChart>
-      </ResponsiveContainer>
+      <React.Suspense fallback={<ChartLoadingState />}>
+        <ToneTrendPrimitive rows={rows} compact={compact} />
+      </React.Suspense>
     </div>
   );
 }
@@ -4523,7 +4742,7 @@ function buildIssues(articles, fallback) {
       relatedSourceCount: Number(displayArticle.relatedSourceCount || unique(relatedArticles.map((item) => item.source).filter(Boolean)).length || 1),
       relatedSources: displayArticle.relatedSources,
     });
-    if (uniqueIssues.length >= 5) break;
+    if (uniqueIssues.length >= 10) break;
   }
   return uniqueIssues.length ? uniqueIssues : [];
 }
@@ -7673,5 +7892,10 @@ function composeRealtimeData(base, articles, liveConnected = false) {
   };
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+const rootElement = document.getElementById("root");
+const appRoot = import.meta.hot && window.__INCAR_APP_ROOT__
+  ? window.__INCAR_APP_ROOT__
+  : createRoot(rootElement);
+if (import.meta.hot) window.__INCAR_APP_ROOT__ = appRoot;
+appRoot.render(<App />);
 

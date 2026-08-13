@@ -26,6 +26,10 @@ const ARTICLE_PAGE_SIZE = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_PAGE_SIZ
 const SESSION_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_SESSION_ARTICLE_MAX_ROWS", 20000, 1000, 50000);
 const PUBLIC_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_PUBLIC_ARTICLE_MAX_ROWS", 12000, 1000, 50000);
 const ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_LOOKBACK_DAYS", 90, 14, 365);
+const CORE_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_ARTICLE_MAX_ROWS", 2000, 500, 5000);
+const CORE_ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_LOOKBACK_DAYS", 14, 3, 30);
+const HISTORY_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_HISTORY_ARTICLE_MAX_ROWS", 8000, 2000, 20000);
+const ENGAGEMENT_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_ENGAGEMENT_ARTICLE_MAX_ROWS", 4000, 1000, 10000);
 
 function readPositiveEnvInt(name, fallback, min, max) {
   const parsed = Number.parseInt(import.meta.env?.[name] || "", 10);
@@ -33,10 +37,43 @@ function readPositiveEnvInt(name, fallback, min, max) {
   return Math.min(max, Math.max(min, parsed));
 }
 
-function articleLookbackStartDateKey() {
+function articleLookbackStartDateKey(days = ARTICLE_LOOKBACK_DAYS) {
   const date = new Date();
-  date.setDate(date.getDate() - (ARTICLE_LOOKBACK_DAYS - 1));
+  date.setDate(date.getDate() - (days - 1));
   return date.toISOString().slice(0, 10);
+}
+
+function operationalLoadOptions(options = {}, authenticated = false) {
+  const profile = options.profile || "core";
+  const full = profile === "full";
+  const history = profile === "history";
+  const engagement = profile === "engagement";
+  const management = profile === "management";
+  const stocks = profile === "stocks";
+  const core = profile === "core";
+  const maxRows = authenticated ? SESSION_ARTICLE_MAX_ROWS : PUBLIC_ARTICLE_MAX_ROWS;
+  return {
+    profile,
+    core,
+    lookbackDays: history || full
+      ? ARTICLE_LOOKBACK_DAYS
+      : engagement
+        ? Math.min(30, ARTICLE_LOOKBACK_DAYS)
+        : CORE_ARTICLE_LOOKBACK_DAYS,
+    maxRows: history
+      ? Math.min(maxRows, HISTORY_ARTICLE_MAX_ROWS)
+      : engagement
+        ? Math.min(maxRows, ENGAGEMENT_ARTICLE_MAX_ROWS)
+        : full
+          ? maxRows
+          : CORE_ARTICLE_MAX_ROWS,
+    includeStatus: core || full,
+    includeArticles: core || history || engagement || full,
+    includeScraps: engagement || full,
+    includeManagement: management || full,
+    includeGaIntel: management || full,
+    includeStock: options.includeStock === true || stocks || full,
+  };
 }
 
 const STOCK_LISTING_NOISE_TITLE_RE = /(?:\[?52주\]?\s*)?(?:최저가|최고가)|장중\s*(?:신저가|신고가)|강세\s*토픽|약세\s*토픽|특징주|오전\s*이슈\s*\[보험\]|\[리스트\]|MVP\s*상위|상위\s*\d+\s*선/;
@@ -585,7 +622,7 @@ export async function verifyDashboardLogin(employeeNo, password) {
   return session;
 }
 
-export async function loadOperationalData() {
+export async function loadOperationalData(options = {}) {
   const base = {
     source: "static",
     status: "loading",
@@ -613,20 +650,22 @@ export async function loadOperationalData() {
   };
 
   try {
-    const stockMarket = await loadStockMarketData();
     const session = getStoredSession();
+    const loadOptions = operationalLoadOptions(options, Boolean(session?.session_token));
+    const stockMarketPromise = loadOptions.includeStock
+      ? loadStockMarketData().catch(() => null)
+      : Promise.resolve(null);
     if (session?.session_token) {
-      const remoteData = await loadOperationalDataFromSupabaseSession();
+      const remoteData = await loadOperationalDataFromSupabaseSession(loadOptions);
       if (remoteData?.status === "live") {
-        const staticFallback = await loadStaticOperationalData();
-        return mergeOperationalData({ ...remoteData, stockMarket }, staticFallback);
+        return { ...remoteData, stockMarket: await stockMarketPromise };
       }
     }
-    const publicData = await loadOperationalDataFromSupabasePublic();
+    const publicData = await loadOperationalDataFromSupabasePublic(loadOptions);
     if (publicData?.status === "live") {
-      const staticFallback = await loadStaticOperationalData();
-      return mergeOperationalData({ ...publicData, stockMarket }, staticFallback);
+      return { ...publicData, stockMarket: await stockMarketPromise };
     }
+    const stockMarket = await stockMarketPromise;
     const staticData = await loadStaticOperationalData();
     if (staticData) return { ...staticData, stockMarket: staticData.stockMarket || stockMarket };
     return { ...base, stockMarket, status: "empty", message: "누적 데이터 없음" };
@@ -859,7 +898,7 @@ async function loadStaticOperationalData() {
   return null;
 }
 
-async function loadOperationalDataFromSupabaseSession() {
+async function loadOperationalDataFromSupabaseSession(loadOptions = operationalLoadOptions({ profile: "full" }, true)) {
   const base = {
     source: "sample",
     status: "sample",
@@ -894,60 +933,63 @@ async function loadOperationalDataFromSupabaseSession() {
       return { ...base, message: "운영 로그인 필요" };
     }
 
-    const articles = await fetchTable(
-      config,
-      session,
-      "news_articles",
-      [
-        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
-        `report_date=gte.${articleLookbackStartDateKey()}`,
-        "order=report_date.desc,score.desc",
-      ].join("&"),
-      ARTICLE_PAGE_SIZE,
-      SESSION_ARTICLE_MAX_ROWS,
-    );
+    const articles = loadOptions.includeArticles
+      ? await fetchTable(
+          config,
+          session,
+          "news_articles",
+          [
+            "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
+            `report_date=gte.${articleLookbackStartDateKey(loadOptions.lookbackDays)}`,
+            "order=report_date.desc,score.desc",
+          ].join("&"),
+          ARTICLE_PAGE_SIZE,
+          loadOptions.maxRows,
+        )
+      : [];
+    const optional = (enabled, request) => enabled ? request() : Promise.resolve([]);
     const optionalRequests = {
-      notifications: rest(
+      notifications: optional(loadOptions.includeStatus, () => rest(
         config,
         session,
         "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=120",
-      ),
-      watchRuns: rest(
+      )),
+      watchRuns: optional(loadOptions.includeStatus, () => rest(
         config,
         session,
         "negative_watch_runs?select=run_key,scanned_at,minutes_back,scanned_count,negative_count,new_negative_count,status,message&order=scanned_at.desc&limit=20",
-      ),
-      reportRuns: rest(
+      )),
+      reportRuns: optional(loadOptions.includeStatus, () => rest(
         config,
         session,
         "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
-      ),
-      jobRuns: rest(
+      )),
+      jobRuns: optional(loadOptions.includeStatus, () => rest(
         config,
         session,
         "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,period_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
-      ).catch(() => []),
-      scraps: rest(
+      ).catch(() => [])),
+      scraps: optional(loadOptions.includeScraps, () => rest(
         config,
         session,
         "article_scraps?select=article_hash,article_snapshot,created_at&order=created_at.desc&limit=100",
-      ),
-      scrapAnalysisReports: rest(
+      )),
+      scrapAnalysisReports: optional(loadOptions.includeScraps, () => rest(
         config,
         session,
         "clipping_analysis_reports?select=id,title,prompt,report,analysis,article_count,article_hashes,model,usage,status,created_by,created_at,updated_at&order=created_at.desc&limit=50",
-      ),
-      mediaRelations: rest(config, session, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc"),
-      reporters: rest(config, session, "reporters?select=id,name,media,beat,status,contact_date,email,phone,request,memo,updated_at&order=updated_at.desc&limit=500"),
-      ads: rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500"),
-      aliases: rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
-      keywords: loadMonitorKeywords(config, session),
-      riskDrafts: rest(config, session, "risk_response_drafts?select=id,article_hash,draft_type,title,link,source,tone,risk_level,issue,draft,status,model,context,created_by,created_at,updated_at&order=created_at.desc&limit=200"),
-      feedback: rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500"),
-      gaCompanies: rest(config, session, "ga_companies?select=name,short_name,display_order,active&active=eq.true&order=display_order.asc,name.asc&limit=200"),
-      gaDisclosureMetrics: rest(config, session, "ga_disclosure_metrics?select=company_name,stand_mm,period_label,planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,source_url,collected_at&order=stand_mm.asc,company_name.asc&limit=5000"),
-      gaRevenueMetrics: rest(config, session, "ga_revenue_metrics?select=company_name,period_key,period_label,amount_krw_100m,status,source_label,source_url,note,confirmed_at&order=period_key.asc&limit=500"),
-      gaMarketMetrics: rest(config, session, "ga_market_metrics?select=stand_mm,period_label,companies_count,total_planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,collected_at&order=stand_mm.asc&limit=500"),
+      )),
+      mediaRelations: optional(loadOptions.includeManagement, () => rest(config, session, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc")),
+      reporters: optional(loadOptions.includeManagement, () => rest(config, session, "reporters?select=id,name,media,beat,status,contact_date,email,phone,request,memo,updated_at&order=updated_at.desc&limit=500")),
+      ads: optional(loadOptions.includeManagement, () => rest(config, session, "ad_spends?select=id,media,spend_month,amount,spend_type,memo,updated_at&order=spend_month.desc,updated_at.desc&limit=500")),
+      aliases: optional(loadOptions.includeManagement, () => rest(config, session, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000")),
+      keywords: optional(loadOptions.includeManagement, () => loadMonitorKeywords(config, session)),
+      riskDrafts: optional(loadOptions.includeManagement, () => rest(config, session, "risk_response_drafts?select=id,article_hash,draft_type,title,link,source,tone,risk_level,issue,draft,status,model,context,created_by,created_at,updated_at&order=created_at.desc&limit=200")),
+      feedback: optional(loadOptions.includeManagement, () => rest(config, session, "classification_feedback?select=id,article_hash,title,link,previous_category,previous_tone,corrected_category,corrected_tone,reason,created_by,created_at&order=created_at.desc&limit=500")),
+      gaCompanies: optional(loadOptions.includeGaIntel, () => rest(config, session, "ga_companies?select=name,short_name,display_order,active&active=eq.true&order=display_order.asc,name.asc&limit=200")),
+      gaDisclosureMetrics: optional(loadOptions.includeGaIntel, () => rest(config, session, "ga_disclosure_metrics?select=company_name,stand_mm,period_label,planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,source_url,collected_at&order=stand_mm.asc,company_name.asc&limit=5000")),
+      gaRevenueMetrics: optional(loadOptions.includeGaIntel, () => rest(config, session, "ga_revenue_metrics?select=company_name,period_key,period_label,amount_krw_100m,status,source_label,source_url,note,confirmed_at&order=period_key.asc&limit=500")),
+      gaMarketMetrics: optional(loadOptions.includeGaIntel, () => rest(config, session, "ga_market_metrics?select=stand_mm,period_label,companies_count,total_planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,collected_at&order=stand_mm.asc&limit=500")),
     };
     const optionalEntries = await Promise.allSettled(
       Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
@@ -1025,42 +1067,45 @@ async function loadOperationalDataFromSupabaseSession() {
   }
 }
 
-async function loadOperationalDataFromSupabasePublic() {
+async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLoadOptions({ profile: "full" }, false)) {
   const config = await loadSupabaseConfig();
   if (!config?.url || !config?.anon_key) return null;
 
   try {
-    const articles = await fetchPublicTable(
-      config,
-      "news_articles",
-      [
-        "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
-        `report_date=gte.${articleLookbackStartDateKey()}`,
-        "order=report_date.desc,score.desc",
-      ].join("&"),
-      ARTICLE_PAGE_SIZE,
-      PUBLIC_ARTICLE_MAX_ROWS,
-    );
+    const articles = loadOptions.includeArticles
+      ? await fetchPublicTable(
+          config,
+          "news_articles",
+          [
+            "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
+            `report_date=gte.${articleLookbackStartDateKey(loadOptions.lookbackDays)}`,
+            "order=report_date.desc,score.desc",
+          ].join("&"),
+          ARTICLE_PAGE_SIZE,
+          loadOptions.maxRows,
+        )
+      : [];
+    const optional = (enabled, request) => enabled ? request() : Promise.resolve([]);
     const optionalRequests = {
-      notifications: publicRest(
+      notifications: optional(loadOptions.includeStatus, () => publicRest(
         config,
         "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=120",
-      ),
-      watchRuns: publicRest(
+      )),
+      watchRuns: optional(loadOptions.includeStatus, () => publicRest(
         config,
         "negative_watch_runs?select=run_key,scanned_at,status,minutes_back,scanned_count,negative_count,new_negative_count,message,created_at&order=scanned_at.desc,created_at.desc&limit=80",
-      ),
-      reportRuns: publicRest(
+      )),
+      reportRuns: optional(loadOptions.includeStatus, () => publicRest(
         config,
         "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
-      ),
-      jobRuns: publicRest(
+      )),
+      jobRuns: optional(loadOptions.includeStatus, () => publicRest(
         config,
         "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,period_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
-      ),
-      mediaRelations: publicRest(config, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc"),
-      aliases: publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000"),
-      keywords: loadPublicMonitorKeywords(config),
+      )),
+      mediaRelations: optional(loadOptions.includeManagement, () => publicRest(config, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc")),
+      aliases: optional(loadOptions.includeManagement, () => publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000")),
+      keywords: optional(loadOptions.includeManagement, () => loadPublicMonitorKeywords(config)),
     };
     const optionalEntries = await Promise.allSettled(
       Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),

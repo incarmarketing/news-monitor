@@ -1,31 +1,39 @@
 # Dashboard Design QA
 
-- Selected reference: `C:\Users\User\.codex\generated_images\019e1489-9221-76e2-9cd8-a29490d3d5bf\exec-7381c423-96b9-4e70-896e-0185b37f170d.png`
-- Desktop viewport: `1600 x 900`
+- Selected visual truth: `design-references/dashboard-option-1-20260813.png`
+- Desktop implementation: `design-qa-dashboard-desktop-v5.png`
+- Mobile implementation: `design-qa-dashboard-mobile-v5.png`
+- Desktop viewport: `1600 x 1000`
 - Mobile viewport: `390 x 844`
-- Verification target: dashboard overview with local operational data
 
-## Desktop
+## Visual Comparison
 
-- [x] Sidebar logo is centered against the full sidebar width. Measured center offset: `0px`.
-- [x] Lead issue and its seven-day momentum share one visual region.
-- [x] Lead copy and momentum chart have the same lower boundary. Measured offset: `0px`.
-- [x] Follow-up issues and Slack operations occupy the second command row.
-- [x] Overall momentum and category composition align on the lower row.
-- [x] No page-level horizontal overflow.
+- [x] Option 1's editorial hierarchy is preserved: compact masthead, dark KPI rail, ranked issue desk, and restrained operations column.
+- [x] The sidebar remains the only large dark surface; content panels use white and neutral gray for long-session readability.
+- [x] The lead issue and its seven-day momentum share one visual region.
+- [x] Follow-up issue rows remain dense and scannable without nested cards.
+- [x] Desktop fits the primary operational view within `1600 x 1000` without horizontal overflow.
+- [x] Mobile switches to an app-style top navigation, stacks the lead chart, and has no page-level horizontal overflow.
 
-## Mobile
+## Interaction And Performance
 
-- [x] No page-level horizontal overflow at `390px` width.
-- [x] Lead issue stacks above its seven-day momentum without overlap.
-- [x] KPI values remain readable and navigation switches to the compact top layout.
-- [x] Issue rows remain tappable and preserve title truncation boundaries.
-
-## Functional
-
-- [x] Search, refresh, alert, and theme controls remain available.
-- [x] Slack status retains the full-history action.
-- [x] Duplicate recent-Slack footer was removed.
+- [x] Monitoring search accepts a query and `초기화` clears it back to an empty value.
+- [x] Dashboard, monitoring, media analysis, and management routes render nonblank content.
+- [x] Dashboard calculations use the 14-day core profile capped at 2,000 rows and a final 500-row visual context.
+- [x] History, engagement, management, stock, and chart data load only for the screens that need them.
+- [x] Recharts is isolated from the initial entry bundle and loaded through a separate chart chunk.
+- [x] Returning to the dashboard reuses the prepared core profile instead of rebuilding it from the history profile.
 - [x] Production build completed successfully.
+
+## Resolved Findings
+
+- P0: None.
+- P1: Route changes previously rebuilt dashboard aggregates from the active history data. The dashboard now uses a stable core profile.
+- P1: Monitoring filters previously reapplied deep-link state after reset. Preset state is now consumed once and reset remains authoritative.
+- P2: Initial JavaScript included chart dependencies and full operational tables. Feature chunks and data profiles now load progressively.
+
+## Follow-up
+
+- P3: The stylesheet still contains legacy selectors used by secondary screens. Removing them requires a separate route-by-route visual regression pass and is intentionally excluded from this low-risk release.
 
 Final result: passed.
