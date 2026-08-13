@@ -42,6 +42,34 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   ga_metric_sources: { read: true, writeRoles: ["admin", "editor"] },
 };
 
+const DASHBOARD_ARTICLE_SELECT = [
+  "article_hash",
+  "report_date",
+  "report_slot",
+  "window_label",
+  "title",
+  "link",
+  "source",
+  "keyword",
+  "summary",
+  "pub_date",
+  "pub_date_raw",
+  "score",
+  "category",
+  "tone",
+  "own_mentioned",
+  "negative_target",
+  "classification_evidence",
+  "classification_reason",
+  "classification_confidence",
+  "classification_provider",
+  "clipping_recommended",
+  "clipping_reason",
+  "risk_level",
+  "status",
+  "cluster_size",
+].join(",");
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -63,6 +91,9 @@ Deno.serve(async (req) => {
   }
 
   try {
+    if (action === "snapshot") {
+      return await handleSnapshot(payload);
+    }
     if (action === "rest") {
       return await handleRest(payload, session);
     }
@@ -77,6 +108,58 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "dashboard_api_failed", detail: String(error?.message || error) }, 500);
   }
 });
+
+async function handleSnapshot(payload: Record<string, unknown>) {
+  const lookbackDays = boundedInteger(payload.lookback_days, 8, 3, 30);
+  const articleLimit = boundedInteger(payload.max_rows, 1000, 100, 1000);
+  const startDate = new Date(Date.now() - ((lookbackDays - 1) * 24 * 60 * 60 * 1000))
+    .toISOString()
+    .slice(0, 10);
+  const requests: Record<string, Promise<{ ok: boolean; status: number; data: unknown }>> = {
+    articles: supabaseRest(
+      `news_articles?select=${DASHBOARD_ARTICLE_SELECT}&report_date=gte.${startDate}&order=report_date.desc,score.desc&limit=${articleLimit}`,
+      { method: "GET" },
+    ),
+    notifications: supabaseRest(
+      "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=120",
+      { method: "GET" },
+    ),
+    watch_runs: supabaseRest(
+      "negative_watch_runs?select=run_key,scanned_at,minutes_back,scanned_count,negative_count,new_negative_count,status,message,created_at&order=scanned_at.desc,created_at.desc&limit=80",
+      { method: "GET" },
+    ),
+    report_runs: supabaseRest(
+      "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
+      { method: "GET" },
+    ),
+    job_runs: supabaseRest(
+      "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,period_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
+      { method: "GET" },
+    ),
+  };
+  const entries = await Promise.all(
+    Object.entries(requests).map(async ([key, request]) => [key, await request] as const),
+  );
+  const data: Record<string, unknown> = {};
+  const warnings: string[] = [];
+  for (const [key, result] of entries) {
+    if (result.ok) data[key] = result.data;
+    else {
+      data[key] = [];
+      warnings.push(`${key}_${result.status}`);
+    }
+  }
+  if (!Array.isArray(data.articles)) {
+    return jsonResponse({ error: "snapshot_articles_failed", warnings }, 502);
+  }
+  return jsonResponse({
+    ok: true,
+    snapshot_at: new Date().toISOString(),
+    lookback_days: lookbackDays,
+    data,
+    warnings,
+  });
+}
 
 async function handleRest(payload: Record<string, unknown>, session: SessionInfo) {
   const path = String(payload.path || "");
@@ -328,6 +411,12 @@ function sanitizeChoice(value: unknown, allowed: string[], fallback: string) {
 function numberEnv(name: string, fallback: number) {
   const parsed = Number(Deno.env.get(name) || "");
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function boundedInteger(value: unknown, fallback: number, min: number, max: number) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
 }
 
 function sanitizeReportMonth(value: unknown) {

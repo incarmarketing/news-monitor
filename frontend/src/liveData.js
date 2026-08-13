@@ -1,4 +1,7 @@
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
+const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v2";
+const CORE_SNAPSHOT_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT = 500;
 
 const APP_BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -31,6 +34,7 @@ const CORE_ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_LO
 const HISTORY_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_HISTORY_ARTICLE_MAX_ROWS", 8000, 2000, 20000);
 const ENGAGEMENT_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_ENGAGEMENT_ARTICLE_MAX_ROWS", 4000, 1000, 10000);
 const NEWS_ARTICLE_SELECT = "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size";
+let supabaseConfigPromise = null;
 
 function readPositiveEnvInt(name, fallback, min, max) {
   const parsed = Number.parseInt(import.meta.env?.[name] || "", 10);
@@ -105,6 +109,65 @@ export function saveDashboardSession(session) {
   }
 }
 
+export function loadCachedCoreSnapshot() {
+  if (typeof window === "undefined") return null;
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(CORE_SNAPSHOT_CACHE_KEY) || "null");
+    const cachedAt = Number(cached?.cachedAt || 0);
+    if (!cachedAt || Date.now() - cachedAt > CORE_SNAPSHOT_CACHE_MAX_AGE_MS || !cached?.data) return null;
+    const articles = Array.isArray(cached.data.articles) ? cached.data.articles : [];
+    if (!articles.length) return null;
+    return {
+      ...cached.data,
+      source: "cache",
+      status: "live",
+      message: "최근 정상 데이터 표시 · 최신 데이터 확인 중",
+      cachedAt: new Date(cachedAt).toISOString(),
+      session: getStoredSession(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveCachedCoreSnapshot(snapshot) {
+  if (typeof window === "undefined" || snapshot?.status !== "live") return;
+  const articles = Array.isArray(snapshot.articles)
+    ? snapshot.articles.slice(0, CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT)
+    : [];
+  if (!articles.length) return;
+  const data = {
+    source: "cache",
+    status: "live",
+    message: "최근 정상 데이터",
+    articles,
+    notifications: Array.isArray(snapshot.notifications) ? snapshot.notifications.slice(0, 60) : [],
+    watchRuns: Array.isArray(snapshot.watchRuns) ? snapshot.watchRuns.slice(0, 40) : [],
+    reportRuns: Array.isArray(snapshot.reportRuns) ? snapshot.reportRuns.slice(0, 160) : [],
+    jobRuns: Array.isArray(snapshot.jobRuns) ? snapshot.jobRuns.slice(0, 120) : [],
+    scraps: [],
+    scrapAnalysisReports: [],
+    mediaRelations: [],
+    reporters: [],
+    ads: [],
+    aliases: [],
+    keywords: [],
+    riskDrafts: [],
+    feedback: [],
+    feedbackGeneratedAt: "",
+    aiStatus: null,
+    qualityChecks: null,
+    stockMarket: null,
+    gaIntel: null,
+    session: null,
+  };
+  try {
+    window.localStorage.setItem(CORE_SNAPSHOT_CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), data }));
+  } catch {
+    // A full or unavailable localStorage must never block live data rendering.
+  }
+}
+
 async function fetchJson(path, options) {
   const response = await fetch(path, { cache: "no-store", ...options });
   if (!response.ok) throw new Error(`request_${response.status}`);
@@ -113,15 +176,22 @@ async function fetchJson(path, options) {
 }
 
 export async function loadSupabaseConfig() {
-  for (const path of SUPABASE_CONFIG_PATHS) {
-    try {
-      const config = await fetchJson(path);
-      if (config?.url && config?.anon_key) return config;
-    } catch {
-      // Try the next path. The Vite dev server exposes /data through vite.config.js.
-    }
+  if (!supabaseConfigPromise) {
+    supabaseConfigPromise = (async () => {
+      for (const path of SUPABASE_CONFIG_PATHS) {
+        try {
+          const config = await fetchJson(path);
+          if (config?.url && config?.anon_key) return config;
+        } catch {
+          // Try the next path. The Vite dev server exposes /data through vite.config.js.
+        }
+      }
+      return null;
+    })();
   }
-  return null;
+  const config = await supabaseConfigPromise;
+  if (!config) supabaseConfigPromise = null;
+  return config;
 }
 
 async function dashboardApi(config, session, action, payload = {}, options = {}) {
@@ -919,6 +989,44 @@ async function loadStaticOperationalData() {
   return null;
 }
 
+function normalizeCoreSnapshotResponse(snapshot, base, session) {
+  const payload = snapshot?.data && typeof snapshot.data === "object" ? snapshot.data : {};
+  const warnings = Array.isArray(snapshot?.warnings) ? snapshot.warnings : [];
+  const articles = Array.isArray(payload.articles)
+    ? deduplicateArticles(payload.articles.map(normalizeArticle).filter(Boolean))
+    : [];
+
+  return {
+    scraps: [],
+    scrapAnalysisReports: [],
+    mediaRelations: [],
+    reporters: [],
+    ads: [],
+    aliases: [],
+    keywords: [],
+    riskDrafts: [],
+    feedback: [],
+    feedbackGeneratedAt: "",
+    aiStatus: null,
+    qualityChecks: null,
+    gaIntel: null,
+    ...base,
+    source: "supabase",
+    status: "live",
+    message: warnings.length ? `운영 DB 연결 · 일부 원장 확인 필요 ${warnings.length}건` : "운영 DB 연결",
+    articles,
+    notifications: Array.isArray(payload.notifications)
+      ? payload.notifications.map(normalizeNotification).filter(isDeliveryNotification)
+      : [],
+    watchRuns: Array.isArray(payload.watch_runs) ? payload.watch_runs.map(normalizeWatchRun) : [],
+    reportRuns: Array.isArray(payload.report_runs) ? payload.report_runs.map(normalizeReportRun) : [],
+    jobRuns: Array.isArray(payload.job_runs) ? payload.job_runs.map(normalizeJobRun) : [],
+    dataLoadWarnings: warnings,
+    snapshotAt: snapshot?.snapshot_at || new Date().toISOString(),
+    session,
+  };
+}
+
 async function loadOperationalDataFromSupabaseSession(loadOptions = operationalLoadOptions({ profile: "full" }, true)) {
   const base = {
     source: "sample",
@@ -952,6 +1060,18 @@ async function loadOperationalDataFromSupabaseSession(loadOptions = operationalL
     }
     if (!session?.session_token) {
       return { ...base, message: "운영 로그인 필요" };
+    }
+
+    if (loadOptions.core) {
+      try {
+        const snapshot = await dashboardApi(config, session, "snapshot", {
+          lookback_days: loadOptions.lookbackDays,
+          max_rows: loadOptions.maxRows,
+        });
+        return normalizeCoreSnapshotResponse(snapshot, base, session);
+      } catch {
+        // Keep legacy requests as a deploy-order and transient-error fallback.
+      }
     }
 
     const articlesRequest = loadOptions.includeArticles

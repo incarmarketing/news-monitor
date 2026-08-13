@@ -46,8 +46,10 @@ import {
   generateScrapAnalysisWithGemini,
   getStoredSession,
   loadArticleRange,
+  loadCachedCoreSnapshot,
   loadOperationalData,
   saveArticleScrap,
+  saveCachedCoreSnapshot,
   saveClassificationFeedback,
   saveScrapAnalysisReport,
   triggerNewsCollection,
@@ -246,6 +248,7 @@ function workflowFinishedAfter(workflowHealth = {}, workflowId = "news-briefing.
 
 function App() {
   const initialRoute = useMemo(() => readInitialRoute(), []);
+  const initialCachedCore = useMemo(() => loadCachedCoreSnapshot(), []);
   const [activeSection, setActiveSection] = useState(initialRoute.section);
   const [pendingSection, setPendingSection] = useState("");
   const [monitoringMounted, setMonitoringMounted] = useState(initialRoute.section === "monitoring");
@@ -254,8 +257,12 @@ function App() {
     if (typeof window === "undefined") return "light";
     return window.localStorage.getItem("incar-dashboard-theme") === "dim" ? "dim" : "light";
   });
-  const [operations, setOperations] = useState({ status: "loading", message: "연결 확인 중", articles: [] });
-  const [articleProfiles, setArticleProfiles] = useState({});
+  const [operations, setOperations] = useState(
+    () => initialCachedCore || { status: "loading", message: "연결 확인 중", articles: [] },
+  );
+  const [articleProfiles, setArticleProfiles] = useState(
+    () => initialCachedCore?.articles?.length ? { core: initialCachedCore.articles } : {},
+  );
   const [loginOpen, setLoginOpen] = useState(false);
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [monitoringRangeArticles, setMonitoringRangeArticles] = useState([]);
@@ -263,11 +270,16 @@ function App() {
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
-  const [dashboardSnapshot, setDashboardSnapshot] = useState(() => ({
-    contextArticles: [],
-    realtimeArticles: [],
-    data: buildDisconnectedPeriodData(periodData.daily),
-  }));
+  const [dashboardSnapshot, setDashboardSnapshot] = useState(() => {
+    const cachedArticles = Array.isArray(initialCachedCore?.articles) ? initialCachedCore.articles : [];
+    const contextArticles = lastNDays(cachedArticles, 8).slice(0, 500);
+    const realtimeArticles = selectRealtimeArticles(contextArticles);
+    return {
+      contextArticles,
+      realtimeArticles,
+      data: composeRealtimeData(periodData.daily, realtimeArticles, Boolean(cachedArticles.length)),
+    };
+  });
   const workTimers = useRef([]);
   const refreshGeneration = useRef(0);
   const routeGeneration = useRef(0);
@@ -277,6 +289,7 @@ function App() {
   const rememberArticleProfile = (profile, snapshot) => {
     const rows = Array.isArray(snapshot?.articles) ? snapshot.articles : [];
     if (!profile || !rows.length) return;
+    if (profile === "core") saveCachedCoreSnapshot(snapshot);
     setArticleProfiles((current) => {
       if (current[profile] === rows) return current;
       const next = { ...current, [profile]: rows };
@@ -424,11 +437,16 @@ function App() {
   useEffect(() => {
     let active = true;
     const load = async () => {
-      const next = await loadOperationalData({ profile: "core" });
-      if (active) {
-        if (next?.status === "live") loadedDataProfiles.current.add("core");
-        rememberArticleProfile("core", next);
-        setOperations((current) => mergeOperationalSnapshots(current, next, true));
+      loadingDataProfiles.current.add("core");
+      try {
+        const next = await loadOperationalData({ profile: "core" });
+        if (active) {
+          if (next?.status === "live") loadedDataProfiles.current.add("core");
+          rememberArticleProfile("core", next);
+          setOperations((current) => mergeOperationalSnapshots(current, next, true));
+        }
+      } finally {
+        loadingDataProfiles.current.delete("core");
       }
     };
     load();
@@ -437,18 +455,6 @@ function App() {
       active = false;
       window.clearInterval(timer);
     };
-  }, []);
-
-  useEffect(() => {
-    const preloadFrequentViews = () => {
-      preloadFeatureSection("media");
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(preloadFrequentViews, { timeout: 3000 });
-      return () => window.cancelIdleCallback?.(idleId);
-    }
-    const timer = window.setTimeout(preloadFrequentViews, 2200);
-    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -483,15 +489,28 @@ function App() {
 
   useEffect(() => {
     let active = true;
+    let intervalId = null;
+    let startTimerId = null;
+    let idleId = null;
     const load = async () => {
       const next = await loadGithubWorkflowHealth();
       if (active) setWorkflowHealth(next);
     };
-    load();
-    const timer = window.setInterval(load, 5 * 60 * 1000);
+    const start = () => {
+      if (!active) return;
+      load();
+      intervalId = window.setInterval(load, 5 * 60 * 1000);
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(start, { timeout: 4000 });
+    } else {
+      startTimerId = window.setTimeout(start, 2000);
+    }
     return () => {
       active = false;
-      window.clearInterval(timer);
+      if (intervalId) window.clearInterval(intervalId);
+      if (startTimerId) window.clearTimeout(startTimerId);
+      if (idleId) window.cancelIdleCallback?.(idleId);
     };
   }, []);
 
