@@ -23,6 +23,10 @@
   --dashboard-muted: #64748b;
 }
 
+.workspace[hidden] {
+  display: none !important;
+}
+
 @media (min-width: 1241px) {
   :root {
     --app-sidebar-width: 228px;

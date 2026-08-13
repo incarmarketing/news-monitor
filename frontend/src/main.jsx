@@ -248,6 +248,7 @@ function App() {
   const initialRoute = useMemo(() => readInitialRoute(), []);
   const [activeSection, setActiveSection] = useState(initialRoute.section);
   const [pendingSection, setPendingSection] = useState("");
+  const [monitoringMounted, setMonitoringMounted] = useState(initialRoute.section === "monitoring");
   const [period, setPeriod] = useState("daily");
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
@@ -607,6 +608,7 @@ function App() {
 
   const navigateSection = (sectionId) => {
     if (!sectionId) return;
+    if (sectionId === "monitoring") setMonitoringMounted(true);
     if (sectionId === activeSection) {
       routeGeneration.current += 1;
       setPendingSection("");
@@ -779,9 +781,7 @@ function App() {
     periodIssueMeta,
   }), []);
 
-  const View = {
-    overview: Overview,
-    monitoring: Monitoring,
+  const FeatureView = {
     regulators: Regulators,
     media: MediaAnalysis,
     stocks: StockMarketDashboard,
@@ -789,7 +789,7 @@ function App() {
     scraps: Scraps,
     reports: Reports,
     management: Management,
-  }[activeSection] || Overview;
+  }[activeSection] || null;
 
   return (
     <div className="app-shell">
@@ -818,19 +818,47 @@ function App() {
           </div>
         ))}
       </aside>
-      <React.Suspense fallback={<main className="workspace"><section className="panel empty-state-panel"><h2>화면 불러오는 중</h2></section></main>}>
-        <View
-          data={activeSection === "overview" ? realtimeData : data}
+      <Overview
+        hidden={activeSection !== "overview"}
+        data={realtimeData}
+        articles={realtimeArticles}
+        allArticles={dashboardContextArticles}
+        notifications={notifications}
+        setActiveSection={navigateSection}
+        onOpenMonitoring={openMonitoring}
+        operations={operations}
+        workflowHealth={workflowHealth}
+        isWorking={working}
+        onRefreshOperations={refreshOperations}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => current === "dim" ? "light" : "dim")}
+      />
+      {monitoringMounted && (
+        <Monitoring
+          hidden={activeSection !== "monitoring"}
+          data={data}
+          articles={allArticles}
+          scraps={scraps}
+          monitoringPreset={monitoringPreset}
+          monitoringRangeArticles={monitoringRangeArticles}
+          monitoringRangeLoading={monitoringRangeLoading}
+          onLoadMonitoringRange={loadMonitoringRange}
+          onClearMonitoringRange={() => setMonitoringRangeArticles([])}
+          operations={operations}
+          isWorking={working}
+          onRefreshOperations={refreshOperations}
+          onFeedbackSaved={handleClassificationFeedbackSaved}
+          onScrapSaved={handleArticleScrapSaved}
+        />
+      )}
+      {FeatureView && (
+        <React.Suspense fallback={<main className="workspace"><section className="panel empty-state-panel"><h2>화면 불러오는 중</h2></section></main>}>
+          <FeatureView
+          data={data}
           period={period}
           setPeriod={setPeriod}
-          articles={
-            activeSection === "monitoring" || activeSection === "regulators" || needsMediaData
-              ? allArticles
-              : activeSection === "overview"
-                ? realtimeArticles
-                : scopedArticles
-          }
-          allArticles={activeSection === "overview" ? dashboardContextArticles : allArticles}
+          articles={activeSection === "regulators" || needsMediaData ? allArticles : scopedArticles}
+          allArticles={allArticles}
           scraps={scraps}
           jobs={jobs}
           notifications={notifications}
@@ -853,8 +881,9 @@ function App() {
           onClearMonitoringRange={() => setMonitoringRangeArticles([])}
           onOpenMonitoring={openMonitoring}
           helpers={dashboardHelpers}
-        />
-      </React.Suspense>
+          />
+        </React.Suspense>
+      )}
       <LoginDialog
         open={loginOpen}
         onClose={() => setLoginOpen(false)}
@@ -953,7 +982,7 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
+function Overview({ hidden = false, data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
   const { summary } = data;
   const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
@@ -984,7 +1013,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     label: "전체 운영 갱신",
   });
   return (
-    <main className="workspace dashboard-workspace dashboard-v5">
+    <main className="workspace dashboard-workspace dashboard-v5" hidden={hidden}>
       <DashboardEditorialHeader
         data={data}
         status={operations?.status}
@@ -1748,6 +1777,7 @@ function OpsStatusRail({
 }
 
 function Monitoring({
+  hidden = false,
   data,
   articles,
   scraps = [],
@@ -1936,7 +1966,7 @@ function Monitoring({
   };
 
   return (
-    <main className="workspace">
+    <main className="workspace" hidden={hidden}>
       <section className="filter-card monitoring-filter-card">
         <label>
           <span>시작 기준일</span>
