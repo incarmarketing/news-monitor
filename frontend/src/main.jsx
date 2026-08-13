@@ -1256,6 +1256,7 @@ function EditorialOperationsRail({ operationsHealth, notificationHealth, reportH
         { slot: "18", state: "예정", status: "pending" },
       ]).slice(0, 3);
   const latestSlackTime = String(notificationHealth?.meta || "").match(/최신\s+([^·]+)/)?.[1]?.trim() || "-";
+  const completedReports = visibleReportSlots.filter((slot) => slot.status === "ok").length;
   return (
     <aside className="signal-operations-rail">
       <section className="signal-operations-panel">
@@ -1264,36 +1265,49 @@ function EditorialOperationsRail({ operationsHealth, notificationHealth, reportH
           <HealthStatusPill status={operationsHealth?.status || "pending"} />
         </header>
 
+        <div className="signal-operation-table-head" aria-hidden="true">
+          <span>운영 항목</span>
+          <span>상태</span>
+          <span>운영 정보</span>
+        </div>
+
         <section className="signal-operation-row system">
-          <div className="signal-operation-identity">
+          <div className="signal-operation-label">
             <ShieldCheck />
-            <span><small>시스템</small><strong>{systemOk ? "정상" : operationsHealth?.label || "확인"}</strong></span>
+            <strong>감시 시스템</strong>
           </div>
-          <div className="signal-operation-inline-metrics">
+          <strong className={`signal-operation-state ${systemOk ? "ok" : "check"}`}>
+            {systemOk ? "정상 운영" : operationsHealth?.label || "확인 필요"}
+          </strong>
+          <div className="signal-operation-details">
             <span><small>모니터링</small><b>{Number(analyzed || 0).toLocaleString("ko-KR")}건</b></span>
-            <span><small>감시</small><b>{NEGATIVE_WATCH_SHORT_LABEL.replace(" 주기", "")}</b></span>
-            <span><small>이상</small><b>{operationsHealth?.status === "fail" ? "확인" : "0건"}</b></span>
+            <span><small>감시 주기</small><b>{NEGATIVE_WATCH_SHORT_LABEL.replace(" 주기", "")}</b></span>
+            <span><small>이상 알림</small><b>{operationsHealth?.status === "fail" ? "확인" : "0건"}</b></span>
           </div>
         </section>
 
         <button type="button" className="signal-operation-row slack" onClick={onOpenHistory}>
-          <div className="signal-operation-identity">
+          <div className="signal-operation-label">
             <SlackMark />
-            <span><small>Slack</small><strong>{notificationHealth?.status === "ok" ? "정상 발송" : notificationHealth?.label || "확인 중"}</strong></span>
+            <strong>Slack 발송</strong>
           </div>
-          <div className="signal-operation-inline-metrics slack-metrics">
-            <span><small>최근</small><b>{latestSlackTime}</b></span>
+          <strong className={`signal-operation-state ${notificationHealth?.status === "ok" ? "ok" : "check"}`}>
+            {notificationHealth?.status === "ok" ? "정상 발송" : notificationHealth?.label || "확인 중"}
+          </strong>
+          <div className="signal-operation-details slack-details">
+            <span><small>최근 발송</small><b>{latestSlackTime}</b></span>
             <span><small>실패</small><b>{notificationHealth?.status === "fail" ? "1건+" : "0건"}</b></span>
           </div>
           <ChevronRight aria-hidden="true" />
         </button>
 
         <section className="signal-operation-row reports">
-          <div className="signal-operation-identity">
+          <div className="signal-operation-label">
             <CalendarDays />
-            <span><small>일일</small><strong>보고서</strong></span>
+            <strong>일일 보고서</strong>
           </div>
-          <div className="signal-report-inline">
+          <strong className="signal-operation-state ok">{completedReports}/{visibleReportSlots.length} 완료</strong>
+          <div className="signal-operation-details report-details">
             {visibleReportSlots.map((slot) => (
               <span key={slot.slot}>
                 <small>{slot.slot}:00</small>
@@ -1324,10 +1338,27 @@ function IssueMomentumChart({ rows = [] }) {
             ? <DashboardSvgLineChart rows={rows} series={dashboardMomentumSeries} />
             : <div className="editorial-chart-empty">집계 가능한 기사 데이터가 없습니다.</div>}
         </div>
-        <div className="editorial-momentum-summary">
-          <strong>{rows.at(-1)?.dateLabel || "오늘"} 현황</strong>
-          {summaryRows.map((item) => <span key={item.key}><b>{item.label}</b><em>{item.value}</em><i className={item.delta > 0 ? "up" : item.delta < 0 ? "down" : ""}>{item.delta > 0 ? "+" : ""}{item.delta}</i></span>)}
-        </div>
+        <table className="editorial-momentum-table">
+          <caption>{rows.at(-1)?.dateLabel || "오늘"} 현황</caption>
+          <thead>
+            <tr><th scope="col">구분</th><th scope="col">오늘</th><th scope="col">전일 대비</th></tr>
+          </thead>
+          <tbody>
+            {summaryRows.map((item) => (
+              <tr key={item.key}>
+                <th scope="row"><i style={{ background: item.color }} />{item.label}</th>
+                <td>{item.value.toLocaleString("ko-KR")}건</td>
+                <td className={item.delta > 0 ? "up" : item.delta < 0 ? "down" : "flat"}>
+                  {item.delta > 0
+                    ? `증가 ${item.delta.toLocaleString("ko-KR")}건`
+                    : item.delta < 0
+                      ? `감소 ${Math.abs(item.delta).toLocaleString("ko-KR")}건`
+                      : "변동 없음"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       <div className="editorial-chart-legend">
         {[["own", "당사"], ["ga", "GA"], ["insurance", "보험사"], ["regulation", "정책/규제"]].map(([key, label]) => <span key={key} className={key}><i />{label}</span>)}
@@ -1358,17 +1389,23 @@ function TodayComposition({ rows = [] }) {
         <div className="editorial-composition-donut" style={{ background: normalized.length ? `conic-gradient(${gradient})` : "#e8edf4" }}>
           <span><small>총</small><b>{total.toLocaleString("ko-KR")}</b><em>건</em></span>
         </div>
-        <div className="editorial-composition-list">
-        {normalized.map((item, index) => {
-          const percent = Math.round((item.value / denominator) * 100);
-          return (
-            <div key={item.name}>
-              <span style={{ background: palette[index] }} /><b>{item.name}</b>
-              <em>{item.value.toLocaleString("ko-KR")}건</em><strong>{percent}%</strong>
-            </div>
-          );
-        })}
-        </div>
+        <table className="editorial-composition-table">
+          <thead>
+            <tr><th scope="col">분류</th><th scope="col">기사</th><th scope="col">비중</th></tr>
+          </thead>
+          <tbody>
+            {normalized.map((item, index) => {
+              const percent = Math.round((item.value / denominator) * 100);
+              return (
+                <tr key={item.name}>
+                  <th scope="row"><i style={{ background: palette[index] }} />{item.name}</th>
+                  <td>{item.value.toLocaleString("ko-KR")}건</td>
+                  <td>{percent}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </section>
   );
