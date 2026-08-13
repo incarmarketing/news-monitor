@@ -26,8 +26,8 @@ const ARTICLE_PAGE_SIZE = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_PAGE_SIZ
 const SESSION_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_SESSION_ARTICLE_MAX_ROWS", 20000, 1000, 50000);
 const PUBLIC_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_PUBLIC_ARTICLE_MAX_ROWS", 12000, 1000, 50000);
 const ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_LOOKBACK_DAYS", 90, 14, 365);
-const CORE_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_ARTICLE_MAX_ROWS", 2000, 500, 5000);
-const CORE_ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_LOOKBACK_DAYS", 14, 3, 30);
+const CORE_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_ARTICLE_MAX_ROWS", 1000, 500, 5000);
+const CORE_ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_LOOKBACK_DAYS", 8, 3, 30);
 const HISTORY_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_HISTORY_ARTICLE_MAX_ROWS", 8000, 2000, 20000);
 const ENGAGEMENT_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_ENGAGEMENT_ARTICLE_MAX_ROWS", 4000, 1000, 10000);
 const NEWS_ARTICLE_SELECT = "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size";
@@ -954,8 +954,8 @@ async function loadOperationalDataFromSupabaseSession(loadOptions = operationalL
       return { ...base, message: "운영 로그인 필요" };
     }
 
-    const articles = loadOptions.includeArticles
-      ? await fetchTable(
+    const articlesRequest = loadOptions.includeArticles
+      ? fetchTable(
           config,
           session,
           "news_articles",
@@ -967,7 +967,7 @@ async function loadOperationalDataFromSupabaseSession(loadOptions = operationalL
           ARTICLE_PAGE_SIZE,
           loadOptions.maxRows,
         )
-      : [];
+      : Promise.resolve([]);
     const optional = (enabled, request) => enabled ? request() : Promise.resolve([]);
     const optionalRequests = {
       notifications: optional(loadOptions.includeStatus, () => rest(
@@ -1012,11 +1012,16 @@ async function loadOperationalDataFromSupabaseSession(loadOptions = operationalL
       gaRevenueMetrics: optional(loadOptions.includeGaIntel, () => rest(config, session, "ga_revenue_metrics?select=company_name,period_key,period_label,amount_krw_100m,status,source_label,source_url,note,confirmed_at&order=period_key.asc&limit=500")),
       gaMarketMetrics: optional(loadOptions.includeGaIntel, () => rest(config, session, "ga_market_metrics?select=stand_mm,period_label,companies_count,total_planners,stay_rate,retention_13_life,retention_25_life,poor_sales_life,collected_at&order=stand_mm.asc&limit=500")),
     };
-    const optionalEntries = await Promise.allSettled(
-      Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
-    );
+    const [articlesEntry, ...optionalEntries] = await Promise.allSettled([
+      articlesRequest,
+      ...Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
+    ]);
+    const articles = articlesEntry.status === "fulfilled" ? articlesEntry.value : [];
     const optionalData = {};
     const optionalErrors = [];
+    if (articlesEntry.status === "rejected") {
+      optionalErrors.push(articlesEntry.reason?.message || "article_load_failed");
+    }
     optionalEntries.forEach((entry) => {
       if (entry.status === "fulfilled") {
         optionalData[entry.value[0]] = entry.value[1];
@@ -1093,8 +1098,8 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
   if (!config?.url || !config?.anon_key) return null;
 
   try {
-    const articles = loadOptions.includeArticles
-      ? await fetchPublicTable(
+    const articlesRequest = loadOptions.includeArticles
+      ? fetchPublicTable(
           config,
           "news_articles",
           [
@@ -1105,7 +1110,7 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
           ARTICLE_PAGE_SIZE,
           loadOptions.maxRows,
         )
-      : [];
+      : Promise.resolve([]);
     const optional = (enabled, request) => enabled ? request() : Promise.resolve([]);
     const optionalRequests = {
       notifications: optional(loadOptions.includeStatus, () => publicRest(
@@ -1128,9 +1133,11 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
       aliases: optional(loadOptions.includeManagement, () => publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000")),
       keywords: optional(loadOptions.includeManagement, () => loadPublicMonitorKeywords(config)),
     };
-    const optionalEntries = await Promise.allSettled(
-      Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
-    );
+    const [articlesEntry, ...optionalEntries] = await Promise.allSettled([
+      articlesRequest,
+      ...Object.entries(optionalRequests).map(async ([key, promise]) => [key, await promise]),
+    ]);
+    const articles = articlesEntry.status === "fulfilled" ? articlesEntry.value : [];
     const optionalData = {};
     optionalEntries.forEach((entry) => {
       if (entry.status === "fulfilled") optionalData[entry.value[0]] = entry.value[1];

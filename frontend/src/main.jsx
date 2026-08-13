@@ -63,6 +63,7 @@ import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
 import slackMarkUrl from "./assets/slack-mark.png";
 import "./styles.css";
 import "./report.css";
+import "./dashboard-option1.css";
 
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
@@ -215,7 +216,7 @@ function mergeOperationalSnapshots(current = {}, next = {}, preserveFull = false
 }
 
 const ARTICLE_PROFILE_LIMITS = {
-  core: 2000,
+  core: 1000,
   history: 8000,
   engagement: 4000,
 };
@@ -261,6 +262,11 @@ function App() {
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
+  const [dashboardSnapshot, setDashboardSnapshot] = useState(() => ({
+    contextArticles: [],
+    realtimeArticles: [],
+    data: buildDisconnectedPeriodData(periodData.daily),
+  }));
   const workTimers = useRef([]);
   const refreshGeneration = useRef(0);
   const routeGeneration = useRef(0);
@@ -543,10 +549,28 @@ function App() {
     ? articleProfiles.core
     : fallbackArticles;
   const scraps = Array.isArray(operations.scraps) ? operations.scraps : [];
-  const dashboardContextArticles = useMemo(
-    () => lastNDays(coreArticles, 8).slice(0, 500),
-    [coreArticles],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    const buildSnapshot = () => {
+      const contextArticles = lastNDays(coreArticles, 8).slice(0, 500);
+      const realtimeArticles = selectRealtimeArticles(contextArticles);
+      const nextData = composeRealtimeData(periodData.daily, realtimeArticles, liveConnected);
+      if (!cancelled) setDashboardSnapshot({ contextArticles, realtimeArticles, data: nextData });
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(buildSnapshot, { timeout: 800 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback?.(idleId);
+      };
+    }
+    const timer = window.setTimeout(buildSnapshot, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [coreArticles, liveConnected]);
+  const dashboardContextArticles = dashboardSnapshot.contextArticles;
   const needsScopedArticles = needsPeriodData || needsMediaData;
   const scopedArticles = useMemo(
     () => needsScopedArticles ? filterArticlesByPeriod(allArticles, period) : [],
@@ -560,14 +584,8 @@ function App() {
     () => needsPeriodData ? composePeriodData(baseData, scopedArticles, scopedReportRuns, liveConnected, period) : baseData,
     [baseData, scopedArticles, scopedReportRuns, liveConnected, period, needsPeriodData],
   );
-  const realtimeArticles = useMemo(
-    () => selectRealtimeArticles(dashboardContextArticles),
-    [dashboardContextArticles],
-  );
-  const realtimeData = useMemo(
-    () => composeRealtimeData(periodData.daily, realtimeArticles, liveConnected),
-    [realtimeArticles, liveConnected],
-  );
+  const realtimeArticles = dashboardSnapshot.realtimeArticles;
+  const realtimeData = dashboardSnapshot.data;
   const management = useMemo(
     () => activeSection === "management"
       ? composeManagementData(operations, allArticles)
@@ -5984,15 +6002,21 @@ function ensureTrendHasTone(rows = []) {
 }
 
 function lastNDays(articles, days) {
-  const dated = articles.filter((article) => article.date);
-  if (!dated.length) return articles;
-  const latest = lastItem(dated.map((article) => article.date).sort());
-  const latestTime = new Date(`${latest}T00:00:00+09:00`).getTime();
-  const minTime = latestTime - (days - 1) * 24 * 60 * 60 * 1000;
-  return dated.filter((article) => {
-    const time = new Date(`${article.date}T00:00:00+09:00`).getTime();
-    return time >= minTime && time <= latestTime;
+  const dated = [];
+  let latestTime = Number.NEGATIVE_INFINITY;
+  articles.forEach((article) => {
+    const dateKey = articleDashboardDateKey(article);
+    if (!dateKey) return;
+    const time = new Date(`${dateKey}T00:00:00+09:00`).getTime();
+    if (!Number.isFinite(time)) return;
+    dated.push({ article, time });
+    if (time > latestTime) latestTime = time;
   });
+  if (!dated.length || !Number.isFinite(latestTime)) return articles;
+  const minTime = latestTime - (days - 1) * 24 * 60 * 60 * 1000;
+  return dated
+    .filter(({ time }) => time >= minTime && time <= latestTime)
+    .map(({ article }) => article);
 }
 
 function selectRealtimeArticles(articles = []) {
@@ -6003,9 +6027,12 @@ function selectRealtimeArticles(articles = []) {
   const todayArticles = datedArticles
     .filter((row) => row.dateKey === todayKey)
     .map((row) => row.article);
-  const latestAvailableDate = todayArticles.length
-    ? todayKey
-    : lastItem(datedArticles.map((row) => row.dateKey).sort());
+  let latestAvailableDate = todayArticles.length ? todayKey : "";
+  if (!latestAvailableDate) {
+    datedArticles.forEach(({ dateKey }) => {
+      if (!latestAvailableDate || dateKey > latestAvailableDate) latestAvailableDate = dateKey;
+    });
+  }
   const visibleArticles = latestAvailableDate
     ? datedArticles.filter((row) => row.dateKey === latestAvailableDate).map((row) => row.article)
     : [];
