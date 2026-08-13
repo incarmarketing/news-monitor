@@ -30,6 +30,7 @@ const CORE_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_ARTICLE
 const CORE_ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_LOOKBACK_DAYS", 14, 3, 30);
 const HISTORY_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_HISTORY_ARTICLE_MAX_ROWS", 8000, 2000, 20000);
 const ENGAGEMENT_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_ENGAGEMENT_ARTICLE_MAX_ROWS", 4000, 1000, 10000);
+const NEWS_ARTICLE_SELECT = "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size";
 
 function readPositiveEnvInt(name, fallback, min, max) {
   const parsed = Number.parseInt(import.meta.env?.[name] || "", 10);
@@ -674,6 +675,26 @@ export async function loadOperationalData(options = {}) {
   }
 }
 
+export async function loadArticleRange({ startDate = "", endDate = "", maxRows = HISTORY_ARTICLE_MAX_ROWS } = {}) {
+  const config = await loadSupabaseConfig();
+  if (!config?.url || !config?.anon_key) return [];
+
+  const start = String(startDate || "").trim();
+  const end = String(endDate || "").trim();
+  const safeMaxRows = Math.min(HISTORY_ARTICLE_MAX_ROWS, Math.max(100, Number(maxRows || HISTORY_ARTICLE_MAX_ROWS)));
+  const query = [
+    NEWS_ARTICLE_SELECT,
+    start ? `report_date=gte.${start}` : "",
+    end ? `report_date=lte.${end}` : "",
+    "order=report_date.desc,score.desc",
+  ].filter(Boolean).join("&");
+  const session = getStoredSession();
+  const rows = session?.session_token
+    ? await fetchTable(config, session, "news_articles", query, ARTICLE_PAGE_SIZE, safeMaxRows)
+    : await fetchPublicTable(config, "news_articles", query, ARTICLE_PAGE_SIZE, safeMaxRows);
+  return deduplicateArticles((Array.isArray(rows) ? rows : []).map(normalizeArticle).filter(Boolean));
+}
+
 function mergeOperationalData(primary, fallback) {
   if (!fallback) return primary;
   const merged = { ...primary };
@@ -939,7 +960,7 @@ async function loadOperationalDataFromSupabaseSession(loadOptions = operationalL
           session,
           "news_articles",
           [
-            "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
+            NEWS_ARTICLE_SELECT,
             `report_date=gte.${articleLookbackStartDateKey(loadOptions.lookbackDays)}`,
             "order=report_date.desc,score.desc",
           ].join("&"),
@@ -1077,7 +1098,7 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
           config,
           "news_articles",
           [
-            "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size",
+            NEWS_ARTICLE_SELECT,
             `report_date=gte.${articleLookbackStartDateKey(loadOptions.lookbackDays)}`,
             "order=report_date.desc,score.desc",
           ].join("&"),

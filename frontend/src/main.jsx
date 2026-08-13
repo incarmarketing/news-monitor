@@ -6,6 +6,7 @@ import {
   Bell,
   Bookmark,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
   Download,
   ExternalLink,
@@ -22,6 +23,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   Sun,
   TrendingDown,
   Users,
@@ -43,6 +45,7 @@ import {
 import {
   generateScrapAnalysisWithGemini,
   getStoredSession,
+  loadArticleRange,
   loadOperationalData,
   saveArticleScrap,
   saveClassificationFeedback,
@@ -253,6 +256,8 @@ function App() {
   const [articleProfiles, setArticleProfiles] = useState({});
   const [loginOpen, setLoginOpen] = useState(false);
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
+  const [monitoringRangeArticles, setMonitoringRangeArticles] = useState([]);
+  const [monitoringRangeLoading, setMonitoringRangeLoading] = useState(false);
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
@@ -441,7 +446,7 @@ function App() {
 
   useEffect(() => {
     const profile = {
-      monitoring: "history",
+      monitoring: "core",
       regulators: "history",
       media: "history",
       reports: "history",
@@ -523,7 +528,7 @@ function App() {
   const liveConnected = operations.status === "live";
   const activeArticleProfile = {
     overview: "core",
-    monitoring: "history",
+    monitoring: "core",
     regulators: "history",
     media: "history",
     reports: "history",
@@ -591,19 +596,34 @@ function App() {
     }
     const generation = routeGeneration.current + 1;
     routeGeneration.current = generation;
-    setPendingSection(sectionId);
-    preloadFeatureSection(sectionId)
-      .catch(() => null)
-      .finally(() => {
-        if (routeGeneration.current !== generation) return;
-        setActiveSection(sectionId);
-        setPendingSection("");
-      });
+    const needsModule = Boolean(featureModuleLoaders[sectionId]);
+    if (needsModule) setPendingSection(sectionId);
+    else setPendingSection("");
+
+    // Start the chunk request before switching views, but never make navigation
+    // wait for the network. Suspense keeps the shell responsive while it loads.
+    const preload = preloadFeatureSection(sectionId).catch(() => null);
+    setActiveSection(sectionId);
+    preload.finally(() => {
+      if (routeGeneration.current === generation) setPendingSection("");
+    });
   };
 
   const openMonitoring = (preset = {}) => {
     setMonitoringPreset({ period, ...preset, stamp: Date.now() });
     navigateSection("monitoring");
+  };
+
+  const loadMonitoringRange = async ({ startDate, endDate }) => {
+    if (!startDate && !endDate) return [];
+    setMonitoringRangeLoading(true);
+    try {
+      const rows = await loadArticleRange({ startDate, endDate, maxRows: ARTICLE_PROFILE_LIMITS.history });
+      setMonitoringRangeArticles(rows);
+      return rows;
+    } finally {
+      setMonitoringRangeLoading(false);
+    }
   };
 
   const handleClassificationFeedbackSaved = async (result, article, correction) => {
@@ -809,6 +829,10 @@ function App() {
           onScrapAnalysisSaved={handleScrapAnalysisSaved}
           setActiveSection={navigateSection}
           monitoringPreset={monitoringPreset}
+          monitoringRangeArticles={monitoringRangeArticles}
+          monitoringRangeLoading={monitoringRangeLoading}
+          onLoadMonitoringRange={loadMonitoringRange}
+          onClearMonitoringRange={() => setMonitoringRangeArticles([])}
           onOpenMonitoring={openMonitoring}
           helpers={dashboardHelpers}
         />
@@ -945,6 +969,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     <main className="workspace dashboard-workspace dashboard-v5">
       <DashboardEditorialHeader
         data={data}
+        status={operations?.status}
         onOpenMonitoring={onOpenMonitoring}
         onRefresh={refreshDashboard}
         isLoading={isLoading}
@@ -964,7 +989,10 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <section className="signal-priority-board">
           <div className="signal-panel-heading">
             <h2>우선 이슈 TOP 10</h2>
-            <div><span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span></div>
+            <div className="signal-panel-tools">
+              <span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span>
+              <button type="button" onClick={() => onOpenMonitoring?.({})}>정렬: 리스크순 <ChevronDown /></button>
+            </div>
           </div>
           <EditorialLeadIssue
             issue={issueRows[0]}
@@ -988,26 +1016,24 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <IssueMomentumChart rows={momentumRows} />
         <TodayComposition rows={data.categoryFlow} />
       </section>
-
+      <footer className="editorial-dashboard-footer">© 2026 INCAR Monitoring System. All rights reserved.</footer>
     </main>
   );
 }
 
-function DashboardEditorialHeader({ data, onOpenMonitoring, onRefresh, isLoading = false, theme = "light", onToggleTheme }) {
+function DashboardEditorialHeader({ data, status, onOpenMonitoring, onRefresh, isLoading = false, theme = "light", onToggleTheme }) {
+  const live = status === "live";
   return (
     <header className="editorial-dashboard-header">
-      <div>
+      <div className="editorial-header-copy">
         <h1>오늘의 언론 상황</h1>
+        <p>{formatDashboardScopeDate(data?.scope)}</p>
       </div>
-      <p>
-        <span>{formatDashboardScopeDate(data?.scope)}</span>
-        <i />
-        <span>{data?.generatedAt || "-"} 업데이트</span>
-      </p>
+      <p className={`editorial-data-status ${live ? "live" : ""}`}><i />{live ? "데이터 정상" : "데이터 확인 중"}<span>·</span>{data?.generatedAt || "-"} 갱신</p>
       <div className="editorial-header-actions">
-        <button type="button" onClick={() => onOpenMonitoring?.({})}><Search />검색</button>
         <button type="button" onClick={onRefresh} disabled={isLoading}><RefreshCw />{isLoading ? "갱신 중" : "새로고침"}</button>
-        <button type="button" onClick={() => onOpenMonitoring?.({ tone: "주의" })}><Bell />알림</button>
+        <button type="button" className="editorial-article-search" onClick={() => onOpenMonitoring?.({})}>기사 검색 <Search /></button>
+        <button type="button" className="editorial-filter-button" onClick={() => onOpenMonitoring?.({})} aria-label="기사 필터"><SlidersHorizontal /></button>
         <button
           type="button"
           className="editorial-theme-toggle"
@@ -1047,6 +1073,7 @@ function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring }) {
   const momentumRows = useMemo(() => buildLeadIssueMomentum(issue, allArticles), [issue, allArticles]);
   const relatedCount = issue ? issueBundleCount(issue) : 0;
   const ownNegativeCount = issue?.tone === "부정" && isOwnArticle(issue) ? 1 : 0;
+  const summary = dashboardLeadSummary(issue);
 
   return (
     <section className="editorial-lead-feature">
@@ -1056,13 +1083,15 @@ function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring }) {
           <div className="editorial-lead-copy">
             <div className="editorial-lead-labels">
               <b>1</b>
+              <Chip>{issue.tone || "중립"}</Chip>
               <Chip>{displayDashboardCategory(issue.category)}</Chip>
-              <span>{issue.tone === "부정" ? "즉시 확인" : issue.tone === "주의" ? "관찰 강화" : "긍정 노출"}</span>
+              <time>{issue.time || formatRelativeArticleTime(issue)}</time>
             </div>
             <button type="button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
               <h2>{issue.title}</h2>
+              {summary && <p className="editorial-lead-summary">{summary}</p>}
               <p className="editorial-lead-meta">
-                {formatDashboardLeadMeta(issue)} · 관련 기사 {relatedCount.toLocaleString("ko-KR")}건 · 당사 직접 부정 {ownNegativeCount}건
+                {String(issue.source || "언론사")} <span /> 관련 기사 {relatedCount.toLocaleString("ko-KR")}건 <span /> 당사 직접 부정 {ownNegativeCount}건
               </p>
             </button>
           </div>
@@ -1081,9 +1110,11 @@ function EditorialIssueList({ issues = [], onOpenMonitoring }) {
       {issues.map((issue, index) => (
         <button type="button" key={`${issue.source}-${issue.title}`} onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
           <span className="editorial-issue-rank">{index + 2}</span>
-          <i className={`tone-dot ${toneCssClass(issue.tone)}`} />
+          <span className={`editorial-issue-tone ${toneCssClass(issue.tone)}`}>{issue.tone || "중립"}</span>
+          <span className="editorial-issue-category">{displayDashboardCategory(issue.category)}</span>
+          <time>{issue.time || formatRelativeArticleTime(issue)}</time>
           <b>{issue.title}</b>
-          <em>{formatDashboardLeadMeta(issue)}</em>
+          <em>{dashboardDisplayScore(issue)}</em>
         </button>
       ))}
       {!issues.length && <div className="editorial-issue-list-empty">추가 관찰 이슈가 없습니다.</div>}
@@ -1097,8 +1128,8 @@ function DashboardLeadSparkline({ rows = [] }) {
   return (
     <div className="editorial-lead-sparkline" aria-label="대표 이슈의 최근 7일 보도량">
       <div className="editorial-lead-sparkline-head">
-        <span>7일 모멘텀</span>
-        <strong>최근 {latest.toLocaleString("ko-KR")}건</strong>
+        <span>리스크 지수</span>
+        <strong>{latest ? Math.min(99, 52 + latest * 8) : 18}</strong>
       </div>
       <div className="editorial-lead-sparkline-chart">
         {chartRows.length
@@ -1157,13 +1188,26 @@ function EditorialOperationsRail({ operationsHealth, watchHealth, notificationHe
 }
 
 function IssueMomentumChart({ rows = [] }) {
+  const latest = rows.at(-1) || {};
+  const previous = rows.at(-2) || {};
+  const summaryRows = dashboardMomentumSeries.map((item) => ({
+    ...item,
+    value: Number(latest[item.key] || 0),
+    delta: Number(latest[item.key] || 0) - Number(previous[item.key] || 0),
+  }));
   return (
     <section className="editorial-momentum-panel">
-      <div className="editorial-section-title"><i />이슈 모멘텀</div>
-      <div className="editorial-momentum-chart">
-        {rows.length
-          ? <DashboardSvgLineChart rows={rows} series={dashboardMomentumSeries} />
-          : <div className="editorial-chart-empty">집계 가능한 기사 데이터가 없습니다.</div>}
+      <div className="editorial-section-title"><i />이슈 모멘텀 <em>최근 7일</em></div>
+      <div className="editorial-momentum-body">
+        <div className="editorial-momentum-chart">
+          {rows.length
+            ? <DashboardSvgLineChart rows={rows} series={dashboardMomentumSeries} />
+            : <div className="editorial-chart-empty">집계 가능한 기사 데이터가 없습니다.</div>}
+        </div>
+        <div className="editorial-momentum-summary">
+          <strong>{rows.at(-1)?.dateLabel || "오늘"} 현황</strong>
+          {summaryRows.map((item) => <span key={item.key}><b>{item.label}</b><em>{item.value}</em><i className={item.delta > 0 ? "up" : item.delta < 0 ? "down" : ""}>{item.delta > 0 ? "+" : ""}{item.delta}</i></span>)}
+        </div>
       </div>
       <div className="editorial-chart-legend">
         {[["own", "당사"], ["ga", "GA"], ["insurance", "보험사"], ["regulation", "정책/규제"]].map(([key, label]) => <span key={key} className={key}><i />{label}</span>)}
@@ -1271,6 +1315,21 @@ function formatDashboardLeadMeta(issue = {}) {
   const source = String(issue.source || issue.press || issue.publisher || displayDashboardCategory(issue.category) || "언론사").trim();
   const mediaLabel = sourceCount > 1 ? `${source} 외 ${sourceCount - 1}개 매체` : source;
   return `${mediaLabel} · ${formatRelativeArticleTime(issue)}`;
+}
+
+function dashboardLeadSummary(issue = {}) {
+  const summary = cleanSummaryText(issue.summary || "");
+  if (summary.length < 30) return "";
+  if (/기사입니다|보도입니다|확인합니다|모니터링|별도 추적|관련 동향/.test(summary)) return "";
+  return summary.length > 110 ? `${summary.slice(0, 107).trim()}…` : summary;
+}
+
+function dashboardDisplayScore(issue = {}) {
+  const raw = Number(issue.score || issue.classificationConfidence || 0);
+  if (raw > 0 && raw <= 1) return Math.round(raw * 100);
+  if (raw > 1 && raw <= 100) return Math.round(raw);
+  const base = { 부정: 88, 주의: 68, 긍정: 54, 중립: 32 }[issue.tone] || 24;
+  return Math.min(99, base + Math.min(10, issueBundleCount(issue) - 1) * 2);
 }
 
 function formatRelativeArticleTime(issue = {}) {
@@ -1670,8 +1729,23 @@ function OpsStatusRail({
   );
 }
 
-function Monitoring({ data, articles, scraps = [], monitoringPreset, operations, isWorking, onRefreshOperations, onFeedbackSaved, onScrapSaved }) {
+function Monitoring({
+  data,
+  articles,
+  scraps = [],
+  monitoringPreset,
+  monitoringRangeArticles = [],
+  monitoringRangeLoading = false,
+  onLoadMonitoringRange,
+  onClearMonitoringRange,
+  operations,
+  isWorking,
+  onRefreshOperations,
+  onFeedbackSaved,
+  onScrapSaved,
+}) {
   const [isFilterPending, startFilterTransition] = useTransition();
+  const workingArticles = monitoringRangeArticles.length ? monitoringRangeArticles : articles;
   const latestDate = useMemo(
     () => latestArticleDate(articles.filter((article) => !isOfficialRegulatorSource(article.source))),
     [articles],
@@ -1703,7 +1777,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
         .filter(Boolean),
     );
     const hasResolvedTarget = hasFocusTarget || issueLinks.size > 0;
-    return articles.filter((article) => {
+    return workingArticles.filter((article) => {
       if (isOfficialRegulatorSource(article.source)) return false;
       if (hasFocusTarget && !articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle)) return false;
       if (issueLinks.size && !issueLinks.has(normalizeRiskUrl(article.link || article.url || ""))) return false;
@@ -1717,7 +1791,7 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
       }
       return isUsableMonitoringArticle(article);
     });
-  }, [articles, endDate, focusPreset, query, startDate]);
+  }, [workingArticles, endDate, focusPreset, query, startDate]);
   const deferredRegularArticles = useDeferredValue(regularArticles);
 
   const sources = useMemo(() => unique(deferredRegularArticles.map((article) => article.source)).slice(0, 80), [deferredRegularArticles]);
@@ -1747,10 +1821,13 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
       setEndDateInput(range.end);
       setStartDate(range.start);
       setEndDate(range.end);
+      if ((range.start && range.start !== latestDate) || (range.end && range.end !== latestDate)) {
+        onLoadMonitoringRange?.({ startDate: range.start, endDate: range.end });
+      }
     }
     setVisible(30);
     appliedPresetStamp.current = presetStamp;
-  }, [monitoringPreset, deferredRegularArticles]);
+  }, [monitoringPreset, deferredRegularArticles, latestDate, onLoadMonitoringRange]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const focusArticleHash = String(focusPreset?.articleHash || "").trim();
@@ -1805,15 +1882,24 @@ function Monitoring({ data, articles, scraps = [], monitoringPreset, operations,
   const feedMeta = viewMode === "related"
     ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
     : `${filtered.length.toLocaleString("ko-KR")}건`;
-  const isLoading = operations?.status === "loading" || isWorking || isFilterPending;
+  const isLoading = operations?.status === "loading" || isWorking || isFilterPending || monitoringRangeLoading;
   const applyFilters = () => {
+    let nextStart = startDateInput;
+    let nextEnd = endDateInput;
+    if (nextStart && nextEnd && nextStart > nextEnd) [nextStart, nextEnd] = [nextEnd, nextStart];
     startFilterTransition(() => {
       applyDateFilter();
       setQuery(queryInput);
       setVisible(30);
     });
+    if ((nextStart && nextStart !== latestDate) || (nextEnd && nextEnd !== latestDate)) {
+      onLoadMonitoringRange?.({ startDate: nextStart, endDate: nextEnd });
+    } else {
+      onClearMonitoringRange?.();
+    }
   };
   const resetMonitoringFilters = () => {
+    onClearMonitoringRange?.();
     setFocusPreset({});
     setQuery("");
     setQueryInput("");
@@ -6928,10 +7014,12 @@ function lastItem(items = []) {
 }
 
 function latestArticleDate(articles = []) {
-  return lastItem(articles
-    .map((article) => rowDateKey(article))
-    .filter(Boolean)
-    .sort()) || "";
+  let latest = "";
+  for (const article of articles) {
+    const dateKey = rowDateKey(article);
+    if (dateKey && dateKey > latest) latest = dateKey;
+  }
+  return latest;
 }
 
 function availableReportMonths(rows = []) {
