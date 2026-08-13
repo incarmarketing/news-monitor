@@ -1,30 +1,55 @@
-# Dashboard Design QA
+**Comparison Target**
+- Source visual truth: `C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-f24fdc37-546f-4985-8d35-061126999bd4.png`
+- Rendered implementation: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/dashboard-v51-implementation.png`
+- Combined comparison: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/dashboard-v51-comparison.png`
+- Source pixels: 1702 x 924.
+- Implementation pixels: 1675 x 909.
+- CSS viewport: 1675 x 909 at device scale factor 1.
+- Normalization: source was proportionally resampled to 1674 x 909 for the side-by-side comparison; implementation remained at native 1675 x 909.
+- State: light theme, overview route, local static operational data.
 
-## Target
+**Full-View Comparison Evidence**
+- The source and implementation now share the same hierarchy: compact header, reduced KPI strip, one TOP 5 command board, one unified operations rail, and a full-height lower analysis row.
+- The implementation intentionally retains the production sidebar, which was omitted from the concept image. This reduces the content canvas width but preserves the product's required navigation.
+- At 1675 x 909, the implementation has zero page and workspace overflow. Vertical gaps between all four major rows are consistently 9 px.
 
-- Selected reference: option 1, compact B2B media operations dashboard.
-- Reference viewport: 1487 x 1058.
-- Production adaptation checked at: 1280 x 720.
+**Focused Region Evidence**
+- Command board: exactly one featured issue and four secondary rows are visible; no empty grid tracks remain.
+- Operations rail: system, Slack, and report schedule are contained in one 420 px panel instead of three detached cards.
+- Analysis row: momentum and composition panels both measure 306 px high; charts and legends remain fully visible.
+- Header controls: data status, refresh, search, filter, and theme controls share one aligned row.
 
-## Visual Comparison
+**Required Fidelity Surfaces**
+- Fonts and typography: existing Noto Sans KR/product typography was preserved. Headings, KPI values, metadata, and labels use the source hierarchy without unintended wrapping at the target viewport.
+- Spacing and layout rhythm: 52 / 80 / 420 / 306 px row allocation matches the selected composition and removes the prior crushed lower charts.
+- Colors and visual tokens: production navy, green, red, amber, and blue semantic colors were retained; no decorative gradient or new palette was introduced.
+- Image quality and asset fidelity: the supplied INCAR logo and Slack image asset remain intact and sharp. No visible design asset was replaced with a placeholder.
+- Copy and content: `우선 이슈 TOP 5` reflects the actual five displayed items; the right panel is labeled `운영 현황` and groups the three operational states.
 
-- Passed: navy fixed sidebar, editorial header, five-metric dark KPI strip, priority issue board, operations rail, momentum chart, and composition chart follow the selected hierarchy.
-- Passed: desktop cards use restrained borders, square enterprise proportions, and readable type rather than decorative card styling.
-- Passed: short desktop view keeps the full dashboard within the viewport without shrinking labels below a readable size. Lower-priority issue rows are progressively hidden instead.
-- Passed: Slack status retains its icon and receives enough vertical space for its status metrics and log action.
-- Passed: no horizontal overflow or page-level vertical scrollbar at 1280 x 720.
-- Passed: empty and disconnected states preserve the layout without collapsing panels.
+**Findings**
+- No actionable P0, P1, or P2 visual mismatch remains at the selected 1675 x 909 viewport.
+- [P3] The production sidebar makes the implementation's content columns narrower than the concept image. This is an accepted product constraint because removing navigation would regress the existing application.
+- [P3] Local fallback data has a different date and issue mix than the concept. The production layout is data-independent and the difference does not change structure or density.
 
-## Interaction And Performance
+**Comparison History**
+- Iteration 1 finding: final-loaded `dashboard-option1.css` overrode the selected design with a 98 px KPI strip, seven issue tracks, three detached operation rows, and a 202 px analysis row. Result: blocked.
+- Iteration 1 fix: moved the compact workspace contract to the final stylesheet, changed the command list to TOP 5, unified operations markup, and set explicit vertical budgets.
+- Iteration 2 evidence: implementation measures KPI 80 px, command board 420 px, operations panel 420 px, analysis row 306 px, and workspace overflow 0. Laptop 1365 x 768 also has overflow 0. Result: passed.
 
-- Passed: dashboard remains mounted while other routes are active, so returning does not rebuild the full dashboard DOM.
-- Passed: cached data produces immediate KPI and issue placeholders; precise issue grouping replaces them during idle time.
-- Passed: expensive article normalization, ownership checks, timestamps, and grouping seeds are memoized per article.
-- Passed: full classification runs only on the active reporting day, not the entire eight-day context.
+**Primary Interactions Tested**
+- `기사 검색` opens the monitoring view.
+- Sidebar `대시보드` returns to the overview.
+- Browser console checked after reload and route transitions; no error-level messages were present.
 
-## Remaining Notes
+**Implementation Checklist**
+- [x] Reduce KPI strip height.
+- [x] Display exactly TOP 5 issues.
+- [x] Merge system, Slack, and report status into one panel.
+- [x] Reserve enough height for the momentum and composition charts.
+- [x] Verify desktop, compact laptop, and narrow responsive layouts.
+- [x] Verify build and primary route transitions.
 
-- Live-data wording and counts vary with Supabase availability and were not treated as visual defects.
-- At short desktop heights, the board intentionally shows fewer follow-up issues; the full list remains available through `전체 기사 보기`.
+**Follow-up Polish**
+- A later data-quality pass can improve the issue titles and classifications independently of this layout change.
 
 final result: passed

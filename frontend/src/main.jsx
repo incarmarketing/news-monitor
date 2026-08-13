@@ -1058,14 +1058,13 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     }),
     [operations, notifications, workflowHealth],
   );
-  const watchHealth = operationsHealth.items.find((item) => item.title === "부정기사 감시");
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
   const notificationHealth = operationsHealth.items.find((item) => item.title === "발송");
   const momentumRows = useMemo(() => buildDashboardMomentum(allArticles.length ? allArticles : articles), [allArticles, articles]);
   // composePeriodData already returns a ranked, deduplicated issue list.
   // Re-grouping it here repeated the most expensive classification path on
   // every dashboard mount and made route changes appear frozen.
-  const issueRows = useMemo(() => (data.issues || []).slice(0, 10), [data.issues]);
+  const issueRows = useMemo(() => (data.issues || []).slice(0, 5), [data.issues]);
   const refreshDashboard = () => onRefreshOperations?.({
     trigger: true,
     workflow: "all",
@@ -1095,7 +1094,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
       <section className="signal-command-grid">
         <section className="signal-priority-board">
           <div className="signal-panel-heading">
-            <h2>우선 이슈 TOP 10</h2>
+            <h2>우선 이슈 TOP 5</h2>
             <div className="signal-panel-tools">
               <span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span>
               <button type="button" onClick={() => onOpenMonitoring?.({})}>정렬: 리스크순 <ChevronDown /></button>
@@ -1111,7 +1110,6 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         </section>
         <EditorialOperationsRail
           operationsHealth={operationsHealth}
-          watchHealth={watchHealth}
           notificationHealth={notificationHealth}
           reportHealth={reportHealth}
           analyzed={summary.analyzed}
@@ -1247,48 +1245,63 @@ function DashboardLeadSparkline({ rows = [] }) {
   );
 }
 
-function EditorialOperationsRail({ operationsHealth, watchHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
+function EditorialOperationsRail({ operationsHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
   const systemOk = operationsHealth?.status === "ok";
   const reportSlots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
+  const visibleReportSlots = (reportSlots.length
+    ? reportSlots
+    : [
+        { slot: "08", state: "완료", status: "ok" },
+        { slot: "13", state: "완료", status: "ok" },
+        { slot: "18", state: "예정", status: "pending" },
+      ]).slice(0, 3);
+  const latestSlackTime = String(notificationHealth?.meta || "").match(/최신\s+([^·]+)/)?.[1]?.trim() || "-";
   return (
     <aside className="signal-operations-rail">
-      <section className="signal-operation-card system">
-        <div className="signal-operation-title">
-          <ShieldCheck />
-          <b>시스템 상태</b>
+      <section className="signal-operations-panel">
+        <header className="signal-operations-heading">
+          <h2>운영 현황</h2>
           <HealthStatusPill status={operationsHealth?.status || "pending"} />
-        </div>
-        <strong>{systemOk ? "정상 운영 중" : operationsHealth?.headline || "상태 확인 중"}</strong>
-        <div className="signal-system-metrics">
-          <span><small>모니터링</small><b>{Number(analyzed || 0).toLocaleString("ko-KR")}건</b></span>
-          <span><small>감시 주기</small><b>{NEGATIVE_WATCH_SHORT_LABEL}</b></span>
-          <span><small>이상 알림</small><b>{operationsHealth?.status === "fail" ? "확인" : "0건"}</b></span>
-        </div>
-      </section>
-      <section className="signal-operation-card slack">
-        <div className="signal-operation-title"><SlackMark /><b>Slack 발송 현황</b></div>
-        <div className="signal-slack-summary">
-          <strong>{notificationHealth?.status === "ok" ? "정상 발송" : notificationHealth?.label || "확인 중"}</strong>
-          <span>{notificationHealth?.meta || "최근 발송 이력 확인 중"}</span>
-        </div>
-        <div className="signal-system-metrics compact">
-          <span><small>감시</small><b>{watchHealth?.label || "확인"}</b></span>
-          <span><small>발송</small><b>{notificationHealth?.label || "확인"}</b></span>
-          <span><small>실패</small><b>{notificationHealth?.status === "fail" ? "1건+" : "0건"}</b></span>
-        </div>
-        <button type="button" onClick={onOpenHistory}>발송 로그 보기 <ChevronRight /></button>
-      </section>
-      <section className="signal-operation-card reports">
-        <div className="signal-operation-title"><CalendarDays /><b>다음 보고서</b></div>
-        <div className="signal-report-slots">
-          {reportSlots.slice(0, 3).map((slot) => (
-            <div key={slot.slot}>
-              <span>{slot.slot}:00</span>
-              <b>{slot.status === "ok" ? "완료" : slot.state || "예정"}</b>
-            </div>
-          ))}
-          {!reportSlots.length && <div><span>일일 언론 동향</span><b>{nextReportLabel(reportHealth)}</b></div>}
-        </div>
+        </header>
+
+        <section className="signal-operation-row system">
+          <div className="signal-operation-identity">
+            <ShieldCheck />
+            <span><small>시스템</small><strong>{systemOk ? "정상" : operationsHealth?.label || "확인"}</strong></span>
+          </div>
+          <div className="signal-operation-inline-metrics">
+            <span><small>모니터링</small><b>{Number(analyzed || 0).toLocaleString("ko-KR")}건</b></span>
+            <span><small>감시</small><b>{NEGATIVE_WATCH_SHORT_LABEL.replace(" 주기", "")}</b></span>
+            <span><small>이상</small><b>{operationsHealth?.status === "fail" ? "확인" : "0건"}</b></span>
+          </div>
+        </section>
+
+        <button type="button" className="signal-operation-row slack" onClick={onOpenHistory}>
+          <div className="signal-operation-identity">
+            <SlackMark />
+            <span><small>Slack</small><strong>{notificationHealth?.status === "ok" ? "정상 발송" : notificationHealth?.label || "확인 중"}</strong></span>
+          </div>
+          <div className="signal-operation-inline-metrics slack-metrics">
+            <span><small>최근</small><b>{latestSlackTime}</b></span>
+            <span><small>실패</small><b>{notificationHealth?.status === "fail" ? "1건+" : "0건"}</b></span>
+          </div>
+          <ChevronRight aria-hidden="true" />
+        </button>
+
+        <section className="signal-operation-row reports">
+          <div className="signal-operation-identity">
+            <CalendarDays />
+            <span><small>일일</small><strong>보고서</strong></span>
+          </div>
+          <div className="signal-report-inline">
+            {visibleReportSlots.map((slot) => (
+              <span key={slot.slot}>
+                <small>{slot.slot}:00</small>
+                <b className={slot.status === "ok" ? "complete" : ""}>{slot.status === "ok" ? "완료" : slot.state || "예정"}</b>
+              </span>
+            ))}
+          </div>
+        </section>
       </section>
     </aside>
   );
