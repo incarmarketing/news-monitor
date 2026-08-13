@@ -1764,6 +1764,8 @@ function Monitoring({
   const [endDate, setEndDate] = useState(latestDate);
   const [focusPreset, setFocusPreset] = useState({});
   const appliedPresetStamp = useRef(null);
+  const effectiveStartDate = startDate || latestDate;
+  const effectiveEndDate = endDate || latestDate;
 
   const regularArticles = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -1786,12 +1788,12 @@ function Monitoring({
         if (!text.includes(needle)) return false;
       } else if (!hasResolvedTarget) {
         const articleDate = article.date || "";
-        if (startDate && articleDate && articleDate < startDate) return false;
-        if (endDate && articleDate && articleDate > endDate) return false;
+        if (effectiveStartDate && articleDate && articleDate < effectiveStartDate) return false;
+        if (effectiveEndDate && articleDate && articleDate > effectiveEndDate) return false;
       }
       return isUsableMonitoringArticle(article);
     });
-  }, [workingArticles, endDate, focusPreset, query, startDate]);
+  }, [workingArticles, effectiveEndDate, effectiveStartDate, focusPreset, query]);
   const deferredRegularArticles = useDeferredValue(regularArticles);
 
   const sources = useMemo(() => unique(deferredRegularArticles.map((article) => article.source)).slice(0, 80), [deferredRegularArticles]);
@@ -1852,15 +1854,15 @@ function Monitoring({
         issueMatched &&
         focusMatched &&
         (!needle || focusTargetAvailable || hasIssueTarget || text.includes(needle)) &&
-        (bypassDateFilter || !startDate || !articleDate || articleDate >= startDate) &&
-        (bypassDateFilter || !endDate || !articleDate || articleDate <= endDate) &&
+        (bypassDateFilter || !effectiveStartDate || !articleDate || articleDate >= effectiveStartDate) &&
+        (bypassDateFilter || !effectiveEndDate || !articleDate || articleDate <= effectiveEndDate) &&
         (hasResolvedTarget || tone === "all" || article.tone === tone) &&
         (hasResolvedTarget || category === "all" || article.category === category) &&
         (hasResolvedTarget || !ownOnly || isOwnArticle(article)) &&
         (hasResolvedTarget || source === "all" || article.source === source)
       );
     });
-  }, [deferredRegularArticles, category, endDate, focusPreset, ownOnly, query, source, startDate, tone]);
+  }, [deferredRegularArticles, category, effectiveEndDate, effectiveStartDate, focusPreset, ownOnly, query, source, tone]);
   const applyDateFilter = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
