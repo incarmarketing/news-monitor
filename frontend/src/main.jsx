@@ -482,17 +482,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (monitoringWarmed) return undefined;
-    const warm = () => setMonitoringWarmed(true);
-    if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(warm, { timeout: 2500 });
-      return () => window.cancelIdleCallback?.(idleId);
-    }
-    const timer = window.setTimeout(warm, 1200);
-    return () => window.clearTimeout(timer);
-  }, [monitoringWarmed]);
-
-  useEffect(() => {
     const profile = {
       monitoring: "core",
       regulators: "history",
@@ -683,6 +672,7 @@ function App() {
     // Start the chunk request before switching views, but never make navigation
     // wait for the network. Suspense keeps the shell responsive while it loads.
     const preload = preloadFeatureSection(sectionId).catch(() => null);
+    if (sectionId === "monitoring") setMonitoringWarmed(true);
     activeSectionRef.current = sectionId;
     setActiveSection(sectionId);
     preload.finally(() => {
