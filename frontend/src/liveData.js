@@ -1,7 +1,10 @@
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
-const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v2";
+const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v3";
+const LEGACY_CORE_SNAPSHOT_CACHE_KEYS = ["incar_core_snapshot_v2"];
 const CORE_SNAPSHOT_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-const CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT = 500;
+const CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT = 240;
+let coreSnapshotCacheWriteHandle = null;
+let coreSnapshotCacheWriteMode = "";
 
 const APP_BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -111,23 +114,29 @@ export function saveDashboardSession(session) {
 
 export function loadCachedCoreSnapshot() {
   if (typeof window === "undefined") return null;
-  try {
-    const cached = JSON.parse(window.localStorage.getItem(CORE_SNAPSHOT_CACHE_KEY) || "null");
-    const cachedAt = Number(cached?.cachedAt || 0);
-    if (!cachedAt || Date.now() - cachedAt > CORE_SNAPSHOT_CACHE_MAX_AGE_MS || !cached?.data) return null;
-    const articles = Array.isArray(cached.data.articles) ? cached.data.articles : [];
-    if (!articles.length) return null;
-    return {
-      ...cached.data,
-      source: "cache",
-      status: "live",
-      message: "최근 정상 데이터 표시 · 최신 데이터 확인 중",
-      cachedAt: new Date(cachedAt).toISOString(),
-      session: getStoredSession(),
-    };
-  } catch {
-    return null;
+  for (const cacheKey of [CORE_SNAPSHOT_CACHE_KEY, ...LEGACY_CORE_SNAPSHOT_CACHE_KEYS]) {
+    try {
+      const cached = JSON.parse(window.localStorage.getItem(cacheKey) || "null");
+      const cachedAt = Number(cached?.cachedAt || 0);
+      if (!cachedAt || Date.now() - cachedAt > CORE_SNAPSHOT_CACHE_MAX_AGE_MS || !cached?.data) continue;
+      const articles = Array.isArray(cached.data.articles)
+        ? cached.data.articles.slice(0, CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT)
+        : [];
+      if (!articles.length) continue;
+      return {
+        ...cached.data,
+        articles,
+        source: "cache",
+        status: "live",
+        message: "최근 정상 데이터 표시 · 최신 데이터 확인 중",
+        cachedAt: new Date(cachedAt).toISOString(),
+        session: getStoredSession(),
+      };
+    } catch {
+      // A malformed legacy cache should not prevent checking the next key.
+    }
   }
+  return null;
 }
 
 export function saveCachedCoreSnapshot(snapshot) {
@@ -161,10 +170,25 @@ export function saveCachedCoreSnapshot(snapshot) {
     gaIntel: null,
     session: null,
   };
-  try {
-    window.localStorage.setItem(CORE_SNAPSHOT_CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), data }));
-  } catch {
-    // A full or unavailable localStorage must never block live data rendering.
+  const write = () => {
+    coreSnapshotCacheWriteHandle = null;
+    coreSnapshotCacheWriteMode = "";
+    try {
+      window.localStorage.setItem(CORE_SNAPSHOT_CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), data }));
+    } catch {
+      // A full or unavailable localStorage must never block live data rendering.
+    }
+  };
+  if (coreSnapshotCacheWriteHandle !== null) {
+    if (coreSnapshotCacheWriteMode === "idle") window.cancelIdleCallback?.(coreSnapshotCacheWriteHandle);
+    else window.clearTimeout(coreSnapshotCacheWriteHandle);
+  }
+  if (typeof window.requestIdleCallback === "function") {
+    coreSnapshotCacheWriteMode = "idle";
+    coreSnapshotCacheWriteHandle = window.requestIdleCallback(write, { timeout: 3000 });
+  } else {
+    coreSnapshotCacheWriteMode = "timeout";
+    coreSnapshotCacheWriteHandle = window.setTimeout(write, 0);
   }
 }
 

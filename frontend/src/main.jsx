@@ -1,4 +1,4 @@
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
@@ -176,6 +176,21 @@ function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+const articleComputationCache = new WeakMap();
+
+function memoizedArticleValue(article, key, compute) {
+  if (!article || typeof article !== "object") return compute();
+  let cache = articleComputationCache.get(article);
+  if (!cache) {
+    cache = new Map();
+    articleComputationCache.set(article, cache);
+  }
+  if (cache.has(key)) return cache.get(key);
+  const value = compute();
+  cache.set(key, value);
+  return value;
+}
+
 function operationsFingerprint(data = {}) {
   const articles = Array.isArray(data.articles) ? data.articles : [];
   const latest = articles.slice(0, 8).map((article) => [
@@ -246,6 +261,14 @@ function workflowFinishedAfter(workflowHealth = {}, workflowId = "news-briefing.
   return latest.conclusion || "unknown";
 }
 
+function useStableCallback(callback) {
+  const callbackRef = useRef(callback);
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+  return useCallback((...args) => callbackRef.current?.(...args), []);
+}
+
 function App() {
   const initialRoute = useMemo(() => readInitialRoute(), []);
   const initialCachedCore = useMemo(() => loadCachedCoreSnapshot(), []);
@@ -266,22 +289,24 @@ function App() {
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [monitoringRangeArticles, setMonitoringRangeArticles] = useState([]);
   const [monitoringRangeLoading, setMonitoringRangeLoading] = useState(false);
+  const [monitoringWarmed, setMonitoringWarmed] = useState(initialRoute.section === "monitoring");
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
   const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
   const [dashboardSnapshot, setDashboardSnapshot] = useState(() => {
     const cachedArticles = Array.isArray(initialCachedCore?.articles) ? initialCachedCore.articles : [];
     const contextArticles = lastNDays(cachedArticles, 8).slice(0, 500);
-    const realtimeArticles = selectRealtimeArticles(contextArticles);
+    const realtimeArticles = selectRealtimeArticlesBootstrap(contextArticles);
     return {
       contextArticles,
       realtimeArticles,
-      data: composeRealtimeData(periodData.daily, realtimeArticles, Boolean(cachedArticles.length)),
+      data: buildDashboardBootstrapData(periodData.daily, realtimeArticles, Boolean(cachedArticles.length)),
     };
   });
   const workTimers = useRef([]);
   const refreshGeneration = useRef(0);
   const routeGeneration = useRef(0);
+  const activeSectionRef = useRef(initialRoute.section);
   const loadedDataProfiles = useRef(new Set());
   const loadingDataProfiles = useRef(new Set());
 
@@ -457,6 +482,17 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (monitoringWarmed) return undefined;
+    const warm = () => setMonitoringWarmed(true);
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(warm, { timeout: 2500 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+    const timer = window.setTimeout(warm, 1200);
+    return () => window.clearTimeout(timer);
+  }, [monitoringWarmed]);
+
+  useEffect(() => {
     const profile = {
       monitoring: "core",
       regulators: "history",
@@ -529,6 +565,7 @@ function App() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    activeSectionRef.current = activeSection;
     const url = new URL(window.location.href);
     url.searchParams.set("section", activeSection);
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
@@ -572,12 +609,15 @@ function App() {
     let cancelled = false;
     const buildSnapshot = () => {
       const contextArticles = lastNDays(coreArticles, 8).slice(0, 500);
-      const realtimeArticles = selectRealtimeArticles(contextArticles);
+      // Isolate the active reporting day with the cheap raw-data path first.
+      // The full classifier then runs only for that day instead of all eight
+      // days, keeping dashboard navigation responsive on a large article DB.
+      const realtimeArticles = selectRealtimeArticles(selectRealtimeArticlesBootstrap(contextArticles));
       const nextData = composeRealtimeData(periodData.daily, realtimeArticles, liveConnected);
       if (!cancelled) setDashboardSnapshot({ contextArticles, realtimeArticles, data: nextData });
     };
     if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(buildSnapshot, { timeout: 800 });
+      const idleId = window.requestIdleCallback(buildSnapshot, { timeout: 1200 });
       return () => {
         cancelled = true;
         window.cancelIdleCallback?.(idleId);
@@ -611,7 +651,10 @@ function App() {
       : { media: [], reporters: [], ads: [] },
     [activeSection, operations, allArticles],
   );
-  const notifications = liveConnected ? operations.notifications || [] : [];
+  const notifications = useMemo(
+    () => liveConnected ? operations.notifications || [] : [],
+    [liveConnected, operations.notifications],
+  );
   const jobs = liveConnected && operations.watchRuns?.length
     ? [
         {
@@ -624,9 +667,9 @@ function App() {
       ]
     : [];
 
-  const navigateSection = (sectionId) => {
+  const navigateSection = useCallback((sectionId) => {
     if (!sectionId) return;
-    if (sectionId === activeSection) {
+    if (sectionId === activeSectionRef.current) {
       routeGeneration.current += 1;
       setPendingSection("");
       return;
@@ -640,16 +683,23 @@ function App() {
     // Start the chunk request before switching views, but never make navigation
     // wait for the network. Suspense keeps the shell responsive while it loads.
     const preload = preloadFeatureSection(sectionId).catch(() => null);
+    activeSectionRef.current = sectionId;
     setActiveSection(sectionId);
     preload.finally(() => {
       if (routeGeneration.current === generation) setPendingSection("");
     });
-  };
+  }, []);
 
-  const openMonitoring = (preset = {}) => {
+  const openMonitoring = useCallback((preset = {}) => {
     setMonitoringPreset({ period, ...preset, stamp: Date.now() });
     navigateSection("monitoring");
-  };
+  }, [navigateSection, period]);
+
+  const overviewRefreshOperations = useStableCallback(refreshOperations);
+  const toggleTheme = useCallback(
+    () => setTheme((current) => current === "dim" ? "light" : "dim"),
+    [],
+  );
 
   const loadMonitoringRange = async ({ startDate, endDate }) => {
     if (!startDate && !endDate) return [];
@@ -694,6 +744,11 @@ function App() {
       scrapAnalysisReports: upsertScrapAnalysisReports(current.scrapAnalysisReports || [], report),
     }));
   };
+
+  const stableLoadMonitoringRange = useStableCallback(loadMonitoringRange);
+  const stableFeedbackSaved = useStableCallback(handleClassificationFeedbackSaved);
+  const stableScrapSaved = useStableCallback(handleArticleScrapSaved);
+  const clearMonitoringRange = useCallback(() => setMonitoringRangeArticles([]), []);
 
   const dashboardHelpers = useMemo(() => ({
     ArticleSummaryBlock,
@@ -809,7 +864,7 @@ function App() {
   }[activeSection] || null;
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-active-section={activeSection}>
       <aside className="side-nav" aria-label="주요 메뉴">
         <Header working={working || Boolean(pendingSection)} workLabel={pendingSection ? "화면 준비 중" : workLabel} />
         {navSections.map((section) => (
@@ -835,8 +890,7 @@ function App() {
           </div>
         ))}
       </aside>
-      <Overview
-        hidden={activeSection !== "overview"}
+      <MemoizedOverview
         data={realtimeData}
         articles={realtimeArticles}
         allArticles={dashboardContextArticles}
@@ -846,25 +900,25 @@ function App() {
         operations={operations}
         workflowHealth={workflowHealth}
         isWorking={working}
-        onRefreshOperations={refreshOperations}
+        onRefreshOperations={overviewRefreshOperations}
         theme={theme}
-        onToggleTheme={() => setTheme((current) => current === "dim" ? "light" : "dim")}
+        onToggleTheme={toggleTheme}
       />
-      {activeSection === "monitoring" && (
-        <Monitoring
-          data={data}
-          articles={allArticles}
+      {(monitoringWarmed || activeSection === "monitoring") && (
+        <MemoizedMonitoring
+          data={baseData}
+          articles={coreArticles}
           scraps={scraps}
           monitoringPreset={monitoringPreset}
           monitoringRangeArticles={monitoringRangeArticles}
           monitoringRangeLoading={monitoringRangeLoading}
-          onLoadMonitoringRange={loadMonitoringRange}
-          onClearMonitoringRange={() => setMonitoringRangeArticles([])}
+          onLoadMonitoringRange={stableLoadMonitoringRange}
+          onClearMonitoringRange={clearMonitoringRange}
           operations={operations}
           isWorking={working}
-          onRefreshOperations={refreshOperations}
-          onFeedbackSaved={handleClassificationFeedbackSaved}
-          onScrapSaved={handleArticleScrapSaved}
+          onRefreshOperations={overviewRefreshOperations}
+          onFeedbackSaved={stableFeedbackSaved}
+          onScrapSaved={stableScrapSaved}
         />
       )}
       {FeatureView && (
@@ -998,7 +1052,9 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
   );
 }
 
-function Overview({ hidden = false, data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
+const MemoizedOverview = React.memo(Overview);
+
+function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
   const { summary } = data;
   const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
@@ -1016,12 +1072,10 @@ function Overview({ hidden = false, data, articles, allArticles = [], notificati
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
   const notificationHealth = operationsHealth.items.find((item) => item.title === "발송");
   const momentumRows = useMemo(() => buildDashboardMomentum(allArticles.length ? allArticles : articles), [allArticles, articles]);
-  const issueRows = useMemo(
-    () => buildDashboardIssueGroups(data.issues)
-      .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
-      .slice(0, 10),
-    [data.issues],
-  );
+  // composePeriodData already returns a ranked, deduplicated issue list.
+  // Re-grouping it here repeated the most expensive classification path on
+  // every dashboard mount and made route changes appear frozen.
+  const issueRows = useMemo(() => (data.issues || []).slice(0, 10), [data.issues]);
   const refreshDashboard = () => onRefreshOperations?.({
     trigger: true,
     workflow: "all",
@@ -1029,7 +1083,7 @@ function Overview({ hidden = false, data, articles, allArticles = [], notificati
     label: "전체 운영 갱신",
   });
   return (
-    <main className="workspace dashboard-workspace dashboard-v5" hidden={hidden}>
+    <main className="workspace dashboard-workspace dashboard-v5">
       <DashboardEditorialHeader
         data={data}
         status={operations?.status}
@@ -1133,7 +1187,7 @@ function DashboardKpiStrip({ summary = {}, onOpenMonitoring }) {
 }
 
 function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring }) {
-  const momentumRows = useMemo(() => buildLeadIssueMomentum(issue, allArticles), [issue, allArticles]);
+  const momentumRows = useMemo(() => buildLeadIssueMomentum(issue, allArticles.slice(0, 260)), [issue, allArticles]);
   const relatedCount = issue ? issueBundleCount(issue) : 0;
   const ownNegativeCount = issue?.tone === "부정" && isOwnArticle(issue) ? 1 : 0;
   const summary = dashboardLeadSummary(issue);
@@ -1792,6 +1846,8 @@ function OpsStatusRail({
   );
 }
 
+const MemoizedMonitoring = React.memo(Monitoring);
+
 function Monitoring({
   data,
   articles,
@@ -1981,7 +2037,7 @@ function Monitoring({
   };
 
   return (
-    <main className="workspace">
+    <main className="workspace monitoring-workspace">
       <section className="filter-card monitoring-filter-card">
         <label>
           <span>시작 기준일</span>
@@ -3912,37 +3968,39 @@ function displayTone(value) {
 
 function normalizeArticleDisplay(row = {}) {
   if (!row || typeof row !== "object") return row;
-  const cleanRelatedArticles = filterRelatedArticlesForRepresentative(row).map((article) => ({
-    ...article,
-    ...normalizeArticleDisplayClassification(article),
-  }));
-  const relatedSourceCount = unique(cleanRelatedArticles.map((item) => item.source).filter(Boolean)).length;
-  const normalizedClassification = normalizeArticleDisplayClassification(row);
-  const baseRow = {
-    ...row,
-    ...normalizedClassification,
-    relatedArticles: cleanRelatedArticles,
-    relatedCount: cleanRelatedArticles.length,
-    relatedSourceCount,
-    clusterSize: Math.max(1, cleanRelatedArticles.length),
-  };
-  if (!isCompetitorBrandReputationAgainstOwn(row)) return baseRow;
-  const relatedArticles = cleanRelatedArticles.map((item) => ({
-    ...item,
-    tone: item.tone === "긍정" || item.tone === "positive" ? "주의" : item.tone,
-    summaryLines: buildBrandReputationDisplayLines(item),
-  }));
-  return {
-    ...baseRow,
-    category: row.category === "당사" || row.category === "긍정" ? "경쟁사" : row.category,
-    tone: row.tone === "긍정" || row.tone === "positive" ? "주의" : row.tone || "주의",
-    summary: "",
-    summaryLines: buildBrandReputationDisplayLines(row),
-    relatedArticles,
-    relatedCount: relatedArticles.length,
-    relatedSourceCount,
-    clusterSize: Math.max(1, relatedArticles.length),
-  };
+  return memoizedArticleValue(row, "display", () => {
+    const cleanRelatedArticles = filterRelatedArticlesForRepresentative(row).map((article) => ({
+      ...article,
+      ...normalizeArticleDisplayClassification(article),
+    }));
+    const relatedSourceCount = unique(cleanRelatedArticles.map((item) => item.source).filter(Boolean)).length;
+    const normalizedClassification = normalizeArticleDisplayClassification(row);
+    const baseRow = {
+      ...row,
+      ...normalizedClassification,
+      relatedArticles: cleanRelatedArticles,
+      relatedCount: cleanRelatedArticles.length,
+      relatedSourceCount,
+      clusterSize: Math.max(1, cleanRelatedArticles.length),
+    };
+    if (!isCompetitorBrandReputationAgainstOwn(row)) return baseRow;
+    const relatedArticles = cleanRelatedArticles.map((item) => ({
+      ...item,
+      tone: item.tone === "긍정" || item.tone === "positive" ? "주의" : item.tone,
+      summaryLines: buildBrandReputationDisplayLines(item),
+    }));
+    return {
+      ...baseRow,
+      category: row.category === "당사" || row.category === "긍정" ? "경쟁사" : row.category,
+      tone: row.tone === "긍정" || row.tone === "positive" ? "주의" : row.tone || "주의",
+      summary: "",
+      summaryLines: buildBrandReputationDisplayLines(row),
+      relatedArticles,
+      relatedCount: relatedArticles.length,
+      relatedSourceCount,
+      clusterSize: Math.max(1, relatedArticles.length),
+    };
+  });
 }
 
 function normalizeArticleDisplayClassification(row = {}) {
@@ -7476,21 +7534,23 @@ function buildRelatedArticleGroups(articles = []) {
 }
 
 function articleGroupSeed(article) {
-  const canonical = normalizeGroupTitle(article.title || "");
-  const topic = articleTopicSignature(article);
-  const summaryTokens = articleTokens(`${article.summary || article.description || article.content || ""}`).slice(0, 16);
-  const tokens = articleTokens(`${canonical} ${summaryTokens.join(" ")}`);
-  const distinctiveTokens = tokens.filter(isDistinctiveRelatedToken);
-  return {
-    canonical,
-    topic,
-    ownSanction: isOwnSupervisorySanctionArticle(article),
-    tokens,
-    distinctiveTokens,
-    titleKey: relatedTitleKey(canonical, tokens),
-    tokenSet: new Set(tokens),
-    distinctiveTokenSet: new Set(distinctiveTokens),
-  };
+  return memoizedArticleValue(article, "groupSeed", () => {
+    const canonical = normalizeGroupTitle(article.title || "");
+    const topic = articleTopicSignature(article);
+    const summaryTokens = articleTokens(`${article.summary || article.description || article.content || ""}`).slice(0, 16);
+    const tokens = articleTokens(`${canonical} ${summaryTokens.join(" ")}`);
+    const distinctiveTokens = tokens.filter(isDistinctiveRelatedToken);
+    return {
+      canonical,
+      topic,
+      ownSanction: isOwnSupervisorySanctionArticle(article),
+      tokens,
+      distinctiveTokens,
+      titleKey: relatedTitleKey(canonical, tokens),
+      tokenSet: new Set(tokens),
+      distinctiveTokenSet: new Set(distinctiveTokens),
+    };
+  });
 }
 
 function mergeGroupSeed(current, next) {
@@ -7669,9 +7729,11 @@ function sortToneLabels(values) {
 }
 
 function articleTimeValue(article) {
-  const value = article.pubDate || article.pub_date || `${article.date || ""}T${article.time || "00:00"}:00+09:00`;
-  const time = new Date(value).getTime();
-  return Number.isNaN(time) ? 0 : time;
+  return memoizedArticleValue(article, "timeValue", () => {
+    const value = article.pubDate || article.pub_date || `${article.date || ""}T${article.time || "00:00"}:00+09:00`;
+    const time = new Date(value).getTime();
+    return Number.isNaN(time) ? 0 : time;
+  });
 }
 
 function selectDashboardKeywords(rows = []) {
@@ -7781,34 +7843,36 @@ function groupArticles(articles, key) {
 }
 
 function isUsableArticle(article) {
-  return article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article) && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isIncidentalInsuranceMentionArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
+  return memoizedArticleValue(article, "usable", () => article && article.tone !== "제외" && article.category !== "제외" && !isStockListingNoiseArticle(article) && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isIncidentalInsuranceMentionArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isGeneralSportsNoiseArticle(article));
 }
 
 function isUsableMonitoringArticle(article) {
-  return article && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isIncidentalInsuranceMentionArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isStockListingNoiseArticle(article) && !isGeneralSportsNoiseArticle(article);
+  return memoizedArticleValue(article, "monitoringUsable", () => article && !isExternalInsuranceNoiseArticle(article) && !isGeneralFinanceNoiseArticle(article) && !isIncidentalInsuranceMentionArticle(article) && !isAdminAgencyNoiseArticle(article) && !isPublicHealthInsuranceNoiseArticle(article) && !isNonInsuranceInvestmentMisconductNoiseArticle(article) && !isAmbiguousCompetitorHomonymNoiseArticle(article) && !isSportsOccupationInsuranceAgentNoiseArticle(article) && !isStockMarketSectorNoiseArticle(article) && !isEntertainmentMarketingNoiseArticle(article) && !isCelebInsuranceAgentNoiseArticle(article) && !isPoliticalMediaDigestNoiseArticle(article) && !isCommunityEventAttendeeNoiseArticle(article) && !isSportsSponsorshipIncidentalNoiseArticle(article) && !isOverseasLocalInsuranceNoiseArticle(article) && !isForeignMacroInsuranceIncidentalNoiseArticle(article) && !isExternalGeopoliticalShippingNoiseArticle(article) && !isOwnSponsoredSportsNoiseArticle(article) && !isStockListingNoiseArticle(article) && !isGeneralSportsNoiseArticle(article));
 }
 
 function isOwnArticle(article) {
-  if (isStockListingNoiseArticle(article)) return false;
-  if (isGeneralFinanceNoiseArticle(article)) return false;
-  if (isIncidentalInsuranceMentionArticle(article)) return false;
-  if (isAdminAgencyNoiseArticle(article)) return false;
-  if (isPublicHealthInsuranceNoiseArticle(article)) return false;
-  if (isNonInsuranceInvestmentMisconductNoiseArticle(article)) return false;
-  if (isAmbiguousCompetitorHomonymNoiseArticle(article)) return false;
-  if (isSportsOccupationInsuranceAgentNoiseArticle(article)) return false;
-  if (isStockMarketSectorNoiseArticle(article)) return false;
-  if (isEntertainmentMarketingNoiseArticle(article)) return false;
-  if (isCelebInsuranceAgentNoiseArticle(article)) return false;
-  if (isPoliticalMediaDigestNoiseArticle(article)) return false;
-  if (isCommunityEventAttendeeNoiseArticle(article)) return false;
-  if (isSportsSponsorshipIncidentalNoiseArticle(article)) return false;
-  if (isOverseasLocalInsuranceNoiseArticle(article)) return false;
-  if (isForeignMacroInsuranceIncidentalNoiseArticle(article)) return false;
-  if (isExternalGeopoliticalShippingNoiseArticle(article)) return false;
-  if (isOwnSponsoredSportsNoiseArticle(article)) return false;
-  if (article?.ownMentioned === true || article?.aiContext?.ownMentioned === true) return true;
-  return hasOwnArticleEvidence(article);
+  return memoizedArticleValue(article, "own", () => {
+    if (isStockListingNoiseArticle(article)) return false;
+    if (isGeneralFinanceNoiseArticle(article)) return false;
+    if (isIncidentalInsuranceMentionArticle(article)) return false;
+    if (isAdminAgencyNoiseArticle(article)) return false;
+    if (isPublicHealthInsuranceNoiseArticle(article)) return false;
+    if (isNonInsuranceInvestmentMisconductNoiseArticle(article)) return false;
+    if (isAmbiguousCompetitorHomonymNoiseArticle(article)) return false;
+    if (isSportsOccupationInsuranceAgentNoiseArticle(article)) return false;
+    if (isStockMarketSectorNoiseArticle(article)) return false;
+    if (isEntertainmentMarketingNoiseArticle(article)) return false;
+    if (isCelebInsuranceAgentNoiseArticle(article)) return false;
+    if (isPoliticalMediaDigestNoiseArticle(article)) return false;
+    if (isCommunityEventAttendeeNoiseArticle(article)) return false;
+    if (isSportsSponsorshipIncidentalNoiseArticle(article)) return false;
+    if (isOverseasLocalInsuranceNoiseArticle(article)) return false;
+    if (isForeignMacroInsuranceIncidentalNoiseArticle(article)) return false;
+    if (isExternalGeopoliticalShippingNoiseArticle(article)) return false;
+    if (isOwnSponsoredSportsNoiseArticle(article)) return false;
+    if (article?.ownMentioned === true || article?.aiContext?.ownMentioned === true) return true;
+    return hasOwnArticleEvidence(article);
+  });
 }
 
 function hasOwnArticleEvidence(article = {}) {
@@ -8064,6 +8128,105 @@ function composeRealtimeData(base, articles, liveConnected = false) {
     label: "대시보드",
     scope: realtimeArticles[0]?.date ? `${realtimeArticles[0].date} 당일 기사` : "당일 기사",
   };
+}
+
+function selectRealtimeArticlesBootstrap(articles = []) {
+  const todayKey = formatKstDateKey(new Date());
+  const datedArticles = articles
+    .map((article) => ({ article, dateKey: articleDashboardDateKey(article) }))
+    .filter((row) => row.dateKey);
+  let targetDate = datedArticles.some((row) => row.dateKey === todayKey) ? todayKey : "";
+  if (!targetDate) {
+    datedArticles.forEach(({ dateKey }) => {
+      if (!targetDate || dateKey > targetDate) targetDate = dateKey;
+    });
+  }
+  return datedArticles
+    .filter((row) => row.dateKey === targetDate)
+    .map((row) => row.article)
+    .slice(0, 240);
+}
+
+function buildDashboardBootstrapData(base, articles, liveConnected = false) {
+  if (!liveConnected) return buildDisconnectedPeriodData(base);
+  const rows = articles.filter(Boolean);
+  if (!rows.length) {
+    return buildDisconnectedPeriodData(base, "당일 기준으로 표시할 운영 기사가 없습니다.");
+  }
+
+  let analyzed = 0;
+  let ownMentions = 0;
+  let ownNegative = 0;
+  let caution = 0;
+  let gaInsurance = 0;
+  const categories = new Map();
+
+  rows.forEach((article) => {
+    const tone = String(article.tone || "").trim().toLowerCase();
+    const category = String(article.category || "").trim();
+    const categoryCanonical = category.toLowerCase();
+    const excluded = tone === "exclude" || tone === "제외" || categoryCanonical === "exclude" || category === "제외";
+    if (!excluded) analyzed += 1;
+
+    const own = article.ownMentioned === true
+      || article.own_mentioned === true
+      || article.aiContext?.ownMentioned === true
+      || categoryCanonical === "own"
+      || category === "당사";
+    const negative = tone === "negative" || tone === "부정";
+    if (own) ownMentions += 1;
+    if (own && negative) ownNegative += 1;
+    if (tone === "caution" || tone === "주의") caution += 1;
+    if (["competitor", "industry", "ga", "보험사", "경쟁사", "업계동향"].includes(categoryCanonical)) gaInsurance += 1;
+
+    if (!excluded) categories.set(category || "미분류", (categories.get(category || "미분류") || 0) + 1);
+  });
+
+  return {
+    ...base,
+    scope: rows[0]?.date ? `${rows[0].date} 당일 기사` : "당일 기사",
+    generatedAt: "-",
+    summary: {
+      ...base.summary,
+      risk: ownNegative >= 3 ? "HIGH" : ownNegative > 0 ? "MEDIUM" : "LOW",
+      collected: rows.length,
+      analyzed,
+      ownMentions,
+      ownNegative,
+      caution,
+      gaInsurance,
+      watchTime: rows[0]?.time || base.summary.watchTime,
+    },
+    issues: buildDashboardBootstrapIssues(rows),
+    categoryFlow: Array.from(categories.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([category, value]) => ({ name: categoryFlowLabel(category), category, value })),
+    toneTrend: [],
+    pressInfluence: [],
+  };
+}
+
+function buildDashboardBootstrapIssues(rows = []) {
+  const toneWeight = { negative: 5, "부정": 5, caution: 4, "주의": 4, positive: 2, "긍정": 2, neutral: 1, "중립": 1 };
+  const categoryWeight = { own: 5, "당사": 5, regulator: 4, "정책/규제": 4, competitor: 3, "경쟁사": 3, industry: 2, "업계동향": 2 };
+  return rows
+    .filter((article) => {
+      const tone = String(article?.tone || "").trim().toLowerCase();
+      const category = String(article?.category || "").trim().toLowerCase();
+      return article?.title && tone !== "exclude" && tone !== "제외" && category !== "exclude" && category !== "제외";
+    })
+    .map((article, index) => ({
+      article,
+      index,
+      score: Number(article?.score || 0)
+        + (toneWeight[String(article?.tone || "").trim().toLowerCase()] || 0) * 10
+        + (categoryWeight[String(article?.category || "").trim().toLowerCase()] || 0) * 6,
+      time: Date.parse(article?.pubDate || article?.pub_date || article?.fullDate || "") || 0,
+    }))
+    .sort((a, b) => b.score - a.score || b.time - a.time || a.index - b.index)
+    .slice(0, 10)
+    .map(({ article }) => article);
 }
 
 const rootElement = document.getElementById("root");
