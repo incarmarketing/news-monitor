@@ -1799,3 +1799,193 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
     gap: 9px;
   }
 }
+
+/* Dashboard legibility and geometry contract. */
+.dashboard-v5 .editorial-composition-donut {
+  box-sizing: border-box;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+.dashboard-v5 .editorial-composition-donut > span {
+  box-sizing: border-box;
+  width: 62%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
+
+@media (min-width: 1241px) {
+  .side-nav button {
+    font-size: 15px;
+  }
+
+  .dashboard-v5 .editorial-dashboard-header h1 {
+    font-size: clamp(31px, 2.15vw, 35px);
+  }
+
+  .dashboard-v5 .editorial-header-copy > p,
+  .dashboard-v5 .editorial-data-status {
+    font-size: 13.5px;
+  }
+
+  .dashboard-v5 .editorial-header-actions button {
+    font-size: 12px;
+  }
+
+  .dashboard-v5 .editorial-kpi-strip small {
+    font-size: 11px;
+  }
+
+  .dashboard-v5 .editorial-kpi-strip b {
+    font-size: 28px;
+  }
+
+  .dashboard-v5 .editorial-kpi-strip em {
+    font-size: 10.5px;
+  }
+
+  .dashboard-v5 .signal-panel-heading h2 {
+    font-size: 18px;
+  }
+
+  .dashboard-v5 .signal-panel-tools {
+    font-size: 11.5px;
+  }
+
+  .dashboard-v5 .signal-panel-tools > button,
+  .dashboard-v5 .editorial-lead-labels .chip {
+    font-size: 11px;
+  }
+
+  .dashboard-v5 .editorial-lead-labels > time,
+  .dashboard-v5 .editorial-lead-meta {
+    font-size: 12px;
+  }
+
+  .dashboard-v5 .editorial-lead-copy h2 {
+    font-size: clamp(21px, 1.4vw, 23px);
+  }
+
+  .dashboard-v5 .editorial-lead-summary {
+    font-size: 13px;
+  }
+
+  .dashboard-v5 .editorial-lead-sparkline-head {
+    font-size: 11px;
+  }
+
+  .dashboard-v5 .editorial-lead-sparkline-head strong {
+    font-size: 20px;
+  }
+
+  .dashboard-v5 .editorial-issue-rank {
+    font-size: 13px;
+  }
+
+  .dashboard-v5 .editorial-issue-tone {
+    font-size: 11px;
+  }
+
+  .dashboard-v5 .editorial-issue-category,
+  .dashboard-v5 .editorial-issue-list time {
+    font-size: 12px;
+  }
+
+  .dashboard-v5 .editorial-issue-list b {
+    font-size: 13.5px;
+  }
+
+  .dashboard-v5 .editorial-issue-list > button {
+    grid-template-columns: 30px 42px 82px 60px minmax(0, 1fr) 36px;
+    gap: 8px;
+  }
+
+  .dashboard-v5 .editorial-issue-list em,
+  .dashboard-v5 .signal-all-issues {
+    font-size: 12px;
+  }
+
+  .dashboard-v5 .signal-operations-heading h2 {
+    font-size: 17px;
+  }
+
+  .dashboard-v5 .signal-operation-identity small,
+  .dashboard-v5 .signal-operation-inline-metrics small,
+  .dashboard-v5 .signal-report-inline small {
+    font-size: 10px;
+  }
+
+  .dashboard-v5 .signal-operation-identity strong {
+    font-size: 15px;
+  }
+
+  .dashboard-v5 .signal-operation-inline-metrics b,
+  .dashboard-v5 .signal-report-inline b {
+    font-size: 13px;
+  }
+
+  .dashboard-v5 .editorial-section-title {
+    font-size: 16px;
+  }
+
+  .dashboard-v5 .editorial-section-title > em {
+    font-size: 10.5px;
+  }
+
+  .dashboard-v5 .dashboard-chart-label,
+  .dashboard-v5 .editorial-chart-legend {
+    font-size: 11.5px;
+  }
+
+  .dashboard-v5 .editorial-momentum-summary > strong {
+    font-size: 13px;
+  }
+
+  .dashboard-v5 .editorial-momentum-summary > span {
+    font-size: 12px;
+  }
+
+  .dashboard-v5 .editorial-composition-donut b {
+    font-size: 24px;
+  }
+
+  .dashboard-v5 .editorial-composition-donut small,
+  .dashboard-v5 .editorial-composition-donut em {
+    font-size: 10px;
+  }
+
+  .dashboard-v5 .editorial-composition-list > div {
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 1240px) {
+  .dashboard-v5 .editorial-dashboard-header h1 {
+    font-size: 27px;
+  }
+
+  .dashboard-v5 .signal-panel-heading h2,
+  .dashboard-v5 .signal-operations-heading h2,
+  .dashboard-v5 .editorial-section-title {
+    font-size: 16px;
+  }
+
+  .dashboard-v5 .editorial-issue-list b,
+  .dashboard-v5 .editorial-composition-list > div {
+    font-size: 12px;
+  }
+
+  .dashboard-v5 .signal-operation-identity small,
+  .dashboard-v5 .signal-operation-inline-metrics small,
+  .dashboard-v5 .signal-report-inline small {
+    font-size: 9.5px;
+  }
+
+  .dashboard-v5 .signal-operation-identity strong,
+  .dashboard-v5 .signal-operation-inline-metrics b,
+  .dashboard-v5 .signal-report-inline b {
+    font-size: 13px;
+  }
+}
