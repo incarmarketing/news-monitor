@@ -47,6 +47,7 @@ class OperationalScheduleTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/dashboard-refresh.yml").read_text(encoding="utf-8")
         self.assertIn("python refresh_dashboard_news.py", workflow)
         self.assertIn("REPORT_SLOT: live", workflow)
+        self.assertIn('      - "refresh_dashboard_news.py"', workflow)
         self.assertNotIn("npm run build", workflow)
         self.assertNotIn("send_slack", workflow)
         self.assertNotIn("pages", workflow.lower())
