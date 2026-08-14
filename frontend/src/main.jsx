@@ -61,7 +61,7 @@ import {
   NEGATIVE_WATCH_SHORT_LABEL,
 } from "./operationsHealth";
 import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
-import { calculateDashboardRiskIndex } from "./dashboardRisk";
+import { calculateDailyDashboardRiskIndex, calculateDashboardRiskIndex } from "./dashboardRisk";
 import slackMarkUrl from "./assets/slack-mark.png";
 import "./styles.css";
 import "./report.css";
@@ -1142,7 +1142,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
           </div>
           <EditorialLeadIssue
             issue={issueRows[0]}
-            allArticles={allArticles.length ? allArticles : articles}
+            riskMomentumRows={momentumRows}
             onOpenMonitoring={onOpenMonitoring}
             emptyMessage={issueSort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : undefined}
           />
@@ -1214,8 +1214,7 @@ function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk }) {
   );
 }
 
-function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring, emptyMessage }) {
-  const momentumRows = useMemo(() => buildLeadIssueMomentum(issue, allArticles.slice(0, 260)), [issue, allArticles]);
+function EditorialLeadIssue({ issue, riskMomentumRows = [], onOpenMonitoring, emptyMessage }) {
   const relatedCount = issue ? issueBundleCount(issue) : 0;
   const ownNegativeCount = issue?.tone === "부정" && isOwnArticle(issue) ? 1 : 0;
   const summary = dashboardLeadSummary(issue);
@@ -1240,7 +1239,7 @@ function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring, emptyMe
               </p>
             </DashboardIssueAction>
           </div>
-          <DashboardLeadSparkline issue={issue} rows={momentumRows} />
+          <DashboardLeadSparkline rows={riskMomentumRows} />
         </article>
       ) : (
         <article className="editorial-issue-empty">{emptyMessage || "오늘 기준으로 표시할 주요 이슈가 없습니다."}</article>
@@ -1267,18 +1266,26 @@ function EditorialIssueList({ issues = [], onOpenMonitoring }) {
   );
 }
 
-function DashboardLeadSparkline({ issue = {}, rows = [] }) {
+function DashboardLeadSparkline({ rows = [] }) {
   const chartRows = rows.slice(-7);
+  const currentRiskIndex = Number(chartRows.at(-1)?.riskIndex || 0);
   return (
-    <div className="editorial-lead-sparkline" aria-label="대표 이슈의 최근 7일 보도량">
+    <div className="editorial-lead-sparkline" aria-label="최근 7일 일별 리스크 지수">
       <div className="editorial-lead-sparkline-head">
         <span>리스크 지수</span>
-        <strong>{dashboardRiskIndex(issue)}</strong>
+        <strong>{currentRiskIndex}</strong>
       </div>
       <div className="editorial-lead-sparkline-chart">
         {chartRows.length
-          ? <DashboardSvgLineChart rows={chartRows} series={[{ key: "total", color: "#1766df", label: "관련 보도" }]} compact />
-          : <div className="editorial-chart-empty">집계 가능한 관련 보도가 없습니다.</div>}
+          ? (
+            <DashboardSvgLineChart
+              rows={chartRows}
+              series={[{ key: "riskIndex", color: "#d97706", label: "리스크 지수", unit: "점" }]}
+              compact
+              ariaLabel="최근 7일 일별 리스크 지수"
+            />
+          )
+          : <div className="editorial-chart-empty">집계 가능한 리스크 신호가 없습니다.</div>}
       </div>
     </div>
   );
@@ -1457,7 +1464,7 @@ const dashboardMomentumSeries = [
   { key: "regulation", color: "#8e1434", label: "정책/규제" },
 ];
 
-function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, compact = false }) {
+function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, compact = false, ariaLabel = "기사량 추이" }) {
   const width = compact ? 320 : 760;
   const height = compact ? 118 : 220;
   const padding = compact ? { top: 18, right: 14, bottom: 24, left: 12 } : { top: 18, right: 24, bottom: 34, left: 38 };
@@ -1467,7 +1474,7 @@ function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, co
   const y = (value) => padding.top + (1 - Number(value || 0) / maxValue) * (height - padding.top - padding.bottom);
   const gridValues = compact ? [0.5] : [0, 0.33, 0.66, 1];
   return (
-    <svg className="dashboard-svg-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label="기사량 추이">
+    <svg className="dashboard-svg-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={ariaLabel}>
       {gridValues.map((ratio) => {
         const gridY = padding.top + ratio * (height - padding.top - padding.bottom);
         return <line key={ratio} x1={padding.left} x2={width - padding.right} y1={gridY} y2={gridY} className="dashboard-chart-grid" />;
@@ -1479,7 +1486,7 @@ function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, co
             <polyline points={points} fill="none" stroke={item.color} strokeWidth={compact ? 3 : 2.5} strokeLinejoin="round" strokeLinecap="round" />
             {rows.map((row, index) => (
               <circle key={`${item.key}-${index}`} cx={x(index)} cy={y(row[item.key])} r={compact ? 3.2 : 2.8} fill="#fff" stroke={item.color} strokeWidth="2">
-                <title>{`${row.dateLabel || row.date || index + 1} ${item.label} ${Number(row[item.key] || 0).toLocaleString("ko-KR")}건`}</title>
+                <title>{`${row.dateLabel || row.date || index + 1} ${item.label} ${Number(row[item.key] || 0).toLocaleString("ko-KR")}${item.unit || "건"}`}</title>
               </circle>
             ))}
           </g>
@@ -1539,31 +1546,12 @@ function nextReportLabel(reportHealth = {}) {
   return next ? `${next.slot}:00` : "오늘 완료";
 }
 
-function buildLeadIssueMomentum(issue, articles = []) {
-  if (!issue) return [];
-  const related = Array.isArray(issue.relatedArticles) ? issue.relatedArticles : [];
-  const sourceRows = [...articles, ...related, issue];
-  const endDate = rowDateKey(issue) || latestArticleDate(related) || latestArticleDate(sourceRows);
-  if (!endDate) return [];
-  const dates = Array.from({ length: 7 }, (_, index) => addDaysToDateKey(endDate, index - 6));
-  const buckets = new Map(dates.map((date) => [date, { date, dateLabel: formatDashboardChartDate(date), total: 0 }]));
-  const issueSeed = articleGroupSeed(issue);
-  const seen = new Set();
-  sourceRows.forEach((article) => {
-    const date = rowDateKey(article);
-    if (!buckets.has(date)) return;
-    const memberKey = issueMemberKey(article);
-    if (memberKey && seen.has(memberKey)) return;
-    if (!areRelatedArticleSeeds(issueSeed, articleGroupSeed(article))) return;
-    if (memberKey) seen.add(memberKey);
-    buckets.get(date).total += 1;
-  });
-  return Array.from(buckets.values());
-}
-
 function buildDashboardMomentum(articles = []) {
   const dated = articles.filter((article) => rowDateKey(article));
-  const dates = unique(dated.map(rowDateKey)).sort().slice(-7);
+  const endDate = latestArticleDate(dated);
+  const dates = endDate
+    ? Array.from({ length: 7 }, (_, index) => addDaysToDateKey(endDate, index - 6))
+    : [];
   const buckets = new Map(dates.map((date) => [date, {
     date,
     dateLabel: formatDashboardChartDate(date),
@@ -1571,13 +1559,39 @@ function buildDashboardMomentum(articles = []) {
     ga: 0,
     insurance: 0,
     regulation: 0,
+    ownNegative: 0,
+    ownCaution: 0,
+    policyNegative: 0,
+    industryNegative: 0,
+    policyCaution: 0,
+    industryCaution: 0,
   }]));
+  const seenRiskArticles = new Set();
   dated.forEach((article) => {
-    const bucket = buckets.get(rowDateKey(article));
+    const date = rowDateKey(article);
+    const bucket = buckets.get(date);
     if (!bucket) return;
-    bucket[dashboardArticleSeries(article)] += 1;
+    const series = dashboardArticleSeries(article);
+    bucket[series] += 1;
+
+    const riskKey = `${date}|${issueMemberKey(article) || `${normalizeGroupTitle(article.title || "")}|${article.source || ""}`}`;
+    if (seenRiskArticles.has(riskKey)) return;
+    seenRiskArticles.add(riskKey);
+    const tone = displayTone(article.tone);
+    if (tone === "부정") {
+      if (series === "own") bucket.ownNegative += 1;
+      else if (series === "regulation") bucket.policyNegative += 1;
+      else bucket.industryNegative += 1;
+    } else if (tone === "주의") {
+      if (series === "own") bucket.ownCaution += 1;
+      else if (series === "regulation") bucket.policyCaution += 1;
+      else bucket.industryCaution += 1;
+    }
   });
-  return Array.from(buckets.values());
+  return Array.from(buckets.values()).map((bucket) => ({
+    ...bucket,
+    riskIndex: calculateDailyDashboardRiskIndex(bucket),
+  }));
 }
 
 function dashboardArticleSeries(article = {}) {

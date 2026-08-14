@@ -65,3 +65,30 @@ export function calculateDashboardRiskIndex({
   return Math.max(0, Math.min(99, Math.round(score + spreadBonus)));
 }
 
+/**
+ * Calculates a daily portfolio risk index from actionable article counts.
+ * Neutral and positive coverage never contributes to this score.
+ */
+export function calculateDailyDashboardRiskIndex({
+  ownNegative = 0,
+  ownCaution = 0,
+  policyNegative = 0,
+  industryNegative = 0,
+  policyCaution = 0,
+  industryCaution = 0,
+} = {}) {
+  const ownNegativeScore = Math.min(60, Math.max(0, Number(ownNegative || 0)) * 30);
+  const ownCautionScore = Math.min(24, Math.max(0, Number(ownCaution || 0)) * 12);
+  const externalNegativeScore = Math.min(
+    30,
+    (Math.max(0, Number(policyNegative || 0)) + Math.max(0, Number(industryNegative || 0))) * 10,
+  );
+  const externalCautionScore = Math.min(
+    30,
+    Math.max(0, Number(policyCaution || 0)) * 5 + Math.max(0, Number(industryCaution || 0)) * 3,
+  );
+
+  return Math.min(100, Math.round(
+    ownNegativeScore + ownCautionScore + externalNegativeScore + externalCautionScore,
+  ));
+}
