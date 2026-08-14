@@ -1,3 +1,5 @@
+import { watchRunDisplayState } from "./watchHealth";
+
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
 const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v3";
 const LEGACY_CORE_SNAPSHOT_CACHE_KEYS = ["incar_core_snapshot_v2"];
@@ -1846,7 +1848,7 @@ function normalizeWatchRun(row) {
     rawStatus: row.status || "",
     minutesBack: Number(row.minutes_back || 0),
     latest: formatTime(row.scanned_at),
-    state: row.status === "ok" || row.status === "success" ? "정상" : row.status || "확인",
+    state: watchRunDisplayState(row.status, row.message),
     scanned: Number(row.scanned_count || 0),
     negative: Number(row.negative_count || 0),
     fresh: Number(row.new_negative_count || 0),

@@ -1,4 +1,5 @@
 import { Bell, CalendarDays, Radar, RefreshCw, ShieldCheck } from "lucide-react";
+import { deriveWatchHealthState } from "./watchHealth";
 
 export const NEGATIVE_WATCH_CADENCE_LABEL = "24시간 · 10분";
 export const NEGATIVE_WATCH_SHORT_LABEL = "10분 주기";
@@ -35,36 +36,34 @@ function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
   const latestRun = watchRuns[0] || {};
   const workflow = findWorkflowHealth(workflowHealth, "negative-watch.yml");
   const latestWorkflow = workflow?.latest || null;
-  const latestAt = latestWorkflow?.updatedAt || latestWorkflow?.createdAt || latestRun.scannedAt || "";
-  const latestRunDelay = minutesSince(latestRun.scannedAt);
-  const delay = minutesSince(latestAt);
-  const failedWorkflow = latestWorkflow && ["failure", "timed_out", "action_required"].includes(latestWorkflow.conclusion);
-  const runStatus = String(latestRun.rawStatus || "").toLowerCase();
-  const runMessage = String(latestRun.message || "").toLowerCase();
-  const normalEmptyScan = runMessage.includes("no new negative article");
-  const recentSuccessfulScan = latestRunDelay !== null
-    && latestRunDelay <= 25
-    && (normalEmptyScan || ["ok", "success", "completed", "scanned", "alert_sent"].includes(runStatus));
-  const failedRun = runStatus && !["ok", "success", "completed", "scanned", "alert_sent"].includes(runStatus) && !normalEmptyScan;
-  let status = "ok";
-  if ((failedWorkflow && !recentSuccessfulScan) || failedRun) status = "fail";
-  else if (delay === null) status = workflow?.status === "error" ? "warn" : "pending";
-  else if (delay > 45) status = "fail";
-  else if (delay > 25) status = "warn";
-  const detail = failedRun && latestRun.message
+  const watchState = deriveWatchHealthState({
+    runStatus: latestRun.rawStatus,
+    runMessage: latestRun.message,
+    runScannedAt: latestRun.scannedAt,
+    workflowStatus: latestWorkflow?.status,
+    workflowConclusion: latestWorkflow?.conclusion,
+    workflowCreatedAt: latestWorkflow?.createdAt,
+    workflowUpdatedAt: latestWorkflow?.updatedAt,
+    workflowSourceStatus: workflow?.status,
+  });
+  const detail = watchState.authoritativeRunFailure && latestRun.message
     ? `최근 감시 실패: ${latestRun.message}`
-    : normalEmptyScan || runMessage.includes("no new negative article")
-      ? "신규 부정기사 없음"
-      : delay === null
-        ? "최근 실행 확인 대기"
-        : `${formatRelativeMinutes(delay)} 전 실행`;
+    : watchState.authoritativeWorkflowFailure
+      ? "최근 GitHub 감시 실행 실패"
+      : watchState.emptyScan
+        ? "신규 부정기사 없음"
+        : watchState.workflowRunning
+          ? "감시 실행 중"
+          : watchState.delay === null
+            ? "최근 실행 확인 대기"
+            : `${formatRelativeMinutes(watchState.delay)} 전 실행`;
   const workflowText = latestWorkflow?.status === "in_progress" ? "실행 중" : formatWorkflowConclusion(latestWorkflow);
   const scope = latestRun.minutesBack ? `검사 ${latestRun.minutesBack}분` : "검사 10분";
   return {
     title: "부정기사 감시",
     icon: Radar,
-    status,
-    label: healthStatusLabel(status),
+    status: watchState.status,
+    label: healthStatusLabel(watchState.status),
     detail,
     meta: `${scope} · 신규 ${Number(latestRun.fresh || 0).toLocaleString("ko-KR")}건 · ${workflowText}`,
   };

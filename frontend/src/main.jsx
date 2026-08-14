@@ -1060,6 +1060,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     }),
     [operations, notifications, workflowHealth],
   );
+  const watchHealth = operationsHealth.items.find((item) => item.title === "부정기사 감시");
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
   const notificationHealth = operationsHealth.items.find((item) => item.title === "발송");
   const momentumRows = useMemo(() => buildDashboardMomentum(allArticles.length ? allArticles : articles), [allArticles, articles]);
@@ -1151,6 +1152,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         </section>
         <EditorialOperationsRail
           operationsHealth={operationsHealth}
+          watchHealth={watchHealth}
           notificationHealth={notificationHealth}
           reportHealth={reportHealth}
           analyzed={summary.analyzed}
@@ -1291,8 +1293,9 @@ function DashboardLeadSparkline({ rows = [] }) {
   );
 }
 
-function EditorialOperationsRail({ operationsHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
-  const systemOk = operationsHealth?.status === "ok";
+function EditorialOperationsRail({ operationsHealth, watchHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
+  const watchStatus = watchHealth?.status || "pending";
+  const systemOk = watchStatus === "ok";
   const reportSlots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
   const visibleReportSlots = (reportSlots.length
     ? reportSlots
@@ -1323,12 +1326,12 @@ function EditorialOperationsRail({ operationsHealth, notificationHealth, reportH
             <strong>감시 시스템</strong>
           </div>
           <strong className={`signal-operation-state ${systemOk ? "ok" : "check"}`}>
-            {systemOk ? "정상 운영" : operationsHealth?.label || "확인 필요"}
+            {systemOk ? "정상 운영" : watchHealth?.label || "확인 필요"}
           </strong>
           <div className="signal-operation-details">
             <span><small>모니터링</small><b>{Number(analyzed || 0).toLocaleString("ko-KR")}건</b></span>
             <span><small>감시 주기</small><b>{NEGATIVE_WATCH_SHORT_LABEL.replace(" 주기", "")}</b></span>
-            <span><small>이상 알림</small><b>{operationsHealth?.status === "fail" ? "확인" : "0건"}</b></span>
+            <span><small>이상 알림</small><b>{watchStatus === "fail" ? "확인" : "0건"}</b></span>
           </div>
         </section>
 
