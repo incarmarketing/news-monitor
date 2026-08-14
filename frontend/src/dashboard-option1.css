@@ -1063,14 +1063,17 @@
 }
 
 .dashboard-v5 .editorial-composition-donut > span {
-  display: inline-flex;
+  display: grid;
+  grid-auto-flow: column;
+  place-content: center;
   align-items: baseline;
-  justify-content: center;
+  gap: 2px;
   width: 62%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: #fff;
   color: #64748b;
+  line-height: 1;
 }
 
 .dashboard-v5 .editorial-composition-donut b {

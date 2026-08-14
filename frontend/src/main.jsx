@@ -1433,10 +1433,10 @@ function TodayComposition({ rows = [] }) {
   }).join(", ");
   return (
     <section className="editorial-composition-panel">
-      <div className="editorial-section-title"><i />오늘의 구성 <em>총 {total.toLocaleString("ko-KR")}건</em></div>
+      <div className="editorial-section-title"><i />오늘의 구성 <em>{total.toLocaleString("ko-KR")}건</em></div>
       <div className="editorial-composition-body">
         <div className="editorial-composition-donut" style={{ background: normalized.length ? `conic-gradient(${gradient})` : "#e8edf4" }}>
-          <span><small>총</small><b>{total.toLocaleString("ko-KR")}</b><em>건</em></span>
+          <span aria-label={`${total.toLocaleString("ko-KR")}건`}><b>{total.toLocaleString("ko-KR")}</b><em>건</em></span>
         </div>
         <table className="editorial-composition-table">
           <thead>
