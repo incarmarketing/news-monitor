@@ -1066,11 +1066,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   // Re-grouping it here repeated the most expensive classification path on
   // every dashboard mount and made route changes appear frozen.
   const issueRows = useMemo(() => {
-    const rows = [...(data.issues || [])];
-    const issueHasOwnMention = (issue) => [
-      issue,
-      ...(Array.isArray(issue?.relatedArticles) ? issue.relatedArticles : []),
-    ].some(isOwnArticle);
+    const rows = [...(data.issues || [])].map(normalizeMajorIssueGroup);
     if (issueSort === "latest") {
       rows.sort((a, b) => {
         const latestTime = (issue) => Math.max(
@@ -1080,13 +1076,15 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         return latestTime(b) - latestTime(a) || dashboardIssueScore(b) - dashboardIssueScore(a);
       });
     } else if (issueSort === "own") {
-      rows.sort((a, b) => Number(issueHasOwnMention(b)) - Number(issueHasOwnMention(a)) || dashboardIssueScore(b) - dashboardIssueScore(a));
+      rows.sort((a, b) => issueOwnPriorityLevel(b) - issueOwnPriorityLevel(a) || dashboardIssueScore(b) - dashboardIssueScore(a));
     } else if (issueSort === "spread") {
       rows.sort((a, b) => issueBundleCount(b) - issueBundleCount(a) || dashboardIssueScore(b) - dashboardIssueScore(a));
     } else {
       rows.sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
     }
-    return rows.slice(0, 5);
+    return rows
+      .slice(0, 5)
+      .map((issue) => (issueSort === "own" ? promoteOwnIssueRepresentative(issue) : issue));
   }, [data.issues, issueSort]);
   const refreshDashboard = () => onRefreshOperations?.({
     trigger: true,
@@ -1127,7 +1125,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
               >
                 <option value="risk">정렬: 리스크순</option>
                 <option value="latest">정렬: 최신순</option>
-                <option value="own">정렬: 당사 우선</option>
+                <option value="own">정렬: 당사 직접 언급</option>
                 <option value="spread">정렬: 확산순</option>
               </select>
             </div>
@@ -1224,13 +1222,13 @@ function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring }) {
               <Chip>{displayDashboardCategory(issue.category)}</Chip>
               <time>{issue.time || formatRelativeArticleTime(issue)}</time>
             </div>
-            <button type="button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
+            <DashboardIssueAction issue={issue} onOpenMonitoring={onOpenMonitoring}>
               <h2>{issue.title}</h2>
               {summary && <p className="editorial-lead-summary">{summary}</p>}
               <p className="editorial-lead-meta">
                 {String(issue.source || "언론사")} <span /> 관련 기사 {relatedCount.toLocaleString("ko-KR")}건 <span /> 당사 직접 부정 {ownNegativeCount}건
               </p>
-            </button>
+            </DashboardIssueAction>
           </div>
           <DashboardLeadSparkline rows={momentumRows} />
         </article>
@@ -1245,14 +1243,14 @@ function EditorialIssueList({ issues = [], onOpenMonitoring }) {
   return (
     <section className="editorial-issue-list" aria-label="후속 주요 이슈">
       {issues.map((issue, index) => (
-        <button type="button" key={`${issue.source}-${issue.title}`} onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
+        <DashboardIssueAction issue={issue} onOpenMonitoring={onOpenMonitoring} key={`${issue.source}-${issue.title}`}>
           <span className="editorial-issue-rank">{index + 2}</span>
           <span className={`editorial-issue-tone ${toneCssClass(issue.tone)}`}>{issue.tone || "중립"}</span>
           <span className="editorial-issue-category">{displayDashboardCategory(issue.category)}</span>
           <time>{issue.time || formatRelativeArticleTime(issue)}</time>
           <b>{issue.title}</b>
           <em>{dashboardDisplayScore(issue)}</em>
-        </button>
+        </DashboardIssueAction>
       ))}
       {!issues.length && <div className="editorial-issue-list-empty">추가 관찰 이슈가 없습니다.</div>}
     </section>
@@ -1833,6 +1831,75 @@ function normalizeMajorIssueGroup(issue = {}) {
     relatedSources: display.relatedSources || sources,
     representativeSource: display.representativeSource || display.source || sources[0] || "",
   };
+}
+
+function directOwnIssueMembers(issue = {}) {
+  return dedupeIssueMembers([
+    issue,
+    ...(Array.isArray(issue.relatedArticles) ? issue.relatedArticles : []),
+  ])
+    .filter(hasOwnArticleEvidence)
+    .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
+}
+
+function issueOwnPriorityLevel(issue = {}) {
+  if (hasOwnArticleEvidence(issue)) return 2;
+  return directOwnIssueMembers(issue).length ? 1 : 0;
+}
+
+function promoteOwnIssueRepresentative(issue = {}) {
+  const normalized = normalizeMajorIssueGroup(issue);
+  if (hasOwnArticleEvidence(normalized)) return normalized;
+  const representative = directOwnIssueMembers(normalized)[0];
+  if (!representative) return normalized;
+  return normalizeMajorIssueGroup({
+    ...normalized,
+    ...representative,
+    relatedArticles: normalized.relatedArticles,
+    relatedCount: normalized.relatedCount,
+    relatedSourceCount: normalized.relatedSourceCount,
+    relatedSources: normalized.relatedSources,
+    representativeSource: representative.source || normalized.representativeSource,
+  });
+}
+
+function directArticleHref(article = {}) {
+  const raw = article.raw && typeof article.raw === "object" ? article.raw : {};
+  const candidates = [
+    article.originalLink,
+    article.original_link,
+    article.originallink,
+    article.canonicalLink,
+    article.canonical_url,
+    article.link,
+    article.url,
+    raw.originalLink,
+    raw.original_link,
+    raw.originallink,
+    raw.link,
+    raw.url,
+  ];
+  for (const value of candidates) {
+    const href = extractFirstUrl(value);
+    if (/^https?:\/\//i.test(href)) return href;
+  }
+  return "";
+}
+
+function DashboardIssueAction({ issue = {}, onOpenMonitoring, children }) {
+  const href = directArticleHref(issue);
+  if (href) {
+    return (
+      <a className="editorial-issue-link" href={href} target="_blank" rel="noopener noreferrer" title="대표 기사 원문 열기">
+        {children}
+      </a>
+    );
+  }
+  return (
+    <button className="editorial-issue-link" type="button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))} title="연결된 기사 목록 보기">
+      {children}
+    </button>
+  );
 }
 
 function issueBundleCount(issue = {}) {
