@@ -62,6 +62,7 @@ import {
   NEGATIVE_WATCH_SHORT_LABEL,
 } from "./operationsHealth";
 import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
+import { calculateDashboardRiskIndex } from "./dashboardRisk";
 import slackMarkUrl from "./assets/slack-mark.png";
 import "./styles.css";
 import "./report.css";
@@ -1233,7 +1234,7 @@ function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring, emptyMe
               </p>
             </DashboardIssueAction>
           </div>
-          <DashboardLeadSparkline rows={momentumRows} />
+          <DashboardLeadSparkline issue={issue} rows={momentumRows} />
         </article>
       ) : (
         <article className="editorial-issue-empty">{emptyMessage || "오늘 기준으로 표시할 주요 이슈가 없습니다."}</article>
@@ -1260,14 +1261,13 @@ function EditorialIssueList({ issues = [], onOpenMonitoring }) {
   );
 }
 
-function DashboardLeadSparkline({ rows = [] }) {
+function DashboardLeadSparkline({ issue = {}, rows = [] }) {
   const chartRows = rows.slice(-7);
-  const latest = chartRows.at(-1)?.total || 0;
   return (
     <div className="editorial-lead-sparkline" aria-label="대표 이슈의 최근 7일 보도량">
       <div className="editorial-lead-sparkline-head">
         <span>리스크 지수</span>
-        <strong>{latest ? Math.min(99, 52 + latest * 8) : 18}</strong>
+        <strong>{dashboardRiskIndex(issue)}</strong>
       </div>
       <div className="editorial-lead-sparkline-chart">
         {chartRows.length
@@ -1515,11 +1515,7 @@ function dashboardLeadSummary(issue = {}) {
 }
 
 function dashboardDisplayScore(issue = {}) {
-  const raw = Number(issue.score || issue.classificationConfidence || 0);
-  if (raw > 0 && raw <= 1) return Math.round(raw * 100);
-  if (raw > 1 && raw <= 100) return Math.round(raw);
-  const base = { 부정: 88, 주의: 68, 긍정: 54, 중립: 32 }[issue.tone] || 24;
-  return Math.min(99, base + Math.min(10, issueBundleCount(issue) - 1) * 2);
+  return dashboardRiskIndex(issue);
 }
 
 function formatRelativeArticleTime(issue = {}) {
@@ -1867,24 +1863,29 @@ function promoteOwnIssueRepresentative(issue = {}) {
 }
 
 function directArticleHref(article = {}) {
-  const raw = article.raw && typeof article.raw === "object" ? article.raw : {};
-  const candidates = [
-    article.originalLink,
-    article.original_link,
-    article.originallink,
-    article.canonicalLink,
-    article.canonical_url,
-    article.link,
-    article.url,
-    raw.originalLink,
-    raw.original_link,
-    raw.originallink,
-    raw.link,
-    raw.url,
-  ];
-  for (const value of candidates) {
-    const href = extractFirstUrl(value);
-    if (/^https?:\/\//i.test(href)) return href;
+  const rows = [article, ...(Array.isArray(article.relatedArticles) ? article.relatedArticles : [])];
+  for (const row of rows) {
+    const raw = row.raw && typeof row.raw === "object" ? row.raw : {};
+    const candidates = [
+      row.originalLink,
+      row.original_link,
+      row.originallink,
+      row.original_url,
+      row.canonicalLink,
+      row.canonical_url,
+      row.link,
+      row.url,
+      raw.originalLink,
+      raw.original_link,
+      raw.originallink,
+      raw.original_url,
+      raw.link,
+      raw.url,
+    ];
+    for (const value of candidates) {
+      const href = extractFirstUrl(value);
+      if (/^https?:\/\//i.test(href)) return href;
+    }
   }
   return "";
 }
@@ -5134,14 +5135,33 @@ function normalizeIssueEntityKey(article = {}) {
 
 function dashboardIssueScore(issue = {}) {
   const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
-  const sponsorship = members.some(isOwnSponsoredSportsArticle) || ["브랜드/스폰서십", "스폰서십"].includes(issue.category);
-  const groupToneScore = Math.max(...members.map((item) => ({ 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[item.tone] || 0)));
-  const toneScore = Math.max(groupToneScore, { 부정: 420, 주의: 280, 긍정: 170, 중립: 90, 제외: 0 }[issue.tone] || 0);
-  const watchScore = members.some(isWatchIssueArticle) ? 1200 : 0;
-  const priorityScore = majorIssuePriorityScore(issue);
-  const ownScore = !sponsorship && members.some(isOwnArticle) ? 520 : 0;
-  const relatedScore = Math.min(Number(issue.relatedCount || 1), 6) * 24;
-  return watchScore + priorityScore + ownScore + toneScore + relatedScore + Number(issue.score || 0);
+  const riskIndex = dashboardRiskIndex(issue);
+  const directOwn = members.some(hasOwnArticleEvidence) || hasOwnArticleEvidence(issue);
+  const relevanceTieBreak = directOwn ? 60 : majorIssuePriorityScore(issue) / 20;
+  const spreadTieBreak = Math.min(Number(issue.relatedCount || members.length || 1), 6);
+  return riskIndex * 1000 + relevanceTieBreak + spreadTieBreak;
+}
+
+function dashboardRiskIndex(issue = {}) {
+  const members = Array.isArray(issue.relatedArticles) && issue.relatedArticles.length ? issue.relatedArticles : [issue];
+  const rows = members.includes(issue) ? members : [issue, ...members];
+  const tones = rows.map((item) => displayTone(item.tone));
+  const directOwnMembers = rows.filter(hasOwnArticleEvidence);
+  const policyContext = rows.some(isInsurancePolicyMajorIssueArticle)
+    || rows.some((item) => displayDashboardCategory(item.category) === "정책/규제");
+  const insuranceContext = rows.some(isGaInsuranceMajorIssueArticle)
+    || rows.some((item) => ["GA", "보험사", "경쟁사", "업계동향"].includes(displayDashboardCategory(item.category)));
+  return calculateDashboardRiskIndex({
+    tones,
+    directOwnMention: directOwnMembers.length > 0,
+    directOwnNegative: directOwnMembers.some((item) => displayTone(item.tone) === "부정"),
+    directOwnCaution: directOwnMembers.some((item) => displayTone(item.tone) === "주의"),
+    policyContext,
+    insuranceContext,
+    watch: rows.some(isWatchIssueArticle),
+    riskLevels: rows.map((item) => item.riskLevel || item.risk_level || item.risk),
+    relatedCount: Number(issue.relatedCount || members.length || 1),
+  });
 }
 
 function isMajorIssueCandidate(issue = {}) {
@@ -8350,24 +8370,23 @@ function buildDashboardBootstrapData(base, articles, liveConnected = false) {
 }
 
 function buildDashboardBootstrapIssues(rows = []) {
-  const toneWeight = { negative: 5, "부정": 5, caution: 4, "주의": 4, positive: 2, "긍정": 2, neutral: 1, "중립": 1 };
-  const categoryWeight = { own: 5, "당사": 5, regulator: 4, "정책/규제": 4, competitor: 3, "경쟁사": 3, industry: 2, "업계동향": 2 };
   return rows
     .filter((article) => {
       const tone = String(article?.tone || "").trim().toLowerCase();
       const category = String(article?.category || "").trim().toLowerCase();
       return article?.title && tone !== "exclude" && tone !== "제외" && category !== "exclude" && category !== "제외";
     })
-    .map((article, index) => ({
-      article,
-      index,
-      score: Number(article?.score || 0)
-        + (toneWeight[String(article?.tone || "").trim().toLowerCase()] || 0) * 10
-        + (categoryWeight[String(article?.category || "").trim().toLowerCase()] || 0) * 6,
-      time: Date.parse(article?.pubDate || article?.pub_date || article?.fullDate || "") || 0,
-    }))
+    .map((article, index) => {
+      const normalized = normalizeArticleDisplay(article);
+      return {
+        article: normalized,
+        index,
+        score: dashboardIssueScore(normalized),
+        time: Date.parse(article?.pubDate || article?.pub_date || article?.fullDate || "") || 0,
+      };
+    })
     .sort((a, b) => b.score - a.score || b.time - a.time || a.index - b.index)
-    .slice(0, 10)
+    .slice(0, 20)
     .map(({ article }) => article);
 }
 
