@@ -2477,7 +2477,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
 
 /* Composition: the chart owns share-of-total; the compact table owns counts. */
 .dashboard-v5 .editorial-composition-body {
-  grid-template-columns: minmax(164px, 1.35fr) minmax(108px, .65fr);
+  grid-template-columns: minmax(164px, 1fr) 126px;
   gap: 6px;
 }
 
@@ -2562,7 +2562,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-track {
 
 @media (min-width: 1241px) and (max-height: 980px) {
   .dashboard-v5 .editorial-composition-body {
-    grid-template-columns: minmax(132px, 1.2fr) minmax(102px, .8fr);
+    grid-template-columns: minmax(140px, 1fr) 122px;
     gap: 4px;
   }
 
@@ -2577,7 +2577,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-track {
 
 @media (max-width: 1240px) {
   .dashboard-v5 .editorial-composition-body {
-    grid-template-columns: minmax(138px, 1.2fr) minmax(108px, .8fr);
+    grid-template-columns: minmax(138px, 1fr) 122px;
   }
 
   .dashboard-v5 .editorial-composition-donut {
@@ -2587,7 +2587,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-track {
 
 @media (max-width: 560px) {
   .dashboard-v5 .editorial-composition-body {
-    grid-template-columns: minmax(132px, 1.15fr) minmax(104px, .85fr);
+    grid-template-columns: minmax(132px, 1fr) 118px;
     gap: 4px;
   }
 
