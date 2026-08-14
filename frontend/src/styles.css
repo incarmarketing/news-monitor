@@ -16293,7 +16293,6 @@ html[data-theme="dim"] .dashboard-v5 .editorial-lead-copy h2 { color: #0f1f35; }
   color: #667085;
   text-align: left;
 }
-.dashboard-v5 .editorial-header-actions .editorial-filter-button { width: 36px; padding: 0; }
 .dashboard-v5 .editorial-header-actions .editorial-theme-toggle { grid-template-columns: repeat(2, 25px); min-height: 34px; }
 .dashboard-v5 .editorial-theme-toggle > span { height: 26px; }
 
@@ -16437,8 +16436,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-lead-copy h2 { color: #0f1f35; }
 
 @media (max-width: 860px) {
   .dashboard-v5 .editorial-header-copy > p { display: none; }
-  .dashboard-v5 .editorial-header-actions .editorial-article-search,
-  .dashboard-v5 .editorial-header-actions .editorial-filter-button { width: 34px; padding: 0; font-size: 0; }
+  .dashboard-v5 .editorial-header-actions .editorial-article-search { width: 34px; padding: 0; font-size: 0; }
   .dashboard-v5 .editorial-issue-list > button { grid-template-columns: 29px 40px minmax(0,1fr) 28px; min-height: 36px; }
   .dashboard-v5 .editorial-issue-category,
   .dashboard-v5 .editorial-issue-list time { display: none; }

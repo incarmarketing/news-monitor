@@ -23,7 +23,6 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  SlidersHorizontal,
   Sun,
   TrendingDown,
   Users,
@@ -1180,7 +1179,6 @@ function DashboardEditorialHeader({ data, status, onOpenMonitoring, onRefresh, i
       <div className="editorial-header-actions">
         <button type="button" onClick={onRefresh} disabled={isLoading}><RefreshCw />{isLoading ? "갱신 중" : "새로고침"}</button>
         <button type="button" className="editorial-article-search" onClick={() => onOpenMonitoring?.({})}>기사 검색 <Search /></button>
-        <button type="button" className="editorial-filter-button" onClick={() => onOpenMonitoring?.({})} aria-label="기사 필터"><SlidersHorizontal /></button>
         <button
           type="button"
           className="editorial-theme-toggle"
