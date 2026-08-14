@@ -1174,7 +1174,6 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
             emptyMessage={issueSort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : undefined}
           />
           {issueRows.length > 1 && <EditorialIssueList issues={issueRows.slice(1)} onOpenMonitoring={onOpenMonitoring} />}
-          <button type="button" className="signal-all-issues" onClick={() => onOpenMonitoring?.({})}>전체 기사 보기 <ChevronRight /></button>
         </section>
         <EditorialOperationsRail
           operationsHealth={operationsHealth}

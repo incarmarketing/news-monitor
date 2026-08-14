@@ -419,7 +419,7 @@
 .dashboard-v5 .signal-priority-board {
   scroll-margin-top: 72px;
   display: grid;
-  grid-template-rows: 44px 164px minmax(0, 1fr) 32px;
+  grid-template-rows: 44px 196px minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -495,7 +495,7 @@
   grid-column: auto;
   grid-row: 2;
   width: auto;
-  height: 164px;
+  height: 196px;
   min-height: 0;
   padding: 0 16px;
   overflow: hidden;
@@ -512,8 +512,8 @@
   gap: 20px;
   align-items: stretch;
   width: 100%;
-  height: 164px;
-  min-height: 164px;
+  height: 196px;
+  min-height: 196px;
   padding: 13px 0;
   border-bottom: 1px solid var(--dashboard-line);
 }
@@ -584,16 +584,14 @@
 }
 
 .dashboard-v5 .editorial-lead-copy h2 {
-  display: -webkit-box;
-  overflow: hidden;
+  display: block;
+  overflow: visible;
   margin: 0 0 5px;
   color: var(--dashboard-ink);
   font-size: 21px;
   line-height: 1.3;
   font-weight: 950;
   letter-spacing: 0;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .dashboard-v5 .editorial-lead-summary {
@@ -746,26 +744,6 @@
   font-weight: 900;
   text-align: right;
   white-space: nowrap;
-}
-
-.dashboard-v5 .signal-all-issues {
-  grid-row: 4;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-height: 32px;
-  height: 32px;
-  padding: 0 16px;
-  border: 0;
-  background: #fff;
-  color: #2563eb;
-  font-size: 11.5px;
-  font-weight: 850;
-}
-
-.dashboard-v5 .signal-all-issues svg {
-  width: 13px;
-  height: 13px;
 }
 
 .dashboard-v5 .signal-operations-rail {
@@ -1150,8 +1128,7 @@ html[data-theme="dim"] .dashboard-workspace.dashboard-v5 {
 html[data-theme="dim"] .dashboard-v5 .editorial-header-actions button,
 html[data-theme="dim"] .dashboard-v5 .signal-panel-tools > button,
 html[data-theme="dim"] .dashboard-v5 .signal-panel-tools > select,
-html[data-theme="dim"] .dashboard-v5 .signal-operation-card.slack > button,
-html[data-theme="dim"] .dashboard-v5 .signal-all-issues {
+html[data-theme="dim"] .dashboard-v5 .signal-operation-card.slack > button {
   background: #f3f6f9;
 }
 
@@ -1172,13 +1149,13 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
   }
 
   .dashboard-v5 .signal-priority-board {
-    grid-template-rows: 42px 148px minmax(0, 1fr) 30px;
+    grid-template-rows: 42px 178px minmax(0, 1fr);
   }
 
   .dashboard-v5 .editorial-lead-feature,
   .dashboard-v5 .editorial-lead-issue {
-    height: 148px;
-    min-height: 148px;
+    height: 178px;
+    min-height: 178px;
   }
 
   .dashboard-v5 .editorial-issue-list {
@@ -1221,9 +1198,9 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
   .dashboard-v5 .editorial-kpi-strip button > svg { width: 33px; height: 33px; }
   .dashboard-v5 .editorial-kpi-strip b { font-size: 25px; }
   .dashboard-v5 .editorial-kpi-strip em { font-size: 10.5px; }
-  .dashboard-v5 .signal-priority-board { grid-template-rows: 39px 120px minmax(0, 1fr) 27px; }
+  .dashboard-v5 .signal-priority-board { grid-template-rows: 39px 147px minmax(0, 1fr); }
   .dashboard-v5 .editorial-lead-feature,
-  .dashboard-v5 .editorial-lead-issue { height: 120px; min-height: 120px; }
+  .dashboard-v5 .editorial-lead-issue { height: 147px; min-height: 147px; }
   .dashboard-v5 .editorial-lead-copy h2 { font-size: 18px; }
   .dashboard-v5 .editorial-lead-summary { display: none; }
   .dashboard-v5 .editorial-lead-sparkline-chart { min-height: 76px; }
@@ -1292,7 +1269,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
 
   .dashboard-v5 .signal-command-grid,
   .dashboard-v5 .editorial-analysis-grid { grid-template-columns: minmax(0, 1fr); }
-  .dashboard-v5 .signal-priority-board { grid-template-rows: 42px auto auto 30px; }
+  .dashboard-v5 .signal-priority-board { grid-template-rows: 42px auto auto; }
   .dashboard-v5 .editorial-lead-feature,
   .dashboard-v5 .editorial-lead-issue { height: auto; min-height: 140px; }
   .dashboard-v5 .editorial-lead-issue { grid-template-columns: minmax(0, 1fr); }
@@ -1569,7 +1546,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
   }
 
   .dashboard-v5 .signal-priority-board {
-    grid-template-rows: 41px 164px minmax(0, 1fr) 28px;
+    grid-template-rows: 41px 192px minmax(0, 1fr);
   }
 
   .dashboard-v5 .signal-panel-heading {
@@ -1579,8 +1556,8 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
 
   .dashboard-v5 .editorial-lead-feature,
   .dashboard-v5 .editorial-lead-issue {
-    height: 164px;
-    min-height: 164px;
+    height: 192px;
+    min-height: 192px;
   }
 
   .dashboard-v5 .editorial-lead-feature {
@@ -1620,11 +1597,6 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
 
   .dashboard-v5 .editorial-issue-list > .editorial-issue-link:nth-child(n + 5) {
     display: none;
-  }
-
-  .dashboard-v5 .signal-all-issues {
-    height: 28px;
-    min-height: 28px;
   }
 
   .dashboard-v5 .signal-operations-rail {
@@ -1920,8 +1892,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
     gap: 8px;
   }
 
-  .dashboard-v5 .editorial-issue-list em,
-  .dashboard-v5 .signal-all-issues {
+  .dashboard-v5 .editorial-issue-list em {
     font-size: 12px;
   }
 
