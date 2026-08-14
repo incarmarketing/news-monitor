@@ -221,7 +221,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
   const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
   const owner = Deno.env.get("GITHUB_OWNER") || "incarmarketing";
   const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
-  const workflow = sanitizeWorkflow(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "news-briefing.yml");
+  const workflow = sanitizeWorkflow(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "dashboard-refresh.yml");
   const ref = Deno.env.get("GITHUB_REF") || "main";
   const periodReports = sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
   const sendSlack = payload.send_slack === true
@@ -379,7 +379,9 @@ async function recordDashboardDispatch(
 function sanitizeWorkflow(value: unknown) {
   const workflow = String(value || "").trim();
   if (workflow === "regulator-releases.yml") return "pages-dashboard.yml";
-  return ["news-briefing.yml", "pages-dashboard.yml"].includes(workflow) ? workflow : "news-briefing.yml";
+  return ["dashboard-refresh.yml", "news-briefing.yml", "pages-dashboard.yml"].includes(workflow)
+    ? workflow
+    : "dashboard-refresh.yml";
 }
 
 function workflowInputs(
@@ -391,7 +393,7 @@ function workflowInputs(
   dashboardSend = false,
   reportMonth = "",
 ) {
-  if (workflow === "pages-dashboard.yml") return {};
+  if (["dashboard-refresh.yml", "pages-dashboard.yml"].includes(workflow)) return {};
   const inputs: Record<string, string> = {
     period_reports: periodReports,
     send_slack: String(sendSlack),

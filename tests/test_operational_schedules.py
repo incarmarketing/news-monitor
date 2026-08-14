@@ -43,6 +43,14 @@ class OperationalScheduleTests(unittest.TestCase):
         self.assertNotIn('      - "period_reports/**"', pages)
         self.assertNotIn("gh workflow run pages-dashboard.yml", briefing)
 
+    def test_manual_dashboard_refresh_skips_report_and_pages_pipeline(self) -> None:
+        workflow = (ROOT / ".github/workflows/dashboard-refresh.yml").read_text(encoding="utf-8")
+        self.assertIn("python refresh_dashboard_news.py", workflow)
+        self.assertIn("REPORT_SLOT: live", workflow)
+        self.assertNotIn("npm run build", workflow)
+        self.assertNotIn("send_slack", workflow)
+        self.assertNotIn("pages", workflow.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

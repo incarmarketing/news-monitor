@@ -12,7 +12,13 @@ def current_window(now: datetime | None = None) -> dict:
     current = now.astimezone(KST) if now else datetime.now(KST)
     slot = normalize_slot(os.getenv("REPORT_SLOT", ""), current)
 
-    if slot == "08":
+    if slot == "live":
+        start = current.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = current
+        label = "당일 00:00~현재"
+        short_label = "당일 현재 기준"
+        report_label = "수동 기사 갱신"
+    elif slot == "08":
         start = (current - timedelta(days=1)).replace(hour=18, minute=0, second=0, microsecond=0)
         end = current.replace(hour=8, minute=0, second=0, microsecond=0)
         label = "전일 18:00~당일 08:00"
@@ -42,7 +48,7 @@ def current_window(now: datetime | None = None) -> dict:
 
 
 def normalize_slot(value: str, current: datetime) -> str:
-    if value in {"08", "13", "18"}:
+    if value in {"08", "13", "18", "live"}:
         return value
     if current.hour < 13:
         return "08"

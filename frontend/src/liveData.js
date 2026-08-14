@@ -296,7 +296,7 @@ export async function triggerNewsCollection(payload = {}) {
   const config = await loadSupabaseConfig();
   const session = getStoredSession();
   return dashboardApi(config, session, "trigger_collection", {
-    workflow: payload.workflow || "news-briefing.yml",
+    workflow: payload.workflow || "dashboard-refresh.yml",
     period_reports: payload.period_reports || "none",
     send_slack: payload.send_slack === true,
     force_slack_send: payload.force_slack_send === true,

@@ -126,6 +126,7 @@ const GITHUB_REPO = "incarmarketing/news-monitor";
 const PRESS_INFLUENCE_LIMIT = 6;
 const WORKFLOW_HEALTH_TARGETS = [
   { id: "negative-watch.yml", label: "부정기사 감시" },
+  { id: "dashboard-refresh.yml", label: "기사 수집 갱신" },
   { id: "news-briefing.yml", label: "보고서 생성·발송" },
   { id: "regulator-releases.yml", label: "금융당국 보도자료" },
   { id: "pages-dashboard.yml", label: "대시보드 배포" },
@@ -315,6 +316,7 @@ function App() {
   const activeSectionRef = useRef(initialRoute.section);
   const loadedDataProfiles = useRef(new Set());
   const loadingDataProfiles = useRef(new Set());
+  const pendingRefreshOptions = useRef(null);
 
   const rememberArticleProfile = (profile, snapshot) => {
     const rows = Array.isArray(snapshot?.articles) ? snapshot.articles : [];
@@ -356,12 +358,19 @@ function App() {
     const requestedTrigger = options.trigger === true;
     const session = getStoredSession();
     const canTriggerWorkflow = Boolean(session?.session_token);
+    if (requestedTrigger && !canTriggerWorkflow) {
+      pendingRefreshOptions.current = options;
+      setWorking(false);
+      setWorkLabel("");
+      window.dispatchEvent(new CustomEvent("news-monitor:login-required"));
+      return;
+    }
     const trigger = requestedTrigger && canTriggerWorkflow;
     const workflows = Array.isArray(options.workflows) && options.workflows.length
       ? options.workflows
       : options.workflow === "all"
         ? ["news-briefing.yml", "regulator-releases.yml"]
-        : [options.workflow || "news-briefing.yml"];
+        : [options.workflow || "dashboard-refresh.yml"];
     const label = options.label || (workflows.length > 1
       ? "전체 운영 갱신"
       : workflows[0] === "regulator-releases.yml"
@@ -379,7 +388,7 @@ function App() {
       status: trigger ? current.status : "loading",
       message: trigger ? `${label} 요청 중` : "연결 확인 중",
     }));
-    let triggerMessage = requestedTrigger && !canTriggerWorkflow ? `${label} 표시 데이터 새로고침` : "";
+    let triggerMessage = "";
     let triggerFailed = false;
     if (trigger) {
       try {
@@ -414,8 +423,9 @@ function App() {
       return;
     }
     if (trigger) {
-      const maxAttempts = workflows.includes("news-briefing.yml") ? 24 : 12;
-      const intervalMs = workflows.includes("news-briefing.yml") ? 15000 : 10000;
+      const isDashboardRefresh = workflows.includes("dashboard-refresh.yml");
+      const maxAttempts = workflows.includes("news-briefing.yml") ? 24 : isDashboardRefresh ? 36 : 12;
+      const intervalMs = workflows.includes("news-briefing.yml") ? 15000 : isDashboardRefresh ? 5000 : 10000;
       let latestData = next;
       let changed = operationsFingerprint(next) !== beforeFingerprint;
       let finishedConclusion = "";
@@ -952,10 +962,15 @@ function App() {
       )}
       <LoginDialog
         open={loginOpen}
-        onClose={() => setLoginOpen(false)}
+        onClose={() => {
+          pendingRefreshOptions.current = null;
+          setLoginOpen(false);
+        }}
         onLoggedIn={async () => {
           setLoginOpen(false);
-          await refreshOperations();
+          const pendingOptions = pendingRefreshOptions.current;
+          pendingRefreshOptions.current = null;
+          await refreshOperations(pendingOptions || {});
         }}
       />
     </div>
@@ -1100,9 +1115,9 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   }, [data.issues, issueSort]);
   const refreshDashboard = () => onRefreshOperations?.({
     trigger: true,
-    workflow: "all",
-    source: "overview_operations",
-    label: "전체 운영 갱신",
+    workflow: "dashboard-refresh.yml",
+    source: "dashboard_manual_refresh",
+    label: "기사 수집 갱신",
   });
   const focusRiskIssues = useCallback(() => {
     setIssueSort("risk");
