@@ -1076,15 +1076,17 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         return latestTime(b) - latestTime(a) || dashboardIssueScore(b) - dashboardIssueScore(a);
       });
     } else if (issueSort === "own") {
-      rows.sort((a, b) => issueOwnPriorityLevel(b) - issueOwnPriorityLevel(a) || dashboardIssueScore(b) - dashboardIssueScore(a));
+      return rows
+        .filter((issue) => issueOwnPriorityLevel(issue) > 0)
+        .sort((a, b) => issueOwnPriorityLevel(b) - issueOwnPriorityLevel(a) || dashboardIssueScore(b) - dashboardIssueScore(a))
+        .slice(0, 5)
+        .map(promoteOwnIssueRepresentative);
     } else if (issueSort === "spread") {
       rows.sort((a, b) => issueBundleCount(b) - issueBundleCount(a) || dashboardIssueScore(b) - dashboardIssueScore(a));
     } else {
       rows.sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || articleTimeValue(b) - articleTimeValue(a));
     }
-    return rows
-      .slice(0, 5)
-      .map((issue) => (issueSort === "own" ? promoteOwnIssueRepresentative(issue) : issue));
+    return rows.slice(0, 5);
   }, [data.issues, issueSort]);
   const refreshDashboard = () => onRefreshOperations?.({
     trigger: true,
@@ -1134,8 +1136,9 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
             issue={issueRows[0]}
             allArticles={allArticles.length ? allArticles : articles}
             onOpenMonitoring={onOpenMonitoring}
+            emptyMessage={issueSort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : undefined}
           />
-          <EditorialIssueList issues={issueRows.slice(1)} onOpenMonitoring={onOpenMonitoring} />
+          {issueRows.length > 1 && <EditorialIssueList issues={issueRows.slice(1)} onOpenMonitoring={onOpenMonitoring} />}
           <button type="button" className="signal-all-issues" onClick={() => onOpenMonitoring?.({})}>전체 기사 보기 <ChevronRight /></button>
         </section>
         <EditorialOperationsRail
@@ -1204,7 +1207,7 @@ function DashboardKpiStrip({ summary = {}, onOpenMonitoring }) {
   );
 }
 
-function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring }) {
+function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring, emptyMessage }) {
   const momentumRows = useMemo(() => buildLeadIssueMomentum(issue, allArticles.slice(0, 260)), [issue, allArticles]);
   const relatedCount = issue ? issueBundleCount(issue) : 0;
   const ownNegativeCount = issue?.tone === "부정" && isOwnArticle(issue) ? 1 : 0;
@@ -1233,7 +1236,7 @@ function EditorialLeadIssue({ issue, allArticles = [], onOpenMonitoring }) {
           <DashboardLeadSparkline rows={momentumRows} />
         </article>
       ) : (
-        <article className="editorial-issue-empty">오늘 기준으로 표시할 주요 이슈가 없습니다.</article>
+        <article className="editorial-issue-empty">{emptyMessage || "오늘 기준으로 표시할 주요 이슈가 없습니다."}</article>
       )}
     </section>
   );
