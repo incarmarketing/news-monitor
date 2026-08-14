@@ -2482,7 +2482,7 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
 }
 
 .dashboard-v5 .editorial-composition-donut {
-  width: min(176px, 100%);
+  width: min(190px, 100%);
   aspect-ratio: 1;
   overflow: visible;
   border-radius: 0;
@@ -2577,11 +2577,28 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-track {
   }
 
   .dashboard-v5 .editorial-composition-donut {
-    width: min(138px, 100%);
+    width: min(164px, 100%);
   }
 
   .dashboard-v5 .editorial-composition-percent {
     font-size: 12px;
+  }
+}
+
+@media (min-width: 1241px) and (max-height: 820px) {
+  .dashboard-workspace.dashboard-v5 {
+    grid-template-rows: 48px 82px minmax(314px, 1fr) 204px;
+  }
+
+  .dashboard-v5 .editorial-analysis-grid,
+  .dashboard-v5 .editorial-momentum-panel,
+  .dashboard-v5 .editorial-composition-panel {
+    height: 204px;
+    min-height: 204px;
+  }
+
+  .dashboard-v5 .editorial-composition-donut {
+    width: min(158px, 100%);
   }
 }
 

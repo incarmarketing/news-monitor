@@ -62,6 +62,7 @@ import {
 } from "./operationsHealth";
 import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
 import {
+  buildDashboardCompositionRows,
   calculateDailyDashboardRiskIndex,
   calculateDashboardRiskIndex,
   classifyDashboardArticleSeries,
@@ -1068,6 +1069,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
   const notificationHealth = operationsHealth.items.find((item) => item.title === "발송");
   const momentumRows = useMemo(() => buildDashboardMomentum(allArticles.length ? allArticles : articles), [allArticles, articles]);
+  const compositionRows = useMemo(() => buildDashboardCompositionRows(momentumRows), [momentumRows]);
   // composePeriodData already returns a ranked, deduplicated issue list.
   // Re-grouping it here repeated the most expensive classification path on
   // every dashboard mount and made route changes appear frozen.
@@ -1166,7 +1168,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
 
       <section className="editorial-analysis-grid">
         <IssueMomentumChart rows={momentumRows} />
-        <TodayComposition rows={data.categoryFlow} />
+        <TodayComposition rows={compositionRows} />
       </section>
       <footer className="editorial-dashboard-footer">© 2026 INCAR Monitoring System. All rights reserved.</footer>
     </main>

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildDashboardCompositionRows,
   calculateDailyDashboardRiskIndex,
   calculateDashboardRiskIndex,
   classifyDashboardArticleSeries,
@@ -92,4 +93,19 @@ test("company and regulation classifications take precedence over GA context", (
     aiContext: { category: "regulation", ownMentioned: false },
     title: "GA 판매수수료 제도 개편",
   }), "regulation");
+});
+
+test("composition rows reuse the latest momentum bucket without reclassifying", () => {
+  const rows = buildDashboardCompositionRows([
+    { own: 2, ga: 4, insurance: 7, regulation: 3 },
+    { own: 1, ga: 9, insurance: 12, regulation: 17 },
+  ]);
+
+  assert.deepEqual(rows, [
+    { name: "당사", value: 1 },
+    { name: "GA", value: 9 },
+    { name: "보험사", value: 12 },
+    { name: "정책/규제", value: 17 },
+  ]);
+  assert.equal(rows.reduce((sum, item) => sum + item.value, 0), 39);
 });

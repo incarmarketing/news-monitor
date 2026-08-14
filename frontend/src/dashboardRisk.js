@@ -53,6 +53,21 @@ export function classifyDashboardArticleSeries(article = {}) {
 }
 
 /**
+ * Converts the latest momentum bucket into the composition chart's rows.
+ * Both dashboard panels must consume this same aggregate so category counts
+ * cannot diverge when stored labels and canonical AI context disagree.
+ */
+export function buildDashboardCompositionRows(momentumRows = []) {
+  const latest = Array.isArray(momentumRows) ? momentumRows.at(-1) || {} : {};
+  return [
+    { name: "당사", value: Number(latest.own || 0) },
+    { name: "GA", value: Number(latest.ga || 0) },
+    { name: "보험사", value: Number(latest.insurance || 0) },
+    { name: "정책/규제", value: Number(latest.regulation || 0) },
+  ].filter((item) => item.value > 0);
+}
+
+/**
  * Calculates an operational risk index, not an AI confidence score.
  * Tone and direct company impact deliberately dominate article volume.
  */
