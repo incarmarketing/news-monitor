@@ -1956,7 +1956,7 @@ function normalizeCategory(value) {
   if (!text) return "미분류";
   if (["own", "company"].includes(canonical) || /당사|인카/.test(text)) return "당사";
   if (["regulation", "policy"].includes(canonical) || /정책|규제|당국|수수료/.test(text)) return "정책/규제";
-  if (["competitor"].includes(canonical)) return "보험사";
+  if (["competitor"].includes(canonical)) return "GA";
   if (["industry", "market"].includes(canonical) || /업계|동향|시장/.test(text)) return "업계동향";
   if (["other"].includes(canonical)) return "기타";
   if (["exclude", "noise"].includes(canonical) || /제외|노이즈/.test(text)) return "제외";

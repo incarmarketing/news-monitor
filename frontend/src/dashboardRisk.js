@@ -20,6 +20,39 @@ function hasRiskLevel(levels, expected) {
 }
 
 /**
+ * Maps normalized article records to the four dashboard momentum series.
+ * Canonical AI context wins over localized labels so competitor records do
+ * not disappear into the generic insurer series after UI normalization.
+ */
+export function classifyDashboardArticleSeries(article = {}) {
+  const canonical = String(article?.aiContext?.category || "").trim().toLowerCase();
+  const category = String(article?.category || "").trim();
+  const context = `${article?.title || ""} ${article?.keyword || ""} ${article?.summary || ""}`;
+
+  if (
+    article?.ownMentioned === true
+    || article?.aiContext?.ownMentioned === true
+    || canonical === "own"
+    || /당사/.test(category)
+  ) return "own";
+
+  if (
+    canonical === "regulation"
+    || canonical === "policy"
+    || /정책|규제|금융당국/.test(category)
+  ) return "regulation";
+
+  if (
+    canonical === "competitor"
+    || canonical === "ga"
+    || /GA|경쟁/.test(category)
+    || /(?:^|\s)GA(?:\s|$)|법인보험대리점|보험대리점|글로벌금융판매|지에이코리아|에이플러스에셋|영진에셋|메가(?:금융|인포)?에셋/.test(context)
+  ) return "ga";
+
+  return "insurance";
+}
+
+/**
  * Calculates an operational risk index, not an AI confidence score.
  * Tone and direct company impact deliberately dominate article volume.
  */

@@ -61,7 +61,11 @@ import {
   NEGATIVE_WATCH_SHORT_LABEL,
 } from "./operationsHealth";
 import { articleMatchesDeepLink, readInitialRoute } from "./routeUtils";
-import { calculateDailyDashboardRiskIndex, calculateDashboardRiskIndex } from "./dashboardRisk";
+import {
+  calculateDailyDashboardRiskIndex,
+  calculateDashboardRiskIndex,
+  classifyDashboardArticleSeries,
+} from "./dashboardRisk";
 import slackMarkUrl from "./assets/slack-mark.png";
 import "./styles.css";
 import "./report.css";
@@ -1260,7 +1264,13 @@ function EditorialIssueList({ issues = [], onOpenMonitoring }) {
           <span className="editorial-issue-category">{displayDashboardCategory(issue.category)}</span>
           <time>{issue.time || formatRelativeArticleTime(issue)}</time>
           <b>{issue.title}</b>
-          <em>{dashboardDisplayScore(issue)}</em>
+          <em
+            className="editorial-issue-score"
+            title="논조·당사 영향·정책 관련성을 반영한 운영 리스크 지수"
+            aria-label={`리스크 지수 ${dashboardDisplayScore(issue)}점`}
+          >
+            위험도 {dashboardDisplayScore(issue)}
+          </em>
         </DashboardIssueAction>
       ))}
       {!issues.length && <div className="editorial-issue-list-empty">추가 관찰 이슈가 없습니다.</div>}
@@ -1470,18 +1480,36 @@ const dashboardMomentumSeries = [
 function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, compact = false, ariaLabel = "기사량 추이" }) {
   const width = compact ? 320 : 760;
   const height = compact ? 118 : 220;
-  const padding = compact ? { top: 18, right: 14, bottom: 24, left: 12 } : { top: 18, right: 24, bottom: 34, left: 38 };
+  const padding = compact ? { top: 18, right: 14, bottom: 24, left: 12 } : { top: 22, right: 24, bottom: 34, left: 50 };
   const values = rows.flatMap((row) => series.map((item) => Number(row[item.key] || 0)));
   const maxValue = Math.max(1, ...values);
+  const roughStep = maxValue / 4;
+  const stepPower = 10 ** Math.floor(Math.log10(Math.max(1, roughStep)));
+  const normalizedStep = roughStep / stepPower;
+  const tickStep = Math.max(1, (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * stepPower);
+  const scaleMax = compact ? maxValue : Math.max(tickStep, Math.ceil(maxValue / tickStep) * tickStep);
+  const yTicks = compact
+    ? []
+    : Array.from({ length: Math.floor(scaleMax / tickStep) + 1 }, (_, index) => index * tickStep);
   const x = (index) => padding.left + (index * (width - padding.left - padding.right)) / Math.max(1, rows.length - 1);
-  const y = (value) => padding.top + (1 - Number(value || 0) / maxValue) * (height - padding.top - padding.bottom);
-  const gridValues = compact ? [0.5] : [0, 0.33, 0.66, 1];
+  const y = (value) => padding.top + (1 - Number(value || 0) / scaleMax) * (height - padding.top - padding.bottom);
   return (
     <svg className="dashboard-svg-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={ariaLabel}>
-      {gridValues.map((ratio) => {
-        const gridY = padding.top + ratio * (height - padding.top - padding.bottom);
-        return <line key={ratio} x1={padding.left} x2={width - padding.right} y1={gridY} y2={gridY} className="dashboard-chart-grid" />;
-      })}
+      {compact
+        ? <line x1={padding.left} x2={width - padding.right} y1={y(scaleMax / 2)} y2={y(scaleMax / 2)} className="dashboard-chart-grid" />
+        : (
+          <>
+            <text x="2" y="12" className="dashboard-chart-axis-unit">기사 수(건)</text>
+            {yTicks.map((tick) => (
+              <g key={tick}>
+                <line x1={padding.left} x2={width - padding.right} y1={y(tick)} y2={y(tick)} className="dashboard-chart-grid" />
+                <text x={padding.left - 8} y={y(tick) + 4} textAnchor="end" className="dashboard-chart-y-label">
+                  {Number(tick).toLocaleString("ko-KR")}
+                </text>
+              </g>
+            ))}
+          </>
+        )}
       {series.map((item) => {
         const points = rows.map((row, index) => `${x(index)},${y(row[item.key])}`).join(" ");
         return (
@@ -1574,7 +1602,7 @@ function buildDashboardMomentum(articles = []) {
     const date = rowDateKey(article);
     const bucket = buckets.get(date);
     if (!bucket) return;
-    const series = dashboardArticleSeries(article);
+    const series = classifyDashboardArticleSeries(article);
     bucket[series] += 1;
 
     const riskKey = `${date}|${issueMemberKey(article) || `${normalizeGroupTitle(article.title || "")}|${article.source || ""}`}`;
@@ -1595,13 +1623,6 @@ function buildDashboardMomentum(articles = []) {
     ...bucket,
     riskIndex: calculateDailyDashboardRiskIndex(bucket),
   }));
-}
-
-function dashboardArticleSeries(article = {}) {
-  if (article?.ownMentioned === true || article?.aiContext?.ownMentioned === true || /당사/.test(String(article.category || ""))) return "own";
-  if (/정책|규제|금융당국/.test(String(article.category || ""))) return "regulation";
-  if (/GA|경쟁/.test(String(article.category || ""))) return "ga";
-  return "insurance";
 }
 
 function displayDashboardCategory(value = "") {

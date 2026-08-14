@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateDailyDashboardRiskIndex, calculateDashboardRiskIndex } from "../src/dashboardRisk.js";
+import {
+  calculateDailyDashboardRiskIndex,
+  calculateDashboardRiskIndex,
+  classifyDashboardArticleSeries,
+} from "../src/dashboardRisk.js";
 
 test("neutral insurer performance does not become a high risk issue", () => {
   const score = calculateDashboardRiskIndex({ tones: ["중립"], insuranceContext: true, relatedCount: 1 });
@@ -58,4 +62,34 @@ test("daily risk index is capped at 100", () => {
     industryCaution: 10,
   });
   assert.equal(score, 100);
+});
+
+test("canonical competitor records are counted in the GA momentum series", () => {
+  const series = classifyDashboardArticleSeries({
+    category: "보험사",
+    aiContext: { category: "competitor", ownMentioned: false },
+    title: "GA 상반기 실적 비교",
+  });
+  assert.equal(series, "ga");
+});
+
+test("industry records remain in the insurer momentum series", () => {
+  const series = classifyDashboardArticleSeries({
+    category: "업계동향",
+    aiContext: { category: "industry", ownMentioned: false },
+  });
+  assert.equal(series, "insurance");
+});
+
+test("company and regulation classifications take precedence over GA context", () => {
+  assert.equal(classifyDashboardArticleSeries({
+    category: "당사",
+    aiContext: { category: "own", ownMentioned: true },
+    title: "인카금융서비스 GA 성과",
+  }), "own");
+  assert.equal(classifyDashboardArticleSeries({
+    category: "정책/규제",
+    aiContext: { category: "regulation", ownMentioned: false },
+    title: "GA 판매수수료 제도 개편",
+  }), "regulation");
 });
