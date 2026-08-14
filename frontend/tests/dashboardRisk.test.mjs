@@ -6,6 +6,7 @@ import {
   calculateDailyDashboardRiskIndex,
   calculateDashboardRiskIndex,
   classifyDashboardArticleSeries,
+  formatDashboardCompositionShare,
 } from "../src/dashboardRisk.js";
 
 test("neutral insurer performance does not become a high risk issue", () => {
@@ -108,4 +109,19 @@ test("composition rows reuse the latest momentum bucket without reclassifying", 
     { name: "정책/규제", value: 17 },
   ]);
   assert.equal(rows.reduce((sum, item) => sum + item.value, 0), 39);
+});
+
+test("small composition shares remain visible inside the stacked bar", () => {
+  assert.equal(formatDashboardCompositionShare(1, 100), "1%");
+  assert.equal(formatDashboardCompositionShare(1, 250), "<1%");
+  assert.equal(formatDashboardCompositionShare(0, 100), "0%");
+});
+
+test("composition rows keep zero-value categories for a stable dashboard table", () => {
+  assert.deepEqual(buildDashboardCompositionRows([{ own: 1, insurance: 2 }]), [
+    { name: "당사", value: 1 },
+    { name: "GA", value: 0 },
+    { name: "보험사", value: 2 },
+    { name: "정책/규제", value: 0 },
+  ]);
 });

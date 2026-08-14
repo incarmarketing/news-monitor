@@ -64,7 +64,20 @@ export function buildDashboardCompositionRows(momentumRows = []) {
     { name: "GA", value: Number(latest.ga || 0) },
     { name: "보험사", value: Number(latest.insurance || 0) },
     { name: "정책/규제", value: Number(latest.regulation || 0) },
-  ].filter((item) => item.value > 0);
+  ];
+}
+
+/**
+ * Formats a non-zero composition share without allowing a small category to
+ * disappear as 0%. The visual bar keeps the exact proportional weight while
+ * the label remains meaningful for operators.
+ */
+export function formatDashboardCompositionShare(value, total) {
+  const safeValue = Math.max(0, Number(value || 0));
+  const safeTotal = Math.max(0, Number(total || 0));
+  if (!safeValue || !safeTotal) return "0%";
+  const share = (safeValue / safeTotal) * 100;
+  return share < 1 ? "<1%" : `${Math.round(share)}%`;
 }
 
 /**

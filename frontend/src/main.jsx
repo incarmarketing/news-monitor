@@ -66,6 +66,7 @@ import {
   calculateDailyDashboardRiskIndex,
   calculateDashboardRiskIndex,
   classifyDashboardArticleSeries,
+  formatDashboardCompositionShare,
 } from "./dashboardRisk";
 import slackMarkUrl from "./assets/slack-mark.png";
 import "./styles.css";
@@ -1429,98 +1430,71 @@ function IssueMomentumChart({ rows = [] }) {
 }
 
 function TodayComposition({ rows = [] }) {
+  const categoryStyles = {
+    "정책/규제": { color: "#1769e8", darkLabel: false },
+    보험사: { color: "#0b9f6f", darkLabel: false },
+    GA: { color: "#ed3f3f", darkLabel: false },
+    당사: { color: "#f5a318", darkLabel: true },
+    스폰서십: { color: "#7357d8", darkLabel: false },
+    기타: { color: "#64748b", darkLabel: false },
+  };
   const normalized = rows
     .map((item) => ({ name: displayDashboardCategory(item.name), value: Number(item.value || 0) }))
-    .filter((item) => item.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   const denominator = total || 1;
-  const palette = ["#1d5bd7", "#0d8f67", "#e04a3f", "#8e1434", "#dc9800"];
-  const radius = 58;
-  const circumference = 2 * Math.PI * radius;
-  let cursor = 0;
   const segments = normalized.map((item, index) => {
-    const percent = Math.round((item.value / denominator) * 100);
-    const ratio = item.value / denominator;
-    const startRatio = cursor;
-    cursor += ratio;
-    const midAngle = (startRatio + ratio / 2) * Math.PI * 2 - Math.PI / 2;
-    const compactLabel = percent < 8;
-    const labelRadius = compactLabel ? 87 : radius;
+    const rawPercent = (item.value / denominator) * 100;
+    const style = categoryStyles[item.name] || {
+      color: ["#1769e8", "#0b9f6f", "#ed3f3f", "#7357d8", "#64748b"][index],
+      darkLabel: false,
+    };
     return {
       ...item,
-      color: palette[index],
-      percent,
-      dash: ratio * circumference,
-      offset: startRatio * circumference,
-      labelX: 100 + Math.cos(midAngle) * labelRadius,
-      labelY: 100 + Math.sin(midAngle) * labelRadius,
-      lineStartX: 100 + Math.cos(midAngle) * 75,
-      lineStartY: 100 + Math.sin(midAngle) * 75,
-      lineEndX: 100 + Math.cos(midAngle) * 82,
-      lineEndY: 100 + Math.sin(midAngle) * 82,
-      compactLabel,
+      ...style,
+      rawPercent,
+      percentLabel: formatDashboardCompositionShare(item.value, denominator),
     };
   });
   return (
     <section className="editorial-composition-panel">
       <div className="editorial-section-title"><i />오늘의 구성 <em>{total.toLocaleString("ko-KR")}건</em></div>
       <div className="editorial-composition-body">
-        <div className="editorial-composition-donut">
-          <svg viewBox="0 0 200 200" role="img" aria-label={`오늘의 기사 구성 총 ${total.toLocaleString("ko-KR")}건`}>
-            <circle className="editorial-composition-track" cx="100" cy="100" r={radius} />
-            {segments.map((item) => (
-              <circle
-                key={`segment-${item.name}`}
-                className="editorial-composition-segment"
-                cx="100"
-                cy="100"
-                r={radius}
-                stroke={item.color}
-                strokeDasharray={`${item.dash} ${circumference - item.dash}`}
-                strokeDashoffset={-item.offset}
-                transform="rotate(-90 100 100)"
-              >
-                <title>{`${item.name} ${item.value.toLocaleString("ko-KR")}건 · ${item.percent}%`}</title>
-              </circle>
-            ))}
-            {segments.filter((item) => item.compactLabel).map((item) => (
-              <line
-                key={`callout-${item.name}`}
-                className="editorial-composition-callout"
-                x1={item.lineStartX}
-                y1={item.lineStartY}
-                x2={item.lineEndX}
-                y2={item.lineEndY}
-                stroke={item.color}
-              />
-            ))}
-            {segments.map((item) => (
-              <text
-                key={`label-${item.name}`}
-                x={item.labelX}
-                y={item.labelY}
-                dy="0.35em"
-                textAnchor="middle"
-                className={item.compactLabel ? "editorial-composition-percent outside" : "editorial-composition-percent"}
-              >
-                {item.percent}%
-              </text>
-            ))}
-            <text x="100" y="96" textAnchor="middle" className="editorial-composition-total">{total.toLocaleString("ko-KR")}</text>
-            <text x="100" y="116" textAnchor="middle" className="editorial-composition-unit">건</text>
-          </svg>
+        <div
+          className="editorial-composition-stack"
+          role="img"
+          aria-label={`오늘의 기사 구성 총 ${total.toLocaleString("ko-KR")}건`}
+        >
+          {segments.filter((item) => item.value > 0).map((item) => (
+            <span
+              key={`segment-${item.name}`}
+              className={item.darkLabel ? "editorial-composition-stack-segment dark-label" : "editorial-composition-stack-segment"}
+              style={{ "--composition-color": item.color, "--composition-weight": item.value }}
+              title={`${item.name} ${item.value.toLocaleString("ko-KR")}건 · ${item.percentLabel}`}
+            >
+              {item.percentLabel}
+            </span>
+          ))}
         </div>
         <table className="editorial-composition-table">
-          <thead>
-            <tr><th scope="col">분류</th><th scope="col">기사</th></tr>
+          <caption className="sr-only">오늘의 분류별 기사 건수와 비중</caption>
+          <thead className="sr-only">
+            <tr><th scope="col">분류</th><th scope="col">기사</th><th scope="col">비중</th><th scope="col">비율 막대</th></tr>
           </thead>
           <tbody>
             {segments.map((item) => (
-              <tr key={item.name}>
+              <tr
+                key={item.name}
+                style={{
+                  "--composition-color": item.color,
+                  "--composition-mini-share": item.value > 0 ? `max(3px, ${item.rawPercent}%)` : "0%",
+                }}
+              >
                 <th scope="row"><i style={{ background: item.color }} />{item.name}</th>
-                <td>{item.value.toLocaleString("ko-KR")}건</td>
+                <td className="editorial-composition-count">{item.value.toLocaleString("ko-KR")}건</td>
+                <td className="editorial-composition-share">{item.percentLabel}</td>
+                <td className="editorial-composition-mini"><span><i /></span></td>
               </tr>
             ))}
           </tbody>

@@ -53,3 +53,33 @@
 - A later data-quality pass can improve the issue titles and classifications independently of this layout change.
 
 final result: passed
+
+---
+
+**Composition Redesign QA - 2026-08-14**
+- Selected visual: `C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-12813630-d3d0-4abd-a9f3-2dd2ee14eab4.png`
+- Desktop render: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/.qa/dashboard-composition-desktop-final.png`
+- Focused implementation: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/.qa/composition-bar-implementation-focus.png`
+- Side-by-side comparison: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/.qa/composition-bar-comparison.png`
+- Target viewport: 1675 x 909 at device scale factor 1.
+
+**Verified Behavior**
+- The donut chart was replaced by a single 100% stacked bar and a compact exact-value table.
+- Percentage labels remain inside their bar segments. Non-zero shares below 1% display as `<1%` instead of disappearing as `0%`.
+- The table keeps all four operating categories visible, including zero-value categories, so its row order is stable across refreshes.
+- The stacked bar, exact counts, percentages, and mini bars all reuse the same category colors.
+- The component has no clipped labels or internal horizontal overflow at the target desktop viewport.
+- The selected concept was responsively adapted to the narrower production rail without changing its information hierarchy.
+
+**Findings**
+- No actionable P0, P1, or P2 mismatch remains in the composition component.
+- [P3] The selected concept has a wider standalone canvas than the production rail. The implementation therefore uses tighter row spacing while preserving all values and labels.
+- [P3] Local fallback data contains two non-zero categories rather than the four-category sample in the concept. Zero-value rows remain visible to make this state explicit.
+
+**Verification**
+- Dashboard risk unit tests: passed.
+- Production frontend build: passed.
+- Desktop visual comparison: passed.
+- Narrow responsive capture: passed for the composition component; the existing dashboard-wide mobile density is outside this scoped component change.
+
+final result: passed
