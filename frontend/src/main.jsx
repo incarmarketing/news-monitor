@@ -1053,6 +1053,7 @@ const MemoizedOverview = React.memo(Overview);
 function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
   const { summary } = data;
   const [issueSort, setIssueSort] = useState("risk");
+  const [slackHistoryOpen, setSlackHistoryOpen] = useState(false);
   const priorityBoardRef = useRef(null);
   const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
@@ -1163,7 +1164,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
           notificationHealth={notificationHealth}
           reportHealth={reportHealth}
           analyzed={summary.analyzed}
-          onOpenHistory={() => setActiveSection("management")}
+          onOpenHistory={() => setSlackHistoryOpen(true)}
         />
       </section>
 
@@ -1172,6 +1173,12 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <TodayComposition rows={compositionRows} />
       </section>
       <footer className="editorial-dashboard-footer">© 2026 INCAR Monitoring System. All rights reserved.</footer>
+      {slackHistoryOpen && (
+        <NotificationHistoryDialog
+          rows={notifications}
+          onClose={() => setSlackHistoryOpen(false)}
+        />
+      )}
     </main>
   );
 }
@@ -1348,7 +1355,12 @@ function EditorialOperationsRail({ operationsHealth, watchHealth, notificationHe
           </div>
         </section>
 
-        <button type="button" className="signal-operation-row slack" onClick={onOpenHistory}>
+        <button
+          type="button"
+          className="signal-operation-row slack"
+          onClick={onOpenHistory}
+          aria-label="Slack 발송 이력 열기"
+        >
           <div className="signal-operation-label">
             <SlackMark />
             <strong>Slack 발송</strong>
@@ -4761,8 +4773,8 @@ function formatNotificationDisplayTime(value) {
   return match ? `${match[1].padStart(2, "0")}:${match[2]}` : "-";
 }
 
-function NotificationList({ rows }) {
-  const [showAll, setShowAll] = useState(false);
+function NotificationList({ rows, initiallyExpanded = false }) {
+  const [showAll, setShowAll] = useState(initiallyExpanded);
   const [selected, setSelected] = useState(null);
   const collapsedLimit = 3;
   const expandedLimit = 20;
@@ -4800,6 +4812,49 @@ function NotificationList({ rows }) {
       )}
       {selected && <NotificationDetail item={selected} onClose={() => setSelected(null)} />}
     </>
+  );
+}
+
+function NotificationHistoryDialog({ rows = [], onClose }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="modal-backdrop notification-history-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notification-history-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose?.();
+      }}
+    >
+      <section className="detail-panel notification-history-dialog">
+        <header className="notification-history-header">
+          <div>
+            <span className="detail-kicker">Slack Delivery</span>
+            <h2 id="notification-history-title">Slack 발송 이력</h2>
+            <p>최근 발송 결과와 저장된 메시지 본문을 확인합니다.</p>
+          </div>
+          <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
+            <X />
+          </button>
+        </header>
+        <div className="notification-history-count">최근 {rows.length.toLocaleString("ko-KR")}건</div>
+        <div className="notification-history-body">
+          {rows.length ? (
+            <NotificationList rows={rows} initiallyExpanded />
+          ) : (
+            <p className="notification-history-empty">저장된 Slack 발송 이력이 없습니다.</p>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }
 
