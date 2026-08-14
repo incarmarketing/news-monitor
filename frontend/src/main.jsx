@@ -1121,13 +1121,13 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
             <div className="signal-panel-tools">
               <span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span>
               <select
-                aria-label="우선 이슈 정렬"
+                aria-label="우선 이슈 정렬 및 보기"
                 value={issueSort}
                 onChange={(event) => setIssueSort(event.target.value)}
               >
                 <option value="risk">정렬: 리스크순</option>
                 <option value="latest">정렬: 최신순</option>
-                <option value="own">정렬: 당사 직접 언급</option>
+                <option value="own">보기: 당사 직접 언급만</option>
                 <option value="spread">정렬: 확산순</option>
               </select>
             </div>
