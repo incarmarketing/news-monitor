@@ -1435,34 +1435,92 @@ function TodayComposition({ rows = [] }) {
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   const denominator = total || 1;
   const palette = ["#1d5bd7", "#0d8f67", "#e04a3f", "#8e1434", "#dc9800"];
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius;
   let cursor = 0;
-  const gradient = normalized.map((item, index) => {
-    const start = cursor;
-    cursor += (item.value / denominator) * 100;
-    return `${palette[index]} ${start}% ${cursor}%`;
-  }).join(", ");
+  const segments = normalized.map((item, index) => {
+    const percent = Math.round((item.value / denominator) * 100);
+    const ratio = item.value / denominator;
+    const startRatio = cursor;
+    cursor += ratio;
+    const midAngle = (startRatio + ratio / 2) * Math.PI * 2 - Math.PI / 2;
+    const compactLabel = percent < 8;
+    const labelRadius = compactLabel ? 87 : radius;
+    return {
+      ...item,
+      color: palette[index],
+      percent,
+      dash: ratio * circumference,
+      offset: startRatio * circumference,
+      labelX: 100 + Math.cos(midAngle) * labelRadius,
+      labelY: 100 + Math.sin(midAngle) * labelRadius,
+      lineStartX: 100 + Math.cos(midAngle) * 75,
+      lineStartY: 100 + Math.sin(midAngle) * 75,
+      lineEndX: 100 + Math.cos(midAngle) * 82,
+      lineEndY: 100 + Math.sin(midAngle) * 82,
+      compactLabel,
+    };
+  });
   return (
     <section className="editorial-composition-panel">
       <div className="editorial-section-title"><i />오늘의 구성 <em>{total.toLocaleString("ko-KR")}건</em></div>
       <div className="editorial-composition-body">
-        <div className="editorial-composition-donut" style={{ background: normalized.length ? `conic-gradient(${gradient})` : "#e8edf4" }}>
-          <span aria-label={`${total.toLocaleString("ko-KR")}건`}><b>{total.toLocaleString("ko-KR")}</b><em>건</em></span>
+        <div className="editorial-composition-donut">
+          <svg viewBox="0 0 200 200" role="img" aria-label={`오늘의 기사 구성 총 ${total.toLocaleString("ko-KR")}건`}>
+            <circle className="editorial-composition-track" cx="100" cy="100" r={radius} />
+            {segments.map((item) => (
+              <circle
+                key={`segment-${item.name}`}
+                className="editorial-composition-segment"
+                cx="100"
+                cy="100"
+                r={radius}
+                stroke={item.color}
+                strokeDasharray={`${item.dash} ${circumference - item.dash}`}
+                strokeDashoffset={-item.offset}
+                transform="rotate(-90 100 100)"
+              >
+                <title>{`${item.name} ${item.value.toLocaleString("ko-KR")}건 · ${item.percent}%`}</title>
+              </circle>
+            ))}
+            {segments.filter((item) => item.compactLabel).map((item) => (
+              <line
+                key={`callout-${item.name}`}
+                className="editorial-composition-callout"
+                x1={item.lineStartX}
+                y1={item.lineStartY}
+                x2={item.lineEndX}
+                y2={item.lineEndY}
+                stroke={item.color}
+              />
+            ))}
+            {segments.map((item) => (
+              <text
+                key={`label-${item.name}`}
+                x={item.labelX}
+                y={item.labelY}
+                dy="0.35em"
+                textAnchor="middle"
+                className={item.compactLabel ? "editorial-composition-percent outside" : "editorial-composition-percent"}
+              >
+                {item.percent}%
+              </text>
+            ))}
+            <text x="100" y="96" textAnchor="middle" className="editorial-composition-total">{total.toLocaleString("ko-KR")}</text>
+            <text x="100" y="116" textAnchor="middle" className="editorial-composition-unit">건</text>
+          </svg>
         </div>
         <table className="editorial-composition-table">
           <thead>
-            <tr><th scope="col">분류</th><th scope="col">기사</th><th scope="col">비중</th></tr>
+            <tr><th scope="col">분류</th><th scope="col">기사</th></tr>
           </thead>
           <tbody>
-            {normalized.map((item, index) => {
-              const percent = Math.round((item.value / denominator) * 100);
-              return (
-                <tr key={item.name}>
-                  <th scope="row"><i style={{ background: palette[index] }} />{item.name}</th>
-                  <td>{item.value.toLocaleString("ko-KR")}건</td>
-                  <td>{percent}%</td>
-                </tr>
-              );
-            })}
+            {segments.map((item) => (
+              <tr key={item.name}>
+                <th scope="row"><i style={{ background: item.color }} />{item.name}</th>
+                <td>{item.value.toLocaleString("ko-KR")}건</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
