@@ -1048,6 +1048,7 @@ const MemoizedOverview = React.memo(Overview);
 function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
   const { summary } = data;
   const [issueSort, setIssueSort] = useState("risk");
+  const priorityBoardRef = useRef(null);
   const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
     () => buildOperationsHealth({
@@ -1095,6 +1096,13 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     source: "overview_operations",
     label: "전체 운영 갱신",
   });
+  const focusRiskIssues = useCallback(() => {
+    setIssueSort("risk");
+    requestAnimationFrame(() => {
+      priorityBoardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      priorityBoardRef.current?.querySelector('select[aria-label="우선 이슈 정렬 및 보기"]')?.focus({ preventScroll: true });
+    });
+  }, []);
   return (
     <main className="workspace dashboard-workspace dashboard-v5">
       <DashboardEditorialHeader
@@ -1107,7 +1115,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         onToggleTheme={onToggleTheme}
       />
 
-      <DashboardKpiStrip summary={summary} onOpenMonitoring={onOpenMonitoring} />
+      <DashboardKpiStrip summary={summary} onOpenMonitoring={onOpenMonitoring} onOpenRisk={focusRiskIssues} />
 
       <nav className="dashboard-mobile-home" aria-label="모바일 대시보드 바로가기">
         <button type="button" onClick={() => setActiveSection("monitoring")}>모니터링</button>
@@ -1116,7 +1124,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
       </nav>
 
       <section className="signal-command-grid">
-        <section className="signal-priority-board">
+        <section className="signal-priority-board" ref={priorityBoardRef}>
           <div className="signal-panel-heading">
             <h2>우선 이슈 TOP 5</h2>
             <div className="signal-panel-tools">
@@ -1188,9 +1196,9 @@ function DashboardEditorialHeader({ data, status, onOpenMonitoring, onRefresh, i
   );
 }
 
-function DashboardKpiStrip({ summary = {}, onOpenMonitoring }) {
+function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk }) {
   const rows = [
-    { label: "리스크", value: summary.risk || "LOW", meta: "당사 기준", Icon: ShieldCheck, className: `risk-${String(summary.risk || "low").toLowerCase()}`, preset: { ownOnly: true } },
+    { label: "리스크", value: summary.risk || "LOW", meta: "당사 기준", Icon: ShieldCheck, className: `risk-${String(summary.risk || "low").toLowerCase()}`, onClick: onOpenRisk },
     { label: "분석", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), meta: "오늘 기사", Icon: Gauge, preset: {} },
     { label: "당사", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), meta: "직접 언급", Icon: Newspaper, className: "own", preset: { ownOnly: true } },
     { label: "부정", value: Number(summary.ownNegative || 0).toLocaleString("ko-KR"), meta: "즉시 확인", Icon: TrendingDown, className: "negative", preset: { tone: "부정" } },
@@ -1198,8 +1206,8 @@ function DashboardKpiStrip({ summary = {}, onOpenMonitoring }) {
   ];
   return (
     <section className="editorial-kpi-strip" aria-label="오늘의 주요 지표">
-      {rows.map(({ Icon, ...item }) => (
-        <button type="button" key={item.label} className={item.className || ""} onClick={() => onOpenMonitoring?.(item.preset)}>
+      {rows.map(({ Icon, onClick, ...item }) => (
+        <button type="button" key={item.label} className={item.className || ""} onClick={onClick || (() => onOpenMonitoring?.(item.preset))}>
           <Icon aria-hidden="true" />
           <span><small>{item.label}</small><b>{item.value}</b><em>{item.meta}</em></span>
         </button>
