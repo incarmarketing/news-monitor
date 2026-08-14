@@ -2552,8 +2552,18 @@ html[data-theme="dim"] .dashboard-v5 .editorial-composition-donut > span {
 
 .dashboard-v5 .editorial-composition-table tbody th,
 .dashboard-v5 .editorial-composition-table td {
-  padding-inline: 5px;
+  padding-inline: 3px;
   font-size: 13.5px;
+}
+
+.dashboard-v5 .editorial-composition-table tbody th {
+  font-size: 12.5px;
+}
+
+.dashboard-v5 .editorial-composition-table tbody th i {
+  width: 6px;
+  height: 6px;
+  margin-right: 3px;
 }
 
 html[data-theme="dim"] .dashboard-v5 .editorial-composition-track {
