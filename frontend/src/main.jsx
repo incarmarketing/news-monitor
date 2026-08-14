@@ -1471,7 +1471,7 @@ function TodayComposition({ rows = [] }) {
   });
   return (
     <section className="editorial-composition-panel">
-      <div className="editorial-section-title"><i />오늘의 구성 <em>{total.toLocaleString("ko-KR")}건</em></div>
+      <div className="editorial-section-title"><i />당일 기사 분포 <em>{total.toLocaleString("ko-KR")}건</em></div>
       <div className="editorial-composition-body">
         <div
           className="editorial-composition-stack"
