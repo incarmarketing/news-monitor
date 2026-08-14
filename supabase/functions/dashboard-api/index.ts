@@ -85,8 +85,11 @@ Deno.serve(async (req) => {
   const action = String(body.action || "");
   const payload = body.payload || {};
   const sessionToken = req.headers.get("x-dashboard-session") || "";
-  const session = sessionToken ? await verifySession(sessionToken) : { ok: false, message: "anonymous" };
-  if (!session.ok) {
+  const session: SessionInfo = sessionToken
+    ? await verifySession(sessionToken)
+    : { ok: false, message: "anonymous" };
+  const publicDashboardRefresh = isPublicDashboardRefreshRequest(action, payload, req.headers.get("origin"));
+  if (!session.ok && !publicDashboardRefresh) {
     return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
   }
 
@@ -98,7 +101,7 @@ Deno.serve(async (req) => {
       return await handleRest(payload, session);
     }
     if (action === "trigger_collection") {
-      return await triggerCollection(session, payload);
+      return await triggerCollection(session, payload, publicDashboardRefresh);
     }
     if (action === "logout") {
       return await revokeSession(sessionToken);
@@ -212,26 +215,36 @@ async function revokeSession(token: string) {
   return jsonResponse(result, result.ok ? 200 : 502);
 }
 
-async function triggerCollection(session: SessionInfo, payload: Record<string, unknown>) {
+async function triggerCollection(
+  session: SessionInfo,
+  payload: Record<string, unknown>,
+  publicDashboardRefresh = false,
+) {
   const authenticated = session.ok === true;
-  if (!authenticated || !["admin", "editor"].includes(session.role || "")) {
+  if (!publicDashboardRefresh && (!authenticated || !["admin", "editor"].includes(session.role || ""))) {
     return jsonResponse({ error: "write_not_allowed" }, 403);
   }
 
   const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
   const owner = Deno.env.get("GITHUB_OWNER") || "incarmarketing";
   const repo = Deno.env.get("GITHUB_REPO") || "news-monitor";
-  const workflow = sanitizeWorkflow(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "dashboard-refresh.yml");
+  const workflow = publicDashboardRefresh
+    ? "dashboard-refresh.yml"
+    : sanitizeWorkflow(payload.workflow || Deno.env.get("GITHUB_WORKFLOW_FILE") || "dashboard-refresh.yml");
   const ref = Deno.env.get("GITHUB_REF") || "main";
-  const periodReports = sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
-  const sendSlack = payload.send_slack === true
-    || String(payload.send_slack || "").toLowerCase() === "true";
-  const forceSlackSend = payload.force_slack_send === true
-    || String(payload.force_slack_send || "").toLowerCase() === "true";
-  const dashboardSend = payload.dashboard_send === true
-    || String(payload.dashboard_send || "").toLowerCase() === "true";
-  const reportSlot = sanitizeChoice(payload.report_slot, ["auto", "07", "08", "13", "18"], "auto");
-  const reportMonth = sanitizeReportMonth(payload.report_month);
+  const periodReports = publicDashboardRefresh
+    ? "none"
+    : sanitizeChoice(payload.period_reports, ["none", "weekly", "monthly", "both"], "none");
+  const sendSlack = !publicDashboardRefresh && (payload.send_slack === true
+    || String(payload.send_slack || "").toLowerCase() === "true");
+  const forceSlackSend = !publicDashboardRefresh && (payload.force_slack_send === true
+    || String(payload.force_slack_send || "").toLowerCase() === "true");
+  const dashboardSend = !publicDashboardRefresh && (payload.dashboard_send === true
+    || String(payload.dashboard_send || "").toLowerCase() === "true");
+  const reportSlot = publicDashboardRefresh
+    ? "auto"
+    : sanitizeChoice(payload.report_slot, ["auto", "07", "08", "13", "18"], "auto");
+  const reportMonth = publicDashboardRefresh ? "" : sanitizeReportMonth(payload.report_month);
 
   if (!token) {
     return jsonResponse({ error: "missing_github_dispatch_token" }, 500);
@@ -242,7 +255,7 @@ async function triggerCollection(session: SessionInfo, payload: Record<string, u
     ? 0
     : authenticated
     ? numberEnv("DASHBOARD_REFRESH_COOLDOWN_MINUTES", 2)
-    : numberEnv("DASHBOARD_PUBLIC_REFRESH_COOLDOWN_MINUTES", 5);
+    : numberEnv("DASHBOARD_PUBLIC_REFRESH_COOLDOWN_MINUTES", 2);
   const runKey = manualReportSend
     ? dashboardReportSendRunKey(workflow, periodReports, reportSlot)
     : dashboardRefreshRunKey(workflow, periodReports, sendSlack, reportSlot, authenticated);
@@ -314,7 +327,9 @@ function dashboardRefreshRunKey(
   reportSlot: string,
   authenticated: boolean,
 ) {
-  const scope = authenticated ? "auth" : "public";
+  const scope = workflow === "dashboard-refresh.yml"
+    ? "shared"
+    : (authenticated ? "auth" : "public");
   return `dashboard_refresh:${scope}:${workflow}:${periodReports}:${sendSlack ? "send" : "nosend"}:${reportSlot}`;
 }
 
@@ -382,6 +397,39 @@ function sanitizeWorkflow(value: unknown) {
   return ["dashboard-refresh.yml", "news-briefing.yml", "pages-dashboard.yml"].includes(workflow)
     ? workflow
     : "dashboard-refresh.yml";
+}
+
+function isPublicDashboardRefreshRequest(
+  action: string,
+  payload: Record<string, unknown>,
+  origin: string | null,
+) {
+  if (action !== "trigger_collection" || !isAllowedPublicRefreshOrigin(origin)) return false;
+  const workflow = String(payload.workflow || "dashboard-refresh.yml").trim();
+  const periodReports = String(payload.period_reports || "none").trim();
+  const reportSlot = String(payload.report_slot || "auto").trim();
+  return workflow === "dashboard-refresh.yml"
+    && periodReports === "none"
+    && reportSlot === "auto"
+    && !booleanInput(payload.send_slack)
+    && !booleanInput(payload.force_slack_send)
+    && !booleanInput(payload.dashboard_send);
+}
+
+function isAllowedPublicRefreshOrigin(origin: string | null) {
+  const normalized = String(origin || "").trim().replace(/\/$/, "");
+  if (!normalized) return false;
+  const configured = String(Deno.env.get("DASHBOARD_PUBLIC_REFRESH_ORIGINS") || "")
+    .split(",")
+    .map((value) => value.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  const allowed = configured.length ? configured : ["https://incarmarketing.github.io"];
+  return allowed.includes(normalized)
+    || /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/.test(normalized);
+}
+
+function booleanInput(value: unknown) {
+  return value === true || String(value || "").trim().toLowerCase() === "true";
 }
 
 function workflowInputs(

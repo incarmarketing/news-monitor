@@ -52,6 +52,22 @@ class OperationalScheduleTests(unittest.TestCase):
         self.assertNotIn("send_slack", workflow)
         self.assertNotIn("pages", workflow.lower())
 
+    def test_public_dashboard_refresh_is_narrow_and_rate_limited(self) -> None:
+        edge = (
+            ROOT / "supabase/functions/dashboard-api/index.ts"
+        ).read_text(encoding="utf-8")
+        frontend = (ROOT / "frontend/src/liveData.js").read_text(encoding="utf-8")
+        app = (ROOT / "frontend/src/main.jsx").read_text(encoding="utf-8")
+
+        self.assertIn("isPublicDashboardRefreshRequest", edge)
+        self.assertIn('workflow === "dashboard-refresh.yml"', edge)
+        self.assertIn('periodReports === "none"', edge)
+        self.assertIn("!booleanInput(payload.send_slack)", edge)
+        self.assertIn("DASHBOARD_PUBLIC_REFRESH_COOLDOWN_MINUTES", edge)
+        self.assertIn('"https://incarmarketing.github.io"', edge)
+        self.assertIn("{ allowAnonymous }", frontend)
+        self.assertIn('workflows[0] === "dashboard-refresh.yml"', app)
+
 
 if __name__ == "__main__":
     unittest.main()

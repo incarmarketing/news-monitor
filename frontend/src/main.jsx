@@ -357,7 +357,15 @@ function App() {
   const refreshOperations = async (options = {}) => {
     const requestedTrigger = options.trigger === true;
     const session = getStoredSession();
-    const canTriggerWorkflow = Boolean(session?.session_token);
+    const workflows = Array.isArray(options.workflows) && options.workflows.length
+      ? options.workflows
+      : options.workflow === "all"
+        ? ["news-briefing.yml", "regulator-releases.yml"]
+        : [options.workflow || "dashboard-refresh.yml"];
+    const isPublicDashboardRefresh = requestedTrigger
+      && workflows.length === 1
+      && workflows[0] === "dashboard-refresh.yml";
+    const canTriggerWorkflow = Boolean(session?.session_token) || isPublicDashboardRefresh;
     if (requestedTrigger && !canTriggerWorkflow) {
       pendingRefreshOptions.current = options;
       setWorking(false);
@@ -366,11 +374,6 @@ function App() {
       return;
     }
     const trigger = requestedTrigger && canTriggerWorkflow;
-    const workflows = Array.isArray(options.workflows) && options.workflows.length
-      ? options.workflows
-      : options.workflow === "all"
-        ? ["news-briefing.yml", "regulator-releases.yml"]
-        : [options.workflow || "dashboard-refresh.yml"];
     const label = options.label || (workflows.length > 1
       ? "전체 운영 갱신"
       : workflows[0] === "regulator-releases.yml"

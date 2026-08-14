@@ -228,7 +228,7 @@ async function dashboardApi(config, session, action, payload = {}, options = {})
     Authorization: `Bearer ${config.anon_key}`,
     "Content-Type": "application/json",
   };
-  if (session?.session_token && !options.allowAnonymous) {
+  if (session?.session_token) {
     headers["X-Dashboard-Session"] = session.session_token;
   }
   const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/dashboard-api`, {
@@ -295,8 +295,9 @@ async function loadPublicMonitorKeywords(config) {
 export async function triggerNewsCollection(payload = {}) {
   const config = await loadSupabaseConfig();
   const session = getStoredSession();
-  return dashboardApi(config, session, "trigger_collection", {
-    workflow: payload.workflow || "dashboard-refresh.yml",
+  const workflow = payload.workflow || "dashboard-refresh.yml";
+  const requestPayload = {
+    workflow,
     period_reports: payload.period_reports || "none",
     send_slack: payload.send_slack === true,
     force_slack_send: payload.force_slack_send === true,
@@ -304,7 +305,13 @@ export async function triggerNewsCollection(payload = {}) {
     report_slot: payload.report_slot || "auto",
     report_month: payload.report_month || "",
     source: payload.source || "dashboard_manual_refresh",
-  });
+  };
+  const allowAnonymous = workflow === "dashboard-refresh.yml"
+    && requestPayload.period_reports === "none"
+    && requestPayload.send_slack === false
+    && requestPayload.force_slack_send === false
+    && requestPayload.dashboard_send === false;
+  return dashboardApi(config, session, "trigger_collection", requestPayload, { allowAnonymous });
 }
 
 async function writeRest(path, method, body, headers = {}) {
