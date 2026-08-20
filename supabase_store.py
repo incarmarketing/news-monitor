@@ -1473,6 +1473,21 @@ def load_dashboard_watch_runs(limit: int = 20) -> list[dict]:
     return response.json()
 
 
+def load_dashboard_job_runs(limit: int = 200) -> list[dict]:
+    if not is_enabled():
+        return []
+    response = request(
+        "GET",
+        (
+            "job_runs?"
+            "select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at"
+            "&job_type=in.(daily_report,period_report,weekly_report,monthly_report)"
+            f"&order=started_at.desc,created_at.desc&limit={limit}"
+        ),
+    )
+    return response.json()
+
+
 def load_dashboard_scraps(limit: int = 100) -> list[dict]:
     if not is_enabled():
         return []

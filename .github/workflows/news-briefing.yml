@@ -347,6 +347,14 @@ jobs:
           JOB_PROVIDER: github_actions
           JOB_STATUS: ${{ job.status }}
 
+      - name: Refresh public operations ledger after notification
+        if: always() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: python -c "import dashboard_builder; print(dashboard_builder.publish_operations_snapshot())"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REQUIRE_DASHBOARD_HISTORY: "true"
+
       - name: Persist run archive
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]'))
         run: |
@@ -363,6 +371,9 @@ jobs:
           fi
           if [ -d .run-state ]; then
             git add -f .run-state
+          fi
+          if [ -f public/data/operations.json ]; then
+            git add -f public/data/operations.json
           fi
           if git diff --cached --quiet; then
             echo "No archive changes to commit."

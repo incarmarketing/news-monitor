@@ -1,4 +1,4 @@
-import { watchRunDisplayState } from "./watchHealth";
+import { watchRunDisplayState } from "./watchHealth.js";
 
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
 const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v3";
@@ -8,7 +8,7 @@ const CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT = 240;
 let coreSnapshotCacheWriteHandle = null;
 let coreSnapshotCacheWriteMode = "";
 
-const APP_BASE_URL = import.meta.env.BASE_URL || "/";
+const APP_BASE_URL = import.meta.env?.BASE_URL || "/";
 
 const SUPABASE_CONFIG_PATHS = [
   `${APP_BASE_URL}data/supabase.json`,
@@ -22,6 +22,13 @@ const STATIC_DATA_PATHS = [
   `${APP_BASE_URL}data/articles.json`,
   "/data/articles.json",
   "/public/data/articles.json",
+];
+
+const STATIC_OPERATIONS_PATHS = [
+  "https://raw.githubusercontent.com/incarmarketing/news-monitor/main/public/data/operations.json",
+  `${APP_BASE_URL}data/operations.json`,
+  "/data/operations.json",
+  "/public/data/operations.json",
 ];
 
 const STOCK_MARKET_DATA_PATHS = [
@@ -976,6 +983,41 @@ function numberOrNull(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+export function normalizeOperationalStatusPayload(payload = {}) {
+  const data = Array.isArray(payload)
+    ? payload[0] || {}
+    : payload?.data && typeof payload.data === "object"
+      ? payload.data
+      : payload;
+  return {
+    generatedAt: data?.generated_at || "",
+    notifications: Array.isArray(data?.notifications)
+      ? data.notifications.map(normalizeNotification).filter(isDeliveryNotification)
+      : [],
+    watchRuns: Array.isArray(data?.watch_runs) ? data.watch_runs.map(normalizeWatchRun) : [],
+    reportRuns: Array.isArray(data?.report_runs) ? data.report_runs.map(normalizeReportRun) : [],
+    jobRuns: Array.isArray(data?.job_runs) ? data.job_runs.map(normalizeJobRun) : [],
+  };
+}
+
+async function loadStaticOperationalStatus() {
+  for (const path of STATIC_OPERATIONS_PATHS) {
+    try {
+      const cacheBustedPath = path.startsWith("https://raw.githubusercontent.com/")
+        ? `${path}?ts=${Date.now()}`
+        : path;
+      return normalizeOperationalStatusPayload(await fetchJson(cacheBustedPath));
+    } catch {
+      // Try the next path.
+    }
+  }
+  return null;
+}
+
+async function loadPublicOperationalStatus() {
+  return loadStaticOperationalStatus();
+}
+
 async function loadStaticOperationalData() {
   for (const path of STATIC_DATA_PATHS) {
     try {
@@ -1266,22 +1308,7 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
       : Promise.resolve([]);
     const optional = (enabled, request) => enabled ? request() : Promise.resolve([]);
     const optionalRequests = {
-      notifications: optional(loadOptions.includeStatus, () => publicRest(
-        config,
-        "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=120",
-      )),
-      watchRuns: optional(loadOptions.includeStatus, () => publicRest(
-        config,
-        "negative_watch_runs?select=run_key,scanned_at,status,minutes_back,scanned_count,negative_count,new_negative_count,message,created_at&order=scanned_at.desc,created_at.desc&limit=80",
-      )),
-      reportRuns: optional(loadOptions.includeStatus, () => publicRest(
-        config,
-        "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
-      )),
-      jobRuns: optional(loadOptions.includeStatus, () => publicRest(
-        config,
-        "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,period_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
-      )),
+      operationalStatus: optional(loadOptions.includeStatus, () => loadPublicOperationalStatus()),
       mediaRelations: optional(loadOptions.includeManagement, () => publicRest(config, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc")),
       aliases: optional(loadOptions.includeManagement, () => publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000")),
       keywords: optional(loadOptions.includeManagement, () => loadPublicMonitorKeywords(config)),
@@ -1298,16 +1325,17 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
     const normalizedArticles = Array.isArray(articles)
       ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean))
       : [];
-    if (!normalizedArticles.length && !Array.isArray(optionalData.reportRuns)) return null;
+    const operationalStatus = optionalData.operationalStatus || {};
+    if (!normalizedArticles.length && !Array.isArray(operationalStatus.reportRuns)) return null;
     return {
       source: "supabase",
       status: "live",
       message: `운영 DB 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`,
       articles: normalizedArticles,
-      notifications: Array.isArray(optionalData.notifications) ? optionalData.notifications.map(normalizeNotification).filter(isDeliveryNotification) : [],
-      watchRuns: Array.isArray(optionalData.watchRuns) ? optionalData.watchRuns.map(normalizeWatchRun) : [],
-      reportRuns: Array.isArray(optionalData.reportRuns) ? optionalData.reportRuns.map(normalizeReportRun) : [],
-      jobRuns: Array.isArray(optionalData.jobRuns) ? optionalData.jobRuns.map(normalizeJobRun) : [],
+      notifications: Array.isArray(operationalStatus.notifications) ? operationalStatus.notifications : [],
+      watchRuns: Array.isArray(operationalStatus.watchRuns) ? operationalStatus.watchRuns : [],
+      reportRuns: Array.isArray(operationalStatus.reportRuns) ? operationalStatus.reportRuns : [],
+      jobRuns: Array.isArray(operationalStatus.jobRuns) ? operationalStatus.jobRuns : [],
       scraps: [],
       scrapAnalysisReports: [],
       mediaRelations: Array.isArray(optionalData.mediaRelations)

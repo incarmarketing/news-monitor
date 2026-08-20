@@ -778,6 +778,120 @@ def load_supabase_watch_runs() -> list[dict]:
     return rows
 
 
+def load_supabase_job_runs() -> list[dict]:
+    required = require_dashboard_history()
+    if required and not supabase_store.is_enabled():
+        raise RuntimeError("Dashboard job history is required but Supabase write access is not configured.")
+    try:
+        rows = supabase_store.load_dashboard_job_runs()
+    except Exception as exc:
+        if required:
+            raise RuntimeError(f"Dashboard job history source failed: {exc}") from exc
+        print(f"Supabase job history source skipped: {exc}")
+        return []
+    if not isinstance(rows, list):
+        if required:
+            raise RuntimeError("Dashboard job history source returned an invalid payload.")
+        return []
+    return rows
+
+
+def build_public_operations_snapshot(
+    notifications: list[dict],
+    watch_runs: list[dict],
+    report_runs: list[dict],
+    job_runs: list[dict],
+) -> dict:
+    notification_fields = (
+        "id",
+        "sent_at",
+        "channel",
+        "message_type",
+        "dedupe_key",
+        "title",
+        "link_url",
+        "status",
+        "created_at",
+    )
+    watch_fields = (
+        "run_key",
+        "scanned_at",
+        "status",
+        "minutes_back",
+        "scanned_count",
+        "negative_count",
+        "new_negative_count",
+        "message",
+        "created_at",
+    )
+    report_fields = (
+        "run_key",
+        "report_date",
+        "report_slot",
+        "timestamp",
+        "window_label",
+        "risk_level",
+    )
+    job_fields = (
+        "run_key",
+        "job_type",
+        "report_date",
+        "report_slot",
+        "workflow",
+        "status",
+        "started_at",
+        "finished_at",
+        "last_seen_at",
+        "created_at",
+        "updated_at",
+    )
+
+    def public_rows(rows: list[dict], fields: tuple[str, ...], limit: int) -> list[dict]:
+        return [
+            {field: row.get(field) for field in fields if row.get(field) is not None}
+            for row in rows[:limit]
+            if isinstance(row, dict)
+        ]
+
+    return {
+        "generated_at": datetime.now(KST).isoformat(),
+        "notifications": public_rows(notifications, notification_fields, 120),
+        "watch_runs": public_rows(watch_runs, watch_fields, 80),
+        "report_runs": public_rows(report_runs, report_fields, 500),
+        "job_runs": public_rows(job_runs, job_fields, 200),
+    }
+
+
+def write_public_operations_snapshot(
+    notifications: list[dict],
+    watch_runs: list[dict],
+    report_runs: list[dict],
+    job_runs: list[dict],
+    output_path: Path | None = None,
+) -> Path:
+    target = output_path or (PUBLIC_DATA_DIR / "operations.json")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(
+            build_public_operations_snapshot(notifications, watch_runs, report_runs, job_runs),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return target
+
+
+def publish_operations_snapshot(output_path: Path | None = None) -> Path:
+    return write_public_operations_snapshot(
+        load_supabase_notifications(),
+        load_supabase_watch_runs(),
+        build_report_runs([]),
+        load_supabase_job_runs(),
+        output_path,
+    )
+
+
 def load_supabase_scraps() -> list[dict]:
     try:
         rows = supabase_store.load_dashboard_scraps()
@@ -861,6 +975,7 @@ def publish_dashboard() -> Path:
     ad_spends = load_dashboard_ad_spends()
     notifications = load_supabase_notifications()
     watch_runs = load_supabase_watch_runs()
+    job_runs = load_supabase_job_runs()
     scraps = load_supabase_scraps()
     classification_feedback = load_dashboard_classification_feedback()
     ai_status = build_ai_status(report_runs)
@@ -883,6 +998,7 @@ def publish_dashboard() -> Path:
                 "report_runs": report_runs,
                 "notifications": notifications,
                 "watch_runs": watch_runs,
+                "job_runs": job_runs,
                 "scraps": scraps,
                 "classification_feedback": classification_feedback,
                 "classification_feedback_generated_at": datetime.now(KST).isoformat(),
@@ -894,6 +1010,7 @@ def publish_dashboard() -> Path:
         ),
         encoding="utf-8",
     )
+    write_public_operations_snapshot(notifications, watch_runs, report_runs, job_runs)
     publish_supabase_public_config()
     rebuilt_target = publish_rebuilt_dashboard()
     if rebuilt_target:
