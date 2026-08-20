@@ -1157,7 +1157,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
       <section className="signal-command-grid">
         <section className="signal-priority-board" ref={priorityBoardRef}>
           <div className="signal-panel-heading">
-            <h2>우선 이슈 TOP 5</h2>
+            <h2>우선 이슈 {issueRows.length}건</h2>
             <div className="signal-panel-tools">
               <span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span>
               <select
@@ -1679,6 +1679,7 @@ function buildDashboardMomentum(articles = []) {
     const riskKey = `${date}|${issueMemberKey(article) || `${normalizeGroupTitle(article.title || "")}|${article.source || ""}`}`;
     if (seenRiskArticles.has(riskKey)) return;
     seenRiskArticles.add(riskKey);
+    if (!isDashboardPriorityArticle(article)) return;
     const tone = displayTone(article.tone);
     if (tone === "부정") {
       if (series === "own") bucket.ownNegative += 1;

@@ -7,7 +7,17 @@ class DashboardOperationsSnapshotTests(unittest.TestCase):
     def test_snapshot_keeps_only_operational_ledgers(self) -> None:
         notifications = [{"id": 1, "status": "success", "body": "private body", "error": "private error"}]
         watch_runs = [{"run_key": "watch-1", "status": "success"}]
-        report_runs = [{"run_key": "2026-08-20-08", "report_slot": "08", "metrics": {"articles": 10}}]
+        report_runs = [{
+            "run_key": "2026-08-20-08",
+            "report_slot": "08",
+            "metrics": {
+                "total_collected": 12,
+                "total_after_cluster": 10,
+                "by_category": {"own": 2, "industry": 8},
+                "by_tone": {"neutral": 9, "caution": 1},
+                "private_summary": "must not be public",
+            },
+        }]
         job_runs = [{"run_key": "daily_report:2026-08-20:08", "status": "success", "error": "private error"}]
 
         snapshot = dashboard_builder.build_public_operations_snapshot(
@@ -20,7 +30,17 @@ class DashboardOperationsSnapshotTests(unittest.TestCase):
         self.assertIn("generated_at", snapshot)
         self.assertEqual(snapshot["notifications"], [{"id": 1, "status": "success"}])
         self.assertEqual(snapshot["watch_runs"], watch_runs)
-        self.assertEqual(snapshot["report_runs"], [{"run_key": "2026-08-20-08", "report_slot": "08"}])
+        self.assertEqual(snapshot["report_runs"], [{
+            "run_key": "2026-08-20-08",
+            "report_slot": "08",
+            "dashboard_metrics": {
+                "total_collected": 12,
+                "total_after_cluster": 10,
+                "by_category": {"own": 2, "industry": 8},
+                "by_tone": {"neutral": 9, "caution": 1},
+            },
+        }])
+        self.assertNotIn("private_summary", snapshot["report_runs"][0]["dashboard_metrics"])
         self.assertEqual(snapshot["job_runs"], [{"run_key": "daily_report:2026-08-20:08", "status": "success"}])
         self.assertNotIn("articles", snapshot)
         self.assertNotIn("body", snapshot["notifications"][0])

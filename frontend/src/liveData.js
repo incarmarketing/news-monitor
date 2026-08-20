@@ -1892,7 +1892,11 @@ function normalizeWatchRun(row) {
 }
 
 function normalizeReportRun(row) {
-  const metrics = row?.metrics && typeof row.metrics === "object" ? row.metrics : {};
+  const metrics = row?.metrics && typeof row.metrics === "object"
+    ? row.metrics
+    : row?.dashboard_metrics && typeof row.dashboard_metrics === "object"
+      ? row.dashboard_metrics
+      : {};
   return {
     id: row?.run_key || row?.id || `${row?.report_date || row?.date || ""}-${row?.report_slot || row?.slot || ""}`,
     date: String(row?.report_date || row?.date || row?.timestamp || "").slice(0, 10),

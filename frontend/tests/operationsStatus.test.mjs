@@ -60,3 +60,30 @@ test("non-delivery channels stay out of the public Slack history", () => {
   assert.equal(status.notifications.length, 1);
   assert.equal(status.notifications[0].channel, "slack");
 });
+
+test("public report aggregates are normalized as dashboard metrics", () => {
+  const status = normalizeOperationalStatusPayload({
+    report_runs: [
+      {
+        run_key: "2026-08-19-18",
+        report_date: "2026-08-19",
+        report_slot: "18",
+        dashboard_metrics: {
+          total_collected: 24,
+          total_after_cluster: 12,
+          own_negative: 1,
+          by_category: { own: 2, industry: 8, regulation: 2 },
+          by_tone: { negative: 1, caution: 3, neutral: 8 },
+        },
+      },
+    ],
+  });
+
+  assert.equal(status.reportRuns.length, 1);
+  assert.equal(status.reportRuns[0].metrics.total_after_cluster, 12);
+  assert.deepEqual(status.reportRuns[0].metrics.by_category, {
+    own: 2,
+    industry: 8,
+    regulation: 2,
+  });
+});

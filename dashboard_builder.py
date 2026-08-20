@@ -853,11 +853,46 @@ def build_public_operations_snapshot(
             if isinstance(row, dict)
         ]
 
+    def public_report_rows(rows: list[dict], limit: int) -> list[dict]:
+        scalar_fields = (
+            "total_collected",
+            "total_after_cluster",
+            "own_negative",
+            "own_total",
+        )
+        group_fields = ("by_category", "by_tone", "own_by_tone")
+        public: list[dict] = []
+        for row in rows[:limit]:
+            if not isinstance(row, dict):
+                continue
+            item = {field: row.get(field) for field in report_fields if row.get(field) is not None}
+            metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+            dashboard_metrics: dict = {}
+            for field in scalar_fields:
+                value = metrics.get(field)
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    dashboard_metrics[field] = value
+            for field in group_fields:
+                values = metrics.get(field)
+                if not isinstance(values, dict):
+                    continue
+                numeric_values = {
+                    str(key): value
+                    for key, value in values.items()
+                    if isinstance(value, (int, float)) and not isinstance(value, bool)
+                }
+                if numeric_values:
+                    dashboard_metrics[field] = numeric_values
+            if dashboard_metrics:
+                item["dashboard_metrics"] = dashboard_metrics
+            public.append(item)
+        return public
+
     return {
         "generated_at": datetime.now(KST).isoformat(),
         "notifications": public_rows(notifications, notification_fields, 120),
         "watch_runs": public_rows(watch_runs, watch_fields, 80),
-        "report_runs": public_rows(report_runs, report_fields, 500),
+        "report_runs": public_report_rows(report_runs, 500),
         "job_runs": public_rows(job_runs, job_fields, 200),
     }
 
