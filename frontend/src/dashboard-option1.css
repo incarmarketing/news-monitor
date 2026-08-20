@@ -1063,6 +1063,12 @@
   text-align: center;
 }
 
+.dashboard-v5 .editorial-issue-score.information {
+  border-color: #d7dee9;
+  background: #f8fafc;
+  color: #64748b;
+}
+
 .dashboard-v5 .editorial-composition-donut b {
   color: #0f172a;
   font-size: 22px;

@@ -67,6 +67,8 @@ import {
   calculateDashboardRiskIndex,
   classifyDashboardArticleSeries,
   formatDashboardCompositionShare,
+  isDashboardPriorityArticle,
+  mergeDashboardMomentumWithReportRuns,
 } from "./dashboardRisk";
 import slackMarkUrl from "./assets/slack-mark.png";
 import "./styles.css";
@@ -1088,7 +1090,10 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   const watchHealth = operationsHealth.items.find((item) => item.title === "부정기사 감시");
   const reportHealth = operationsHealth.items.find((item) => item.title === "일일보고서");
   const notificationHealth = operationsHealth.items.find((item) => item.title === "발송");
-  const momentumRows = useMemo(() => buildDashboardMomentum(allArticles.length ? allArticles : articles), [allArticles, articles]);
+  const momentumRows = useMemo(() => {
+    const articleRows = buildDashboardMomentum(allArticles.length ? allArticles : articles);
+    return mergeDashboardMomentumWithReportRuns(articleRows, operations?.reportRuns || []);
+  }, [allArticles, articles, operations?.reportRuns]);
   const compositionRows = useMemo(() => buildDashboardCompositionRows(momentumRows), [momentumRows]);
   // composePeriodData already returns a ranked, deduplicated issue list.
   // Re-grouping it here repeated the most expensive classification path on
@@ -1284,22 +1289,25 @@ function EditorialLeadIssue({ issue, riskMomentumRows = [], onOpenMonitoring, em
 function EditorialIssueList({ issues = [], onOpenMonitoring }) {
   return (
     <section className="editorial-issue-list" aria-label="후속 주요 이슈">
-      {issues.map((issue, index) => (
-        <DashboardIssueAction issue={issue} onOpenMonitoring={onOpenMonitoring} key={`${issue.source}-${issue.title}`}>
-          <span className="editorial-issue-rank">{index + 2}</span>
-          <span className={`editorial-issue-tone ${toneCssClass(issue.tone)}`}>{issue.tone || "중립"}</span>
-          <span className="editorial-issue-category">{displayDashboardCategory(issue.category)}</span>
-          <time>{issue.time || formatRelativeArticleTime(issue)}</time>
-          <b>{issue.title}</b>
-          <em
-            className="editorial-issue-score"
-            title="논조·당사 영향·정책 관련성을 반영한 운영 리스크 지수"
-            aria-label={`리스크 지수 ${dashboardDisplayScore(issue)}점`}
-          >
-            위험도 {dashboardDisplayScore(issue)}
-          </em>
-        </DashboardIssueAction>
-      ))}
+      {issues.map((issue, index) => {
+        const riskScore = dashboardDisplayScore(issue);
+        return (
+          <DashboardIssueAction issue={issue} onOpenMonitoring={onOpenMonitoring} key={`${issue.source}-${issue.title}`}>
+            <span className="editorial-issue-rank">{index + 2}</span>
+            <span className={`editorial-issue-tone ${toneCssClass(issue.tone)}`}>{issue.tone || "중립"}</span>
+            <span className="editorial-issue-category">{displayDashboardCategory(issue.category)}</span>
+            <time>{issue.time || formatRelativeArticleTime(issue)}</time>
+            <b>{issue.title}</b>
+            <em
+              className={`editorial-issue-score ${riskScore > 0 ? "risk" : "information"}`}
+              title={riskScore > 0 ? "부정·주의 신호만 반영한 운영 리스크 지수" : "부정·주의 신호가 없는 업계 정보"}
+              aria-label={riskScore > 0 ? `리스크 지수 ${riskScore}점` : "업계 정보"}
+            >
+              {riskScore > 0 ? `리스크 ${riskScore}` : "정보"}
+            </em>
+          </DashboardIssueAction>
+        );
+      })}
       {!issues.length && <div className="editorial-issue-list-empty">추가 관찰 이슈가 없습니다.</div>}
     </section>
   );
@@ -1309,9 +1317,9 @@ function DashboardLeadSparkline({ rows = [] }) {
   const chartRows = rows.slice(-7);
   const currentRiskIndex = Number(chartRows.at(-1)?.riskIndex || 0);
   return (
-    <div className="editorial-lead-sparkline" aria-label="최근 7일 일별 리스크 지수">
+    <div className="editorial-lead-sparkline" aria-label="최근 7일 전체 운영 리스크 지수">
       <div className="editorial-lead-sparkline-head">
-        <span>리스크 지수</span>
+        <span>전체 리스크</span>
         <strong>{currentRiskIndex}</strong>
       </div>
       <div className="editorial-lead-sparkline-chart">
@@ -1321,7 +1329,7 @@ function DashboardLeadSparkline({ rows = [] }) {
               rows={chartRows}
               series={[{ key: "riskIndex", color: "#d97706", label: "리스크 지수", unit: "점" }]}
               compact
-              ariaLabel="최근 7일 일별 리스크 지수"
+              ariaLabel="최근 7일 전체 운영 리스크 지수"
             />
           )
           : <div className="editorial-chart-empty">집계 가능한 리스크 신호가 없습니다.</div>}
@@ -1422,7 +1430,7 @@ function IssueMomentumChart({ rows = [] }) {
   }));
   return (
     <section className="editorial-momentum-panel">
-      <div className="editorial-section-title"><i />이슈 모멘텀 <em>최근 7일</em></div>
+      <div className="editorial-section-title"><i />분류별 기사 흐름 <em>최근 7일 · 보고일 기준</em></div>
       <div className="editorial-momentum-body">
         <div className="editorial-momentum-chart">
           {rows.length
@@ -5339,22 +5347,12 @@ function majorIssuePriorityScore(issue = {}) {
 function isLowPriorityMajorIssueArticle(article = {}) {
   if (isNonInsuranceFinancialLegalNoiseArticle(article)) return true;
   if (isOwnArticle(article)) return false;
-  if (articleEventTopicSignature(article)) return false;
-  const title = cleanSummaryText(article.title || "");
-  const text = sourceEvidenceHaystack(article);
-  const hasHardSignal = /1200\s*%|판매수수료|보험\s*페이백|보험대리점|법인보험대리점|\bGA\b|부당승환|불완전판매|보험사기|보험금\s*(?:제3자|편취|피해|리스크|대리|누수)|금감원|금융감독원|금융위|금융위원회|제재|검사|인수|매각|M&A|정착지원금|모집질서|실손|실손보험|자동차보험|차보험|보험추천|불법|수수료|무단반출|과실비율|침수|손보협회|소비자금융포럼|분쟁|적자|손해율|민원|소비자\s*피해|리스크\s*관리/i.test(text);
-  if (hasHardSignal) return false;
-  if (/(?:카드|금융|보험|더밸류)\s*(?:뉴스)?브리핑|오늘의\s+\w+\s*소식|금융신상|소비자보호의\s*날|KB스타뱅킹|슈퍼SOL|IPO까지|중앙그룹\s*회생|채권\s*개미/i.test(`${title} ${text}`)) {
-    return true;
-  }
-  if (/(상품|출시|보장보험|보험료|이벤트|행사)/i.test(title) && !hasHardSignal) {
-    return true;
-  }
-  return false;
+  return !isDashboardPriorityArticle({ ...article, ownMentioned: false });
 }
 
 function isGaInsuranceMajorIssueArticle(article = {}) {
-  return ["GA", "보험사", "경쟁사", "업계동향"].includes(article.category) && hasMajorIssueInsuranceGaContext(article);
+  return ["GA", "보험사", "경쟁사", "업계동향"].includes(article.category)
+    && isDashboardPriorityArticle({ ...article, ownMentioned: false });
 }
 
 function isInsurancePolicyMajorIssueArticle(article = {}) {
@@ -5364,7 +5362,7 @@ function isInsurancePolicyMajorIssueArticle(article = {}) {
   const source = String(article.source || "");
   const hasPolicySignal = category === "정책/규제"
     || /정책|규제|금감원|금융감독원|금융위|금융위원회|감독|제재|검사|제도|법안|시행령/.test(`${category} ${source} ${text}`);
-  return hasPolicySignal && hasMajorIssueInsuranceGaContext(article);
+  return hasPolicySignal && isDashboardPriorityArticle({ ...article, ownMentioned: false });
 }
 
 function buildMediaAnalysisIssues(articles = [], period = "monthly") {
@@ -8287,7 +8285,7 @@ function hasMaterialInsuranceGaContext(article = {}) {
 function isNonInsuranceFinancialRegulatoryArticle(article = {}) {
   const text = sourceEvidenceHaystack(article);
   const hasRegulatorySignal = /금융위|금융위원회|금감원|금융감독원|제재|제재심|검사|감독|금융보안|해킹|내부통제|보고의무|공시제도|개정\s*상법/.test(text);
-  const hasNonInsuranceSector = /빚투|반대매매|주식\s*빚투|카드사?|롯데카드|신용카드|은행권?|은행업|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|PG사|결제대행/.test(text);
+  const hasNonInsuranceSector = /빚투|반대매매|주식\s*빚투|비청산\s*장외파생|장외파생상품|파생상품거래|증거금\s*교환|공매도|회사채|채권|카드사?|롯데카드|신용카드|은행권?|은행업|한국투자증권|투자증권|증권사|금융투자|저축은행|새마을금고|가계대출|주택담보대출|부동산|대부업|캐피탈|가상자산|코인|핀테크|전자금융|PG사|결제대행/.test(text);
   return (isNonInsuranceFinancialLegalNoiseArticle(article) || (hasRegulatorySignal && hasNonInsuranceSector)) && !hasStrongInsuranceGaContext(article);
 }
 
