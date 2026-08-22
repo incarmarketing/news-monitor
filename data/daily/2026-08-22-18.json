@@ -1,0 +1,157 @@
+{
+  "date": "2026-08-22",
+  "timestamp": "2026-08-22T18:09:44.677608+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-08-22T13:00:00+09:00",
+    "end": "2026-08-22T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 7,
+    "total_after_cluster": 7,
+    "by_category": {
+      "own": 0,
+      "regulation": 2,
+      "competitor": 1,
+      "industry": 4,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 2,
+      "neutral": 5,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 1,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "classification_ruleset_version": "classification-contract-v5-deterministic-2026-08-12:0362f06df629",
+    "ai_model_used": "rules_fallback",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini-2.5-pro",
+        "error": "429 Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay.",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_failed"
+  },
+  "briefing": "## 최종 결론\n당사 직접 이슈보다 \"현대해상, 도수치료 보험금 급감…실적 개선 기대 커진다\" 등 업계 흐름이 중심입니다.\n\n## 핵심 이슈\n- [2] 현대해상, 도수치료 보험금 급감…실적 개선 기대 커진다: 경영지표가 상위권 보험사와 비교해도 뒤처지지 않을 정도로 개선됐다는 것이다 CSM은 보험계약에서 앞으로…\n- [3] 한은 금리·성장률 전망 '동시 공개'…다음주 경제 일…: 이찬진 금융감독원장은 27일 금융소비자보호자문위원회 회의를 열고 보험사기 척결과 카드사 마케팅 동의제도…\n\n## 지표 해석\n전체 수집 7건 중 분석 대상은 7건입니다. 당사 0건은 긍정 0, 주의 0, 중립 0, 부정 0건으로 나눕니다. 정책/규제 2건, 경쟁/업계 5건이며 전체 주의 2건과 부정 0건은 별도 관찰합니다.\n\n\n## 분석 키워드\n보험사, 금융감독원, 손해보험, 보험설계사",
+  "articles": [
+    {
+      "title": "경남 호우 침수차 2천 대 넘어...\"피해액만 최소 145억 추정\"",
+      "link": "https://www.ytn.co.kr/_ln/0115_202608221636195631",
+      "source": "ytn.co.kr",
+      "keyword": "손해보험",
+      "description": "[이원식 / DB손해보험 진주보상센터장 : 사실 저희가 보는 관점에서 폐차해야 하는데도, 수리를 좀 희망하시는 고객분들이 있습니다. 그런 분들은 저희가 상세하게 차량 상태를 안내 드리고 수리보다는 폐차하는 게 좀 더...",
+      "_summary": "[이원식 / DB손해보험 진주보상센터장 : 사실 저희가 보는 관점에서 폐차해야 하는데도, 수리를 좀 희망하시는 고객분들이 있습니다 그런 분들은 저희가 상세하게 차량 상태를 안내 드리고 수리보다는 폐차하는 게 좀 더. 경남 호우 침수차 2천 대 넘어...\"피해액만 최소 145억 추정\".",
+      "pub_date": "Sat, 22 Aug 2026 16:36:00 +0900",
+      "_report_id": 1,
+      "_score": 8,
+      "_category": "competitor",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "현대해상, 도수치료 보험금 급감…실적 개선 기대 커진다",
+      "link": "https://www.pinpointnews.co.kr/news/articleView.html?idxno=479583",
+      "source": "핀포인트뉴스",
+      "keyword": "보험사",
+      "description": "주요 경영지표가 상위권 보험사와 비교해도 뒤처지지 않을 정도로 개선됐다는 것이다. CSM은 보험계약에서 앞으로 발생할 이익을 현재 가치로 보여주는 지표다. 보험사가 장기적으로 얼마나 안정적인 이익을 창출할 수...",
+      "_summary": "경영지표가 상위권 보험사와 비교해도 뒤처지지 않을 정도로 개선됐다는 것이다 CSM은 보험계약에서 앞으로 발생할 이익을 현재 가치로 보여주는 지표다 보험사가 장기적으로 얼마나 안정적인 이익을 창출할 수.",
+      "pub_date": "Sat, 22 Aug 2026 14:46:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "한은 금리·성장률 전망 '동시 공개'…다음주 경제 일정 촉각",
+      "link": "https://www.ebn.co.kr/news/articleView.html?idxno=1721277",
+      "source": "ebn.co.kr",
+      "keyword": "금융감독원",
+      "description": "이찬진 금융감독원장은 27일 금융소비자보호자문위원회 회의를 열고 보험사기 척결과 카드사 마케팅 동의제도 등 금융권 불공정 관행 개선 방안을 논의한다. 금감원은 28일에는 기업공개(IPO)·유상증자 주관업무와...",
+      "_summary": "이찬진 금융감독원장은 27일 금융소비자보호자문위원회 회의를 열고 보험사기 척결과 카드사 마케팅 동의제도 등 금융권 불공정 관행 개선 방안을 논의한다 금감원은 28일에는 기업공개(IPO)·유상증자 주관업무와. 한은 금리·성장률 전망 '동시 공개'…다음주 경제 일정 촉각.",
+      "pub_date": "Sat, 22 Aug 2026 13:22:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1
+    },
+    {
+      "title": "신정근 \"'컷' 없는 1시간 반, 그 맛 느끼고 싶었죠\"…20년 만에 무대 [문...",
+      "link": "https://www.newsis.com/view/NISX20260821_0003758153",
+      "source": "뉴시스",
+      "keyword": "보험설계사",
+      "description": "'너 없이'는 서울의 한 공원에서 신반근이 평범한 보험설계사 김한근과 우연히 마주치며 시작된다. 술잔을 기울이던 두 사람은 같은 학교에서 밴드부 활동을 함께한 옛 친구였다는 사실을 깨닫게 된다. 신정근은 \"중년의...",
+      "_summary": "'너 없이'는 서울의 한 공원에서 신반근이 평범한 보험설계사 김한근과 우연히 마주치며 시작된다 술잔을 기울이던 두 사람은 같은 학교에서 밴드부 활동을 함께한 옛 친구였다는 사실을 깨닫게 된다 신정근은 \"중년의.",
+      "pub_date": "Sat, 22 Aug 2026 13:00:00 +0900",
+      "_report_id": 4,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "“대출부터 카드값까지 미뤄준다”...4대 금융, 수해지역 ‘전방위 지원...",
+      "link": "https://www.ekn.kr/web/view.php?key=20260822022235141",
+      "source": "ekn.kr",
+      "keyword": "손해보험",
+      "description": "KB손해보험은 장기보험 고객의 보험료 납입을 유예하고 KB국민카드는 신용카드 결제대금을 최대 6개월간 청구 유예한다. 카드론은 분할상환기간이나 거치기간 변경을 통해 상환을 유예하고 피해일 이후 사용한 단기...",
+      "_summary": "KB손해보험은 장기보험 고객의 보험료 납입을 유예하고 KB국민카드는 신용카드 결제대금을 최대 6개월간 청구 유예한다 카드론은 분할상환기간이나 거치기간 변경을 통해 상환을 유예하고 피해일 이후 사용한 단기. “대출부터 카드값까지 미뤄준다”...4대 금융, 수해지역 ‘전방위 지원.",
+      "pub_date": "Sat, 22 Aug 2026 15:42:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "경북농협, 새의성농협 ‘위더스상’ 수상",
+      "link": "https://tk.newdaily.co.kr/site/data/html/2026/08/22/2026082200017.html",
+      "source": "tk.newdaily.co.kr",
+      "keyword": "손해보험",
+      "description": "뉴데일리 강승탁 기자 = 농업 현장의 불확실성이 커지는 가운데 새의성농협이 농작물재해보험 등을 활용한 농가 위험관리와 상호금융 사업 성과를 인정받아 NH농협손해보험의 우수 사무소로 선정됐다. 새의성농협은 21일...",
+      "_summary": "뉴데일리 강승탁 기자 = 농업 현장의 불확실성이 커지는 가운데 새의성농협이 농작물재해보험 등을 활용한 농가 위험관리와 상호금융 사업 성과를 인정받아 NH농협손해보험의 우수 사무소로 선정됐다 새의성농협은 21일. 경북농협, 새의성농협 ‘위더스상’ 수상.",
+      "pub_date": "Sat, 22 Aug 2026 13:12:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    },
+    {
+      "title": "쇼엠인슈어런스, ‘플랜비보험’ 앱 개편·사이트 개설",
+      "link": "https://www.vegannews.co.kr/news/article.html?no=384860",
+      "source": "vegannews.co.kr",
+      "keyword": "보험사",
+      "description": "사이트 운영사인 쇼엠인슈어런스는 다수 보험사와 계약 체결을 대리·중개하는 금융상품판매대리·중개업자다. 금융소비자보호법 제26조에 따라 판매대리·중개업자는 대리·중개하는 보험사와 업무 내용을 소비자에게...",
+      "_summary": "사이트 운영사인 쇼엠인슈어런스는 다수 보험사와 계약 체결을 대리·중개하는 금융상품판매대리·중개업자다 금융소비자보호법 제26조에 따라 판매대리·중개업자는 대리·중개하는 보험사와 업무 내용을 소비자에게. 쇼엠인슈어런스, ‘플랜비보험’ 앱 개편·사이트 개설.",
+      "pub_date": "Sat, 22 Aug 2026 14:24:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1
+    }
+  ]
+}
