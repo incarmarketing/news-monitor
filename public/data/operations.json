@@ -1,6 +1,17 @@
 {
-  "generated_at": "2026-08-22T18:12:55.366231+09:00",
+  "generated_at": "2026-08-23T08:12:11.623505+09:00",
   "notifications": [
+    {
+      "id": 304,
+      "sent_at": "2026-08-22T23:12:08.85032+00:00",
+      "channel": "slack",
+      "message_type": "daily_report",
+      "dedupe_key": "slack:daily_report:언론 동향 2026-08-23 08",
+      "title": "언론 동향 2026-08-23 08",
+      "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-08-23-08.html?v=20260823081207",
+      "status": "success",
+      "created_at": "2026-08-22T23:12:09.104722+00:00"
+    },
     {
       "id": 303,
       "sent_at": "2026-08-22T09:12:52.779048+00:00",
@@ -8,7 +19,7 @@
       "message_type": "daily_report",
       "dedupe_key": "slack:daily_report:언론 동향 2026-08-22 18",
       "title": "언론 동향 2026-08-22 18",
-      "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-08-22-18.html?v=20260822181251",
+      "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-08-22-18.html",
       "status": "success",
       "created_at": "2026-08-22T09:12:52.931355+00:00"
     },
@@ -869,222 +880,246 @@
       "link_url": "https://incarmarketing.github.io/news-monitor/dashboard.html?section=monitoring&tone=negative&category=own&article_title=%22%EB%A7%88%EA%B0%90+%ED%9D%AC%EB%B9%84+%EA%B0%88%EB%A0%B8%EB%8B%A4%22%E2%80%A6%EB%8C%80%ED%98%95+GA+7%EC%82%AC%2C+6%EC%9B%94+%EB%8F%99%EB%B0%98+%EB%B0%98%EB%93%B1+%EC%86%8D+%EC%88%9C%EC%9C%84+%EA%B2%BD%EC%9F%81+%EC%9E%AC%EC%A0%90%ED%99%94&article_link=https%3A%2F%2Fwww.fins.co.kr%2Fnews%2FarticleView.html%3Fidxno%3D109402",
       "status": "success",
       "created_at": "2026-07-29T21:44:10.830444+00:00"
-    },
-    {
-      "id": 224,
-      "sent_at": "2026-07-29T09:10:14.207316+00:00",
-      "channel": "slack",
-      "message_type": "daily_report",
-      "dedupe_key": "slack:daily_report:언론 동향 2026-07-29 18",
-      "title": "언론 동향 2026-07-29 18",
-      "link_url": "https://incarmarketing.github.io/news-monitor/reports/daily/2026-07-29-18.html",
-      "status": "success",
-      "created_at": "2026-07-29T09:10:14.395776+00:00"
     }
   ],
   "watch_runs": [
     {
-      "run_key": "negative-watch-2026-08-22T18:00",
-      "scanned_at": "2026-08-22T09:00:51.224234+00:00",
+      "run_key": "negative-watch-2026-08-23T08:00",
+      "scanned_at": "2026-08-22T23:00:44.271867+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 6,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T17:50",
-      "scanned_at": "2026-08-22T08:50:35.524166+00:00",
+      "run_key": "negative-watch-2026-08-23T07:50",
+      "scanned_at": "2026-08-22T22:50:32.96589+00:00",
+      "status": "success",
+      "minutes_back": 11,
+      "scanned_count": 5,
+      "negative_count": 0,
+      "new_negative_count": 0,
+      "message": "no new negative article"
+    },
+    {
+      "run_key": "negative-watch-2026-08-23T07:40",
+      "scanned_at": "2026-08-22T22:40:36.190955+00:00",
+      "status": "success",
+      "minutes_back": 11,
+      "scanned_count": 5,
+      "negative_count": 0,
+      "new_negative_count": 0,
+      "message": "no new negative article"
+    },
+    {
+      "run_key": "negative-watch-2026-08-23T07:30",
+      "scanned_at": "2026-08-22T22:30:41.834306+00:00",
+      "status": "success",
+      "minutes_back": 11,
+      "scanned_count": 5,
+      "negative_count": 0,
+      "new_negative_count": 0,
+      "message": "no new negative article"
+    },
+    {
+      "run_key": "negative-watch-2026-08-23T07:20",
+      "scanned_at": "2026-08-22T22:20:43.282963+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 6,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T17:40",
-      "scanned_at": "2026-08-22T08:40:34.67817+00:00",
+      "run_key": "negative-watch-2026-08-23T07:10",
+      "scanned_at": "2026-08-22T22:10:35.60068+00:00",
       "status": "success",
       "minutes_back": 11,
-      "scanned_count": 6,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T17:30",
-      "scanned_at": "2026-08-22T08:30:41.345038+00:00",
+      "run_key": "negative-watch-2026-08-23T07:00",
+      "scanned_at": "2026-08-22T22:00:48.943741+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 6,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T17:20",
-      "scanned_at": "2026-08-22T08:20:35.200726+00:00",
+      "run_key": "negative-watch-2026-08-23T06:50",
+      "scanned_at": "2026-08-22T21:50:37.153775+00:00",
       "status": "success",
       "minutes_back": 11,
-      "scanned_count": 7,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T17:10",
-      "scanned_at": "2026-08-22T08:10:34.79783+00:00",
+      "run_key": "negative-watch-2026-08-23T06:40",
+      "scanned_at": "2026-08-22T21:40:47.072569+00:00",
       "status": "success",
       "minutes_back": 11,
-      "scanned_count": 7,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T17:00",
-      "scanned_at": "2026-08-22T08:00:55.47948+00:00",
+      "run_key": "negative-watch-2026-08-23T06:30",
+      "scanned_at": "2026-08-22T21:30:46.838096+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 7,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T16:50",
-      "scanned_at": "2026-08-22T07:50:32.168653+00:00",
-      "status": "success",
-      "minutes_back": 11,
-      "scanned_count": 7,
-      "negative_count": 0,
-      "new_negative_count": 0,
-      "message": "no new negative article"
-    },
-    {
-      "run_key": "negative-watch-2026-08-22T16:40",
-      "scanned_at": "2026-08-22T07:40:35.92048+00:00",
-      "status": "success",
-      "minutes_back": 11,
-      "scanned_count": 8,
-      "negative_count": 0,
-      "new_negative_count": 0,
-      "message": "no new negative article"
-    },
-    {
-      "run_key": "negative-watch-2026-08-22T16:30",
-      "scanned_at": "2026-08-22T07:30:42.246368+00:00",
+      "run_key": "negative-watch-2026-08-23T06:20",
+      "scanned_at": "2026-08-22T21:20:36.772479+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 8,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T16:20",
-      "scanned_at": "2026-08-22T07:20:38.825109+00:00",
-      "status": "success",
-      "minutes_back": 12,
-      "scanned_count": 9,
-      "negative_count": 0,
-      "new_negative_count": 0,
-      "message": "no new negative article"
-    },
-    {
-      "run_key": "negative-watch-2026-08-22T16:10",
-      "scanned_at": "2026-08-22T07:10:33.967514+00:00",
+      "run_key": "negative-watch-2026-08-23T06:10",
+      "scanned_at": "2026-08-22T21:10:35.365296+00:00",
       "status": "success",
       "minutes_back": 11,
-      "scanned_count": 9,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T16:00",
-      "scanned_at": "2026-08-22T07:00:49.884256+00:00",
+      "run_key": "negative-watch-2026-08-23T06:00",
+      "scanned_at": "2026-08-22T21:00:45.221324+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 9,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T15:50",
-      "scanned_at": "2026-08-22T06:50:38.175802+00:00",
+      "run_key": "negative-watch-2026-08-23T05:50",
+      "scanned_at": "2026-08-22T20:50:35.827032+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 9,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T15:40",
-      "scanned_at": "2026-08-22T06:40:36.809284+00:00",
+      "run_key": "negative-watch-2026-08-23T05:40",
+      "scanned_at": "2026-08-22T20:40:33.374567+00:00",
       "status": "success",
       "minutes_back": 11,
-      "scanned_count": 9,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T15:30",
-      "scanned_at": "2026-08-22T06:30:40.756406+00:00",
-      "status": "success",
-      "minutes_back": 11,
-      "scanned_count": 9,
-      "negative_count": 0,
-      "new_negative_count": 0,
-      "message": "no new negative article"
-    },
-    {
-      "run_key": "negative-watch-2026-08-22T15:20",
-      "scanned_at": "2026-08-22T06:20:44.604136+00:00",
+      "run_key": "negative-watch-2026-08-23T05:30",
+      "scanned_at": "2026-08-22T20:30:41.554489+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 9,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T15:10",
-      "scanned_at": "2026-08-22T06:10:41.993499+00:00",
-      "status": "success",
-      "minutes_back": 11,
-      "scanned_count": 9,
-      "negative_count": 0,
-      "new_negative_count": 0,
-      "message": "no new negative article"
-    },
-    {
-      "run_key": "negative-watch-2026-08-22T15:00",
-      "scanned_at": "2026-08-22T06:00:47.079859+00:00",
+      "run_key": "negative-watch-2026-08-23T05:20",
+      "scanned_at": "2026-08-22T20:20:39.35129+00:00",
       "status": "success",
       "minutes_back": 12,
-      "scanned_count": 9,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     },
     {
-      "run_key": "negative-watch-2026-08-22T14:50",
-      "scanned_at": "2026-08-22T05:50:34.608751+00:00",
+      "run_key": "negative-watch-2026-08-23T05:10",
+      "scanned_at": "2026-08-22T20:10:37.547708+00:00",
       "status": "success",
       "minutes_back": 11,
-      "scanned_count": 9,
+      "scanned_count": 5,
+      "negative_count": 0,
+      "new_negative_count": 0,
+      "message": "no new negative article"
+    },
+    {
+      "run_key": "negative-watch-2026-08-23T05:00",
+      "scanned_at": "2026-08-22T20:00:52.379646+00:00",
+      "status": "success",
+      "minutes_back": 12,
+      "scanned_count": 5,
+      "negative_count": 0,
+      "new_negative_count": 0,
+      "message": "no new negative article"
+    },
+    {
+      "run_key": "negative-watch-2026-08-23T04:50",
+      "scanned_at": "2026-08-22T19:50:38.827804+00:00",
+      "status": "success",
+      "minutes_back": 12,
+      "scanned_count": 5,
       "negative_count": 0,
       "new_negative_count": 0,
       "message": "no new negative article"
     }
   ],
   "report_runs": [
+    {
+      "run_key": "2026-08-23-08",
+      "report_date": "2026-08-23",
+      "report_slot": "08",
+      "timestamp": "2026-08-22T23:09:39.077178+00:00",
+      "window_label": "전일 18:00~당일 08:00",
+      "risk_level": "LOW",
+      "dashboard_metrics": {
+        "total_collected": 18,
+        "total_after_cluster": 15,
+        "own_negative": 0,
+        "own_total": 0,
+        "by_category": {
+          "own": 0,
+          "other": 1,
+          "industry": 5,
+          "competitor": 3,
+          "regulation": 2,
+          "sponsorship": 4
+        },
+        "by_tone": {
+          "caution": 3,
+          "exclude": 0,
+          "neutral": 12,
+          "negative": 0,
+          "positive": 0
+        },
+        "own_by_tone": {
+          "caution": 0,
+          "neutral": 0,
+          "negative": 0,
+          "positive": 0
+        }
+      }
+    },
     {
       "run_key": "2026-08-22-18",
       "report_date": "2026-08-22",
@@ -10699,6 +10734,18 @@
   ],
   "job_runs": [
     {
+      "run_key": "daily_report:2026-08-23:08:generated",
+      "job_type": "daily_report",
+      "report_date": "2026-08-23",
+      "report_slot": "08",
+      "workflow": "AI News Briefing",
+      "status": "success",
+      "finished_at": "2026-08-22T23:11:26.930491+00:00",
+      "last_seen_at": "2026-08-22T23:11:26.930491+00:00",
+      "created_at": "2026-08-22T23:11:27.138734+00:00",
+      "updated_at": "2026-08-22T23:11:27.138734+00:00"
+    },
+    {
       "run_key": "daily_report:2026-08-22:18:generated",
       "job_type": "daily_report",
       "report_date": "2026-08-22",
@@ -12871,6 +12918,19 @@
       "updated_at": "2026-06-24T10:16:06.684834+00:00"
     },
     {
+      "run_key": "daily_report:2026-08-23:08",
+      "job_type": "daily_report",
+      "report_date": "2026-08-23",
+      "report_slot": "08",
+      "workflow": "AI News Briefing",
+      "status": "success",
+      "started_at": "2026-08-22T23:00:42.361849+00:00",
+      "finished_at": "2026-08-22T23:12:09.34372+00:00",
+      "last_seen_at": "2026-08-22T23:12:09.34372+00:00",
+      "created_at": "2026-08-22T23:00:42.632688+00:00",
+      "updated_at": "2026-08-22T23:12:09.552023+00:00"
+    },
+    {
       "run_key": "daily_report:2026-08-22:18",
       "job_type": "daily_report",
       "report_date": "2026-08-22",
@@ -13090,32 +13150,6 @@
       "last_seen_at": "2026-08-17T04:12:32.891144+00:00",
       "created_at": "2026-08-17T04:00:39.390775+00:00",
       "updated_at": "2026-08-17T04:12:33.082902+00:00"
-    },
-    {
-      "run_key": "daily_report:2026-08-17:08",
-      "job_type": "daily_report",
-      "report_date": "2026-08-17",
-      "report_slot": "08",
-      "workflow": "AI News Briefing",
-      "status": "success",
-      "started_at": "2026-08-16T23:00:44.79418+00:00",
-      "finished_at": "2026-08-16T23:10:44.515769+00:00",
-      "last_seen_at": "2026-08-16T23:10:44.515769+00:00",
-      "created_at": "2026-08-16T23:00:45.293542+00:00",
-      "updated_at": "2026-08-16T23:10:44.679393+00:00"
-    },
-    {
-      "run_key": "daily_report:2026-08-16:18",
-      "job_type": "daily_report",
-      "report_date": "2026-08-16",
-      "report_slot": "18",
-      "workflow": "AI News Briefing",
-      "status": "success",
-      "started_at": "2026-08-16T09:00:46.649368+00:00",
-      "finished_at": "2026-08-16T09:10:56.262659+00:00",
-      "last_seen_at": "2026-08-16T09:10:56.262659+00:00",
-      "created_at": "2026-08-16T09:00:47.104969+00:00",
-      "updated_at": "2026-08-16T09:10:56.422792+00:00"
     }
   ]
 }
