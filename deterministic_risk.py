@@ -117,7 +117,7 @@ CERTIFIED_POSITIVE_PATTERN = re.compile(
 )
 POSITIVE_PERFORMANCE_PATTERN = re.compile(
     r"호실적|양호한\s*실적|매출\s*(?:증가|급증|회복)|실적\s*(?:증가|개선|반등)|"
-    r"1위|최다|수상|선정|배출|돌파|성장|회복|업계\s*최다",
+    r"역대\s*최대|최대\s*실적|1위|최다|수상|선정|배출|돌파|성장|회복|업계\s*최다",
     re.I,
 )
 POSITIVE_RISK_EXCEPTION_PATTERN = re.compile(
@@ -143,6 +143,27 @@ PEER_LIST_PATTERN = re.compile(
     r"메가금융서비스|에이플러스에셋).{0,100}(?:인카금융서비스|인카금융)|"
     r"(?:인카금융서비스|인카금융).{0,100}(?:한화생명금융서비스|지에이코리아|"
     r"글로벌금융판매|메가금융서비스|에이플러스에셋)",
+    re.I,
+)
+
+PERFORMANCE_DISCLOSURE_TITLE_PATTERN = re.compile(
+    r"(?:매출|영업\s*이익|순이익|실적|설계사).{0,60}"
+    r"(?:역대\s*최대|최대\s*실적|증가|급증|성장|개선|회복|돌파)|"
+    r"(?:역대\s*최대|최대\s*실적|호실적).{0,60}"
+    r"(?:매출|영업\s*이익|순이익|실적|설계사)",
+    re.I,
+)
+HISTORICAL_ONE_OFF_COST_PATTERN = re.compile(
+    r"(?:20\d{2}년|지난해|전년|과거).{0,180}"
+    r"(?:정기\s*검사|검사\s*결과|과태료\s*납부|과징금\s*납부|제재\s*비용).{0,220}"
+    r"(?:일회성\s*(?:비용|요인)|실적에\s*반영|비용으로\s*반영)",
+    re.I,
+)
+FRESH_ENFORCEMENT_ACTION_PATTERN = re.compile(
+    r"(?:과태료|과징금|제재|처분).{0,45}"
+    r"(?:부과|통보|결정|확정|착수|적발|확인)|"
+    r"(?:부과|통보|결정|확정|착수|적발).{0,45}"
+    r"(?:과태료|과징금|제재|처분)",
     re.I,
 )
 
@@ -381,6 +402,25 @@ def _event_in_sentence(sentence: str) -> tuple[str, str, re.Match[str]] | None:
     return None
 
 
+def _is_historical_one_off_performance_disclosure(
+    article: dict[str, Any],
+    sentence: str,
+) -> bool:
+    """Ignore old one-off cost explanations inside a positive earnings article.
+
+    This guardrail is intentionally narrow. A newly imposed or announced
+    sanction must still alert even when the article also discusses earnings.
+    """
+    title = _title(article)
+    if not PERFORMANCE_DISCLOSURE_TITLE_PATTERN.search(title):
+        return False
+    if any(pattern.search(title) for _event, _key, pattern in EVENT_PATTERNS):
+        return False
+    if not HISTORICAL_ONE_OFF_COST_PATTERN.search(sentence):
+        return False
+    return not FRESH_ENFORCEMENT_ACTION_PATTERN.search(sentence)
+
+
 def _is_direct_binding(sentence: str, event_match: re.Match[str], *, is_title: bool) -> bool:
     own_matches = list(OWN_PATTERN.finditer(sentence))
     if not own_matches:
@@ -444,12 +484,16 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
         return base
 
     sentences = source_sentences(article)
+    historical_disclosure_suppressed = False
     for sentence in sentences:
         event = _event_in_sentence(sentence)
         if not event or not OWN_PATTERN.search(sentence):
             continue
         event_type, rule_key, event_match = event
         if _is_direct_binding(sentence, event_match, is_title=sentence == title):
+            if _is_historical_one_off_performance_disclosure(article, sentence):
+                historical_disclosure_suppressed = True
+                continue
             base.update(
                 own_role="primary",
                 document_type="risk_event",
@@ -467,13 +511,27 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
     positive_override = _positive_document_override(article)
     if positive_override:
         document_type, tone = positive_override
+        matched_rule_keys = [f"guardrail_{document_type}"]
+        if historical_disclosure_suppressed:
+            matched_rule_keys.append("guardrail_historical_one_off_performance_disclosure")
         base.update(
             own_role=inferred_role,
             document_type=document_type,
             confidence=0.995,
             suggested_tone=tone,
             decision="positive_or_routine_guardrail",
-            matched_rule_keys=[f"guardrail_{document_type}"],
+            matched_rule_keys=matched_rule_keys,
+        )
+        return base
+
+
+    if historical_disclosure_suppressed:
+        base.update(
+            own_role=inferred_role,
+            document_type="industry_news",
+            confidence=0.995,
+            decision="positive_or_routine_guardrail",
+            matched_rule_keys=["guardrail_historical_one_off_performance_disclosure"],
         )
         return base
 

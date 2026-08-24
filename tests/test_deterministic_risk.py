@@ -338,6 +338,40 @@ class DeterministicRiskPrecisionTests(unittest.TestCase):
         self.assertTrue(result["review_required"])
         self.assertEqual(result["suggested_tone"], "caution")
 
+    def test_historical_one_off_sanction_cost_in_record_earnings_is_not_an_alert(self) -> None:
+        article = {
+            "title": (
+                "규제 재편 속 인카금융서비스, 상반기 매출 6400억 '역대 최대'"
+                "…설계사 2.47만명"
+            ),
+            "description": "인카금융서비스가 상반기 역대 최대 매출을 기록했다.",
+            "body": (
+                "회사 측은 2024년 금융감독원 정기검사 결과에 따른 과태료 납부와 "
+                "'KLPGA 인카금융 더헤븐 마스터즈' 대회 운영비 등 약 60억원의 "
+                "일회성 비용이 2분기 실적에 반영됐다고 설명했다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertFalse(result["alert_eligible"])
+        self.assertFalse(result["review_required"])
+        self.assertEqual(result["decision"], "positive_or_routine_guardrail")
+        self.assertIn(
+            "guardrail_historical_one_off_performance_disclosure",
+            result["matched_rule_keys"],
+        )
+
+    def test_new_sanction_in_performance_article_still_alerts(self) -> None:
+        article = {
+            "title": "인카금융서비스, 상반기 매출 증가",
+            "description": (
+                "금융감독원은 인카금융서비스에 모집질서 위반 과태료를 새로 부과했다고 "
+                "통보했다."
+            ),
+        }
+        result = deterministic_risk.classify(article)
+        self.assertTrue(result["alert_eligible"])
+        self.assertEqual(result["risk_event_type"], "sanction")
+
 
 if __name__ == "__main__":
     unittest.main()
