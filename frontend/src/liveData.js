@@ -47,6 +47,7 @@ const CORE_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_ARTICLE
 const CORE_ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_LOOKBACK_DAYS", 8, 3, 30);
 const HISTORY_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_HISTORY_ARTICLE_MAX_ROWS", 8000, 2000, 20000);
 const ENGAGEMENT_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_ENGAGEMENT_ARTICLE_MAX_ROWS", 4000, 1000, 10000);
+const REQUEST_TIMEOUT_MS = readPositiveEnvInt("VITE_NEWS_MONITOR_REQUEST_TIMEOUT_MS", 12000, 3000, 30000);
 const NEWS_ARTICLE_SELECT = "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size";
 let supabaseConfigPromise = null;
 
@@ -203,11 +204,40 @@ export function saveCachedCoreSnapshot(snapshot) {
   }
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const upstreamSignal = options.signal;
+  const abortFromUpstream = () => controller.abort(upstreamSignal?.reason);
+  if (upstreamSignal?.aborted) abortFromUpstream();
+  else upstreamSignal?.addEventListener?.("abort", abortFromUpstream, { once: true });
+  const timeout = window.setTimeout(() => controller.abort("request_timeout"), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted && !upstreamSignal?.aborted) {
+      throw new Error("request_timeout");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+    upstreamSignal?.removeEventListener?.("abort", abortFromUpstream);
+  }
+}
+
 async function fetchJson(path, options) {
-  const response = await fetch(path, { cache: "no-store", ...options });
+  const response = await fetchWithTimeout(path, { cache: "no-store", ...options });
   if (!response.ok) throw new Error(`request_${response.status}`);
   const text = await response.text();
   return text ? JSON.parse(text) : null;
+}
+
+function supabaseApiHeaders(apiKey, extraHeaders = {}) {
+  const key = String(apiKey || "").trim();
+  const headers = { apikey: key, ...extraHeaders };
+  if (key.split(".").length === 3) {
+    headers.Authorization = `Bearer ${key}`;
+  }
+  return headers;
 }
 
 export async function loadSupabaseConfig() {
@@ -232,15 +262,13 @@ export async function loadSupabaseConfig() {
 async function dashboardApi(config, session, action, payload = {}, options = {}) {
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
   if (!session?.session_token && !options.allowAnonymous) throw new Error("missing_dashboard_session");
-  const headers = {
-    apikey: config.anon_key,
-    Authorization: `Bearer ${config.anon_key}`,
+  const headers = supabaseApiHeaders(config.anon_key, {
     "Content-Type": "application/json",
-  };
+  });
   if (session?.session_token) {
     headers["X-Dashboard-Session"] = session.session_token;
   }
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/dashboard-api`, {
+  const response = await fetchWithTimeout(`${config.url.replace(/\/$/, "")}/functions/v1/dashboard-api`, {
     method: "POST",
     cache: "no-store",
     headers,
@@ -267,14 +295,12 @@ async function rest(config, session, path) {
 
 async function publicRest(config, path) {
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/rest/v1/${path}`, {
+  const response = await fetchWithTimeout(`${config.url.replace(/\/$/, "")}/rest/v1/${path}`, {
     method: "GET",
     cache: "no-store",
-    headers: {
-      apikey: config.anon_key,
-      Authorization: `Bearer ${config.anon_key}`,
+    headers: supabaseApiHeaders(config.anon_key, {
       Accept: "application/json",
-    },
+    }),
   });
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
@@ -478,15 +504,13 @@ export async function generateScrapAnalysisWithGemini(payload = {}) {
   const config = await loadSupabaseConfig();
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
   const session = getStoredSession();
-  const headers = {
-    apikey: config.anon_key,
-    Authorization: `Bearer ${config.anon_key}`,
+  const headers = supabaseApiHeaders(config.anon_key, {
     "Content-Type": "application/json",
-  };
+  });
   if (session?.session_token) {
     headers["X-Dashboard-Session"] = session.session_token;
   }
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/analyze-scraps`, {
+  const response = await fetchWithTimeout(`${config.url.replace(/\/$/, "")}/functions/v1/analyze-scraps`, {
     method: "POST",
     cache: "no-store",
     headers,
@@ -550,15 +574,13 @@ export async function generatePressReleaseWithGemini(payload = {}) {
   const config = await loadSupabaseConfig();
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
   const session = getStoredSession();
-  const headers = {
-    apikey: config.anon_key,
-    Authorization: `Bearer ${config.anon_key}`,
+  const headers = supabaseApiHeaders(config.anon_key, {
     "Content-Type": "application/json",
-  };
+  });
   if (session?.session_token) {
     headers["X-Dashboard-Session"] = session.session_token;
   }
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/generate-press-release`, {
+  const response = await fetchWithTimeout(`${config.url.replace(/\/$/, "")}/functions/v1/generate-press-release`, {
     method: "POST",
     cache: "no-store",
     headers,
@@ -724,11 +746,9 @@ export async function verifyDashboardLogin(employeeNo, password) {
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
   const session = await fetchJson(`${config.url.replace(/\/$/, "")}/rest/v1/rpc/verify_dashboard_login`, {
     method: "POST",
-    headers: {
-      apikey: config.anon_key,
-      Authorization: `Bearer ${config.anon_key}`,
+    headers: supabaseApiHeaders(config.anon_key, {
       "Content-Type": "application/json",
-    },
+    }),
     body: JSON.stringify({ p_employee_no: employeeNo, p_password: password }),
   });
   if (session?.ok) saveDashboardSession(session);
@@ -1036,8 +1056,21 @@ async function loadStaticOperationalStatus() {
   };
 }
 
-async function loadPublicOperationalStatus() {
-  return loadStaticOperationalStatus();
+async function loadPublicOperationalStatus(config, loadOptions) {
+  try {
+    const snapshot = await dashboardApi(config, null, "snapshot", {
+      lookback_days: loadOptions?.lookbackDays || CORE_ARTICLE_LOOKBACK_DAYS,
+      max_rows: loadOptions?.maxRows || CORE_ARTICLE_MAX_ROWS,
+    }, { allowAnonymous: true });
+    const normalized = normalizeOperationalStatusPayload(snapshot);
+    return {
+      ...normalized,
+      generatedAt: snapshot?.snapshot_at || normalized.generatedAt,
+      source: "supabase_snapshot",
+    };
+  } catch {
+    return loadStaticOperationalStatus();
+  }
 }
 
 async function loadStaticOperationalData() {
@@ -1315,22 +1348,28 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
   if (!config?.url || !config?.anon_key) return null;
 
   try {
+    const operationalStatusPromise = loadOptions.includeStatus
+      ? loadPublicOperationalStatus(config, loadOptions)
+      : Promise.resolve(null);
     const articlesRequest = loadOptions.includeArticles
-      ? fetchPublicTable(
-          config,
-          "news_articles",
-          [
-            NEWS_ARTICLE_SELECT,
-            `report_date=gte.${articleLookbackStartDateKey(loadOptions.lookbackDays)}`,
-            "order=report_date.desc,score.desc",
-          ].join("&"),
-          ARTICLE_PAGE_SIZE,
-          loadOptions.maxRows,
-        )
+      ? operationalStatusPromise.then((snapshot) => {
+          if (Array.isArray(snapshot?.articles) && snapshot.articles.length) return snapshot.articles;
+          return fetchPublicTable(
+            config,
+            "news_articles",
+            [
+              NEWS_ARTICLE_SELECT,
+              `report_date=gte.${articleLookbackStartDateKey(loadOptions.lookbackDays)}`,
+              "order=report_date.desc,score.desc",
+            ].join("&"),
+            ARTICLE_PAGE_SIZE,
+            loadOptions.maxRows,
+          );
+        })
       : Promise.resolve([]);
     const optional = (enabled, request) => enabled ? request() : Promise.resolve([]);
     const optionalRequests = {
-      operationalStatus: optional(loadOptions.includeStatus, () => loadPublicOperationalStatus()),
+      operationalStatus: operationalStatusPromise,
       mediaRelations: optional(loadOptions.includeManagement, () => publicRest(config, "media_relations?select=name,url,status,grade,owner,contact_date,beat,lead_reporter,email,phone,memo,hidden&order=name.asc")),
       aliases: optional(loadOptions.includeManagement, () => publicRest(config, "press_aliases?select=host,press_name&order=press_name.asc,host.asc&limit=1000")),
       keywords: optional(loadOptions.includeManagement, () => loadPublicMonitorKeywords(config)),
@@ -1390,15 +1429,13 @@ export async function generateRiskResponseWithGemini(payload = {}) {
   const config = await loadSupabaseConfig();
   if (!config?.url || !config?.anon_key) throw new Error("missing_supabase_config");
   const session = getStoredSession();
-  const headers = {
-    apikey: config.anon_key,
-    Authorization: `Bearer ${config.anon_key}`,
+  const headers = supabaseApiHeaders(config.anon_key, {
     "Content-Type": "application/json",
-  };
+  });
   if (session?.session_token) {
     headers["X-Dashboard-Session"] = session.session_token;
   }
-  const response = await fetch(`${config.url.replace(/\/$/, "")}/functions/v1/generate-risk-response`, {
+  const response = await fetchWithTimeout(`${config.url.replace(/\/$/, "")}/functions/v1/generate-risk-response`, {
     method: "POST",
     cache: "no-store",
     headers,

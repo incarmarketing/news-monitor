@@ -67,6 +67,22 @@ class ScheduleGuardTests(unittest.TestCase):
         with patch.object(schedule_guard, "supabase_select", side_effect=rows):
             self.assertTrue(schedule_guard.daily_report_succeeded("2026-06-22", "13"))
 
+    def test_period_completion_is_scoped_to_current_kst_day(self) -> None:
+        now = kst_datetime(2026, 6, 1, 8, 3)
+        with patch.object(schedule_guard, "supabase_select", return_value=[{"id": 1}]) as select:
+            self.assertTrue(schedule_guard.period_reports_succeeded(now))
+
+        query = select.call_args.args[1]
+        self.assertIn("message_type=eq.weekly_report", query)
+        self.assertIn("sent_at=gte.", query)
+        self.assertIn("sent_at=lt.", query)
+        self.assertNotIn("title=eq.", query)
+
+    def test_old_period_success_does_not_complete_current_period(self) -> None:
+        now = kst_datetime(2026, 6, 1, 8, 3)
+        with patch.object(schedule_guard, "supabase_select", return_value=[]):
+            self.assertFalse(schedule_guard.period_reports_succeeded(now))
+
     def test_cancelled_report_does_not_activate_failure_cooldown(self) -> None:
         rows = [[{
             "status": "cancelled",

@@ -241,6 +241,8 @@ jobs:
           GROQ_MAX_ISSUE_SUMMARIES: ${{ secrets.GROQ_MAX_ISSUE_SUMMARIES || '20' }}
           AI_MAX_ISSUE_SUMMARIES: ${{ secrets.AI_MAX_ISSUE_SUMMARIES || '5' }}
           AI_ISSUE_SUMMARY_PROVIDER: gemini
+          DART_API_KEY: ${{ secrets.DART_API_KEY || secrets.OPENDART_API_KEY || secrets.DART }}
+          DART_CORP_CODE: ${{ secrets.DART_CORP_CODE || secrets.INCAR_DART_CORP_CODE || '01013694' }}
           REQUIRE_DASHBOARD_HISTORY: "true"
           REQUIRE_DASHBOARD_QUALITY: "false"
 
@@ -307,20 +309,24 @@ jobs:
           PERIOD="${{ github.event.inputs.period_reports }}"
           REPORT_MONTH="${{ github.event.inputs.report_month }}"
 
-          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
-            python slack_notify.py period weekly
-          fi
-          if [ "${{ steps.guard.outputs.should_period }}" = "true" ] && [ "$(TZ=Asia/Seoul date +%d)" = "01" ]; then
-            python slack_notify.py period monthly
-          fi
-          if [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
-            python slack_notify.py period weekly
-          fi
-          if [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
-            if [ -n "$REPORT_MONTH" ]; then
-              python slack_notify.py period monthly "$REPORT_MONTH"
-            else
-              python slack_notify.py period monthly
+          if [ "${{ steps.guard.outputs.should_period }}" = "true" ]; then
+            if [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
+              python slack_notify.py period weekly
+            fi
+            if [ "$(TZ=Asia/Seoul date +%d)" = "01" ]; then
+              PREVIOUS_MONTH="$(TZ=Asia/Seoul date -d 'last month' +%Y-%m)"
+              python slack_notify.py period monthly "$PREVIOUS_MONTH"
+            fi
+          else
+            if [ "$PERIOD" = "weekly" ] || [ "$PERIOD" = "both" ]; then
+              python slack_notify.py period weekly
+            fi
+            if [ "$PERIOD" = "monthly" ] || [ "$PERIOD" = "both" ]; then
+              if [ -n "$REPORT_MONTH" ]; then
+                python slack_notify.py period monthly "$REPORT_MONTH"
+              else
+                python slack_notify.py period monthly
+              fi
             fi
           fi
         env:

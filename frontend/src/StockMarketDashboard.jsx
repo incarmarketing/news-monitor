@@ -423,6 +423,7 @@ function StockDisclosureBoard({ disclosures = {}, companyName = "인카금융서
 
 function dartDisclosureStatusLabel(status) {
   if (status === "ok") return "자동 수집";
+  if (status === "preserved") return "최근 정상 공시";
   if (status === "timeout") return "연결 지연";
   if (status === "network_error") return "네트워크 확인";
   if (status === "auth_error") return "인증 확인";
@@ -432,6 +433,7 @@ function dartDisclosureStatusLabel(status) {
 }
 
 function dartDisclosureEmptyTitle(status) {
+  if (status === "preserved") return "최근 정상 공시 유지";
   if (status === "timeout") return "OpenDART 연결 지연";
   if (status === "network_error") return "OpenDART 네트워크 확인";
   if (status === "auth_error") return "OpenDART 인증 확인 필요";

@@ -172,13 +172,19 @@ def period_report_due(now: datetime) -> bool:
     return now.isoweekday() == 1 or now.day == 1
 
 
-def due_period_reports(now: datetime) -> list[tuple[str, str]]:
-    reports: list[tuple[str, str]] = []
+def due_period_reports(now: datetime) -> list[str]:
+    reports: list[str] = []
     if now.isoweekday() == 1:
-        reports.append(("weekly_report", "주간 언론 동향"))
+        reports.append("weekly_report")
     if now.day == 1:
-        reports.append(("monthly_report", "월간 언론 동향"))
+        reports.append("monthly_report")
     return reports
+
+
+def kst_day_bounds(now: datetime) -> tuple[str, str]:
+    start = now.astimezone(KST).replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+    return start.astimezone(timezone.utc).isoformat(), end.astimezone(timezone.utc).isoformat()
 
 
 def period_reports_succeeded(now: datetime) -> bool:
@@ -186,14 +192,16 @@ def period_reports_succeeded(now: datetime) -> bool:
     if not due:
         return False
     try:
-        for message_type, title in due:
+        start_iso, end_iso = kst_day_bounds(now)
+        for message_type in due:
             rows = supabase_select(
                 "notification_sends",
                 "select=id"
                 "&channel=eq.slack"
                 f"&message_type=eq.{quote(message_type)}"
-                f"&title=eq.{quote(title)}"
                 "&status=eq.success"
+                f"&sent_at=gte.{quote(start_iso)}"
+                f"&sent_at=lt.{quote(end_iso)}"
                 "&limit=1",
             )
             if not rows:

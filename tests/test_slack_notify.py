@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
+from datetime import datetime
 from unittest.mock import patch
 
 import slack_notify
@@ -106,9 +107,11 @@ class SlackPeriodNotificationTests(unittest.TestCase):
             patch.object(slack_notify, "teams_enabled", return_value=False),
             patch.object(slack_notify, "save_notification_send") as save_send,
         ):
-            slack_notify.send_period("weekly")
+            with patch.object(slack_notify, "datetime") as mock_datetime:
+                mock_datetime.now.return_value = datetime(2026, 8, 24, tzinfo=slack_notify.KST)
+                slack_notify.send_period("weekly")
 
-        already_sent.assert_called_once_with("weekly_report", "주간 언론 동향", strict=True, channel="slack")
+        already_sent.assert_called_once_with("weekly_report", "주간 언론 동향 2026-08-24", strict=True, channel="slack")
         verify_link.assert_not_called()
         post_to_slack.assert_not_called()
         save_send.assert_not_called()
@@ -121,11 +124,11 @@ class SlackPeriodNotificationTests(unittest.TestCase):
             patch.object(slack_notify, "teams_enabled", return_value=False),
             patch.object(slack_notify, "save_notification_send") as save_send,
         ):
-            slack_notify.send_period("monthly")
+            slack_notify.send_period("monthly", "2026-07")
 
         saved = save_send.call_args.kwargs
         self.assertEqual(saved["message_type"], "monthly_report")
-        self.assertEqual(saved["title"], "월간 언론 동향")
+        self.assertEqual(saved["title"], "월간 언론 동향 2026-07")
         self.assertEqual(saved["channel"], "slack")
 
 class PeriodWatchdogDispatchTests(unittest.TestCase):

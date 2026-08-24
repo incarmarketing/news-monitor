@@ -465,9 +465,27 @@ async function supabaseRpc(functionName: string, body: Record<string, unknown>) 
 
 function isAllowedApiKey(apiKey: string | null) {
   if (!apiKey) return false;
-  const allowed = [
+  const allowed = new Set([
     Deno.env.get("PUBLIC_SUPABASE_ANON_KEY"),
     Deno.env.get("SUPABASE_ANON_KEY"),
-  ].filter(Boolean);
-  return allowed.includes(apiKey);
+    Deno.env.get("PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY"),
+    ...jsonApiKeyValues(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")),
+  ].filter((value): value is string => Boolean(value)));
+  return allowed.has(apiKey);
+}
+
+function jsonApiKeyValues(raw: string | undefined) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "string") return [parsed];
+    if (Array.isArray(parsed)) return parsed.filter((value) => typeof value === "string");
+    if (parsed && typeof parsed === "object") {
+      return Object.values(parsed).filter((value) => typeof value === "string") as string[];
+    }
+  } catch {
+    return [raw];
+  }
+  return [];
 }

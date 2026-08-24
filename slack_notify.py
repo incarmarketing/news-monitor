@@ -713,7 +713,8 @@ def build_period_payload(period: str, report_month: str = "") -> tuple[str, str,
     info = PERIODS[period]
     link = with_cache_buster(base_url() + period_path(period, report_month))
     date_line = f"{report_month} {K['report_basis']}" if report_month else datetime.now(KST).strftime("%Y-%m-%d")
-    title = f"{info['label']} {K['media_trend']} {(' ' + report_month) if report_month else ''}".strip()
+    report_identity = report_month or datetime.now(KST).strftime("%Y-%m-%d")
+    title = f"{info['label']} {K['media_trend']} {report_identity}".strip()
     fallback = f"{title} | {date_line}"
     payload = {
         "text": fallback,

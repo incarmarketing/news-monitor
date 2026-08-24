@@ -134,15 +134,26 @@ const WORKFLOW_HEALTH_TARGETS = [
   { id: "pages-dashboard.yml", label: "대시보드 배포" },
 ];
 
+async function fetchWorkflowHealth(url) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort("workflow_health_timeout"), 8000);
+  try {
+    return await fetch(url, {
+      cache: "no-store",
+      headers: { Accept: "application/vnd.github+json" },
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 async function loadGithubWorkflowHealth() {
   if (typeof fetch === "undefined") return { status: "unsupported", workflows: [] };
   const workflows = await Promise.all(WORKFLOW_HEALTH_TARGETS.map(async (target) => {
     const url = `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${target.id}/runs?branch=main&per_page=5`;
     try {
-      const response = await fetch(url, {
-        cache: "no-store",
-        headers: { Accept: "application/vnd.github+json" },
-      });
+      const response = await fetchWorkflowHealth(url);
       if (!response.ok) throw new Error(`github_${response.status}`);
       const payload = await response.json();
       const latest = Array.isArray(payload.workflow_runs) ? payload.workflow_runs[0] : null;

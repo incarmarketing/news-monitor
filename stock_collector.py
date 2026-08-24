@@ -20,6 +20,7 @@ PUBLIC_DATA_DIR = BASE_DIR / "public" / "data"
 NAVER_CHART_URL = "https://fchart.stock.naver.com/sise.nhn"
 NAVER_REALTIME_URL = "https://polling.finance.naver.com/api/realtime/domestic"
 OPENDART_LIST_URL = "https://opendart.fss.or.kr/api/list.json"
+DEPLOYED_STOCK_MARKET_URL = "https://incarmarketing.github.io/news-monitor/data/stock-market.json"
 OPENDART_TIMEOUT = (8, 30)
 OPENDART_RETRIES = 3
 REQUEST_HEADERS = {
@@ -427,7 +428,7 @@ def build_market_cap(quote: dict, price: float | None = None) -> dict:
     }
 
 
-def build_market_payload() -> dict:
+def build_market_payload(previous_payload: dict | None = None) -> dict:
     securities = [build_security(meta) for meta in STOCK_UNIVERSE]
     indices = [build_security(meta) for meta in MARKET_INDICES]
     company = next((item for item in securities if item.get("kind") == "company"), securities[0])
@@ -444,9 +445,54 @@ def build_market_payload() -> dict:
         "peer_groups": group_securities(peer_rows),
         "summary": build_summary(company, peer_rows, kospi, kosdaq),
         "relative_trend": build_relative_trend(company, peer_rows, kospi),
-        "dart_disclosures": fetch_dart_disclosures(),
+        "dart_disclosures": preserve_dart_disclosures(
+            fetch_dart_disclosures(),
+            (previous_payload or {}).get("dart_disclosures"),
+        ),
     }
     return payload
+
+
+def preserve_dart_disclosures(current: dict, previous: object) -> dict:
+    """Keep the last verified disclosure list during a transient refresh failure."""
+    if current.get("status") == "ok":
+        return current
+    if not isinstance(previous, dict) or previous.get("status") not in {"ok", "preserved"}:
+        return current
+    items = previous.get("items")
+    if not isinstance(items, list) or not items:
+        return current
+    preserved = dict(previous)
+    preserved.update(
+        {
+            "status": "preserved",
+            "refresh_status": current.get("status", "error"),
+            "refresh_message": current.get("message", "OpenDART refresh failed."),
+            "preserved_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    return preserved
+
+
+def load_previous_market_payload(target: Path) -> dict:
+    if target.exists():
+        try:
+            payload = json.loads(target.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                return payload
+        except (OSError, ValueError):
+            pass
+
+    fallback_url = os.getenv("STOCK_MARKET_FALLBACK_URL", DEPLOYED_STOCK_MARKET_URL).strip()
+    if not fallback_url:
+        return {}
+    try:
+        response = requests.get(fallback_url, headers=REQUEST_HEADERS, timeout=(5, 10))
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else {}
+    except (requests.RequestException, ValueError):
+        return {}
 
 
 def fetch_dart_disclosures(days: int = 365, limit: int = 8) -> dict:
@@ -789,7 +835,7 @@ def format_price_gap(value: float | None) -> str:
 def publish_stock_market_data(target: Path | None = None) -> Path:
     target = target or (PUBLIC_DATA_DIR / "stock-market.json")
     target.parent.mkdir(parents=True, exist_ok=True)
-    payload = build_market_payload()
+    payload = build_market_payload(load_previous_market_payload(target))
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Published stock market data: {target}")
     return target

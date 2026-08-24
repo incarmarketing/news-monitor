@@ -88,8 +88,10 @@ Deno.serve(async (req) => {
   const session: SessionInfo = sessionToken
     ? await verifySession(sessionToken)
     : { ok: false, message: "anonymous" };
-  const publicDashboardRefresh = isPublicDashboardRefreshRequest(action, payload, req.headers.get("origin"));
-  if (!session.ok && !publicDashboardRefresh) {
+  const requestOrigin = req.headers.get("origin");
+  const publicDashboardRefresh = isPublicDashboardRefreshRequest(action, payload, requestOrigin);
+  const publicDashboardSnapshot = isPublicDashboardSnapshotRequest(action, requestOrigin);
+  if (!session.ok && !publicDashboardRefresh && !publicDashboardSnapshot) {
     return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
   }
 
@@ -416,6 +418,10 @@ function isPublicDashboardRefreshRequest(
     && !booleanInput(payload.dashboard_send);
 }
 
+function isPublicDashboardSnapshotRequest(action: string, origin: string | null) {
+  return action === "snapshot" && isAllowedPublicRefreshOrigin(origin);
+}
+
 function isAllowedPublicRefreshOrigin(origin: string | null) {
   const normalized = String(origin || "").trim().replace(/\/$/, "");
   if (!normalized) return false;
@@ -538,9 +544,26 @@ function jsonResponse(payload: unknown, status = 200) {
 
 function isAllowedApiKey(apiKey: string | null) {
   if (!apiKey) return false;
-  const allowed = [
+  const allowed = new Set([
     Deno.env.get("PUBLIC_SUPABASE_ANON_KEY"),
     Deno.env.get("SUPABASE_ANON_KEY"),
-  ].filter(Boolean);
-  return allowed.includes(apiKey);
+    Deno.env.get("PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY"),
+    ...jsonSecretValues(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")),
+  ].filter((value): value is string => Boolean(value)));
+  return allowed.has(apiKey);
+}
+
+function jsonSecretValues(raw: string | undefined) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter((value) => typeof value === "string");
+    if (parsed && typeof parsed === "object") {
+      return Object.values(parsed).filter((value) => typeof value === "string") as string[];
+    }
+  } catch {
+    // Keep legacy single-key environments working when the managed JSON secret is absent.
+  }
+  return [];
 }

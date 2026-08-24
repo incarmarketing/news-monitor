@@ -320,18 +320,12 @@ async function dailyReportSucceeded(date: string, slot: string) {
 
 async function periodReportSucceeded(period: PeriodReportKind) {
   const config = periodReports[period];
-  const now = kstNowParts();
-  const date = dateKey(now);
   const bounds = kstDayBoundsIso();
   const sendRows = await selectRows(
     "notification_sends",
-    `select=id&channel=eq.slack&message_type=in.(${config.messageType},${config.messageType}_manual)&title=eq.${encodeURIComponent(config.title)}&status=eq.success&sent_at=gte.${encodeURIComponent(bounds.start)}&sent_at=lt.${encodeURIComponent(bounds.end)}&limit=1`,
+    `select=id&channel=eq.slack&message_type=in.(${config.messageType},${config.messageType}_manual)&status=eq.success&sent_at=gte.${encodeURIComponent(bounds.start)}&sent_at=lt.${encodeURIComponent(bounds.end)}&limit=1`,
   );
-  const jobRows = await selectRows(
-    "job_runs",
-    `select=run_key&job_type=eq.period_report&report_date=eq.${encodeURIComponent(date)}&report_slot=eq.07&status=eq.success&limit=1`,
-  );
-  return sendRows.length > 0 || jobRows.length > 0;
+  return sendRows.length > 0;
 }
 
 function dailyNotificationTitle(reportDate: string, slot: string) {
@@ -461,6 +455,12 @@ function isAllowedApiKey(apiKey: string | null) {
   const allowed = new Set<string>();
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (anonKey) allowed.add(anonKey);
+  const publicAnonKey = Deno.env.get("PUBLIC_SUPABASE_ANON_KEY");
+  if (publicAnonKey) allowed.add(publicAnonKey);
+  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+  if (publishableKey) allowed.add(publishableKey);
+  const publicPublishableKey = Deno.env.get("PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  if (publicPublishableKey) allowed.add(publicPublishableKey);
   const publishableKeys = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
   if (publishableKeys) {
     try {

@@ -23,15 +23,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Deploy changed Edge Functions
+      - name: Validate Edge Function deploy secrets
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_PROJECT_REF" ]; then
-            echo "::warning::SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF is missing. Edge Function deploy skipped."
-            exit 0
+            echo "::error::SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF are required. Refusing to report a skipped Edge Function deploy as successful."
+            exit 1
           fi
 
-          npx -y supabase@latest functions deploy dashboard-api --project-ref "$SUPABASE_PROJECT_REF"
-          npx -y supabase@latest functions deploy trigger-news-collection --project-ref "$SUPABASE_PROJECT_REF"
+      - name: Deploy browser-facing Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+
+          for function_name in \
+            dashboard-api \
+            trigger-news-collection \
+            analyze-scraps \
+            generate-risk-response \
+            generate-press-release
+          do
+            npx -y supabase@latest functions deploy "$function_name" \
+              --project-ref "$SUPABASE_PROJECT_REF" \
+              --no-verify-jwt
+          done

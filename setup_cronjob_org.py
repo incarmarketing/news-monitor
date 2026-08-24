@@ -50,6 +50,7 @@ def github_dispatch_url(workflow: str) -> str:
 
 
 def job_payload(spec: CronSpec, github_token: str, enabled: bool) -> dict:
+    notify_success = spec.workflow != "negative-watch.yml"
     return {
         "job": {
             "enabled": enabled,
@@ -71,7 +72,7 @@ def job_payload(spec: CronSpec, github_token: str, enabled: bool) -> dict:
             "notification": {
                 "onFailure": True,
                 "onFailureCount": 1,
-                "onSuccess": True,
+                "onSuccess": notify_success,
                 "onDisable": True,
             },
             "extendedData": {
@@ -223,9 +224,13 @@ def disable_stale_jobs(api_key: str, jobs: list[dict], managed_job_ids: dict[str
         return []
 
     disabled: list[int] = []
+    managed_urls = {github_dispatch_url(spec.workflow) for spec in specs()}
     for job in jobs:
         title = str(job.get("title", ""))
-        if not title.startswith("news-monitor"):
+        normalized_title = title.strip().lower()
+        job_url = str(job.get("url") or job.get("job", {}).get("url") or "").strip()
+        targets_managed_workflow = job_url in managed_urls
+        if not normalized_title.startswith("news-monitor") and not targets_managed_workflow:
             continue
         job_id = int(job["jobId"])
         is_duplicate_managed_title = title in expected_titles and job_id != managed_job_ids.get(title)
