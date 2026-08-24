@@ -233,6 +233,16 @@ function mergeOperationalSnapshots(current = {}, next = {}, preserveFull = false
     "feedback",
   ];
   const merged = { ...current, ...next, articles };
+  if (
+    articles.length
+    && current.status === "live"
+    && next.status !== "live"
+  ) {
+    merged.status = "live";
+    merged.source = current.source || "cache";
+    merged.message = `${next.message || "최신 연결 확인 필요"} · 최근 정상 데이터 유지`;
+    merged.degraded = true;
+  }
   fullOnlyFields.forEach((field) => {
     if (!Array.isArray(next[field]) || next[field].length === 0) merged[field] = current[field] || [];
   });

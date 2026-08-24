@@ -19,6 +19,8 @@ const SUPABASE_CONFIG_PATHS = [
 ];
 
 const STATIC_DATA_PATHS = [
+  "https://raw.githubusercontent.com/incarmarketing/news-monitor/main/public/data/operations.json",
+  "https://raw.githubusercontent.com/incarmarketing/news-monitor/main/public/data/articles.json",
   `${APP_BASE_URL}data/articles.json`,
   "/data/articles.json",
   "/public/data/articles.json",
@@ -991,6 +993,11 @@ export function normalizeOperationalStatusPayload(payload = {}) {
       : payload;
   return {
     generatedAt: data?.generated_at || "",
+    articlesGeneratedAt: data?.articles_generated_at || "",
+    articlesRefreshStatus: data?.articles_refresh_status || "",
+    articles: Array.isArray(data?.articles)
+      ? deduplicateArticles(data.articles.map(normalizeArticle).filter(Boolean))
+      : [],
     notifications: Array.isArray(data?.notifications)
       ? data.notifications.map(normalizeNotification).filter(isDeliveryNotification)
       : [],
@@ -1001,17 +1008,32 @@ export function normalizeOperationalStatusPayload(payload = {}) {
 }
 
 async function loadStaticOperationalStatus() {
+  let operationalSnapshot = null;
+  let articleSnapshot = null;
   for (const path of STATIC_OPERATIONS_PATHS) {
     try {
       const cacheBustedPath = path.startsWith("https://raw.githubusercontent.com/")
         ? `${path}?ts=${Date.now()}`
         : path;
-      return normalizeOperationalStatusPayload(await fetchJson(cacheBustedPath));
+      const snapshot = normalizeOperationalStatusPayload(await fetchJson(cacheBustedPath));
+      if (!operationalSnapshot) operationalSnapshot = snapshot;
+      if (snapshot.articles.length) {
+        const currentTime = new Date(articleSnapshot?.articlesGeneratedAt || 0).getTime() || 0;
+        const nextTime = new Date(snapshot.articlesGeneratedAt || 0).getTime() || 0;
+        if (!articleSnapshot || nextTime >= currentTime) articleSnapshot = snapshot;
+      }
     } catch {
       // Try the next path.
     }
   }
-  return null;
+  if (!operationalSnapshot) return null;
+  if (!articleSnapshot) return operationalSnapshot;
+  return {
+    ...operationalSnapshot,
+    articles: articleSnapshot.articles,
+    articlesGeneratedAt: articleSnapshot.articlesGeneratedAt,
+    articlesRefreshStatus: articleSnapshot.articlesRefreshStatus,
+  };
 }
 
 async function loadPublicOperationalStatus() {
@@ -1322,15 +1344,22 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
     optionalEntries.forEach((entry) => {
       if (entry.status === "fulfilled") optionalData[entry.value[0]] = entry.value[1];
     });
-    const normalizedArticles = Array.isArray(articles)
+    const directArticles = Array.isArray(articles)
       ? deduplicateArticles(articles.map(normalizeArticle).filter(Boolean))
       : [];
     const operationalStatus = optionalData.operationalStatus || {};
+    const normalizedArticles = directArticles.length
+      ? directArticles
+      : Array.isArray(operationalStatus.articles)
+        ? operationalStatus.articles
+        : [];
     if (!normalizedArticles.length && !Array.isArray(operationalStatus.reportRuns)) return null;
     return {
       source: "supabase",
       status: "live",
-      message: `운영 DB 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`,
+      message: directArticles.length
+        ? `운영 DB 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`
+        : `운영 스냅샷 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`,
       articles: normalizedArticles,
       notifications: Array.isArray(operationalStatus.notifications) ? operationalStatus.notifications : [],
       watchRuns: Array.isArray(operationalStatus.watchRuns) ? operationalStatus.watchRuns : [],

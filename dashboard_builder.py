@@ -59,6 +59,32 @@ STOCK_LISTING_NOISE_TITLE_RE = re.compile(
 )
 INVESTMENT_REPORT_RE = re.compile(r"투자의견|목표주가|목표가|증권가|리포트|애널리스트")
 OWN_NAME_RE = re.compile(r"인카금융서비스|인카금융")
+PUBLIC_CORE_ARTICLE_LOOKBACK_DAYS = 14
+PUBLIC_CORE_ARTICLE_LIMIT = 1500
+PUBLIC_ARTICLE_FIELDS = (
+    "id",
+    "date",
+    "window",
+    "slot",
+    "risk",
+    "title",
+    "link",
+    "source",
+    "keyword",
+    "summary",
+    "discovered_at",
+    "pub_date",
+    "score",
+    "category",
+    "category_label",
+    "tone",
+    "tone_label",
+    "own_mentioned",
+    "negative_target",
+    "classification_reason",
+    "cluster_size",
+    "status",
+)
 
 
 def load_daily_archives() -> list[dict]:
@@ -70,6 +96,11 @@ def build_articles(archives: list[dict]) -> list[dict]:
     if supabase_articles:
         return enrich_issue_summaries(supabase_articles)
 
+    return enrich_issue_summaries(build_archive_articles(archives))
+
+
+def build_archive_articles(archives: list[dict]) -> list[dict]:
+    """Build normalized dashboard rows without invoking any AI provider."""
     rows: list[dict] = []
     seen: set[str] = set()
     feedback_index = supabase_store.load_classification_feedback_index()
@@ -122,7 +153,7 @@ def build_articles(archives: list[dict]) -> list[dict]:
             )
 
     rows.sort(key=lambda row: (row["date"], row["score"]), reverse=True)
-    return enrich_issue_summaries(rows)
+    return rows
 
 
 def article_summary(article: dict, category: str, tone: str) -> str:
@@ -396,9 +427,9 @@ def summary_compare_key(value: object) -> str:
     return re.sub(r"[^0-9a-zA-Z가-힣]+", "", clean_summary_text(value).lower())[:130]
 
 
-def load_supabase_articles() -> list[dict]:
+def load_supabase_articles(start_date: str = "", limit: int = 50000) -> list[dict]:
     try:
-        rows = supabase_store.load_dashboard_articles()
+        rows = supabase_store.load_dashboard_articles(limit=limit, start_date=start_date)
     except Exception as exc:
         print(f"Supabase dashboard source skipped: {exc}")
         return []
@@ -443,6 +474,7 @@ def load_supabase_articles() -> list[dict]:
                 "status": row.get("status", "new"),
             }
         )
+    articles.sort(key=lambda row: (row["date"], row["score"]), reverse=True)
     return articles
 
 
@@ -905,10 +937,27 @@ def write_public_operations_snapshot(
     output_path: Path | None = None,
 ) -> Path:
     target = output_path or (PUBLIC_DATA_DIR / "operations.json")
+    existing: dict = {}
+    if target.exists():
+        try:
+            loaded = json.loads(target.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                existing = loaded
+        except (OSError, json.JSONDecodeError):
+            existing = {}
+    payload = build_public_operations_snapshot(notifications, watch_runs, report_runs, job_runs)
+    for field in (
+        "articles",
+        "articles_generated_at",
+        "article_lookback_days",
+        "articles_refresh_status",
+    ):
+        if field in existing:
+            payload[field] = existing[field]
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
         json.dumps(
-            build_public_operations_snapshot(notifications, watch_runs, report_runs, job_runs),
+            payload,
             ensure_ascii=False,
             indent=2,
         ),
@@ -918,13 +967,75 @@ def write_public_operations_snapshot(
 
 
 def publish_operations_snapshot(output_path: Path | None = None) -> Path:
-    return write_public_operations_snapshot(
+    target = write_public_operations_snapshot(
         load_supabase_notifications(),
         load_supabase_watch_runs(),
         build_report_runs([]),
         load_supabase_job_runs(),
         output_path,
     )
+    return publish_public_core_article_snapshot(target)
+
+
+def public_core_article_cutoff() -> str:
+    return (datetime.now(KST).date() - timedelta(days=PUBLIC_CORE_ARTICLE_LOOKBACK_DAYS - 1)).isoformat()
+
+
+def build_public_core_articles(archives: list[dict] | None = None) -> list[dict]:
+    cutoff = public_core_article_cutoff()
+    rows = load_supabase_articles(start_date=cutoff, limit=PUBLIC_CORE_ARTICLE_LIMIT)
+    if not rows:
+        recent_archives = [
+            archive
+            for archive in (archives if archives is not None else load_daily_archives())
+            if str(archive.get("date") or "")[:10] >= cutoff
+        ]
+        rows = build_archive_articles(recent_archives)
+    rows = [row for row in rows if str(row.get("date") or "")[:10] >= cutoff]
+    rows.sort(key=lambda row: (str(row.get("date") or ""), float(row.get("score") or 0)), reverse=True)
+    return rows[:PUBLIC_CORE_ARTICLE_LIMIT]
+
+
+def build_public_core_article_snapshot(
+    existing: dict | None,
+    articles: list[dict],
+    generated_at: str | None = None,
+) -> dict:
+    payload = dict(existing) if isinstance(existing, dict) else {}
+    public_articles = [
+        {field: row.get(field) for field in PUBLIC_ARTICLE_FIELDS if row.get(field) is not None}
+        for row in articles[:PUBLIC_CORE_ARTICLE_LIMIT]
+        if isinstance(row, dict) and row.get("title")
+    ]
+    if public_articles:
+        payload["articles"] = public_articles
+        payload["articles_generated_at"] = generated_at or datetime.now(KST).isoformat()
+        payload["article_lookback_days"] = PUBLIC_CORE_ARTICLE_LOOKBACK_DAYS
+        payload["articles_refresh_status"] = "ok"
+    else:
+        payload["articles_refresh_status"] = "preserved" if payload.get("articles") else "empty"
+    return payload
+
+
+def publish_public_core_article_snapshot(output_path: Path | None = None) -> Path:
+    target = output_path or (PUBLIC_DATA_DIR / "operations.json")
+    existing: dict = {}
+    if target.exists():
+        try:
+            loaded = json.loads(target.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                existing = loaded
+        except (OSError, json.JSONDecodeError):
+            existing = {}
+    articles = build_public_core_articles()
+    payload = build_public_core_article_snapshot(existing, articles)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(
+        "Published public core article snapshot: "
+        f"{len(payload.get('articles', []))} rows ({payload.get('articles_refresh_status')})"
+    )
+    return target
 
 
 def load_supabase_scraps() -> list[dict]:
@@ -1045,7 +1156,21 @@ def publish_dashboard() -> Path:
         ),
         encoding="utf-8",
     )
-    write_public_operations_snapshot(notifications, watch_runs, report_runs, job_runs)
+    operations_target = write_public_operations_snapshot(notifications, watch_runs, report_runs, job_runs)
+    operations_payload = json.loads(operations_target.read_text(encoding="utf-8"))
+    recent_articles = [
+        row
+        for row in articles
+        if str(row.get("date") or "")[:10] >= public_core_article_cutoff()
+    ][:PUBLIC_CORE_ARTICLE_LIMIT]
+    operations_target.write_text(
+        json.dumps(
+            build_public_core_article_snapshot(operations_payload, recent_articles),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     publish_supabase_public_config()
     rebuilt_target = publish_rebuilt_dashboard()
     if rebuilt_target:

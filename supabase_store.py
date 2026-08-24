@@ -1352,14 +1352,22 @@ def media_relation_exists(name: str) -> bool:
     return bool(rows)
 
 
-def load_dashboard_articles(limit: int = 50000, page_size: int = 1000) -> list[dict]:
+def load_dashboard_articles(
+    limit: int = 50000,
+    page_size: int = 1000,
+    start_date: str = "",
+) -> list[dict]:
     if not is_enabled():
         return []
     rows: list[dict] = []
 
     def load_pages(select_fields: str) -> list[dict]:
         loaded: list[dict] = []
-        select = f"news_articles?select={select_fields}&order=report_date.desc,score.desc"
+        date_filter = f"&report_date=gte.{quote(start_date, safe='-')}" if start_date else ""
+        select = (
+            f"news_articles?select={select_fields}"
+            f"{date_filter}&order=report_date.desc,score.desc"
+        )
         for offset in range(0, limit, page_size):
             response = request("GET", f"{select}&limit={page_size}&offset={offset}")
             page = response.json()
