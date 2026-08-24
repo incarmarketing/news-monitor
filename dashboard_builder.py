@@ -182,7 +182,17 @@ def article_summary(article: dict, category: str, tone: str) -> str:
         for line in unique_lines(lines)
         if is_usable_summary_line(line, title)
     ]
-    return " ".join(unique_lines(usable)[:3])
+    contextual = [
+        line
+        for line in contextual_summary_lines(article, category, tone)
+        if is_usable_summary_line(line, title)
+    ]
+    combined = unique_lines([*usable, *contextual])
+    if combined:
+        return " ".join(combined[:3])
+
+    fallback = headline_fallback_summary(article, category, tone)
+    return fallback if is_usable_summary_line(fallback, title) else ""
 
 
 def clean_summary_text(value: object) -> str:

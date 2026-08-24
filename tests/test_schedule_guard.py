@@ -72,11 +72,13 @@ class ScheduleGuardTests(unittest.TestCase):
         with patch.object(schedule_guard, "supabase_select", return_value=[{"id": 1}]) as select:
             self.assertTrue(schedule_guard.period_reports_succeeded(now))
 
-        query = select.call_args.args[1]
-        self.assertIn("message_type=eq.weekly_report", query)
-        self.assertIn("sent_at=gte.", query)
-        self.assertIn("sent_at=lt.", query)
-        self.assertNotIn("title=eq.", query)
+        queries = [call.args[1] for call in select.call_args_list]
+        self.assertTrue(any("message_type=eq.weekly_report" in query for query in queries))
+        self.assertTrue(any("message_type=eq.monthly_report" in query for query in queries))
+        for query in queries:
+            self.assertIn("sent_at=gte.", query)
+            self.assertIn("sent_at=lt.", query)
+            self.assertNotIn("title=eq.", query)
 
     def test_old_period_success_does_not_complete_current_period(self) -> None:
         now = kst_datetime(2026, 6, 1, 8, 3)
