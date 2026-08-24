@@ -46,6 +46,18 @@ class StockCollectorStabilityTests(unittest.TestCase):
         self.assertEqual(actual, expected)
         get.assert_not_called()
 
+    def test_incar_corp_code_has_a_safe_project_default(self) -> None:
+        with (
+            patch.dict("os.environ", {"DART_API_KEY": "test-key"}, clear=True),
+            patch.object(stock_collector.requests, "get") as get,
+        ):
+            get.return_value.ok = True
+            get.return_value.raise_for_status.return_value = None
+            get.return_value.json.return_value = {"status": "013", "message": "no data"}
+            stock_collector.fetch_dart_disclosures()
+
+        self.assertEqual(get.call_args.kwargs["params"]["corp_code"], "01013694")
+
 
 if __name__ == "__main__":
     unittest.main()

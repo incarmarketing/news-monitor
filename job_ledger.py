@@ -9,8 +9,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from datetime import datetime, timedelta, timezone
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -56,12 +57,23 @@ def rest_request(method: str, path: str, payload: list[dict] | None = None) -> N
             "Prefer": "resolution=merge-duplicates,return=minimal",
         },
     )
-    try:
-        with urlopen(request, timeout=30) as response:
-            response.read()
-    except HTTPError as error:
-        detail = error.read().decode("utf-8", errors="replace")[:500]
-        raise RuntimeError(f"Supabase job ledger write failed: {error.code} {detail}") from error
+    for attempt in range(1, 4):
+        try:
+            with urlopen(request, timeout=30) as response:
+                response.read()
+            return
+        except HTTPError as error:
+            detail = error.read().decode("utf-8", errors="replace")[:500]
+            retryable = error.code == 429 or error.code >= 500
+            if retryable and attempt < 3:
+                time.sleep(attempt * 2)
+                continue
+            raise RuntimeError(f"Supabase job ledger write failed: {error.code} {detail}") from error
+        except (URLError, TimeoutError) as error:
+            if attempt < 3:
+                time.sleep(attempt * 2)
+                continue
+            raise RuntimeError(f"Supabase job ledger write failed: {error}") from error
 
 
 def report_job_row(status: str, *, error: str = "", stage: str = "") -> dict:

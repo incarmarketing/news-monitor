@@ -42,6 +42,10 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   ga_metric_sources: { read: true, writeRoles: ["admin", "editor"] },
 };
 
+const githubRequestTimeoutMs = 10000;
+const supabaseRequestTimeoutMs = 8000;
+const githubDispatchAttempts = 2;
+
 const DASHBOARD_ARTICLE_SELECT = [
   "article_hash",
   "report_date",
@@ -142,18 +146,26 @@ async function handleSnapshot(payload: Record<string, unknown>) {
       { method: "GET" },
     ),
   };
-  const entries = await Promise.all(
-    Object.entries(requests).map(async ([key, request]) => [key, await request] as const),
+  const requestEntries = Object.entries(requests);
+  const settledEntries = await Promise.allSettled(
+    requestEntries.map(async ([key, request]) => [key, await request] as const),
   );
   const data: Record<string, unknown> = {};
   const warnings: string[] = [];
-  for (const [key, result] of entries) {
+  settledEntries.forEach((entry, index) => {
+    const key = requestEntries[index][0];
+    if (entry.status === "rejected") {
+      data[key] = [];
+      warnings.push(`${key}_request_failed`);
+      return;
+    }
+    const [, result] = entry.value;
     if (result.ok) data[key] = result.data;
     else {
       data[key] = [];
       warnings.push(`${key}_${result.status}`);
     }
-  }
+  });
   if (!Array.isArray(data.articles)) {
     return jsonResponse({ error: "snapshot_articles_failed", warnings }, 502);
   }
@@ -282,25 +294,39 @@ async function triggerCollection(
     authenticated,
   });
 
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/dispatches`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${token}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      "Content-Type": "application/json",
+  let dispatchResult: { response: Response; detail: string };
+  try {
+    dispatchResult = await githubDispatchWithRetry(
+      `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ref,
+          inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot, forceSlackSend, dashboardSend, reportMonth),
+        }),
       },
-      body: JSON.stringify({
-        ref,
-        inputs: workflowInputs(workflow, periodReports, sendSlack, reportSlot, forceSlackSend, dashboardSend, reportMonth),
-      }),
-    },
-  );
+    );
+  } catch (error) {
+    const detail = boundedError(error);
+    await recordDashboardDispatch(runKey, {
+      workflow,
+      status: "failed",
+      source: String(payload.source || "dashboard_manual_refresh"),
+      requestedBy: session.employee_no || "dashboard_public_refresh",
+      authenticated,
+      error: detail,
+    });
+    return jsonResponse({ error: "github_dispatch_failed", detail }, 502);
+  }
 
-  if (!response.ok) {
-    const detail = await response.text();
+  if (!dispatchResult.response.ok) {
+    const detail = dispatchResult.detail;
     await recordDashboardDispatch(runKey, {
       workflow,
       status: "failed",
@@ -309,7 +335,11 @@ async function triggerCollection(
       authenticated,
       error: detail.slice(0, 500),
     });
-    return jsonResponse({ error: "github_dispatch_failed", status: response.status, detail }, 502);
+    return jsonResponse({
+      error: "github_dispatch_failed",
+      status: dispatchResult.response.status,
+      detail,
+    }, 502);
   }
 
   return jsonResponse({
@@ -506,12 +536,12 @@ async function supabaseFetch(path: string, options: { method: string; body?: str
   if (options.contentType) headers["Content-Type"] = options.contentType;
   if (options.prefer) headers.Prefer = options.prefer;
 
-  const response = await fetch(`${url}/rest/v1/${path}`, {
+  const response = await fetchWithTimeout(`${url}/rest/v1/${path}`, {
     method: options.method,
     cache: "no-store",
     headers,
     body: options.body,
-  });
+  }, supabaseRequestTimeoutMs);
   const text = await response.text();
   let data: unknown = true;
   if (text) {
@@ -522,6 +552,52 @@ async function supabaseFetch(path: string, options: { method: string; body?: str
     }
   }
   return { ok: response.ok, status: response.status, data };
+}
+
+async function githubDispatchWithRetry(url: string, init: RequestInit) {
+  let lastError: unknown = new Error("github_dispatch_failed");
+  for (let attempt = 1; attempt <= githubDispatchAttempts; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(url, init, githubRequestTimeoutMs);
+      const detail = response.ok ? "" : (await response.text()).slice(0, 500);
+      if (response.ok || !isTransientStatus(response.status) || attempt === githubDispatchAttempts) {
+        return { response, detail };
+      }
+      lastError = new Error(`github_dispatch_failed_${response.status}: ${detail}`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === githubDispatchAttempts) throw error;
+    }
+    await delay(1500);
+  }
+  throw lastError;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`request_timeout_${timeoutMs}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function isTransientStatus(status: number) {
+  return status === 429 || status >= 500;
+}
+
+function boundedError(error: unknown) {
+  return String(error instanceof Error ? error.message : error).slice(0, 500);
+}
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function safeJson<T>(req: Request): Promise<T> {

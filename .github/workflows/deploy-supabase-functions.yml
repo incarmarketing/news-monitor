@@ -19,6 +19,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -44,7 +45,8 @@ jobs:
             trigger-news-collection \
             analyze-scraps \
             generate-risk-response \
-            generate-press-release
+            generate-press-release \
+            refresh-market-data
           do
             npx -y supabase@latest functions deploy "$function_name" \
               --project-ref "$SUPABASE_PROJECT_REF" \

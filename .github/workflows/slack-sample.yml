@@ -16,6 +16,7 @@ jobs:
   send-sample:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[slack-sample]')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Send sample Slack table notification

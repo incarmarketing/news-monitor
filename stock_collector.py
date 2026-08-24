@@ -486,27 +486,32 @@ def load_previous_market_payload(target: Path) -> dict:
     fallback_url = os.getenv("STOCK_MARKET_FALLBACK_URL", DEPLOYED_STOCK_MARKET_URL).strip()
     if not fallback_url:
         return {}
-    try:
-        response = requests.get(fallback_url, headers=REQUEST_HEADERS, timeout=(5, 10))
-        response.raise_for_status()
-        payload = response.json()
-        return payload if isinstance(payload, dict) else {}
-    except (requests.RequestException, ValueError):
-        return {}
+    for attempt in range(1, 4):
+        try:
+            response = requests.get(fallback_url, headers=REQUEST_HEADERS, timeout=(5, 10))
+            response.raise_for_status()
+            payload = response.json()
+            return payload if isinstance(payload, dict) else {}
+        except (requests.RequestException, ValueError):
+            if attempt < 3:
+                time.sleep(attempt)
+    return {}
 
 
 def fetch_dart_disclosures(days: int = 365, limit: int = 8) -> dict:
     """Fetch recent OpenDART disclosures when API credentials are configured."""
     api_key = clean_secret_value(os.getenv("DART_API_KEY") or os.getenv("OPENDART_API_KEY"))
-    corp_code = clean_secret_value(os.getenv("DART_CORP_CODE") or os.getenv("INCAR_DART_CORP_CODE"))
+    corp_code = clean_secret_value(
+        os.getenv("DART_CORP_CODE") or os.getenv("INCAR_DART_CORP_CODE") or "01013694"
+    )
     now = datetime.now(timezone.utc)
-    if not api_key or not corp_code:
+    if not api_key:
         return {
             "status": "not_configured",
             "source": "OpenDART",
             "updated_at": now.isoformat(),
             "items": [],
-            "message": "DART_API_KEY and DART_CORP_CODE are required for automatic disclosure collection.",
+            "message": "DART_API_KEY is required for automatic disclosure collection.",
         }
 
     end_date = now.date()

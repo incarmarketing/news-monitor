@@ -447,9 +447,9 @@ function dartDisclosureEmptyMessage(disclosures, status) {
   if (message) return message;
   if (status === "timeout") return "OpenDART 서버 응답이 지연되어 이번 갱신에서 공시를 가져오지 못했습니다. 다음 자동 갱신에서 재시도합니다.";
   if (status === "network_error") return "OpenDART 연결 중 네트워크 오류가 발생했습니다. API 키는 화면에 노출하지 않고 다음 갱신에서 재시도합니다.";
-  if (status === "auth_error") return "GitHub Secret의 DART_API_KEY와 DART_CORP_CODE 값을 확인하세요.";
+  if (status === "auth_error") return "GitHub Secret의 DART_API_KEY 값을 확인하세요. 기업코드는 인카금융서비스 기본값을 사용합니다.";
   if (status === "error") return "OpenDART 응답을 해석하지 못했습니다. 잠시 후 다시 갱신됩니다.";
-  return "DART API 키와 기업 고유번호를 연결하면 기업설명회, 실적, 사업보고서 공시가 이 영역에 자동 표시됩니다.";
+  return "GitHub Actions에 DART_API_KEY를 연결하면 기업설명회, 실적, 사업보고서 공시가 자동 표시됩니다.";
 }
 
 function sanitizeDashboardSecretText(value) {

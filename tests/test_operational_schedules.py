@@ -60,8 +60,43 @@ class OperationalScheduleTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("status=in.(success,alert_sent)", source)
         self.assertIn("Math.max(25, rawThreshold)", source)
-        self.assertIn("Math.max(10, rawBucketMinutes)", source)
+        self.assertIn("Math.max(20, rawBucketMinutes)", source)
         self.assertIn("schedule := '*/10 * * * *'", schedule_migration)
+
+    def test_supabase_watchdog_is_offset_from_primary_scheduler(self) -> None:
+        offset_migration = (
+            ROOT
+            / "supabase/migrations/20260824083154_offset_watchdog_schedule.sql"
+        ).read_text(encoding="utf-8")
+        self.assertIn("schedule := '5,15,25,35,45,55 * * * *'", offset_migration)
+        self.assertIn("'apikey', publishable_key", offset_migration)
+        self.assertNotIn("'Authorization', 'Bearer ' || publishable_key", offset_migration)
+
+    def test_negative_watchdog_considers_primary_github_activity(self) -> None:
+        source = (
+            ROOT / "supabase/functions/trigger-news-collection/index.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn("provider=eq.github_actions", source)
+        self.assertIn("status=in.(started,success)", source)
+        self.assertIn("newestDate(completedAt, githubAt)", source)
+
+    def test_watchdog_dispatch_acceptance_is_not_reported_as_completion(self) -> None:
+        source = (
+            ROOT / "supabase/functions/trigger-news-collection/index.ts"
+        ).read_text(encoding="utf-8")
+        daily_start = source.index("async function ensureDailyReport")
+        period_start = source.index("async function ensurePeriodReport")
+        negative_start = source.index("async function ensureNegativeWatch")
+        daily_section = source[daily_start:period_start]
+        period_section = source[period_start:negative_start]
+
+        for section in (daily_section, period_section):
+            self.assertIn('status: "watchdog_dispatched"', section)
+            self.assertIn("finished_at: null", section)
+            self.assertNotIn('status: "success"', section)
+
+        self.assertIn('WATCHDOG_REPORT_GRACE_MINUTES", 40, 30', source)
+        self.assertIn('WATCHDOG_REPORT_RETRY_MINUTES", 30, 20', source)
 
     def test_report_archive_does_not_trigger_duplicate_pages_deploy(self) -> None:
         pages = (ROOT / ".github/workflows/pages-dashboard.yml").read_text(encoding="utf-8")
@@ -129,7 +164,66 @@ class OperationalScheduleTests(unittest.TestCase):
         self.assertIn("analyze-scraps", deploy)
         self.assertIn("generate-risk-response", deploy)
         self.assertIn("generate-press-release", deploy)
+        self.assertIn("refresh-market-data", deploy)
         self.assertIn("--no-verify-jwt", deploy)
+
+    def test_public_key_cannot_dispatch_arbitrary_workflows(self) -> None:
+        source = (
+            ROOT / "supabase/functions/trigger-news-collection/index.ts"
+        ).read_text(encoding="utf-8")
+        auth_start = source.index("function isAllowedRequest")
+        auth_end = source.index("function isAllowedApiKey")
+        auth_section = source[auth_start:auth_end]
+        self.assertIn('if (action !== "watchdog") return false;', auth_section)
+        self.assertIn('req.headers.get("x-scheduler-secret")', auth_section)
+
+    def test_operational_edge_calls_have_timeouts_and_bounded_retries(self) -> None:
+        for function_name in ("dashboard-api", "trigger-news-collection"):
+            source = (
+                ROOT / "supabase/functions" / function_name / "index.ts"
+            ).read_text(encoding="utf-8")
+            self.assertIn("githubRequestTimeoutMs = 10000", source, function_name)
+            self.assertIn("supabaseRequestTimeoutMs = 8000", source, function_name)
+            self.assertIn("githubDispatchAttempts = 2", source, function_name)
+            self.assertIn("new AbortController()", source, function_name)
+            self.assertIn("isTransientStatus", source, function_name)
+
+    def test_market_refresh_is_bounded_and_closes_stale_runs(self) -> None:
+        source = (
+            ROOT / "supabase/functions/refresh-market-data/index.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn("const PROVIDER_TIMEOUT_MS = 8000", source)
+        self.assertIn("const REQUEST_INTERVAL_MS = 1100", source)
+        self.assertIn("const PEER_CHUNK_COUNT = 3", source)
+        self.assertIn("function selectWatchlist", source)
+        self.assertIn("async function closeStaleRuns", source)
+        self.assertIn("async function claimMinuteRun", source)
+        self.assertIn('error.code === "23505"', source)
+        self.assertIn('reason: "minute_already_handled"', source)
+        self.assertIn('status: "failed"', source)
+
+    def test_dashboard_snapshot_isolates_optional_query_failures(self) -> None:
+        source = (
+            ROOT / "supabase/functions/dashboard-api/index.ts"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Promise.allSettled", source)
+        self.assertIn("request_failed", source)
+        self.assertIn('if (!Array.isArray(data.articles))', source)
+
+        migration = (
+            ROOT / "supabase/migrations/20260824100000_track_market_refresh_cron.sql"
+        ).read_text(encoding="utf-8")
+        self.assertIn("private.refresh_hantu_market_data_cron", migration)
+        self.assertIn("'x-market-refresh-secret', refresh_secret", migration)
+        self.assertIn("timeout_milliseconds := 45000", migration)
+        self.assertIn("news-monitor-market-refresh-regular", migration)
+
+    def test_all_operational_workflows_have_a_bounded_runtime(self) -> None:
+        for workflow in (ROOT / ".github/workflows").glob("*.yml"):
+            text = workflow.read_text(encoding="utf-8")
+            if "runs-on:" not in text:
+                continue
+            self.assertIn("timeout-minutes:", text, workflow.name)
 
     def test_edge_deploy_fails_loudly_when_credentials_are_missing(self) -> None:
         deploy = (
