@@ -162,6 +162,7 @@ def run(rows: list[dict[str, Any]], sample_limit: int) -> tuple[dict[str, Any], 
     decisions = Counter()
     changed_fields = Counter()
     validation_errors = Counter()
+    validation_samples: list[dict[str, Any]] = []
     deferred_reasons = Counter()
     deferred_samples: list[dict[str, Any]] = []
     repairs: list[dict[str, Any]] = []
@@ -190,6 +191,34 @@ def run(rows: list[dict[str, Any]], sample_limit: int) -> tuple[dict[str, Any], 
         for error in errors:
             validation_errors[error] += 1
         if errors:
+            if len(validation_samples) < max(20, sample_limit):
+                validation_samples.append(
+                    {
+                        "id": row.get("id"),
+                        "title": row.get("title"),
+                        "source": row.get("source"),
+                        "feedback_applied": feedback_applied,
+                        "errors": errors,
+                        "stored": {
+                            "category": row.get("category"),
+                            "tone": row.get("tone"),
+                            "negative_target": row.get("negative_target"),
+                            "alert_eligible": row.get("alert_eligible"),
+                        },
+                        "proposed": {
+                            "category": repair["category"],
+                            "tone": repair["tone"],
+                            "negative_target": repair["negative_target"],
+                            "alert_eligible": repair["alert_eligible"],
+                        },
+                        "deterministic": {
+                            "decision": deterministic.get("decision"),
+                            "alert_eligible": deterministic.get("alert_eligible"),
+                            "review_required": deterministic.get("review_required"),
+                            "evidence": deterministic.get("evidence"),
+                        },
+                    }
+                )
             continue
 
         decision = str(deterministic.get("decision") or "no_alert")
@@ -234,6 +263,7 @@ def run(rows: list[dict[str, Any]], sample_limit: int) -> tuple[dict[str, Any], 
             if old != new
         ],
         "validation_errors": dict(validation_errors.most_common()),
+        "validation_samples": validation_samples,
         "deferred_rows": sum(deferred_reasons.values()),
         "deferred_reasons": dict(deferred_reasons.most_common()),
         "deferred_samples": deferred_samples,
@@ -267,15 +297,29 @@ def main() -> int:
 
     rows = fetch_rows(args.limit, args.page_size)
     report, repairs = run(rows, args.sample_limit)
+    report["apply_requested"] = bool(args.apply)
+    report["affected_rows"] = 0
+    output = Path(args.output) if args.output else Path("logs") / (
+        f"deterministic-reclassification-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     if report["validation_errors"]:
-        raise SystemExit(json.dumps(report["validation_errors"], ensure_ascii=False))
+        raise SystemExit(
+            json.dumps(
+                {
+                    "validation_errors": report["validation_errors"],
+                    "validation_samples": report["validation_samples"],
+                    "report_file": str(output.resolve()),
+                },
+                ensure_ascii=False,
+            )
+        )
     if report["deterministic_alert_rows"] > args.max_alerts:
         raise SystemExit(
             f"alert safety cap exceeded: {report['deterministic_alert_rows']} > {args.max_alerts}"
         )
 
-    report["apply_requested"] = bool(args.apply)
-    report["affected_rows"] = 0
     if args.apply:
         report["affected_rows"] = apply_repairs(repairs, args.batch_size)
         if report["affected_rows"] != len(repairs):
@@ -283,10 +327,6 @@ def main() -> int:
                 f"affected row mismatch: {report['affected_rows']} != {len(repairs)}"
             )
 
-    output = Path(args.output) if args.output else Path("logs") / (
-        f"deterministic-reclassification-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-    )
-    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     summary_keys = (
         "mode",

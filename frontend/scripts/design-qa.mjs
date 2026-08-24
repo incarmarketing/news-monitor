@@ -44,6 +44,28 @@ async function measureLayout(page) {
     const viewportHeight = window.innerHeight;
     const doc = document.documentElement;
     const body = document.body;
+    const isIntentionallyClipped = (element, rect) => {
+      let ancestor = element.parentElement;
+      while (ancestor && ancestor !== body) {
+        const style = window.getComputedStyle(ancestor);
+        const ancestorRect = ancestor.getBoundingClientRect();
+        const clipsHorizontally = /^(auto|scroll|hidden|clip)$/.test(style.overflowX);
+        if (
+          clipsHorizontally &&
+          (rect.left < ancestorRect.left - 2 || rect.right > ancestorRect.right + 2)
+        ) {
+          return true;
+        }
+        if (
+          style.position === "fixed" &&
+          (ancestorRect.right <= 0 || ancestorRect.left >= viewportWidth)
+        ) {
+          return true;
+        }
+        ancestor = ancestor.parentElement;
+      }
+      return false;
+    };
     const horizontalScroll = Math.max(doc.scrollWidth, body?.scrollWidth || 0) - viewportWidth;
     const visibleElements = Array.from(document.querySelectorAll("body *")).filter((element) => {
       const rect = element.getBoundingClientRect();
@@ -66,10 +88,13 @@ async function measureLayout(page) {
           right: Math.round(rect.right),
           top: Math.round(rect.top),
           width: Math.round(rect.width),
+          intentionallyClipped: isIntentionallyClipped(element, rect),
         };
       })
       .filter((item) => item.top < viewportHeight * 3 && (item.left < -2 || item.right > viewportWidth + 2))
+      .filter((item) => !item.intentionallyClipped)
       .filter((item) => !/recharts-tooltip|tooltip|toast|dialog/.test(item.className))
+      .map(({ intentionallyClipped: _intentionallyClipped, ...item }) => item)
       .slice(0, 12);
 
     const textOverflow = visibleElements

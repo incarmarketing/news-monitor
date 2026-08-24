@@ -87,3 +87,13 @@ jobs:
           AI_CONTEXT_ENABLED: "false"
           AI_CONTEXT_PRO_REVIEW: "false"
           AI_CONTEXT_CLASSIFICATION: "rules"
+
+      - name: Upload classification audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classification-audit-reports
+          path: |
+            ${{ runner.temp }}/classification-gold-validation.json
+            ${{ runner.temp }}/classification-audit.json
+            ${{ runner.temp }}/deterministic-reclassification.json
