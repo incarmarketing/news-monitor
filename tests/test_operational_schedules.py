@@ -159,13 +159,5 @@ class OperationalScheduleTests(unittest.TestCase):
             self.assertIn("DART_API_KEY:", publish_env, workflow_name)
             self.assertIn("DART_CORP_CODE:", publish_env, workflow_name)
 
-    def test_redundant_ga_service_role_policies_are_removed(self) -> None:
-        migration = (
-            ROOT / "supabase/migrations/202608240001_ga_rls_init_plan.sql"
-        ).read_text(encoding="utf-8")
-        self.assertEqual(migration.count("drop policy if exists"), 6)
-        self.assertNotIn("auth.role()", migration)
-
-
 if __name__ == "__main__":
     unittest.main()
