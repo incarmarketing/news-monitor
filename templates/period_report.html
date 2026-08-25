@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ period_label }} 언론 동향 리서치 리포트</title>
+<title>{{ period_label }} 뉴스 브리핑</title>
 <!-- print-layout-version: one-page-20260610 -->
 <style>
   :root {
@@ -748,6 +748,111 @@
     .evidence-empty { padding:3px; font-size:5.8px; }
   }
 </style>
+<style>
+  /* Newspaper edition for weekly and monthly briefings. */
+  body { background:#e8edf3; color:#111827; }
+  .sheet {
+    border:1px solid #aeb8c5;
+    border-radius:2px;
+    background:#fffefb;
+    box-shadow:0 22px 60px rgba(15,23,42,.15);
+  }
+  .report-head {
+    align-items:center;
+    padding:16px 20px 14px;
+    border-top:5px solid #111827;
+    border-bottom:3px double #111827;
+    background:#fffefb;
+    color:#111827;
+  }
+  .eyebrow { color:#475569; letter-spacing:0; }
+  .badge {
+    border-color:#111827;
+    border-radius:0;
+    background:#111827;
+    color:#fff;
+  }
+  h1 {
+    color:#050b16;
+    font-family:"Noto Serif KR","Batang",serif;
+    font-size:31px;
+    letter-spacing:0;
+  }
+  .headline { color:#475569; }
+  .risk-panel {
+    border:1px solid #111827;
+    border-radius:0;
+    background:#fffefb;
+    color:#111827;
+  }
+  .risk-label,
+  .risk-meta { color:#64748b; }
+  .kpi-grid {
+    gap:0;
+    padding:0 14px;
+    border-bottom:1px solid #111827;
+    background:#fffefb;
+  }
+  .kpi {
+    min-height:52px;
+    border:0;
+    border-right:1px solid #cbd5e1;
+    border-radius:0;
+    background:transparent;
+  }
+  .kpi:last-child { border-right:0; }
+  .content-grid { gap:12px; align-items:stretch; }
+  .summary-panel,
+  .metrics-panel { min-height:0; }
+  .summary-panel .analysis-body { min-height:0; }
+  .panel {
+    padding:10px 0 8px;
+    border:0;
+    border-top:2px solid #111827;
+    border-radius:0;
+    background:transparent;
+  }
+  .panel h2,
+  .rank-box h3,
+  .evidence-group h3 {
+    font-family:"Noto Serif KR","Batang",serif;
+    letter-spacing:0;
+  }
+  .tracking-card,
+  .mix-row,
+  .synthesis-item,
+  .evidence-group,
+  .evidence-card {
+    border:0;
+    border-bottom:1px dotted #9ca3af;
+    border-radius:0;
+    background:transparent;
+  }
+  .track,
+  .fill,
+  .bar,
+  .own-bar { border-radius:0; }
+  .article-table th,
+  .mini-table th,
+  .ledger-table th { background:#f4f1e9; }
+  .article-table th,
+  .article-table td,
+  .mini-table th,
+  .mini-table td,
+  .ledger-table th,
+  .ledger-table td { border-color:#cbd5e1; }
+  .footer { border-top:3px double #111827; }
+  @media (max-width:760px) {
+    .sheet { border:0; }
+    .report-head { grid-template-columns:1fr; }
+    h1 { font-size:25px; }
+  }
+  @media print {
+    .sheet { border:0; }
+    .report-head { background:#fffefb; color:#111827; }
+    h1 { color:#050b16; }
+  }
+</style>
 </head>
 <body>
 <div class="toolbar"><button onclick="window.print()">인쇄 / PDF 저장</button><a href="{{ dashboard_url }}">동향 대시보드</a></div>
@@ -755,7 +860,7 @@
   <header class="report-head">
     <div>
       <div class="eyebrow"><span class="badge">{{ period_badge }}</span><span>{{ company }} · {{ team }}</span><span>{{ period_range }}</span><span>{{ generated_at }}</span></div>
-      <h1>{{ period_label }} 언론 동향 리서치 리포트</h1>
+      <h1>{{ period_label }} 뉴스 브리핑</h1>
       <p class="headline">{{ report_context.headline }}</p>
     </div>
     <aside class="risk-panel">
@@ -776,7 +881,7 @@
 
   <section class="content-grid">
     <div class="panel summary-panel">
-      <h2>핵심 판단 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
+      <h2>기간 핵심 이슈 <span>{{ aggregate.period_days }}일 · {{ aggregate.period_windows }}구간</span></h2>
       <div class="analysis-body">{{ ai_report_html | safe }}</div>
     </div>
     <div class="panel metrics-panel">
@@ -926,7 +1031,7 @@
   </section>
 
   <footer class="footer">
-    <span>{{ period_label }} 언론 동향 리서치 리포트</span>
+    <span>{{ period_label }} 뉴스 브리핑</span>
     <span>{{ company }} {{ team }}</span>
   </footer>
 </main>

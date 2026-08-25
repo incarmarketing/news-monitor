@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>언론 동향 리포트 {{ date_str }}</title>
+<title>일일 언론 브리핑 {{ date_str }}</title>
 <style>
   :root {
     --ink:#0b1220;
@@ -600,6 +600,90 @@
     .article-card-list .article-card:nth-child(n+9) { display:none; }
   }
 </style>
+<style>
+  /* Newspaper edition: aligned with the in-app daily briefing. */
+  body { background:#e8edf3; color:#111827; }
+  .sheet {
+    border:1px solid #aeb8c5;
+    border-radius:2px;
+    background:#fffefb;
+    box-shadow:0 22px 60px rgba(15,23,42,.15);
+  }
+  .masthead {
+    padding-top:14px;
+    border-top:5px solid #111827;
+    border-bottom:3px double #111827;
+  }
+  .system {
+    font-family:Georgia,"Times New Roman",serif;
+    letter-spacing:0;
+  }
+  h1 {
+    color:#050b16;
+    font-family:"Noto Serif KR","Batang",serif;
+    font-size:37px;
+    letter-spacing:0;
+  }
+  .score-table th { background:#f4f1e9; }
+  .score-table th,
+  .score-table td { border-color:#aeb8c5; }
+  .main-grid {
+    position:relative;
+    grid-template-columns:minmax(0,1.68fr) minmax(260px,.72fr);
+    gap:16px;
+  }
+  .section-head {
+    border-top:1px solid #111827;
+    border-bottom:2px solid #111827;
+    padding:7px 0;
+  }
+  .section-head h2,
+  .panel-title {
+    font-family:"Noto Serif KR","Batang",serif;
+    letter-spacing:0;
+  }
+  .article-card-list.compact {
+    gap:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+  }
+  .article-card-list.compact .article-card {
+    grid-template-columns:30px 58px minmax(0,1fr);
+    min-height:51px;
+    border:0;
+    border-bottom:1px dotted #9ca3af;
+    border-left:0;
+    border-radius:0;
+    background:transparent;
+  }
+  .article-card-list.compact .headline {
+    color:#111827;
+    font-family:"Noto Serif KR","Batang",serif;
+    font-size:13px;
+  }
+  .num { border-radius:0; background:#111827; }
+  .side {
+    padding-left:16px;
+    border-left:1px solid #111827;
+  }
+  .side-panel { border-color:#111827; }
+  .track,
+  .bar { border-radius:0; }
+  .footer { border-top:3px double #111827; }
+  @media screen and (max-width:880px) {
+    .sheet { border:0; }
+    .masthead { grid-template-columns:1fr; }
+    .main-grid { grid-template-columns:1fr; }
+    .side { padding-left:0; border-left:0; }
+    h1 { font-size:29px; }
+  }
+  @media print {
+    .sheet { border:0; }
+    h1 { font-size:17px; }
+    .main-grid { grid-template-columns:minmax(0,1.68fr) 53mm; }
+  }
+</style>
 </head>
 <body>
   {% set evidence_tab = article_tabs[0] %}
@@ -617,8 +701,8 @@
   <main class="sheet">
     <header class="masthead">
       <div class="title-block">
-        <div class="system">INCAR MEDIA MONITORING SYSTEM</div>
-        <h1>언론 동향 리포트</h1>
+        <div class="system">INCAR MEDIA INTELLIGENCE</div>
+        <h1>일일 언론 브리핑</h1>
         <div class="report-meta">
           <span>{{ date_str }} 생성</span>
           <span>{{ window.label }}</span>
