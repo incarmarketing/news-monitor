@@ -73,6 +73,33 @@ class ClassificationFeedbackTests(unittest.TestCase):
 
         self.assertNotIn("discovered_at", row)
 
+    def test_metadata_only_source_does_not_persist_publisher_body(self) -> None:
+        article = {
+            "title": "뉴스포트 보험 기사",
+            "link": "https://www.newsport.co.kr/news/articleView.html?idxno=100",
+            "description": "RSS 제공 설명문",
+            "body": "RSS가 제공한 기사 원문",
+            "content": "RSS가 제공한 기사 원문",
+            "author": "뉴스포트 기자",
+            "source": "뉴스포트",
+            "storage_policy": "metadata_only",
+            "_summary": "내부 분류용 요약",
+            "_category": "industry",
+            "_tone": "neutral",
+        }
+
+        row = supabase_store.normalize_article(
+            article,
+            {"date": "2026-08-25", "window": {}, "metrics": {}},
+        )
+
+        self.assertEqual(row["summary"], "내부 분류용 요약")
+        self.assertEqual(row["raw"]["author"], "뉴스포트 기자")
+        self.assertEqual(row["raw"]["storage_policy"], "metadata_only")
+        self.assertNotIn("description", row["raw"])
+        self.assertNotIn("body", row["raw"])
+        self.assertNotIn("content", row["raw"])
+
     def test_missing_discovered_at_retry_preserves_classification_contract(self) -> None:
         error = requests.HTTPError("column discovered_at does not exist")
         row = {

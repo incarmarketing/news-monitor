@@ -29,6 +29,14 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 load_dotenv()
 console = Console()
 KST = timezone(timedelta(hours=9))
+COLLECTOR_USER_AGENT = os.getenv(
+    "NEWS_COLLECTOR_USER_AGENT",
+    "NewsRSSReader/1.0",
+).strip()
+RSS_REQUEST_HEADERS = {
+    "User-Agent": COLLECTOR_USER_AGENT,
+    "Accept": "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.1",
+}
 
 PRESS_ALIAS_MAP = {}
 
@@ -164,6 +172,8 @@ DOMAIN_PRESS_MAP = {
     "www.kbanker.co.kr": "대한금융신문",
     "eroun.net": "이로운넷",
     "www.eroun.net": "이로운넷",
+    "newsport.co.kr": "뉴스포트",
+    "www.newsport.co.kr": "뉴스포트",
 }
 
 KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
@@ -184,6 +194,23 @@ ENABLE_TRADE_PRESS_SOURCES = os.getenv("ENABLE_TRADE_PRESS_SOURCES", "true").low
 TRADE_PRESS_ARTICLES_PER_SOURCE = int(os.getenv("TRADE_PRESS_ARTICLES_PER_SOURCE", "30"))
 OWN_SEARCH_ARTICLES_PER_KEYWORD = int(os.getenv("OWN_SEARCH_ARTICLES_PER_KEYWORD", "100"))
 TRADE_PRESS_SOURCES = [
+    {
+        "name": "뉴스포트",
+        "base_url": "https://www.newsport.co.kr/",
+        "rss_urls": [
+            "https://cdn.newsport.co.kr/rss/gn_rss_allArticle.xml",
+        ],
+        "list_urls": [
+            "https://www.newsport.co.kr/",
+            "https://www.newsport.co.kr/news/articleList.html?view_type=sm",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?newsport\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+        "rss_transient_content": True,
+        "storage_policy": "metadata_only",
+    },
     {
         "name": "보험저널",
         "base_url": "https://www.insjournal.co.kr/",
@@ -243,6 +270,18 @@ TRADE_PRESS_SOURCES = [
     },
 ]
 OWN_PRESS_SEARCH_SOURCES = [
+    {
+        "name": "뉴스포트",
+        "base_url": "https://www.newsport.co.kr/",
+        "search_url_templates": [
+            "https://www.newsport.co.kr/news/articleList.html?sc_area=A&view_type=sm&sc_word={query}",
+        ],
+        "article_url_patterns": [
+            r'https?://(?:www\.)?newsport\.co\.kr/news/articleView\.html\?idxno=\d+',
+            r'["\'](/news/articleView\.html\?idxno=\d+)["\']',
+        ],
+        "storage_policy": "metadata_only",
+    },
     {
         "name": "보험저널",
         "base_url": "https://www.insjournal.co.kr/",
@@ -586,7 +625,7 @@ def fetch_google_news(
     url = f"https://news.google.com/rss/search?q={encoded}&hl=ko&gl=KR&ceid=KR:ko"
 
     try:
-        feed = feedparser.parse(url)
+        feed = feedparser.parse(url, request_headers=RSS_REQUEST_HEADERS)
         return [
             {
                 "title": entry.get("title", ""),
@@ -615,16 +654,96 @@ def fetch_trade_press_news(limit_per_source: int | None = None) -> list[dict]:
     articles: list[dict] = []
     seen_links: set[str] = set()
     for source in TRADE_PRESS_SOURCES:
-        urls = collect_trade_press_article_urls(source, limit)
-        for url in urls[:limit]:
+        source_count = 0
+        if source.get("rss_transient_content"):
+            for article in fetch_trade_press_rss_articles(source, limit):
+                normalized = normalize_url_for_tracking(article.get("link", ""))
+                if not normalized or normalized in seen_links:
+                    continue
+                seen_links.add(normalized)
+                articles.append(article)
+                source_count += 1
+                if source_count >= limit:
+                    break
+
+        if source_count >= limit:
+            continue
+        urls = collect_trade_press_article_urls(
+            source,
+            limit - source_count,
+            include_rss=not bool(source.get("rss_transient_content")),
+        )
+        for url in urls[: max(0, limit - source_count)]:
             normalized = normalize_url_for_tracking(url)
-            if normalized in seen_links:
+            if not normalized or normalized in seen_links:
                 continue
             seen_links.add(normalized)
             article = fetch_trade_press_article(source, url)
             if article:
                 articles.append(article)
+                source_count += 1
+                if source_count >= limit:
+                    break
     return articles
+
+
+def fetch_trade_press_rss_articles(source: dict, limit: int) -> list[dict]:
+    """Read an official RSS body for analysis without treating it as stored content."""
+    articles: list[dict] = []
+    seen_links: set[str] = set()
+    for rss_url in source.get("rss_urls", []):
+        try:
+            feed = feedparser.parse(rss_url, request_headers=RSS_REQUEST_HEADERS)
+        except Exception:
+            continue
+        for entry in getattr(feed, "entries", [])[:limit]:
+            link = str(entry.get("link") or "").strip()
+            normalized = normalize_url_for_tracking(link)
+            if not link or normalized in seen_links:
+                continue
+            title = clean_html(entry.get("title", ""))
+            if not title:
+                continue
+            description = clean_html(entry.get("summary") or entry.get("description") or "")
+            body = extract_rss_entry_content(entry)
+            published_raw = str(entry.get("published") or entry.get("updated") or "").strip()
+            published = parse_pub_date(published_raw)
+            text = f"{title} {description} {body}"
+            articles.append(
+                {
+                    "title": title,
+                    "link": link,
+                    "description": description[:600],
+                    "body": body[:5000],
+                    "content": body[:5000],
+                    "author": clean_html(entry.get("author") or entry.get("dc_creator") or ""),
+                    "pub_date": format_pub_date(published) if published else published_raw,
+                    "source": source.get("name", "보험전문지"),
+                    "keyword": "보험",
+                    "keyword_query": "보험",
+                    "keyword_category": infer_trade_press_category(text),
+                    "keyword_strict_query": False,
+                    "portal": "trade_press_rss",
+                    "collection_method": "official_rss",
+                    "storage_policy": source.get("storage_policy", "standard"),
+                }
+            )
+            seen_links.add(normalized)
+            if len(articles) >= limit:
+                return articles
+    return articles
+
+
+def extract_rss_entry_content(entry: dict) -> str:
+    values = entry.get("content") or []
+    if isinstance(values, list):
+        for item in values:
+            if isinstance(item, dict) and item.get("value"):
+                return clean_html(item.get("value", ""))
+            value = getattr(item, "value", "")
+            if value:
+                return clean_html(value)
+    return ""
 
 
 def fetch_own_press_search_news(limit_per_source: int | None = None) -> list[dict]:
@@ -685,17 +804,18 @@ def collect_source_search_article_urls(source: dict, query: str, limit: int) -> 
     return urls
 
 
-def collect_trade_press_article_urls(source: dict, limit: int) -> list[str]:
+def collect_trade_press_article_urls(source: dict, limit: int, *, include_rss: bool = True) -> list[str]:
     seen: set[str] = set()
     urls: list[str] = []
-    for url in collect_trade_press_rss_article_urls(source, limit):
-        normalized = normalize_url_for_tracking(url)
-        if normalized in seen:
-            continue
-        seen.add(normalized)
-        urls.append(url)
-        if len(urls) >= limit:
-            return urls
+    if include_rss:
+        for url in collect_trade_press_rss_article_urls(source, limit):
+            normalized = normalize_url_for_tracking(url)
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            urls.append(url)
+            if len(urls) >= limit:
+                return urls
     for list_url in source.get("list_urls", []):
         html, final_url = fetch_article_html(list_url, timeout=8)
         if not html:
@@ -720,7 +840,7 @@ def collect_trade_press_rss_article_urls(source: dict, limit: int) -> list[str]:
     seen: set[str] = set()
     for rss_url in source.get("rss_urls", []):
         try:
-            feed = feedparser.parse(rss_url)
+            feed = feedparser.parse(rss_url, request_headers=RSS_REQUEST_HEADERS)
         except Exception:
             continue
         for entry in getattr(feed, "entries", [])[:limit]:
@@ -781,6 +901,8 @@ def fetch_trade_press_article(source: dict, url: str) -> dict | None:
         "keyword_category": category,
         "keyword_strict_query": False,
         "portal": "trade_press",
+        "collection_method": "publisher_page",
+        "storage_policy": source.get("storage_policy", "standard"),
     }
 
 
@@ -793,7 +915,7 @@ def extract_article_title_from_html(html: str) -> str:
         match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
         title = match.group(1) if match else ""
     title = clean_html(title)
-    title = re.sub(r"\s*[-|]\s*(보험저널|보험매일|한국보험신문|보험신보)\s*$", "", title).strip()
+    title = re.sub(r"\s*[-|]\s*(보험저널|보험매일|한국보험신문|보험신보|뉴스포트)\s*$", "", title).strip()
     return title
 
 

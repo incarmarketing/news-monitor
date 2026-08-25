@@ -1219,12 +1219,31 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "clipping_recommended": context.get("clipping_recommended", False),
         "clipping_reason": context.get("clipping_reason", ""),
         "cluster_size": article.get("_cluster_size", 1),
-        "raw": article,
+        "raw": storage_safe_article(article),
     }
     normalized = {key: row.get(key) for key in ARTICLE_COLUMNS if key != "discovered_at"}
     if discovered_at:
         normalized["discovered_at"] = discovered_at
     return normalized
+
+
+def storage_safe_article(article: dict) -> dict:
+    """Remove publisher text when a source is configured for metadata-only storage."""
+    raw = dict(article)
+    if str(article.get("storage_policy") or "").strip() != "metadata_only":
+        return raw
+    for field in (
+        "body",
+        "content",
+        "description",
+        "summary",
+        "article_text",
+        "full_text",
+        "html",
+    ):
+        raw.pop(field, None)
+    raw["storage_policy"] = "metadata_only"
+    return raw
 
 
 def normalized_article_context(article: dict) -> dict:

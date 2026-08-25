@@ -78,12 +78,17 @@ def archive_path(report_date: date, slot: str = "") -> Path:
 
 
 def lighten(article: dict) -> dict:
+    metadata_only = str(article.get("storage_policy") or "").strip() == "metadata_only"
     return {
         "title": article.get("title", ""),
         "link": article.get("link", ""),
         "source": article.get("source", ""),
         "keyword": article.get("keyword", ""),
-        "description": article.get("description", "") or article.get("summary", ""),
+        "description": (
+            article.get("_summary", "")
+            if metadata_only
+            else article.get("description", "") or article.get("summary", "")
+        ),
         "_summary": article.get("_summary", ""),
         "pub_date": article.get("pub_date", ""),
         "_report_id": article.get("_report_id"),
@@ -91,6 +96,7 @@ def lighten(article: dict) -> dict:
         "_category": article.get("_category", "other"),
         "_tone": article.get("_tone", "neutral"),
         "_cluster_size": article.get("_cluster_size", 1),
+        "storage_policy": article.get("storage_policy", "standard"),
     }
 
 

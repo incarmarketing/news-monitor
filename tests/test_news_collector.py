@@ -69,6 +69,16 @@ class CollectionWindowFilterTests(unittest.TestCase):
 
 
 class TradePressCollectorTests(unittest.TestCase):
+    def test_google_and_trade_press_rss_share_generic_reader_header(self) -> None:
+        feed = SimpleNamespace(entries=[])
+
+        with patch.object(news_collector.feedparser, "parse", return_value=feed) as parse:
+            news_collector.fetch_google_news("보험")
+
+        parse.assert_called_once()
+        self.assertEqual(parse.call_args.kwargs["request_headers"], news_collector.RSS_REQUEST_HEADERS)
+        self.assertEqual(news_collector.RSS_REQUEST_HEADERS["User-Agent"], "NewsRSSReader/1.0")
+
     def test_trade_press_domains_are_named_by_actual_media(self) -> None:
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["fins.co.kr"], "보험매일")
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["insjournal.co.kr"], "보험저널")
@@ -76,6 +86,7 @@ class TradePressCollectorTests(unittest.TestCase):
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["insweek.co.kr"], "보험신보")
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["kbanker.co.kr"], "대한금융신문")
         self.assertEqual(news_collector.DOMAIN_PRESS_MAP["eroun.net"], "이로운넷")
+        self.assertEqual(news_collector.DOMAIN_PRESS_MAP["newsport.co.kr"], "뉴스포트")
 
     def test_trade_press_urls_are_collected_from_rss_and_list_without_duplicates(self) -> None:
         source = {
@@ -137,6 +148,35 @@ class TradePressCollectorTests(unittest.TestCase):
         self.assertIn("보험저널", names)
         self.assertIn("한국보험신문", names)
         self.assertIn("보험신보", names)
+        self.assertIn("뉴스포트", names)
+
+    def test_newsport_official_rss_body_is_transient_analysis_input(self) -> None:
+        source = next(row for row in news_collector.TRADE_PRESS_SOURCES if row["name"] == "뉴스포트")
+        feed = SimpleNamespace(
+            entries=[
+                {
+                    "title": "인카금융서비스, 현장 지원 강화",
+                    "link": "https://www.newsport.co.kr/news/articleView.html?idxno=100",
+                    "summary": "<p>인카금융서비스 관련 기사입니다.</p>",
+                    "published": "Tue, 25 Aug 2026 09:00:00 +0900",
+                    "author": "뉴스포트 기자",
+                    "content": [{"value": "<p>인카금융서비스가 영업 현장 지원을 강화했습니다.</p>"}],
+                }
+            ]
+        )
+
+        with patch.object(news_collector.feedparser, "parse", return_value=feed) as parse:
+            rows = news_collector.fetch_trade_press_rss_articles(source, 5)
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["source"], "뉴스포트")
+        self.assertEqual(rows[0]["collection_method"], "official_rss")
+        self.assertEqual(rows[0]["storage_policy"], "metadata_only")
+        self.assertIn("영업 현장 지원", rows[0]["body"])
+        parse.assert_called_once_with(
+            "https://cdn.newsport.co.kr/rss/gn_rss_allArticle.xml",
+            request_headers=news_collector.RSS_REQUEST_HEADERS,
+        )
 
     def test_own_press_search_rejects_result_without_company_mention(self) -> None:
         source = {
