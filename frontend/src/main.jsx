@@ -1202,7 +1202,6 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
           {issueRows.length > 1 && <EditorialIssueList issues={issueRows.slice(1)} onOpenMonitoring={onOpenMonitoring} />}
         </section>
         <EditorialOperationsRail
-          operationsHealth={operationsHealth}
           watchHealth={watchHealth}
           notificationHealth={notificationHealth}
           reportHealth={reportHealth}
@@ -1359,9 +1358,18 @@ function DashboardLeadSparkline({ rows = [] }) {
   );
 }
 
-function EditorialOperationsRail({ operationsHealth, watchHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
+function EditorialOperationsRail({ watchHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
   const watchStatus = watchHealth?.status || "pending";
   const systemOk = watchStatus === "ok";
+  const visibleStatuses = [watchStatus, notificationHealth?.status, reportHealth?.status]
+    .filter(Boolean);
+  const visibleStatus = visibleStatuses.includes("fail")
+    ? "fail"
+    : visibleStatuses.includes("warn")
+      ? "warn"
+      : visibleStatuses.some((status) => ["pending", "unknown"].includes(status))
+        ? "pending"
+        : "ok";
   const reportSlots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
   const visibleReportSlots = (reportSlots.length
     ? reportSlots
@@ -1377,7 +1385,7 @@ function EditorialOperationsRail({ operationsHealth, watchHealth, notificationHe
       <section className="signal-operations-panel">
         <header className="signal-operations-heading">
           <h2>운영 현황</h2>
-          <HealthStatusPill status={operationsHealth?.status || "pending"} />
+          <HealthStatusPill status={visibleStatus} label={visibleStatus === "pending" ? "확인 중" : undefined} />
         </header>
 
         <div className="signal-operation-table-head" aria-hidden="true">

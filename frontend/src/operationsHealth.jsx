@@ -16,6 +16,20 @@ export function buildOperationsHealth({ operations, notifications, watchRuns, re
     buildWorkflowActionsHealth(workflowHealth),
     buildHistorySourceHealth(operations, notifications, watchRuns, reportRuns, jobRuns),
   ];
+  // An empty bootstrap payload means that the browser is still checking the
+  // operational sources. Missing rows during this short phase are not failures.
+  if (operations?.status === "loading") {
+    return {
+      status: "pending",
+      label: "확인 중",
+      headline: "최신 운영 이력을 확인하고 있습니다.",
+      items: items.map((item) => ({
+        ...item,
+        status: "pending",
+        label: "확인 중",
+      })),
+    };
+  }
   const status = items.some((item) => item.status === "fail")
     ? "fail"
     : items.some((item) => item.status === "warn")
