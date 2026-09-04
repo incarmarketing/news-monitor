@@ -62,5 +62,5 @@ export function resolvePublisher(article = {}, aliasRows = []) {
     const name = fromDomain(value);
     if (name) return name;
   }
-  return validName(article.rss_source_name || raw.rss_source_name) || validName(source) || fromTitle(article.title || raw.title) || UNKNOWN_PUBLISHER;
+  return validName(article.rss_source_name || raw.rss_source_name) || validName(source) || fromTitle(article.title || raw.title) || fromDomain(article.source_raw || raw.source_raw) || UNKNOWN_PUBLISHER;
 }

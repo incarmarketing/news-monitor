@@ -121,6 +121,10 @@ def resolve_publisher(article: dict) -> dict:
     name = title_publisher(article.get("title") or raw.get("title"))
     if name:
         return {"name": name, "method": "title_suffix", "host": host_of(link)}
+    original_source = article.get("source_raw") or raw.get("source_raw")
+    name = domain_name(original_source)
+    if name:
+        return {"name": name, "method": "preserved_source_domain", "host": host_of(original_source)}
     return {"name": UNKNOWN, "method": "unresolved", "host": host_of(rss_url or link or source)}
 
 
