@@ -9,6 +9,7 @@ import news_collector
 import archiver
 import ai_briefing
 import supabase_store
+import requests
 from tools.backfill_publisher_identity import repair_patch, apply_row, scan_rows
 
 
@@ -84,6 +85,12 @@ class PublisherIdentityTests(unittest.TestCase):
             self.assertEqual(list(scan_rows()), [{"id": 500}, {"id": 700}])
         self.assertIn("id=gt.500", request.call_args_list[1].args[1])
         self.assertIn("id=gt.700", request.call_args_list[2].args[1])
+
+    def test_transient_write_is_retried_with_the_same_guard(self):
+        row = {"id": 4, "updated_at": "2026-09-04T10:00:00Z", "source": "google", "title": "기사 - 뉴스1"}
+        with patch.object(supabase_store, "request", side_effect=[requests.Timeout(), Mock(json=lambda: [{"id": 4}])]) as request, patch("tools.backfill_publisher_identity.time.sleep"):
+            self.assertEqual(apply_row(row), "updated")
+        self.assertEqual(request.call_args_list[0], request.call_args_list[1])
 
 
 if __name__ == "__main__":

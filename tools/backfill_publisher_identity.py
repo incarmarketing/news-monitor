@@ -8,7 +8,10 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 import sys
+import time
 from urllib.parse import quote
+
+import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import publisher_identity as publishers
@@ -51,13 +54,23 @@ def apply_row(row):
         return "conflict"
     # Compare-and-set prevents overwriting a classification/raw update by an
     # overlapping collector. Conflicts are left for the next run, never forced.
-    response = supabase_store.request(
-        "PATCH",
-        f"news_articles?id=eq.{row['id']}&updated_at=eq.{quote(row['updated_at'], safe='')}&select=id",
-        data=json.dumps(patch, ensure_ascii=False),
-        headers={"Prefer": "return=representation"},
-    )
-    return "updated" if response.json() else "conflict"
+    for attempt in range(3):
+        try:
+            response = supabase_store.request(
+                "PATCH",
+                f"news_articles?id=eq.{row['id']}&updated_at=eq.{quote(row['updated_at'], safe='')}&select=id",
+                data=json.dumps(patch, ensure_ascii=False),
+                headers={"Prefer": "return=representation"},
+            )
+            return "updated" if response.json() else "conflict"
+        except requests.RequestException as error:
+            status = getattr(error.response, "status_code", None)
+            if status and status < 500 and status not in {408, 429}:
+                raise
+            if attempt < 2:
+                time.sleep(2 ** attempt)
+    print(f"Publisher repair deferred after transient errors: article {row['id']}", file=sys.stderr)
+    return "failed"
 
 
 def main():
@@ -81,13 +94,21 @@ def main():
             for row in unresolved
         ],
     }
-    if args.apply and not args.dry_run:
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            audit["results"] = dict(Counter(pool.map(apply_row, changes)))
     path = Path(args.audit)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    if args.apply and not args.dry_run:
+        results = Counter()
+        try:
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                for status in pool.map(apply_row, changes):
+                    results[status] += 1
+        finally:
+            audit["results"] = dict(results)
+            path.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({key: value for key, value in audit.items() if key not in {"changes", "unresolved_articles"}}, ensure_ascii=False))
+    if audit.get("results", {}).get("failed"):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
