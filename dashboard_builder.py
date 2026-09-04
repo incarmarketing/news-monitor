@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlparse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import supabase_store
+import publisher_identity
 import config
 import archiver
 import ai_fallback
@@ -139,7 +140,7 @@ def build_archive_articles(archives: list[dict]) -> list[dict]:
                     "risk": supabase_store.article_risk_level(article, metrics),
                     "title": title,
                     "link": link,
-                    "source": article.get("source", ""),
+                    "source": publisher_identity.resolve_publisher(article)["name"],
                     "keyword": article.get("keyword", ""),
                     "summary": article_summary(article, category, tone),
                     "pub_date": article.get("pub_date", ""),
@@ -467,7 +468,7 @@ def load_supabase_articles(start_date: str = "", limit: int = 50000) -> list[dic
                 "risk": supabase_store.article_risk_level(row),
                 "title": row.get("title", ""),
                 "link": row.get("link", ""),
-                "source": row.get("source", ""),
+                "source": publisher_identity.resolve_publisher(row)["name"],
                 "keyword": row.get("keyword", ""),
                 "summary": article_summary(row, category, tone),
                 "discovered_at": row.get("discovered_at", ""),
@@ -1120,12 +1121,13 @@ def load_dashboard_classification_feedback() -> list[dict]:
 
 
 def publish_dashboard() -> Path:
+    aliases = load_dashboard_aliases()
+    publisher_identity.configure_aliases(aliases)
     archives = load_daily_archives()
     articles = build_articles(archives)
     summary = build_summary(archives, articles)
     report_runs = build_report_runs(archives)
     keywords = load_dashboard_keywords()
-    aliases = load_dashboard_aliases()
     media_relations = load_dashboard_media_relations()
     reporters = load_dashboard_reporters()
     ad_spends = load_dashboard_ad_spends()

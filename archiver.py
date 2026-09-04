@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 import report_window
 import supabase_store
+import publisher_identity
 
 BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
@@ -78,11 +79,17 @@ def archive_path(report_date: date, slot: str = "") -> Path:
 
 
 def lighten(article: dict) -> dict:
+    article = publisher_identity.normalize_article(article)
     metadata_only = str(article.get("storage_policy") or "").strip() == "metadata_only"
     return {
         "title": article.get("title", ""),
         "link": article.get("link", ""),
         "source": article.get("source", ""),
+        "source_raw": article.get("source_raw", ""),
+        "rss_source_name": article.get("rss_source_name", ""),
+        "source_url": article.get("source_url", ""),
+        "portal": article.get("portal", ""),
+        "publisher_resolution": article.get("publisher_resolution", {}),
         "keyword": article.get("keyword", ""),
         "description": (
             article.get("_summary", "")
@@ -262,13 +269,13 @@ def aggregate_metrics(daily_data: list[dict]) -> dict:
             if is_excluded_article(article):
                 continue
             keyword = str(article.get("keyword") or "").strip()
-            source = str(article.get("source") or article.get("press") or "").strip()
+            source = publisher_identity.resolve_publisher(article)["name"]
             tone = article.get("_tone") or article.get("tone")
             if keyword:
                 keyword_counts[keyword] += 1
                 if tone == "negative":
                     risk_keyword_counts[keyword] += 1
-            if source:
+            if source and source != publisher_identity.UNKNOWN:
                 source_counts[source] += 1
 
     daily_volume = sorted(by_date.values(), key=lambda row: row["date"])
@@ -319,7 +326,7 @@ def collect_top_articles(daily_data: list[dict], limit: int = 20) -> list[dict]:
         for article in day.get("articles", []):
             if is_excluded_article(article):
                 continue
-            copied = dict(article)
+            copied = publisher_identity.normalize_article(article)
             window = day.get("window", {})
             copied["_date"] = f"{day.get('date', '')} {window.get('short_label') or window.get('slot', '')}".strip()
             articles.append(copied)

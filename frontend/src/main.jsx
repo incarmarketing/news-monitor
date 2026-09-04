@@ -1,5 +1,6 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createRoot } from "react-dom/client";
+import { resolvePublisher, isPublisherPortal, UNKNOWN_PUBLISHER } from "./publisherIdentity.js";
 import {
   Activity,
   AlertTriangle,
@@ -4260,12 +4261,14 @@ function normalizeArticleDisplay(row = {}) {
     const cleanRelatedArticles = filterRelatedArticlesForRepresentative(row).map((article) => ({
       ...article,
       ...normalizeArticleDisplayClassification(article),
+      source: resolvePublisher(article),
     }));
     const relatedSourceCount = unique(cleanRelatedArticles.map((item) => item.source).filter(Boolean)).length;
     const normalizedClassification = normalizeArticleDisplayClassification(row);
     const baseRow = {
       ...row,
       ...normalizedClassification,
+      source: resolvePublisher(row),
       relatedArticles: cleanRelatedArticles,
       relatedCount: cleanRelatedArticles.length,
       relatedSourceCount,
@@ -6559,7 +6562,7 @@ function isOfficialRegulatorSource(source) {
 }
 
 function isPortalSource(source) {
-  return /^(google|naver|daum|bing)$/i.test(String(source || "").trim()) || /google\./i.test(String(source || ""));
+  return isPublisherPortal(source) || source === UNKNOWN_PUBLISHER;
 }
 
 const emptyReporterForm = {

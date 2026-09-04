@@ -21,6 +21,7 @@ import config
 import analyzer
 import report_window
 import supabase_store
+import publisher_identity
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -99,82 +100,7 @@ EXCLUDED_PRESS_NAMES = {
     "mhn포토",
 }
 
-DOMAIN_PRESS_MAP = {
-    "fins.co.kr": "보험매일",
-    "www.fins.co.kr": "보험매일",
-    "insjournal.co.kr": "보험저널",
-    "www.insjournal.co.kr": "보험저널",
-    "insnews.co.kr": "한국보험신문",
-    "www.insnews.co.kr": "한국보험신문",
-    "insweek.co.kr": "보험신보",
-    "www.insweek.co.kr": "보험신보",
-    "news2day.co.kr": "뉴스투데이",
-    "econovill.com": "이코노믹리뷰",
-    "pinpointnews.co.kr": "핀포인트뉴스",
-    "bigdatanews.co.kr": "빅데이터뉴스",
-    "enetnews.co.kr": "이넷뉴스",
-    "energy-news.co.kr": "에너지경제",
-    "mtn.co.kr": "머니투데이방송",
-    "mk.co.kr": "매일경제",
-    "hankyung.com": "한국경제",
-    "yna.co.kr": "연합뉴스",
-    "newsis.com": "뉴시스",
-    "news1.kr": "뉴스1",
-    "mt.co.kr": "머니투데이",
-    "biz.heraldcorp.com": "헤럴드경제",
-    "heraldcorp.com": "헤럴드경제",
-    "view.asiae.co.kr": "아시아경제",
-    "asiae.co.kr": "아시아경제",
-    "edaily.co.kr": "이데일리",
-    "sedaily.com": "서울경제",
-    "bloter.net": "블로터",
-    "ziksir.com": "직썰",
-    "segyebiz.com": "세계비즈",
-    "sisaon.co.kr": "시사오늘",
-    "ttlnews.com": "티티엘뉴스",
-    "popcornnews.net": "팝콘뉴스",
-    "4th.kr": "포쓰저널",
-    "footballist.co.kr": "풋볼리스트",
-    "nocutnews.co.kr": "노컷뉴스",
-    "osen.co.kr": "OSEN",
-    "chosun.com": "조선일보",
-    "sports.chosun.com": "스포츠조선",
-    "sportsworldi.com": "스포츠월드",
-    "kookje.co.kr": "국제신문",
-    "newsworks.co.kr": "뉴스웍스",
-    "youthdaily.co.kr": "청년일보",
-    "joseilbo.com": "조세일보",
-    "sisafocus.co.kr": "시사포커스",
-    "dailian.co.kr": "데일리안",
-    "ngetnews.com": "뉴스저널리즘",
-    "ftoday.co.kr": "파이낸셜투데이",
-    "sateconomy.co.kr": "시장경제",
-    "dt.co.kr": "디지털타임스",
-    "pointdaily.co.kr": "포인트데일리",
-    "m.maniareport.com": "마니아리포트",
-    "maniareport.com": "마니아리포트",
-    "kmib.co.kr": "국민일보",
-    "m.sportsworldi.com": "스포츠월드",
-    "m.hankookilbo.com": "한국일보",
-    "starin.edaily.co.kr": "이데일리",
-    "mbn.co.kr": "MBN",
-    "m.nocutnews.co.kr": "노컷뉴스",
-    "cnbnews.com": "CNB뉴스",
-    "sports.hankooki.com": "스포츠한국",
-    "m-i.kr": "매일일보",
-    "efnews.co.kr": "파이낸셜신문",
-    "newsprime.co.kr": "프라임경제",
-    "breaknews.com": "브레이크뉴스",
-    "safetimes.co.kr": "세이프타임즈",
-    "xportsnews.com": "엑스포츠뉴스",
-    "fnnews.com": "파이낸셜뉴스",
-    "kbanker.co.kr": "대한금융신문",
-    "www.kbanker.co.kr": "대한금융신문",
-    "eroun.net": "이로운넷",
-    "www.eroun.net": "이로운넷",
-    "newsport.co.kr": "뉴스포트",
-    "www.newsport.co.kr": "뉴스포트",
-}
+DOMAIN_PRESS_MAP = publisher_identity.DOMAIN_NAMES
 
 KEYWORD_CATEGORIES = {"own", "regulation", "competitor", "industry", "other"}
 MANDATORY_OWN_COLLECTION_KEYWORDS = ["인카금융서비스", "인카금융"]
@@ -632,7 +558,14 @@ def fetch_google_news(
                 "link": entry.get("link", ""),
                 "description": clean_html(entry.get("summary", "")),
                 "pub_date": entry.get("published", ""),
-                "source": infer_press_name(entry.get("title", ""), entry.get("link", ""), "google"),
+                "source": publisher_identity.resolve_publisher({
+                    "title": entry.get("title", ""),
+                    "link": entry.get("link", ""),
+                    "rss_source_name": (entry.get("source") or {}).get("title", ""),
+                    "source_url": (entry.get("source") or {}).get("href", ""),
+                })["name"],
+                "rss_source_name": (entry.get("source") or {}).get("title", ""),
+                "source_url": (entry.get("source") or {}).get("href", ""),
                 "keyword": keyword,
                 "keyword_query": query,
                 "keyword_category": normalize_keyword_category(keyword_category),
@@ -1165,11 +1098,12 @@ def clean_html(text: str) -> str:
 
 
 def infer_press_name(title: str, link: str, fallback: str) -> str:
-    title_press = extract_press_from_title(title)
-    if title_press:
-        return normalize_press_name(title_press)
-    domain_press = extract_press_from_url(link)
-    return normalize_press_name(domain_press or fallback)
+    resolved = publisher_identity.resolve_publisher({"title": title, "link": link, "source": fallback})
+    if resolved["method"] != "unresolved":
+        return resolved["name"]
+    if publisher_identity.is_portal(link):
+        return publisher_identity.valid_name(resolve_portal_press_from_page(link)) or publisher_identity.UNKNOWN
+    return publisher_identity.UNKNOWN
 
 
 def normalize_press_name(value: str) -> str:
@@ -1180,7 +1114,7 @@ def normalize_press_name(value: str) -> str:
         return ""
     aliased = PRESS_ALIAS_MAP.get(press, press)
     host = canonical_host(aliased)
-    return DOMAIN_PRESS_MAP.get(host, aliased)
+    return publisher_identity.domain_name(host) or publisher_identity.valid_name(aliased)
 
 
 def extract_press_from_title(title: str) -> str:
@@ -1226,7 +1160,7 @@ def extract_press_from_url(link: str) -> str:
         return resolve_portal_press_from_page(link)
     if not host:
         return ""
-    return DOMAIN_PRESS_MAP.get(host, host)
+    return publisher_identity.domain_name(host)
 
 
 def resolve_portal_press_from_page(link: str) -> str:
@@ -1235,7 +1169,7 @@ def resolve_portal_press_from_page(link: str) -> str:
         response = requests.get(
             link,
             timeout=5,
-            headers={"User-Agent": "Mozilla/5.0 news-monitor/1.0"},
+            headers=RSS_REQUEST_HEADERS,
         )
         response.raise_for_status()
     except Exception:
@@ -1243,8 +1177,6 @@ def resolve_portal_press_from_page(link: str) -> str:
 
     html = response.text
     patterns = [
-        r'property=["\']og:article:author["\']\s+content=["\']([^"\']+)["\']',
-        r'content=["\']([^"\']+)["\']\s+property=["\']og:article:author["\']',
         r'class=["\'][^"\']*media_end_head_top_logo_img[^"\']*["\'][^>]+alt=["\']([^"\']+)["\']',
         r'alt=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*media_end_head_top_logo_img[^"\']*["\']',
         r'class=["\'][^"\']*press_logo[^"\']*["\'][^>]+alt=["\']([^"\']+)["\']',
@@ -1468,6 +1400,10 @@ def article_matches_collection_keyword(article: dict, text: str) -> bool:
 
 
 def configure_context_rules_from_supabase() -> None:
+    try:
+        publisher_identity.configure_aliases(supabase_store.load_press_alias_rows())
+    except Exception as error:
+        console.print(f"[yellow]Publisher aliases unavailable; using bundled registry:[/] {error}")
     try:
         analyzer.configure_context_rules(supabase_store.load_monitor_context_rules())
     except Exception as error:

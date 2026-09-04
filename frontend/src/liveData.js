@@ -1,4 +1,5 @@
 import { watchRunDisplayState } from "./watchHealth.js";
+import { resolvePublisher } from "./publisherIdentity.js";
 
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
 const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v3";
@@ -1642,7 +1643,7 @@ function normalizeArticle(row) {
     pubDate: publicationSource || "",
     slot: row.report_slot || row.slot || row.window_label || row.window || "",
     reportSlot: row.report_slot || row.slot || "",
-    source: normalizeArticleSource(row.source, row.link, row.title),
+    source: resolvePublisher(row),
     title: row.title,
     link: row.link || "#",
     keyword: row.keyword || "",
@@ -1770,13 +1771,7 @@ function isStockListingNoise(row = {}) {
 }
 
 function normalizeArticleSource(source, link = "", title = "") {
-  const raw = String(source || "").trim();
-  if (raw && !isPortalSource(raw)) return raw;
-  const titleSource = String(title || "").match(/\s[-–]\s([^-\n|]+)$/)?.[1]?.trim();
-  if (titleSource && !isPortalSource(titleSource)) return titleSource.replace(/^www\./, "");
-  const host = safeHost(link);
-  if (host && !isPortalSource(host)) return host;
-  return raw || "미확인";
+  return resolvePublisher({ source, link, title });
 }
 
 function isPortalSource(value) {

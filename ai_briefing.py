@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import google.generativeai as genai
+import publisher_identity
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
@@ -75,6 +76,7 @@ def run_briefing(articles: list[dict]) -> Path:
     supabase_store.apply_cached_analysis_to_articles(articles)
     clustered, metrics = analyzer.analyze(articles, top_n=config.TOP_N_FOR_BRIEFING)
     clustered = classification_normalizer.normalize_articles(clustered)
+    clustered = [publisher_identity.normalize_article(article) for article in clustered]
     metrics = classification_normalizer.recompute_metrics(metrics, clustered)
     assign_report_ids(clustered)
     yesterday = archiver.load_yesterday()
@@ -578,6 +580,7 @@ def build_html_report(
     window_override: dict | None = None,
 ) -> str:
     clustered = classification_normalizer.normalize_articles(clustered)
+    clustered = [publisher_identity.normalize_article(article) for article in clustered]
     metrics = classification_normalizer.recompute_metrics(metrics, clustered)
     ensure_report_ids(clustered)
     metrics = normalize_metrics_for_template(metrics)
@@ -956,7 +959,7 @@ def build_daily_source_rows(clustered: list[dict], limit: int = 6) -> list[dict]
     counts: Counter[str] = Counter()
     for article in clustered:
         source = report_source_label(article)
-        if not source:
+        if not source or source == publisher_identity.UNKNOWN:
             continue
         counts[source] += 1
 
@@ -981,14 +984,7 @@ def report_source_label(article: dict) -> str:
         or article.get("source")
         or ""
     ).strip()
-    source = normalize_source_name(raw_source)
-    if is_portal_source(source):
-        source = infer_source_from_title(article.get("title", ""))
-    if not source:
-        source = source_from_link(article.get("link", ""))
-    if is_portal_source(source):
-        source = ""
-    return compact_text(source or "언론사 확인", 12)
+    return publisher_identity.resolve_publisher({**article, "source": raw_source})["name"]
 
 
 def normalize_source_name(value: str) -> str:

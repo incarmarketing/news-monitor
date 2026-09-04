@@ -15,6 +15,7 @@ import requests
 from dotenv import load_dotenv
 
 import analyzer
+import publisher_identity
 
 load_dotenv()
 KST = timezone(timedelta(hours=9))
@@ -1180,6 +1181,7 @@ def article_risk_level(article: dict, metrics: dict | None = None) -> str:
 
 
 def normalize_article(article: dict, archive_payload: dict) -> dict:
+    identity_article = publisher_identity.normalize_article(article)
     window = archive_payload.get("window", {})
     metrics = archive_payload.get("metrics", {})
     context = normalized_article_context(article)
@@ -1195,7 +1197,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "risk_level": article_risk_level(article, metrics),
         "title": article.get("title", ""),
         "link": article.get("link", ""),
-        "source": article.get("source", ""),
+        "source": identity_article["source"],
         "keyword": article.get("keyword", ""),
         "summary": article.get("_summary", "") or analyzer.build_quality_summary(article),
         "pub_date": parse_pub_date(article.get("pub_date", "")),
@@ -1219,7 +1221,7 @@ def normalize_article(article: dict, archive_payload: dict) -> dict:
         "clipping_recommended": context.get("clipping_recommended", False),
         "clipping_reason": context.get("clipping_reason", ""),
         "cluster_size": article.get("_cluster_size", 1),
-        "raw": storage_safe_article(article),
+        "raw": storage_safe_article(identity_article),
     }
     normalized = {key: row.get(key) for key in ARTICLE_COLUMNS if key != "discovered_at"}
     if discovered_at:
