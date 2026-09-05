@@ -1,0 +1,251 @@
+{
+  "date": "2026-09-06",
+  "timestamp": "2026-09-06T08:07:16.867157+09:00",
+  "window": {
+    "slot": "08",
+    "label": "전일 18:00~당일 08:00",
+    "short_label": "전일 18시 이후",
+    "start": "2026-09-05T18:00:00+09:00",
+    "end": "2026-09-06T08:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 8,
+    "total_after_cluster": 8,
+    "by_category": {
+      "own": 0,
+      "regulation": 5,
+      "competitor": 0,
+      "industry": 3,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 4,
+      "neutral": 4,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "classification_ruleset_version": "classification-contract-v5-deterministic-2026-08-12:0362f06df629",
+    "ai_model_used": "rules_fallback",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini",
+        "error": "Gemini circuit open: credit_depleted until 2026-09-06 18:06 KST",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_circuit_open"
+  },
+  "briefing": "## 최종 결론\n당사 직접 이슈보다 \"[ESG 칼럼] 2028년부터 본격화되는 지속가능성 공시제도…\" 등 업계 흐름이 중심입니다.\n\n## 핵심 이슈\n- [1] [ESG 칼럼] 2028년부터 본격화되는 지속가능성…: 2026년 2월 금융위원회는 제4차 생산적 금융 대전환 회의에서 국내 지속가능성(ESG) 공시제도의 로…\n- [2] 가계대출·5세대 실손·레버리지 ETF…금융권 흔들 국…: 이밖에도 고액 비급여 진료비 일부를 환자에게 돌려주는 '페이백형 보험사기'와 GA(법인보험대리점) 수수…\n\n## 지표 해석\n전체 수집 8건 중 분석 대상은 8건입니다. 당사 0건은 긍정 0, 주의 0, 중립 0, 부정 0건으로 나눕니다. 정책/규제 5건, 경쟁/업계 3건이며 전체 주의 4건과 부정 0건은 별도 관찰합니다.\n\n\n## 분석 키워드\n금융위, 보험대리점, 내부통제, 금융감독원",
+  "articles": [
+    {
+      "title": "[ESG 칼럼] 2028년부터 본격화되는 지속가능성 공시제도, 지금 무엇을 준...",
+      "link": "https://www.hellot.net/news/article.html?no=114798",
+      "source": "언론사 확인 필요",
+      "source_raw": "언론사 확인 필요",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "언론사 확인 필요",
+        "method": "unresolved",
+        "host": "hellot.net"
+      },
+      "keyword": "금융위",
+      "description": "2026년 2월 금융위원회는 제4차 생산적 금융 대전환 회의에서 국내 지속가능성(ESG) 공시제도의 로드맵(안)을... 금융위와 KSSB는 ISSB IFRS S1·S2와의 정합성을 최우선 원칙으로 삼고 있다. 이는 우리 기업이 국내 공시만이...",
+      "_summary": "2026년 2월 금융위원회는 제4차 생산적 금융 대전환 회의에서 국내 지속가능성(ESG) 공시제도의 로드맵(안)을. 금융위와 KSSB는 ISSB IFRS S1·S2와의 정합성을 최우선 원칙으로 삼고 있다 이는 우리 기업이 국내 공시만이.",
+      "pub_date": "Sat, 05 Sep 2026 20:50:00 +0900",
+      "_report_id": 1,
+      "_score": 12,
+      "_category": "regulation",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "가계대출·5세대 실손·레버리지 ETF…금융권 흔들 국감 핵심 쟁점",
+      "link": "https://www.shinailbo.co.kr/news/articleView.html?idxno=5058612",
+      "source": "신아일보",
+      "source_raw": "신아일보",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "신아일보",
+        "method": "original_domain",
+        "host": "shinailbo.co.kr"
+      },
+      "keyword": "보험대리점",
+      "description": "이밖에도 고액 비급여 진료비 일부를 환자에게 돌려주는 '페이백형 보험사기'와 GA(법인보험대리점) 수수료 경쟁에 따른 부당승환 방지 대책도 국감에서 다뤄질 것으로 보인다. 카드업권에서는 카드론·리볼빙 증가에...",
+      "_summary": "이밖에도 고액 비급여 진료비 일부를 환자에게 돌려주는 '페이백형 보험사기'와 GA(법인보험대리점) 수수료 경쟁에 따른 부당승환 방지 대책도 국감에서 다뤄질 것으로 보인다 카드업권에서는 카드론·리볼빙 증가에. 가계대출·5세대 실손·레버리지 ETF…금융권 흔들 국감 핵심 쟁점.",
+      "pub_date": "Sun, 06 Sep 2026 06:00:00 +0900",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "[2026 국감] '삼전닉스 레버리지 ETF' 화력 집중… 野, 김용범 출석 요구",
+      "link": "https://www.g-enews.com/view.php?ud=202609041335353249e30fcb1ba8_1",
+      "source": "글로벌이코노믹",
+      "source_raw": "글로벌이코노믹",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "글로벌이코노믹",
+        "method": "original_domain",
+        "host": "g-enews.com"
+      },
+      "keyword": "보험대리점",
+      "description": "보험권에서는 5세대 실손보험의 저조한 전환 실적과 법인보험대리점(GA)의 부당승환 문제가 부각될 전망이다. 금융회사 최고경영자(CEO) 연임과 지배구조, 주가조작 등 불공정거래 대응과 금융소비자 보호도 쟁점 후보로...",
+      "_summary": "보험권에서는 5세대 실손보험의 저조한 전환 실적과 법인보험대리점(GA)의 부당승환 문제가 부각될 전망이다 [2026 국감] '삼전닉스 레버리지 ETF' 화력 집중… 野, 김용범 출석 요구.",
+      "pub_date": "Sun, 06 Sep 2026 06:00:00 +0900",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "바오비엣 생명보험 \"학교생활에 함께하며, 당신의 미래를 만들어갑니다\" - Vietnam.vn",
+      "link": "https://news.google.com/rss/articles/CBMihwFBVV95cUxOOHpLMXVkSGd2aEdqM19wMG5vUUdvQ2ZUVmtWSm9kODE5UG1VUUZvLWFUTnlvTU56V0luckRMZURPZFU2ZHNCcnc2VXlFZVNxZGQwUzY4ZFVYN19nOFpFODhRU1M0NDRic2JFWE4zZlFuQXRORmdyOEF5ZmJlUlV5WWxtbV9RRGc?oc=5",
+      "source": "베트남닷브이엔",
+      "source_raw": "베트남닷브이엔",
+      "rss_source_name": "Vietnam.vn",
+      "source_url": "https://www.vietnam.vn",
+      "portal": "google",
+      "publisher_resolution": {
+        "name": "베트남닷브이엔",
+        "method": "rss_source_name",
+        "host": "vietnam.vn"
+      },
+      "keyword": "생명보험",
+      "description": "바오비엣 생명보험 \"학교생활에 함께하며, 당신의 미래를 만들어갑니다\"&nbsp;&nbsp;Vietnam.vn",
+      "_summary": "바오비엣 생명보험 \"학교생활에 함께하며, 당신의 미래를 만들어갑니다\" Vietnam.vn. 바오비엣 생명보험 \"학교생활에 함께하며, 당신의 미래를 만들어갑니다\" - Vietnam.vn.",
+      "pub_date": "Sat, 05 Sep 2026 13:49:01 GMT",
+      "_report_id": 4,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "CEO 중징계부터 때렸는데 결국 취소…법원서 깨진 금융당국 '엄벌 행정...",
+      "link": "https://www.mt.co.kr/stock/2026/09/06/2026090213440094814",
+      "source": "머니투데이",
+      "source_raw": "머니투데이",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "머니투데이",
+        "method": "original_domain",
+        "host": "mt.co.kr"
+      },
+      "keyword": "내부통제",
+      "description": "내부통제기준 마련 의무 위반 등을 이유로 한 중징계였다. 그러나 두 사람 모두 금융위를 상대로 낸 행정소송 1·2심에서 승소했다. 금융위는 대법원까지 상고했지만 지난 4월 두 사건 모두 심리불속행 기각됐다. 두...",
+      "_summary": "내부통제기준 마련 의무 위반 등을 이유로 한 중징계였다 그러나 두 사람 모두 금융위를 상대로 낸 행정소송 1·2심에서 승소했다 금융위는 대법원까지 상고했지만 지난 4월 두 사건 모두 심리불속행 기각됐다",
+      "pub_date": "Sun, 06 Sep 2026 06:40:00 +0900",
+      "_report_id": 5,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "금융기관 지방이전 재점화⋯효과ㆍ비용 논쟁 속 선별론도 [공공기관 빅...",
+      "link": "https://www.etoday.co.kr/news/view/2622119",
+      "source": "이투데이",
+      "source_raw": "이투데이",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "이투데이",
+        "method": "original_domain",
+        "host": "etoday.co.kr"
+      },
+      "keyword": "금융감독원",
+      "description": "5일 금융권에 따르면 2차 공공기관 이전 논의 과정에서 금융위원회와 금융감독원, 예금보험공사, 산업은행·기업은행·수출입은행 등의 지방이전 가능성이 거론되고 있다. 1차 공공기관 이전 당시 한국자산관리공사(캠코)와...",
+      "_summary": "5일 금융권에 따르면 2차 공공기관 이전 논의 과정에서 금융위원회와 금융감독원, 예금보험공사, 산업은행·기업은행·수출입은행 등의 지방이전 가능성이 거론되고 있다 1차 공공기관 이전 당시 한국자산관리공사(캠코)와. 금융기관 지방이전 재점화⋯효과ㆍ비용 논쟁 속 선별론도 [공공기관 빅.",
+      "pub_date": "Sun, 06 Sep 2026 06:00:00 +0900",
+      "_report_id": 6,
+      "_score": 8,
+      "_category": "regulation",
+      "_tone": "caution",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "'빚투' 속에 50대 이상 보험계약대출·카드론 늘었다",
+      "link": "https://www.yna.co.kr/view/AKR20260905046700002?input=1195m",
+      "source": "연합뉴스",
+      "source_raw": "연합뉴스",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "연합뉴스",
+        "method": "original_domain",
+        "host": "yna.co.kr"
+      },
+      "keyword": "손해보험",
+      "description": "6일 국회 재정경제기획위원회 소속 이종욱 국민의힘 의원이 금융감독원에서 받은 자료에 따르면, 올해 7월 말 대형 생명보험사(삼성·한화·교보)와 손해보험사(삼성·현대·DB·KB·메리츠)의 보험계약대출 잔액은...",
+      "_summary": "6일 국회 재정경제기획위원회 소속 이종욱 국민의힘 의원이 금융감독원에서 받은 자료에 따르면, 올해 7월 말 대형 생명보험사(삼성·한화·교보)와 손해보험사(삼성·현대·DB·KB·메리츠)의 보험계약대출 잔액은. '빚투' 속에 50대 이상 보험계약대출·카드론 늘었다",
+      "pub_date": "Sun, 06 Sep 2026 05:57:00 +0900",
+      "_report_id": 7,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "\"주식 대신 보험\"…부자들의 달라진 목돈 운용법",
+      "link": "https://www.sidae.com/article/2026090414580658603",
+      "source": "동행미디어 시대",
+      "source_raw": "동행미디어 시대",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "동행미디어 시대",
+        "method": "original_domain",
+        "host": "sidae.com"
+      },
+      "keyword": "생명보험",
+      "description": "시장 변동성↑…방카 문의 증가 박윤희 신한은행 프리미어 PWM 강남센터 팀장은 \"최근 은행 영업점에서 방카슈랑스에 대한 문의와 가입이 눈에 띄게 늘었다\"며 \"생명보험사의 확정금리형 연금보험과 일시납 저축성보험에...",
+      "_summary": "시장 변동성↑…방카 문의 증가 박윤희 신한은행 프리미어 PWM 강남센터 팀장은 \"최근 은행 영업점에서 방카슈랑스에 대한 문의와 가입이 눈에 띄게 늘었다\"며 \"생명보험사의 확정금리형 연금보험과 일시납 저축성보험에. \"주식 대신 보험\"…부자들의 달라진 목돈 운용법.",
+      "pub_date": "Sun, 06 Sep 2026 08:00:00 +0900",
+      "_report_id": 8,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    }
+  ]
+}
