@@ -1,0 +1,203 @@
+{
+  "date": "2026-09-05",
+  "timestamp": "2026-09-05T18:06:46.867973+09:00",
+  "window": {
+    "slot": "18",
+    "label": "당일 13:00~18:00",
+    "short_label": "오후 13~18시",
+    "start": "2026-09-05T13:00:00+09:00",
+    "end": "2026-09-05T18:00:00+09:00"
+  },
+  "metrics": {
+    "total_collected": 7,
+    "total_after_cluster": 6,
+    "by_category": {
+      "own": 0,
+      "regulation": 0,
+      "competitor": 0,
+      "industry": 6,
+      "sponsorship": 0,
+      "other": 0
+    },
+    "by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 6,
+      "negative": 0,
+      "exclude": 0
+    },
+    "own_negative": 0,
+    "own_total": 0,
+    "sponsorship_total": 0,
+    "own_by_tone": {
+      "positive": 0,
+      "caution": 0,
+      "neutral": 0,
+      "negative": 0
+    },
+    "risk_level": "LOW",
+    "analysis_cache_hits": 0,
+    "ai_context_reviews": 0,
+    "ai_context_budget": 18,
+    "classification_ruleset_version": "classification-contract-v5-deterministic-2026-08-12:0362f06df629",
+    "ai_model_used": "rules_fallback",
+    "ai_primary_failed": true,
+    "ai_fallback_used": true,
+    "ai_quota_exhausted": true,
+    "ai_errors": [
+      {
+        "model": "gemini-2.5-pro",
+        "error": "429 Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay.",
+        "quota": true
+      }
+    ],
+    "ai_fallback_reason": "gemini_failed"
+  },
+  "briefing": "## 최종 결론\n당사 직접 이슈보다 \"바오비엣생명보험의 \"아이들의 등교길에 함께하며 더 밝은 미래…\" 등 업계 흐름이 중심입니다.\n\n## 핵심 이슈\n- [1] 바오비엣생명보험의 \"아이들의 등교길에 함께하며 더 밝…: 바오비엣생명보험의 \"아이들의 등교길에 함께하며 더 밝은 미래를 만들어 갑니다\" 캠페인이 전국적으로 시행…\n- [2] 생명보험 회사들이 막대한 이익을 내고 있다. - Vi…: 생명보험 회사들이 막대한 이익을 내고 있다 Vietnam.vn.\n\n## 지표 해석\n전체 수집 7건 중 분석 대상은 6건입니다. 당사 0건은 긍정 0, 주의 0, 중립 0, 부정 0건으로 나눕니다. 정책/규제 0건, 경쟁/업계 6건이며 전체 주의 0건과 부정 0건은 별도 관찰합니다.\n\n\n## 분석 키워드\n생명보험, 보험사, 보험설계사, 손해보험",
+  "articles": [
+    {
+      "title": "바오비엣생명보험의 \"아이들의 등교길에 함께하며 더 밝은 미래를 만들어 갑니다\" 캠페인이 전국적으로 시행되고 있습니다. - Vietnam.vn",
+      "link": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQT2ZnbmVjampaOE9ZME13MG0wUVhNWEhid2JBM0tUM1lxX3h4UnpELUU0dE10N1AzdjZ0dXRpNUhmY0s5RHc1LWhIZTEyN09Ja1JGMU93eXp5RlY4NjNWZmduMFdycnNOX0JJbUxVOGVvMG9SMkNTUWNfWnVRWjByc05vcDRWcDc4YjcyR0d6U3lVR0MtNXpKMXEteHhxMXc?oc=5",
+      "source": "베트남닷브이엔",
+      "source_raw": "베트남닷브이엔",
+      "rss_source_name": "Vietnam.vn",
+      "source_url": "https://www.vietnam.vn",
+      "portal": "google",
+      "publisher_resolution": {
+        "name": "베트남닷브이엔",
+        "method": "rss_source_name",
+        "host": "vietnam.vn"
+      },
+      "keyword": "생명보험",
+      "description": "바오비엣생명보험의 \"아이들의 등교길에 함께하며 더 밝은 미래를 만들어 갑니다\" 캠페인이 전국적으로 시행되고 있습니다.&nbsp;&nbsp;Vietnam.vn",
+      "_summary": "바오비엣생명보험의 \"아이들의 등교길에 함께하며 더 밝은 미래를 만들어 갑니다\" 캠페인이 전국적으로 시행되고 있습니다 Vietnam.vn. 바오비엣생명보험의 \"아이들의 등교길에 함께하며 더 밝은 미래를 만들어 갑니다\" 캠페인이 전국적으로 시행되고 있습니다. - Vietnam.vn.",
+      "pub_date": "Sat, 05 Sep 2026 08:13:59 GMT",
+      "_report_id": 1,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "생명보험 회사들이 막대한 이익을 내고 있다. - Vietnam.vn",
+      "link": "https://news.google.com/rss/articles/CBMia0FVX3lxTFAwZ0ZKR0x3ZVIybXZhOVB4T2p1QkpOMU5oa3lfWkJKTVV5Qm9yMGROWFRHOXJlQ01DNkVvaHBZaHY3S1VQRk02LXhXWWdjN3F4SkVnM0JFeTlqM2phYWdLOHBWSlJtNk1LZnNR?oc=5",
+      "source": "베트남닷브이엔",
+      "source_raw": "베트남닷브이엔",
+      "rss_source_name": "Vietnam.vn",
+      "source_url": "https://www.vietnam.vn",
+      "portal": "google",
+      "publisher_resolution": {
+        "name": "베트남닷브이엔",
+        "method": "rss_source_name",
+        "host": "vietnam.vn"
+      },
+      "keyword": "생명보험",
+      "description": "생명보험 회사들이 막대한 이익을 내고 있다.&nbsp;&nbsp;Vietnam.vn",
+      "_summary": "생명보험 회사들이 막대한 이익을 내고 있다 Vietnam.vn. 생명보험 회사들이 막대한 이익을 내고 있다. - Vietnam.vn.",
+      "pub_date": "Sat, 05 Sep 2026 04:56:40 GMT",
+      "_report_id": 2,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "노란봉투법에 모보험사 사용자성 쟁점…GA 설계사 관리 어디까지 - 아시아경제",
+      "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE92NGtWUHdSZEJOMXhNVmNpRmpwZXFkWTFVMF9EamtCb25FWWZJVFdEU2U3WU1RYnNoVHl6a1BZTTFCZXlZWExaaE5OemdKUGRVWXBmTFBXUXRUbGtwM2VlTQ?oc=5",
+      "source": "아시아경제",
+      "source_raw": "아시아경제",
+      "rss_source_name": "아시아경제",
+      "source_url": "https://www.asiae.co.kr",
+      "portal": "google",
+      "publisher_resolution": {
+        "name": "아시아경제",
+        "method": "rss_source_domain",
+        "host": "asiae.co.kr"
+      },
+      "keyword": "보험사",
+      "description": "노란봉투법에 모보험사 사용자성 쟁점…GA 설계사 관리 어디까지&nbsp;&nbsp;아시아경제",
+      "_summary": "노란봉투법에 모보험사 사용자성 쟁점…GA 설계사 관리 어디까지 아시아경제. 노란봉투법에 모보험사 사용자성 쟁점…GA 설계사 관리 어디까지 - 아시아경제.",
+      "pub_date": "Sat, 05 Sep 2026 05:00:00 GMT",
+      "_report_id": 3,
+      "_score": 8,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 2,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "“아기 입 막고 웃었다”…천사 엄마의 6천만 원짜리 연쇄 살인에 내려...",
+      "link": "https://www.seoul.co.kr/news/plan/listenthecase/2026/09/05/20260905500021?wlog_tag3=naver",
+      "source": "서울신문",
+      "source_raw": "서울신문",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "서울신문",
+        "method": "original_domain",
+        "host": "seoul.co.kr"
+      },
+      "keyword": "보험설계사",
+      "description": "둘째 수빈이를 입양하기 전, 임신한 것처럼 배를 부풀려 보험 설계사를 속이고 태아 보험에 가입하며 타낸 피 묻은 돈은 총 6천만 원에 달했다. 그렇다면 왜 아이들이 20개월에서 28개월, 즉 두 돌을 전후로 하여 예외 없이...",
+      "_summary": "둘째 수빈이를 입양하기 전, 임신한 것처럼 배를 부풀려 보험 설계사를 속이고 태아 보험에 가입하며 타낸 피 묻은 돈은 총 6천만 원에 달했다 그렇다면 왜 아이들이 20개월에서 28개월, 즉 두 돌을 전후로 하여 예외 없이. “아기 입 막고 웃었다”…천사 엄마의 6천만 원짜리 연쇄 살인에 내려.",
+      "pub_date": "Sat, 05 Sep 2026 13:59:00 +0900",
+      "_report_id": 4,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "[자원순환의 날] 버려지는 순간 끝나지 않는다…'폐기물 감축' 넘어 '순...",
+      "link": "http://www.dailypop.kr/news/articleView.html?idxno=102286",
+      "source": "데일리팝",
+      "source_raw": "데일리팝",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "데일리팝",
+        "method": "original_domain",
+        "host": "dailypop.kr"
+      },
+      "keyword": "손해보험",
+      "description": "AXA손해보험은 올해 6년째 자원 재순환 캠페인을 이어가며 임직원의 유휴 물품과 미사용 제품을 굿윌스토어에 기부하도록 했다. 임직원과 가족이 공원과 하천 등에서 플로깅에 참여하고, 기후교육을 받은 직원들이...",
+      "_summary": "AXA손해보험은 올해 6년째 자원 재순환 캠페인을 이어가며 임직원의 유휴 물품과 미사용 제품을 굿윌스토어에 기부하도록 했다 임직원과 가족이 공원과 하천 등에서 플로깅에 참여하고, 기후교육을 받은 직원들이. [자원순환의 날] 버려지는 순간 끝나지 않는다…'폐기물 감축' 넘어 '순.",
+      "pub_date": "Sat, 05 Sep 2026 15:40:00 +0900",
+      "_report_id": 5,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    },
+    {
+      "title": "주유소 갔다가 '날벼락'…직원 실수에 車 180대 정비소행",
+      "link": "https://www.hankyung.com/article/2026090558837",
+      "source": "한국경제",
+      "source_raw": "한국경제",
+      "rss_source_name": "",
+      "source_url": "",
+      "portal": "naver",
+      "publisher_resolution": {
+        "name": "한국경제",
+        "method": "original_domain",
+        "host": "hankyung.com"
+      },
+      "keyword": "손해보험",
+      "description": "손해보험협회 자동차보험 종합포털은 혼유로 인한 고장을 자동차보험 보상 대상이 아니라고 안내한다. 엔진 내부나 연료탱크에 이물질이 들어간 경우를 차량 외부 물체와의 충돌로 보지 않아서다.",
+      "_summary": "손해보험협회 자동차보험 종합포털은 혼유로 인한 고장을 자동차보험 보상 대상이 아니라고 안내한다 엔진 내부나 연료탱크에 이물질이 들어간 경우를 차량 외부 물체와의 충돌로 보지 않아서다 주유소 갔다가 '날벼락'…직원 실수에 車 180대 정비소행.",
+      "pub_date": "Sat, 05 Sep 2026 15:26:00 +0900",
+      "_report_id": 6,
+      "_score": 4,
+      "_category": "industry",
+      "_tone": "neutral",
+      "_cluster_size": 1,
+      "storage_policy": "standard"
+    }
+  ]
+}
