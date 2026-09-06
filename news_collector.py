@@ -521,6 +521,7 @@ def fetch_naver_news(
                 "link": item.get("originallink") or item.get("link", ""),
                 "description": clean_html(item.get("description", "")),
                 "pub_date": item.get("pubDate", ""),
+                "source_raw": publisher_identity.host_of(item.get("originallink") or item.get("link", "")),
                 "source": infer_press_name(
                     clean_html(item.get("title", "")),
                     item.get("originallink") or item.get("link", ""),
@@ -565,6 +566,7 @@ def fetch_google_news(
                     "source_url": (entry.get("source") or {}).get("href", ""),
                 })["name"],
                 "rss_source_name": (entry.get("source") or {}).get("title", ""),
+                "source_raw": (entry.get("source") or {}).get("title", "") or "google",
                 "source_url": (entry.get("source") or {}).get("href", ""),
                 "keyword": keyword,
                 "keyword_query": query,
@@ -951,13 +953,16 @@ def enrich_sensitive_article_bodies(articles: list[dict]) -> None:
             continue
 
         source_html = html
+        source_url = final_url or article.get("link", "")
         original_url = extract_original_article_url(html, final_url)
         if original_url and original_url != article.get("link"):
             original_html, original_final_url = fetch_article_html(original_url, timeout=6)
             if original_html:
                 source_html = original_html
                 article["_original_url"] = original_final_url or original_url
+                source_url = article["_original_url"]
 
+        publisher_identity.enrich_from_html(article, source_html, source_url)
         body = extract_article_body_from_html(source_html)
         if not body:
             continue

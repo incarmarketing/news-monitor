@@ -90,6 +90,7 @@ def lighten(article: dict) -> dict:
         "source_url": article.get("source_url", ""),
         "portal": article.get("portal", ""),
         "publisher_resolution": article.get("publisher_resolution", {}),
+        "publisher_evidence": article.get("publisher_evidence", {}),
         "keyword": article.get("keyword", ""),
         "description": (
             article.get("_summary", "")

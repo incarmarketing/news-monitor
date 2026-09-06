@@ -11,7 +11,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import { keywordGroups } from "./data";
+import { contextRules, keywordGroups } from "./data";
 import {
   deleteReporterProfile,
   saveMediaRelation,
@@ -885,6 +885,17 @@ function KeywordManagement({ keywords = [], articles = [] }) {
 
   return (
     <section className="keyword-management-shell keyword-management-single">
+      <Panel title="문맥 필터 기준" icon={ShieldCheck} meta="키워드 컬럼별 해석">
+        <div className="rule-stack management-context-rules">
+          {contextRules.map((rule) => (
+            <article key={rule.label}>
+              <Chip tone={rule.label}>{rule.label}</Chip>
+              <b>{rule.action}</b>
+              <p>{rule.body}</p>
+            </article>
+          ))}
+        </div>
+      </Panel>
       <Panel title="분류 기준 관리" icon={ShieldCheck} meta={`${rows.length.toLocaleString("ko-KR")}개 · 키워드/문맥 원장`}>
         <div className="keyword-ledger-editor">
           <div className="keyword-ledger-editor-head">

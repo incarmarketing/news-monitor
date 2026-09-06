@@ -1,0 +1,4992 @@
+{
+  "checked_on": "2026-09-07",
+  "scope": "Publisher labels only; no article classification, timestamps, alerts, or article body changes.",
+  "method": "Official publisher homepage identity metadata, corroborated with page title/logo/schema; reviewed conflicting brands separately. Never infer a publisher from a portal name or a similar article title.",
+  "baseline_unresolved_articles": 1354,
+  "additions": [
+    {
+      "host": "00news.co.kr",
+      "name": "공공뉴스",
+      "url": "http://www.00news.co.kr/",
+      "page_title": "공공뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "공공뉴스",
+        "og:site_name": "공공뉴스"
+      },
+      "logo_names": [
+        "공공뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "100ssd.co.kr",
+      "name": "백세시대",
+      "url": "https://www.100ssd.co.kr/",
+      "page_title": "백세시대",
+      "metadata": {
+        "apple-mobile-web-app-title": "백세시대",
+        "og:site_name": "백세시대"
+      },
+      "logo_names": [
+        "백세시대"
+      ],
+      "schema": []
+    },
+    {
+      "host": "abcn.kr",
+      "name": "ABC뉴스",
+      "url": "https://www.abcn.kr/",
+      "page_title": "ABC뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "ABC뉴스",
+        "og:site_name": "ABC뉴스"
+      },
+      "logo_names": [
+        "ABC뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ablenews.co.kr",
+      "name": "에이블뉴스",
+      "url": "https://www.ablenews.co.kr/",
+      "page_title": "에이블뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "에이블뉴스",
+        "og:site_name": "에이블뉴스"
+      },
+      "logo_names": [
+        "에이블뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "aflnews.co.kr",
+      "name": "농수축산신문",
+      "url": "https://www.aflnews.co.kr/",
+      "page_title": "농수축산신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "농수축산신문",
+        "og:site_name": "농수축산신문"
+      },
+      "logo_names": [
+        "농수축산신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "agrinet.co.kr",
+      "name": "한국농어민신문",
+      "url": "https://www.agrinet.co.kr/",
+      "page_title": "한국농어민신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국농어민신문",
+        "og:site_name": "한국농어민신문"
+      },
+      "logo_names": [
+        "한국농어민신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "aitimes.com",
+      "name": "AI타임스",
+      "url": "https://www.aitimes.com/",
+      "page_title": "AI타임스",
+      "metadata": {
+        "apple-mobile-web-app-title": "AI타임스",
+        "og:site_name": "AI타임스"
+      },
+      "logo_names": [
+        "toplogo3",
+        "AI타임스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "aitimes.kr",
+      "name": "인공지능신문",
+      "url": "https://www.aitimes.kr/",
+      "page_title": "인공지능신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "인공지능신문",
+        "og:site_name": "인공지능신문"
+      },
+      "logo_names": [
+        "인공지능신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "akomnews.com",
+      "name": "한의신문",
+      "url": "https://www.akomnews.com/",
+      "page_title": "한의신문",
+      "metadata": {
+        "og:site_name": "한의신문"
+      },
+      "logo_names": [
+        "한의신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "apsk.co.kr",
+      "name": "메디팜스투데이",
+      "url": "https://www.apsk.co.kr/",
+      "page_title": "메디팜스투데이",
+      "metadata": {
+        "apple-mobile-web-app-title": "메디팜스투데이",
+        "og:site_name": "메디팜스투데이"
+      },
+      "logo_names": [
+        "메디팜스투데이"
+      ],
+      "schema": []
+    },
+    {
+      "host": "atstar1.com",
+      "name": "앳스타일",
+      "url": "http://www.atstar1.com/",
+      "page_title": "앳스타일",
+      "metadata": {
+        "apple-mobile-web-app-title": "앳스타일",
+        "og:site_name": "앳스타일"
+      },
+      "logo_names": [
+        "앳스타일"
+      ],
+      "schema": []
+    },
+    {
+      "host": "autodaily.co.kr",
+      "name": "엠투데이",
+      "url": "https://www.autodaily.co.kr/",
+      "page_title": "엠투데이",
+      "metadata": {
+        "apple-mobile-web-app-title": "엠투데이",
+        "og:site_name": "엠투데이"
+      },
+      "logo_names": [
+        "엠투데이",
+        "자율공시"
+      ],
+      "schema": []
+    },
+    {
+      "host": "autotimes.co.kr",
+      "name": "오토타임즈",
+      "url": "http://autotimes.co.kr/",
+      "page_title": "오토타임즈",
+      "metadata": {
+        "author": "Autotimes",
+        "twitter:site": "오토타임즈"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "babytimes.co.kr",
+      "name": "베이비타임즈",
+      "url": "http://www.babytimes.co.kr/",
+      "page_title": "베이비타임즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "베이비타임즈",
+        "og:site_name": "베이비타임즈"
+      },
+      "logo_names": [
+        "베이비타임즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "banronbodo.com",
+      "name": "반론보도닷컴",
+      "url": "https://www.banronbodo.com/",
+      "page_title": "반론보도닷컴",
+      "metadata": {
+        "apple-mobile-web-app-title": "반론보도닷컴",
+        "og:site_name": "반론보도닷컴"
+      },
+      "logo_names": [
+        "반론보도닷컴"
+      ],
+      "schema": []
+    },
+    {
+      "host": "basketkorea.com",
+      "name": "바스켓코리아",
+      "url": "https://basketkorea.com/",
+      "page_title": "바스켓코리아",
+      "metadata": {
+        "author": "바스켓코리아",
+        "twitter:site": "https://www.basketkorea.com"
+      },
+      "logo_names": [
+        "바스켓코리아"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "url": "https://basketkorea.com"
+        }
+      ]
+    },
+    {
+      "host": "betanews.net",
+      "name": "베타뉴스",
+      "url": "https://www.betanews.net/",
+      "page_title": "베타뉴스  - 경제를 보는 새로운 관점",
+      "metadata": {
+        "author": "베타뉴스",
+        "og:site_name": "베타뉴스",
+        "twitter:site": "@베타뉴스"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "bigtanews.co.kr",
+      "name": "빅터뉴스",
+      "url": "https://www.bigtanews.co.kr/",
+      "page_title": "빅터뉴스 - 빅터뉴스엔(N) 분석(aNalysis), 통찰(iNsight), 사람(humaN)이 있습니다.",
+      "metadata": {
+        "author": "빅터뉴스",
+        "og:site_name": "빅터뉴스",
+        "twitter:site": "@빅터뉴스"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "biotimes.co.kr",
+      "name": "바이오타임즈",
+      "url": "https://www.biotimes.co.kr/",
+      "page_title": "바이오타임즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "바이오타임즈",
+        "og:site_name": "바이오타임즈"
+      },
+      "logo_names": [
+        "바이오타임즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "bizhankook.com",
+      "name": "비즈한국",
+      "url": "https://bizhankook.com/",
+      "page_title": "비즈한국",
+      "metadata": {
+        "apple-mobile-web-app-title": "비즈한국"
+      },
+      "logo_names": [
+        "비즈한국",
+        "홈으로",
+        "인터넷신문윤리위원회",
+        "자율공시 참여사"
+      ],
+      "schema": [
+        {
+          "@type": "NewsMediaOrganization",
+          "name": "비즈한국",
+          "url": "https://bizhankook.com/"
+        },
+        {
+          "@type": "WebSite",
+          "name": "비즈한국",
+          "url": "https://bizhankook.com/"
+        }
+      ]
+    },
+    {
+      "host": "bizwork.co.kr",
+      "name": "비즈워크",
+      "url": "https://www.bizwork.co.kr/",
+      "page_title": "비즈워크",
+      "metadata": {
+        "apple-mobile-web-app-title": "비즈워크",
+        "og:site_name": "비즈워크"
+      },
+      "logo_names": [
+        "비즈워크"
+      ],
+      "schema": []
+    },
+    {
+      "host": "bntnews.co.kr",
+      "name": "bntnews",
+      "url": "https://www.bntnews.co.kr/",
+      "page_title": "bntnews",
+      "metadata": {
+        "author": "bntnews",
+        "og:site_name": "bntnews",
+        "twitter:site": "@bntnews"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "boannews.com",
+      "name": "보안뉴스",
+      "url": "https://www.boannews.com/",
+      "page_title": "보안뉴스",
+      "metadata": {
+        "og:site_name": "보안뉴스"
+      },
+      "logo_names": [
+        "보안뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "bravo.etoday.co.kr",
+      "name": "브라보마이라이프",
+      "url": "https://bravo.etoday.co.kr/",
+      "page_title": "브라보마이라이프",
+      "metadata": {},
+      "logo_names": [
+        "이투데이",
+        "넥스블록",
+        "브라보마이라이프"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "브라보마이라이프",
+          "url": "https://bravo.etoday.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "busan.com",
+      "name": "부산일보",
+      "url": "https://www.busan.com/",
+      "page_title": "부산일보",
+      "metadata": {
+        "author": "부산일보"
+      },
+      "logo_names": [
+        "부산일보",
+        "80주년 로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "bzeronews.com",
+      "name": "공뉴스",
+      "url": "https://www.bzeronews.com/",
+      "page_title": "공뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "공뉴스",
+        "og:site_name": "공뉴스"
+      },
+      "logo_names": [
+        "공뉴스",
+        "17주년"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ccdailynews.com",
+      "name": "충청일보",
+      "url": "https://www.ccdailynews.com/",
+      "page_title": "충청일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "충청일보",
+        "og:site_name": "충청일보"
+      },
+      "logo_names": [
+        "충청일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ccdn.co.kr",
+      "name": "충청매일",
+      "url": "https://www.ccdn.co.kr/",
+      "page_title": "충청매일",
+      "metadata": {
+        "apple-mobile-web-app-title": "충청매일",
+        "og:site_name": "충청매일"
+      },
+      "logo_names": [
+        "충청매일"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "충청매일",
+          "url": "https://www.ccdn.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "ccnnews.co.kr",
+      "name": "충청뉴스",
+      "url": "http://www.ccnnews.co.kr/",
+      "page_title": "충청뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "충청뉴스",
+        "og:site_name": "충청뉴스"
+      },
+      "logo_names": [
+        "충청뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ccreview.co.kr",
+      "name": "충청리뷰",
+      "url": "https://www.ccreview.co.kr/",
+      "page_title": "충청리뷰",
+      "metadata": {
+        "apple-mobile-web-app-title": "충청리뷰",
+        "og:site_name": "충청리뷰"
+      },
+      "logo_names": [
+        "충청리뷰"
+      ],
+      "schema": []
+    },
+    {
+      "host": "cctimes.kr",
+      "name": "충청타임즈",
+      "url": "http://www.cctimes.kr/",
+      "page_title": "충청타임즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "충청타임즈",
+        "og:site_name": "충청타임즈"
+      },
+      "logo_names": [
+        "충청타임즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "cctoday.co.kr",
+      "name": "충청투데이",
+      "url": "https://www.cctoday.co.kr/",
+      "page_title": "충청투데이 - 충청권 유일 심층보도 중심 종합 일간지",
+      "metadata": {
+        "apple-mobile-web-app-title": "충청투데이",
+        "og:site_name": "충청투데이"
+      },
+      "logo_names": [
+        "충청투데이"
+      ],
+      "schema": []
+    },
+    {
+      "host": "celuvmedia.com",
+      "name": "셀럽미디어",
+      "url": "http://www.celuvmedia.com/",
+      "page_title": "셀럽미디어",
+      "metadata": {},
+      "logo_names": [
+        "셀럽미디어"
+      ],
+      "schema": []
+    },
+    {
+      "host": "cfnews.kr",
+      "name": "유교신문",
+      "url": "https://www.cfnews.kr/",
+      "page_title": "유교신문",
+      "metadata": {},
+      "logo_names": [
+        "유교신문",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "choicenews.co.kr",
+      "name": "초이스경제",
+      "url": "http://www.choicenews.co.kr/",
+      "page_title": "초이스경제",
+      "metadata": {
+        "apple-mobile-web-app-title": "초이스경제",
+        "og:site_name": "초이스경제"
+      },
+      "logo_names": [
+        "초이스경제"
+      ],
+      "schema": []
+    },
+    {
+      "host": "christiantoday.co.kr",
+      "name": "크리스천투데이",
+      "url": "https://www.christiantoday.co.kr/",
+      "page_title": "종교신문 1위 크리스천투데이",
+      "metadata": {
+        "author": "크리스천투데이"
+      },
+      "logo_names": [
+        "크리스천투데이"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "크리스천투데이",
+          "url": "http://www.christiantoday.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "chukkyung.co.kr",
+      "name": "축산경제신문",
+      "url": "https://www.chukkyung.co.kr/",
+      "page_title": "축산경제신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "축산경제신문",
+        "og:site_name": "축산경제신문"
+      },
+      "logo_names": [
+        "축산경제신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "chungnamilbo.co.kr",
+      "name": "충남일보",
+      "url": "http://www.chungnamilbo.co.kr/",
+      "page_title": "충남일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "충남일보",
+        "og:site_name": "충남일보"
+      },
+      "logo_names": [
+        "충남일보"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "충남일보",
+          "url": "http://www.chungnamilbo.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "coinreaders.com",
+      "name": "코인리더스",
+      "url": "http://coinreaders.com/",
+      "page_title": "코인리더스",
+      "metadata": {
+        "og:site_name": "코인리더스"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "consumuch.com",
+      "name": "컨슈머치",
+      "url": "https://www.consumuch.com/",
+      "page_title": "컨슈머치",
+      "metadata": {
+        "apple-mobile-web-app-title": "컨슈머치",
+        "og:site_name": "컨슈머치"
+      },
+      "logo_names": [
+        "컨슈머치"
+      ],
+      "schema": []
+    },
+    {
+      "host": "daejonilbo.com",
+      "name": "대전일보",
+      "url": "https://www.daejonilbo.com/",
+      "page_title": "대전일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "대전일보",
+        "og:site_name": "대전일보"
+      },
+      "logo_names": [
+        "대전일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "dailycar.co.kr",
+      "name": "데일리카",
+      "url": "https://www.dailycar.co.kr/",
+      "page_title": "데일리카 ~ 클래스가 다른; 뉴스 채널",
+      "metadata": {
+        "og:site_name": "데일리카",
+        "apple-mobile-web-app-title": ""
+      },
+      "logo_names": [
+        "Volkswagen",
+        "LG",
+        "Nvidia",
+        "Hanon Systems",
+        "Samsung",
+        "Cadillac",
+        "Honda",
+        "BYD",
+        "Korean Air",
+        "Land Rover",
+        "Volvo Trucks",
+        "Parata Air"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.dailycar.co.kr",
+          "name": "데일리카",
+          "alternateName": "DAILYCAR",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.dailycar.co.kr/img/logo/2019redko.png",
+            "width": "481",
+            "height": "100"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "url": "https://www.dailycar.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "dailymedi.com",
+      "name": "데일리메디",
+      "url": "https://www.dailymedi.com/",
+      "page_title": "데일리메디",
+      "metadata": {
+        "og:site_name": "데일리메디",
+        "twitter:site": "https://www.dailymedi.com/"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "dailypharm.com",
+      "name": "데일리팜",
+      "url": "https://www.dailypharm.com/",
+      "page_title": "데일리팜",
+      "metadata": {
+        "og:site_name": "데일리팜"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "dailysportshankook.co.kr",
+      "name": "데일리스포츠한국",
+      "url": "https://www.dailysportshankook.co.kr/",
+      "page_title": "데일리스포츠한국",
+      "metadata": {
+        "apple-mobile-web-app-title": "데일리스포츠한국",
+        "og:site_name": "데일리스포츠한국"
+      },
+      "logo_names": [
+        "데일리스포츠한국"
+      ],
+      "schema": []
+    },
+    {
+      "host": "dailyt.co.kr",
+      "name": "데일리환경",
+      "url": "https://www.dailyt.co.kr/",
+      "page_title": "데일리환경 - 경제환경 특집 환경뉴스 인터뷰 사회·문화 전국네트워크 독자마당 환경 신문, 환경정책, 사건사고, 녹색산업, 환경TV 등 기사 제공",
+      "metadata": {
+        "author": "  데일리환경",
+        "og:site_name": "  데일리환경",
+        "twitter:site": "@dailyt_news"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "dailyvet.co.kr",
+      "name": "데일리벳",
+      "url": "https://www.dailyvet.co.kr/",
+      "page_title": "데일리벳 – 소통하는 수의사 신문 데일리벳",
+      "metadata": {},
+      "logo_names": [
+        "데일리벳 로고"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "데일리벳",
+          "url": "https://www.dailyvet.co.kr/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://cdn.dailyvet.co.kr/wp-content/uploads/2023/10/30132245/logo.png"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "name": "데일리벳",
+          "url": "https://www.dailyvet.co.kr/"
+        },
+        {
+          "@type": "Organization",
+          "name": "데일리벳",
+          "url": "https://www.dailyvet.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "datanet.co.kr",
+      "name": "데이터넷",
+      "url": "https://www.datanet.co.kr/",
+      "page_title": "데이터넷",
+      "metadata": {
+        "apple-mobile-web-app-title": "데이터넷",
+        "og:site_name": "데이터넷"
+      },
+      "logo_names": [
+        "데이터넷"
+      ],
+      "schema": []
+    },
+    {
+      "host": "datanews.co.kr",
+      "name": "데이터뉴스",
+      "url": "http://www.datanews.co.kr/",
+      "page_title": "데이터뉴스",
+      "metadata": {},
+      "logo_names": [
+        "데이터뉴스",
+        "로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "datasom.co.kr",
+      "name": "데이터솜",
+      "url": "https://www.datasom.co.kr/",
+      "page_title": "데이터솜 - 데이터로 보는 세상",
+      "metadata": {
+        "apple-mobile-web-app-title": "데이터솜",
+        "og:site_name": "데이터솜"
+      },
+      "logo_names": [
+        "데이터솜"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ddanzi.com",
+      "name": "딴지일보",
+      "url": "http://www.ddanzi.com/",
+      "page_title": "딴지일보_21세기 명랑사회를 향하여",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "dentalnews.or.kr",
+      "name": "치과신문",
+      "url": "https://www.dentalnews.or.kr/",
+      "page_title": "치과신문",
+      "metadata": {},
+      "logo_names": [
+        "치과신문",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "digitalbizon.com",
+      "name": "디지털비즈온",
+      "url": "http://www.digitalbizon.com/",
+      "page_title": "디지털비즈온",
+      "metadata": {
+        "apple-mobile-web-app-title": "디지털비즈온",
+        "og:site_name": "디지털비즈온"
+      },
+      "logo_names": [
+        "디지털비즈온"
+      ],
+      "schema": []
+    },
+    {
+      "host": "digitalchosun.dizzo.com",
+      "name": "디지틀조선일보",
+      "url": "https://digitalchosun.dizzo.com/",
+      "page_title": "디지틀조선일보-디조닷컴 dizzo.com",
+      "metadata": {
+        "author": "Digital Chosun Inc",
+        "og:site_name": "디지틀조선일보-디조닷컴 dizzo.com",
+        "twitter:site": "@dizzo"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "discoverynews.kr",
+      "name": "디스커버리뉴스(DISCOVERYNEWS)",
+      "url": "https://www.discoverynews.kr/",
+      "page_title": "디스커버리뉴스(DISCOVERYNEWS)",
+      "metadata": {
+        "apple-mobile-web-app-title": "디스커버리뉴스(DISCOVERYNEWS)",
+        "og:site_name": "디스커버리뉴스(DISCOVERYNEWS)"
+      },
+      "logo_names": [
+        "디스커버리뉴스(DISCOVERYNEWS)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ditoday.com",
+      "name": "DIGITAL iNSIGHT 디지털 인사이트",
+      "url": "https://ditoday.com/",
+      "page_title": "디지털 인사이트 DIGITAL iNSIGHT - 디지털과 내가 연결되는 순간",
+      "metadata": {
+        "og:site_name": "DIGITAL iNSIGHT 디지털 인사이트"
+      },
+      "logo_names": [
+        "DIGITAL iNSIGHT 디지털 인사이트",
+        "디지털인사이트",
+        "DI-LETTER",
+        "Digital Insight"
+      ],
+      "schema": [
+        {
+          "@id": "https://ditoday.com/#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "DIGITAL iNSIGHT 디지털 인사이트",
+          "url": "https://ditoday.com/"
+        },
+        {
+          "@type": "Organization",
+          "name": "(주)웹스미디어",
+          "url": "https://ditoday.com/"
+        }
+      ]
+    },
+    {
+      "host": "dizzotv.com",
+      "name": "디지틀조선TV",
+      "url": "https://www.dizzotv.com/",
+      "page_title": "디지틀조선TV",
+      "metadata": {
+        "og:site_name": "디지틀조선TV",
+        "twitter:site": "@dizzotv"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "dkilbo.com",
+      "name": "대경일보",
+      "url": "https://www.dkilbo.com/",
+      "page_title": "대경일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "대경일보",
+        "og:site_name": "대경일보"
+      },
+      "logo_names": [
+        "대경일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "doctorstimes.com",
+      "name": "의사신문",
+      "url": "http://www.doctorstimes.com/",
+      "page_title": "의사신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "의사신문",
+        "og:site_name": "의사신문"
+      },
+      "logo_names": [
+        "의사신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "domin.co.kr",
+      "name": "전북도민일보",
+      "url": "http://www.domin.co.kr/",
+      "page_title": "전북도민일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "전북도민일보",
+        "og:site_name": "전북도민일보"
+      },
+      "logo_names": [
+        "전북도민일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "dongponews.net",
+      "name": "재외동포신문",
+      "url": "https://www.dongponews.net/",
+      "page_title": "재외동포신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "재외동포신문",
+        "og:site_name": "재외동포신문"
+      },
+      "logo_names": [
+        "재외동포신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "dtnews24.com",
+      "name": "디트NEWS24",
+      "url": "http://www.dtnews24.com/",
+      "page_title": "디트NEWS24",
+      "metadata": {
+        "apple-mobile-web-app-title": "디트NEWS24",
+        "og:site_name": "디트NEWS24"
+      },
+      "logo_names": [
+        "디트NEWS24"
+      ],
+      "schema": []
+    },
+    {
+      "host": "dynews.co.kr",
+      "name": "동양일보",
+      "url": "https://www.dynews.co.kr/",
+      "page_title": "동양일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "동양일보",
+        "og:site_name": "동양일보"
+      },
+      "logo_names": [
+        "동양일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "e2news.com",
+      "name": "이투뉴스",
+      "url": "http://www.e2news.com/",
+      "page_title": "Energy & Environment News : 이투뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "이투뉴스",
+        "og:site_name": "이투뉴스"
+      },
+      "logo_names": [
+        "이투뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "econotelling.com",
+      "name": "이코노텔링(econotelling)",
+      "url": "http://www.econotelling.com/",
+      "page_title": "이코노텔링(econotelling)",
+      "metadata": {
+        "apple-mobile-web-app-title": "이코노텔링(econotelling)",
+        "og:site_name": "이코노텔링(econotelling)"
+      },
+      "logo_names": [
+        "이코노텔링(econotelling)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "edu.chosun.com",
+      "name": "조선에듀",
+      "url": "https://edu.chosun.com/",
+      "page_title": "조선에듀-프리미엄 교육전문 미디어",
+      "metadata": {
+        "twitter:site": "@educhosun"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "edu.donga.com",
+      "name": "E동아",
+      "url": "https://edu.donga.com/",
+      "page_title": "E동아",
+      "metadata": {
+        "apple-mobile-web-app-title": "E동아",
+        "og:site_name": "E동아"
+      },
+      "logo_names": [
+        "E동아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "electimes.com",
+      "name": "전기신문",
+      "url": "https://www.electimes.com/",
+      "page_title": "전기신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "전기신문",
+        "og:site_name": "전기신문"
+      },
+      "logo_names": [
+        "전기신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "energydaily.co.kr",
+      "name": "에너지데일리",
+      "url": "https://www.energydaily.co.kr/",
+      "page_title": "에너지데일리",
+      "metadata": {
+        "apple-mobile-web-app-title": "에너지데일리",
+        "og:site_name": "에너지데일리"
+      },
+      "logo_names": [
+        "에너지데일리"
+      ],
+      "schema": []
+    },
+    {
+      "host": "enews.imbc.com",
+      "name": "iMBC 연예",
+      "url": "https://enews.imbc.com/",
+      "page_title": "iMBC 연예",
+      "metadata": {
+        "og:site_name": "iMBC 연예"
+      },
+      "logo_names": [
+        "imbc연예 흑백로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "enter.etoday.co.kr",
+      "name": "비즈엔터",
+      "url": "https://enter.etoday.co.kr/",
+      "page_title": "비즈엔터",
+      "metadata": {},
+      "logo_names": [
+        "비즈엔터"
+      ],
+      "schema": []
+    },
+    {
+      "host": "esgeconomy.com",
+      "name": "ESG경제",
+      "url": "https://www.esgeconomy.com/",
+      "page_title": "ESG경제",
+      "metadata": {
+        "apple-mobile-web-app-title": "ESG경제",
+        "og:site_name": "ESG경제"
+      },
+      "logo_names": [
+        "ESG경제"
+      ],
+      "schema": []
+    },
+    {
+      "host": "factin.co.kr",
+      "name": "여론과뉴스",
+      "url": "https://www.factin.co.kr/",
+      "page_title": "여론과뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "여론과뉴스",
+        "og:site_name": "여론과뉴스"
+      },
+      "logo_names": [
+        "여론과뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "farminsight.net",
+      "name": "팜인사이트",
+      "url": "https://www.farminsight.net/",
+      "page_title": "팜인사이트",
+      "metadata": {
+        "apple-mobile-web-app-title": "팜인사이트",
+        "og:site_name": "팜인사이트"
+      },
+      "logo_names": [
+        "팜인사이트"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ferrotimes.com",
+      "name": "페로타임즈(FerroTimes)",
+      "url": "http://www.ferrotimes.com/",
+      "page_title": "페로타임즈(FerroTimes)",
+      "metadata": {
+        "apple-mobile-web-app-title": "페로타임즈(FerroTimes)",
+        "og:site_name": "페로타임즈(FerroTimes)"
+      },
+      "logo_names": [
+        "페로타임즈(FerroTimes)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "fieldnews.kr",
+      "name": "필드뉴스",
+      "url": "http://www.fieldnews.kr/",
+      "page_title": "필드뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "필드뉴스",
+        "og:site_name": "필드뉴스"
+      },
+      "logo_names": [
+        "필드뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "fomos.kr",
+      "name": "포모스",
+      "url": "https://www.fomos.kr/",
+      "page_title": "포모스",
+      "metadata": {},
+      "logo_names": [
+        "fomos"
+      ],
+      "schema": []
+    },
+    {
+      "host": "fortunekorea.co.kr",
+      "name": "포춘코리아",
+      "url": "https://www.fortunekorea.co.kr/",
+      "page_title": "포춘코리아",
+      "metadata": {
+        "apple-mobile-web-app-title": "포춘코리아",
+        "og:site_name": "포춘코리아"
+      },
+      "logo_names": [
+        "포춘코리아"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "포춘코리아(FORTUNE KOREA)",
+          "url": "http://www.fortunekorea.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "fpn119.co.kr",
+      "name": "소방방재신문",
+      "url": "http://fpn119.co.kr/",
+      "page_title": "FPN Daily",
+      "metadata": {
+        "og:site_name": "소방방재신문"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "ftimes.kr",
+      "name": "FT스포츠",
+      "url": "https://www.ftimes.kr/",
+      "page_title": "FT스포츠",
+      "metadata": {
+        "apple-mobile-web-app-title": "FT스포츠",
+        "og:site_name": "FT스포츠"
+      },
+      "logo_names": [
+        "FT스포츠"
+      ],
+      "schema": []
+    },
+    {
+      "host": "futurechosun.com",
+      "name": "더나은미래",
+      "url": "https://futurechosun.com/",
+      "page_title": "더나은미래 - 변화가 시작되는 곳",
+      "metadata": {
+        "author": "더나은미래",
+        "og:site_name": "더나은미래",
+        "twitter:site": "@futurechosun"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@id": "https://futurechosun.com/#organization"
+        },
+        {
+          "@id": "https://futurechosun.com/#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "더나은미래",
+          "url": "https://futurechosun.com/"
+        },
+        {
+          "@type": "Organization",
+          "name": "더나은미래",
+          "url": "https://futurechosun.com/"
+        },
+        {
+          "@type": "Organization",
+          "name": "더나은미래",
+          "url": "https://futurechosun.com"
+        }
+      ]
+    },
+    {
+      "host": "g1tv.co.kr",
+      "name": "G1방송",
+      "url": "https://www.g1tv.co.kr/",
+      "page_title": "G1방송",
+      "metadata": {
+        "author": "G1TV"
+      },
+      "logo_names": [
+        "뉴스 로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gamechosun.co.kr",
+      "name": "게임조선",
+      "url": "https://www.gamechosun.co.kr/",
+      "page_title": "게임조선",
+      "metadata": {},
+      "logo_names": [
+        "logo"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gamefocus.co.kr",
+      "name": "게임포커스",
+      "url": "https://gamefocus.co.kr/",
+      "page_title": "Global No.1 Game Media 게임포커스",
+      "metadata": {},
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "Gamefocus",
+          "url": "https://gamefocus.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "gametoc.co.kr",
+      "name": "게임톡",
+      "url": "https://www.gametoc.co.kr/",
+      "page_title": "게임톡",
+      "metadata": {
+        "apple-mobile-web-app-title": "게임톡",
+        "og:site_name": "게임톡"
+      },
+      "logo_names": [
+        "게임톡"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gamevu.co.kr",
+      "name": "게임뷰",
+      "url": "https://www.gamevu.co.kr/",
+      "page_title": "게임뷰",
+      "metadata": {
+        "apple-mobile-web-app-title": "게임뷰",
+        "og:site_name": "게임뷰"
+      },
+      "logo_names": [
+        "게임뷰"
+      ],
+      "schema": []
+    },
+    {
+      "host": "geconomy.co.kr",
+      "name": "지이코노미",
+      "url": "https://www.geconomy.co.kr/",
+      "page_title": "G.ECONOMY(지이코노미)",
+      "metadata": {},
+      "logo_names": [
+        "G.ECONOMY(지이코노미)",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ggmedinews.com",
+      "name": "경기메디뉴스",
+      "url": "http://www.ggmedinews.com/",
+      "page_title": "경기메디뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "경기메디뉴스",
+        "og:site_name": "경기메디뉴스"
+      },
+      "logo_names": [
+        "경기메디뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gjdream.com",
+      "name": "드림투데이",
+      "url": "http://www.gjdream.com/",
+      "page_title": "드림투데이",
+      "metadata": {
+        "apple-mobile-web-app-title": "드림투데이",
+        "og:site_name": "드림투데이"
+      },
+      "logo_names": [
+        "드림투데이"
+      ],
+      "schema": []
+    },
+    {
+      "host": "globale.co.kr",
+      "name": "글로벌E",
+      "url": "https://www.globale.co.kr/",
+      "page_title": "글로벌E",
+      "metadata": {
+        "apple-mobile-web-app-title": "글로벌E",
+        "og:site_name": "글로벌E"
+      },
+      "logo_names": [
+        "globale magazine",
+        "글로벌E"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gndomin.com",
+      "name": "경남도민신문",
+      "url": "http://www.gndomin.com/",
+      "page_title": "경남도민신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "경남도민신문",
+        "og:site_name": "경남도민신문"
+      },
+      "logo_names": [
+        "경남도민신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gnmaeil.com",
+      "name": "경남매일",
+      "url": "https://www.gnmaeil.com/",
+      "page_title": "경남매일",
+      "metadata": {
+        "apple-mobile-web-app-title": "경남매일",
+        "og:site_name": "경남매일"
+      },
+      "logo_names": [
+        "경남매일"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gnnews.co.kr",
+      "name": "경남일보",
+      "url": "https://www.gnnews.co.kr/",
+      "page_title": "경남일보 - 우리나라 최초의 지역신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "경남일보",
+        "og:site_name": "경남일보"
+      },
+      "logo_names": [
+        "경남일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "golfdigest.co.kr",
+      "name": "골프다이제스트코리아",
+      "url": "https://www.golfdigest.co.kr/",
+      "page_title": "골프다이제스트코리아",
+      "metadata": {
+        "apple-mobile-web-app-title": "골프다이제스트코리아",
+        "og:site_name": "골프다이제스트코리아"
+      },
+      "logo_names": [
+        "골프다이제스트코리아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "goodmorningcc.com",
+      "name": "굿모닝충청",
+      "url": "https://www.goodmorningcc.com/",
+      "page_title": "굿모닝충청",
+      "metadata": {
+        "apple-mobile-web-app-title": "굿모닝충청",
+        "og:site_name": "굿모닝충청"
+      },
+      "logo_names": [
+        "굿모닝충청"
+      ],
+      "schema": []
+    },
+    {
+      "host": "goodnews1.com",
+      "name": "데일리굿뉴스",
+      "url": "https://www.goodnews1.com/",
+      "page_title": "데일리굿뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "데일리굿뉴스",
+        "og:site_name": "데일리굿뉴스"
+      },
+      "logo_names": [
+        "데일리굿뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gosiweek.com",
+      "name": "피앤피뉴스",
+      "url": "https://www.gosiweek.com/",
+      "page_title": "피앤피뉴스",
+      "metadata": {
+        "author": "피앤피뉴스",
+        "twitter:site": "https://www.gosiweek.com/"
+      },
+      "logo_names": [
+        "피앤피뉴스"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "url": "https://www.gosiweek.com"
+        }
+      ]
+    },
+    {
+      "host": "gpkorea.com",
+      "name": "지피코리아",
+      "url": "https://www.gpkorea.com/",
+      "page_title": "지피코리아",
+      "metadata": {
+        "apple-mobile-web-app-title": "지피코리아",
+        "og:site_name": "지피코리아"
+      },
+      "logo_names": [
+        "지피코리아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "greenpostkorea.co.kr",
+      "name": "그린포스트코리아",
+      "url": "https://www.greenpostkorea.co.kr/",
+      "page_title": "그린포스트코리아",
+      "metadata": {
+        "apple-mobile-web-app-title": "그린포스트코리아",
+        "og:site_name": "그린포스트코리아"
+      },
+      "logo_names": [
+        "그린포스트코리아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "gw.newdaily.co.kr",
+      "name": "뉴데일리 강원",
+      "url": "https://gw.newdaily.co.kr/",
+      "page_title": "뉴데일리 강원",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "h21.hani.co.kr",
+      "name": "한겨레21",
+      "url": "https://h21.hani.co.kr/",
+      "page_title": "새로운 저널리즘을 꿈꾸는 시사 주간지, 한겨레21",
+      "metadata": {
+        "og:site_name": "한겨레21"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "handmk.com",
+      "name": "핸드메이커(handmaker)",
+      "url": "https://www.handmk.com/",
+      "page_title": "핸드메이커(handmaker)",
+      "metadata": {
+        "apple-mobile-web-app-title": "핸드메이커(handmaker)",
+        "og:site_name": "핸드메이커(handmaker)"
+      },
+      "logo_names": [
+        "핸드메이커(handmaker)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "hbnpress.com",
+      "name": "HBN뉴스",
+      "url": "https://hbnpress.com/",
+      "page_title": "HBN뉴스",
+      "metadata": {
+        "author": "HBN뉴스",
+        "twitter:site": "https://hbnpress.com"
+      },
+      "logo_names": [
+        "HBN뉴스"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "url": "https://hbnpress.com"
+        }
+      ]
+    },
+    {
+      "host": "headlinejeju.co.kr",
+      "name": "헤드라인제주",
+      "url": "https://www.headlinejeju.co.kr/",
+      "page_title": "헤드라인제주",
+      "metadata": {
+        "apple-mobile-web-app-title": "헤드라인제주",
+        "og:site_name": "헤드라인제주"
+      },
+      "logo_names": [
+        "헤드라인제주"
+      ],
+      "schema": []
+    },
+    {
+      "host": "health.chosun.com",
+      "name": "헬스조선",
+      "url": "https://health.chosun.com/",
+      "page_title": "당신의 건강가이드 헬스조선",
+      "metadata": {
+        "author": "health chosun",
+        "og:site_name": "헬스조선"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "NewsMediaOrganization",
+          "name": "헬스조선",
+          "url": "https://health.chosun.com/"
+        }
+      ]
+    },
+    {
+      "host": "hellot.net",
+      "name": "헬로티",
+      "url": "https://www.hellot.net/",
+      "page_title": "헬로티 –매일 만나는 첨단 산업, 경제, IT 소식",
+      "metadata": {},
+      "logo_names": [
+        "헬로티 –매일 만나는 첨단 산업, 경제, IT 소식",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "hemophilia.co.kr",
+      "name": "헤모필리아라이프",
+      "url": "https://www.hemophilia.co.kr/",
+      "page_title": "헤모필리아라이프",
+      "metadata": {
+        "apple-mobile-web-app-title": "헤모필리아라이프",
+        "og:site_name": "헤모필리아라이프"
+      },
+      "logo_names": [
+        "헤모필리아라이프"
+      ],
+      "schema": []
+    },
+    {
+      "host": "heraldmuse.com",
+      "name": "헤럴드뮤즈 (Herald Muse)",
+      "url": "https://www.heraldmuse.com/",
+      "page_title": "헤럴드뮤즈 (Herald Muse)",
+      "metadata": {
+        "og:site_name": "헤럴드뮤즈 (Herald Muse)"
+      },
+      "logo_names": [
+        "헤럴드뮤즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "hidomin.com",
+      "name": "경북도민일보",
+      "url": "https://www.hidomin.com/",
+      "page_title": "경북도민일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "경북도민일보",
+        "og:site_name": "경북도민일보"
+      },
+      "logo_names": [
+        "경북도민일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "hinews.co.kr",
+      "name": "하이뉴스",
+      "url": "https://www.hinews.co.kr/",
+      "page_title": "하이뉴스",
+      "metadata": {
+        "og:site_name": "하이뉴스"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "WebSite",
+          "url": "https://www.hinews.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "hitnews.co.kr",
+      "name": "히트뉴스",
+      "url": "https://www.hitnews.co.kr/",
+      "page_title": "히트뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "히트뉴스",
+        "og:site_name": "히트뉴스"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "ic.newdaily.co.kr",
+      "name": "뉴데일리 인천·김포",
+      "url": "https://ic.newdaily.co.kr/",
+      "page_title": "뉴데일리 인천·김포",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "ichannela.com",
+      "name": "채널A",
+      "url": "https://ichannela.com/",
+      "page_title": "채널A 뉴스",
+      "metadata": {
+        "og:site_name": "채널A"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "idaegu.co.kr",
+      "name": "대구신문",
+      "url": "https://www.idaegu.co.kr/",
+      "page_title": "대구신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "대구신문",
+        "og:site_name": "대구신문"
+      },
+      "logo_names": [
+        "대구신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "idjnews.kr",
+      "name": "당진신문",
+      "url": "https://www.idjnews.kr/",
+      "page_title": "당진신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "당진신문",
+        "og:site_name": "당진신문"
+      },
+      "logo_names": [
+        "당진신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "idomin.com",
+      "name": "경남도민일보",
+      "url": "https://www.idomin.com/",
+      "page_title": "경남도민일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "경남도민일보",
+        "og:site_name": "경남도민일보"
+      },
+      "logo_names": [
+        "경남도민일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "idsn.co.kr",
+      "name": "매일안전신문",
+      "url": "https://idsn.co.kr/",
+      "page_title": "매일안전신문",
+      "metadata": {
+        "author": "매일안전신문",
+        "twitter:site": "https://idsn.co.kr"
+      },
+      "logo_names": [
+        "매일안전신문"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "url": "https://idsn.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "ikbc.co.kr",
+      "name": "KBC광주방송",
+      "url": "https://www.ikbc.co.kr/",
+      "page_title": "KBC광주방송",
+      "metadata": {
+        "author": "KBC광주방송",
+        "og:site_name": "KBC광주방송",
+        "twitter:site": "@KBC광주방송"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "ikld.kr",
+      "name": "국토일보",
+      "url": "http://www.ikld.kr/",
+      "page_title": "국토일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "국토일보",
+        "og:site_name": "국토일보"
+      },
+      "logo_names": [
+        "국토일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ikpnews.net",
+      "name": "한국농정신문",
+      "url": "http://www.ikpnews.net/",
+      "page_title": "한국농정신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국농정신문",
+        "og:site_name": "한국농정신문"
+      },
+      "logo_names": [
+        "한국농정신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ilemonde.com",
+      "name": "르몽드디플로마티크",
+      "url": "https://www.ilemonde.com/",
+      "page_title": "르몽드디플로마티크",
+      "metadata": {
+        "apple-mobile-web-app-title": "르몽드디플로마티크(LeMonde Diplomatique)",
+        "og:site_name": "르몽드디플로마티크(LeMonde Diplomatique)"
+      },
+      "logo_names": [
+        "르몽드디플로마티크(LeMonde Diplomatique)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ilovepc.co.kr",
+      "name": "디지털포스트(PC사랑)",
+      "url": "https://www.ilovepc.co.kr/",
+      "page_title": "디지털포스트(PC사랑)",
+      "metadata": {
+        "apple-mobile-web-app-title": "디지털포스트(PC사랑)",
+        "og:site_name": "디지털포스트(PC사랑)"
+      },
+      "logo_names": [
+        "디지털포스트(PC사랑)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ilyo.co.kr",
+      "name": "일요신문",
+      "url": "https://www.ilyo.co.kr/",
+      "page_title": "일요신문",
+      "metadata": {
+        "publisher": "일요신문",
+        "og:site_name": "일요신문",
+        "twitter:site": "@i_ilyo"
+      },
+      "logo_names": [
+        "일요신문",
+        " 일요신문 소개 및 약관"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ilyosisa.co.kr",
+      "name": "일요시사",
+      "url": "https://www.ilyosisa.co.kr/",
+      "page_title": "일요시사",
+      "metadata": {},
+      "logo_names": [
+        "일요시사",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "impacton.net",
+      "name": "IMPACT ON(임팩트온)",
+      "url": "http://www.impacton.net/",
+      "page_title": "임팩트온(Impact ON)",
+      "metadata": {
+        "apple-mobile-web-app-title": "IMPACT ON(임팩트온)",
+        "og:site_name": "IMPACT ON(임팩트온)"
+      },
+      "logo_names": [
+        "IMPACT ON(임팩트온)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "imwood.co.kr",
+      "name": "나무신문",
+      "url": "https://www.imwood.co.kr/",
+      "page_title": "나무신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "나무신문",
+        "og:site_name": "나무신문"
+      },
+      "logo_names": [
+        "나무신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "incheonilbo.com",
+      "name": "인천일보",
+      "url": "https://www.incheonilbo.com/",
+      "page_title": "인천일보 - 수도권 지역신문 열독률 1위",
+      "metadata": {
+        "apple-mobile-web-app-title": "인천일보",
+        "og:site_name": "인천일보"
+      },
+      "logo_names": [
+        "인천일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "incheonnews.com",
+      "name": "인천뉴스",
+      "url": "http://www.incheonnews.com/",
+      "page_title": "인천뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "인천뉴스",
+        "og:site_name": "인천뉴스"
+      },
+      "logo_names": [
+        "인천뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "incheontoday.com",
+      "name": "인천투데이",
+      "url": "https://www.incheontoday.com/",
+      "page_title": "인천투데이",
+      "metadata": {
+        "apple-mobile-web-app-title": "인천투데이",
+        "og:site_name": "인천투데이"
+      },
+      "logo_names": [
+        "인천투데이"
+      ],
+      "schema": []
+    },
+    {
+      "host": "inews365.com",
+      "name": "충북일보",
+      "url": "https://www.inews365.com/",
+      "page_title": "충북과 나의 연결고리 충북일보",
+      "metadata": {
+        "og:site_name": "충북일보",
+        "twitter:site": "http://www.inews365.com/"
+      },
+      "logo_names": [
+        "충북과 나의 연결고리 충북일보",
+        "충북일보",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "interview365.com",
+      "name": "인터뷰365",
+      "url": "https://www.interview365.com/",
+      "page_title": "인터뷰365 - 대한민국 인터넷대상 최우수상",
+      "metadata": {
+        "apple-mobile-web-app-title": "인터뷰365 - 대한민국 인터넷대상 최우수상 ",
+        "og:site_name": "인터뷰365 - 대한민국 인터넷대상 최우수상 "
+      },
+      "logo_names": [
+        "인터뷰365 - 대한민국 인터넷대상 최우수상 "
+      ],
+      "schema": []
+    },
+    {
+      "host": "issuenbiz.com",
+      "name": "이슈앤비즈",
+      "url": "http://www.issuenbiz.com/",
+      "page_title": "이슈앤비즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "이슈앤비즈",
+        "og:site_name": "이슈앤비즈"
+      },
+      "logo_names": [
+        "이슈앤비즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "it-b.co.kr",
+      "name": "아이티비즈",
+      "url": "https://www.it-b.co.kr/",
+      "page_title": "아이티비즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "아이티비즈",
+        "og:site_name": "아이티비즈"
+      },
+      "logo_names": [
+        "아이티비즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "itbiznews.com",
+      "name": "IT비즈뉴스",
+      "url": "https://www.itbiznews.com/",
+      "page_title": "IT비즈뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "IT비즈뉴스",
+        "og:site_name": "IT비즈뉴스"
+      },
+      "logo_names": [
+        "IT비즈뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "itdaily.kr",
+      "name": "아이티데일리",
+      "url": "https://www.itdaily.kr/",
+      "page_title": "아이티데일리",
+      "metadata": {
+        "apple-mobile-web-app-title": "아이티데일리",
+        "og:site_name": "아이티데일리"
+      },
+      "logo_names": [
+        "아이티데일리"
+      ],
+      "schema": []
+    },
+    {
+      "host": "itooza.com",
+      "name": "아이투자",
+      "url": "https://itooza.com/",
+      "page_title": "아이투자 - 대한민국 대표 가치투자포털",
+      "metadata": {
+        "apple-mobile-web-app-title": "아이투자",
+        "author": "아이투자"
+      },
+      "logo_names": [
+        "아이투자",
+        "이데일리",
+        "(주)한국투자교육 연구소 : KIERI"
+      ],
+      "schema": []
+    },
+    {
+      "host": "itworld.co.kr",
+      "name": "ITWorld",
+      "url": "https://www.itworld.co.kr/",
+      "page_title": "테크놀로지 리더를 위한 글로벌 IT 뉴스 - ITWorld",
+      "metadata": {
+        "og:site_name": "ITWorld",
+        "twitter:site": "ITWorld"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "ITWorld",
+          "url": "https://www.itworld.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "ize.co.kr",
+      "name": "아이즈(ize)",
+      "url": "https://www.ize.co.kr/",
+      "page_title": "아이즈(ize)",
+      "metadata": {
+        "apple-mobile-web-app-title": "아이즈(ize)",
+        "og:site_name": "아이즈(ize)"
+      },
+      "logo_names": [
+        "아이즈(ize)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jbnews.com",
+      "name": "중부매일",
+      "url": "https://www.jbnews.com/",
+      "page_title": "중부매일 - 충청권 대표 뉴스 플랫폼",
+      "metadata": {
+        "apple-mobile-web-app-title": "중부매일 - 충청권 대표 뉴스 플랫폼",
+        "og:site_name": "중부매일 - 충청권 대표 뉴스 플랫폼"
+      },
+      "logo_names": [
+        "중부매일 - 충청권 대표 뉴스 플랫폼"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jbsori.com",
+      "name": "전북의소리",
+      "url": "http://www.jbsori.com/",
+      "page_title": "전북의소리",
+      "metadata": {
+        "apple-mobile-web-app-title": "전북의소리",
+        "og:site_name": "전북의소리"
+      },
+      "logo_names": [
+        "전북의소리"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jejudomin.co.kr",
+      "name": "제주도민일보",
+      "url": "https://www.jejudomin.co.kr/",
+      "page_title": "제주도민일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "제주도민일보",
+        "og:site_name": "제주도민일보"
+      },
+      "logo_names": [
+        "제주도민일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jejumaeil.net",
+      "name": "제주매일",
+      "url": "https://www.jejumaeil.net/",
+      "page_title": "제주매일",
+      "metadata": {
+        "apple-mobile-web-app-title": "제주매일",
+        "og:site_name": "제주매일"
+      },
+      "logo_names": [
+        "제주매일"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jejusori.net",
+      "name": "제주의소리",
+      "url": "https://www.jejusori.net/",
+      "page_title": "제주의소리",
+      "metadata": {
+        "apple-mobile-web-app-title": "제주의소리",
+        "og:site_name": "제주의소리"
+      },
+      "logo_names": [
+        "제주의소리"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jeollailbo.com",
+      "name": "전라일보",
+      "url": "http://www.jeollailbo.com/",
+      "page_title": "전라일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "전라일보",
+        "og:site_name": "전라일보"
+      },
+      "logo_names": [
+        "전라일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jeonmae.co.kr",
+      "name": "전국매일신문",
+      "url": "https://www.jeonmae.co.kr/",
+      "page_title": "전국매일신문 - 전국의 생생한 뉴스를 ‘한눈에’",
+      "metadata": {
+        "apple-mobile-web-app-title": "전국매일신문 - 전국의 생생한 뉴스를 ‘한눈에’",
+        "og:site_name": "전국매일신문 - 전국의 생생한 뉴스를 ‘한눈에’"
+      },
+      "logo_names": [
+        "전국매일신문 - 전국의 생생한 뉴스를 ‘한눈에’"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jeonmin.co.kr",
+      "name": "전민일보",
+      "url": "http://www.jeonmin.co.kr/",
+      "page_title": "전민일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "전민일보",
+        "og:site_name": "전민일보"
+      },
+      "logo_names": [
+        "전민일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jibs.co.kr",
+      "name": "JIBS제주방송",
+      "url": "https://www.jibs.co.kr/",
+      "page_title": "JIBS제주방송",
+      "metadata": {},
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "JIBS제주방송",
+          "url": "http://www.jibs.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "jjan.kr",
+      "name": "전북일보 인터넷신문",
+      "url": "https://www.jjan.kr/",
+      "page_title": "전북일보 인터넷신문",
+      "metadata": {
+        "author": "전북일보 인터넷신문",
+        "publisher": "전북일보 인터넷신문",
+        "og:site_name": "전북일보 인터넷신문",
+        "twitter:site": "전북일보 인터넷신문"
+      },
+      "logo_names": [
+        "탑로고",
+        "푸터로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jjn.co.kr",
+      "name": "전북중앙",
+      "url": "http://www.jjn.co.kr/",
+      "page_title": "전북중앙",
+      "metadata": {
+        "apple-mobile-web-app-title": "전북중앙",
+        "og:site_name": "전북중앙"
+      },
+      "logo_names": [
+        "전북중앙"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jmbc.co.kr",
+      "name": "전주MBC",
+      "url": "https://www.jmbc.co.kr/",
+      "page_title": "전주MBC",
+      "metadata": {
+        "og:site_name": "전주MBC"
+      },
+      "logo_names": [
+        "jmbc 전주MBC"
+      ],
+      "schema": []
+    },
+    {
+      "host": "jndn.com",
+      "name": "전남매일",
+      "url": "http://www.jndn.com/",
+      "page_title": "전남매일",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "jnilbo.com",
+      "name": "전남일보",
+      "url": "https://www.jnilbo.com/",
+      "page_title": "진일보",
+      "metadata": {
+        "og:site_name": "전남일보"
+      },
+      "logo_names": [
+        "전남일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "job-post.co.kr",
+      "name": "잡포스트(JOBPOST)",
+      "url": "https://www.job-post.co.kr/",
+      "page_title": "잡포스트(JOBPOST)",
+      "metadata": {
+        "apple-mobile-web-app-title": "잡포스트(JOBPOST)",
+        "og:site_name": "잡포스트(JOBPOST)"
+      },
+      "logo_names": [
+        "잡포스트(JOBPOST)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "joongdo.co.kr",
+      "name": "중도일보",
+      "url": "https://www.joongdo.co.kr/web/",
+      "page_title": "중도일보 : 독자와 함께 만드는 신문",
+      "metadata": {
+        "og:site_name": "중도일보"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "journal.kobeta.com",
+      "name": "방송기술저널",
+      "url": "http://journal.kobeta.com/",
+      "page_title": "방송기술저널",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "joynews24.com",
+      "name": "조이뉴스24",
+      "url": "http://www.joynews24.com/",
+      "page_title": "조이뉴스24 : index",
+      "metadata": {
+        "og:site_name": "아이뉴스24",
+        "twitter:site": "http://www.joynews24.com/"
+      },
+      "logo_names": [
+        "inews_logo"
+      ],
+      "schema": []
+    },
+    {
+      "host": "k-health.com",
+      "name": "헬스경향",
+      "url": "https://www.k-health.com/",
+      "page_title": "헬스경향",
+      "metadata": {
+        "apple-mobile-web-app-title": "헬스경향",
+        "og:site_name": "헬스경향"
+      },
+      "logo_names": [
+        "헬스경향"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kbiznews.co.kr",
+      "name": "중소기업뉴스",
+      "url": "http://www.kbiznews.co.kr/",
+      "page_title": "중소기업뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "중소기업뉴스",
+        "og:site_name": "중소기업뉴스"
+      },
+      "logo_names": [
+        "중소기업뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kbsm.net",
+      "name": "경북신문",
+      "url": "https://www.kbsm.net/",
+      "page_title": "경북신문",
+      "metadata": {
+        "og:site_name": "경북신문"
+      },
+      "logo_names": [
+        "경북신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kdfnews.com",
+      "name": "한국면세뉴스",
+      "url": "https://www.kdfnews.com/",
+      "page_title": "한국면세뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국면세뉴스",
+        "og:site_name": "한국면세뉴스"
+      },
+      "logo_names": [
+        "한국면세뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kgnews.co.kr",
+      "name": "경기신문",
+      "url": "https://www.kgnews.co.kr/",
+      "page_title": "경기신문 - 기본에 충실한 경기·인천 지역 바른 신문",
+      "metadata": {},
+      "logo_names": [
+        "경기신문 - 기본에 충실한 경기·인천 지역 바른 신문",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "khgames.co.kr",
+      "name": "경향게임스",
+      "url": "https://www.khgames.co.kr/",
+      "page_title": "경향게임스",
+      "metadata": {
+        "apple-mobile-web-app-title": "경향게임스",
+        "og:site_name": "경향게임스"
+      },
+      "logo_names": [
+        "경향게임즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kidd.co.kr",
+      "name": "산업일보",
+      "url": "https://kidd.co.kr/",
+      "page_title": "산업일보",
+      "metadata": {
+        "og:site_name": "산업일보"
+      },
+      "logo_names": [
+        "산업일보 로고",
+        "한국기계산업진흥회 ",
+        "한국산업지능화협회",
+        "한국탄소산업진흥원 ",
+        "chinasinopack",
+        "Sino-Pack",
+        "한국로봇산업협회",
+        "한국전기산업진흥회",
+        "이미지 로고 이름",
+        "timtos",
+        "한국탄소나노산업협회",
+        "Plastics, Rubber & Composite Material Fair Taiwan"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "산업일보",
+          "url": "https://kidd.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "kihoilbo.co.kr",
+      "name": "기호일보",
+      "url": "https://www.kihoilbo.co.kr/",
+      "page_title": "기호일보 - 아침을 여는 신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "기호일보",
+        "og:site_name": "기호일보"
+      },
+      "logo_names": [
+        "기호일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kizmom.com",
+      "name": "키즈맘",
+      "url": "https://www.kizmom.com/",
+      "page_title": "키즈맘",
+      "metadata": {
+        "apple-mobile-web-app-title": "키즈맘",
+        "og:site_name": "키즈맘"
+      },
+      "logo_names": [
+        "키즈맘"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kjdaily.com",
+      "name": "광주매일신문",
+      "url": "http://www.kjdaily.com/",
+      "page_title": "광주매일신문",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "kmaeil.com",
+      "name": "경인매일",
+      "url": "https://www.kmaeil.com/",
+      "page_title": "경인매일 - 세력에 타협하지 않는 신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "경인매일",
+        "og:site_name": "경인매일"
+      },
+      "logo_names": [
+        "경인매일"
+      ],
+      "schema": []
+    },
+    {
+      "host": "knnews.co.kr",
+      "name": "경남신문",
+      "url": "https://www.knnews.co.kr/autoi/index.php",
+      "page_title": "경남신문",
+      "metadata": {
+        "author": "경남신문",
+        "og:site_name": "경남신문"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "knpnews.com",
+      "name": "한국원자력신문",
+      "url": "http://www.knpnews.com/",
+      "page_title": "한국원자력신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국원자력신문",
+        "og:site_name": "한국원자력신문"
+      },
+      "logo_names": [
+        "한국원자력신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "koit.co.kr",
+      "name": "정보통신신문",
+      "url": "https://www.koit.co.kr/",
+      "page_title": "정보통신신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "정보통신신문",
+        "og:site_name": "정보통신신문"
+      },
+      "logo_names": [
+        "정보통신신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "konas.net",
+      "name": "코나스넷",
+      "url": "https://www.konas.net/",
+      "page_title": "코나스넷",
+      "metadata": {},
+      "logo_names": [
+        "코나스넷 로고",
+        "로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kookbang.dema.mil.kr",
+      "name": "국방일보",
+      "url": "https://kookbang.dema.mil.kr/",
+      "page_title": "국방일보-Kookbangilbo",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "kor.theasian.asia",
+      "name": "아시아엔 THE AsiaN",
+      "url": "https://kor.theasian.asia/",
+      "page_title": "HOME - 아시아엔 THE AsiaN",
+      "metadata": {
+        "og:site_name": "아시아엔 THE AsiaN"
+      },
+      "logo_names": [
+        "아시아엔 THE AsiaN",
+        "로고"
+      ],
+      "schema": [
+        {
+          "@id": "https://kor.theasian.asia/#organization"
+        },
+        {
+          "@id": "https://kor.theasian.asia/#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "아시아엔 THE AsiaN",
+          "url": "https://kor.theasian.asia/"
+        },
+        {
+          "@type": "Organization",
+          "name": "아시아엔 THE AsiaN",
+          "url": "https://kor.theasian.asia/"
+        }
+      ]
+    },
+    {
+      "host": "korea.kr",
+      "name": "대한민국 정책브리핑",
+      "url": "https://www.korea.kr/",
+      "page_title": "대한민국 정책브리핑",
+      "metadata": {},
+      "logo_names": [
+        "정책브리핑"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "대한민국 정책브리핑",
+          "url": "https://www.korea.kr"
+        }
+      ]
+    },
+    {
+      "host": "koreahealthlog.com",
+      "name": "코리아헬스로그",
+      "url": "https://www.koreahealthlog.com/",
+      "page_title": "코리아헬스로그",
+      "metadata": {
+        "apple-mobile-web-app-title": "코리아헬스로그",
+        "og:site_name": "코리아헬스로그"
+      },
+      "logo_names": [
+        "코리아헬스로그",
+        "청년의사",
+        "korea Biomedical Review"
+      ],
+      "schema": []
+    },
+    {
+      "host": "koreaittimes.com",
+      "name": "Korea IT Times",
+      "url": "https://www.koreaittimes.com/",
+      "page_title": "Korea IT Times",
+      "metadata": {
+        "apple-mobile-web-app-title": "Korea IT Times",
+        "og:site_name": "Korea IT Times"
+      },
+      "logo_names": [
+        "Korea IT Times"
+      ],
+      "schema": []
+    },
+    {
+      "host": "koreatimes.com",
+      "name": "미주한국일보",
+      "url": "http://www.koreatimes.com/",
+      "page_title": "미주한국일보 - 미주 No.1 정상의 뉴스",
+      "metadata": {},
+      "logo_names": [
+        "한국일보",
+        "KTown 1번가",
+        "logo"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kormedi.com",
+      "name": "코메디닷컴",
+      "url": "https://kormedi.com/",
+      "page_title": "건강을 위한 정직한 지식 - 코메디닷컴",
+      "metadata": {
+        "og:site_name": "코메디닷컴"
+      },
+      "logo_names": [
+        "코메디닷컴"
+      ],
+      "schema": [
+        {
+          "@type": "WebSite",
+          "name": "코메디닷컴",
+          "url": "https://kormedi.com/"
+        }
+      ]
+    },
+    {
+      "host": "koscaj.com",
+      "name": "대한전문건설신문",
+      "url": "https://www.koscaj.com/",
+      "page_title": "대한전문건설신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "대한전문건설신문",
+        "og:site_name": "대한전문건설신문"
+      },
+      "logo_names": [
+        "대한전문건설신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kpanews.co.kr",
+      "name": "약사공론",
+      "url": "https://www.kpanews.co.kr/",
+      "page_title": "약사공론",
+      "metadata": {
+        "apple-mobile-web-app-title": "약사공론",
+        "og:site_name": "약사공론"
+      },
+      "logo_names": [
+        "약사공론"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kr.aving.net",
+      "name": "에이빙(AVING)",
+      "url": "https://kr.aving.net/",
+      "page_title": "에이빙(AVING)",
+      "metadata": {
+        "apple-mobile-web-app-title": "에이빙(AVING)",
+        "og:site_name": "에이빙(AVING)"
+      },
+      "logo_names": [
+        "에이빙(AVING)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kr.people.com.cn",
+      "name": "인민망 한국어판",
+      "url": "http://kr.people.com.cn/",
+      "page_title": "인민망 한국어판--People's Daily Online",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "ksilbo.co.kr",
+      "name": "경상일보",
+      "url": "https://www.ksilbo.co.kr/",
+      "page_title": "경상일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "경상일보",
+        "og:site_name": "경상일보"
+      },
+      "logo_names": [
+        "경상일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ktv.go.kr",
+      "name": "KTV 국민방송",
+      "url": "https://www.ktv.go.kr/",
+      "page_title": "KTV 국민방송",
+      "metadata": {
+        "og:site_name": "ktv.go.kr"
+      },
+      "logo_names": [
+        "책임운영기관 문화체육관광부 한국정책방송원"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kwangju.co.kr",
+      "name": "광주일보",
+      "url": "http://www.kwangju.co.kr/",
+      "page_title": "광주일보",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "kwnews.co.kr",
+      "name": "강원일보",
+      "url": "https://www.kwnews.co.kr/",
+      "page_title": "강원일보",
+      "metadata": {
+        "author": "강원일보",
+        "og:site_name": "강원일보"
+      },
+      "logo_names": [
+        "강원일보",
+        "한국지방신문협회",
+        "경남신문",
+        "경인일보",
+        "광주일보",
+        "대전일보",
+        "매일신문",
+        "부산일보",
+        "전북일보",
+        "제주일보",
+        "강원일보 한자 로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kyeongin.com",
+      "name": "경인일보",
+      "url": "https://www.kyeongin.com/",
+      "page_title": "경인일보",
+      "metadata": {
+        "author": "경인일보(Kyeongin Daily News)",
+        "apple-mobile-web-app-title": "경인일보",
+        "og:site_name": "경인일보"
+      },
+      "logo_names": [
+        "경인일보",
+        "강원일보",
+        "경남신문",
+        "광주일보",
+        "대전일보",
+        "매일신문",
+        "부산일보",
+        "전북일보",
+        "제주일보"
+      ],
+      "schema": [
+        {
+          "@type": "NewsMediaOrganization",
+          "name": "경인일보",
+          "url": "https://www.kyeongin.com/"
+        }
+      ]
+    },
+    {
+      "host": "kyongbuk.co.kr",
+      "name": "경북일보",
+      "url": "https://www.kyongbuk.co.kr/",
+      "page_title": "",
+      "metadata": {
+        "apple-mobile-web-app-title": "경북일보",
+        "og:site_name": "경북일보"
+      },
+      "logo_names": [
+        "경북일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "kyosu.net",
+      "name": "교수신문",
+      "url": "https://www.kyosu.net/",
+      "page_title": "교수신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "교수신문",
+        "og:site_name": "교수신문"
+      },
+      "logo_names": [
+        "교수신문",
+        "daenamu-logo",
+        "joblogo"
+      ],
+      "schema": []
+    },
+    {
+      "host": "labortoday.co.kr",
+      "name": "매일노동뉴스",
+      "url": "https://www.labortoday.co.kr/",
+      "page_title": "매일노동뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "매일노동뉴스",
+        "og:site_name": "매일노동뉴스"
+      },
+      "logo_names": [
+        "매일노동뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "lawtalknews.co.kr",
+      "name": "로톡뉴스",
+      "url": "https://lawtalknews.co.kr/",
+      "page_title": "법, 누구나 쉽게 알 수 있도록. - 로톡뉴스",
+      "metadata": {
+        "author": "Lawtalk",
+        "og:site_name": "로톡뉴스"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "lawtimes.co.kr",
+      "name": "법률신문",
+      "url": "https://www.lawtimes.co.kr/",
+      "page_title": "법률신문",
+      "metadata": {
+        "og:site_name": "법률신문"
+      },
+      "logo_names": [
+        "toplogo",
+        "법률신문",
+        "foot-logo"
+      ],
+      "schema": []
+    },
+    {
+      "host": "lec.co.kr",
+      "name": "법률저널",
+      "url": "https://www.lec.co.kr/",
+      "page_title": "법률저널",
+      "metadata": {
+        "apple-mobile-web-app-title": "법률저널",
+        "og:site_name": "법률저널"
+      },
+      "logo_names": [
+        "법률저널"
+      ],
+      "schema": []
+    },
+    {
+      "host": "lecturernews.com",
+      "name": "한국강사신문",
+      "url": "https://www.lecturernews.com/",
+      "page_title": "한국강사신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국강사신문",
+        "og:site_name": "한국강사신문"
+      },
+      "logo_names": [
+        "한국강사신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "legaltimes.co.kr",
+      "name": "리걸타임즈",
+      "url": "https://www.legaltimes.co.kr/",
+      "page_title": "리걸타임즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "리걸타임즈",
+        "og:site_name": "리걸타임즈"
+      },
+      "logo_names": [
+        "리걸타임즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "livebiz.today",
+      "name": "생생비즈플러스",
+      "url": "https://www.livebiz.today/",
+      "page_title": "생생비즈플러스",
+      "metadata": {
+        "apple-mobile-web-app-title": "생생비즈플러스",
+        "og:site_name": "생생비즈플러스"
+      },
+      "logo_names": [
+        "생생비즈플러스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "livesnews.com",
+      "name": "라이브뉴스",
+      "url": "https://www.livesnews.com/",
+      "page_title": "라이브뉴스",
+      "metadata": {},
+      "logo_names": [
+        "라이브뉴스",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "lkp.news",
+      "name": "리버티코리아포스트",
+      "url": "http://www.lkp.news/",
+      "page_title": "리버티코리아포스트 | 늘 깨어있는 언론",
+      "metadata": {
+        "apple-mobile-web-app-title": "리버티코리아포스트",
+        "og:site_name": "리버티코리아포스트"
+      },
+      "logo_names": [
+        "리버티코리아포스트"
+      ],
+      "schema": []
+    },
+    {
+      "host": "m-economynews.com",
+      "name": "M이코노미뉴스",
+      "url": "https://www.m-economynews.com/",
+      "page_title": "M이코노미뉴스",
+      "metadata": {},
+      "logo_names": [
+        "M이코노미뉴스",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "m.newsen.com",
+      "name": "뉴스엔",
+      "url": "https://m.newsen.com/",
+      "page_title": "손에 잡히는 뉴스 눈에 보이는 뉴스 - 뉴스엔",
+      "metadata": {
+        "og:site_name": "뉴스엔",
+        "twitter:site": "newsen"
+      },
+      "logo_names": [
+        "뉴스엔"
+      ],
+      "schema": []
+    },
+    {
+      "host": "marieclairekorea.com",
+      "name": "마리끌레르 코리아",
+      "url": "https://www.marieclairekorea.com/",
+      "page_title": "마리끌레르 코리아 | MarieclaireKorea",
+      "metadata": {
+        "og:site_name": "마리끌레르 코리아 | Marie Claire Korea",
+        "twitter:site": "@marieclairekr"
+      },
+      "logo_names": [
+        "마리끌레르 코리아 | MarieclaireKorea 로고"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "MarieclaireKorea",
+          "url": "https://www.marieclairekorea.com/"
+        }
+      ]
+    },
+    {
+      "host": "mbn.mk.co.kr",
+      "name": "MBN",
+      "url": "https://mbn.mk.co.kr/"
+    },
+    {
+      "host": "mbnmoney.mbn.co.kr",
+      "name": "매일경제TV",
+      "url": "http://mbnmoney.mbn.co.kr/",
+      "page_title": "경제채널 매일경제TV",
+      "metadata": {
+        "author": "매일경제TV"
+      },
+      "logo_names": [
+        "로고",
+        "푸터로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "mdilbo.com",
+      "name": "무등일보",
+      "url": "https://www.mdilbo.com/",
+      "page_title": "무등일보",
+      "metadata": {
+        "og:site_name": "",
+        "twitter:site": "@Srbnewsroom"
+      },
+      "logo_names": [
+        "사랑방닷컴"
+      ],
+      "schema": []
+    },
+    {
+      "host": "meconomynews.com",
+      "name": "시장경제신문",
+      "url": "https://www.meconomynews.com/",
+      "page_title": "시장경제 - Market Economy News",
+      "metadata": {
+        "apple-mobile-web-app-title": "시장경제신문",
+        "og:site_name": "시장경제신문"
+      },
+      "logo_names": [
+        "시장경제신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "mediafine.co.kr",
+      "name": "미디어파인",
+      "url": "https://www.mediafine.co.kr/",
+      "page_title": "미디어파인",
+      "metadata": {
+        "apple-mobile-web-app-title": "미디어파인",
+        "og:site_name": "미디어파인"
+      },
+      "logo_names": [
+        "미디어파인"
+      ],
+      "schema": []
+    },
+    {
+      "host": "mediatoday.co.kr",
+      "name": "미디어오늘",
+      "url": "https://www.mediatoday.co.kr/",
+      "page_title": "미디어오늘",
+      "metadata": {
+        "apple-mobile-web-app-title": "미디어오늘",
+        "author": "미디어오늘",
+        "og:site_name": "미디어오늘"
+      },
+      "logo_names": [
+        "미디어오늘"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "미디어오늘",
+          "url": "https://www.mediatoday.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "mediaus.co.kr",
+      "name": "미디어스",
+      "url": "https://www.mediaus.co.kr/",
+      "page_title": "미디어스",
+      "metadata": {
+        "apple-mobile-web-app-title": "미디어스",
+        "og:site_name": "미디어스"
+      },
+      "logo_names": [
+        "미디어스"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "미디어스",
+          "url": "https://www.mediaus.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "mediawatch.kr",
+      "name": "인싸잇",
+      "url": "https://www.mediawatch.kr/",
+      "page_title": "인싸잇",
+      "metadata": {},
+      "logo_names": [
+        "인싸잇",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "medicopharma.co.kr",
+      "name": "메디코파마",
+      "url": "https://www.medicopharma.co.kr/",
+      "page_title": "메디코파마",
+      "metadata": {
+        "apple-mobile-web-app-title": "메디코파마",
+        "og:site_name": "메디코파마"
+      },
+      "logo_names": [
+        "메디코파마"
+      ],
+      "schema": []
+    },
+    {
+      "host": "medisobizanews.com",
+      "name": "메디소비자뉴스",
+      "url": "http://www.medisobizanews.com/",
+      "page_title": "메디소비자뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "메디소비자뉴스",
+        "og:site_name": "메디소비자뉴스"
+      },
+      "logo_names": [
+        "메디소비자뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "mhj21.com",
+      "name": "문화저널21",
+      "url": "https://www.mhj21.com/",
+      "page_title": "문화저널21",
+      "metadata": {
+        "apple-mobile-web-app-title": "문화저널21",
+        "og:site_name": "문화저널21"
+      },
+      "logo_names": [
+        "문화저널21"
+      ],
+      "schema": []
+    },
+    {
+      "host": "mjmedi.com",
+      "name": "민족의학신문",
+      "url": "http://www.mjmedi.com/",
+      "page_title": "민족의학신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "민족의학신문",
+        "og:site_name": "민족의학신문"
+      },
+      "logo_names": [
+        "민족의학신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "mkhealth.co.kr",
+      "name": "매경헬스",
+      "url": "http://www.mkhealth.co.kr/",
+      "page_title": "매경헬스",
+      "metadata": {
+        "apple-mobile-web-app-title": "매경헬스",
+        "og:site_name": "매경헬스"
+      },
+      "logo_names": [
+        "매경헬스",
+        "인터넷신문자율심의기구"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "매경헬스",
+          "url": "http://www.mkhealth.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "monews.co.kr",
+      "name": "메디칼업저버",
+      "url": "https://www.monews.co.kr/",
+      "page_title": "메디칼업저버",
+      "metadata": {
+        "apple-mobile-web-app-title": "메디칼업저버",
+        "og:site_name": "메디칼업저버"
+      },
+      "logo_names": [
+        "메디칼업저버"
+      ],
+      "schema": []
+    },
+    {
+      "host": "moneystorm.kr",
+      "name": "머니스톰",
+      "url": "https://www.moneystorm.kr/",
+      "page_title": "머니스톰",
+      "metadata": {
+        "apple-mobile-web-app-title": "머니스톰",
+        "og:site_name": "머니스톰"
+      },
+      "logo_names": [
+        "머니스톰"
+      ],
+      "schema": []
+    },
+    {
+      "host": "mstoday.co.kr",
+      "name": "MS TODAY",
+      "url": "https://www.mstoday.co.kr/",
+      "page_title": "MS TODAY",
+      "metadata": {
+        "apple-mobile-web-app-title": "MS TODAY",
+        "og:site_name": "MS TODAY"
+      },
+      "logo_names": [
+        "MS TODAY"
+      ],
+      "schema": []
+    },
+    {
+      "host": "nbntv.co.kr",
+      "name": "내외경제TV",
+      "url": "https://www.nbntv.co.kr/",
+      "page_title": "내외경제TV",
+      "metadata": {
+        "apple-mobile-web-app-title": "내외경제TV",
+        "og:site_name": "내외경제TV"
+      },
+      "logo_names": [
+        "내외경제TV"
+      ],
+      "schema": []
+    },
+    {
+      "host": "nbntv.kr",
+      "name": "NBN미디어",
+      "url": "https://www.nbntv.kr/",
+      "page_title": "NBN미디어",
+      "metadata": {
+        "apple-mobile-web-app-title": "NBN미디어",
+        "og:site_name": "NBN미디어"
+      },
+      "logo_names": [
+        "NBN미디어"
+      ],
+      "schema": []
+    },
+    {
+      "host": "netongs.com",
+      "name": "여수넷통뉴스",
+      "url": "http://www.netongs.com/",
+      "page_title": "여수넷통뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "여수넷통뉴스",
+        "og:site_name": "여수넷통뉴스"
+      },
+      "logo_names": [
+        "여수넷통뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newmanagement.co.kr",
+      "name": "현대경영",
+      "url": "http://www.newmanagement.co.kr/",
+      "page_title": "The New Management 현대경영",
+      "metadata": {
+        "author": "Brian Purkiss"
+      },
+      "logo_names": [
+        "현대경영",
+        "동국제약"
+      ],
+      "schema": []
+    },
+    {
+      "host": "news.bbsi.co.kr",
+      "name": "불교방송",
+      "url": "https://news.bbsi.co.kr/",
+      "page_title": "불교방송",
+      "metadata": {
+        "apple-mobile-web-app-title": "불교방송",
+        "og:site_name": "불교방송"
+      },
+      "logo_names": [
+        "불교방송"
+      ],
+      "schema": []
+    },
+    {
+      "host": "news.cpbc.co.kr",
+      "name": "CPBC뉴스",
+      "url": "https://news.cpbc.co.kr/",
+      "page_title": "cpbc News",
+      "metadata": {
+        "twitter:site": "cpbc 뉴스"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "news.ifm.kr",
+      "name": "경인방송",
+      "url": "https://news.ifm.kr/",
+      "page_title": "경인방송 뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "경인방송",
+        "og:site_name": "경인방송"
+      },
+      "logo_names": [
+        "경인방송"
+      ],
+      "schema": []
+    },
+    {
+      "host": "news.knn.co.kr",
+      "name": "KNN",
+      "url": "https://news.knn.co.kr/news",
+      "page_title": "부산경남대표방송 KNN 뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "부산경남대표방송 KNN 뉴스",
+        "og:site_name": "부산경남대표방송 KNN 뉴스"
+      },
+      "logo_names": [
+        "KNN"
+      ],
+      "schema": []
+    },
+    {
+      "host": "news.koreanbar.or.kr",
+      "name": "법조신문",
+      "url": "https://news.koreanbar.or.kr/",
+      "page_title": "법조신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "법조신문",
+        "og:site_name": "법조신문"
+      },
+      "logo_names": [
+        "법조신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "news.skbroadband.com",
+      "name": "B tv news",
+      "url": "https://news.skbroadband.com/",
+      "page_title": "B tv news",
+      "metadata": {
+        "apple-mobile-web-app-title": "B tv news",
+        "og:site_name": "B tv news"
+      },
+      "logo_names": [
+        "B tv news"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newsbrite.net",
+      "name": "뉴스브라이트",
+      "url": "http://www.newsbrite.net/",
+      "page_title": "뉴스브라이트",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스브라이트",
+        "og:site_name": "뉴스브라이트"
+      },
+      "logo_names": [
+        "뉴스브라이트"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newscammp.co.kr",
+      "name": "뉴스캠프",
+      "url": "https://www.newscammp.co.kr/",
+      "page_title": "뉴스캠프",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스캠프",
+        "og:site_name": "뉴스캠프"
+      },
+      "logo_names": [
+        "뉴스캠프"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newsclaim.co.kr",
+      "name": "뉴스클레임",
+      "url": "https://www.newsclaim.co.kr/",
+      "page_title": "뉴스클레임",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스클레임",
+        "og:site_name": "뉴스클레임"
+      },
+      "logo_names": [
+        "뉴스클레임"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newsen.com",
+      "name": "뉴스엔",
+      "url": "https://www.newsen.com/",
+      "page_title": "가장 빠르고 정확한 뉴스, 재미와 감동이 있는 뉴스 - 뉴스엔",
+      "metadata": {
+        "og:site_name": "뉴스엔",
+        "twitter:site": "newsen"
+      },
+      "logo_names": [
+        "뉴스엔",
+        "앳스타일"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newsfarm.co.kr",
+      "name": "한국농업신문",
+      "url": "http://www.newsfarm.co.kr/",
+      "page_title": "한국농업신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국농업신문",
+        "og:site_name": "한국농업신문"
+      },
+      "logo_names": [
+        "한국농업신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newsgn.com",
+      "name": "뉴스경남",
+      "url": "https://www.newsgn.com/",
+      "page_title": "뉴스경남 - 경남도민을 대변하는 일간지",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스경남",
+        "og:site_name": "뉴스경남"
+      },
+      "logo_names": [
+        "뉴스경남"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newsjeju.net",
+      "name": "뉴스제주",
+      "url": "https://www.newsjeju.net/",
+      "page_title": "뉴스제주",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스제주",
+        "og:site_name": "뉴스제주"
+      },
+      "logo_names": [
+        "뉴스제주"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newskr.kr",
+      "name": "센트럴경제",
+      "url": "http://www.newskr.kr/",
+      "page_title": "센트럴경제",
+      "metadata": {
+        "apple-mobile-web-app-title": "센트럴경제",
+        "og:site_name": "센트럴경제"
+      },
+      "logo_names": [
+        "센트럴경제"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newsmaker.or.kr",
+      "name": "뉴스메이커",
+      "url": "http://www.newsmaker.or.kr/",
+      "page_title": "뉴스메이커",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "newsmap.co.kr",
+      "name": "뉴스맵",
+      "url": "https://www.newsmap.co.kr/",
+      "page_title": "뉴스맵",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스맵",
+        "og:site_name": "뉴스맵"
+      },
+      "logo_names": [
+        "뉴스맵"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newspenguin.com",
+      "name": "뉴스펭귄",
+      "url": "https://www.newspenguin.com/",
+      "page_title": "뉴스펭귄",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스펭귄",
+        "og:site_name": "뉴스펭귄"
+      },
+      "logo_names": [
+        "뉴스펭귄",
+        "인터넷신문자율심의기구"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newstopkorea.com",
+      "name": "뉴스톱",
+      "url": "https://www.newstopkorea.com/",
+      "page_title": "뉴스톱",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스톱",
+        "og:site_name": "뉴스톱"
+      },
+      "logo_names": [
+        "뉴스톱"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newstown.co.kr",
+      "name": "뉴스타운",
+      "url": "https://www.newstown.co.kr/",
+      "page_title": "자유 대한민국 수호자 - 뉴스타운",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스타운",
+        "og:site_name": "자유 대한민국 수호자 - 뉴스타운"
+      },
+      "logo_names": [
+        "뉴스타운"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newstree.kr",
+      "name": "뉴스;트리",
+      "url": "https://www.newstree.kr/",
+      "page_title": "뉴스;트리 - '가치있는  뉴스'",
+      "metadata": {
+        "author": "뉴스;트리",
+        "og:site_name": "뉴스;트리"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "newsverse.kr",
+      "name": "뉴스버스(Newsverse)",
+      "url": "https://www.newsverse.kr/",
+      "page_title": "뉴스버스(Newsverse)",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스버스(Newsverse)",
+        "og:site_name": "뉴스버스(Newsverse)"
+      },
+      "logo_names": [
+        "뉴스버스(Newsverse)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newswell.co.kr",
+      "name": "뉴스웰",
+      "url": "http://www.newswell.co.kr/",
+      "page_title": "뉴스웰 – 더 나은 내일을 여는 창",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스웰",
+        "og:site_name": "뉴스웰"
+      },
+      "logo_names": [
+        "뉴스웰"
+      ],
+      "schema": []
+    },
+    {
+      "host": "newswhoplus.com",
+      "name": "뉴스후플러스",
+      "url": "https://www.newswhoplus.com/",
+      "page_title": "뉴스후플러스",
+      "metadata": {
+        "apple-mobile-web-app-title": "뉴스후플러스",
+        "og:site_name": "뉴스후플러스"
+      },
+      "logo_names": [
+        "뉴스후플러스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "nextdaily.co.kr",
+      "name": "넥스트데일리",
+      "url": "https://www.nextdaily.co.kr/",
+      "page_title": "넥스트데일리",
+      "metadata": {
+        "apple-mobile-web-app-title": "넥스트데일리",
+        "og:site_name": "넥스트데일리"
+      },
+      "logo_names": [
+        "넥스트데일리"
+      ],
+      "schema": []
+    },
+    {
+      "host": "niceeconomy.co.kr",
+      "name": "나이스경제",
+      "url": "http://www.niceeconomy.co.kr/",
+      "page_title": "나이스경제",
+      "metadata": {
+        "apple-mobile-web-app-title": "나이스경제",
+        "og:site_name": "나이스경제"
+      },
+      "logo_names": [
+        "나이스경제"
+      ],
+      "schema": []
+    },
+    {
+      "host": "nongaek.com",
+      "name": "논객닷컴",
+      "url": "http://www.nongaek.com/",
+      "page_title": "논객닷컴",
+      "metadata": {
+        "apple-mobile-web-app-title": "논객닷컴",
+        "og:site_name": "논객닷컴"
+      },
+      "logo_names": [
+        "논객닷컴"
+      ],
+      "schema": []
+    },
+    {
+      "host": "nownews.seoul.co.kr",
+      "name": "나우뉴스",
+      "url": "https://nownews.seoul.co.kr/",
+      "page_title": "나우뉴스 - 지구촌 별별 이야기",
+      "metadata": {
+        "og:site_name": "나우뉴스"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "Organization",
+          "url": "https://nownews.seoul.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "obsnews.co.kr",
+      "name": "OBS경인TV",
+      "url": "https://www.obsnews.co.kr/",
+      "page_title": "OBS경인TV",
+      "metadata": {
+        "apple-mobile-web-app-title": "OBS경인TV",
+        "og:site_name": "OBS경인TV"
+      },
+      "logo_names": [
+        "OBS경인TV"
+      ],
+      "schema": []
+    },
+    {
+      "host": "olchiolchi.com",
+      "name": "케이펫뉴스",
+      "url": "https://www.olchiolchi.com/",
+      "page_title": "케이펫뉴스 | 반려동물 뉴스",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "onews.tv",
+      "name": "열린뉴스통신",
+      "url": "https://www.onews.tv/",
+      "page_title": "열린뉴스통신",
+      "metadata": {
+        "apple-mobile-web-app-title": "열린뉴스통신",
+        "og:site_name": "열린뉴스통신"
+      },
+      "logo_names": [
+        "열린뉴스통신"
+      ],
+      "schema": []
+    },
+    {
+      "host": "paxetv.com",
+      "name": "팍스경제TV",
+      "url": "http://www.paxetv.com/",
+      "page_title": "팍스경제TV",
+      "metadata": {
+        "apple-mobile-web-app-title": "팍스경제TV",
+        "og:site_name": "팍스경제TV"
+      },
+      "logo_names": [
+        "팍스경제TV"
+      ],
+      "schema": []
+    },
+    {
+      "host": "pennmike.com",
+      "name": "펜앤마이크",
+      "url": "https://www.pennmike.com/",
+      "page_title": "펜앤마이크",
+      "metadata": {
+        "apple-mobile-web-app-title": "펜앤마이크",
+        "og:site_name": "펜앤마이크"
+      },
+      "logo_names": [
+        "펜앤마이크"
+      ],
+      "schema": []
+    },
+    {
+      "host": "peoplewatch.co.kr",
+      "name": "피플워치",
+      "url": "https://www.peoplewatch.co.kr/",
+      "page_title": "피플워치 - 사람이 뉴스다, 연결이 가치다",
+      "metadata": {
+        "author": "피플워치",
+        "og:site_name": "피플워치",
+        "twitter:site": "@피플워치"
+      },
+      "logo_names": [
+        "피플워치",
+        "PeopleWatch"
+      ],
+      "schema": []
+    },
+    {
+      "host": "platum.kr",
+      "name": "플래텀",
+      "url": "https://platum.kr/",
+      "page_title": "스타트업 생태계의 모든 것 - '플래텀(Platum)'",
+      "metadata": {
+        "og:site_name": "스타트업 생태계의 모든 것 \\'플래텀(Platum)\\'",
+        "twitter:site": "@platum.kr"
+      },
+      "logo_names": [
+        "플래텀"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "스타트업 생태계의 모든 것 \\'플래텀(Platum)\\'"
+        },
+        {
+          "@id": "https://platum.kr/#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "스타트업 생태계의 모든 것 \\'플래텀(Platum)\\'",
+          "url": "https://platum.kr"
+        },
+        {
+          "@id": "https://platum.kr/#organization"
+        }
+      ]
+    },
+    {
+      "host": "pn.or.kr",
+      "name": "평화뉴스",
+      "url": "https://www.pn.or.kr/",
+      "page_title": "평화뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "평화뉴스",
+        "og:site_name": "평화뉴스"
+      },
+      "logo_names": [
+        "평화뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "public25.com",
+      "name": "퍼블릭타임스",
+      "url": "https://www.public25.com/",
+      "page_title": "퍼블릭타임스",
+      "metadata": {
+        "apple-mobile-web-app-title": "퍼블릭타임스",
+        "og:site_name": "퍼블릭타임스"
+      },
+      "logo_names": [
+        "퍼블릭타임스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "queen.co.kr",
+      "name": "Queen 이코노미퀸",
+      "url": "http://www.queen.co.kr/",
+      "page_title": "Queen 이코노미퀸",
+      "metadata": {
+        "apple-mobile-web-app-title": "Queen 이코노미퀸",
+        "og:site_name": "Queen 이코노미퀸"
+      },
+      "logo_names": [
+        "Queen 이코노미퀸"
+      ],
+      "schema": []
+    },
+    {
+      "host": "radiokorea.com",
+      "name": "라디오코리아",
+      "url": "https://www.radiokorea.com/",
+      "page_title": "라디오코리아",
+      "metadata": {
+        "og:site_name": "RadioKorea"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "rapportian.com",
+      "name": "라포르시안",
+      "url": "https://www.rapportian.com/",
+      "page_title": "라포르시안",
+      "metadata": {
+        "apple-mobile-web-app-title": "라포르시안",
+        "og:site_name": "라포르시안"
+      },
+      "logo_names": [
+        "라포르시안"
+      ],
+      "schema": []
+    },
+    {
+      "host": "rcast.co.kr",
+      "name": "리얼캐스트",
+      "url": "https://www.rcast.co.kr/",
+      "page_title": "리얼캐스트",
+      "metadata": {
+        "apple-mobile-web-app-title": "리얼캐스트",
+        "og:site_name": "리얼캐스트"
+      },
+      "logo_names": [
+        "리얼캐스트"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "리얼캐스트",
+          "url": "http://www.rcast.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "redian.org",
+      "name": "레디앙",
+      "url": "https://www.redian.org/",
+      "page_title": "레디앙",
+      "metadata": {
+        "apple-mobile-web-app-title": "레디앙",
+        "og:site_name": "레디앙"
+      },
+      "logo_names": [
+        "레디앙"
+      ],
+      "schema": []
+    },
+    {
+      "host": "rightknow.co.kr",
+      "name": "알티케이뉴스",
+      "url": "http://www.rightknow.co.kr/",
+      "page_title": "알티케이뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "알티케이뉴스",
+        "og:site_name": "알티케이뉴스"
+      },
+      "logo_names": [
+        "알티케이뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "rookie.co.kr",
+      "name": "ROOKIE",
+      "url": "http://www.rookie.co.kr/",
+      "page_title": "ROOKIE",
+      "metadata": {
+        "apple-mobile-web-app-title": "ROOKIE",
+        "og:site_name": "ROOKIE"
+      },
+      "logo_names": [
+        "ROOKIE"
+      ],
+      "schema": []
+    },
+    {
+      "host": "safetynews.co.kr",
+      "name": "안전신문",
+      "url": "https://www.safetynews.co.kr/",
+      "page_title": "안전신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "안전신문",
+        "og:site_name": "안전신문"
+      },
+      "logo_names": [
+        "안전신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "samdailbo.com",
+      "name": "삼다일보",
+      "url": "https://www.samdailbo.com/",
+      "page_title": "삼다일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "삼다일보",
+        "og:site_name": "삼다일보"
+      },
+      "logo_names": [
+        "삼다일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sejungilbo.com",
+      "name": "세정일보",
+      "url": "https://www.sejungilbo.com/",
+      "page_title": "세정일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "세정일보",
+        "og:site_name": "세정일보"
+      },
+      "logo_names": [
+        "세정일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "seouleconews.com",
+      "name": "서울이코노미뉴스",
+      "url": "http://www.seouleconews.com/",
+      "page_title": "서울이코노미뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "서울이코노미뉴스",
+        "og:site_name": "서울이코노미뉴스"
+      },
+      "logo_names": [
+        "서울이코노미뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "siminilbo.co.kr",
+      "name": "시민일보",
+      "url": "https://www.siminilbo.co.kr/",
+      "page_title": "시민일보",
+      "metadata": {
+        "author": "시민일보",
+        "twitter:site": "http://www.siminilbo.co.kr"
+      },
+      "logo_names": [
+        "시민일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "siminsori.com",
+      "name": "시민의소리",
+      "url": "https://www.siminsori.com/",
+      "page_title": "시민의소리",
+      "metadata": {
+        "apple-mobile-web-app-title": "시민의소리",
+        "og:site_name": "시민의소리"
+      },
+      "logo_names": [
+        "시민의소리"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sisain.co.kr",
+      "name": "시사IN",
+      "url": "https://www.sisain.co.kr/",
+      "page_title": "시사IN",
+      "metadata": {
+        "og:site_name": "시사IN"
+      },
+      "logo_names": [
+        "시사IN"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sisaweek.com",
+      "name": "시사위크",
+      "url": "https://www.sisaweek.com/",
+      "page_title": "시사위크",
+      "metadata": {
+        "apple-mobile-web-app-title": "시사위크",
+        "og:site_name": "시사위크"
+      },
+      "logo_names": [
+        "시사위크"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sisunnews.co.kr",
+      "name": "시선뉴스",
+      "url": "http://www.sisunnews.co.kr/",
+      "page_title": "시선뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "시선뉴스",
+        "og:site_name": "시선뉴스"
+      },
+      "logo_names": [
+        "시선뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sjbnews.com",
+      "name": "새전북신문",
+      "url": "https://sjbnews.com/",
+      "page_title": "새전북신문",
+      "metadata": {
+        "author": "새전북신문",
+        "og:site_name": "새전북신문",
+        "twitter:site": "http://sjbnews.com/"
+      },
+      "logo_names": [
+        "새전북신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sjsori.com",
+      "name": "세종의소리",
+      "url": "https://www.sjsori.com/",
+      "page_title": "세종의소리",
+      "metadata": {
+        "apple-mobile-web-app-title": "세종의소리",
+        "og:site_name": "세종의소리"
+      },
+      "logo_names": [
+        "세종의소리"
+      ],
+      "schema": []
+    },
+    {
+      "host": "slist.kr",
+      "name": "싱글리스트",
+      "url": "https://www.slist.kr/",
+      "page_title": "싱글리스트",
+      "metadata": {
+        "apple-mobile-web-app-title": "싱글리스트",
+        "og:site_name": "싱글리스트"
+      },
+      "logo_names": [
+        "싱글리스트"
+      ],
+      "schema": []
+    },
+    {
+      "host": "slownews.kr",
+      "name": "슬로우뉴스",
+      "url": "https://slownews.kr/",
+      "page_title": "Home. - 슬로우뉴스.",
+      "metadata": {
+        "og:site_name": "슬로우뉴스",
+        "twitter:site": "@slownewskr"
+      },
+      "logo_names": [
+        "슬로우뉴스."
+      ],
+      "schema": [
+        {
+          "@id": "https://slownews.kr/#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "슬로우뉴스",
+          "url": "https://slownews.kr"
+        },
+        {
+          "@id": "https://slownews.kr/#organization"
+        }
+      ]
+    },
+    {
+      "host": "smarttimes.co.kr",
+      "name": "스마트타임스",
+      "url": "http://www.smarttimes.co.kr/intro.html",
+      "page_title": "INTRO - 스마트타임스",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "snmnews.com",
+      "name": "철강금속신문",
+      "url": "https://www.snmnews.com/",
+      "page_title": "철강금속신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "철강금속신문",
+        "og:site_name": "철강금속신문"
+      },
+      "logo_names": [
+        "철강금속신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "socialvalue.kr",
+      "name": "소셜밸류",
+      "url": "https://www.socialvalue.kr/",
+      "page_title": "사회가치 공유 언론-소셜밸류",
+      "metadata": {
+        "author": "사회가치 공유 언론-소셜밸류",
+        "twitter:site": "https://socialvalue.kr"
+      },
+      "logo_names": [
+        "사회가치 공유 언론-소셜밸류"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "url": "https://www.socialvalue.kr"
+        }
+      ]
+    },
+    {
+      "host": "spochoo.com",
+      "name": "더게이트(THE GATE)",
+      "url": "http://www.spochoo.com/",
+      "page_title": "더게이트(THE GATE)",
+      "metadata": {
+        "apple-mobile-web-app-title": "더게이트(THE GATE)",
+        "og:site_name": "더게이트(THE GATE)"
+      },
+      "logo_names": [
+        "더게이트(THE GATE)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sportalkorea.com",
+      "name": "스포탈코리아",
+      "url": "https://www.sportalkorea.com/",
+      "page_title": "스포탈코리아",
+      "metadata": {
+        "apple-mobile-web-app-title": "스포탈코리아",
+        "og:site_name": "스포탈코리아"
+      },
+      "logo_names": [
+        "스포탈코리아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sports.donga.com",
+      "name": "스포츠동아",
+      "url": "https://sports.donga.com/",
+      "page_title": "스포츠동아",
+      "metadata": {
+        "og:site_name": "스포츠동아",
+        "twitter:site": "@dongacom_enter"
+      },
+      "logo_names": [
+        "스포츠동아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "sportsq.co.kr",
+      "name": "스포츠Q(큐)",
+      "url": "http://www.sportsq.co.kr/",
+      "page_title": "스포츠Q(큐)",
+      "metadata": {
+        "apple-mobile-web-app-title": "스포츠Q(큐)",
+        "og:site_name": "스포츠Q(큐)"
+      },
+      "logo_names": [
+        "스포츠Q(큐)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "spotvnews.co.kr",
+      "name": "스포티비뉴스",
+      "url": "https://www.spotvnews.co.kr/",
+      "page_title": "SPOTV NEWS",
+      "metadata": {},
+      "logo_names": [
+        "스포티비 로고",
+        "spotv logo"
+      ],
+      "schema": []
+    },
+    {
+      "host": "stardailynews.co.kr",
+      "name": "스타데일리뉴스",
+      "url": "https://www.stardailynews.co.kr/",
+      "page_title": "스타데일리뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "스타데일리뉴스",
+        "og:site_name": "스타데일리뉴스"
+      },
+      "logo_names": [
+        "스타데일리뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "stnsports.co.kr",
+      "name": "STN NEWS",
+      "url": "https://www.stnsports.co.kr/",
+      "page_title": "STN NEWS",
+      "metadata": {
+        "apple-mobile-web-app-title": "STN NEWS",
+        "og:site_name": "STN NEWS"
+      },
+      "logo_names": [
+        "STN NEWS"
+      ],
+      "schema": []
+    },
+    {
+      "host": "taxtimes.co.kr",
+      "name": "한국세정신문",
+      "url": "https://www.taxtimes.co.kr/",
+      "page_title": "한국세정신문-한국대표 조세정론지",
+      "metadata": {},
+      "logo_names": [
+        "한국세정신문-한국대표 조세정론지",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "tbc.co.kr",
+      "name": "TBC",
+      "url": "https://www.tbc.co.kr/",
+      "page_title": "TBC 티비씨",
+      "metadata": {
+        "author": "TBC"
+      },
+      "logo_names": [
+        "로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "technoa.co.kr",
+      "name": "테크노아",
+      "url": "http://www.technoa.co.kr/",
+      "page_title": "[테크노아] - Digital Community Techno@",
+      "metadata": {},
+      "logo_names": [
+        "테크노아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "tenasia.co.kr",
+      "name": "텐아시아",
+      "url": "https://www.tenasia.co.kr/",
+      "page_title": "텐아시아",
+      "metadata": {
+        "author": "Digital www.tenasia.co.kr",
+        "og:site_name": "텐아시아",
+        "application-name": "텐아시아",
+        "twitter:site": "@tenasia_"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "NewsMediaOrganization",
+          "name": "텐아시아",
+          "url": "https://www.tenasia.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "tennis.co.kr",
+      "name": "테니스코리아",
+      "url": "https://www.tennis.co.kr/",
+      "page_title": "테니스코리아",
+      "metadata": {
+        "apple-mobile-web-app-title": "테니스코리아",
+        "og:site_name": "테니스코리아"
+      },
+      "logo_names": [
+        "테니스코리아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "the-pr.co.kr",
+      "name": "The PR 더피알",
+      "url": "https://www.the-pr.co.kr/",
+      "page_title": "The PR 더피알, PR전문언론, Communication post",
+      "metadata": {
+        "apple-mobile-web-app-title": "The PR 더피알",
+        "og:site_name": "The PR 더피알"
+      },
+      "logo_names": [
+        "The PR 더피알"
+      ],
+      "schema": []
+    },
+    {
+      "host": "thebilliards.kr",
+      "name": "빌리어즈",
+      "url": "https://www.thebilliards.kr/",
+      "page_title": "빌리어즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "빌리어즈",
+        "og:site_name": "빌리어즈"
+      },
+      "logo_names": [
+        "빌리어즈"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "빌리어즈",
+          "url": "https://www.thebilliards.kr"
+        }
+      ]
+    },
+    {
+      "host": "thebk.co.kr",
+      "name": "뷰티경제",
+      "url": "https://www.thebk.co.kr/",
+      "page_title": "뷰티경제",
+      "metadata": {
+        "apple-mobile-web-app-title": "뷰티경제",
+        "og:site_name": "뷰티경제"
+      },
+      "logo_names": [
+        "뷰티경제"
+      ],
+      "schema": []
+    },
+    {
+      "host": "thedailypost.kr",
+      "name": "데일리포스트",
+      "url": "https://www.thedailypost.kr/",
+      "page_title": "데일리포스트",
+      "metadata": {
+        "apple-mobile-web-app-title": "데일리포스트",
+        "og:site_name": "데일리포스트"
+      },
+      "logo_names": [
+        "데일리포스트"
+      ],
+      "schema": []
+    },
+    {
+      "host": "thegolftimes.co.kr",
+      "name": "골프타임즈",
+      "url": "https://www.thegolftimes.co.kr/",
+      "page_title": "골프타임즈",
+      "metadata": {
+        "apple-mobile-web-app-title": "골프타임즈",
+        "og:site_name": "골프타임즈"
+      },
+      "logo_names": [
+        "골프타임즈"
+      ],
+      "schema": []
+    },
+    {
+      "host": "theguru.co.kr",
+      "name": "더구루",
+      "url": "https://www.theguru.co.kr/",
+      "page_title": "더구루",
+      "metadata": {},
+      "logo_names": [
+        "Global News",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "thelec.kr",
+      "name": "디일렉(THE ELEC)",
+      "url": "https://www.thelec.kr/",
+      "page_title": "디일렉",
+      "metadata": {
+        "apple-mobile-web-app-title": "디일렉(THE ELEC)",
+        "og:site_name": "디일렉(THE ELEC)"
+      },
+      "logo_names": [
+        "디일렉(THE ELEC)"
+      ],
+      "schema": []
+    },
+    {
+      "host": "theopiniontimes.news",
+      "name": "더오피니언타임즈",
+      "url": "https://theopiniontimes.news/",
+      "page_title": "홈 - 더오피니언타임즈",
+      "metadata": {
+        "og:site_name": "더오피니언타임즈"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@id": "https://theopiniontimes.news/#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "더오피니언타임즈",
+          "url": "https://theopiniontimes.news/"
+        },
+        {
+          "@type": "Organization",
+          "name": "더오피니언타임즈",
+          "url": "https://theopiniontimes.news/"
+        }
+      ]
+    },
+    {
+      "host": "thereport.co.kr",
+      "name": "더리포트",
+      "url": "https://www.thereport.co.kr/",
+      "page_title": "더리포트",
+      "metadata": {
+        "apple-mobile-web-app-title": "더리포트",
+        "og:site_name": "더리포트"
+      },
+      "logo_names": [
+        "더리포트"
+      ],
+      "schema": []
+    },
+    {
+      "host": "thescoop.co.kr",
+      "name": "더스쿠프",
+      "url": "https://www.thescoop.co.kr/",
+      "page_title": "더스쿠프 | 가치를 같이 읽다",
+      "metadata": {
+        "apple-mobile-web-app-title": "더스쿠프",
+        "og:site_name": "더스쿠프"
+      },
+      "logo_names": [
+        "더스쿠프"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "더스쿠프",
+          "url": "https://www.thescoop.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "thetracker.co.kr",
+      "name": "더트래커",
+      "url": "https://thetracker.co.kr/",
+      "page_title": "더트래커",
+      "metadata": {
+        "og:site_name": "더트래커",
+        "author": "더트래커",
+        "apple-mobile-web-app-title": "더트래커"
+      },
+      "logo_names": [
+        "더트래커",
+        "뉴스브릿지 배너"
+      ],
+      "schema": []
+    },
+    {
+      "host": "theviewers.co.kr",
+      "name": "뷰어스",
+      "url": "https://theviewers.co.kr/",
+      "page_title": "뷰어스 | 세상을 보는 또 다른 시선 뷰어스",
+      "metadata": {
+        "og:site_name": "뷰어스",
+        "author": "뷰어스",
+        "apple-mobile-web-app-title": "뷰어스"
+      },
+      "logo_names": [
+        "뷰어스",
+        "뉴스브릿지 배너",
+        "인터넷신문위원회"
+      ],
+      "schema": []
+    },
+    {
+      "host": "tk.newdaily.co.kr",
+      "name": "뉴데일리 대구경북",
+      "url": "https://tk.newdaily.co.kr/",
+      "page_title": "뉴데일리 대구경북",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "tleaves.co.kr",
+      "name": "더리브스",
+      "url": "https://www.tleaves.co.kr/",
+      "page_title": "더리브스",
+      "metadata": {
+        "apple-mobile-web-app-title": "더리브스",
+        "og:site_name": "더리브스"
+      },
+      "logo_names": [
+        "더리브스"
+      ],
+      "schema": [
+        {
+          "@type": "Organization",
+          "name": "더리브스",
+          "url": "http://www.tleaves.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "todayeconomic.com",
+      "name": "투데이e코노믹",
+      "url": "https://www.todayeconomic.com/",
+      "page_title": "투데이e코노믹",
+      "metadata": {},
+      "logo_names": [
+        "투데이e코노믹",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "todayenergy.kr",
+      "name": "투데이에너지",
+      "url": "https://www.todayenergy.kr/",
+      "page_title": "투데이에너지",
+      "metadata": {
+        "apple-mobile-web-app-title": "투데이에너지",
+        "og:site_name": "투데이에너지"
+      },
+      "logo_names": [
+        "투데이에너지"
+      ],
+      "schema": []
+    },
+    {
+      "host": "topclass.chosun.com",
+      "name": "톱클래스",
+      "url": "http://topclass.chosun.com/",
+      "page_title": "톱클래스",
+      "metadata": {
+        "apple-mobile-web-app-title": "톱클래스",
+        "og:site_name": "톱클래스"
+      },
+      "logo_names": [
+        "톱클래스",
+        "조선뉴스프레스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "tournews21.com",
+      "name": "투어코리아",
+      "url": "https://www.tournews21.com/",
+      "page_title": "시선 넓힌 뉴스 투어코리아",
+      "metadata": {
+        "apple-mobile-web-app-title": "투어코리아",
+        "og:site_name": "투어코리아"
+      },
+      "logo_names": [
+        "투어코리아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "tvdaily.co.kr",
+      "name": "티브이데일리",
+      "url": "http://www.tvdaily.co.kr/",
+      "page_title": "티브이데일리",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "tvreport.co.kr",
+      "name": "TV리포트",
+      "url": "https://tvreport.co.kr/",
+      "page_title": "TV리포트",
+      "metadata": {
+        "og:site_name": "TV리포트",
+        "twitter:site": "@Tvreport_TV"
+      },
+      "logo_names": [
+        "로고",
+        "TV리포트 유튜브 로고",
+        "TV리포트 인스타그램 로고",
+        "TV리포트 틱톡 로고",
+        "TV리포트 트위터 로고",
+        "TV리포트 페이스북 로고",
+        "TV리포트 다음채널 로고",
+        "TV리포트 위키 로고",
+        "TV리포트 나무위키 로고",
+        "TV리포트 카카오스토리 로고",
+        "TV리포트 카카오톡채널 로고",
+        "TV리포트 네이버블로그 로고"
+      ],
+      "schema": [
+        {
+          "@id": "https://tvreport.co.kr/#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "TV리포트",
+          "url": "https://tvreport.co.kr/"
+        },
+        {
+          "@type": "Organization",
+          "name": "TV리포트",
+          "url": "https://tvreport.co.kr/"
+        }
+      ]
+    },
+    {
+      "host": "ujeil.com",
+      "name": "울산제일일보",
+      "url": "http://www.ujeil.com/",
+      "page_title": "울산제일일보",
+      "metadata": {
+        "apple-mobile-web-app-title": "울산제일일보",
+        "og:site_name": "울산제일일보"
+      },
+      "logo_names": [
+        "울산제일일보"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ulsanpress.net",
+      "name": "울산신문",
+      "url": "https://www.ulsanpress.net/",
+      "page_title": "울산신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "울산신문",
+        "og:site_name": "울산신문"
+      },
+      "logo_names": [
+        "울산신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "updownnews.co.kr",
+      "name": "업다운뉴스",
+      "url": "http://www.updownnews.co.kr/",
+      "page_title": "업다운뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "업다운뉴스",
+        "og:site_name": "업다운뉴스"
+      },
+      "logo_names": [
+        "업다운뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "upkoreanews.kr",
+      "name": "업코리아",
+      "url": "https://www.upkoreanews.kr/",
+      "page_title": "업코리아 업코리아뉴스 정치 경제 사회 산업",
+      "metadata": {
+        "apple-mobile-web-app-title": "업코리아",
+        "og:site_name": "업코리아"
+      },
+      "logo_names": [
+        "업코리아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "vegannews.co.kr",
+      "name": "비건뉴스",
+      "url": "https://www.vegannews.co.kr/",
+      "page_title": "비건뉴스",
+      "metadata": {},
+      "logo_names": [
+        "비건뉴스",
+        "로고",
+        "powered by mediaOn"
+      ],
+      "schema": []
+    },
+    {
+      "host": "venturesquare.net",
+      "name": "벤처스퀘어",
+      "url": "https://www.venturesquare.net/",
+      "page_title": "대한민국 대표 스타트업 액셀러레이터 - 벤처스퀘어",
+      "metadata": {
+        "og:site_name": "벤처스퀘어",
+        "twitter:site": "@venturesquare"
+      },
+      "logo_names": [],
+      "schema": [
+        {
+          "@type": "NewsMediaOrganization",
+          "name": "벤처스퀘어",
+          "url": "https://www.venturesquare.net"
+        }
+      ]
+    },
+    {
+      "host": "veritas-a.com",
+      "name": "베리타스알파",
+      "url": "https://www.veritas-a.com/",
+      "page_title": "베리타스알파",
+      "metadata": {
+        "apple-mobile-web-app-title": "베리타스알파",
+        "og:site_name": "베리타스알파"
+      },
+      "logo_names": [
+        "베리타스알파"
+      ],
+      "schema": []
+    },
+    {
+      "host": "viewsnnews.com",
+      "name": "뷰스앤뉴스",
+      "url": "https://www.viewsnnews.com/",
+      "page_title": "세상을 보는 다른 눈 \"뷰스앤뉴스\"",
+      "metadata": {},
+      "logo_names": [
+        "세상을보는다른눈\"뷰스앤뉴스\""
+      ],
+      "schema": []
+    },
+    {
+      "host": "vogue.co.kr",
+      "name": "보그 코리아",
+      "url": "https://www.vogue.co.kr/",
+      "page_title": "보그 코리아 (Vogue Korea)",
+      "metadata": {
+        "og:site_name": "Vogue korea",
+        "twitter:site": "@VogueKorea"
+      },
+      "logo_names": [
+        "VOGUE"
+      ],
+      "schema": [
+        {
+          "@type": "NewsMediaOrganization",
+          "name": "Vogue Korea",
+          "url": "https://www.vogue.co.kr"
+        }
+      ]
+    },
+    {
+      "host": "weekly.chosun.com",
+      "name": "주간조선",
+      "url": "http://weekly.chosun.com/",
+      "page_title": "주간조선",
+      "metadata": {
+        "apple-mobile-web-app-title": "주간조선",
+        "og:site_name": "주간조선"
+      },
+      "logo_names": [
+        "주간조선"
+      ],
+      "schema": []
+    },
+    {
+      "host": "weekly.donga.com",
+      "name": "주간동아",
+      "url": "https://weekly.donga.com/",
+      "page_title": "주간동아",
+      "metadata": {},
+      "logo_names": [
+        "주간동아"
+      ],
+      "schema": []
+    },
+    {
+      "host": "weekly.khan.co.kr",
+      "name": "주간경향",
+      "url": "https://weekly.khan.co.kr/",
+      "page_title": "주간경향",
+      "metadata": {
+        "og:site_name": "주간경향"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "weeklytrade.co.kr",
+      "name": "한국무역신문",
+      "url": "https://weeklytrade.co.kr/main/index.html",
+      "page_title": "한국무역신문, 주간무역, 한국무역의 길잡이 한국무역신문",
+      "metadata": {},
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "welfarenews.net",
+      "name": "웰페어뉴스",
+      "url": "https://www.welfarenews.net/",
+      "page_title": "웰페어뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "웰페어뉴스",
+        "og:site_name": "웰페어뉴스"
+      },
+      "logo_names": [
+        "웰페어뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "wemakenews.co.kr",
+      "name": "위메이크뉴스",
+      "url": "https://wemakenews.co.kr/",
+      "page_title": "위메이크뉴스",
+      "metadata": {
+        "og:site_name": "위메이크뉴스"
+      },
+      "logo_names": [
+        "로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "whosaeng.com",
+      "name": "후생신보",
+      "url": "http://www.whosaeng.com/",
+      "page_title": "후생신보",
+      "metadata": {
+        "og:site_name": "후생신보"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "widedaily.com",
+      "name": "와이드경제",
+      "url": "https://www.widedaily.com/",
+      "page_title": "와이드경제",
+      "metadata": {
+        "apple-mobile-web-app-title": "와이드경제",
+        "og:site_name": "와이드경제"
+      },
+      "logo_names": [
+        "와이드경제"
+      ],
+      "schema": []
+    },
+    {
+      "host": "woman.donga.com",
+      "name": "여성동아",
+      "url": "https://woman.donga.com/",
+      "page_title": "여성동아",
+      "metadata": {
+        "og:site_name": "woman.donga.com",
+        "twitter:site": "@dongamedia"
+      },
+      "logo_names": [
+        "WOMAN DONGA"
+      ],
+      "schema": [
+        {
+          "@id": "https://woman.donga.com#organization"
+        },
+        {
+          "@type": "WebSite",
+          "name": "여성동아",
+          "url": "https://woman.donga.com"
+        },
+        {
+          "@type": "Organization",
+          "name": "여성동아",
+          "url": "https://woman.donga.com"
+        }
+      ]
+    },
+    {
+      "host": "womennews.co.kr",
+      "name": "여성신문",
+      "url": "https://www.womennews.co.kr/",
+      "page_title": "여성신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "여성신문",
+        "og:site_name": "여성신문"
+      },
+      "logo_names": [
+        "여성신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "womentimes.co.kr",
+      "name": "우먼타임스",
+      "url": "https://www.womentimes.co.kr/",
+      "page_title": "우먼타임스",
+      "metadata": {
+        "apple-mobile-web-app-title": "우먼타임스",
+        "og:site_name": "우먼타임스"
+      },
+      "logo_names": [
+        "우먼타임스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "woodkorea.co.kr",
+      "name": "한국목재신문",
+      "url": "https://www.woodkorea.co.kr/",
+      "page_title": "한국목재신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국목재신문",
+        "og:site_name": "한국목재신문"
+      },
+      "logo_names": [
+        "한국목재신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "worknworld.kctu.org",
+      "name": "노동과세계",
+      "url": "http://worknworld.kctu.org/",
+      "page_title": "노동과세계",
+      "metadata": {
+        "og:site_name": "노동과세계"
+      },
+      "logo_names": [
+        "노동과세계"
+      ],
+      "schema": []
+    },
+    {
+      "host": "worktoday.co.kr",
+      "name": "워크투데이",
+      "url": "http://www.worktoday.co.kr/",
+      "page_title": "워크투데이",
+      "metadata": {
+        "apple-mobile-web-app-title": "워크투데이",
+        "og:site_name": "워크투데이"
+      },
+      "logo_names": [
+        "워크투데이"
+      ],
+      "schema": []
+    },
+    {
+      "host": "worldkorean.net",
+      "name": "월드코리안뉴스",
+      "url": "https://www.worldkorean.net/",
+      "page_title": "월드코리안뉴스",
+      "metadata": {
+        "apple-mobile-web-app-title": "월드코리안뉴스",
+        "og:site_name": "월드코리안뉴스"
+      },
+      "logo_names": [
+        "월드코리안뉴스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "yakup.com",
+      "name": "약업신문",
+      "url": "https://www.yakup.com/",
+      "page_title": "약업닷컴 - 보건의약계를 대표하는 전문신문 - 약사, 의사, 제약사 - 약업신문",
+      "metadata": {},
+      "logo_names": [
+        "약업신문 로고",
+        "푸터 로고"
+      ],
+      "schema": []
+    },
+    {
+      "host": "yonhapmidas.com",
+      "name": "연합뉴스 월간 마이더스",
+      "url": "https://www.yonhapmidas.com/",
+      "page_title": "연합뉴스 월간 마이더스",
+      "metadata": {
+        "apple-mobile-web-app-title": "연합뉴스 월간 마이더스",
+        "og:site_name": "연합뉴스 월간 마이더스"
+      },
+      "logo_names": [
+        "연합뉴스 월간 마이더스"
+      ],
+      "schema": []
+    },
+    {
+      "host": "youngnong.co.kr",
+      "name": "한국영농신문",
+      "url": "https://www.youngnong.co.kr/",
+      "page_title": "한국영농신문",
+      "metadata": {
+        "apple-mobile-web-app-title": "한국영농신문",
+        "og:site_name": "한국영농신문"
+      },
+      "logo_names": [
+        "한국영농신문"
+      ],
+      "schema": []
+    },
+    {
+      "host": "ysmbc.co.kr",
+      "name": "여수MBC",
+      "url": "https://ysmbc.co.kr/",
+      "page_title": "여수MBC",
+      "metadata": {
+        "apple-mobile-web-app-title": "여수MBC",
+        "og:site_name": "여수MBC"
+      },
+      "logo_names": [],
+      "schema": []
+    },
+    {
+      "host": "marketin.edaily.co.kr",
+      "name": "마켓인",
+      "url": "https://marketin.edaily.co.kr/",
+      "evidence": "Homepage brand and footer identify 마켓인, copyright 이데일리."
+    },
+    {
+      "host": "vop.co.kr",
+      "name": "민중의소리",
+      "url": "https://www.vop.co.kr/",
+      "evidence": "Official homepage title and masthead."
+    },
+    {
+      "host": "yeongnam.com",
+      "name": "영남일보",
+      "url": "https://www.yeongnam.com/web/pr.php",
+      "evidence": "Official publisher introduction and company footer."
+    }
+  ]
+}

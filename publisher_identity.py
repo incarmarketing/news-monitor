@@ -9,6 +9,7 @@ from __future__ import annotations
 import html
 import json
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -136,3 +137,108 @@ def normalize_article(article: dict) -> dict:
         "source": result["name"],
         "publisher_resolution": result,
     }
+
+
+class _PublisherPage(HTMLParser):
+    """Read only site identity fields, never arbitrary article/body text."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.site_names = set()
+        self.titles = []
+        self.schemas = []
+        self._title = False
+        self._schema = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "meta" and (attrs.get("property") or attrs.get("name") or "").lower() == "og:site_name":
+            name = valid_name(attrs.get("content"))
+            if name:
+                self.site_names.add(name)
+        if tag == "title":
+            self._title = True
+        if tag == "script" and (attrs.get("type") or "").lower() == "application/ld+json":
+            self._schema = []
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self._title = False
+        if tag == "script" and self._schema is not None:
+            try:
+                self.schemas.append(json.loads("".join(self._schema)))
+            except (ValueError, RecursionError):
+                pass
+            self._schema = None
+
+    def handle_data(self, data):
+        if self._title:
+            self.titles.append(data)
+        if self._schema is not None:
+            self._schema.append(data)
+
+
+def publisher_from_html(document: str, page_url: str) -> dict | None:
+    """Resolve unknown original sites from two agreeing identity signals.
+
+    Uses HTML already fetched for body enrichment, so publisher recovery adds
+    no requests or collection latency from a second crawl. Portal site branding
+    and conflicting child/parent publication names must never become a source.
+    """
+    host = host_of(page_url)
+    if not host or is_portal(host) or not document:
+        return None
+    page = _PublisherPage()
+    try:
+        page.feed(document[:1_000_000])
+    except (ValueError, RecursionError):
+        return None
+    if len(page.site_names) != 1:
+        return None
+    name = next(iter(page.site_names))
+    # An arbitrary phrase in an article title is not site-brand evidence.
+    title_parts = {clean(part) for part in re.split(r"\s+[|\-–]\s+", "".join(page.titles))}
+    title_agrees = name in title_parts
+    schema_names = set()
+    nodes = list(page.schemas)
+    examined = 0
+    while nodes and examined < 100:
+        node = nodes.pop()
+        examined += 1
+        if isinstance(node, list):
+            nodes.extend(node[:100])
+            continue
+        if not isinstance(node, dict):
+            continue
+        graph = node.get("@graph")
+        if isinstance(graph, list):
+            nodes.extend(graph[:100])
+        types = node.get("@type", [])
+        types = [types] if isinstance(types, str) else types
+        if not isinstance(types, list) or not any(t in {"NewsArticle", "Article", "ReportageNewsArticle", "WebSite"} for t in types if isinstance(t, str)):
+            continue
+        publisher = node.get("publisher")
+        if not isinstance(publisher, dict):
+            continue
+        org_type = publisher.get("@type")
+        if org_type not in ("Organization", "NewsMediaOrganization"):
+            continue
+        candidate = valid_name(publisher.get("name"))
+        publisher_url = publisher.get("url") or publisher.get("@id")
+        if candidate and (not publisher_url or host_of(publisher_url) == host):
+            schema_names.add(candidate)
+    if schema_names and schema_names != {name}:
+        return None
+    if not title_agrees and schema_names != {name}:
+        return None
+    return {"name": name, "method": "page_metadata", "host": host, "url": page_url}
+
+
+def enrich_from_html(article: dict, document: str, page_url: str) -> None:
+    if resolve_publisher(article)["name"] != UNKNOWN:
+        return
+    evidence = publisher_from_html(document, page_url)
+    if evidence:
+        article.setdefault("source_raw", article.get("source", ""))
+        article["source"] = evidence["name"]
+        article["publisher_evidence"] = evidence

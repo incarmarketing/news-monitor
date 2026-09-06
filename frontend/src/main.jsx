@@ -32,7 +32,6 @@ import {
 } from "lucide-react";
 import {
   adRows,
-  contextRules,
   journalistRows,
   keywordGroups,
   navItems,
@@ -2401,9 +2400,6 @@ function Monitoring({
               더보기
             </button>
           )}
-        </Panel>
-        <Panel title="문맥 필터 기준" icon={ShieldCheck} meta="키워드 컬럼별 해석">
-          <RuleStack />
         </Panel>
       </section>
     </main>
@@ -5067,20 +5063,6 @@ function KeywordBrief({ rows = [] }) {
           <b>{index + 1}</b>
           {row.name} {Number(row.value || 0).toLocaleString("ko-KR")}건
         </span>
-      ))}
-    </div>
-  );
-}
-
-function RuleStack() {
-  return (
-    <div className="rule-stack">
-      {contextRules.map((rule) => (
-        <article key={rule.label}>
-          <Chip tone={rule.label}>{rule.label}</Chip>
-          <b>{rule.action}</b>
-          <p>{rule.body}</p>
-        </article>
       ))}
     </div>
   );
