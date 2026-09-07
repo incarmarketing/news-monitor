@@ -78,6 +78,17 @@ class MediaBylineTests(unittest.TestCase):
         self.assertEqual(result['authors'][0]['name'], '홍길동')
         self.assertNotIn('publisher_evidence', result)
 
+    def test_publisher_conflict_is_not_marked_complete_and_evidence_is_not_a_byline_column(self):
+        result = {'article_hash': 'x', 'authors': [], 'status': 'not_found', 'publisher_evidence': {'name': '검증신문'}}
+        for outcome in ['conflict', 'failed', 'updated']:
+            with self.subTest(outcome=outcome), patch('sys.argv', ['sync_media_registry', '--input', 'fixture.json', '--apply']), patch.object(sync_media_registry.Path, 'read_text', return_value='[{"article_hash":"x"}]'), patch.object(sync_media_registry.Path, 'write_text'), patch.object(sync_media_registry.Path, 'mkdir'), patch.object(sync_media_registry, 'inspect_article', return_value=result), patch.object(sync_media_registry, 'save_page_evidence', return_value=outcome), patch.object(supabase_store, 'request') as request:
+                sync_media_registry.main()
+                if outcome == 'updated':
+                    request.assert_called_once()
+                    self.assertNotIn('publisher_evidence', request.call_args.kwargs['json'][0])
+                else:
+                    request.assert_not_called()
+
     @patch("tools.sync_media_registry.socket.getaddrinfo", return_value=[(2, 1, 6, "", ("127.0.0.1", 80))])
     def test_private_addresses_rejected(self, _):
         with self.assertRaises(ValueError): public_url("https://internal.test/news")

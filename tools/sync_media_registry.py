@@ -124,10 +124,15 @@ def main():
         for result in pool.map(inspect_article, rows[:args.limit]):
             if args.apply:
                 evidence = result.get("publisher_evidence")
+                publisher_status = "unchanged"
                 if evidence:
-                    counts["publisher_" + save_page_evidence(result["article_hash"], evidence)] += 1
+                    publisher_status = save_page_evidence(result["article_hash"], evidence)
+                    counts["publisher_" + publisher_status] += 1
                 byline = {key: value for key, value in result.items() if key != "publisher_evidence"}
-                supabase_store.request("POST", "article_byline_evidence?on_conflict=article_hash", json=[byline])
+                # Do not mark the candidate complete before its publisher is
+                # saved; a concurrent update must remain eligible for retry.
+                if publisher_status not in {"conflict", "failed"}:
+                    supabase_store.request("POST", "article_byline_evidence?on_conflict=article_hash", json=[byline])
             results.append(result)
             counts[result["status"]] += 1
             if len(results) % 25 == 0:
