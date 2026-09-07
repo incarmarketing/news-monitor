@@ -143,18 +143,34 @@ def normalize_article(article: dict) -> dict:
 
 
 class _PublisherPage(HTMLParser):
-    """Read only site identity fields, never arbitrary article/body text."""
+    """Read site metadata and scoped copyright notices, not article prose."""
+
+    _void = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+    _blocks = {"br", "div", "footer", "li", "p", "section", "ul"}
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.site_names = set()
         self.titles = []
         self.schemas = []
+        self.copyright_lines = set()
+        self._frames = []
         self._title = False
         self._schema = None
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag in self._blocks:
+            self._copyright_text("\n")
+        identity = " ".join(str(attrs.get(key) or "") for key in ("id", "class", "role"))
+        blocked = (bool(self._frames and self._frames[-1]["blocked"])
+                   or tag in {"script", "style", "noscript", "template", "blockquote", "figure", "figcaption", "aside"}
+                   or bool(re.search(r"related|recommend|comment|photo|caption|advert|powered", identity, re.I)))
+        scoped = tag == "footer" or attrs.get("role") == "contentinfo" or bool(re.search(r"copyright|copy[-_]right|footer", identity, re.I))
+        if tag not in self._void:
+            if len(self._frames) >= 256:
+                raise ValueError("publisher_html_nesting_limit")
+            self._frames.append({"tag": tag, "blocked": blocked, "text": [] if scoped and not blocked else None})
         if tag == "meta" and (attrs.get("property") or attrs.get("name") or "").lower() == "og:site_name":
             name = valid_name(attrs.get("content"))
             if name:
@@ -165,6 +181,15 @@ class _PublisherPage(HTMLParser):
             self._schema = []
 
     def handle_endtag(self, tag):
+        if tag in self._blocks:
+            self._copyright_text("\n")
+        for index in range(len(self._frames) - 1, -1, -1):
+            if self._frames[index]["tag"] == tag:
+                for frame in self._frames[index:]:
+                    if frame["text"] is not None:
+                        self.copyright_lines.update(clean(line) for line in "".join(frame["text"]).splitlines() if clean(line))
+                del self._frames[index:]
+                break
         if tag == "title":
             self._title = False
         if tag == "script" and self._schema is not None:
@@ -175,14 +200,49 @@ class _PublisherPage(HTMLParser):
             self._schema = None
 
     def handle_data(self, data):
+        self._copyright_text(data)
         if self._title:
             self.titles.append(data)
         if self._schema is not None:
             self._schema.append(data)
 
+    def _copyright_text(self, text):
+        if self._frames and self._frames[-1]["blocked"]:
+            return
+        for frame in self._frames:
+            if frame["text"] is not None:
+                frame["text"].append(text)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in self._void:
+            self.handle_endtag(tag)
+
+
+def _copyright_owner(line: str) -> str:
+    """Require an ownership notice, never a loose publisher-name substring."""
+    if len(line) > 500:
+        return ""
+    text = clean(line).lstrip("[ ")
+    prefix = re.match(r"^(?:copyright(?:s)?\s*(?:©|ⓒ|\(c\))?|저작권자\s*(?:©|ⓒ)?|©|ⓒ)\s*", text, re.I)
+    if prefix:
+        owner = text[prefix.end():]
+        owner = re.sub(r"^\s*(?:\d{4}(?:\s*[-–]\s*\d{4})?\s*[.,]?\s*)", "", owner)
+        owner = re.split(r"all\s+rights|무단|재배포|unauthori[sz]ed|\s*[|\[\]]", owner, maxsplit=1, flags=re.I)[0]
+    else:
+        suffix = re.match(r"^([^©ⓒ]{2,60})\s*[©ⓒ]", text)
+        if not suffix:
+            return ""
+        owner = suffix.group(1)
+    owner = re.sub(r"^(?:주식회사|\(주\)|㈜)\s*", "", owner.strip())
+    owner = owner.strip(" .,;:[]()")
+    # Newsroom software, a photo agency and a parent company are not inferred
+    # from generic corporate text. New brands need corroborating site metadata.
+    return domain_name(owner) or valid_name(owner)
+
 
 def publisher_from_html(document: str, page_url: str) -> dict | None:
-    """Resolve unknown original sites from two agreeing identity signals.
+    """Resolve original sites from metadata or a verified copyright notice.
 
     Uses HTML already fetched for body enrichment, so publisher recovery adds
     no requests or collection latency from a second crawl. Portal site branding
@@ -193,12 +253,12 @@ def publisher_from_html(document: str, page_url: str) -> dict | None:
         return None
     page = _PublisherPage()
     try:
-        page.feed(document[:1_000_000])
+        page.feed(document[:2_000_000])
     except (ValueError, RecursionError):
         return None
-    if len(page.site_names) != 1:
+    if len(page.site_names) > 1:
         return None
-    name = next(iter(page.site_names))
+    name = next(iter(page.site_names), "")
     # An arbitrary phrase in an article title is not site-brand evidence.
     title_parts = {clean(part) for part in re.split(r"\s+[|\-–]\s+", "".join(page.titles))}
     title_agrees = name in title_parts
@@ -230,11 +290,28 @@ def publisher_from_html(document: str, page_url: str) -> dict | None:
         publisher_url = publisher.get("url") or publisher.get("@id")
         if candidate and (not publisher_url or host_of(publisher_url) == host):
             schema_names.add(candidate)
-    if schema_names and schema_names != {name}:
+    if len(schema_names) > 1 or (name and schema_names and schema_names != {name}):
         return None
-    if not title_agrees and schema_names != {name}:
+    owners = {_copyright_owner(line) for line in page.copyright_lines}
+    owners = {owner for owner in owners if owner and (owner in KNOWN_NAMES or owner in page.site_names or owner in schema_names)}
+    if len(owners) > 1:
         return None
-    return {"name": name, "method": "page_metadata", "host": host, "url": page_url}
+    if owners:
+        owner = next(iter(owners))
+        title_brands = {valid_name(part) for part in title_parts if valid_name(part) in KNOWN_NAMES}
+        identities = page.site_names | schema_names | title_brands
+        mapped = domain_name(page_url)
+        if (identities and identities != {owner}) or (mapped and mapped != owner):
+            return None
+        signals = ["copyright"]
+        if owner in page.site_names:
+            signals.append("og_site_name")
+        if owner in schema_names:
+            signals.append("schema_publisher")
+        return {"name": owner, "method": "page_copyright", "host": host, "url": page_url, "signals": signals}
+    if name and (title_agrees or schema_names == {name}):
+        return {"name": name, "method": "page_metadata", "host": host, "url": page_url}
+    return None
 
 
 def enrich_from_html(article: dict, document: str, page_url: str) -> None:

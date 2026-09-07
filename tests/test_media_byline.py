@@ -1,11 +1,12 @@
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from media_byline import extract_bylines
 from tools.sync_media_registry import inspect_article, public_url
 import supabase_store
 import publisher_identity
+from tools import sync_media_registry
 
 
 class MediaBylineTests(unittest.TestCase):
@@ -56,6 +57,26 @@ class MediaBylineTests(unittest.TestCase):
     def test_portal_not_fetched_or_guessed(self, fetch):
         self.assertEqual(inspect_article({"article_hash": "x", "link": "https://news.google.com/rss/articles/test"})["status"], "needs_original")
         fetch.assert_not_called()
+
+    def test_publisher_recovery_reuses_byline_fetch_without_inventing_reporter(self):
+        row = {'article_hash': 'x', 'source': publisher_identity.UNKNOWN, 'link': 'https://new-press.example/1'}
+        page = '<footer>Copyright © 디지털타임스.</footer>'
+        robots = Mock(can_fetch=lambda *args: True, crawl_delay=lambda *args: 1)
+        with patch.dict(sync_media_registry._robots, {'new-press.example': robots}, clear=True), patch.object(sync_media_registry, 'fetch_document', return_value=(page, row['link'])) as fetch, patch.object(sync_media_registry.time, 'sleep'):
+            result = inspect_article(row)
+        fetch.assert_called_once_with(row['link'])
+        self.assertEqual(result['publisher_evidence']['name'], '디지털타임스')
+        self.assertEqual(result['authors'], [])
+        self.assertEqual(result['status'], 'not_found')
+
+    def test_known_publisher_keeps_existing_byline_flow(self):
+        row = {'article_hash': 'x', 'source': '보험매일', 'link': 'https://new-press.example/1'}
+        robots = Mock(can_fetch=lambda *args: True, crawl_delay=lambda *args: 1)
+        with patch.dict(sync_media_registry._robots, {'new-press.example': robots}, clear=True), patch.object(sync_media_registry, 'fetch_document', return_value=('<meta name="author" content="홍길동">', row['link'])), patch.object(sync_media_registry.time, 'sleep'), patch.object(publisher_identity, 'publisher_from_html') as parse:
+            result = inspect_article(row)
+        parse.assert_not_called()
+        self.assertEqual(result['authors'][0]['name'], '홍길동')
+        self.assertNotIn('publisher_evidence', result)
 
     @patch("tools.sync_media_registry.socket.getaddrinfo", return_value=[(2, 1, 6, "", ("127.0.0.1", 80))])
     def test_private_addresses_rejected(self, _):

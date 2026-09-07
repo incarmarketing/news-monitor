@@ -10,7 +10,7 @@ import archiver
 import ai_briefing
 import supabase_store
 import requests
-from tools.backfill_publisher_identity import repair_patch, apply_row, scan_rows
+from tools.backfill_publisher_identity import repair_patch, apply_row, scan_rows, page_evidence_patch
 
 
 class PublisherIdentityTests(unittest.TestCase):
@@ -110,6 +110,88 @@ class PublisherIdentityTests(unittest.TestCase):
             publishers.enrich_from_html(article, "irrelevant", article["link"])
         parse.assert_not_called()
         self.assertEqual(article["source"], "보험매일")
+
+    def test_copyright_alone_resolves_a_known_publisher(self):
+        for notice in [
+            'Copyright © 디지털타임스. 무단전재 및 재배포 금지.',
+            '[저작권자 ⓒ디지털타임스, 무단 전재-재배포, AI 학습 및 활용 금지]',
+            'Copyright (c) 2026 (주)디지털타임스. All rights reserved.',
+            '디지털타임스 © dt.co.kr All rights reserved.',
+        ]:
+            with self.subTest(notice=notice):
+                page = f'<footer><p>{notice}</p></footer>'
+                found = publishers.publisher_from_html(page, 'https://new-press.example/news/1')
+                self.assertEqual(found['name'], '디지털타임스')
+                self.assertEqual(found['method'], 'page_copyright')
+
+    def test_copyright_inline_elements_and_body_footer(self):
+        page = '<div class="article-copyright">Copyright &copy; <strong>디지털타임스</strong>. 무단전재 및 재배포 금지.</div>'
+        self.assertEqual(publishers.publisher_from_html(page, 'https://new-press.example/1')['name'], '디지털타임스')
+
+    def test_new_publisher_copyright_requires_metadata_agreement(self):
+        footer = '<ul class="copyright"><li>새로운검증신문 © <a href="https://new-press.example">new-press.example</a> All rights reserved.</li></ul>'
+        page = '<meta property="og:site_name" content="새로운검증신문">' + footer
+        self.assertEqual(publishers.publisher_from_html(page, 'https://new-press.example/news/1')['name'], '새로운검증신문')
+        self.assertIsNone(publishers.publisher_from_html(footer, 'https://new-press.example/news/1'))
+        unknown = '<footer>Copyright © 검증전매체. All rights reserved.</footer>'
+        self.assertIsNone(publishers.publisher_from_html(unknown, 'https://new-press.example/1'))
+
+    def test_copyright_in_body_quotes_photos_scripts_and_comments_ignored(self):
+        notice = '<div class="copyright">Copyright © 디지털타임스. All rights reserved.</div>'
+        for page in [
+            '<p>디지털타임스 기사를 인용했습니다.</p>',
+            '<blockquote>' + notice + '</blockquote>',
+            '<figure>' + notice + '</figure>',
+            '<footer><span class="photo-credit">Copyright © 디지털타임스</span></footer>',
+            '<script>' + notice + '</script>',
+            '<!--' + notice + '-->',
+            '<aside>' + notice + '</aside>',
+            '<div class="related-articles">' + notice + '</div>',
+        ]:
+            with self.subTest(page=page):
+                self.assertIsNone(publishers.publisher_from_html(page, 'https://new-press.example/1'))
+
+    def test_portal_copyright_never_becomes_a_publisher(self):
+        for notice in ['Copyright © NAVER Corp.', 'Copyright © Google', 'Copyright © 디지털타임스']:
+            page = '<footer>' + notice + '</footer>'
+            self.assertIsNone(publishers.publisher_from_html(page, 'https://news.google.com/rss/1'))
+
+    def test_conflicting_footer_parent_brand_and_software_not_used(self):
+        footer = '<footer><p>Copyright © 디지털타임스.</p></footer>'
+        self.assertIsNone(publishers.publisher_from_html(footer, 'https://fins.co.kr/news/1'))
+        conflict = '<meta property="og:site_name" content="보험매일"><title>기사 - 보험매일</title>' + footer
+        self.assertIsNone(publishers.publisher_from_html(conflict, 'https://new-press.example/1'))
+        self.assertIsNone(publishers.publisher_from_html('<title>기사 - 보험매일</title>' + footer, 'https://new-press.example/1'))
+        software = '<footer>Copyright © ND소프트. All rights reserved.</footer>'
+        self.assertIsNone(publishers.publisher_from_html(software, 'https://new-press.example/1'))
+
+    def test_footer_is_read_after_large_advertising_payload(self):
+        page = '<script>' + (' ' * 1_100_000) + '</script><footer>Copyright © 디지털타임스.</footer>'
+        self.assertEqual(publishers.publisher_from_html(page, 'https://new-press.example/1')['name'], '디지털타임스')
+
+    def test_excessive_html_nesting_is_bounded(self):
+        page = '<div>' * 1000 + '<footer>Copyright © 디지털타임스.</footer>'
+        self.assertIsNone(publishers.publisher_from_html(page, 'https://new-press.example/1'))
+
+    def test_copyright_update_uses_the_same_concurrency_guard(self):
+        evidence = publishers.publisher_from_html('<footer>Copyright © 디지털타임스.</footer>', 'https://new-press.example/1')
+        row = {'id': 4, 'source': publishers.UNKNOWN, 'updated_at': '2026-09-07T01:00:00Z'}
+        with patch.object(supabase_store, 'request', return_value=Mock(json=lambda: [])) as request:
+            self.assertEqual(apply_row(row, evidence), 'conflict')
+        self.assertIn('updated_at=eq.2026-09-07T01%3A00%3A00Z', request.call_args.args[1])
+        self.assertEqual(json.loads(request.call_args.kwargs['data'])['source'], '디지털타임스')
+
+    def test_copyright_enrichment_preserves_raw_and_manual_correction(self):
+        evidence = publishers.publisher_from_html('<footer>Copyright © 디지털타임스.</footer>', 'https://new-press.example/1')
+        row = {'id': 4, 'source': publishers.UNKNOWN, 'raw': {'_tone': 'positive', 'pub_date': '2026-09-01'}}
+        patch_value = page_evidence_patch(row, evidence)
+        self.assertEqual(patch_value['source'], '디지털타임스')
+        self.assertEqual(patch_value['raw']['_tone'], 'positive')
+        self.assertEqual(patch_value['raw']['pub_date'], '2026-09-01')
+        self.assertEqual(patch_value['raw']['publisher_evidence']['method'], 'page_copyright')
+        self.assertIsNone(page_evidence_patch({**row, 'raw': {'publisher_manual_override': '보험매일'}}, evidence))
+        self.assertIsNone(page_evidence_patch(row, {**evidence, 'url': 'https://news.google.com/rss/1'}))
+        self.assertIsNone(page_evidence_patch({**row, **patch_value}, evidence))
 
     def test_reuses_body_fetch_and_preserves_identity_evidence_through_storage(self):
         article = {"source": publishers.UNKNOWN, "source_raw": "new-press.example", "link": "https://new-press.example/1", "title": "보험사기 제재"}

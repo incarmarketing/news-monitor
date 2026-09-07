@@ -1,0 +1,30 @@
+{
+  "checked_on": "2026-09-07",
+  "scope": "Publisher identity only. No changes to classification, tone, publication time or alerts.",
+  "missing_signal": "The HTML parser previously ignored scoped copyright notices and required og:site_name with title/schema agreement.",
+  "verification": {
+    "baseline_unresolved": 268,
+    "historical_candidates_inspected": 18,
+    "copyright_verified_articles": 2,
+    "already_correct_digitaltimes_articles": 59,
+    "sample_original_url": "https://www.dt.co.kr/article/12082231?ref=naver"
+  },
+  "domain_additions": [
+    {
+      "host": "amenews.kr",
+      "name": "신소재경제신문",
+      "signals": ["og:site_name", "copyright"],
+      "evidence_urls": [
+        "http://amenews.kr/news/view.php?idx=67163",
+        "http://amenews.kr/news/view.php?idx=66979"
+      ]
+    }
+  ],
+  "guards": [
+    "Reject portal page branding, conflicting publisher identities and unverified copyright owners.",
+    "Ignore article prose, quotations, photo credits, related stories and scripts.",
+    "Preserve manual publisher corrections and concurrently edited article fields.",
+    "Reuse already-fetched original HTML; no extra requests in the risk watch.",
+    "Keep unresolved portal originals, inaccessible pages and ambiguous brands unresolved."
+  ]
+}

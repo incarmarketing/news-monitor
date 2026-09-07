@@ -46,8 +46,23 @@ def repair_patch(row):
     }
 
 
-def apply_row(row):
-    patch = repair_patch(row)
+def page_evidence_patch(row, evidence):
+    if publishers.resolve_publisher(row)["name"] != publishers.UNKNOWN or not isinstance(evidence, dict):
+        return None
+    name = publishers.valid_name(evidence.get("name"))
+    url = evidence.get("url", "")
+    if (not name or evidence.get("method") not in {"page_metadata", "page_copyright"}
+            or not publishers.host_of(url) or publishers.is_portal(url)
+            or evidence.get("host") != publishers.host_of(url)):
+        return None
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    return {"source": name, "raw": {**raw,
+        "source_raw": raw.get("source_raw", raw.get("source") or row.get("source", "")),
+        "source": name, "publisher_resolution": evidence, "publisher_evidence": evidence}}
+
+
+def apply_row(row, evidence=None):
+    patch = page_evidence_patch(row, evidence) if evidence is not None else repair_patch(row)
     if not patch:
         return "unchanged"
     if not row.get("updated_at"):
@@ -71,6 +86,15 @@ def apply_row(row):
                 time.sleep(2 ** attempt)
     print(f"Publisher repair deferred after transient errors: article {row['id']}", file=sys.stderr)
     return "failed"
+
+
+def save_page_evidence(article_hash, evidence):
+    # Read the latest row after crawling; preserve concurrent edits with the
+    # same compare-and-set guard as the offline publisher repair.
+    rows = supabase_store.request(
+        "GET", f"news_articles?article_hash=eq.{quote(article_hash, safe='')}&select=id,title,link,source,raw,updated_at&limit=1"
+    ).json()
+    return apply_row(rows[0], evidence) if rows else "unchanged"
 
 
 def main():

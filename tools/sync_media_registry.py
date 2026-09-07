@@ -21,6 +21,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from media_byline import VERSION, extract_bylines
+from tools.backfill_publisher_identity import save_page_evidence
 import publisher_identity
 import supabase_store
 
@@ -97,6 +98,10 @@ def inspect_article(row):
             time.sleep(delay)
             document, final_url = fetch_document(url)
             result["evidence_url"] = final_url
+            if publisher_identity.resolve_publisher(row)["name"] == publisher_identity.UNKNOWN:
+                evidence = publisher_identity.publisher_from_html(document, final_url)
+                if evidence:
+                    result["publisher_evidence"] = evidence
             result["authors"] = extract_bylines(document)
             result["status"] = "verified" if result["authors"] else "not_found"
     except (requests.RequestException, ValueError, OSError):
@@ -118,7 +123,11 @@ def main():
     with ThreadPoolExecutor(max_workers=4) as pool:
         for result in pool.map(inspect_article, rows[:args.limit]):
             if args.apply:
-                supabase_store.request("POST", "article_byline_evidence?on_conflict=article_hash", json=[result])
+                evidence = result.get("publisher_evidence")
+                if evidence:
+                    counts["publisher_" + save_page_evidence(result["article_hash"], evidence)] += 1
+                byline = {key: value for key, value in result.items() if key != "publisher_evidence"}
+                supabase_store.request("POST", "article_byline_evidence?on_conflict=article_hash", json=[byline])
             results.append(result)
             counts[result["status"]] += 1
             if len(results) % 25 == 0:
