@@ -364,7 +364,7 @@ export async function savePressAlias(host, pressName) {
   const cleanHost = String(host || "").trim().toLowerCase().replace(/^www\./, "");
   const cleanName = String(pressName || "").trim();
   if (!cleanHost || !cleanName) throw new Error("host_and_press_required");
-  if (/(^|\.)(google\.[a-z.]+|naver\.com|daum\.net|nate\.com|googleusercontent\.com|bing\.com|yahoo\.com)$/.test(cleanHost)) {
+  if (/(^|\.)(google\.[a-z.]+|naver\.com|daum\.net|nate\.com|msn\.com|googleusercontent\.com|bing\.com|yahoo\.com)$/.test(cleanHost)) {
     throw new Error("portal_requires_article_resolution");
   }
   return writeRest(

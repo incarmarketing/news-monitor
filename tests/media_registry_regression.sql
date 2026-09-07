@@ -16,6 +16,7 @@ update public.news_articles set source='google',raw='{}' where article_hash='reg
 do $$
 declare v jsonb;
 begin
+  if not public.media_portal_host('www.msn.com') or not public.media_publisher_unknown('네이버 뉴스') then raise exception 'portal registry parity failed'; end if;
   if (select source from public.news_articles where article_hash='registry-test-a') <> '검증언론' then raise exception 'alias backfill failed'; end if;
   if (select source from public.news_articles where article_hash='registry-test-c') <> '기사별언론' then raise exception 'article override lost'; end if;
   if (select raw->>'publisher_manual_override' from public.news_articles where article_hash='registry-test-c') <> '기사별언론' then raise exception 'override provenance lost'; end if;
