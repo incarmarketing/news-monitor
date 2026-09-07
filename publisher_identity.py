@@ -76,8 +76,11 @@ def domain_name(value: object, aliases_only: bool = False) -> str:
 
 def title_publisher(title: object) -> str:
     text = clean(title)
-    match = re.search(r"\s[-–]\s([^-–\n|]{2,60})$", text)
-    candidates = [match.group(1)] if match else []
+    # Only spaced dashes separate the headline from its source. A hyphen
+    # inside an official domain (g-enews.com) belongs to the publisher.
+    parts = re.split(r"\s[-–]\s", text)
+    suffix = parts[-1] if len(parts) > 1 else ""
+    candidates = [suffix] if re.fullmatch(r"[^\n|]{2,60}", suffix) else []
     bracket = re.match(r"^\[([^\]]{2,30})\]", text)
     if bracket:
         # Bracket text is commonly a column name, so require a known publisher.

@@ -1,0 +1,899 @@
+{
+  "checked_on": "2026-09-07",
+  "scope": "Recheck 266 unresolved publisher labels. No collection, alert delivery, classification or article date changes.",
+  "before": {
+    "unresolved": 266,
+    "own_unresolved": 27
+  },
+  "after": {
+    "unresolved": 224,
+    "own_unresolved": 8
+  },
+  "applied": {
+    "articles": 42,
+    "own_articles": 19,
+    "automatic_page_identity": 20,
+    "reviewed_article_identity": 22,
+    "verified_domain_aliases": 17
+  },
+  "verification": {
+    "rollback_repair_passed": true,
+    "publisher_only_hash_checks": 42,
+    "recollection_identity_preserved": 42,
+    "public_api_unresolved": 224,
+    "live_browser_passed": true,
+    "own_sbs_golf_articles_visible": 5,
+    "python_tests": 309,
+    "javascript_tests": 96,
+    "build_passed": true
+  },
+  "remaining_reasons": {
+    "portal_original_publisher_not_verified": 160,
+    "unregistered_source_name_needs_independent_confirmation": 41,
+    "distributor_or_non_news_source_needs_review": 10,
+    "original_site_access_or_identity_incomplete": 7,
+    "source_domain_identity_not_verified": 6
+  },
+  "domain_aliases": [
+    {
+      "host": "g-enews.com",
+      "press_name": "글로벌이코노믹"
+    },
+    {
+      "host": "m-i.kr",
+      "press_name": "매일일보"
+    },
+    {
+      "host": "newsnjeju.com",
+      "press_name": "뉴스N제주"
+    },
+    {
+      "host": "datatooza.com",
+      "press_name": "데이터투자"
+    },
+    {
+      "host": "hnrsm.com",
+      "press_name": "하나로신문/일보"
+    },
+    {
+      "host": "dandinews.com",
+      "press_name": "단디뉴스"
+    },
+    {
+      "host": "2news.co.kr",
+      "press_name": "에너지뉴스"
+    },
+    {
+      "host": "asportstv.kr",
+      "press_name": "AsportsNEWS"
+    },
+    {
+      "host": "foodnews.co.kr",
+      "press_name": "식품저널 foodnews"
+    },
+    {
+      "host": "e-science.co.kr",
+      "press_name": "이코노미사이언스"
+    },
+    {
+      "host": "hdnews.co.kr",
+      "press_name": "현대경제"
+    },
+    {
+      "host": "rnx.kr",
+      "press_name": "RNX"
+    },
+    {
+      "host": "carmgz.kr",
+      "press_name": "카매거진 CARMGZ"
+    },
+    {
+      "host": "yjb0802.com",
+      "press_name": "정경시사 FOCUS"
+    },
+    {
+      "host": "jabon.co.kr",
+      "press_name": "자본시장뉴스"
+    },
+    {
+      "host": "issueon.co.kr",
+      "press_name": "ISSUE ON (이슈온)"
+    },
+    {
+      "host": "kmctimes.com",
+      "press_name": "weekly기독교타임즈"
+    }
+  ],
+  "repairs": [
+    {
+      "id": 162251,
+      "article_hash": "2d6e792ee17a5ff494f069c946a4adcba8fa34e224dabca5ea386ac621c115dc",
+      "title": "김민솔 vs 서교림, 2006년생 동갑내기의 매서운 돌풍! 2026 KLPGA투어 상반...",
+      "after": "SBS Golf",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "SBS Golf",
+        "method": "reviewed_article_identity",
+        "host": "m.programs.sbs.co.kr",
+        "url": "https://m.programs.sbs.co.kr/sbsgolf/golfnews/article/78652/G20000002475",
+        "signals": [
+          "same_article_id_redirect",
+          "golf_news_route",
+          "official_site_title"
+        ],
+        "observed_title": "SBS Golf 뉴스 : 전체 뉴스 : 김민솔 vs 서교림, 2006년생 동갑내기의 매서운 돌풍! 2026 KLPGA투어 상반기 총결산 [KLPGA] : SBS Golf"
+      }
+    },
+    {
+      "id": 22637,
+      "article_hash": "f1f57693b320caeb396e35fbe29fcb68b8f1ad5b6ebdf4569979eb1ee933505c",
+      "title": "‘맥콜 · 모나 용평 오픈 with SBS Golf’ 26일 개막 ... ‘동갑내기‘ ...",
+      "after": "SBS Golf",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "SBS Golf",
+        "method": "reviewed_article_identity",
+        "host": "m.programs.sbs.co.kr",
+        "url": "https://m.programs.sbs.co.kr/sbsgolf/golfnews/article/78652/G20000002432",
+        "signals": [
+          "same_article_id_redirect",
+          "golf_news_route",
+          "official_site_title"
+        ],
+        "observed_title": "SBS Golf 뉴스 : 전체 뉴스 : ‘맥콜 · 모나 용평 오픈 with SBS Golf’ 26일 개막 ... ‘동갑내기‘ 서교림 vs 김민솔 시즌 3승 경쟁 [KLPGA] : SBS Golf"
+      }
+    },
+    {
+      "id": 21610,
+      "article_hash": "a901f8199ce9bbe2a6d8b761928eb1a255a8a31b8989d4b6c0d658e6fee3baa8",
+      "title": "‘2주 만에 또 정상’ 서교림, “목표는 다승왕, 기회 오면 반드시 잡겠...",
+      "after": "SBS Golf",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "SBS Golf",
+        "method": "reviewed_article_identity",
+        "host": "m.programs.sbs.co.kr",
+        "url": "https://m.programs.sbs.co.kr/sbsgolf/golfnews/article/78652/G20000002430",
+        "signals": [
+          "same_article_id_redirect",
+          "golf_news_route",
+          "official_site_title"
+        ],
+        "observed_title": "SBS Golf 뉴스 : 전체 뉴스 : ‘2주 만에 또 정상’ 서교림, “목표는 다승왕, 기회 오면 반드시 잡겠다” [KLPGA] : SBS Golf"
+      }
+    },
+    {
+      "id": 20388,
+      "article_hash": "c59f2cb1a862ebe790102ffc045b46457fddcf2c61fe293f1fb758c81cf0187b",
+      "title": "‘400경기 출전’ 안송이, 최다 출전 기록 축하식 진행 “500경기 달성이...",
+      "after": "SBS Golf",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "SBS Golf",
+        "method": "reviewed_article_identity",
+        "host": "m.programs.sbs.co.kr",
+        "url": "https://m.programs.sbs.co.kr/sbsgolf/golfnews/article/78652/G20000002427",
+        "signals": [
+          "same_article_id_redirect",
+          "golf_news_route",
+          "official_site_title"
+        ],
+        "observed_title": "SBS Golf 뉴스 : 전체 뉴스 : ‘400경기 출전’ 안송이, 최다 출전 기록 축하식 진행 “500경기 달성이 새로운 목표” [KLPGA] : SBS Golf"
+      }
+    },
+    {
+      "id": 18996,
+      "article_hash": "aa7447f482a20e4b64fd7dd6f37706ed5c1770d7dc201d53ae855082b8835d68",
+      "title": "‘디펜딩 챔피언‘ 노승희 vs ‘시즌 3승 도전‘ 김민솔 ... ‘인카금융...",
+      "after": "SBS Golf",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "SBS Golf",
+        "method": "reviewed_article_identity",
+        "host": "m.programs.sbs.co.kr",
+        "url": "https://m.programs.sbs.co.kr/sbsgolf/golfnews/article/78652/G20000002422",
+        "signals": [
+          "same_article_id_redirect",
+          "golf_news_route",
+          "official_site_title"
+        ],
+        "observed_title": "SBS Golf 뉴스 : 전체 뉴스 : ‘디펜딩 챔피언‘ 노승희 vs ‘시즌 3승 도전‘ 김민솔 ... ‘인카금융 더헤븐 마스터즈’ 19일 개막 [KLPGA] : SBS Golf"
+      }
+    },
+    {
+      "id": 7208,
+      "article_hash": "7de3ae617bfa5a9d852dace3e3c9b97093911e22d4741fc9df1c8b675b88c257",
+      "title": "KPGA 선수권대회 1R 조편성 발표...옥태훈-양지호-함정우, 신상훈-장유빈...",
+      "after": "SBS Golf",
+      "own_mentioned": false,
+      "manual_override": true,
+      "evidence": {
+        "name": "SBS Golf",
+        "method": "reviewed_article_identity",
+        "host": "m.programs.sbs.co.kr",
+        "url": "https://m.programs.sbs.co.kr/sbsgolf/golfnews/article/78652/G20000002401",
+        "signals": [
+          "same_article_id_redirect",
+          "golf_news_route",
+          "official_site_title"
+        ],
+        "observed_title": "SBS Golf 뉴스 : 전체 뉴스 : KPGA 선수권대회 1R 조편성 발표...옥태훈-양지호-함정우, 신상훈-장유빈-박상현 동반 플레이 [KPGA] : SBS Golf"
+      }
+    },
+    {
+      "id": 1161,
+      "article_hash": "90533d89de928b906f3910a4eb874395f28ae641fbf7c52a25973dd13c5d9f49",
+      "title": "‘제69회 KPGA 선수권대회 with A-ONE CC’ 디펜딩 챔피언 옥태훈, 국내 ...",
+      "after": "SBS Golf",
+      "own_mentioned": false,
+      "manual_override": true,
+      "evidence": {
+        "name": "SBS Golf",
+        "method": "reviewed_article_identity",
+        "host": "m.programs.sbs.co.kr",
+        "url": "https://m.programs.sbs.co.kr/sbsgolf/golfnews/article/78652/G20000002386",
+        "signals": [
+          "same_article_id_redirect",
+          "golf_news_route",
+          "official_site_title"
+        ],
+        "observed_title": "SBS Golf 뉴스 : 전체 뉴스 : ‘제69회 KPGA 선수권대회 with A-ONE CC’ 디펜딩 챔피언 옥태훈, 국내 최고 권위 대회서 올 시즌 첫 승 노린다 : SBS Golf"
+      }
+    },
+    {
+      "id": 250002,
+      "article_hash": "42ade470d72accf2d9fbfafda00b3ea63c2ce6f24ee1de6e2e93e8b29a3e2e5b",
+      "title": "보험업계·지자체, 소상공인 100만명에 무료 상생보험 - g-enews.com",
+      "after": "글로벌이코노믹",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "글로벌이코노믹",
+        "method": "page_copyright",
+        "host": "g-enews.com",
+        "url": "https://g-enews.com/",
+        "signals": [
+          "copyright"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 183369,
+      "article_hash": "44219cf219c9e7f9190a6d0b6dd7e07a17fad71cab56fe73d4f7b83c00bd20c0",
+      "title": "경찰도 한방치료 '정조준'…보험업계 '촉각' - m-i.kr",
+      "after": "매일일보",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "매일일보",
+        "method": "page_copyright",
+        "host": "m-i.kr",
+        "url": "https://m-i.kr/",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 182252,
+      "article_hash": "de0052aa24607dc914efca4c60ce4da4faeb681ce4bb896235a3b34bb9013334",
+      "title": "성산일출봉농협, NH농협손해보험 '헤아림 인증직원' 3명 배출 - newsnjeju.com",
+      "after": "뉴스N제주",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "뉴스N제주",
+        "method": "page_copyright",
+        "host": "newsnjeju.com",
+        "url": "https://newsnjeju.com/",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 154760,
+      "article_hash": "c77a1d37924f42ebf09d27c2180fe57296dd473710d66a0e49424169ec7a87f8",
+      "title": "유종목 상무, 한화손해보험 주식 800주 ↑…지분율 0.01% - datatooza.com",
+      "after": "데이터투자",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "데이터투자",
+        "method": "page_copyright",
+        "host": "datatooza.com",
+        "url": "https://datatooza.com/",
+        "signals": [
+          "copyright"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 11360,
+      "article_hash": "18de2a7a3023008d7fdf7599a21d46c52dc85f11b2a038870806a2aa8b24752d",
+      "title": "신둔농협·NH농협손해보험, 영농철 맞아 ‘농촌 일손돕기’ 전개 - hnrsm.com",
+      "after": "하나로신문/일보",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "하나로신문/일보",
+        "method": "page_metadata",
+        "host": "hnrsm.com",
+        "url": "https://hnrsm.com/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 251441,
+      "article_hash": "5fd766cc4112cf05aa6c02d26918c78c86c930ed51b2d3892d7361a11e20a694",
+      "title": "경남도, 소상공인 상생보험(생명보험) 지원사업 개시 - dandinews.com",
+      "after": "단디뉴스",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "단디뉴스",
+        "method": "page_copyright",
+        "host": "dandinews.com",
+        "url": "https://www.dandinews.com/",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 242300,
+      "article_hash": "ee694be29e39a32decbbce68b90ff27adfbcfc44dda20279c6bf2abffc61fe34",
+      "title": "KB손해보험, 저소득 어르신 대상 식료품 정기 배송 서비스 전국 확대 - 2news.co.kr",
+      "after": "에너지뉴스",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "에너지뉴스",
+        "method": "page_metadata",
+        "host": "2news.co.kr",
+        "url": "https://www.2news.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 20857,
+      "article_hash": "eee1b34db736e98342acc1b5ba849e8edc8a6fe3343376e4f86f86e1d299b2b2",
+      "title": "메가박스중앙 회생 절차 신청에 영화계 긴장 - 2news.co.kr",
+      "after": "에너지뉴스",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "에너지뉴스",
+        "method": "page_metadata",
+        "host": "2news.co.kr",
+        "url": "https://www.2news.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 229417,
+      "article_hash": "b63a4aab2c804195b3d7df2f28b0716d4871a091269d02b67ee245d0738b13e0",
+      "title": "'안방 잃은' KB손해보험 떠돌이 생활… 페퍼 인수한 '광주 SOOP' 첫선 - asportstv.kr",
+      "after": "AsportsNEWS",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "AsportsNEWS",
+        "method": "page_metadata",
+        "host": "asportstv.kr",
+        "url": "https://www.asportstv.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 228201,
+      "article_hash": "42858d1fc5608a2eeae51e1f72ec258d713795d624a7a0adb07acd62f8505764",
+      "title": "대상웰라이프, 한화생명금융서비스와 통합 라이프케어 모델 개발 - foodnews.co.kr",
+      "after": "식품저널 foodnews",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "식품저널 foodnews",
+        "method": "page_copyright",
+        "host": "foodnews.co.kr",
+        "url": "https://www.foodnews.co.kr/",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 215460,
+      "article_hash": "b1d592c5bd85845e7ce0c56db768d74cc9dc9284f56958b50d666fcccb96bed8",
+      "title": "생명보험사회공헌재단 \"자살사망자 96.6% 경고신호…주변은 23.8%만 알아챘다\" - e-science.co.kr",
+      "after": "이코노미사이언스",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "이코노미사이언스",
+        "method": "page_metadata",
+        "host": "e-science.co.kr",
+        "url": "https://www.e-science.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 154752,
+      "article_hash": "fc1821c035977417aa50213cfde0eaa7d725a3e9c06d80fb25b3587ff58d7ad1",
+      "title": "치아보험 중복 가입시켜 22억 챙긴 보험사기 적발…치과·보험설계사 조직적 공모 - hdnews.co.kr",
+      "after": "현대경제",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "현대경제",
+        "method": "page_metadata",
+        "host": "hdnews.co.kr",
+        "url": "https://www.hdnews.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 87440,
+      "article_hash": "b91d95d41ca070d6b058f7f26eb356f9ce8d259d58007c5d6803c10cee3b9838",
+      "title": "[탐정들의 영업비밀] '남편 사망보험금'으로 식당 차려 대박난 女, 실은 '보험 설계사' 남편 선배와 불륜? \"둘이 짰다\" 시댁 충격 주장! - rnx.kr",
+      "after": "RNX",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "RNX",
+        "method": "page_copyright",
+        "host": "rnx.kr",
+        "url": "https://www.rnx.kr/",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 22285,
+      "article_hash": "b59934eda3d4843fc531104bdb79edefac525d23b5d85c452d2bf11465702198",
+      "title": "쏘카-AXA 손해보험 MOU 체결… 보험·금융으로 ‘풀스택 모빌리티’ 완성 - carmgz.kr",
+      "after": "카매거진 CARMGZ",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "카매거진 CARMGZ",
+        "method": "page_metadata",
+        "host": "carmgz.kr",
+        "url": "https://www.carmgz.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 21411,
+      "article_hash": "80537de5a81bc8fd2716b4c9ae5c43cf9375c512cbee2f2b5aec7f4f9d010ee8",
+      "title": "”하나손해보험회사, 후유장애 및 수술비 왜? 지급하지 않고있나?“ - yjb0802.com",
+      "after": "정경시사 FOCUS",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "정경시사 FOCUS",
+        "method": "page_copyright",
+        "host": "yjb0802.com",
+        "url": "http://www.yjb0802.com/",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ],
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 19496,
+      "article_hash": "aed4b72c25f5dc1c66574349a3e1fbdc7e36d08d8b5672626d50415e9eae6af7",
+      "title": "빚투에 금융·보험 대출 180조 최대, 보험사 자본확충 직격 - jabon.co.kr",
+      "after": "자본시장뉴스",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "자본시장뉴스",
+        "method": "page_metadata",
+        "host": "jabon.co.kr",
+        "url": "https://www.jabon.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 18134,
+      "article_hash": "a691492e9f8ce77ae11c738a27fbed6392bff9ac983ef9c7571df5a785286b61",
+      "title": "[부고] 생명보험협회 유제상 부장 모친상 - jabon.co.kr",
+      "after": "자본시장뉴스",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "자본시장뉴스",
+        "method": "page_metadata",
+        "host": "jabon.co.kr",
+        "url": "https://www.jabon.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 1945,
+      "article_hash": "bb764e8ec0dd0d889fcc5336007e97042e33c0e2e23027074946db7828e73e52",
+      "title": "30년 잠자던 신용생명보험 깨운다…6개 지자체 60억 투입 - jabon.co.kr",
+      "after": "자본시장뉴스",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "자본시장뉴스",
+        "method": "page_metadata",
+        "host": "jabon.co.kr",
+        "url": "https://www.jabon.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 15425,
+      "article_hash": "34f5b134931aee9f2c7cf18ba0f3d100a737ce0218e4acc45451400874866d75",
+      "title": "이마트, DB손해보험과 손잡고 반려동물 맞춤형 ‘올라 펫보험’ 출시 - issueon.co.kr",
+      "after": "ISSUE ON (이슈온)",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "ISSUE ON (이슈온)",
+        "method": "page_metadata",
+        "host": "issueon.co.kr",
+        "url": "https://www.issueon.co.kr/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 20,
+      "article_hash": "9b46f3a911e10dbe14ec2bfbd3557c87437f504d53cdfc2439aba8c6b49d9de8",
+      "title": "미래에셋운용 ‘TIGER 미국나스닥100’ 순자산 10조 돌파···미래생명보험에 500억 추가 출자 - kmctimes.com",
+      "after": "weekly기독교타임즈",
+      "own_mentioned": false,
+      "manual_override": false,
+      "evidence": {
+        "name": "weekly기독교타임즈",
+        "method": "page_metadata",
+        "host": "kmctimes.com",
+        "url": "https://www.kmctimes.com/",
+        "article_match": "explicit_title_source_domain"
+      }
+    },
+    {
+      "id": 88792,
+      "article_hash": "ee6c955ec0e604e066febfeaaa5f2d888c222070c5d8187fc9a0fb75e0dc0d5a",
+      "title": "독립 보험대리점 7월 브랜드평판 1위 인카금융서비스…2위 한화생명금융서비스 - 네이트",
+      "after": "조세일보",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "조세일보",
+        "url": "https://news.nate.com/view/20260710n16787",
+        "published_local": "2026-07-10 13:41",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline",
+          "copyright_owner"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "news.nate.com",
+        "matched_title": "독립 보험대리점 7월 브랜드평판 1위 인카금융서비스…2위 한화생명금융서비스"
+      }
+    },
+    {
+      "id": 21277,
+      "article_hash": "f6d4d2aaed272d1ec12c720f23a5d79d3b78aa818a474e1bc803d422836ea9df",
+      "title": "[포토]'인카금융 더헤븐 마스터즈'기부금 전달식 - 네이트",
+      "after": "이데일리",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "이데일리",
+        "url": "https://sports.news.nate.com/view/20260621n12779",
+        "published_local": "2026-06-21 17:55",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "sports.news.nate.com",
+        "matched_title": "[포토]'인카금융 더헤븐 마스터즈'기부금 전달식"
+      }
+    },
+    {
+      "id": 21276,
+      "article_hash": "9d35d060157f2c359fee7027dad073a2b9fa27df209ddb983f3ca6dbd821288a",
+      "title": "인카금융더헤븐 마스터즈 우승 차지한 서교림 - 네이트",
+      "after": "뉴시스",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "뉴시스",
+        "url": "https://m.news.nate.com/view/20260621n12204",
+        "published_local": "2026-06-21 17:30",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline",
+          "copyright_owner"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "m.news.nate.com",
+        "matched_title": "인카금융더헤븐 마스터즈 우승 차지한 서교림"
+      }
+    },
+    {
+      "id": 21226,
+      "article_hash": "44c18997e6552ad0c458cc7244166e6f77bdf3d7a1e8854f9e095a91d97e4434",
+      "title": "'첫 승은 시작이었다' 서교림, 인카금융 '와이어 투 와이어' 우승…2주 만에 '시즌 2승' 달성 [SS시선집중] - 네이트",
+      "after": "스포츠서울",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "스포츠서울",
+        "url": "https://sports.news.nate.com/view/20260621n10591",
+        "published_local": "2026-06-21 16:00",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "sports.news.nate.com",
+        "matched_title": "'첫 승은 시작이었다' 서교림, 인카금융 '와이어 투 와이어' 우승…2주 만에 '시즌 2승' 달성 [SS시선집중]"
+      }
+    },
+    {
+      "id": 20618,
+      "article_hash": "71bbfbb93e54e9f8f8e095f6d19e6af84026a5cf2778a5d61bde21abc598ef10",
+      "title": "[KLPGA] 서교림, 김민별 7언더, 인카금융 더헤븐 마스터즈 첫 날 공동 선두 - 네이트",
+      "after": "뉴스핌",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "뉴스핌",
+        "url": "https://sports.news.nate.com/view/20260619n31074",
+        "published_local": "2026-06-19 20:57",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "sports.news.nate.com",
+        "matched_title": "[KLPGA] 서교림, 김민별 7언더, 인카금융 더헤븐 마스터즈 첫 날 공동 선두"
+      }
+    },
+    {
+      "id": 20140,
+      "article_hash": "89dfc3ab1a62d926f6a238f0bd81a0c5542a9bc6f5da24cdeaa464168cb5daec",
+      "title": "KLPGA 인카금융 더헤븐 마스터즈 관전포인트 3가지…김민솔·배소현·박현경·노승희·유현조·이다연·김수지 등 - v.daum.net",
+      "after": "골프한국",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "골프한국",
+        "url": "https://v.daum.net/v/45mv8AAiyL",
+        "published_local": "2026-06-19 08:46",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline",
+          "publisher_website_credit"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "v.daum.net",
+        "matched_title": "KLPGA 인카금융 더헤븐 마스터즈 관전포인트 3가지…김민솔·배소현·박현경·노승희·유현조·이다연·김수지 등"
+      }
+    },
+    {
+      "id": 19699,
+      "article_hash": "e70c82cfe013f7eeb85bf1a602890cd02f4edc2899ea30d3c4cce5d076fbc467",
+      "title": "[포토]'인카금융 더헤븐 마스터즈'많은 응원 부탁합니다 - 네이트",
+      "after": "이데일리",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "이데일리",
+        "url": "https://m.news.nate.com/view/20260618n23011",
+        "published_local": "2026-06-18 14:48",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline",
+          "copyright_owner"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "m.news.nate.com",
+        "matched_title": "[포토]'인카금융 더헤븐 마스터즈'많은 응원 부탁합니다"
+      }
+    },
+    {
+      "id": 19697,
+      "article_hash": "c800ef97c5fba3f8ca754587b540a0f8fc9254f5b64c0f7eb1a777f6bd390590",
+      "title": "[포토]'인카금융 더헤븐 마스터즈'승부의 시작 - 네이트",
+      "after": "이데일리",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "이데일리",
+        "url": "https://m.news.nate.com/view/20260618n23008",
+        "published_local": "2026-06-18 14:48",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline",
+          "copyright_owner"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "m.news.nate.com",
+        "matched_title": "[포토]'인카금융 더헤븐 마스터즈'승부의 시작"
+      }
+    },
+    {
+      "id": 19252,
+      "article_hash": "971758b7fb60516ad562031e25d525501cbbc51d2846c6c1ee751756564812ae",
+      "title": "'방어' 노승희, '3승' 김민솔 격돌…인카금융 더헤븐 마스터즈 개막 - 네이트",
+      "after": "스타데일리뉴스",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "스타데일리뉴스",
+        "url": "https://news.nate.com/view/20260617n32484?mid=n0000",
+        "published_local": "2026-06-17 20:00",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "news.nate.com",
+        "matched_title": "'방어' 노승희, '3승' 김민솔 격돌…인카금융 더헤븐 마스터즈 개막"
+      }
+    },
+    {
+      "id": 19251,
+      "article_hash": "e61f90635f52d53b8c2864a6bcf52030ebb48eabde055f4a32539142be074e91",
+      "title": "러프에 탄식, 어색함도 잠시 웃음꽃… '인카금융 더헤븐 마스터즈' 프로암 이모저모 - v.daum.net",
+      "after": "마니아타임즈",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "마니아타임즈",
+        "url": "https://v.daum.net/v/20260617211905973",
+        "published_local": "2026-06-17 21:19",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "v.daum.net",
+        "matched_title": "러프에 탄식, 어색함도 잠시 웃음꽃… '인카금융 더헤븐 마스터즈' 프로암 이모저모"
+      }
+    },
+    {
+      "id": 18988,
+      "article_hash": "f1e2a34b7da4a526080c08abe3a0fc11a71f957dce922455a27d62f9c9b7b051",
+      "title": "US오픈 다녀와 한국여자오픈 제패한 김민솔, 인카금융 더헤븐 마스터즈서 3승 사냥 - 네이트",
+      "after": "이데일리",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "이데일리",
+        "url": "https://sports.news.nate.com/view/20260617n17255",
+        "published_local": "2026-06-17 13:35",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "sports.news.nate.com",
+        "matched_title": "US오픈 다녀와 한국여자오픈 제패한 김민솔, 인카금융 더헤븐 마스터즈서 3승 사냥"
+      }
+    },
+    {
+      "id": 18987,
+      "article_hash": "ec7cb331f9ad9b9857e784cba6cf75383ee7fbca5cd7f3c06994adb361916471",
+      "title": "노승희, '인카금융 더헤븐 마스터즈' 타이틀 방어 나서 - 네이트",
+      "after": "프라임경제",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "프라임경제",
+        "url": "https://m.news.nate.com/view/20260617n19212",
+        "published_local": "2026-06-17 14:22",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "m.news.nate.com",
+        "matched_title": "노승희, '인카금융 더헤븐 마스터즈' 타이틀 방어 나서"
+      }
+    },
+    {
+      "id": 12322,
+      "article_hash": "2da99e4da80234cc4be744587dce7ead6551a21577a9b3245bc9a763e6e60124",
+      "title": "독립 보험대리점(GA) 브랜드평판 6월, 한화생명금융서비스 1위…인카금융서비스·에이플러스에셋 뒤이어 - 네이트",
+      "after": "CBC뉴스",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "CBC뉴스",
+        "url": "https://news.nate.com/view/20260611n15880",
+        "published_local": "2026-06-11 11:40",
+        "signals": [
+          "exact_portal_headline",
+          "publication_minute",
+          "publisher_byline",
+          "copyright_owner"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "news.nate.com",
+        "matched_title": "독립 보험대리점(GA) 브랜드평판 6월, 한화생명금융서비스 1위…인카금융서비스·에이플러스에셋 뒤이어"
+      }
+    },
+    {
+      "id": 99,
+      "article_hash": "ec262943dc826842fe3519810eae0d536aca1d3eb1c8f9e564686210fb323927",
+      "title": "[인카금융스캔들]③'보험 꺾기' 넘어 '불법 사채놀이'까지...대형GA사의 약탈 영업 민낯 - :: 위즈경제 ::",
+      "after": "위즈경제",
+      "own_mentioned": true,
+      "manual_override": true,
+      "evidence": {
+        "name": "위즈경제",
+        "url": "https://wikyung.com/search?keyword=%EC%9D%B8%EC%B9%B4%EA%B8%88%EC%9C%B5%EC%84%9C%EB%B9%84%EC%8A%A4",
+        "signals": [
+          "explicit_title_publisher_suffix",
+          "official_publication_imprint",
+          "series_headline_match"
+        ],
+        "note": "Original publication predates the stored feed date. Identity only; do not change dates or re-alert.",
+        "method": "reviewed_article_identity",
+        "host": "wikyung.com",
+        "matched_title": "[인카금융스캔들]③'보험 꺾기' 넘어 '불법 사채놀이'까지...대형GA사의 약탈 영업 민낯"
+      }
+    },
+    {
+      "id": 253945,
+      "article_hash": "2ee6bf7f5b0b316c3aed1ed2e1a2d49f0c3d4e329e99ab52e64c88162d6256a4",
+      "title": "한국배구연맹, 흥국생명과 3시즌 'V-리그 타이틀스폰서' 계약 체결...28-...",
+      "after": "몬스터짐",
+      "own_mentioned": false,
+      "manual_override": true,
+      "evidence": {
+        "name": "몬스터짐",
+        "url": "https://news.monsterzym.com/index.php?mid=sports_asia&type=main&document_srl=10455980",
+        "signals": [
+          "same_article_url",
+          "official_site_title",
+          "registered_publisher_footer"
+        ],
+        "method": "reviewed_article_identity",
+        "host": "news.monsterzym.com",
+        "matched_title": "한국배구연맹, 흥국생명과 3시즌 'V-리그 타이틀스폰서' 계약 체결...28-..."
+      }
+    }
+  ]
+}

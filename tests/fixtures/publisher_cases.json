@@ -1,9 +1,42 @@
 [
-  [{"source":"언론사 확인 필요","link":"https://www.busan.com/view/busan/view.php?code=1"},"부산일보"],
-  [{"source":"google","title":"보험 소식 - marketin.edaily.co.kr","link":"https://news.google.com/rss/1"},"마켓인"],
-  [{"source":"언론사 확인 필요","link":"https://joynews24.com/view/1"},"조이뉴스24"],
-  [{"source":"언론사 확인 필요","link":"https://busan.com.unrelated.example/view/1"},"언론사 확인 필요"],
-  [{"source":"언론사 확인 필요","raw":{"source_raw":"etoday.co.kr"}},"이투데이"],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "link": "https://www.busan.com/view/busan/view.php?code=1"
+    },
+    "부산일보"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "보험 소식 - marketin.edaily.co.kr",
+      "link": "https://news.google.com/rss/1"
+    },
+    "마켓인"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "link": "https://joynews24.com/view/1"
+    },
+    "조이뉴스24"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "link": "https://busan.com.unrelated.example/view/1"
+    },
+    "언론사 확인 필요"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "raw": {
+        "source_raw": "etoday.co.kr"
+      }
+    },
+    "이투데이"
+  ],
   [
     {
       "source": "google",
@@ -196,5 +229,193 @@
       "link": "https://www.fss.or.kr/1"
     },
     "금융감독원"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "보험업계·지자체, 소상공인 100만명에 무료 상생보험 - g-enews.com",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "글로벌이코노믹"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "경찰도 한방치료 '정조준'…보험업계 '촉각' - m-i.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "매일일보"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "성산일출봉농협, NH농협손해보험 '헤아림 인증직원' 3명 배출 - newsnjeju.com",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "뉴스N제주"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "유종목 상무, 한화손해보험 주식 800주 ↑…지분율 0.01% - datatooza.com",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "데이터투자"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "신둔농협·NH농협손해보험, 영농철 맞아 ‘농촌 일손돕기’ 전개 - hnrsm.com",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "하나로신문/일보"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "경남도, 소상공인 상생보험(생명보험) 지원사업 개시 - dandinews.com",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "단디뉴스"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "KB손해보험, 저소득 어르신 대상 식료품 정기 배송 서비스 전국 확대 - 2news.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "에너지뉴스"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "메가박스중앙 회생 절차 신청에 영화계 긴장 - 2news.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "에너지뉴스"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "'안방 잃은' KB손해보험 떠돌이 생활… 페퍼 인수한 '광주 SOOP' 첫선 - asportstv.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "AsportsNEWS"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "대상웰라이프, 한화생명금융서비스와 통합 라이프케어 모델 개발 - foodnews.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "식품저널 foodnews"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "생명보험사회공헌재단 \"자살사망자 96.6% 경고신호…주변은 23.8%만 알아챘다\" - e-science.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "이코노미사이언스"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "치아보험 중복 가입시켜 22억 챙긴 보험사기 적발…치과·보험설계사 조직적 공모 - hdnews.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "현대경제"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "[탐정들의 영업비밀] '남편 사망보험금'으로 식당 차려 대박난 女, 실은 '보험 설계사' 남편 선배와 불륜? \"둘이 짰다\" 시댁 충격 주장! - rnx.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "RNX"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "쏘카-AXA 손해보험 MOU 체결… 보험·금융으로 ‘풀스택 모빌리티’ 완성 - carmgz.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "카매거진 CARMGZ"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "”하나손해보험회사, 후유장애 및 수술비 왜? 지급하지 않고있나?“ - yjb0802.com",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "정경시사 FOCUS"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "빚투에 금융·보험 대출 180조 최대, 보험사 자본확충 직격 - jabon.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "자본시장뉴스"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "[부고] 생명보험협회 유제상 부장 모친상 - jabon.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "자본시장뉴스"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "30년 잠자던 신용생명보험 깨운다…6개 지자체 60억 투입 - jabon.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "자본시장뉴스"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "이마트, DB손해보험과 손잡고 반려동물 맞춤형 ‘올라 펫보험’ 출시 - issueon.co.kr",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "ISSUE ON (이슈온)"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "미래에셋운용 ‘TIGER 미국나스닥100’ 순자산 10조 돌파···미래생명보험에 500억 추가 출자 - kmctimes.com",
+      "link": "https://news.google.com/rss/articles/fixture"
+    },
+    "weekly기독교타임즈"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "보험 - 이슈 - g-enews.com"
+    },
+    "글로벌이코노믹"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "보험 - g-enews.com - 네이트"
+    },
+    "언론사 확인 필요"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "보험 - unverified-press.example"
+    },
+    "언론사 확인 필요"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "기사 - :: 위즈경제 ::"
+    },
+    "위즈경제"
   ]
 ]

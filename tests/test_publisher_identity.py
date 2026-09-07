@@ -68,6 +68,11 @@ class PublisherIdentityTests(unittest.TestCase):
     def test_multiple_title_dashes_use_last_publisher(self):
         self.assertEqual(publishers.title_publisher("보험 - 실적 개선 - 뉴스1"), "뉴스1")
 
+    def test_hyphenated_title_source_uses_admin_alias(self):
+        publishers.configure_aliases([{"host": "new-press.example", "press_name": "검증매체"}])
+        self.assertEqual(publishers.resolve_publisher({"source": "google", "title": "보험 - 실적 - new-press.example"})["name"], "검증매체")
+        self.assertEqual(publishers.resolve_publisher({"source": "google", "title": "보험 - new-press.example - 네이트"})["name"], publishers.UNKNOWN)
+
     def test_metadata_requires_agreeing_publisher_signals(self):
         page = '<meta property="og:site_name" content="새로운매체"><title>기사 제목 - 새로운매체</title>'
         found = publishers.publisher_from_html(page, "https://new-press.example/1")

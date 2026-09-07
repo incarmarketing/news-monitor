@@ -31,15 +31,17 @@ function fromDomain(value, mapping = registry.domains) {
   return mapping[host] || (host.startsWith("m.") ? mapping[host.slice(2)] : "") || "";
 }
 
-function fromTitle(title) {
+function fromTitle(title, aliases = {}) {
   const text = clean(title);
-  const suffix = text.match(/\s[-–]\s([^-–\n|]{2,60})$/)?.[1];
-  const candidates = suffix ? [suffix] : [];
+  const parts = text.split(/\s[-–]\s/);
+  const suffix = parts.length > 1 ? parts.at(-1) : "";
+  const candidates = /^[^\n|]{2,60}$/.test(suffix) ? [suffix] : [];
+  const domainName = (value) => fromDomain(value, aliases) || fromDomain(value);
   const bracket = text.match(/^\[([^\]]{2,30})\]/)?.[1];
-  const bracketName = fromDomain(bracket) || registry.name_aliases[bracket] || bracket;
+  const bracketName = domainName(bracket) || registry.name_aliases[bracket] || bracket;
   if (known.has(bracketName)) candidates.push(bracketName);
   for (const candidate of candidates) {
-    const mapped = fromDomain(candidate);
+    const mapped = domainName(candidate);
     if (mapped) return mapped;
     const name = validName(candidate);
     if (known.has(name)) return name;
@@ -64,5 +66,5 @@ export function resolvePublisher(article = {}, aliasRows = []) {
     const name = fromDomain(value);
     if (name) return name;
   }
-  return validName(article.rss_source_name || raw.rss_source_name) || validName(source) || fromTitle(article.title || raw.title) || fromDomain(article.source_raw || raw.source_raw) || UNKNOWN_PUBLISHER;
+  return validName(article.rss_source_name || raw.rss_source_name) || validName(source) || fromTitle(article.title || raw.title, aliases) || fromDomain(article.source_raw || raw.source_raw, aliases) || fromDomain(article.source_raw || raw.source_raw) || UNKNOWN_PUBLISHER;
 }

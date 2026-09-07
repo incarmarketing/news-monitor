@@ -632,7 +632,24 @@
     "newscj.com": "천지일보",
     "smedaily.co.kr": "중소기업신문",
     "news.jtbc.co.kr": "JTBC",
-    "smarttoday.co.kr": "스마트투데이"
+    "smarttoday.co.kr": "스마트투데이",
+    "g-enews.com": "글로벌이코노믹",
+    "m-i.kr": "매일일보",
+    "newsnjeju.com": "뉴스N제주",
+    "datatooza.com": "데이터투자",
+    "hnrsm.com": "하나로신문/일보",
+    "dandinews.com": "단디뉴스",
+    "2news.co.kr": "에너지뉴스",
+    "asportstv.kr": "AsportsNEWS",
+    "foodnews.co.kr": "식품저널 foodnews",
+    "e-science.co.kr": "이코노미사이언스",
+    "hdnews.co.kr": "현대경제",
+    "rnx.kr": "RNX",
+    "carmgz.kr": "카매거진 CARMGZ",
+    "yjb0802.com": "정경시사 FOCUS",
+    "jabon.co.kr": "자본시장뉴스",
+    "issueon.co.kr": "ISSUE ON (이슈온)",
+    "kmctimes.com": "weekly기독교타임즈"
   },
   "name_aliases": {
     "SBSBiz": "SBS Biz",
@@ -642,7 +659,8 @@
     "Investing.com 한국어": "인베스팅닷컴",
     "Vietnam.vn": "베트남닷브이엔",
     "MHN포토": "MHN스포츠",
-    "엠에이치앤포토": "MHN스포츠"
+    "엠에이치앤포토": "MHN스포츠",
+    ":: 위즈경제 ::": "위즈경제"
   },
   "portal_names": [
     "google",

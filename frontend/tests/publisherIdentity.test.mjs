@@ -10,3 +10,9 @@ for (const [article, expected] of cases) {
 test("explicit publisher alias wins over a bundled mapping", () => {
   assert.equal(resolvePublisher({ source: "etoday.co.kr" }, [{ host: "etoday.co.kr", press_name: "관리자 지정 매체" }]), "관리자 지정 매체");
 });
+
+test("a hyphenated title source uses the verified alias, never a preceding distributor", () => {
+  const aliases = [{ host: "new-press.example", press_name: "검증매체" }];
+  assert.equal(resolvePublisher({ source: "google", title: "보험 - 실적 - new-press.example" }, aliases), "검증매체");
+  assert.equal(resolvePublisher({ source: "google", title: "보험 - new-press.example - 네이트" }, aliases), "언론사 확인 필요");
+});
