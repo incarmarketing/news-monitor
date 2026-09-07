@@ -100,6 +100,9 @@ def title_publisher(title: object) -> str:
 
 def resolve_publisher(article: dict) -> dict:
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    manual = valid_name(article.get("publisher_manual_override") or raw.get("publisher_manual_override"))
+    if manual:
+        return {"name": manual, "method": "admin_article_override", "host": host_of(article.get("link"))}
     source = article.get("source") or raw.get("source") or raw.get("source_raw") or ""
     rss_name = article.get("rss_source_name") or raw.get("rss_source_name")
     rss_url = article.get("source_url") or raw.get("source_url")

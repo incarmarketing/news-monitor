@@ -1151,7 +1151,7 @@ def publish_dashboard() -> Path:
                 "keywords": keywords,
                 "aliases": aliases,
                 "media_relations": media_relations,
-                "reporters": reporters,
+                "reporters": [{key: row.get(key) for key in ("id", "name", "media", "beat", "updated_at")} for row in reporters],
                 "ads": ad_spends,
                 "report_runs": report_runs,
                 "notifications": notifications,

@@ -29,6 +29,7 @@ const tableAccess: Record<string, { read: boolean; writeRoles: string[] }> = {
   reporters: { read: true, writeRoles: ["admin", "editor"] },
   ad_spends: { read: true, writeRoles: ["admin", "editor"] },
   press_aliases: { read: true, writeRoles: ["admin", "editor"] },
+  article_publisher_overrides: { read: true, writeRoles: ["admin", "editor"] },
   notification_sends: { read: true, writeRoles: [] },
   negative_watch_runs: { read: true, writeRoles: [] },
   risk_response_drafts: { read: true, writeRoles: ["admin", "editor", "reporter"] },
@@ -95,11 +96,21 @@ Deno.serve(async (req) => {
   const requestOrigin = req.headers.get("origin");
   const publicDashboardRefresh = isPublicDashboardRefreshRequest(action, payload, requestOrigin);
   const publicDashboardSnapshot = isPublicDashboardSnapshotRequest(action, requestOrigin);
-  if (!session.ok && !publicDashboardRefresh && !publicDashboardSnapshot) {
+  const publicMediaRegistry = action === "media_registry" && isAllowedPublicRefreshOrigin(requestOrigin);
+  if (!session.ok && !publicDashboardRefresh && !publicDashboardSnapshot && !publicMediaRegistry) {
     return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
   }
 
   try {
+    if (action === "media_registry") {
+      const mode = String(payload.mode || "summary");
+      if (!["summary", "media", "unknown", "reporter"].includes(mode)) return jsonResponse({ error: "invalid_registry_mode" }, 400);
+      const result = await supabaseRpc("get_media_registry", {
+        p_mode: mode, p_key: String(payload.key || "").slice(0, 300),
+        p_offset: boundedInteger(payload.offset, 0, 0, 1000000),
+      });
+      return jsonResponse(result, result.ok ? 200 : 502);
+    }
     if (action === "snapshot") {
       return await handleSnapshot(payload);
     }

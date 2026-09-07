@@ -1331,14 +1331,13 @@ def save_own_media_relations(article_rows: list[dict]) -> None:
         {
             str(row.get("source") or "").strip()
             for row in article_rows
-            if row.get("category") == "own" and is_manageable_media_source(row.get("source"))
+            if row.get("own_mentioned") is True and is_manageable_media_source(row.get("source"))
         }
     )
-    for source in own_sources:
-        try:
-            if media_relation_exists(source):
-                continue
-            row = {
+    if not own_sources:
+        return
+    try:
+        rows = [{
                 "name": source,
                 "status": "중립",
                 "grade": "B",
@@ -1346,15 +1345,16 @@ def save_own_media_relations(article_rows: list[dict]) -> None:
                 "contact_date": None,
                 "memo": "당사 기사 게재 이력으로 자동 등록된 관리 대상",
                 "hidden": False,
-            }
-            request("POST", "media_relations", data=json.dumps([row], ensure_ascii=False))
-        except Exception as error:
-            print(f"Supabase media relation seed skipped for {source}: {error}")
+            } for source in own_sources]
+        request("POST", "media_relations?on_conflict=name", data=json.dumps(rows, ensure_ascii=False),
+                headers={"Prefer": "resolution=ignore-duplicates,return=minimal"})
+    except Exception as error:
+        print(f"Supabase media relation seed deferred: {error}")
 
 
 def is_manageable_media_source(source: object) -> bool:
     name = str(source or "").strip()
-    if not name:
+    if not name or name == publisher_identity.UNKNOWN or not publisher_identity.valid_name(name):
         return False
     lower = name.lower()
     if name in MEDIA_RELATION_EXCLUDED_SOURCES or lower in MEDIA_RELATION_EXCLUDED_SOURCES:

@@ -91,6 +91,8 @@ def lighten(article: dict) -> dict:
         "portal": article.get("portal", ""),
         "publisher_resolution": article.get("publisher_resolution", {}),
         "publisher_evidence": article.get("publisher_evidence", {}),
+        "publisher_manual_override": article.get("publisher_manual_override", ""),
+        "_original_url": article.get("_original_url", ""),
         "keyword": article.get("keyword", ""),
         "description": (
             article.get("_summary", "")

@@ -392,3 +392,12 @@ jobs:
           fi
           git pull --rebase
           git push
+
+      - name: Enrich verified media bylines after briefing completion
+        if: success() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual'
+        continue-on-error: true
+        timeout-minutes: 3
+        run: python tools/sync_media_registry.py --limit 20 --apply
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

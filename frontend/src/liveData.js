@@ -1,5 +1,6 @@
 import { watchRunDisplayState } from "./watchHealth.js";
 import { resolvePublisher } from "./publisherIdentity.js";
+import { validRegistryPayload } from "./mediaRegistryModel.mjs";
 
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
 const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v3";
@@ -360,9 +361,12 @@ async function writeRest(path, method, body, headers = {}) {
 }
 
 export async function savePressAlias(host, pressName) {
-  const cleanHost = String(host || "").trim().toLowerCase();
+  const cleanHost = String(host || "").trim().toLowerCase().replace(/^www\./, "");
   const cleanName = String(pressName || "").trim();
   if (!cleanHost || !cleanName) throw new Error("host_and_press_required");
+  if (/(^|\.)(google\.[a-z.]+|naver\.com|daum\.net|nate\.com|googleusercontent\.com|bing\.com|yahoo\.com)$/.test(cleanHost)) {
+    throw new Error("portal_requires_article_resolution");
+  }
   return writeRest(
     "press_aliases?on_conflict=host",
     "POST",
@@ -1772,6 +1776,20 @@ function isStockListingNoise(row = {}) {
 
 function normalizeArticleSource(source, link = "", title = "") {
   return resolvePublisher({ source, link, title });
+}
+
+export async function loadMediaRegistry(mode = "summary", key = "", offset = 0) {
+  const config = await loadSupabaseConfig();
+  const result = await dashboardApi(config, getStoredSession(), "media_registry", { mode, key, offset }, { allowAnonymous: true });
+  if (!result?.ok || !validRegistryPayload(result.data, mode)) throw new Error("media_registry_load_failed");
+  return result.data;
+}
+
+export async function saveArticlePublisher(articleHash, pressName) {
+  if (!articleHash || !String(pressName || "").trim()) throw new Error("article_and_press_required");
+  return writeRest("article_publisher_overrides?on_conflict=article_hash", "POST",
+    [{ article_hash: articleHash, press_name: pressName.trim(), updated_at: new Date().toISOString() }],
+    { Prefer: "resolution=merge-duplicates,return=representation" });
 }
 
 function isPortalSource(value) {

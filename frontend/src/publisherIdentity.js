@@ -50,6 +50,8 @@ function fromTitle(title) {
 
 export function resolvePublisher(article = {}, aliasRows = []) {
   const raw = article.raw || {};
+  const manual = validName(article.publisher_manual_override || raw.publisher_manual_override);
+  if (manual) return manual;
   const source = article.source || raw.source || raw.source_raw || "";
   const sourceUrl = article.source_url || raw.source_url;
   const link = article.link || raw.link;

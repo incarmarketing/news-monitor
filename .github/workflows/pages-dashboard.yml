@@ -12,6 +12,8 @@ on:
       - "dashboard_builder.py"
       - "news_collector.py"
       - "publisher_identity.py"
+      - "media_byline.py"
+      - "tools/sync_media_registry.py"
       - "publisher_registry.json"
       - "tools/backfill_publisher_identity.py"
       - "tests/test_publisher_identity.py"
@@ -102,6 +104,7 @@ jobs:
           tests.test_negative_watch
           tests.test_news_collector
           tests.test_publisher_identity
+          tests.test_media_byline
           tests.test_supabase_store_feedback
           tests.test_context_rule_fixes
           tests.test_dashboard_operations_snapshot

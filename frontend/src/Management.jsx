@@ -12,6 +12,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { contextRules, keywordGroups } from "./data";
+import MediaRegistry from "./MediaRegistry";
 import {
   deleteReporterProfile,
   saveMediaRelation,
@@ -167,6 +168,7 @@ export default function Management({ management, operations, onRefreshOperations
   const articles = asArray(safeOperations.articles);
   const feedback = asArray(safeOperations.feedback);
   const [tab, setTab] = useState("media");
+  const [registrySummary, setRegistrySummary] = useState(null);
   const tabs = [
     ["media", "언론사 관리", Building2],
     ["reporters", "기자 관리", Users],
@@ -194,7 +196,7 @@ export default function Management({ management, operations, onRefreshOperations
           </div>
         )}
       />
-      <ManagementSummary management={safeManagement} operations={safeOperations} />
+      <ManagementSummary management={safeManagement} operations={safeOperations} registry={registrySummary} />
       <section className="admin-crud-panel admin-crud-panel-top-tabs">
         <div className="management-tabs admin-tabs-rail">
           {tabs.map(([id, label, Icon]) => (
@@ -204,8 +206,8 @@ export default function Management({ management, operations, onRefreshOperations
           ))}
         </div>
         <div className="admin-panel-body">
-          {tab === "media" && <MediaManagement rows={safeManagement.media} reporters={safeManagement.reporters} aliases={aliases} />}
-          {tab === "reporters" && <ReporterManagement rows={safeManagement.reporters} />}
+          {tab === "media" && <MediaRegistry onSummary={setRegistrySummary}><MediaManagement rows={safeManagement.media} reporters={safeManagement.reporters} aliases={aliases} /></MediaRegistry>}
+          {tab === "reporters" && <MediaRegistry key="reporter-registry" reportersOnly onSummary={setRegistrySummary}><ReporterManagement rows={safeManagement.reporters} /></MediaRegistry>}
           {tab === "ads" && <AdManagement rows={safeManagement.ads} />}
           {tab === "keywords" && <KeywordManagement keywords={keywords} articles={articles} />}
           {tab === "feedback" && (
@@ -222,7 +224,7 @@ export default function Management({ management, operations, onRefreshOperations
   );
 }
 
-function ManagementSummary({ management = {}, operations = {} }) {
+function ManagementSummary({ management = {}, operations = {}, registry }) {
   const media = asArray(management.media);
   const reporters = asArray(management.reporters);
   const ads = asArray(management.ads);
@@ -230,8 +232,8 @@ function ManagementSummary({ management = {}, operations = {} }) {
   const totalAd = ads.reduce((sum, row) => sum + Number(row.amount || 0), 0);
   return (
     <section className="management-summary">
-      <StatCard icon={Building2} label="관리 언론사" value={`${media.length.toLocaleString("ko-KR")}곳`} />
-      <StatCard icon={Users} label="기자 프로필" value={`${reporters.length.toLocaleString("ko-KR")}명`} />
+      <StatCard icon={Building2} label="당사 보도 매체" value={`${(registry?.media?.length ?? media.length).toLocaleString("ko-KR")}곳`} />
+      <StatCard icon={Users} label="확인된 작성 기자" value={`${(registry?.reporters?.length ?? reporters.length).toLocaleString("ko-KR")}명`} />
       <StatCard icon={WalletCards} label="광고비 누적" value={formatMoney(totalAd)} />
       <StatCard icon={Megaphone} label="문맥 규칙" value={`${keywordGroups.length}개 그룹`} />
       <StatCard icon={FilePenLine} label="분류 피드백" value={`${feedback.length.toLocaleString("ko-KR")}건`} />

@@ -32,13 +32,11 @@ import {
 } from "lucide-react";
 import {
   adRows,
-  journalistRows,
   keywordGroups,
   navItems,
   periodData,
   periodTabs,
   pressInfluence,
-  pressRegistry,
   watchJobs,
 } from "./data";
 import {
@@ -7396,19 +7394,9 @@ function composeManagementData(operations, articles) {
   const mediaRelations = Array.isArray(safeOperations.mediaRelations) ? safeOperations.mediaRelations : [];
   const reporterRowsSource = Array.isArray(safeOperations.reporters) ? safeOperations.reporters : [];
   const adRowsSource = Array.isArray(safeOperations.ads) ? safeOperations.ads : [];
-  const baseMedia = mediaRelations.length
-    ? mediaRelations.map((row) => ({ ...row, ...(pressStats.get(row.name) || {}) }))
-    : pressRegistry.map((name, index) => ({
-        name,
-        grade: index < 5 ? "A" : "B",
-        status: index % 5 === 0 ? "우호" : "중립",
-        owner: index < 6 ? "홍보팀" : "",
-        contactDate: index < 8 ? "2026-05" : "",
-        memo: index < 15 ? "보도자료 발송 이력 확인" : "",
-        ...(pressStats.get(name) || { total: 0, own: 0, negative: 0 }),
-      }));
+  const baseMedia = mediaRelations.map((row) => ({ ...row, ...(pressStats.get(row.name) || {}) }));
   const media = mergeRequiredOwnPressRows(baseMedia, ownPressRows);
-  const reporterSource = reporterRowsSource.length ? reporterRowsSource : journalistRows;
+  const reporterSource = reporterRowsSource;
   const reporters = reporterSource.map((row) => enrichReporterWithMediaStats(row, pressStats));
   const ads = adRowsSource.length ? adRowsSource : adRows;
   return { media, reporters, ads };
