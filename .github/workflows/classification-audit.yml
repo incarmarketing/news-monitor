@@ -14,6 +14,7 @@ on:
       - "deterministic_risk.py"
       - "supabase_store.py"
       - "tests/test_analyzer.py"
+      - "tests/test_source_role_relevance.py"
       - "tests/test_deterministic_risk.py"
       - "tools/audit_classification_drift.py"
       - "tools/reclassify_deterministic.py"
@@ -43,6 +44,7 @@ jobs:
           python -m unittest
           tests.test_deterministic_risk
           tests.test_analyzer
+          tests.test_source_role_relevance
           tests.test_negative_watch
           tests.test_context_rule_fixes
           tests.test_supabase_store_feedback
