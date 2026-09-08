@@ -141,7 +141,8 @@ class OperationalScheduleTests(unittest.TestCase):
         self.assertNotIn('action === "rest" && isAllowedPublicRefreshOrigin(origin)', edge)
         self.assertIn('dashboardApi(config, null, "snapshot"', frontend)
         self.assertIn('{ allowAnonymous: true }', frontend)
-        self.assertIn("return loadStaticOperationalStatus()", frontend)
+        self.assertIn("await loadStaticOperationalStatus()", frontend)
+        self.assertIn('dataLoadWarnings: ["database_unavailable"]', frontend)
         self.assertIn('Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")', edge)
         self.assertIn('Deno.env.get("SUPABASE_PUBLISHABLE_KEY")', edge)
 
@@ -208,7 +209,9 @@ class OperationalScheduleTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("Promise.allSettled", source)
         self.assertIn("request_failed", source)
-        self.assertIn('if (!Array.isArray(data.articles))', source)
+        self.assertIn('!Array.isArray(data.articles)', source)
+        self.assertIn('warnings.some((warning) => warning.startsWith("articles_"))', source)
+        self.assertIn('error: "snapshot_articles_failed", warnings }, 502', source)
 
         migration = (
             ROOT / "supabase/migrations/20260824100000_track_market_refresh_cron.sql"
