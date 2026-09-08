@@ -38,6 +38,7 @@ on:
       - "tools/reclassify_deterministic.py"
       - "tests/test_context_rule_fixes.py"
       - "tests/test_dashboard_operations_snapshot.py"
+      - "tests/test_operational_schedules.py"
       - "tests/test_negative_watch.py"
       - "tests/test_news_collector.py"
       - "tests/test_supabase_store_feedback.py"
