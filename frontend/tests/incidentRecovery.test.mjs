@@ -33,7 +33,11 @@ test("database outage uses the published current-day backup, retaining its real 
     if (String(url).includes("operations.json")) {
       return Response.json({
         generated_at: "2026-09-08T08:12:21+09:00", articles_generated_at: "2026-09-08T08:12:21+09:00",
-        articles: [{ id: "today", date: "2026-09-08", pub_date: "2026-09-08T07:03:00+09:00", title: "사이버보험 필요성", summary: "KB손해보험의 개인정보배상책임보험", category: "competitor", tone: "neutral" }],
+        articles: [
+          { id: "today", date: "2026-09-08", pub_date: "2026-09-08T07:03:00+09:00", title: "사이버보험 필요성", summary: "KB손해보험의 개인정보배상책임보험", category: "competitor", tone: "neutral" },
+          { id: "noise", title: "듀오 연애 조사, 한화손해보험 연구소 인용", category: "other", tone: "neutral", classification_provider: "rules:source-role-v1" },
+          { id: "raw-noise", title: "배구 경기, KB손해보험 소속 선수", category: "competitor", raw: { _ai_context: { category: "other", provider: "rules:source-role-v1" } } },
+        ],
         report_runs: [{ report_date: "2026-09-08", report_slot: "08" }],
       });
     }
@@ -44,6 +48,7 @@ test("database outage uses the published current-day backup, retaining its real 
   assert.equal(data.source, "static");
   assert.equal(data.articles[0].date, "2026-09-08");
   assert.equal(data.articles[0].category, "보험사");
+  assert.equal(data.articles.length, 1, "persisted relevance decisions must also filter live/static payloads");
   assert.equal(data.reportRuns[0].date, "2026-09-08");
   assert.equal(data.generatedAt, "2026-09-08T08:12:21+09:00");
   assert.deepEqual(data.dataLoadWarnings, ["database_unavailable"]);

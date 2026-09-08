@@ -1654,6 +1654,8 @@ function normalizeArticle(row) {
   const dateSource = publicationSource || row.date || row.report_date || "";
   const showTime = shouldShowArticleTime(row, publicationSource || row.date || row.report_date);
   const aiContext = normalizeAiContext(row);
+  // Keep source-role exclusions out of live aggregates, just like static builds.
+  if (aiContext.provider === "rules:source-role-v1" && aiContext.category === "other") return null;
   const storedCategory = normalizeCategory(aiContext.category || row.category_label || row.category);
   const category = storedCategory === "GA" && isInsurerOnlyContext(row) ? "보험사" : storedCategory;
   const tone = normalizeArticleTone(row, category, aiContext);
