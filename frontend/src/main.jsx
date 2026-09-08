@@ -1158,6 +1158,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
       <DashboardEditorialHeader
         data={data}
         status={operations?.status}
+        operations={operations}
         onOpenMonitoring={onOpenMonitoring}
         onRefresh={refreshDashboard}
         isLoading={isLoading}
@@ -1223,15 +1224,16 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   );
 }
 
-function DashboardEditorialHeader({ data, status, onOpenMonitoring, onRefresh, isLoading = false, theme = "light", onToggleTheme }) {
-  const live = status === "live";
+function DashboardEditorialHeader({ data, status, operations, onOpenMonitoring, onRefresh, isLoading = false, theme = "light", onToggleTheme }) {
+  const live = status === "live" && operations?.source === "supabase" && !operations?.degraded && !operations?.dataLoadWarnings?.length;
+  const sourceTime = formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || "-");
   return (
     <header className="editorial-dashboard-header">
       <div className="editorial-header-copy">
         <h1>오늘의 언론 상황</h1>
-        <p>{formatDashboardScopeDate(data?.scope)}</p>
+        <p>{formatDashboardScopeDate(formatKstDateKey(new Date()))}</p>
       </div>
-      <p className={`editorial-data-status ${live ? "live" : ""}`}><i />{live ? "데이터 정상" : "데이터 확인 중"}<span>·</span>{data?.generatedAt || "-"} 갱신</p>
+      <p className={`editorial-data-status ${live ? "live" : ""}`}><i />{live ? "데이터 정상" : status === "live" ? "저장본 · 실시간 연결 확인 필요" : "데이터 확인 중"}<span>·</span>{sourceTime} 기준</p>
       <div className="editorial-header-actions">
         <button type="button" onClick={onRefresh} disabled={isLoading}><RefreshCw />{isLoading ? "갱신 중" : "새로고침"}</button>
         <button type="button" className="editorial-article-search" onClick={() => onOpenMonitoring?.({})}>기사 검색 <Search /></button>

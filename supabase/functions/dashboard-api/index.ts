@@ -177,7 +177,7 @@ async function handleSnapshot(payload: Record<string, unknown>) {
       warnings.push(`${key}_${result.status}`);
     }
   });
-  if (!Array.isArray(data.articles)) {
+  if (!Array.isArray(data.articles) || warnings.some((warning) => warning.startsWith("articles_"))) {
     return jsonResponse({ error: "snapshot_articles_failed", warnings }, 502);
   }
   return jsonResponse({

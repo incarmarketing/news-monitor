@@ -1,3 +1,5 @@
+import { isInsurerOnlyContext } from "./articleSector.js";
+
 const TONE_RANK = Object.freeze({
   negative: 4,
   "부정": 4,
@@ -41,6 +43,8 @@ export function classifyDashboardArticleSeries(article = {}) {
     || canonical === "policy"
     || /정책|규제|금융당국/.test(category)
   ) return "regulation";
+
+  if (canonical === "competitor" && isInsurerOnlyContext(article)) return "insurance";
 
   if (
     canonical === "competitor"

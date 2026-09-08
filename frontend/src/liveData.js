@@ -1,6 +1,7 @@
 import { watchRunDisplayState } from "./watchHealth.js";
 import { resolvePublisher } from "./publisherIdentity.js";
 import { validRegistryPayload } from "./mediaRegistryModel.mjs";
+import { isInsurerOnlyContext } from "./articleSector.js";
 
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
 const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v3";
@@ -141,6 +142,7 @@ export function loadCachedCoreSnapshot() {
         ...cached.data,
         articles,
         source: "cache",
+        dataLoadWarnings: ["cached_snapshot"],
         status: "live",
         message: "최근 정상 데이터 표시 · 최신 데이터 확인 중",
         cachedAt: new Date(cachedAt).toISOString(),
@@ -161,6 +163,8 @@ export function saveCachedCoreSnapshot(snapshot) {
   if (!articles.length) return;
   const data = {
     source: "cache",
+    generatedAt: snapshot.generatedAt || "",
+    articlesGeneratedAt: snapshot.articlesGeneratedAt || "",
     status: "live",
     message: "최근 정상 데이터",
     articles,
@@ -1011,6 +1015,9 @@ function numberOrNull(value) {
 }
 
 export function normalizeOperationalStatusPayload(payload = {}) {
+  if (Array.isArray(payload?.warnings) && payload.warnings.some((warning) => String(warning).startsWith("articles_"))) {
+    throw new Error("snapshot_articles_failed");
+  }
   const data = Array.isArray(payload)
     ? payload[0] || {}
     : payload?.data && typeof payload.data === "object"
@@ -1074,7 +1081,8 @@ async function loadPublicOperationalStatus(config, loadOptions) {
       source: "supabase_snapshot",
     };
   } catch {
-    return loadStaticOperationalStatus();
+    const fallback = await loadStaticOperationalStatus();
+    return fallback ? { ...fallback, source: "static", dataLoadWarnings: ["database_unavailable"] } : null;
   }
 }
 
@@ -1094,6 +1102,9 @@ async function loadStaticOperationalData() {
       return {
         source: "static",
         status: "live",
+        generatedAt: payload?.generated_at || "",
+        articlesGeneratedAt: payload?.articles_generated_at || "",
+        dataLoadWarnings: ["static_snapshot"],
         message: `누적 데이터 ${articles.length.toLocaleString("ko-KR")}건`,
         articles,
         notifications: Array.isArray(payload?.notifications) ? payload.notifications.map(normalizeNotification).filter(isDeliveryNotification) : [],
@@ -1125,6 +1136,7 @@ async function loadStaticOperationalData() {
 }
 
 function normalizeCoreSnapshotResponse(snapshot, base, session) {
+  normalizeOperationalStatusPayload(snapshot);
   const payload = snapshot?.data && typeof snapshot.data === "object" ? snapshot.data : {};
   const warnings = Array.isArray(snapshot?.warnings) ? snapshot.warnings : [];
   const articles = Array.isArray(payload.articles)
@@ -1157,6 +1169,7 @@ function normalizeCoreSnapshotResponse(snapshot, base, session) {
     reportRuns: Array.isArray(payload.report_runs) ? payload.report_runs.map(normalizeReportRun) : [],
     jobRuns: Array.isArray(payload.job_runs) ? payload.job_runs.map(normalizeJobRun) : [],
     dataLoadWarnings: warnings,
+    generatedAt: snapshot?.snapshot_at || "",
     snapshotAt: snapshot?.snapshot_at || new Date().toISOString(),
     session,
   };
@@ -1399,9 +1412,14 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
         : [];
     if (!normalizedArticles.length && !Array.isArray(operationalStatus.reportRuns)) return null;
     return {
-      source: "supabase",
+      source: operationalStatus.source === "static" ? "static" : "supabase",
       status: "live",
-      message: directArticles.length
+      generatedAt: operationalStatus.generatedAt || "",
+      articlesGeneratedAt: operationalStatus.articlesGeneratedAt || "",
+      dataLoadWarnings: operationalStatus.dataLoadWarnings || [],
+      message: operationalStatus.source === "static"
+        ? `운영 DB 연결 실패 · 저장본 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`
+        : directArticles.length
         ? `운영 DB 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`
         : `운영 스냅샷 연결 · 기사 ${normalizedArticles.length.toLocaleString("ko-KR")}건`,
       articles: normalizedArticles,
@@ -1636,7 +1654,8 @@ function normalizeArticle(row) {
   const dateSource = publicationSource || row.date || row.report_date || "";
   const showTime = shouldShowArticleTime(row, publicationSource || row.date || row.report_date);
   const aiContext = normalizeAiContext(row);
-  const category = normalizeCategory(aiContext.category || row.category_label || row.category);
+  const storedCategory = normalizeCategory(aiContext.category || row.category_label || row.category);
+  const category = storedCategory === "GA" && isInsurerOnlyContext(row) ? "보험사" : storedCategory;
   const tone = normalizeArticleTone(row, category, aiContext);
   return {
     id: row.article_hash || row.id || row.link || row.title,
