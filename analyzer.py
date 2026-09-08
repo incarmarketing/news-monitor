@@ -418,7 +418,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-source-role-2026-09-08"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-source-role-2026-09-08-r2"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -1655,6 +1655,7 @@ def source_role_noise_reason(article: dict) -> str:
     material = re.search(
         r"보험(?:상품|계약|료|금|사기|업법|대리점|설계사|소비자)|"
         r"(?:사이버|실손|펫|연금|자동차|배상책임|안심)보험|"
+        r"방카슈랑스|금융소비자보호법|금소법|보험\s*(?:판매|모집|보장)|"
         r"손해배상책임공제|손해율|지급여력|K-ICS|CSM|IFRS\s*17|"
         r"1200\s*%|정착지원금|모집질서|부당승환|법인보험대리점|\bGA\b|"
         r"(?:보험사|보험업계|보험회사).{0,35}(?:제재|민원|인수|매각|실적|자본|내부통제)",
@@ -1662,6 +1663,10 @@ def source_role_noise_reason(article: dict) -> str:
     )
     if material:
         return ""
+    if (re.search(r"은행|증권|\bA?IBK\b", title, re.I)
+            and re.search(r"펀드|투자자|여신|대출|금융사고|불완전판매", text)
+            and not contains_competitor_word(text)):
+        return "은행 여신·증권 투자상품 관련 기사이며 보험업 관련 원문 근거가 없음"
     if (re.search(r"연애|데이트|미혼|결혼정보|결혼\s*의향", title)
             and re.search(r"설문|조사|응답", text)
             and re.search(r"연구소|연구원|의뢰|인용", text)
