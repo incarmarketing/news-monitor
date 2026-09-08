@@ -4192,6 +4192,7 @@ function displayCategory(value) {
   if (canonical === "sponsorship" || /브랜드|스폰서|후원/.test(text)) return "스폰서십";
   if (canonical === "own" || /당사/.test(text)) return "당사";
   if (canonical === "regulation" || /정책|규제/.test(text)) return "정책/규제";
+  if (text === "보험사") return "보험사";
   if (canonical === "competitor" || /경쟁|GA|보험사/.test(text)) return "경쟁사";
   if (canonical === "industry" || /업계/.test(text)) return "업계동향";
   return text || "기타";

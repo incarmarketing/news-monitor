@@ -62,3 +62,12 @@ test("edge snapshot rejects failed article queries even when an empty array was 
   const source = readFileSync(new URL("../../supabase/functions/dashboard-api/index.ts", import.meta.url), "utf8");
   assert.match(source, /!Array\.isArray\(data\.articles\) \|\| warnings\.some/);
 });
+
+test("monitoring retains the resolved insurer label without changing legacy categories", () => {
+  const source = readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  const body = source.match(/function displayCategory\(value\) \{([\s\S]*?)\n\}/)[1];
+  const displayCategory = new Function("value", body);
+  assert.equal(displayCategory("보험사"), "보험사");
+  assert.equal(displayCategory("competitor"), "경쟁사");
+  assert.equal(displayCategory("regulation"), "정책/규제");
+});
