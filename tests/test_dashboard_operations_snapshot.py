@@ -7,6 +7,17 @@ import dashboard_builder
 
 
 class DashboardOperationsSnapshotTests(unittest.TestCase):
+    def test_public_watch_messages_keep_status_signal_without_private_details(self) -> None:
+        runs = [
+            {"status": "failed", "message": "request failed: private provider response"},
+            {"status": "failed", "message": "no_new_negative_articles; private provider response"},
+            {"status": "empty", "message": "신규 부정 기사가 없습니다. internal data"},
+        ]
+        snapshot = dashboard_builder.build_public_operations_snapshot([], runs, [], [])
+        self.assertEqual([row["status"] for row in snapshot["watch_runs"]], ["failed", "failed", "empty"])
+        self.assertEqual([row["message"] for row in snapshot["watch_runs"]], ["", "no_new_negative_articles", "no_new_negative_articles"])
+        self.assertNotIn("private", json.dumps(snapshot))
+
     def test_snapshot_keeps_only_operational_ledgers(self) -> None:
         notifications = [{"id": 1, "status": "success", "body": "private body", "error": "private error"}]
         watch_runs = [{"run_key": "watch-1", "status": "success"}]

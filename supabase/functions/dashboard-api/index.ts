@@ -109,10 +109,11 @@ Deno.serve(async (req) => {
         p_mode: mode, p_key: String(payload.key || "").slice(0, 300),
         p_offset: boundedInteger(payload.offset, 0, 0, 1000000),
       });
+      if (!session.ok && !result.ok) return jsonResponse({ error: "media_registry_unavailable" }, 502);
       return jsonResponse(result, result.ok ? 200 : 502);
     }
     if (action === "snapshot") {
-      return await handleSnapshot(payload);
+      return await handleSnapshot(payload, session.ok === true);
     }
     if (action === "rest") {
       return await handleRest(payload, session);
@@ -125,11 +126,11 @@ Deno.serve(async (req) => {
     }
     return jsonResponse({ error: "unknown_action" }, 400);
   } catch (error) {
-    return jsonResponse({ error: "dashboard_api_failed", detail: String(error?.message || error) }, 500);
+    return jsonResponse({ error: "dashboard_api_failed", ...(session.ok ? { detail: String(error?.message || error) } : {}) }, 500);
   }
 });
 
-async function handleSnapshot(payload: Record<string, unknown>) {
+async function handleSnapshot(payload: Record<string, unknown>, authenticated = false) {
   const lookbackDays = boundedInteger(payload.lookback_days, 8, 3, 30);
   const articleLimit = boundedInteger(payload.max_rows, 1000, 100, 1000);
   const startDate = new Date(Date.now() - ((lookbackDays - 1) * 24 * 60 * 60 * 1000))
@@ -184,9 +185,71 @@ async function handleSnapshot(payload: Record<string, unknown>) {
     ok: true,
     snapshot_at: new Date().toISOString(),
     lookback_days: lookbackDays,
-    data,
+    data: authenticated ? data : publicSnapshotData(data),
     warnings,
   });
+}
+
+function pickFields(row: Record<string, unknown>, fields: string[]) {
+  return Object.fromEntries(fields.filter((key) => row[key] !== undefined).map((key) => [key, row[key]]));
+}
+
+function publicWatchMessage(message: unknown) {
+  const text = String(message || "");
+  const token = text.trim().toLowerCase().replace(/[\s-]+/g, "_").replace(/_+/g, "_");
+  // Preserve the legacy empty-scan signal without returning exception or provider text.
+  return token.includes("no_new_negative_article") || token.includes("no_negative_article_found")
+    || /신규\s*부정\s*기사\s*(?:가\s*)?없/.test(text) || /새\s*부정\s*기사\s*(?:가\s*)?없/.test(text)
+    ? "no_new_negative_articles" : "";
+}
+
+function publicReportMetrics(value: unknown) {
+  const metrics = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const result: Record<string, unknown> = {};
+  for (const key of ["total_collected", "total_after_cluster", "own_negative", "own_total"]) {
+    if (typeof metrics[key] === "number" && Number.isFinite(metrics[key])) result[key] = metrics[key];
+  }
+  for (const key of ["by_category", "by_tone", "own_by_tone"]) {
+    const group = metrics[key];
+    if (group && typeof group === "object" && !Array.isArray(group)) {
+      result[key] = Object.fromEntries(Object.entries(group).filter(([, count]) => typeof count === "number" && Number.isFinite(count)));
+    }
+  }
+  if (["LOW", "MEDIUM", "HIGH"].includes(String(metrics.risk_level))) result.risk_level = metrics.risk_level;
+  return result;
+}
+
+function publicNotificationBody(row: Record<string, unknown>) {
+  if (!/daily_report|weekly_report|monthly_report|일일|주간|월간|언론 동향/i.test(`${row.title || ""} ${row.message_type || ""}`)) return "";
+  // Older delayed deliveries encode the report slot only in their message body.
+  const text = String(row.body || "");
+  const date = text.match(/20\d{2}[-.]\d{2}[-.]\d{2}/)?.[0] || "";
+  const slot = text.match(/(?:slot|report_slot)[=:\s-]*(0?8|13|18)/i)
+    || text.match(/(?:^|[\sT])((?:0?8)|13|18):[0-5]\d/)
+    || text.match(/(?:^|[^0-9])((?:0?8)|13|18)\s*시/);
+  return [date, slot ? `report_slot=${slot[1].padStart(2, "0")}` : ""].filter(Boolean).join(" ");
+}
+
+function publicSnapshotData(data: Record<string, unknown>) {
+  const rows = (key: string) => Array.isArray(data[key]) ? data[key] as Record<string, unknown>[] : [];
+  return {
+    articles: data.articles,
+    notifications: rows("notifications").map((row) => ({
+      ...pickFields(row, ["id", "sent_at", "channel", "message_type", "dedupe_key", "title", "link_url", "status", "created_at"]),
+      body: publicNotificationBody(row),
+    })),
+    watch_runs: rows("watch_runs").map((row) => ({
+      ...pickFields(row, ["run_key", "scanned_at", "minutes_back", "scanned_count", "negative_count", "new_negative_count", "status", "created_at"]),
+      message: publicWatchMessage(row.message),
+    })),
+    report_runs: rows("report_runs").map((row) => ({
+      ...pickFields(row, ["run_key", "report_date", "report_slot", "timestamp", "window_label", "risk_level"]),
+      metrics: publicReportMetrics(row.metrics),
+    })),
+    job_runs: rows("job_runs").map((row) => pickFields(row, [
+      "run_key", "job_type", "report_date", "report_slot", "workflow", "status", "started_at", "finished_at", "last_seen_at", "created_at", "updated_at",
+    ])),
+  };
 }
 
 async function handleRest(payload: Record<string, unknown>, session: SessionInfo) {
@@ -284,7 +347,22 @@ async function triggerCollection(
   const runKey = manualReportSend
     ? dashboardReportSendRunKey(workflow, periodReports, reportSlot)
     : dashboardRefreshRunKey(workflow, periodReports, sendSlack, reportSlot, authenticated);
-  const recentDispatch = await hasRecentDashboardDispatch(runKey, cooldownMinutes);
+  const atomicRefresh = workflow === "dashboard-refresh.yml";
+  let recentDispatch: { active: boolean; retryAfterSeconds: number };
+  if (atomicRefresh) {
+    const claim = await supabaseRpc("claim_dashboard_refresh", {
+      p_cooldown_seconds: Math.max(120, Math.ceil(cooldownMinutes * 60)),
+      p_requested_by: session.employee_no || "dashboard_public_refresh",
+      p_authenticated: authenticated,
+    });
+    const result = claim.data as { claimed?: boolean; retry_after_seconds?: number } | null;
+    if (!claim.ok || !result || typeof result.claimed !== "boolean") {
+      return jsonResponse({ error: "refresh_reservation_unavailable", retry_after_seconds: 30 }, 503);
+    }
+    recentDispatch = { active: !result.claimed, retryAfterSeconds: Number(result.retry_after_seconds || 120) };
+  } else {
+    recentDispatch = await hasRecentDashboardDispatch(runKey, cooldownMinutes);
+  }
   if (recentDispatch.active) {
     return jsonResponse({
       ok: true,
@@ -297,7 +375,7 @@ async function triggerCollection(
     }, 202);
   }
 
-  await recordDashboardDispatch(runKey, {
+  if (!atomicRefresh) await recordDashboardDispatch(runKey, {
     workflow,
     status: "dashboard_dispatched",
     source: String(payload.source || "dashboard_manual_refresh"),
@@ -333,7 +411,7 @@ async function triggerCollection(
       authenticated,
       error: detail,
     });
-    return jsonResponse({ error: "github_dispatch_failed", detail }, 502);
+    return jsonResponse({ error: "github_dispatch_failed", ...(authenticated ? { detail } : {}) }, 502);
   }
 
   if (!dispatchResult.response.ok) {
@@ -349,7 +427,7 @@ async function triggerCollection(
     return jsonResponse({
       error: "github_dispatch_failed",
       status: dispatchResult.response.status,
-      detail,
+      ...(authenticated ? { detail } : {}),
     }, 502);
   }
 
@@ -370,9 +448,8 @@ function dashboardRefreshRunKey(
   reportSlot: string,
   authenticated: boolean,
 ) {
-  const scope = workflow === "dashboard-refresh.yml"
-    ? "shared"
-    : (authenticated ? "auth" : "public");
+  if (workflow === "dashboard-refresh.yml") return "dashboard_refresh:shared:dashboard-refresh.yml:none:nosend:auto";
+  const scope = authenticated ? "auth" : "public";
   return `dashboard_refresh:${scope}:${workflow}:${periodReports}:${sendSlack ? "send" : "nosend"}:${reportSlot}`;
 }
 
@@ -624,6 +701,7 @@ function jsonResponse(payload: unknown, status = 200) {
     status,
     headers: {
       ...corsHeaders,
+      "Cache-Control": "no-store",
       "Content-Type": "application/json; charset=utf-8",
     },
   });

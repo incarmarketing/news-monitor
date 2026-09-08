@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - "supabase/functions/**"
+      - "tools/test_dashboard_api.cjs"
       - ".github/workflows/deploy-supabase-functions.yml"
 
 permissions:
@@ -33,6 +34,16 @@ jobs:
             echo "::error::SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF are required. Refusing to report a skipped Edge Function deploy as successful."
             exit 1
           fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Verify public dashboard API contract
+        run: |
+          npm ci --prefix frontend --ignore-scripts
+          node tools/test_dashboard_api.cjs
 
       - name: Deploy browser-facing Edge Functions
         env:

@@ -838,6 +838,19 @@ def load_supabase_job_runs() -> list[dict]:
     return rows
 
 
+def public_watch_message(value: object) -> str:
+    text = str(value or "")
+    token = re.sub(r"_+", "_", re.sub(r"[\s-]+", "_", text.strip().lower()))
+    if (
+        "no_new_negative_article" in token
+        or "no_negative_article_found" in token
+        or re.search(r"신규\s*부정\s*기사\s*(?:가\s*)?없", text)
+        or re.search(r"새\s*부정\s*기사\s*(?:가\s*)?없", text)
+    ):
+        return "no_new_negative_articles"
+    return ""
+
+
 def build_public_operations_snapshot(
     notifications: list[dict],
     watch_runs: list[dict],
@@ -933,7 +946,10 @@ def build_public_operations_snapshot(
     return {
         "generated_at": datetime.now(KST).isoformat(),
         "notifications": public_rows(notifications, notification_fields, 120),
-        "watch_runs": public_rows(watch_runs, watch_fields, 80),
+        "watch_runs": [
+            {**row, **({"message": public_watch_message(row["message"])} if "message" in row else {})}
+            for row in public_rows(watch_runs, watch_fields, 80)
+        ],
         "report_runs": public_report_rows(report_runs, 500),
         "job_runs": public_rows(job_runs, job_fields, 200),
     }
