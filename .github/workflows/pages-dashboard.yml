@@ -48,6 +48,11 @@ on:
       - ".github/workflows/ga-revenue-sync.yml"
   workflow_dispatch:
     inputs:
+      ui_only:
+        description: "Publish UI only, preserving existing data and reports during a database outage"
+        required: false
+        default: false
+        type: boolean
       refresh_external:
         description: "Refresh regulator, GA, and archive sync data before publishing"
         required: false
@@ -120,8 +125,10 @@ jobs:
           tests.test_schedule_guard
           tests.test_slack_notify
           tests.test_stock_collector
+          tests.test_publish_dashboard_ui
 
       - name: Repair stored publisher identities
+        if: ${{ inputs.ui_only != true }}
         timeout-minutes: 12
         run: |
           if git diff --quiet HEAD^ HEAD -- publisher_identity.py publisher_registry.json tools/backfill_publisher_identity.py; then
@@ -143,7 +150,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Refresh official regulator releases
-        if: github.event_name == 'workflow_dispatch' && inputs.refresh_external == true
+        if: github.event_name == 'workflow_dispatch' && inputs.refresh_external == true && inputs.ui_only != true
         run: |
           timeout 180s python refresh_regulator_releases.py --days 14 --pages 10 || \
             echo "::warning::Regulator refresh did not finish; publishing with last successful data."
@@ -154,7 +161,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Refresh GA competitor intel
-        if: github.event_name == 'workflow_dispatch' && inputs.refresh_external == true
+        if: github.event_name == 'workflow_dispatch' && inputs.refresh_external == true && inputs.ui_only != true
         run: |
           timeout 240s python refresh_ga_competitor_intel.py --stand-mm 202512 --top 10 --revenue-start-year 2021 --revenue-end-year 2025 || \
             echo "::warning::GA competitor refresh did not finish; publishing with last successful data."
@@ -163,7 +170,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Re-sync recent daily archives to Supabase
-        if: github.event_name == 'workflow_dispatch' && inputs.refresh_external == true
+        if: github.event_name == 'workflow_dispatch' && inputs.refresh_external == true && inputs.ui_only != true
         run: |
           timeout 180s python sync_daily_archive_to_supabase.py --days 14 || \
             echo "::warning::Daily archive Supabase sync did not finish; dashboard publish will continue."
@@ -179,6 +186,7 @@ jobs:
           npm run build
 
       - name: Build static site from existing archives
+        if: ${{ inputs.ui_only != true }}
         run: python publish_report.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
@@ -205,6 +213,15 @@ jobs:
           AI_ISSUE_SUMMARY_PROVIDER: gemini
           REQUIRE_DASHBOARD_HISTORY: "true"
           REQUIRE_DASHBOARD_QUALITY: "false"
+
+      - name: Publish UI without replacing stored data or reports
+        if: ${{ inputs.ui_only == true }}
+        run: |
+          python -c "import dashboard_builder; dashboard_builder.publish_supabase_public_config()"
+          python tools/publish_dashboard_ui.py
+        env:
+          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
