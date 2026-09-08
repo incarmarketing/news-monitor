@@ -21,6 +21,10 @@ on:
 permissions:
   contents: read
 
+env:
+  AI_CONTEXT_CLASSIFICATION: "rules"
+  AI_CONTEXT_PRO_REVIEW: "false"
+
 jobs:
   backfill:
     runs-on: ubuntu-latest
@@ -54,6 +58,4 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_CONTEXT_MODEL: ${{ secrets.GEMINI_CONTEXT_MODEL || secrets.GEMINI_FLASH_MODEL || 'gemini-2.5-flash' }}
           AI_CONTEXT_MAX_ARTICLES: "10"
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: ${{ secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
           BACKFILL_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}

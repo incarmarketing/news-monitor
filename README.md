@@ -397,12 +397,13 @@ AI 요약 백업용:
 GEMINI_TIMEOUT_SECONDS=45
 GEMINI_CIRCUIT_HOURS=6
 GEMINI_CIRCUIT_CREDIT_HOURS=24
-GROQ_API_KEY
-GROQ_MODEL=llama-3.3-70b-versatile
-GROQ_MAX_ISSUE_SUMMARIES=20
+AI_ISSUE_SUMMARY_PROVIDER=gemini
+AI_MAX_ISSUE_SUMMARIES=8
 ```
 
-`GROQ_API_KEY`가 있으면 GitHub Actions 대시보드 빌드 단계에서 관련 기사 묶음별로 "이 이슈가 무엇인지"만 1문장 요약합니다. Gemini가 429, quota, prepay credit depleted 상태가 되면 `.run-state/gemini_circuit.json`에 회로차단 상태를 기록하고 일정 시간 Gemini 호출을 건너뜁니다. 키가 없거나 한도 초과가 발생하면 Groq 또는 기존 규칙 기반 요약으로 자동 전환합니다.
+기사 분류와 부정 감시는 검증된 규칙으로 처리합니다. Gemini는 요약·보고서 문장 생성에 사용하며, 키 누락·한도 초과·오류 시 기존 규칙 기반 보고서로 전환합니다. Groq/Llama 호출과 관련 비밀값 주입은 제거했습니다. 과거 모델명이 남은 DB 이력은 삭제하지 않습니다.
+
+분류 자동 점검은 [운영 안내](docs/classification-maintenance.md)를 참고하세요.
 
 반복 실패 방지:
 

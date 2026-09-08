@@ -28,7 +28,6 @@ import archiver
 import classification_normalizer
 import config
 import gemini_helper
-import groq_helper
 import public_urls
 import report_window
 import supabase_store
@@ -131,7 +130,7 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
         return f"## 최종 결론\n{window['label']} 기준 주요 모니터링 대상 뉴스가 없습니다."
     baseline_report = fallback_report(clustered, metrics)
     if not GEMINI_API_KEY:
-        return groq_or_rules_report(clustered, metrics, baseline_report, reason="gemini_key_missing")
+        return rules_report(clustered, metrics, baseline_report, reason="gemini_key_missing")
 
     is_open, circuit_state = gemini_helper.circuit_open()
     if is_open:
@@ -139,9 +138,9 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
         gemini_helper.set_ai_failure_metrics(
             metrics,
             [{"model": "gemini", "error": gemini_helper.circuit_message(circuit_state), "quota": True}],
-            used_model="groq_or_rules_fallback",
+            used_model="rules_fallback",
         )
-        return groq_or_rules_report(clustered, metrics, baseline_report, reason="gemini_circuit_open")
+        return rules_report(clustered, metrics, baseline_report, reason="gemini_circuit_open")
 
     prompt = build_prompt(clustered, metrics, yesterday)
     failures: list[dict] = []
@@ -182,20 +181,12 @@ def generate_report(clustered: list[dict], metrics: dict, yesterday: dict | None
                 console.print(f"[yellow]{gemini_helper.circuit_message(state)}[/]")
                 break
             console.print("[yellow]다음 백업 모델을 시도합니다.[/]")
-    gemini_helper.set_ai_failure_metrics(metrics, failures, used_model="groq_or_rules_fallback")
-    console.print("[yellow]Gemini 사용 불가: Groq/규칙 기반 백업 보고서로 전환해 발송 흐름을 계속합니다.[/]")
-    return groq_or_rules_report(clustered, metrics, baseline_report, reason="gemini_failed")
+    gemini_helper.set_ai_failure_metrics(metrics, failures, used_model="rules_fallback")
+    console.print("[yellow]Gemini 사용 불가: 규칙 기반 백업 보고서로 전환해 발송 흐름을 계속합니다.[/]")
+    return rules_report(clustered, metrics, baseline_report, reason="gemini_failed")
 
 
-def groq_or_rules_report(clustered: list[dict], metrics: dict, baseline_report: str, *, reason: str) -> str:
-    if groq_helper.is_enabled():
-        with console.status("[cyan]Groq 백업 보고서 작성 중...[/]", spinner="dots"):
-            report = groq_helper.generate_briefing_report(clustered, metrics, baseline_report)
-        if report:
-            metrics["ai_model_used"] = f"groq:{config.GROQ_MODEL}"
-            metrics["ai_fallback_used"] = True
-            metrics["ai_fallback_reason"] = reason
-            return report
+def rules_report(clustered: list[dict], metrics: dict, baseline_report: str, *, reason: str) -> str:
     metrics["ai_model_used"] = "rules_fallback"
     metrics["ai_fallback_used"] = True
     metrics["ai_fallback_reason"] = reason

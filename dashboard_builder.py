@@ -21,7 +21,6 @@ import ai_fallback
 import analyzer
 import classification_normalizer
 import gemini_helper
-import groq_helper
 
 BASE_DIR = Path(__file__).parent
 PUBLIC_DIR = BASE_DIR / "public"
@@ -503,7 +502,7 @@ def is_stock_listing_noise(row: dict) -> bool:
 
 
 def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
-    limit = getattr(config, "AI_MAX_ISSUE_SUMMARIES", getattr(config, "GROQ_MAX_ISSUE_SUMMARIES", 8))
+    limit = getattr(config, "AI_MAX_ISSUE_SUMMARIES", 8)
     if not rows or limit <= 0:
         return rows
 
@@ -1414,7 +1413,7 @@ def invalid_notification_action_links(notifications: list[dict]) -> list[dict]:
             continue
 
         if "ai_usage" in message_type:
-            allowed_hosts = {"aistudio.google.com", "console.groq.com"}
+            allowed_hosts = {"aistudio.google.com"}
             if host not in allowed_hosts:
                 failures.append(notification_link_failure(row, "ai_usage_link_unexpected_host", actual=link))
             continue
@@ -1577,7 +1576,6 @@ def latest_daily_notification_rows(rows: list[dict]) -> list[dict]:
 
 def build_ai_status(report_runs: list[dict] | None = None) -> dict:
     circuit_open, circuit_state = gemini_helper.circuit_open()
-    groq_status = groq_helper.rate_limit_status()
     latest_gemini_report = latest_gemini_report_status(report_runs or [])
     gemini_usage_state = gemini_helper.read_usage_state()
     return {
@@ -1592,13 +1590,6 @@ def build_ai_status(report_runs: list[dict] | None = None) -> dict:
             "usage_url": getattr(config, "GEMINI_USAGE_URL", "https://aistudio.google.com/usage"),
             "latest_report": latest_gemini_report,
             "last_response": gemini_usage_state,
-        },
-        "groq": {
-            "model": os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL),
-            "report_model": config.GROQ_MODEL,
-            "has_key": bool(os.getenv("GROQ_API_KEY", "").strip()),
-            "rate_limit": groq_status,
-            "limits_url": "https://console.groq.com/settings/limits",
         },
     }
 
@@ -1713,7 +1704,7 @@ def public_key_from_json_env(name: str) -> str:
 
 
 def enrich_issue_summaries(rows: list[dict]) -> list[dict]:
-    limit = getattr(config, "AI_MAX_ISSUE_SUMMARIES", getattr(config, "GROQ_MAX_ISSUE_SUMMARIES", 8))
+    limit = getattr(config, "AI_MAX_ISSUE_SUMMARIES", 8)
     if not rows or limit <= 0:
         return rows
 

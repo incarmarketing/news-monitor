@@ -46,7 +46,10 @@ class GeminiModelRoutingTests(unittest.TestCase):
 
         with patch.dict("os.environ", {"AI_CONTEXT_PRO_REVIEW": "true"}):
             self.assertFalse(analyzer.should_pro_review_ai_context({}, neutral_context))
-            self.assertTrue(analyzer.should_pro_review_ai_context({}, own_caution_context))
+            self.assertFalse(analyzer.should_pro_review_ai_context({}, own_caution_context))
+            self.assertTrue(analyzer.should_pro_review_ai_context(
+                {"title": "인카금융서비스 내부통제 점검"}, own_caution_context,
+            ))
 
 
 if __name__ == "__main__":

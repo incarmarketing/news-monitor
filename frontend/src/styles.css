@@ -1857,7 +1857,7 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   box-shadow: 0 16px 34px rgba(15, 31, 62, .18);
 }
 
-.ai-usage-panel.llama-only {
+.ai-usage-panel.compact-provider {
   gap: 10px;
 }
 
@@ -4766,11 +4766,11 @@ svg { width: 18px; height: 18px; stroke-width: 2.35; }
   white-space: nowrap;
 }
 
-.ai-usage-panel.llama-only .ai-power-copy b {
+.ai-usage-panel.compact-provider .ai-power-copy b {
   color: #ffffff;
 }
 
-.ai-usage-panel.llama-only .ai-power-copy em {
+.ai-usage-panel.compact-provider .ai-power-copy em {
   color: rgba(236, 248, 255, .72);
 }
 

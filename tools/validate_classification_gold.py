@@ -34,8 +34,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def get_rows(path: str) -> list[dict[str, Any]]:
-    value = supabase_store.request("GET", path).json()
-    return value if isinstance(value, list) else []
+    response = supabase_store.request("GET", path, headers={"Prefer": "count=exact"})
+    value = response.json()
+    total = response.headers.get("Content-Range", "").rsplit("/", 1)[-1]
+    if not isinstance(value, list) or not total.isdigit() or len(value) != int(total):
+        raise RuntimeError("incomplete classification validation data")
+    return value
 
 
 def chunks(values: list[int], size: int = 100) -> list[list[int]]:

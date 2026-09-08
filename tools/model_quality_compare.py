@@ -1,4 +1,4 @@
-"""Compare Gemini and Groq issue-summary quality on fixed monitoring cases.
+"""Compare Gemini Pro and Flash issue-summary quality on fixed monitoring cases.
 
 This smoke test is intentionally small. It uses the same prompt builder and
 cleanup path that the dashboard issue summaries use, then writes a markdown and
@@ -23,10 +23,10 @@ if str(ROOT_DIR) not in sys.path:
 import ai_fallback
 import config
 import gemini_helper
-import groq_helper
+import summary_text
 
 KST = timezone(timedelta(hours=9))
-PROVIDER_KEYS = ("gemini_pro", "gemini_flash", "groq")
+PROVIDER_KEYS = ("gemini_pro", "gemini_flash")
 
 FORBIDDEN_TERMS = (
     "당사 직접 언급 기사",
@@ -140,18 +140,10 @@ def main() -> None:
     gemini_flash_model = os.getenv("GEMINI_FLASH_MODEL", "gemini-2.5-flash").strip()
 
     results = []
-    groq_blocked = False
     for sample in SAMPLES[:sample_limit]:
         articles = sample["articles"]
         gemini_pro_result = summarize_with_gemini(articles, provider="gemini_pro", model_name=gemini_pro_model)
         gemini_flash_result = summarize_with_gemini(articles, provider="gemini_flash", model_name=gemini_flash_model)
-        groq_result = (
-            provider_payload("groq", "skipped_after_rate_limit", model=os.getenv("GROQ_ISSUE_MODEL", ""))
-            if groq_blocked
-            else summarize_with_groq(articles)
-        )
-        if groq_result.get("status") == "rate_limited":
-            groq_blocked = True
         results.append(
             {
                 "id": sample["id"],
@@ -159,7 +151,6 @@ def main() -> None:
                 "expected_terms": list(sample["expected_terms"]),
                 "gemini_pro": evaluate_provider_result(gemini_pro_result, sample),
                 "gemini_flash": evaluate_provider_result(gemini_flash_result, sample),
-                "groq": evaluate_provider_result(groq_result, sample),
                 "input_titles": [article["title"] for article in articles],
             }
         )
@@ -169,14 +160,11 @@ def main() -> None:
         "strict_mode": strict_mode,
         "gemini_pro_model": gemini_pro_model,
         "gemini_flash_model": gemini_flash_model,
-        "groq_model": os.getenv("GROQ_ISSUE_MODEL") or os.getenv("GROQ_MODEL", ""),
         "case_count": len(results),
         "results": results,
         "overall": {
             "gemini_pro_pass": sum(1 for item in results if item["gemini_pro"]["passed"]),
             "gemini_flash_pass": sum(1 for item in results if item["gemini_flash"]["passed"]),
-            "groq_pass": sum(1 for item in results if item["groq"]["passed"]),
-            "groq_rate_limited": sum(1 for item in results if item["groq"].get("status") == "rate_limited"),
         },
     }
 
@@ -200,7 +188,7 @@ def main() -> None:
 
 
 def summarize_with_gemini(articles: list[dict], *, provider: str, model_name: str) -> dict:
-    prompt = groq_helper.build_issue_prompt(articles)
+    prompt = summary_text.build_issue_prompt(articles)
     full_prompt = f"{ai_fallback.ISSUE_SYSTEM_PROMPT}\n\n{prompt}"
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
@@ -220,7 +208,7 @@ def summarize_with_gemini(articles: list[dict], *, provider: str, model_name: st
                 request_options=gemini_helper.request_options(),
             )
             raw_text, extraction_error, metadata = extract_gemini_text(response)
-            summary = groq_helper.clean_issue_summary(raw_text)
+            summary = summary_text.clean_issue_summary(raw_text)
             status = "ok" if summary else ("raw_rejected" if raw_text else "empty")
             return provider_payload(
                 provider,
@@ -245,35 +233,6 @@ def summarize_with_gemini(articles: list[dict], *, provider: str, model_name: st
                 )
 
     return provider_payload(provider, "failed", error="model candidate failed", attempts=attempts)
-
-
-def summarize_with_groq(articles: list[dict]) -> dict:
-    if not groq_helper.is_enabled():
-        return provider_payload("groq", "groq_key_missing", model=os.getenv("GROQ_ISSUE_MODEL", ""))
-
-    model_name = os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL)
-    raw_text = groq_helper.chat_completion(
-        [
-            {"role": "system", "content": groq_helper.ISSUE_SUMMARY_SYSTEM_PROMPT},
-            {"role": "user", "content": groq_helper.build_issue_prompt(articles)},
-        ],
-        max_tokens=int(os.getenv("GROQ_ISSUE_MAX_TOKENS", "90")),
-        temperature=0.1,
-        retries=1,
-        purpose="model_quality_compare",
-        model=model_name,
-    )
-    summary = groq_helper.clean_issue_summary(raw_text)
-    rate_limit = groq_helper.rate_limit_status()
-    status = "ok" if summary else ("rate_limited" if is_groq_rate_limited(rate_limit) else "raw_rejected" if raw_text else "empty")
-    return provider_payload(
-        "groq",
-        status,
-        model=model_name,
-        raw=raw_text,
-        summary=summary,
-        rate_limit=rate_limit,
-    )
 
 
 def provider_payload(
@@ -337,13 +296,6 @@ def gemini_response_metadata(response: object) -> dict:
     }
 
 
-def is_groq_rate_limited(rate_limit: dict) -> bool:
-    if not rate_limit:
-        return False
-    status = str(rate_limit.get("status", ""))
-    return status == "429" or bool(rate_limit.get("daily_limit_tokens"))
-
-
 def evaluate_provider_result(result: dict, sample: dict) -> dict:
     evaluated = evaluate_summary(result.get("summary", ""), sample)
     evaluated.update(
@@ -363,7 +315,7 @@ def evaluate_provider_result(result: dict, sample: dict) -> dict:
 
 
 def evaluate_summary(summary: str, sample: dict) -> dict:
-    text = groq_helper.clean_prompt_text(summary)
+    text = summary_text.clean_prompt_text(summary)
     checks = {
         "non_empty": bool(text),
         "length": 24 <= len(text) <= 135,
@@ -395,7 +347,7 @@ def normalize_text(value: object) -> str:
 
 
 def preview_text(value: object, limit: int = 180) -> str:
-    text = groq_helper.clean_prompt_text(value)
+    text = summary_text.clean_prompt_text(value)
     if len(text) <= limit:
         return text
     return text[:limit].rstrip() + "..."
@@ -409,29 +361,23 @@ def render_markdown(payload: dict) -> str:
         f"- Strict mode: {'on' if payload.get('strict_mode') else 'off'}",
         f"- Gemini Pro 모델: {payload.get('gemini_pro_model') or '-'}",
         f"- Gemini Flash 모델: {payload.get('gemini_flash_model') or '-'}",
-        f"- Groq 모델: {payload.get('groq_model') or '-'}",
         f"- Gemini Pro 통과: {payload['overall']['gemini_pro_pass']}/{payload['case_count']}",
         f"- Gemini Flash 통과: {payload['overall']['gemini_flash_pass']}/{payload['case_count']}",
-        f"- Groq 통과: {payload['overall']['groq_pass']}/{payload['case_count']}",
-        f"- Groq rate limit: {payload['overall'].get('groq_rate_limited', 0)}건",
         "",
-        "| 케이스 | Pro 상태 | Pro 요약 | Flash 상태 | Flash 요약 | Groq 상태 | Groq 요약 | 판정 |",
-        "|---|---|---|---|---|---|---|---|",
+        "| 케이스 | Pro 상태 | Pro 요약 | Flash 상태 | Flash 요약 | 판정 |",
+        "|---|---|---|---|---|---|",
     ]
     for item in payload["results"]:
         gemini_pro = item["gemini_pro"]
         gemini_flash = item["gemini_flash"]
-        groq = item["groq"]
         verdict = "OK" if all(item[provider]["passed"] for provider in PROVIDER_KEYS) else "CHECK"
         lines.append(
-            "| {label} | {pro_status} | {pro} | {flash_status} | {flash} | {groq_status} | {groq} | {verdict} |".format(
+            "| {label} | {pro_status} | {pro} | {flash_status} | {flash} | {verdict} |".format(
                 label=escape_cell(item["label"]),
                 pro_status=escape_cell(gemini_pro.get("status") or "-"),
                 pro=escape_cell(gemini_pro["summary"] or "(empty)"),
                 flash_status=escape_cell(gemini_flash.get("status") or "-"),
                 flash=escape_cell(gemini_flash["summary"] or "(empty)"),
-                groq_status=escape_cell(groq.get("status") or "-"),
-                groq=escape_cell(groq["summary"] or "(empty)"),
                 verdict=verdict,
             )
         )

@@ -6,7 +6,7 @@ on:
     branches: [main]
     paths:
       - "tools/model_quality_compare.py"
-      - "groq_helper.py"
+      - "summary_text.py"
       - "ai_fallback.py"
       - ".github/workflows/model-quality-compare.yml"
 
@@ -33,16 +33,13 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Compare Gemini and Groq summary quality
+      - name: Compare Gemini Pro and Flash summary quality
         run: python tools/model_quality_compare.py
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL || secrets.GEMINI_EDGE_MODEL || 'gemini-2.5-pro' }}
           GEMINI_PRO_MODEL: ${{ secrets.GEMINI_MODEL || secrets.GEMINI_EDGE_MODEL || 'gemini-2.5-pro' }}
           GEMINI_FLASH_MODEL: ${{ secrets.GEMINI_FLASH_MODEL || 'gemini-2.5-flash' }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: ${{ secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
-          GROQ_ISSUE_MODEL: ${{ secrets.GROQ_ISSUE_MODEL || secrets.GROQ_MODEL || 'llama-3.3-70b-versatile' }}
           GEMINI_TIMEOUT_SECONDS: "75"
           GEMINI_ISSUE_MAX_TOKENS: "4096"
           MODEL_QUALITY_STRICT: "0"

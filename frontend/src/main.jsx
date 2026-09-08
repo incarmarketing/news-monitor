@@ -4588,13 +4588,12 @@ function OpsRuntimeStrip({ jobs, watchHealth, notificationHealth, aiStatus }) {
   const sendStatus = notificationHealth?.status || "unknown";
   const sendValue = notificationHealth?.label || (sendStatus === "success" ? "정상" : sendStatus === "fail" ? "실패" : "확인");
   const sendDetail = notificationHealth?.detail || "발송 이력 확인";
-  const apiValue = "100%";
-  const apiDetail = "Llama 잔량 기준";
+  const api = aiSummaryRuntimeStatus(aiStatus);
   return (
     <section className="panel ops-runtime-strip">
       <OpsMiniStatus icon={Radar} label="감시" value={watchValue} detail={watchDetail} status={watchStatus} />
       <OpsMiniStatus icon={Bell} label="발송" value={sendValue} detail={sendDetail} status={sendStatus} />
-      <OpsMiniStatus icon={Gauge} label="API" value={apiValue} detail={apiDetail} status="success" />
+      <OpsMiniStatus icon={Gauge} label="AI 요약" value={api.value} detail={api.detail} status={api.status} />
     </section>
   );
 }
@@ -4651,17 +4650,27 @@ function WatchPanel({ jobs, risk = "LOW", health }) {
   );
 }
 
+function aiSummaryRuntimeStatus(status) {
+  const gemini = status?.gemini;
+  if (!gemini || typeof gemini.has_key !== "boolean") {
+    return { value: "미확인", detail: "상태 수신 대기", status: "unknown" };
+  }
+  if (!gemini.has_key || gemini.circuit_open) {
+    return { value: "기본형", detail: "규칙 기반 보고서", status: "warning" };
+  }
+  return { value: "연결 설정", detail: "Gemini", status: "success" };
+}
+
 function AiUsagePanel({ status }) {
-  const groqReserve = 100;
+  const state = aiSummaryRuntimeStatus(status);
   return (
-    <section className="ai-usage-panel llama-only">
+    <section className="ai-usage-panel compact-provider">
       <div className="ai-usage-head">
-        <span><Gauge />API</span>
-        <b>잔량 기준</b>
+        <span><Gauge />AI 요약</span>
+        <b>{state.detail}</b>
       </div>
       <div className="ai-compact-value">
-        <strong>{groqReserve}%</strong>
-        <span>Llama 잔량</span>
+        <strong>{state.value}</strong>
       </div>
     </section>
   );
@@ -4749,7 +4758,7 @@ function formatGeminiDetail(gemini = {}, report = {}) {
   if (report.run_key) {
     const slot = report.report_slot ? `${report.report_slot}시 보고서` : "최근 보고서";
     const usageText = formatGeminiUsageText(report.usage);
-    if (report.credit_depleted) return `${slot}에서 Gemini 크레딧 소진이 감지되어 Groq/규칙 백업을 사용했습니다.`;
+    if (report.credit_depleted) return `${slot}에서 Gemini 크레딧 소진이 감지되어 규칙 기반 보고서를 사용했습니다.`;
     if (report.quota_exhausted) return `${slot}에서 Gemini 쿼터 한도가 감지되어 백업을 사용했습니다.`;
     if (report.fallback_used) return `${slot}에서 ${report.ai_model_used || "백업 모델"}로 전환했습니다.`;
     if (report.ai_model_used) return `${slot}에서 ${report.ai_model_used} 응답을 사용했습니다${usageText ? ` · ${usageText}` : ""}.`;

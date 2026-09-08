@@ -20,7 +20,6 @@ from rich.panel import Panel
 import archiver
 import config
 import gemini_helper
-import groq_helper
 import public_urls
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -58,12 +57,12 @@ def _fmt_count(value: int | float) -> str:
 def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: str) -> str:
     baseline = fallback_period_summary(aggregate, top_articles, period_label)
     if not GEMINI_API_KEY:
-        return groq_or_rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_key_missing")
+        return rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_key_missing")
 
     is_open, circuit_state = gemini_helper.circuit_open()
     if is_open:
         console.print(f"[yellow]{gemini_helper.circuit_message(circuit_state)}[/]")
-        return groq_or_rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_circuit_open")
+        return rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_circuit_open")
 
     top_text = "\n".join(
         f"- {a.get('_date', '')} | {a.get('_tone', 'neutral')} | 점수 {a.get('_score', 0)} | "
@@ -169,32 +168,11 @@ def generate_ai_report(aggregate: dict, top_articles: list[dict], period_label: 
                 state = gemini_helper.trip_circuit(exc, model=model_name)
                 console.print(f"[yellow]{gemini_helper.circuit_message(state)}[/]")
                 break
-    console.print("[yellow]Gemini 사용 불가: 기간 보고서를 Groq/규칙 기반 요약으로 작성합니다.[/]")
-    return groq_or_rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_failed")
+    console.print("[yellow]Gemini 사용 불가: 기간 보고서를 규칙 기반 요약으로 작성합니다.[/]")
+    return rules_period_report(aggregate, top_articles, period_label, baseline, reason="gemini_failed")
 
 
-def groq_or_rules_period_report(aggregate: dict, top_articles: list[dict], period_label: str, baseline: str, *, reason: str) -> str:
-    if groq_helper.is_enabled():
-        rows = [
-            {
-                "_score": article.get("_score", article.get("score", 0)),
-                "title": article.get("title", ""),
-                "source": article.get("source", ""),
-                "_category": article.get("_category", article.get("category", "")),
-                "_tone": article.get("_tone", article.get("tone", "")),
-                "_summary": article.get("_summary", "") or article.get("summary", "") or article.get("description", ""),
-            }
-            for article in top_articles[:8]
-        ]
-        metrics = {
-            "total_collected": aggregate.get("total_collected", 0),
-            "total_after_cluster": aggregate.get("total_after_cluster", 0),
-            "risk_level": "PERIOD",
-            "fallback_reason": reason,
-        }
-        report = groq_helper.generate_period_report(rows, metrics, baseline, period_label)
-        if report:
-            return report
+def rules_period_report(aggregate: dict, top_articles: list[dict], period_label: str, baseline: str, *, reason: str) -> str:
     return baseline
 
 

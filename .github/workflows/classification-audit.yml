@@ -1,14 +1,23 @@
 name: Classification Audit
 
 on:
+  schedule:
+    # 06:37 KST, away from the regular briefing and 10-minute watch boundaries.
+    - cron: "37 21 * * *"
   workflow_dispatch:
     inputs:
       apply_repairs:
-        description: "Apply validated deterministic repairs to Supabase"
+        description: "Apply only protected, capped source-role repairs"
+        required: false
+        default: false
+        type: boolean
+      full_history:
+        description: "Also run the legacy full-history read-only audit"
         required: false
         default: false
         type: boolean
   push:
+    branches: [main]
     paths:
       - "analyzer.py"
       - "deterministic_risk.py"
@@ -18,10 +27,20 @@ on:
       - "tests/test_deterministic_risk.py"
       - "tools/audit_classification_drift.py"
       - "tools/reclassify_deterministic.py"
+      - "tools/classification_maintenance.py"
+      - "tests/test_classification_maintenance.py"
       - ".github/workflows/classification-audit.yml"
 
 permissions:
   contents: read
+
+concurrency:
+  group: classification-maintenance
+  cancel-in-progress: false
+
+env:
+  AI_CONTEXT_CLASSIFICATION: "rules"
+  AI_CONTEXT_PRO_REVIEW: "false"
 
 jobs:
   audit:
@@ -45,17 +64,17 @@ jobs:
           tests.test_deterministic_risk
           tests.test_analyzer
           tests.test_source_role_relevance
+          tests.test_classification_maintenance
+          tests.test_no_llama_fallback
           tests.test_negative_watch
           tests.test_context_rule_fixes
           tests.test_supabase_store_feedback
 
-      - name: Validate reviewed classification gold set
+      - name: Validate reviewed cases and maintain recent seven days
         run: >-
-          python tools/validate_classification_gold.py
-          --sample-limit 40
-          --min-alert-precision 0.99
-          --min-alert-recall 0.90
-          --output "${RUNNER_TEMP}/classification-gold-validation.json"
+          python tools/classification_maintenance.py
+          --output "${RUNNER_TEMP}/classification-maintenance.json"
+          ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.apply_repairs)) && vars.CLASSIFICATION_MAINTENANCE_PAUSED != 'true' && '--apply' || '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
@@ -65,6 +84,7 @@ jobs:
           AI_CONTEXT_CLASSIFICATION: "rules"
 
       - name: Run read-only aggregate classification audit
+        if: github.event_name == 'workflow_dispatch' && inputs.full_history
         run: >-
           python tools/audit_classification_drift.py
           --sample-limit 0
@@ -77,11 +97,11 @@ jobs:
           AI_CONTEXT_PRO_REVIEW: "false"
 
       - name: Build deterministic reclassification plan
+        if: github.event_name == 'workflow_dispatch' && inputs.full_history
         run: >-
           python tools/reclassify_deterministic.py
           --sample-limit 0
           --output "${RUNNER_TEMP}/deterministic-reclassification.json"
-          ${{ github.event_name == 'workflow_dispatch' && inputs.apply_repairs && '--apply' || '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
@@ -95,7 +115,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: classification-audit-reports
+          retention-days: 30
           path: |
-            ${{ runner.temp }}/classification-gold-validation.json
+            ${{ runner.temp }}/classification-maintenance.json
             ${{ runner.temp }}/classification-audit.json
             ${{ runner.temp }}/deterministic-reclassification.json

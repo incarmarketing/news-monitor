@@ -2,8 +2,7 @@
 
 The application decides which articles matter before calling this module.
 This module only chooses the text-generation provider for the same input.
-Dashboard issue summaries default to Gemini for higher-quality summaries, with
-Groq/rules retained only as fallback providers.
+Dashboard issue summaries use Gemini with a deterministic, no-network fallback.
 """
 
 from __future__ import annotations
@@ -16,7 +15,7 @@ import google.generativeai as genai
 
 import config
 import gemini_helper
-import groq_helper
+import summary_text
 
 _GEMINI_CONFIGURED_KEY = ""
 
@@ -24,11 +23,11 @@ ISSUE_SYSTEM_PROMPT = """
 당신은 한국어 언론 모니터링 기사 요약 전문가입니다.
 판단, 대응 제안, 위험 평가를 추가하지 말고 기사 묶음에서 확인되는 이슈의 사실관계만 한 문장으로 정리합니다.
 {rules}
-""".format(rules=groq_helper.SUMMARY_QUALITY_RULES).strip()
+""".format(rules=summary_text.SUMMARY_QUALITY_RULES).strip()
 
 
 def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> tuple[str, str]:
-    """Summarize one already-selected issue group using Gemini -> Groq -> rules."""
+    """Summarize one selected group using Gemini, then deterministic text."""
     if not articles:
         return "", "none"
 
@@ -36,27 +35,16 @@ def summarize_issue_with_provider(articles: list[dict], *, retries: int = 0) -> 
     if provider_mode == "rules":
         rules_summary = rules_issue_summary(articles)
         return rules_summary, "rules" if rules_summary else "none"
-    if provider_mode == "groq":
-        groq_summary = summarize_issue_with_groq(articles, retries=retries)
-        if groq_summary:
-            return groq_summary, f"groq:{groq_issue_model()}"
-        rules_summary = rules_issue_summary(articles)
-        return rules_summary, "rules" if rules_summary else "none"
-
-    prompt = groq_helper.build_issue_prompt(articles)
+    prompt = summary_text.build_issue_prompt(articles)
     gemini_text, gemini_provider = generate_gemini_text(
         f"{ISSUE_SYSTEM_PROMPT}\n\n{prompt}",
         max_tokens=int(os.getenv("GEMINI_ISSUE_MAX_TOKENS", "4096")),
         temperature=0.1,
         purpose="issue_summary",
     )
-    gemini_summary = groq_helper.clean_issue_summary(gemini_text)
+    gemini_summary = summary_text.clean_issue_summary(gemini_text)
     if gemini_summary:
         return gemini_summary, gemini_provider
-
-    groq_summary = summarize_issue_with_groq(articles, retries=retries)
-    if groq_summary:
-        return groq_summary, f"groq:{groq_issue_model()}"
 
     rules_summary = rules_issue_summary(articles)
     return rules_summary, "rules" if rules_summary else "none"
@@ -68,61 +56,13 @@ def summarize_issue(articles: list[dict], *, retries: int = 0) -> str:
 
 
 def summarize_issue_groups_with_provider(groups: list[dict], *, retries: int = 0) -> list[tuple[str, str]]:
-    """Summarize dashboard issue groups, batching Groq when explicitly requested."""
-    provider_mode = issue_summary_provider_mode()
-    if provider_mode == "groq":
-        summaries = summarize_issue_groups_with_groq(groups, retries=retries)
-        if summaries:
-            result: list[tuple[str, str]] = []
-            for index, group in enumerate(groups):
-                summary = summaries[index] if index < len(summaries) else ""
-                if summary:
-                    result.append((summary, f"groq:{groq_issue_model()}"))
-                else:
-                    result.append((rules_issue_summary(group.get("members", [])), "rules"))
-            return result
-        return [(rules_issue_summary(group.get("members", [])), "rules") for group in groups]
-
+    """Summarize groups without changing their classification or priority."""
     return [summarize_issue_with_provider(group.get("members", []), retries=retries) for group in groups]
 
 
 def issue_summary_provider_mode() -> str:
     value = os.getenv("AI_ISSUE_SUMMARY_PROVIDER", "gemini").strip().lower()
-    return value if value in {"auto", "gemini", "groq", "rules"} else "auto"
-
-
-def summarize_issue_with_groq(articles: list[dict], *, retries: int = 0) -> str:
-    if not groq_helper.is_enabled():
-        return ""
-    return groq_helper.summarize_issue(articles, retries=retries)
-
-
-def groq_issue_model() -> str:
-    return os.getenv("GROQ_ISSUE_MODEL", config.GROQ_MODEL)
-
-
-def summarize_issue_groups_with_groq(groups: list[dict], *, retries: int = 0) -> list[str]:
-    if not groq_helper.is_enabled() or not groups:
-        return []
-    text = groq_helper.chat_completion(
-        [
-            {
-                "role": "system",
-                "content": (
-                    "You summarize Korean news issue groups for a media monitoring dashboard. "
-                    "Return only a JSON array of concise Korean sentences. "
-                    "No advice, no risk judgment, no markdown."
-                ),
-            },
-            {"role": "user", "content": build_group_batch_prompt(groups)},
-        ],
-        max_tokens=int(os.getenv("GROQ_ISSUE_BATCH_MAX_TOKENS", "420")),
-        temperature=0.1,
-        retries=retries,
-        purpose="issue_summary_batch",
-        model=groq_issue_model(),
-    )
-    return parse_issue_batch_response(text, len(groups))
+    return value if value in {"auto", "gemini", "rules"} else "rules"
 
 
 def build_group_batch_prompt(groups: list[dict]) -> str:
@@ -130,20 +70,20 @@ def build_group_batch_prompt(groups: list[dict]) -> str:
         "각 관련 기사 묶음의 핵심 이슈를 한국어 한 문장으로 요약하세요.",
         "반드시 입력 순서와 같은 JSON 문자열 배열만 출력하세요.",
         "제목 반복, 출처, 날짜, 판단, 대응 제안은 쓰지 마세요.",
-        groq_helper.SUMMARY_QUALITY_RULES,
+        summary_text.SUMMARY_QUALITY_RULES,
     ]
     for index, group in enumerate(groups, 1):
         rows = []
         for article in group.get("members", [])[:2]:
-            title = groq_helper.clean_prompt_text(article.get("title", ""))[:80]
-            summary = groq_helper.clean_prompt_text(article.get("summary", "") or article.get("description", ""))[:90]
+            title = summary_text.clean_prompt_text(article.get("title", ""))[:80]
+            summary = summary_text.clean_prompt_text(article.get("summary", "") or article.get("description", ""))[:90]
             rows.append(f"- {title} / {summary}")
         sections.append(f"\n[{index}]\n" + "\n".join(rows))
     return "\n".join(sections)
 
 
 def parse_issue_batch_response(value: object, expected: int) -> list[str]:
-    text = groq_helper.clean_prompt_text(value)
+    text = summary_text.clean_prompt_text(value)
     if not text:
         return []
     try:
@@ -160,7 +100,7 @@ def parse_issue_batch_response(value: object, expected: int) -> list[str]:
 
 
 def clean_batch_issue_sentence(value: object) -> str:
-    text = groq_helper.clean_prompt_text(value)
+    text = summary_text.clean_prompt_text(value)
     text = text.strip("\"'`[] ")
     text = re.sub(r"^(요약|이슈|핵심)\s*[:：]\s*", "", text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -239,7 +179,7 @@ def rules_issue_summary(articles: list[dict]) -> str:
 
 
 def split_candidate_sentences(value: object) -> list[str]:
-    text = groq_helper.clean_prompt_text(value)
+    text = summary_text.clean_prompt_text(value)
     text = re.sub(r"\b기사\s*열기\b", " ", text)
     text = re.sub(r"^\s*[\[［(【]?[가-힣A-Za-z0-9_.-]{2,20}\s*=\s*[가-힣]{2,6}\s*기자[\]］)】]?\s*", "", text)
     text = re.sub(r"^\s*[\[［(【]?[^\]］)】\n]{2,30}\s+기자[\]］)】]?\s*", "", text)
