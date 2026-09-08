@@ -117,6 +117,20 @@ def is_non_insurance_financial_legal_noise(article: dict) -> bool:
 
 def normalize_article(article: dict, *, inplace: bool = False) -> dict:
     row = article if inplace else dict(article)
+    reason = analyzer.source_role_noise_reason(row)
+    if reason and not row.get("_feedback_applied"):
+        context = analyzer.apply_context_safety_guardrails(row, {
+            "category": "other", "tone": "neutral", "own_mentioned": False,
+            "negative_target": "none", "provider": "rules:source-role-v1",
+            "reason": reason,
+        })
+        row["classification_provider"] = context["provider"]
+        row["classification_reason"] = reason
+        row["own_mentioned"] = False
+        row["negative_target"] = "none"
+        row["clipping_recommended"] = False
+        row["clipping_reason"] = ""
+        return row
     if analyzer.is_routine_ga_channel_performance_article(row):
         category = analyzer.routine_ga_channel_performance_category(row)
         tone = analyzer.routine_ga_channel_performance_tone(row)

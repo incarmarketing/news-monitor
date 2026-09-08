@@ -418,7 +418,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v5-deterministic-2026-08-12"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-source-role-2026-09-08"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -729,6 +729,7 @@ def build_classification_contract(article: dict, context: dict | None = None) ->
             "confidence": deterministic.get("confidence") or 0,
             "matched_rule_keys": deterministic.get("matched_rule_keys") or [],
             "feedback_suppressed": feedback_suppressed,
+            "relevance_exclusion_reason": source_role_noise_reason(article),
         },
     }
 
@@ -1172,6 +1173,11 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["negative_target"] = "none"
         result["clipping_recommended"] = False
         result["clipping_reason"] = ""
+        relevance_reason = source_role_noise_reason(article)
+        if relevance_reason:
+            result["provider"] = "rules:source-role-v1"
+            result["reason"] = relevance_reason
+            result["evidence"] = original_article_title(article)[:500]
 
     if is_own_sales_performance_positive_article(article):
         result["category"] = "own"
@@ -1637,6 +1643,39 @@ def is_non_insurance_financial_legal_noise_article(article: dict) -> bool:
         )
     )
     return is_non_insurance_financial_legal_noise_text(text)
+
+
+def source_role_noise_reason(article: dict) -> str:
+    """Require a non-insurance subject and role evidence, never query metadata."""
+    text = original_article_text(article)
+    title = original_article_title(article)
+    if contains_own_name(text):
+        return ""
+    # A named insurer alone is not product, distribution, or regulatory evidence.
+    material = re.search(
+        r"보험(?:상품|계약|료|금|사기|업법|대리점|설계사|소비자)|"
+        r"(?:사이버|실손|펫|연금|자동차|배상책임|안심)보험|"
+        r"손해배상책임공제|손해율|지급여력|K-ICS|CSM|IFRS\s*17|"
+        r"1200\s*%|정착지원금|모집질서|부당승환|법인보험대리점|\bGA\b|"
+        r"(?:보험사|보험업계|보험회사).{0,35}(?:제재|민원|인수|매각|실적|자본|내부통제)",
+        text, re.I,
+    )
+    if material:
+        return ""
+    if (re.search(r"연애|데이트|미혼|결혼정보|결혼\s*의향", title)
+            and re.search(r"설문|조사|응답", text)
+            and re.search(r"연구소|연구원|의뢰|인용", text)
+            and re.search(r"손해보험|생명보험|보험사", text)):
+        return "보험사 연구·설문을 출처로 인용한 연애·결혼 기사로 보험업 주제가 아님"
+    if (re.search(r"통신|휴대폰|이동통신", title)
+            and re.search(r"민원|분쟁|불완전판매|위약금", text)):
+        return "통신 상품의 판매·민원 기사이며 원문에 보험 상품·모집 관련 근거가 없음"
+    if (re.search(r"배구|V[- ]?리그|아시아선수권", title, re.I)
+            and re.search(r"세터|미들블로커|블로킹|서브\s*에이스|아포짓|세트|홈경기장", text)
+            and re.search(r"KB손해보험|삼성화재|흥국생명", text)
+            and not re.search(r"스폰서|후원|협찬|사회공헌|기부", text)):
+        return "보험사명이 선수 소속팀으로 등장하는 배구 경기·구단 운영 기사"
+    return ""
 
 
 def is_incidental_insurance_mention_noise_text(text: str) -> bool:
@@ -2225,6 +2264,8 @@ def is_non_business_noise(article: dict) -> bool:
     text = article.get("title", "") + " " + article.get("description", "")
     title = article.get("title", "")
     if not text.strip():
+        return True
+    if source_role_noise_reason(article):
         return True
     if is_external_insurance_noise_article(article):
         return True
