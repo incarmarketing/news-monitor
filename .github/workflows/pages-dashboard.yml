@@ -48,6 +48,10 @@ on:
       - ".github/workflows/ga-revenue-sync.yml"
   workflow_dispatch:
     inputs:
+      backup_run_id:
+        description: "Successful full-site deployment run to preserve for UI-only recovery"
+        required: false
+        type: string
       ui_only:
         description: "Publish UI only, preserving existing data and reports during a database outage"
         required: false
@@ -60,6 +64,7 @@ on:
         type: boolean
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -213,6 +218,25 @@ jobs:
           AI_ISSUE_SUMMARY_PROVIDER: gemini
           REQUIRE_DASHBOARD_HISTORY: "true"
           REQUIRE_DASHBOARD_QUALITY: "false"
+
+      - name: Validate UI recovery backup selection
+        if: ${{ inputs.ui_only == true }}
+        env:
+          BACKUP_RUN_ID: ${{ inputs.backup_run_id }}
+        run: python -c "import os; value=os.environ['BACKUP_RUN_ID']; assert value.isdigit(), 'Select a successful full-site backup run'"
+
+      - name: Download existing published site for UI recovery
+        if: ${{ inputs.ui_only == true }}
+        uses: actions/download-artifact@v5
+        with:
+          name: github-pages
+          path: .ui-site-backup
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.backup_run_id }}
+
+      - name: Restore existing published site for UI recovery
+        if: ${{ inputs.ui_only == true }}
+        run: tar -xf .ui-site-backup/artifact.tar -C public
 
       - name: Publish UI without replacing stored data or reports
         if: ${{ inputs.ui_only == true }}

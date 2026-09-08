@@ -9,6 +9,8 @@ import shutil
 def publish_ui(root: Path) -> None:
     public = root / "public"
     dist = root / "frontend" / "dist"
+    if not (public / "index.html").is_file() or not any((public / "reports").rglob("*.html")):
+        raise RuntimeError("Restore a complete published site with report pages before UI-only publishing")
     snapshot = json.loads((public / "data" / "operations.json").read_text(encoding="utf-8"))
     if not snapshot.get("articles") or not snapshot.get("articles_generated_at"):
         raise RuntimeError("A dated, nonempty operations backup is required for UI-only publishing")
