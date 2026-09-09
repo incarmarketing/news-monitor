@@ -50,10 +50,7 @@ def page_evidence_patch(row, evidence):
     if publishers.resolve_publisher(row)["name"] != publishers.UNKNOWN or not isinstance(evidence, dict):
         return None
     name = publishers.valid_name(evidence.get("name"))
-    url = evidence.get("url", "")
-    if (not name or evidence.get("method") not in {"page_metadata", "page_copyright"}
-            or not publishers.host_of(url) or publishers.is_portal(url)
-            or evidence.get("host") != publishers.host_of(url)):
+    if not name or not publishers.valid_page_evidence(evidence):
         return None
     raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
     return {"source": name, "raw": {**raw,

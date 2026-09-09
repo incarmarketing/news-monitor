@@ -14,6 +14,60 @@ from tools.backfill_publisher_identity import repair_patch, apply_row, scan_rows
 
 
 class PublisherIdentityTests(unittest.TestCase):
+    daum_url = "https://v.daum.net/v/20260909165149886"
+
+    def daum_page(self):
+        return (Path(__file__).parent / "fixtures/daum_publisher.html").read_text(encoding="utf-8")
+
+    def test_daum_article_copyright_agrees_with_publisher_metadata(self):
+        evidence = publishers.publisher_from_html(self.daum_page(), self.daum_url)
+        self.assertEqual(evidence["name"], "아시아경제")
+        self.assertEqual(evidence["signals"], ["daum_site_name", "article_copyright"])
+        self.assertTrue(publishers.valid_page_evidence(evidence))
+        row = {"source": publishers.UNKNOWN, "link": "https://news.google.com/rss/articles/abc", "raw": {"_tone": "neutral"}}
+        patch_value = page_evidence_patch(row, evidence)
+        self.assertEqual(patch_value["source"], "아시아경제")
+        self.assertEqual(patch_value["raw"]["_tone"], "neutral")
+        self.assertIsNone(page_evidence_patch(row, {**evidence, "signals": ["article_copyright"]}))
+        self.assertIsNone(page_evidence_patch(row, {**evidence, "name": "Daum"}))
+
+    def test_daum_requires_article_path_and_two_matching_signals(self):
+        page = self.daum_page()
+        for bad_url in ["https://v.daum.net", "https://v.daum.net/search", "https://v.daum.net.evil.example/v/20260909165149886", "https://news.google.com/rss/articles/abc", "https://user@v.daum.net/v/20260909165149886"]:
+            with self.subTest(url=bad_url):
+                self.assertIsNone(publishers.publisher_from_html(page, bad_url))
+        for bad_page in [page.replace("Daum | 아시아경제", "Daum | 보험매일"),
+                         page.replace("Daum | 아시아경제", "Daum"),
+                         page.replace("Copyright © 아시아경제.", "Copyright © Daum Corp."),
+                         page.replace("아시아경제", "검증되지않은매체"),
+                         page + '<meta property="og:site_name" content="Daum | 보험매일">']:
+            with self.subTest(page=bad_page):
+                self.assertIsNone(publishers.publisher_from_html(bad_page, self.daum_url))
+
+    def test_daum_photo_quote_related_and_body_notice_are_not_publisher_evidence(self):
+        meta = '<meta property="og:site_name" content="Daum | 아시아경제">'
+        notice = '<p>Copyright © 아시아경제.</p>'
+        for wrapper in ['<div class="article_view">{}</div>', '<figure>{}</figure>', '<blockquote>{}</blockquote>',
+                        '<aside>{}</aside>', '<div class="related-news">{}</div>', '<script>{}</script>', '<!--{}-->']:
+            page = meta + '<div class="news_view">' + wrapper.format(notice) + '</div><footer>© Daum Corp.</footer>'
+            with self.subTest(wrapper=wrapper):
+                self.assertIsNone(publishers.publisher_from_html(page, self.daum_url))
+
+    def test_daum_related_links_are_never_treated_as_current_original(self):
+        self.assertEqual(news_collector.extract_original_article_url(self.daum_page(), self.daum_url), "")
+        response = Mock(text=self.daum_page(), url=self.daum_url)
+        with patch.object(news_collector.requests, "get", return_value=response):
+            self.assertEqual(news_collector.resolve_portal_press_from_page(self.daum_url), "아시아경제")
+
+    def test_daum_publisher_is_recovered_without_an_extra_body_request(self):
+        article = {"source": publishers.UNKNOWN, "link": self.daum_url, "title": "보험사기 제재"}
+        with patch.object(news_collector, "should_enrich_article_body", return_value=True), patch.object(news_collector, "fetch_article_html", return_value=(self.daum_page(), self.daum_url)) as fetch, patch.object(news_collector, "extract_article_body_from_html", return_value="원문 본문"):
+            news_collector.enrich_sensitive_article_bodies([article])
+        fetch.assert_called_once()
+        self.assertEqual(article["source"], "아시아경제")
+        light = archiver.lighten(article)
+        self.assertEqual(light["publisher_evidence"]["host"], "v.daum.net")
+
     def tearDown(self):
         publishers.configure_aliases([])
 

@@ -954,6 +954,7 @@ def enrich_sensitive_article_bodies(articles: list[dict]) -> None:
 
         source_html = html
         source_url = final_url or article.get("link", "")
+        publisher_identity.enrich_from_html(article, html, source_url)
         original_url = extract_original_article_url(html, final_url)
         if original_url and original_url != article.get("link"):
             original_html, original_final_url = fetch_article_html(original_url, timeout=6)
@@ -1181,6 +1182,9 @@ def resolve_portal_press_from_page(link: str) -> str:
         return ""
 
     html = response.text
+    evidence = publisher_identity.publisher_from_html(html, response.url)
+    if evidence:
+        return evidence["name"]
     patterns = [
         r'class=["\'][^"\']*media_end_head_top_logo_img[^"\']*["\'][^>]+alt=["\']([^"\']+)["\']',
         r'alt=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*media_end_head_top_logo_img[^"\']*["\']',
@@ -1210,6 +1214,9 @@ def resolve_portal_press_from_page(link: str) -> str:
 
 
 def extract_original_article_url(html: str, final_url: str = "") -> str:
+    # Daum's related-news outlinks are not the current article's original URL.
+    if publisher_identity.is_daum_article(final_url):
+        return ""
     patterns = [
         r'"orgUrl"\s*:\s*\{[\s\S]{0,1200}?"url"\s*:\s*"([^"]+)"',
         r'"officeOutlinkNews"\s*:\s*\[[\s\S]{0,1600}?"url"\s*:\s*"([^"]+)"',

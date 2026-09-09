@@ -66,11 +66,14 @@ def fetch_document(url):
 
 
 def inspect_article(row):
-    url = row.get("original_url") or row.get("link") or ""
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    evidence = raw.get("publisher_evidence") if isinstance(raw.get("publisher_evidence"), dict) else {}
+    evidence_url = row.get("publisher_evidence_url") or evidence.get("url", "")
+    url = row.get("original_url") or (evidence_url if publisher_identity.is_daum_article(evidence_url) else "") or row.get("link") or ""
     result = {"article_hash": row["article_hash"], "authors": [], "status": "fetch_failed",
               "evidence_url": url, "checked_at": datetime.now(timezone.utc).isoformat(),
               "attempts": int(row.get("attempts") or 0) + 1, "parser_version": VERSION}
-    if not url or publisher_identity.is_portal(url):
+    if not url or (publisher_identity.is_portal(url) and not publisher_identity.is_daum_article(url)):
         result["status"] = "needs_original"
         return result
     host = urlparse(url).netloc

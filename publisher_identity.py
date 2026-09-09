@@ -44,6 +44,32 @@ def is_portal(value: object) -> bool:
     return any(host == domain or host.endswith("." + domain) for domain in REGISTRY["portal_domains"])
 
 
+def is_daum_article(value: object) -> bool:
+    try:
+        url = urlparse(str(value or ""))
+        return (url.scheme in {"http", "https"} and url.hostname == "v.daum.net"
+                and not url.username and not url.password and url.port in {None, 80, 443}
+                and re.fullmatch(r"/v/\d{17}", url.path) is not None)
+    except ValueError:
+        return False
+
+
+def valid_page_evidence(evidence: dict) -> bool:
+    if not isinstance(evidence, dict):
+        return False
+    name, url = valid_name(evidence.get("name")), evidence.get("url", "")
+    host = host_of(url)
+    if not name or not host or evidence.get("host") != host:
+        return False
+    if evidence.get("method") not in {"page_metadata", "page_copyright"}:
+        return False
+    if not is_portal(host):
+        return True
+    signals = evidence.get("signals")
+    return (is_daum_article(url) and name in KNOWN_NAMES and evidence.get("method") == "page_copyright"
+            and isinstance(signals, list) and "daum_site_name" in signals and "article_copyright" in signals)
+
+
 def valid_name(value: object) -> str:
     name = clean(value)
     name = NAME_ALIASES.get(name, name)
@@ -151,12 +177,15 @@ class _PublisherPage(HTMLParser):
     _void = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
     _blocks = {"br", "div", "footer", "li", "p", "section", "ul"}
 
-    def __init__(self):
+    def __init__(self, daum_article=False):
         super().__init__(convert_charrefs=True)
         self.site_names = set()
         self.titles = []
         self.schemas = []
         self.copyright_lines = set()
+        self.daum_names = set()
+        self.daum_copyright_lines = set()
+        self._daum_article = daum_article
         self._frames = []
         self._title = False
         self._schema = None
@@ -170,14 +199,25 @@ class _PublisherPage(HTMLParser):
                    or tag in {"script", "style", "noscript", "template", "blockquote", "figure", "figcaption", "aside"}
                    or bool(re.search(r"related|recommend|comment|photo|caption|advert|powered", identity, re.I)))
         scoped = tag == "footer" or attrs.get("role") == "contentinfo" or bool(re.search(r"copyright|copy[-_]right|footer", identity, re.I))
+        # Daum places the ownership notice in a plain paragraph immediately
+        # outside article_view, but inside news_view. Prose/photos stay excluded.
+        daum_notice = (self._daum_article and tag == "p" and self._frames
+                       and self._frames[-1].get("daum_body") and not blocked)
         if tag not in self._void:
             if len(self._frames) >= 256:
                 raise ValueError("publisher_html_nesting_limit")
-            self._frames.append({"tag": tag, "blocked": blocked, "text": [] if scoped and not blocked else None})
+            self._frames.append({"tag": tag, "blocked": blocked,
+                                 "text": [] if scoped and not blocked else None,
+                                 "daum_body": self._daum_article and "news_view" in str(attrs.get("class") or "").split(),
+                                 "daum_text": [] if daum_notice else None})
         if tag == "meta" and (attrs.get("property") or attrs.get("name") or "").lower() == "og:site_name":
             name = valid_name(attrs.get("content"))
             if name:
                 self.site_names.add(name)
+            if self._daum_article and not blocked:
+                match = re.fullmatch(r"Daum\s*\|\s*(.+)", clean(attrs.get("content")), re.I)
+                if match:
+                    self.daum_names.add(valid_name(match.group(1)))
         if tag == "title":
             self._title = True
         if tag == "script" and (attrs.get("type") or "").lower() == "application/ld+json":
@@ -191,6 +231,8 @@ class _PublisherPage(HTMLParser):
                 for frame in self._frames[index:]:
                     if frame["text"] is not None:
                         self.copyright_lines.update(clean(line) for line in "".join(frame["text"]).splitlines() if clean(line))
+                    if frame.get("daum_text") is not None:
+                        self.daum_copyright_lines.add(clean("".join(frame["daum_text"])))
                 del self._frames[index:]
                 break
         if tag == "title":
@@ -215,6 +257,8 @@ class _PublisherPage(HTMLParser):
         for frame in self._frames:
             if frame["text"] is not None:
                 frame["text"].append(text)
+            if frame.get("daum_text") is not None:
+                frame["daum_text"].append(text)
 
     def handle_startendtag(self, tag, attrs):
         self.handle_starttag(tag, attrs)
@@ -252,13 +296,24 @@ def publisher_from_html(document: str, page_url: str) -> dict | None:
     and conflicting child/parent publication names must never become a source.
     """
     host = host_of(page_url)
-    if not host or is_portal(host) or not document:
+    daum_article = is_daum_article(page_url)
+    if not host or (is_portal(host) and not daum_article) or not document:
         return None
-    page = _PublisherPage()
+    page = _PublisherPage(daum_article=daum_article)
     try:
         page.feed(document[:2_000_000])
     except (ValueError, RecursionError):
         return None
+    if daum_article:
+        owners = {_copyright_owner(line) for line in page.daum_copyright_lines}
+        owners.discard("")
+        if len(page.daum_names) != 1 or owners != page.daum_names:
+            return None
+        owner = next(iter(owners))
+        if owner not in KNOWN_NAMES:
+            return None
+        return {"name": owner, "method": "page_copyright", "host": host, "url": page_url,
+                "signals": ["daum_site_name", "article_copyright"]}
     if len(page.site_names) > 1:
         return None
     name = next(iter(page.site_names), "")

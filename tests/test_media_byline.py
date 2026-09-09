@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import unittest
 from unittest.mock import patch, Mock
 
@@ -10,6 +11,18 @@ from tools import sync_media_registry
 
 
 class MediaBylineTests(unittest.TestCase):
+    def test_daum_can_be_checked_but_portal_brand_is_never_registered(self):
+        url = "https://v.daum.net/v/20260909165149886"
+        page = (Path(__file__).parent / 'fixtures/daum_publisher.html').read_text(encoding='utf-8')
+        robots = Mock(can_fetch=lambda *args: True, crawl_delay=lambda *args: 1)
+        for row in [ {'article_hash': 'x', 'link': url},
+                     {'article_hash': 'x', 'link': 'https://news.google.com/rss/articles/abc', 'publisher_evidence_url': url} ]:
+            with patch.dict(sync_media_registry._robots, {'v.daum.net': robots}, clear=True), patch.object(sync_media_registry, 'fetch_document', return_value=(page,url)) as fetch, patch.object(sync_media_registry.time, 'sleep'):
+                result = inspect_article(row)
+            fetch.assert_called_once_with(url)
+            self.assertEqual(result['publisher_evidence']['name'], '아시아경제')
+            self.assertEqual(result['authors'], [])
+
     def test_metadata_and_public_byline_contact(self):
         rows = extract_bylines('<meta name="author" content="홍길동 기자"><div class="article-writer"><span>홍길동 기자</span> press@example.com</div>')
         self.assertEqual(rows, [{"name": "홍길동", "method": "author_meta", "email": "press@example.com"}])
