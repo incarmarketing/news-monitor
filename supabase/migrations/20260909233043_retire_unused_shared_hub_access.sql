@@ -37,11 +37,15 @@ end $$;
 
 -- Remove obsolete storage policies from the authenticated role before revoking
 -- their table dependencies, so unrelated storage requests cannot fail on them.
-alter policy hub_storage_admin_select on storage.objects to service_role;
-alter policy hub_storage_admin_insert on storage.objects to service_role;
-alter policy hub_storage_admin_update on storage.objects to service_role;
-alter policy hub_storage_admin_delete on storage.objects to service_role;
-alter policy hub_storage_sales_manager_select on storage.objects to service_role;
+do $$
+declare item record;
+begin
+  for item in select policyname from pg_policies
+    where schemaname='storage' and tablename='objects' and starts_with(policyname,'hub_storage_')
+  loop
+    execute format('alter policy %I on storage.objects to service_role',item.policyname);
+  end loop;
+end $$;
 
 do $$
 declare
@@ -68,12 +72,26 @@ begin
   end loop;
 end $$;
 
-revoke all on sequence public.hub_audit_logs_id_seq,
-  public.hub_employee_login_attempts_id_seq from public, anon, authenticated;
-revoke execute on function public.hub_activate_admin_invite(),
-  public.hub_claim_admin_identity(),
-  public.hub_record_auto_login_notice_acknowledgement(uuid, text),
-  public.hub_is_admin_email_allowlisted(text) from public, anon, authenticated;
+-- Fresh news-monitor installations never had the shared hub objects.
+do $$
+declare item record;
+begin
+  for item in select c.oid from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind='S'
+      and c.relname in ('hub_audit_logs_id_seq','hub_employee_login_attempts_id_seq')
+  loop
+    execute format('revoke all on sequence %s from public, anon, authenticated', item.oid::regclass);
+  end loop;
+  for item in select p.oid from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public' and p.oid in (
+      to_regprocedure('public.hub_activate_admin_invite()'),
+      to_regprocedure('public.hub_claim_admin_identity()'),
+      to_regprocedure('public.hub_record_auto_login_notice_acknowledgement(uuid,text)'),
+      to_regprocedure('public.hub_is_admin_email_allowlisted(text)'))
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated',item.oid::regprocedure);
+  end loop;
+end $$;
 
 -- Assert effective permissions, rather than assuming a REVOKE took effect.
 do $$
