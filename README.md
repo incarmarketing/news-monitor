@@ -449,19 +449,22 @@ python negative_watch.py
 python check_cronjob_org.py
 ```
 
-모바일/PC UI 회귀검사:
+현재 React 화면의 모바일/PC 기능 회귀검사(Playwright 런타임 필요):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\ui-qa.ps1
+npm --prefix frontend run check:references
+npm --prefix frontend run build
+node tools/verify-category-flows.mjs
 ```
 
-스크린샷까지 남길 때:
+추가 모니터링 필터·언론사 관리 검사:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\ui-qa.ps1 -Screenshots
+node tools/verify-monitoring-layout.mjs
+node tools/verify-media-registry.mjs
 ```
 
-이 검사는 `public/dashboard.html`과 `public/index.html`을 280px 모바일부터 1440px 데스크톱까지 열어 가로 넘침, 라벨 겹침 위험, 너무 작은 터치 영역을 확인합니다. 결과는 Git에 올리지 않는 `out/ui-qa` 아래에 저장됩니다.
+현재 9개 카테고리와 보고서 기간 전환, 운영관리 하위 탭, 검색 초기화를 검사하고 `out/category-flows`에 스크린샷을 저장합니다. 네트워크는 테스트 데이터로 격리하므로 수집·발송을 실행하지 않습니다. 배포 후 검사는 `frontend/scripts/design-qa.mjs`가 같은 메뉴 목록을 사용합니다. 옛 정적 화면용 `tools/ui-qa.*`는 참고용으로 보존하며 현재 React 기능 검증을 대신하지 않습니다.
 
 ## 배포 프로세스
 

@@ -191,6 +191,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci --no-audit --no-fund
+          npm run check:references
           node --test tests/*.test.mjs
           npm run build
 

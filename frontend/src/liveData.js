@@ -104,7 +104,8 @@ const INVESTMENT_REPORT_RE = /투자의견|목표주가|목표가|증권가|리�
 const OWN_NAME_RE = /인카금융서비스|인카금융/;
 
 function isExpired(session) {
-  return !session?.session_expires_at || new Date(session.session_expires_at).getTime() <= Date.now();
+  const expiresAt = new Date(session?.session_expires_at || "").getTime();
+  return !Number.isFinite(expiresAt) || expiresAt <= Date.now();
 }
 
 export function getStoredSession() {
@@ -116,9 +117,16 @@ export function getStoredSession() {
     }
     return session;
   } catch {
-    sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
+    // Storage may be disabled by browser policy, including removeItem itself.
+    try { sessionStorage.removeItem(DASHBOARD_SESSION_KEY); } catch { /* Read-only access still works. */ }
     return null;
   }
+}
+
+export function dashboardSessionLabel(session) {
+  if (!session?.session_token || isExpired(session)) return "로그인 안 됨 · 조회 전용";
+  const role = { admin: "관리자", editor: "편집자", viewer: "조회 전용" }[session.role] || "권한 확인 필요";
+  return `${session.display_name || session.employee_no || "로그인 사용자"} · ${role}`;
 }
 
 export function saveDashboardSession(session) {
@@ -283,7 +291,9 @@ async function dashboardApi(config, session, action, payload = {}, options = {})
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
   if (!response.ok) {
-    if (response.status === 401) sessionStorage.removeItem(DASHBOARD_SESSION_KEY);
+    if (response.status === 401) {
+      try { sessionStorage.removeItem(DASHBOARD_SESSION_KEY); } catch { /* Keep the API error. */ }
+    }
     const pieces = [
       data?.error || `dashboard_api_${response.status}`,
       data?.status ? `status_${data.status}` : "",

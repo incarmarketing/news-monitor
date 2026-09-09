@@ -1,0 +1,117 @@
+# 보안 권한 및 카테고리별 점검 (2026-09-10)
+
+## 변경 원칙
+
+- 대상은 news-monitor DB `moszekksbhprhevxdynb`와 이 저장소다.
+- 프로모션 허브의 Sites 운영 환경 `SUPABASE_URL`은 별도 프로젝트
+  `rmolcowfgzvvqczpjzwx`임을 확인했다. 별도 프로젝트는 변경하지 않았다.
+- 마케팅 대시보드는 `data/articles.json`을 읽는다. 해당 계약을 유지했다.
+- 실제 Slack 발송, 유료 분석 요청, 기사 재분류/삭제는 검증 중 실행하지 않았다.
+
+## 적용한 권한 정리
+
+`retire_unused_shared_hub_access` 마이그레이션을 운영 DB에 적용했다.
+옛 hub 테이블 8개(경고 대상 7개와 로그인 시도 테이블), 파일 버킷이 모두
+비어 있음을 확인하고, 행이 생기면 중단하는 잠금/검사 조건을 넣었다.
+
+- PUBLIC/anon/authenticated의 테이블 및 **컬럼별** 권한을 회수했다.
+- 관련 시퀀스 2개 및 공개 RPC 4개의 일반 실행 권한을 회수했다.
+- 옛 hub Storage 정책 5개는 service_role 대상으로 제한했다. 테이블 권한을
+  없앤 뒤 다른 Storage 조회가 옛 정책을 평가하다 실패하는 것을 방지한다.
+- 객체, RLS, 데이터 구조, postgres 및 service_role 권한은 보존했다.
+- 적용 전 롤백 리허설 2회, 적용 후 `tests/retired_hub_access_regression.sql` 통과.
+- 원래 권한 복구 SQL은 로컬 `out/retired-hub-access-rollback.sql`에 보관했다.
+
+Advisor의 hub 테이블 노출 7건 및 SECURITY DEFINER 공개 실행 4건이 사라졌다.
+정책 없는 RLS INFO 36건은 서비스 전용 차단 구조이므로 개방하지 않았다.
+
+## pg_net: 적용하지 못한 부분
+
+- 버전 0.20.0, 확장 메타데이터 스키마 public, 실제 객체는 net,
+  `extrelocatable=false`. 삭제/재설치/이동하지 않았다.
+- 소유자는 `supabase_admin`, 연결 역할은 `postgres`다. 롤백 트랜잭션에서
+  REVOKE 후에도 anon의 USAGE가 true였다. 따라서 실행 성공 응답을 근거로
+  권한이 축소됐다고 보고하지 않는다.
+- `net`은 REST 노출 스키마가 아니다. limit=0 조회는 406/PGRST106으로 거부됐다.
+  그렇더라도 내부 일반 역할의 넓은 권한은 보완 대상이다.
+- 감시/시장정보 cron 4개는 postgres, 관련 private 함수는 postgres 소유
+  SECURITY DEFINER다. 이 경로를 유지해야 한다.
+- `supabase/operations/pg_net_owner_hardening.sql`은 **Supabase 관리 소유자용
+  검토안이며 미적용**이다. 소유자가 아니면 중단한다. 관리자 역할의 기존
+  유효 권한을 보존한 뒤 일반 역할 권한을 회수하고 유효 권한을 재검사한다.
+- 요청 사항: Supabase 지원 측에 이 스크립트의 관리 소유자 실행 가능 여부를
+  확인하고, 지원되는 방식으로 적용 후 cron 성공과 유효 ACL을 재검증한다.
+  관리 확장 업데이트 이후에도 권한을 재점검해야 한다.
+
+유출 비밀번호 보호 경고도 남아 있다. 이번 범위에서는 요금제/로그인 체계를
+변경하지 않았다. pg_net 설치 위치 경고와 별개로 취급한다.
+
+## 새로 발견해 수정한 오류
+
+1. **스크랩 0건 차트 오류**: Recharts 숫자축 계산에서 DecimalError가 발생했다.
+   빈 스크랩은 차트 대신 빈 상태를 표시한다. 브라우저 회귀 검사로 재현/해소했다.
+2. **분석 성공 후 보고서 생성 실패**: `buildLocalScrapAnalysisReport`가
+   존재하지 않는 `formatTime`을 호출했다. 기존 KST 시간 함수를 재사용하고
+   실제 함수 실행 회귀 테스트를 추가했다.
+3. **저장소 차단 시 화면 오류**: 테마 및 세션 저장소 접근 예외를 처리하고
+   유효하지 않은 만료 시각은 로그인으로 인정하지 않는다. 조회는 유지한다.
+4. **고정 관리자 표시**: 로그인 여부와 무관한 특정 이름/관리자 문구를 제거하고
+   세션 상태에 맞춰 표시한다. 서버의 실제 권한 검사에는 변화가 없다.
+5. **메뉴 미리받기 예외**: hover/focus 청크 다운로드 실패의 미처리 Promise를
+   처리했다. 실제 화면 다운로드 실패 전체 복구를 보장하는 변경은 아니다.
+6. **배포 검사의 누락/오판**: 제거된 risk 화면을 검사하던 목록을 실제 9개
+   메뉴에서 가져온다. 실제 진입 화면, 비어 있는 화면, 런타임 오류를 검사한다.
+   모바일 리포트의 의도된 대시보드 이동은 별도 기대 결과로 검사한다.
+
+빌드가 잡지 못했던 미정의 참조를 막기 위해 `check:references`를 Pages 배포
+단계에 추가했다. 임시 미정의 함수 주입 시 실제로 실패함을 확인하고 제거했다.
+이는 전체 TypeScript 타입 안전성 검사가 아니라 미정의/잘못된 지역 참조 검사다.
+
+## 카테고리별 검사
+
+| 카테고리 | 코드 및 동작 검사 | 결과/제한 |
+|---|---|---|
+| 대시보드 | 지표/분류/리스크 모델, 캐시 장애, 1366/390 화면, 저장소 차단 | 통과. 실 API 및 공개 피드 확인 |
+| 모니터링 | 검색 무결과→초기화, 기사 링크/분류 편집 진입, 제목/필터 배치 | 전체 화면 검사 통과. 실제 DB 수정은 하지 않음 |
+| 언론동향 | 기간 집계/차트 입력, lazy 화면 진입 | 통과. 새로운 데이터 분류 변경 없음 |
+| 금융당국 | 필터/기간/목록 경로와 수집기 회귀 검사 | 통과. 실제 재수집/외부 기관 전체 장애 시험 아님 |
+| 주가/시장 | 로딩 및 데이터 없음 상태, 수집기 회귀 검사 | 통과. 실시간 시세의 정확성 전체 보증은 아님 |
+| 클리핑 | 후보 목록/선택 상태와 화면 진입 | 통과. 실제 발송하지 않음 |
+| 스크랩 | 빈 목록, 분석 보고서 구성 함수, 화면 차트 | 위 오류 2개 수정. 유료 모델 호출/실제 저장은 실행하지 않음 |
+| 리포트 | 일간/주간/월간 전환, 기간/공개 링크 회귀 검사, 모바일 숨김 | 통과. 과거 발행본 일괄 재생성 없음 |
+| 운영관리 | 언론사·기자·광고비·키워드·분류 피드백·분류 점검 6탭 | 통과. 관리자 저장 동작은 API 권한 테스트로 검증 |
+| 공통 백엔드 | 수집/감시/발송/작업 원장/분류/배포 회귀 및 Python 구문 | 테스트 범위 내 통과. 분류 정확도 99% 입증이 아님 |
+
+## 미사용 코드 판별
+
+정적/dynamic import 그래프에서 frontend/src 25개 모듈 중 21개가 main에 연결된다.
+연결되지 않는 4개는 아래와 같다.
+
+- `GACompetitorIntel.jsx`
+- `PressReleaseStudio.jsx`
+- `pressReleaseUtils.js` (구형 보도자료 화면에서만 참조)
+- `RiskCenterV2.jsx`
+
+이 모듈들은 현재 번들에서 제외되므로 삭제해도 초기 다운로드 경량화 효과는
+없다. 관련 데이터 수집기, Edge Functions, liveData API 및 helper 일부는 남아
+있고 외부 호출 여부를 완전히 확인하지 못했다. 기능 축소 방지를 위해 임의로
+제거하지 않았다. `legacy/kakao`와 `legacy/local-scheduler`는 사용자 요청에
+따른 의도적 보관 코드다. 옛 `tools/ui-qa.*`는 현재 React 기능 검사의 근거로
+쓰지 않도록 README를 정정했다.
+
+## 검증 명령
+
+```text
+python -m unittest discover -s tests
+node --test frontend/tests/*.test.mjs tools/test_dashboard_api.cjs
+npm --prefix frontend run check:references
+npm --prefix frontend run build
+node tools/verify-category-flows.mjs
+node tools/verify-monitoring-layout.mjs
+node tools/verify-read-contract.mjs
+```
+
+브라우저 테스트는 headless이며 외부 쓰기/발송 요청을 테스트 데이터로 격리한다.
+마지막 읽기 계약 검사는 실제 API/공개 피드를 읽기만 한다. 스크린샷 및 세부
+결과는 로컬 out 아래에 보관한다. 카테고리 샘플 검사는 전체 사용자 입력과
+모든 계정의 E2E 동작을 완전히 증명하지는 않는다.

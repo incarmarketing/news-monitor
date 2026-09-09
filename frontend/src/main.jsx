@@ -41,6 +41,7 @@ import {
 } from "./data";
 import {
   generateScrapAnalysisWithGemini,
+  dashboardSessionLabel,
   getStoredSession,
   loadArticleRange,
   loadCachedCoreSnapshot,
@@ -305,7 +306,8 @@ function App() {
   const [period, setPeriod] = useState("daily");
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
-    return window.localStorage.getItem("incar-dashboard-theme") === "dim" ? "dim" : "light";
+    try { return window.localStorage.getItem("incar-dashboard-theme") === "dim" ? "dim" : "light"; }
+    catch { return "light"; }
   });
   const [operations, setOperations] = useState(
     () => initialCachedCore || { status: "loading", message: "연결 확인 중", articles: [] },
@@ -583,7 +585,8 @@ function App() {
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("incar-dashboard-theme", theme);
+    try { window.localStorage.setItem("incar-dashboard-theme", theme); }
+    catch { /* Theme remains usable without persistent storage. */ }
   }, [theme]);
 
   useEffect(() => {
@@ -908,8 +911,8 @@ function App() {
                   key={item.id}
                   className={(pendingSection || activeSection) === item.id ? "active" : ""}
                   data-section={item.id}
-                  onMouseEnter={() => preloadFeatureSection(item.id)}
-                  onFocus={() => preloadFeatureSection(item.id)}
+                  onMouseEnter={() => preloadFeatureSection(item.id).catch(() => null)}
+                  onFocus={() => preloadFeatureSection(item.id).catch(() => null)}
                   onClick={() => navigateSection(item.id)}
                 >
                   <Icon />
@@ -1002,7 +1005,7 @@ function App() {
 }
 
 function Header({ working = false, workLabel = "" }) {
-  const userText = "최진우 1611499 관리자";
+  const userText = dashboardSessionLabel(getStoredSession());
 
   return (
     <div className="side-brand">
@@ -2779,7 +2782,9 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
             </div>
           </Panel>
           <Panel title="스크랩 분류" icon={LineChart} meta="근거 구성">
-            <CategoryChart rows={grouped.length ? grouped : [{ name: "스크랩", value: scraps.length }]} mini onOpenMonitoring={onOpenMonitoring} />
+            {grouped.length
+              ? <CategoryChart rows={grouped} mini onOpenMonitoring={onOpenMonitoring} />
+              : <div className="chart-empty">스크랩한 기사가 없습니다.</div>}
           </Panel>
           <Panel title="스크랩 기사 목록" icon={Newspaper} meta={`${scraps.length}건`}>
             <ArticleFeed rows={scraps} scraps={scraps} onScrapSaved={onScrapSaved} />
@@ -2894,7 +2899,7 @@ function buildLocalScrapAnalysisReport(result = {}, prompt = "", articles = []) 
     status: "completed",
     createdAt: now,
     date: formatKstDateKey(new Date(now)),
-    time: formatTime(now),
+    time: formatNotificationDisplayTime(now),
   };
 }
 

@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { sections, expectedSection, validateSectionState } from "./qa-sections.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || "playwright");
@@ -13,16 +14,6 @@ const viewports = [
   { name: "desktop", width: 1440, height: 1100 },
   { name: "tablet", width: 900, height: 1180 },
   { name: "mobile", width: 390, height: 844 },
-];
-
-const sections = [
-  { id: "overview", name: "dashboard" },
-  { id: "monitoring", name: "monitoring" },
-  { id: "regulators", name: "regulators" },
-  { id: "media", name: "media-analysis" },
-  { id: "reports", name: "reports" },
-  { id: "risk", name: "risk-center" },
-  { id: "management", name: "management" },
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -127,7 +118,7 @@ async function measureLayout(page) {
 
 async function run() {
   await ensureDir(outDir);
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   const results = [];
   let failed = false;
 
@@ -138,19 +129,30 @@ async function run() {
         deviceScaleFactor: viewport.name === "mobile" ? 2 : 1,
       });
       const page = await context.newPage();
+      let pageErrors = [];
+      page.on("pageerror", (error) => pageErrors.push(error.message));
       page.setDefaultTimeout(45_000);
 
       for (const section of sections) {
+        pageErrors = [];
         const url = sectionUrl(section.id);
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+        await page.locator(`.app-shell[data-active-section="${expectedSection(section.id, viewport.width)}"]`).waitFor();
         await page.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
         await sleep(1200);
 
         const metrics = await measureLayout(page);
+        const state = await page.evaluate(() => ({
+          actual: document.querySelector(".app-shell")?.dataset.activeSection,
+          visibleText: [...document.querySelectorAll("main.workspace")]
+            .filter((element) => element.getBoundingClientRect().width > 0)
+            .map((element) => element.innerText).join(" "),
+        }));
+        const renderFailures = validateSectionState({ requested: section.id, width: viewport.width, ...state, errors: pageErrors });
         const screenshotPath = path.join(outDir, `${viewport.name}-${section.name}.png`);
         await page.screenshot({ path: screenshotPath, fullPage: true, animations: "disabled" });
 
-        const status = metrics.horizontalScroll > 6 || metrics.offscreen.length ? "fail" : "ok";
+        const status = metrics.horizontalScroll > 6 || metrics.offscreen.length || renderFailures.length ? "fail" : "ok";
         if (status === "fail") failed = true;
         results.push({
           viewport: viewport.name,
@@ -158,6 +160,7 @@ async function run() {
           status,
           screenshotPath,
           metrics,
+          renderFailures,
         });
       }
 
