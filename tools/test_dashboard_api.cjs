@@ -41,6 +41,7 @@ function runtime(options = {}) {
       const table = url.split('/rest/v1/')[1]?.split('?')[0];
       const key = { news_articles: 'articles', notification_sends: 'notifications', negative_watch_runs: 'watch_runs' }[table] || table;
       if (options.failedTable === table) return reply({ message: 'PRIVATE_QUERY_ERROR' }, 503);
+      if (table === 'classification_maintenance_runs') return reply(options.auditRows ?? []);
       return reply(fixture[key] || []);
     },
   });
@@ -67,6 +68,48 @@ test('anonymous snapshot keeps articles, counts, report slots and ledger states 
   assert.deepEqual(body.data.report_runs[0].metrics.by_category, fixture.report_runs[0].metrics.by_category);
   assert.equal(body.data.job_runs[0].status, 'success');
   assert.doesNotMatch(JSON.stringify(body), /PRIVATE_/);
+});
+
+test('classification audit is private and role-scoped with no REST bypass', async () => {
+  assert.equal((await runtime().request('classification_maintenance')).status, 401);
+  for (const role of ['viewer', 'reporter']) {
+    const r = runtime({ role });
+    assert.equal((await r.request('classification_maintenance', {}, { 'x-dashboard-session': 'test' })).status, 403);
+    assert.equal(r.calls.filter((call) => call.url.includes('classification_maintenance_runs')).length, 0);
+  }
+  assert.equal((await runtime({ role: 'admin' }).request('rest', { path: 'classification_maintenance_runs', method: 'GET' }, { 'x-dashboard-session': 'test' })).status, 403);
+});
+
+test('classification audit paginates and strips raw articles and gold samples', async () => {
+  const row = { run_id: 'classification-test-1', created_at: '2026-09-09', report: {
+    status: 'blocked', gate: { passed: false, mismatches: ['PRIVATE_GOLD'], category_accuracy: .8 },
+    reviews: Array.from({ length: 60 }, (_, id) => ({ id, title: `Article ${id}`, before: { category: 'industry', raw: 'PRIVATE_BODY' }, proposed: { category: 'competitor' }, raw: 'PRIVATE_RAW' })),
+    repair_candidates: [{ id: 61, title: 'Pending candidate', evidence_status: 'gate_required', before: { category: 'industry' }, proposed: { category: 'other', raw: 'PRIVATE_PATCH' } }],
+  }, repairs: [{ id: 1, before: { title: 'Article 1', category: 'industry', raw: 'PRIVATE_BEFORE' }, patch: { category: 'other', raw: 'PRIVATE_PATCH' } }] };
+  const r = runtime({ role: 'editor', auditRows: [row] });
+  const headers = { 'x-dashboard-session': 'test' };
+  const result = await r.request('classification_maintenance', { offset: 25 }, headers);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.data.total, 60);
+  assert.equal(result.body.data.items.length, 25);
+  assert.equal(result.body.data.items[0].id, 25);
+  assert.doesNotMatch(JSON.stringify(result.body), /PRIVATE_/);
+  const pending = await r.request('classification_maintenance', { mode: 'candidates' }, headers);
+  assert.equal(pending.body.data.total, 1);
+  assert.equal(pending.body.data.items[0].evidence_status, 'gate_required');
+  assert.doesNotMatch(JSON.stringify(pending.body), /PRIVATE_/);
+  assert.equal((await r.request('classification_maintenance', { mode: 'repairs' }, headers)).body.data.items[0].proposed.category, 'other');
+  assert.equal((await r.request('classification_maintenance', { run_id: 'bad&select=*' }, headers)).status, 400);
+  assert.equal((await r.request('classification_maintenance', { mode: 'delete' }, headers)).status, 400);
+});
+
+test('classification audit distinguishes no history, missing run and outage', async () => {
+  const headers = { 'x-dashboard-session': 'test' };
+  assert.equal((await runtime({ role: 'admin' }).request('classification_maintenance', {}, headers)).body.data.run, null);
+  assert.equal((await runtime({ role: 'admin' }).request('classification_maintenance', { run_id: 'missing' }, headers)).status, 404);
+  const failed = await runtime({ role: 'admin', failedTable: 'classification_maintenance_runs' }).request('classification_maintenance', {}, headers);
+  assert.equal(failed.status, 502);
+  assert.doesNotMatch(JSON.stringify(failed), /PRIVATE_/);
 });
 
 test('authenticated snapshot retains authorized operational details', async () => {

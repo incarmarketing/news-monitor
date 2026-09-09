@@ -148,13 +148,16 @@ def build_plan(rows, feedback_index):
             or (before["negative_target"] or "none") != (after["negative_target"] or "none")
         )
         if semantic_change:
+            evidence_status = source_evidence_status(row, article, before, after, manual)
             reviews.append({
                 "id": row["id"], "article_hash": row.get("article_hash"),
                 "title": row.get("title"), "link": row.get("link"), "source": row.get("source"),
                 "before": before, "proposed": after, "changed_fields": changed,
                 "protected": guard, "manual": manual,
-                "reason": context.get("reason") or context.get("classification_evidence") or "",
+                "reason": review_reason(article, context, evidence_status),
                 "priority": priority_score(before, after),
+                "evidence_status": evidence_status,
+                "source_excerpt": analyzer.original_article_lead(article, 240),
             })
     reviews.sort(key=lambda row: (-row["priority"], row["id"]))
     transitions = Counter(f"{r['before']['category']} -> {r['proposed']['category']}" for r in reviews)
@@ -163,8 +166,47 @@ def build_plan(rows, feedback_index):
         "contract_drift_count": contract_drift,
         "candidate_count": len(repairs), "review_count": len(reviews),
         "review_transitions": dict(transitions), "reviews": reviews,
+        "evidence_counts": dict(Counter(r["evidence_status"] for r in reviews)),
+        "repair_candidates": [{"id": item["id"], "title": item["expected"].get("title"),
+            "link": item["expected"].get("link"),
+            "before": {key: item["expected"].get(key) for key in SEMANTIC_FIELDS},
+            "proposed": {key: item["patch"].get(key) for key in SEMANTIC_FIELDS},
+            "reason": item["patch"]["classification_reason"], "evidence_status": "gate_required"} for item in repairs],
         "repairs": repairs,
     }
+
+
+def source_evidence_status(row, article, before, after, manual=False):
+    if manual:
+        return "manual_protected"
+    has_body = bool(article.get("body") or article.get("content"))
+    if not has_body and (before.get("own_mentioned") != after.get("own_mentioned")
+                         or before.get("alert_eligible") != after.get("alert_eligible")
+                         or before.get("tone") == "negative"):
+        return "original_required"
+    if len(analyzer.original_article_lead(article)) < 40:
+        return "limited_source"
+    return "source_review"
+
+
+def review_reason(article, context, evidence_status):
+    if evidence_status == "manual_protected":
+        return "운영자가 지정한 분류를 유지하며 자동 보정에서 제외합니다."
+    if evidence_status == "original_required":
+        return "저장된 제목·설명만으로 기존 당사 언급·경보 판단을 변경할 수 없어 원문 확인이 필요합니다."
+    if evidence_status == "limited_source":
+        return "원문 설명이 짧거나 없어 제목만으로 확정할 수 없습니다. 기존 DB 값은 유지합니다."
+    reason = context.get("reason") or context.get("classification_evidence")
+    if reason:
+        return reason
+    subject = analyzer.insurance_subject_category(article)
+    if subject and subject == context.get("category"):
+        label = {"industry": "보험사·보험업", "competitor": "GA·보험대리점", "regulation": "정책·규제"}[subject]
+        return f"제목의 주요 주체와 행위가 {label} 문맥에 해당합니다. 기존 분류와 비교 검토할 대상입니다."
+    rule = analyzer.matched_context_rule(analyzer.article_summary_text(article))
+    if rule.get("rule_key"):
+        return f"일치한 문맥 규칙: {rule.get('label') or rule['rule_key']} ({rule['rule_key']})"
+    return "저장된 제목·RSS 설명의 키워드 문맥과 기존 분류가 다릅니다. 확정 전 재검토가 필요합니다."
 
 
 def guard_plan(plan, gate):
@@ -183,8 +225,7 @@ def validate_gold():
     if not reviewed or not fixtures:
         raise RuntimeError("reviewed validation set is missing")
     result = gold.evaluate(reviewed + fixtures, sample_limit=30)
-    result["passed"] = result["alert_precision"] >= 0.99 and result["alert_recall"] >= 0.90
-    return result
+    return gold.quality_gate(result)
 
 
 def record_report(run_id, report):
@@ -261,7 +302,7 @@ def main():
         report["status"] = "blocked" if blocked else "audited"
         if blocked:
             exit_code = 1
-        elif args.apply:
+        elif args.apply and repairs:
             result = apply_plan(run_id, report, repairs, feedback, rules)
             report.update(result)
         if report["status"] != "applied":

@@ -418,7 +418,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-source-role-2026-09-08-r2"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-subject-2026-09-09-r1"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -1331,6 +1331,12 @@ def categorize(article: dict) -> str:
     rule_category = rule.get("category")
     if rule_category in {"exclude", "other"}:
         return "other"
+    subject_category = insurance_subject_category(article)
+    # Explicit policy rules and sales-conduct evidence outrank company type.
+    if subject_category == "regulation":
+        return "regulation"
+    if subject_category and rule_category != "regulation" and not is_sales_conduct_context_text(text):
+        return subject_category
     if rule_category in KEYWORD_CATEGORIES:
         return rule_category
     if is_competitor_brand_reputation_against_own(article):
@@ -1348,6 +1354,34 @@ def categorize(article: dict) -> str:
     if any(keyword in text for keyword in INDUSTRY_WORDS):
         return "industry"
     return "other"
+
+
+def insurance_subject_category(article: dict) -> str:
+    """Separate a publisher's main subject from search terms and old GA labels."""
+    title = str(article.get("title") or "")
+    insurers = COMPETITOR_WORDS[COMPETITOR_WORDS.index("삼성생명"):] + [
+        "카카오페이손보", "AXA손보", "DB생보", "KB라이프", "푸본현대생명", "iM라이프", "IM라이프",
+    ]
+    insurer_subject = any(name in title for name in insurers) or bool(re.search(
+        r"보험사|보험업계|보험주|생보사|손보사|생보협회|손보협회|생명보험협회|손해보험협회|보험계약대출", title
+    ))
+    ga_names = COMPETITOR_WORDS[:COMPETITOR_WORDS.index("삼성생명")] + ["키움에셋플래너", "아이에프에이"]
+    ga_subject = bool(re.search(r"(?<![A-Za-z])GA(?![A-Za-z])|보험대리점", title, re.I)) or any(
+        name in title for name in ga_names if name not in {"메가", "맘스"}
+    )
+    insurance_subject = insurer_subject or ga_subject
+    if not insurance_subject:
+        return ""
+    if (re.search(r"보험업법|시행령|법안|제재|과징금|과태료|불완전판매|부당승환|1200\s*%|노란봉투법|근로자추정제", title)
+            or (re.search(r"금감원|금융감독원|금융위원회|금융위", title)
+                and re.search(r"검사|점검|감독|제도|규정|지침|명령|가이드라인|실태평가|소비자\s*보호\s*평가|관리\s*강화|광고.{0,10}제동", title))
+            or is_sales_conduct_context_text(title)):
+        return "regulation"
+    if ga_subject:
+        return "competitor"
+    if insurer_subject:
+        return "industry"
+    return ""
 
 
 def normalize_keyword_category(value: object) -> str:

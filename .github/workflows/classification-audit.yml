@@ -28,6 +28,7 @@ on:
       - "tools/audit_classification_drift.py"
       - "tools/reclassify_deterministic.py"
       - "tools/classification_maintenance.py"
+      - "tools/validate_classification_gold.py"
       - "tests/test_classification_maintenance.py"
       - ".github/workflows/classification-audit.yml"
 

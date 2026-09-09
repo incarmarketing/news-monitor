@@ -102,6 +102,12 @@ Deno.serve(async (req) => {
   }
 
   try {
+    if (action === "classification_maintenance") {
+      if (!session.ok || !["admin", "editor"].includes(session.role || "")) {
+        return jsonResponse({ error: "read_not_allowed" }, 403);
+      }
+      return await handleClassificationMaintenance(payload);
+    }
     if (action === "media_registry") {
       const mode = String(payload.mode || "summary");
       if (!["summary", "media", "unknown", "reporter"].includes(mode)) return jsonResponse({ error: "invalid_registry_mode" }, 400);
@@ -129,6 +135,58 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "dashboard_api_failed", ...(session.ok ? { detail: String(error?.message || error) } : {}) }, 500);
   }
 });
+
+function auditObject(value: unknown): Record<string, any> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
+}
+
+function auditPick(value: unknown, keys: string[]) {
+  const source = auditObject(value);
+  return Object.fromEntries(keys.filter((key) => Object.hasOwn(source, key)).map((key) => [key, source[key]]));
+}
+
+async function handleClassificationMaintenance(payload: Record<string, unknown>) {
+  const runId = String(payload.run_id || "");
+  const mode = String(payload.mode || "reviews");
+  if ((runId && !/^[A-Za-z0-9_-]{1,160}$/.test(runId)) || !["reviews", "repairs", "candidates"].includes(mode)) {
+    return jsonResponse({ error: "invalid_audit_request" }, 400);
+  }
+  const offset = boundedInteger(payload.offset, 0, 0, 1000000);
+  const summaryKeys = ["status", "generated_at", "row_count", "review_count", "applied_count", "block_reason"];
+  const summarySelect = ["run_id", "created_at", ...summaryKeys.map((key) => `${key}:report->${key}`)].join(",");
+  try {
+    const history = await supabaseRest(`classification_maintenance_runs?select=${summarySelect}&order=created_at.desc,run_id.desc&limit=25`, { method: "GET" });
+    if (!history.ok || !Array.isArray(history.data)) throw new Error("history_unavailable");
+    const runs = history.data.map((row) => auditPick(row, ["run_id", "created_at", ...summaryKeys]));
+    const selected = runId || String(runs[0]?.run_id || "");
+    if (!selected) return jsonResponse({ ok: true, data: { runs, run: null, items: [], total: 0, offset, page_size: 25 } });
+    const detail = await supabaseRest(`classification_maintenance_runs?select=run_id,created_at,report,repairs&run_id=eq.${encodeURIComponent(selected)}&limit=1`, { method: "GET" });
+    if (!detail.ok || !Array.isArray(detail.data)) throw new Error("detail_unavailable");
+    if (!detail.data.length) return jsonResponse({ error: "audit_not_found" }, 404);
+    const record = detail.data[0];
+    const report = auditObject(record.report);
+    const gate = auditPick(report.gate, ["passed", "failures", "thresholds", "case_count", "category_accuracy", "tone_accuracy", "exact_accuracy", "alert_precision", "alert_recall", "alert_confusion", "minimum_cases", "minimum_positive_cases", "minimum_negative_cases"]);
+    const run = { run_id: record.run_id, created_at: record.created_at, ...auditPick(report, [...summaryKeys, "ruleset", "window_start", "window_end", "candidate_count", "protected_count", "evidence_counts"]), gate };
+    const rawItems = mode === "repairs" ? record.repairs : mode === "candidates" ? report.repair_candidates : report.reviews;
+    if (rawItems != null && !Array.isArray(rawItems)) throw new Error("invalid_audit_items");
+    const fields = ["category", "tone", "own_mentioned", "alert_eligible", "negative_target"];
+    const items = (rawItems || []).slice(offset, offset + 25).map((entry: unknown) => {
+      const item = auditObject(entry);
+      if (mode === "repairs") return {
+        id: item.id, ...auditPick(item.before, ["title", "link", "source"]),
+        before: auditPick(item.before, fields), proposed: auditPick(item.patch, fields),
+        reason: String(auditObject(item.patch).classification_reason || "").slice(0, 1000),
+      };
+      return { ...auditPick(item, ["id", "title", "link", "source", "protected", "manual", "evidence_status", "changed_fields"]),
+        before: auditPick(item.before, fields), proposed: auditPick(item.proposed, fields),
+        reason: String(item.reason || "").slice(0, 1000), source_excerpt: String(item.source_excerpt || "").slice(0, 240),
+      };
+    });
+    return jsonResponse({ ok: true, data: { runs, run, items, total: (rawItems || []).length, offset, page_size: 25 } });
+  } catch {
+    return jsonResponse({ error: "classification_audit_unavailable" }, 502);
+  }
+}
 
 async function handleSnapshot(payload: Record<string, unknown>, authenticated = false) {
   const lookbackDays = boundedInteger(payload.lookback_days, 8, 3, 30);

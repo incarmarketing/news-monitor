@@ -98,6 +98,11 @@ def article_from_row(row: dict[str, Any]) -> dict[str, Any]:
         "body": raw.get("body") or "",
         "raw": raw,
     }
+    # Reconstruct collection inputs, never prior classifications or AI summaries.
+    for key in ("keyword_category", "keyword_context_terms", "keyword_exclude_terms",
+                "keyword_match_mode", "regulator_keyword", "regulator_department"):
+        if key in raw:
+            article[key] = raw[key]
     return article
 
 

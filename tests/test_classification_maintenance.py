@@ -6,6 +6,8 @@ from unittest.mock import Mock, patch
 import analyzer
 import supabase_store
 from tools import classification_maintenance as maintenance
+from tools import validate_classification_gold as gold
+from tools.audit_classification_drift import article_from_row
 
 
 def noise_row(row_id=1):
@@ -97,6 +99,57 @@ class MaintenanceTests(unittest.TestCase):
         original = copy.deepcopy(row)
         maintenance.build_plan([row], {})
         self.assertEqual(row, original)
+
+    def test_high_alert_score_alone_cannot_pass_quality_gate(self):
+        result = {"case_count": 150, "category_accuracy": .81, "tone_accuracy": .55,
+                  "exact_accuracy": .42, "alert_precision": 1, "alert_recall": 1,
+                  "alert_confusion": {"true_positive": 1, "true_negative": 149}}
+        gate = gold.quality_gate(result)
+        self.assertFalse(gate["passed"])
+        self.assertIn("tone_accuracy", gate["failures"])
+        self.assertIn("insufficient_positive_cases", gate["failures"])
+
+    def test_quality_gate_needs_finite_metrics_and_enough_cases(self):
+        result = {"case_count": 40, "category_accuracy": .98, "tone_accuracy": .98,
+                  "exact_accuracy": .96, "alert_precision": 1, "alert_recall": 1,
+                  "alert_confusion": {"true_positive": 8, "true_negative": 32}}
+        self.assertTrue(gold.quality_gate(result)["passed"])
+        for invalid in (None, True, float("nan"), float("inf"), 1.01, .94):
+            with self.subTest(value=invalid):
+                self.assertFalse(gold.quality_gate({**result, "category_accuracy": invalid})["passed"])
+        self.assertFalse(gold.quality_gate({**result, "case_count": 1})["passed"])
+
+    def test_source_only_replay_preserves_collection_context_not_generated_summary(self):
+        article = article_from_row({**noise_row(), "summary": "인카금융서비스 부정 의혹",
+                                   "raw": {"keyword_category": "industry", "description": "원문 설명", "_category": "own"}})
+        self.assertEqual(article["keyword_category"], "industry")
+        self.assertNotIn("인카금융서비스", analyzer.original_article_text(article))
+
+    def test_missing_body_cannot_disprove_existing_own_evidence(self):
+        row = noise_row()
+        status = maintenance.source_evidence_status(row, article_from_row(row),
+                 {"own_mentioned": True}, {"own_mentioned": False})
+        self.assertEqual(status, "original_required")
+
+    def test_insurer_subject_not_broad_legacy_ga_rule(self):
+        analyzer.configure_context_rules([{"rule_key": "legacy_insurer", "enabled": True,
+            "category": "competitor", "tone": "neutral", "priority": 26,
+            "trigger_terms": ["한화생명"], "required_terms": ["출시"]}])
+        for title in ("한화생명, 건강보험 신상품 출시", "카카오페이손보, 운전자보험 출시", "푸본현대생명 고객 서비스 확대"):
+            with self.subTest(title=title):
+                self.assertEqual(analyzer.categorize({"title": title}), "industry")
+
+    def test_ga_regulation_own_and_sponsorship_precedence_preserved(self):
+        for title, expected in (
+            ("한화생명금융서비스, 설계사 교육 강화", "competitor"),
+            ("한화생명 GA시책 확대", "competitor"),
+            ("금감원, 삼성생명 불완전판매 제재", "regulation"),
+            ("금감원, GA 신입 설계사 지원금 광고 관리 강화", "regulation"),
+            ("보험사 주주환원 너도나도 50%", "industry"),
+            ("인카금융서비스, 독립 보험대리점 브랜드평판 1위", "own"),
+        ):
+            with self.subTest(title=title):
+                self.assertEqual(analyzer.categorize({"title": title}), expected)
 
 
 if __name__ == "__main__":

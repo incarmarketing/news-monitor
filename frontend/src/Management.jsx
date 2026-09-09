@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { contextRules, keywordGroups } from "./data";
 import MediaRegistry from "./MediaRegistry";
+import ClassificationMaintenance from "./ClassificationMaintenance";
 import {
   deleteReporterProfile,
   saveMediaRelation,
@@ -175,6 +176,7 @@ export default function Management({ management, operations, onRefreshOperations
     ["ads", "광고비 관리", WalletCards],
     ["keywords", "키워드 문맥", Settings],
     ["feedback", "분류 피드백", FilePenLine],
+    ["classification", "분류 점검", ShieldCheck],
   ];
   return (
     <main className="workspace">
@@ -210,6 +212,7 @@ export default function Management({ management, operations, onRefreshOperations
           {tab === "reporters" && <MediaRegistry key="reporter-registry" reportersOnly onSummary={setRegistrySummary}><ReporterManagement rows={safeManagement.reporters} /></MediaRegistry>}
           {tab === "ads" && <AdManagement rows={safeManagement.ads} />}
           {tab === "keywords" && <KeywordManagement keywords={keywords} articles={articles} />}
+          {tab === "classification" && <ClassificationMaintenance />}
           {tab === "feedback" && (
             <FeedbackManagement
               feedback={feedback}

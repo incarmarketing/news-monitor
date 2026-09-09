@@ -1799,6 +1799,18 @@ function normalizeArticleSource(source, link = "", title = "") {
   return resolvePublisher({ source, link, title });
 }
 
+export async function loadClassificationMaintenance(runId = "", mode = "reviews", offset = 0) {
+  const config = await loadSupabaseConfig();
+  const result = await dashboardApi(config, getStoredSession(), "classification_maintenance", { run_id: runId, mode, offset });
+  const data = result?.data;
+  if (!result?.ok || !data || !Array.isArray(data.runs) || !Array.isArray(data.items)
+      || !Number.isInteger(data.total) || data.total < 0 || data.page_size !== 25
+      || !(data.run === null || (typeof data.run === "object" && typeof data.run.run_id === "string"))) {
+    throw new Error("classification_audit_load_failed");
+  }
+  return data;
+}
+
 export async function loadMediaRegistry(mode = "summary", key = "", offset = 0) {
   const config = await loadSupabaseConfig();
   const result = await dashboardApi(config, getStoredSession(), "media_registry", { mode, key, offset }, { allowAnonymous: true });

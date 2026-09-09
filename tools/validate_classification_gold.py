@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import math
 import sys
 from collections import Counter
 from pathlib import Path
@@ -150,10 +151,30 @@ def evaluate(cases: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
             "true_positive": true_positive,
             "false_positive": false_positive,
             "false_negative": false_negative,
+            "true_negative": total - true_positive - false_positive - false_negative,
         },
         "mismatch_types": dict(mismatch_types),
         "mismatches": mismatches,
     }
+
+
+def quality_gate(result: dict[str, Any]) -> dict[str, Any]:
+    thresholds = {"category_accuracy": 0.95, "tone_accuracy": 0.95,
+                  "exact_accuracy": 0.90, "alert_precision": 0.99, "alert_recall": 0.90}
+    failures = []
+    for key, minimum in thresholds.items():
+        value = result.get(key)
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not minimum <= value <= 1:
+            failures.append(key)
+    confusion = result.get("alert_confusion") or {}
+    if result.get("case_count", 0) < 30:
+        failures.append("insufficient_cases")
+    if confusion.get("true_positive", 0) + confusion.get("false_negative", 0) < 5:
+        failures.append("insufficient_positive_cases")
+    if confusion.get("true_negative", 0) + confusion.get("false_positive", 0) < 20:
+        failures.append("insufficient_negative_cases")
+    return {**result, "passed": not failures, "failures": failures, "thresholds": thresholds,
+            "minimum_cases": 30, "minimum_positive_cases": 5, "minimum_negative_cases": 20}
 
 
 def load_cases() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -220,7 +241,7 @@ def main() -> int:
         "reviewed": evaluate(review_cases, args.sample_limit),
         "fixtures": evaluate(fixture_cases, args.sample_limit),
     }
-    combined = evaluate(review_cases + fixture_cases, args.sample_limit)
+    combined = quality_gate(evaluate(review_cases + fixture_cases, args.sample_limit))
     report["combined"] = combined
 
     output = Path(args.output) if args.output else Path("logs/classification-gold-validation.json")
@@ -229,7 +250,7 @@ def main() -> int:
     print(json.dumps(report, ensure_ascii=False, indent=2))
     print(f"report_file={output.resolve()}")
 
-    failures: list[str] = []
+    failures: list[str] = list(combined["failures"])
     if combined["alert_precision"] < args.min_alert_precision:
         failures.append(
             f"alert precision {combined['alert_precision']:.4f} < {args.min_alert_precision:.4f}"
