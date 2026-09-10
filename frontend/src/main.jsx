@@ -67,15 +67,15 @@ import {
   calculateDailyDashboardRiskIndex,
   calculateDashboardRiskIndex,
   classifyDashboardArticleSeries,
-  formatDashboardCompositionShare,
   isDashboardPriorityArticle,
   mergeDashboardMomentumWithReportRuns,
 } from "./dashboardRisk";
-import slackMarkUrl from "./assets/slack-mark.png";
 import { createOperationalPoller } from "./operationalPolling.js";
 import "./styles.css";
 import "./report.css";
-import "./dashboard-option1.css";
+import { DashboardAnalysis, DashboardDialog, DashboardOperationsStrip, DashboardPriorityTable } from "./DashboardWorkbench.jsx";
+import { articleClock, priorityDisplayRows, dashboardSeries as dashboardMomentumSeries } from "./dashboardPresentation.js";
+import "./dashboard-workbench.css";
 
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
@@ -941,10 +941,10 @@ function Header({ working = false, workLabel = "" }) {
       <div className="side-brand-main">
         <img
           className="side-brand-logo"
-          src={`${import.meta.env.BASE_URL || "./"}assets/incar-logo-white.png`}
+          src={`${import.meta.env.BASE_URL || "./"}assets/incar-signature-blue-ko.png`}
           alt="인카금융서비스"
         />
-        <strong>인카 모니터링 시스템</strong>
+        <strong>언론 모니터링</strong>
         <span>Monitoring Workspace</span>
       </div>
       <div className="side-brand-user">
@@ -1025,7 +1025,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   const { summary } = data;
   const [issueSort, setIssueSort] = useState("risk");
   const [slackHistoryOpen, setSlackHistoryOpen] = useState(false);
-  const priorityBoardRef = useRef(null);
+  const [riskHistoryOpen, setRiskHistoryOpen] = useState(false);
   const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
     () => buildOperationsHealth({
@@ -1072,6 +1072,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     }
     return rows.slice(0, 5);
   }, [data.issues, issueSort]);
+  const visibleIssueRows = useMemo(() => priorityDisplayRows(issueRows, articles), [issueRows, articles]);
   const refreshDashboard = () => onRefreshOperations?.({
     trigger: true,
     workflow: "dashboard-refresh.yml",
@@ -1080,13 +1081,10 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   });
   const focusRiskIssues = useCallback(() => {
     setIssueSort("risk");
-    requestAnimationFrame(() => {
-      priorityBoardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      priorityBoardRef.current?.querySelector('select[aria-label="우선 이슈 정렬 및 보기"]')?.focus({ preventScroll: true });
-    });
+    setRiskHistoryOpen(true);
   }, []);
   return (
-    <main className="workspace dashboard-workspace dashboard-v5">
+    <main className="workspace dashboard-workspace dashboard-workbench">
       <DashboardEditorialHeader
         data={data}
         status={operations?.status}
@@ -1106,46 +1104,10 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
       </nav>
 
-      <section className="signal-command-grid">
-        <section className="signal-priority-board" ref={priorityBoardRef}>
-          <div className="signal-panel-heading">
-            <h2>우선 이슈 {issueRows.length}건</h2>
-            <div className="signal-panel-tools">
-              <span className="negative">부정</span><span className="caution">주의</span><span className="neutral">중립</span>
-              <select
-                aria-label="우선 이슈 정렬 및 보기"
-                value={issueSort}
-                onChange={(event) => setIssueSort(event.target.value)}
-              >
-                <option value="risk">정렬: 리스크순</option>
-                <option value="latest">정렬: 최신순</option>
-                <option value="own">보기: 당사 직접 언급만</option>
-                <option value="spread">정렬: 확산순</option>
-              </select>
-            </div>
-          </div>
-          <EditorialLeadIssue
-            issue={issueRows[0]}
-            riskMomentumRows={momentumRows}
-            onOpenMonitoring={onOpenMonitoring}
-            emptyMessage={issueSort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : undefined}
-          />
-          {issueRows.length > 1 && <EditorialIssueList issues={issueRows.slice(1)} onOpenMonitoring={onOpenMonitoring} />}
-        </section>
-        <EditorialOperationsRail
-          watchHealth={watchHealth}
-          notificationHealth={notificationHealth}
-          reportHealth={reportHealth}
-          analyzed={summary.analyzed}
-          onOpenHistory={() => setSlackHistoryOpen(true)}
-        />
-      </section>
-
-      <section className="editorial-analysis-grid">
-        <IssueMomentumChart rows={momentumRows} />
-        <TodayComposition rows={compositionRows} />
-      </section>
-      <footer className="editorial-dashboard-footer">© 2026 INCAR Monitoring System. All rights reserved.</footer>
+      <DashboardOperationsStrip watchHealth={watchHealth} notificationHealth={notificationHealth} reportHealth={reportHealth} cadence={NEGATIVE_WATCH_SHORT_LABEL} onOpenHistory={() => setSlackHistoryOpen(true)} />
+      <DashboardAnalysis rows={momentumRows} compositionRows={compositionRows} Chart={DashboardSvgLineChart} categoryLabel={displayDashboardCategory} />
+      <DashboardPriorityTable rows={visibleIssueRows} sort={issueSort} onSort={setIssueSort} Action={DashboardIssueAction} onOpenMonitoring={onOpenMonitoring} categoryLabel={displayDashboardCategory} timeLabel={(issue) => articleClock(issue, articleTimeValue(issue))} riskScore={dashboardDisplayScore} />
+      {riskHistoryOpen && <DashboardDialog title="최근 7일 전체 리스크" onClose={() => setRiskHistoryOpen(false)}><DashboardLeadSparkline rows={momentumRows} /></DashboardDialog>}
       {slackHistoryOpen && (
         <NotificationHistoryDialog
           rows={notifications}
@@ -1162,12 +1124,12 @@ function DashboardEditorialHeader({ data, status, operations, onOpenMonitoring, 
   return (
     <header className="editorial-dashboard-header">
       <div className="editorial-header-copy">
-        <h1>오늘의 언론 상황</h1>
+        <h1>언론 모니터링</h1>
         <p>{formatDashboardScopeDate(formatKstDateKey(new Date()))}</p>
       </div>
-      <p className={`editorial-data-status ${live ? "live" : ""}`}><i />{live ? "데이터 정상" : status === "live" ? "저장본 · 실시간 연결 확인 필요" : "데이터 확인 중"}<span>·</span>{sourceTime} 기준</p>
+      <p className={`editorial-data-status ${live ? "live" : ""}`}><i /><span>{live ? "데이터 정상" : status === "live" ? "저장본 · 연결 확인 필요" : "데이터 확인 중"}</span><time>{sourceTime} 기준</time></p>
       <div className="editorial-header-actions">
-        <button type="button" onClick={onRefresh} disabled={isLoading}><RefreshCw />{isLoading ? "갱신 중" : "새로고침"}</button>
+        <button type="button" onClick={onRefresh} disabled={isLoading} aria-label={isLoading ? "갱신 중" : "새로고침"} title="새로고침"><RefreshCw /></button>
         <button type="button" className="editorial-article-search" onClick={() => onOpenMonitoring?.({})}>기사 검색 <Search /></button>
         <button
           type="button"
@@ -1187,8 +1149,8 @@ function DashboardEditorialHeader({ data, status, operations, onOpenMonitoring, 
 function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk }) {
   const rows = [
     { label: "리스크", value: summary.risk || "LOW", meta: "당사 기준", Icon: ShieldCheck, className: `risk-${String(summary.risk || "low").toLowerCase()}`, onClick: onOpenRisk },
-    { label: "분석", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), meta: "오늘 기사", Icon: Gauge, preset: {} },
-    { label: "당사", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), meta: "직접 언급", Icon: Newspaper, className: "own", preset: { ownOnly: true } },
+    { label: "당일 기사", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), meta: "건", Icon: Newspaper, preset: {} },
+    { label: "당사 언급", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), meta: "건", Icon: Users, className: "own", preset: { ownOnly: true } },
     { label: "부정", value: Number(summary.ownNegative || 0).toLocaleString("ko-KR"), meta: "즉시 확인", Icon: TrendingDown, className: "negative", preset: { tone: "부정" } },
     { label: "주의", value: Number(summary.caution || 0).toLocaleString("ko-KR"), meta: "관찰 기사", Icon: AlertTriangle, className: "caution", preset: { tone: "주의" } },
   ];
@@ -1200,67 +1162,6 @@ function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk }) {
           <span><small>{item.label}</small><b>{item.value}</b><em>{item.meta}</em></span>
         </button>
       ))}
-    </section>
-  );
-}
-
-function EditorialLeadIssue({ issue, riskMomentumRows = [], onOpenMonitoring, emptyMessage }) {
-  const relatedCount = issue ? issueBundleCount(issue) : 0;
-  const ownNegativeCount = issue?.tone === "부정" && isOwnArticle(issue) ? 1 : 0;
-  const summary = dashboardLeadSummary(issue);
-
-  return (
-    <section className="editorial-lead-feature">
-      <div className="editorial-section-title"><i />오늘의 이슈 흐름</div>
-      {issue ? (
-        <article className="editorial-lead-issue">
-          <div className="editorial-lead-copy">
-            <div className="editorial-lead-labels">
-              <b>1</b>
-              <Chip>{issue.tone || "중립"}</Chip>
-              <Chip>{displayDashboardCategory(issue.category)}</Chip>
-              <time>{issue.time || formatRelativeArticleTime(issue)}</time>
-            </div>
-            <DashboardIssueAction issue={issue} onOpenMonitoring={onOpenMonitoring}>
-              <h2>{displayHeadline(issue)}</h2>
-              {summary && <p className="editorial-lead-summary">{summary}</p>}
-              <p className="editorial-lead-meta">
-                {String(issue.source || "언론사")} <span /> 관련 기사 {relatedCount.toLocaleString("ko-KR")}건 <span /> 당사 직접 부정 {ownNegativeCount}건
-              </p>
-            </DashboardIssueAction>
-          </div>
-          <DashboardLeadSparkline rows={riskMomentumRows} />
-        </article>
-      ) : (
-        <article className="editorial-issue-empty">{emptyMessage || "오늘 기준으로 표시할 주요 이슈가 없습니다."}</article>
-      )}
-    </section>
-  );
-}
-
-function EditorialIssueList({ issues = [], onOpenMonitoring }) {
-  return (
-    <section className="editorial-issue-list" aria-label="후속 주요 이슈">
-      {issues.map((issue, index) => {
-        const riskScore = dashboardDisplayScore(issue);
-        return (
-          <DashboardIssueAction issue={issue} onOpenMonitoring={onOpenMonitoring} key={`${issue.source}-${issue.title}`}>
-            <span className="editorial-issue-rank">{index + 2}</span>
-            <span className={`editorial-issue-tone ${toneCssClass(issue.tone)}`}>{issue.tone || "중립"}</span>
-            <span className="editorial-issue-category">{displayDashboardCategory(issue.category)}</span>
-            <time>{issue.time || formatRelativeArticleTime(issue)}</time>
-            <b>{displayHeadline(issue)}</b>
-            <em
-              className={`editorial-issue-score ${riskScore > 0 ? "risk" : "information"}`}
-              title={riskScore > 0 ? "부정·주의 신호만 반영한 운영 리스크 지수" : "부정·주의 신호가 없는 업계 정보"}
-              aria-label={riskScore > 0 ? `리스크 지수 ${riskScore}점` : "업계 정보"}
-            >
-              {riskScore > 0 ? `리스크 ${riskScore}` : "정보"}
-            </em>
-          </DashboardIssueAction>
-        );
-      })}
-      {!issues.length && <div className="editorial-issue-list-empty">추가 관찰 이슈가 없습니다.</div>}
     </section>
   );
 }
@@ -1290,228 +1191,21 @@ function DashboardLeadSparkline({ rows = [] }) {
   );
 }
 
-function EditorialOperationsRail({ watchHealth, notificationHealth, reportHealth, analyzed = 0, onOpenHistory }) {
-  const watchStatus = watchHealth?.status || "pending";
-  const systemOk = watchStatus === "ok";
-  const visibleStatuses = [watchStatus, notificationHealth?.status, reportHealth?.status]
-    .filter(Boolean);
-  const visibleStatus = visibleStatuses.includes("fail")
-    ? "fail"
-    : visibleStatuses.includes("warn")
-      ? "warn"
-      : visibleStatuses.some((status) => ["pending", "unknown"].includes(status))
-        ? "pending"
-        : "ok";
-  const reportSlots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
-  const visibleReportSlots = (reportSlots.length
-    ? reportSlots
-    : [
-        { slot: "08", state: "완료", status: "ok" },
-        { slot: "13", state: "완료", status: "ok" },
-        { slot: "18", state: "예정", status: "pending" },
-      ]).slice(0, 3);
-  const latestSlackTime = String(notificationHealth?.meta || "").match(/최신\s+([^·]+)/)?.[1]?.trim() || "-";
-  const completedReports = visibleReportSlots.filter((slot) => slot.status === "ok").length;
-  return (
-    <aside className="signal-operations-rail">
-      <section className="signal-operations-panel">
-        <header className="signal-operations-heading">
-          <h2>운영 현황</h2>
-          <HealthStatusPill status={visibleStatus} label={visibleStatus === "pending" ? "확인 중" : undefined} />
-        </header>
-
-        <div className="signal-operation-table-head" aria-hidden="true">
-          <span>운영 항목</span>
-          <span>상태</span>
-          <span>운영 정보</span>
-        </div>
-
-        <section className="signal-operation-row system">
-          <div className="signal-operation-label">
-            <ShieldCheck />
-            <strong>감시 시스템</strong>
-          </div>
-          <strong className={`signal-operation-state ${systemOk ? "ok" : "check"}`}>
-            {systemOk ? "정상 운영" : watchHealth?.label || "확인 필요"}
-          </strong>
-          <div className="signal-operation-details">
-            <span><small>모니터링</small><b>{Number(analyzed || 0).toLocaleString("ko-KR")}건</b></span>
-            <span><small>감시 주기</small><b>{NEGATIVE_WATCH_SHORT_LABEL.replace(" 주기", "")}</b></span>
-            <span><small>이상 알림</small><b>{watchStatus === "fail" ? "확인" : "0건"}</b></span>
-          </div>
-        </section>
-
-        <button
-          type="button"
-          className="signal-operation-row slack"
-          onClick={onOpenHistory}
-          aria-label="Slack 발송 이력 열기"
-        >
-          <div className="signal-operation-label">
-            <SlackMark />
-            <strong>Slack 발송</strong>
-          </div>
-          <strong className={`signal-operation-state ${notificationHealth?.status === "ok" ? "ok" : "check"}`}>
-            {notificationHealth?.status === "ok" ? "정상 발송" : notificationHealth?.label || "확인 중"}
-          </strong>
-          <div className="signal-operation-details slack-details">
-            <span><small>최근 발송</small><b>{latestSlackTime}</b></span>
-            <span><small>실패</small><b>{notificationHealth?.status === "fail" ? "1건+" : "0건"}</b></span>
-          </div>
-          <ChevronRight aria-hidden="true" />
-        </button>
-
-        <section className="signal-operation-row reports">
-          <div className="signal-operation-label">
-            <CalendarDays />
-            <strong>일일 보고서</strong>
-          </div>
-          <strong className="signal-operation-state ok">{completedReports}/{visibleReportSlots.length} 완료</strong>
-          <div className="signal-operation-details report-details">
-            {visibleReportSlots.map((slot) => (
-              <span key={slot.slot}>
-                <small>{slot.slot}:00</small>
-                <b className={slot.status === "ok" ? "complete" : ""}>{slot.status === "ok" ? "완료" : slot.state || "예정"}</b>
-              </span>
-            ))}
-          </div>
-        </section>
-      </section>
-    </aside>
-  );
-}
-
-function IssueMomentumChart({ rows = [] }) {
-  const latest = rows.at(-1) || {};
-  const previous = rows.at(-2) || {};
-  const summaryRows = dashboardMomentumSeries.map((item) => ({
-    ...item,
-    value: Number(latest[item.key] || 0),
-    delta: Number(latest[item.key] || 0) - Number(previous[item.key] || 0),
-  }));
-  return (
-    <section className="editorial-momentum-panel">
-      <div className="editorial-section-title"><i />분류별 기사 흐름 <em>최근 7일 · 보고일 기준</em></div>
-      <div className="editorial-momentum-body">
-        <div className="editorial-momentum-chart">
-          {rows.length
-            ? <DashboardSvgLineChart rows={rows} series={dashboardMomentumSeries} />
-            : <div className="editorial-chart-empty">집계 가능한 기사 데이터가 없습니다.</div>}
-        </div>
-        <table className="editorial-momentum-table">
-          <caption>{rows.at(-1)?.dateLabel || "오늘"} 현황</caption>
-          <thead>
-            <tr><th scope="col">구분</th><th scope="col">오늘</th><th scope="col">전일 대비</th></tr>
-          </thead>
-          <tbody>
-            {summaryRows.map((item) => (
-              <tr key={item.key}>
-                <th scope="row"><i style={{ background: item.color }} />{item.label}</th>
-                <td>{item.value.toLocaleString("ko-KR")}건</td>
-                <td className={item.delta > 0 ? "up" : item.delta < 0 ? "down" : "flat"}>
-                  {item.delta > 0
-                    ? `증가 ${item.delta.toLocaleString("ko-KR")}건`
-                    : item.delta < 0
-                      ? `감소 ${Math.abs(item.delta).toLocaleString("ko-KR")}건`
-                      : "변동 없음"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="editorial-chart-legend">
-        {[["own", "당사"], ["ga", "GA"], ["insurance", "보험사"], ["regulation", "정책/규제"]].map(([key, label]) => <span key={key} className={key}><i />{label}</span>)}
-      </div>
-    </section>
-  );
-}
-
-function TodayComposition({ rows = [] }) {
-  const categoryStyles = {
-    "정책/규제": { color: "#1769e8", darkLabel: false },
-    보험사: { color: "#0b9f6f", darkLabel: false },
-    GA: { color: "#ed3f3f", darkLabel: false },
-    당사: { color: "#f5a318", darkLabel: true },
-    스폰서십: { color: "#7357d8", darkLabel: false },
-    기타: { color: "#64748b", darkLabel: false },
-  };
-  const normalized = rows
-    .map((item) => ({ name: displayDashboardCategory(item.name), value: Number(item.value || 0) }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
-  const total = normalized.reduce((sum, item) => sum + item.value, 0);
-  const denominator = total || 1;
-  const segments = normalized.map((item, index) => {
-    const rawPercent = (item.value / denominator) * 100;
-    const style = categoryStyles[item.name] || {
-      color: ["#1769e8", "#0b9f6f", "#ed3f3f", "#7357d8", "#64748b"][index],
-      darkLabel: false,
-    };
-    return {
-      ...item,
-      ...style,
-      rawPercent,
-      percentLabel: formatDashboardCompositionShare(item.value, denominator),
-    };
-  });
-  return (
-    <section className="editorial-composition-panel">
-      <div className="editorial-section-title"><i />당일 기사 분포 <em>{total.toLocaleString("ko-KR")}건</em></div>
-      <div className="editorial-composition-body">
-        <div
-          className="editorial-composition-stack"
-          role="img"
-          aria-label={`오늘의 기사 구성 총 ${total.toLocaleString("ko-KR")}건`}
-        >
-          {segments.filter((item) => item.value > 0).map((item) => (
-            <span
-              key={`segment-${item.name}`}
-              className={item.darkLabel ? "editorial-composition-stack-segment dark-label" : "editorial-composition-stack-segment"}
-              style={{ "--composition-color": item.color, "--composition-weight": item.value }}
-              title={`${item.name} ${item.value.toLocaleString("ko-KR")}건 · ${item.percentLabel}`}
-            >
-              {item.percentLabel}
-            </span>
-          ))}
-        </div>
-        <table className="editorial-composition-table">
-          <caption className="sr-only">오늘의 분류별 기사 건수와 비중</caption>
-          <thead className="sr-only">
-            <tr><th scope="col">분류</th><th scope="col">기사</th><th scope="col">비중</th><th scope="col">비율 막대</th></tr>
-          </thead>
-          <tbody>
-            {segments.map((item) => (
-              <tr
-                key={item.name}
-                style={{
-                  "--composition-color": item.color,
-                  "--composition-mini-share": item.value > 0 ? `max(3px, ${item.rawPercent}%)` : "0%",
-                }}
-              >
-                <th scope="row"><i style={{ background: item.color }} />{item.name}</th>
-                <td className="editorial-composition-count">{item.value.toLocaleString("ko-KR")}건</td>
-                <td className="editorial-composition-share">{item.percentLabel}</td>
-                <td className="editorial-composition-mini"><span><i /></span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-const dashboardMomentumSeries = [
-  { key: "own", color: "#1d5bd7", label: "당사" },
-  { key: "ga", color: "#0d8f67", label: "GA" },
-  { key: "insurance", color: "#e04a3f", label: "보험사" },
-  { key: "regulation", color: "#8e1434", label: "정책/규제" },
-];
-
 function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, compact = false, ariaLabel = "기사량 추이" }) {
-  const width = compact ? 320 : 760;
-  const height = compact ? 118 : 220;
+  const chartRef = useRef(null);
+  const [size, setSize] = useState({ width: compact ? 320 : 760, height: compact ? 118 : 220 });
+  useEffect(() => {
+    const parent = chartRef.current?.parentElement;
+    if (!parent) return undefined;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      if (width > 0 && height > 0) setSize((previous) => previous.width === width && previous.height === height ? previous : { width, height });
+    });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, []);
+  const { width, height } = size;
   const padding = compact ? { top: 18, right: 14, bottom: 24, left: 12 } : { top: 22, right: 24, bottom: 34, left: 50 };
   const values = rows.flatMap((row) => series.map((item) => Number(row[item.key] || 0)));
   const maxValue = Math.max(1, ...values);
@@ -1526,7 +1220,7 @@ function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, co
   const x = (index) => padding.left + (index * (width - padding.left - padding.right)) / Math.max(1, rows.length - 1);
   const y = (value) => padding.top + (1 - Number(value || 0) / scaleMax) * (height - padding.top - padding.bottom);
   return (
-    <svg className="dashboard-svg-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={ariaLabel}>
+    <svg ref={chartRef} className="dashboard-svg-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
       {compact
         ? <line x1={padding.left} x2={width - padding.right} y1={y(scaleMax / 2)} y2={y(scaleMax / 2)} className="dashboard-chart-grid" />
         : (
@@ -1564,10 +1258,6 @@ function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, co
   );
 }
 
-function SlackMark({ className = "" }) {
-  return <img className={`slack-mark ${className}`.trim()} src={slackMarkUrl} alt="Slack" />;
-}
-
 function formatDashboardScopeDate(scope = "") {
   const match = String(scope || "").match(/(20\d{2})-(\d{2})-(\d{2})/);
   if (!match) return scope || "오늘 기준";
@@ -1576,37 +1266,8 @@ function formatDashboardScopeDate(scope = "") {
   return `${match[1]}년 ${Number(match[2])}월 ${Number(match[3])}일 ${weekday}`;
 }
 
-function formatDashboardLeadMeta(issue = {}) {
-  const sourceCount = Number(issue.relatedSourceCount || 1);
-  const source = String(issue.source || issue.press || issue.publisher || displayDashboardCategory(issue.category) || "언론사").trim();
-  const mediaLabel = sourceCount > 1 ? `${source} 외 ${sourceCount - 1}개 매체` : source;
-  return `${mediaLabel} · ${formatRelativeArticleTime(issue)}`;
-}
-
-function dashboardLeadSummary(issue = {}) {
-  const summary = cleanSummaryText(issue.summary || "");
-  if (summary.length < 30) return "";
-  if (/기사입니다|보도입니다|확인합니다|모니터링|별도 추적|관련 동향/.test(summary)) return "";
-  return summary.length > 110 ? `${summary.slice(0, 107).trim()}…` : summary;
-}
-
 function dashboardDisplayScore(issue = {}) {
   return dashboardRiskIndex(issue);
-}
-
-function formatRelativeArticleTime(issue = {}) {
-  const time = articleTimeValue(issue);
-  if (!Number.isFinite(time) || time <= 0) return issue.time || issue.date || "최근 수집";
-  const diffHours = Math.max(0, Math.floor((Date.now() - time) / (60 * 60 * 1000)));
-  if (diffHours < 1) return "최근 1시간";
-  if (diffHours < 24) return `최근 ${diffHours}시간`;
-  return issue.date || "최근 수집";
-}
-
-function nextReportLabel(reportHealth = {}) {
-  const slots = Array.isArray(reportHealth?.slots) ? reportHealth.slots : [];
-  const next = slots.find((slot) => slot.status === "pending");
-  return next ? `${next.slot}:00` : "오늘 완료";
 }
 
 function buildDashboardMomentum(articles = []) {
@@ -1677,7 +1338,7 @@ function dashboardSeriesLabel(value = "") {
 
 function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, onOpenMonitoring }) {
   return (
-    <section className="dashboard-clipping-panel">
+    <section className="clipping-candidate-panel">
       <div className="clipping-panel-head">
         <div>
           <span>REPORT CLIPPING</span>
@@ -1687,11 +1348,11 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
           후보 더보기
         </button>
       </div>
-      <div className="dashboard-clipping-list">
+      <div className="clipping-candidate-list">
         {candidates.length ? candidates.map((article, index) => {
           const scrapped = isArticleScrapped(article, scraps);
           return (
-            <article className={`dashboard-clipping-card ${toneCssClass(article.tone)}`} key={`${articleSelectionKey(article)}-${index}`}>
+            <article className={`clipping-candidate-card ${toneCssClass(article.tone)}`} key={`${articleSelectionKey(article)}-${index}`}>
               <div className="clipping-card-top">
                 <div className="clipping-card-meta">
                   <Chip tone={article.tone}>{article.tone}</Chip>
@@ -1713,7 +1374,7 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
             </article>
           );
         }) : (
-          <article className="dashboard-clipping-empty">
+          <article className="clipping-candidate-empty">
             <b>현재 클리핑 후보가 없습니다.</b>
             <span>분석 근거가 충분한 기사만 보고서 후보로 표시합니다.</span>
           </article>
@@ -1759,98 +1420,6 @@ function dashboardClippingFallbackReason(article = {}) {
     return "시장·규제성 신호가 있는 기사입니다. 영업환경 또는 소비자 보호 기준 변화 가능성을 확인합니다.";
   }
   return "보고서 근거로 활용 가능한 관찰 기사입니다. 관련 이슈와 노출 맥락을 확인합니다.";
-}
-
-
-function TerminalCommandBar({ data, summary, operationsHealth, onOpenMonitoring }) {
-  const risk = summary?.risk || operationsHealth?.statusLabel || "LOW";
-  const negative = Number(summary?.ownNegative || 0);
-  const caution = Number(summary?.caution || 0);
-  const ownMentions = Number(summary?.ownMentions || 0);
-  const latest = data?.generatedAt || summary?.watchTime || "-";
-  return (
-    <section className={`terminal-command-bar risk-${String(risk).toLowerCase()}`}>
-      <div className="terminal-brief">
-        <span className="terminal-command-kicker">MEDIA RISK COMMAND</span>
-        <p className="terminal-command-meta">{data?.scope || "전체"} · 마지막 갱신 {latest}</p>
-      </div>
-      <div className="terminal-metrics">
-        <button type="button" onClick={() => onOpenMonitoring?.({ ownOnly: true })}>
-          <span>Risk</span>
-          <b>{risk}</b>
-          <em>당사 기준</em>
-        </button>
-        <button type="button" onClick={() => onOpenMonitoring?.({ tone: "부정" })}>
-          <span>Negative</span>
-          <b>{negative.toLocaleString("ko-KR")}</b>
-          <em>즉시 확인</em>
-        </button>
-        <button type="button" onClick={() => onOpenMonitoring?.({ tone: "주의" })}>
-          <span>Caution</span>
-          <b>{caution.toLocaleString("ko-KR")}</b>
-          <em>분리 관찰</em>
-        </button>
-        <button type="button" onClick={() => onOpenMonitoring?.({ ownOnly: true })}>
-          <span>Own</span>
-          <b>{ownMentions.toLocaleString("ko-KR")}</b>
-          <em>당사 언급</em>
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
-  const ranked = buildDashboardIssueGroups(issues)
-    .sort((a, b) => dashboardIssueScore(b) - dashboardIssueScore(a) || toneRank(b.tone) - toneRank(a.tone) || articleTimeValue(b) - articleTimeValue(a))
-    .slice(0, 5);
-  return (
-    <section className="risk-priority-queue">
-      <div className="queue-head">
-        <div>
-          <h2>주요 이슈</h2>
-        </div>
-        <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.({})}>
-          전체 보기
-        </button>
-      </div>
-      <div className="queue-list">
-        {ranked.length ? ranked.map((issue, index) => {
-          const bundleCount = issueBundleCount(issue);
-          return (
-            <article className={`queue-row ${toneCssClass(issue.tone)}`} key={`${issue.source}-${issue.title}-${index}`}>
-              <div className="queue-rank">{String(index + 1).padStart(2, "0")}</div>
-              <div className="queue-body">
-                <div className="queue-meta">
-                  <Chip tone={issue.tone}>{issue.tone}</Chip>
-                  <Chip>{issue.category}</Chip>
-                  <span>{formatIssueMeta(issue)}</span>
-                </div>
-                <h3>{displayHeadline(issue)}</h3>
-              </div>
-              <div className="queue-actions">
-                {bundleCount > 1 && (
-                  <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.(issueMonitoringPreset(issue))}>
-                    묶음 {bundleCount.toLocaleString("ko-KR")}건
-                  </button>
-                )}
-                {issue.link && issue.link !== "#" && (
-                  <a href={issue.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, issue.link)}>
-                    <ExternalLink /> 대표 기사
-                  </a>
-                )}
-              </div>
-            </article>
-          );
-        }) : (
-          <article className="queue-empty">
-            <b>표시할 주요 이슈가 없습니다.</b>
-            <span>운영 DB 연결 후 오늘 기준 주요 이슈가 표시됩니다.</span>
-          </article>
-        )}
-      </div>
-    </section>
-  );
 }
 
 function buildDashboardIssueGroups(issues = []) {
@@ -2019,51 +1588,6 @@ function toneRank(tone = "") {
   if (tone === "주의" || tone === "caution") return 3;
   if (tone === "긍정" || tone === "positive") return 2;
   return 1;
-}
-
-function OpsStatusRail({
-  jobs,
-  summary,
-  operations,
-  watchHealth,
-  notificationHealth,
-  reportHealth,
-  actionsHealth,
-  historyHealth,
-  notifications,
-  isLoading,
-  onRefreshOperations,
-}) {
-  return (
-    <aside className="ops-status-rail">
-      <div className="ops-rail-head">
-        <div>
-          <span>OPERATIONS</span>
-          <b>운영 현황</b>
-        </div>
-        <button
-          type="button"
-          className="ghost-button compact-button ops-refresh-button"
-          onClick={() => onRefreshOperations?.({ trigger: true, workflow: "all", source: "overview_operations", label: "전체 운영 갱신" })}
-          disabled={isLoading}
-        >
-          <RefreshCw />갱신
-        </button>
-      </div>
-      <OpsRuntimeStrip
-        jobs={jobs}
-        watchHealth={watchHealth}
-        notificationHealth={notificationHealth}
-        aiStatus={operations?.aiStatus}
-      />
-      <Panel title="발송 이력" icon={Bell} meta={`최근 ${notifications.length.toLocaleString("ko-KR")}건`}>
-        <NotificationList rows={notifications} />
-      </Panel>
-      <Panel title="보고서 자동화" icon={CalendarDays}>
-        <ReportAutomationStatus reportHealth={reportHealth} actionsHealth={actionsHealth} historyHealth={historyHealth} />
-      </Panel>
-    </aside>
-  );
 }
 
 const MemoizedMonitoring = React.memo(Monitoring);
@@ -4545,45 +4069,6 @@ function OpsMiniStatus({ icon: Icon, label, value, detail, status = "unknown" })
   );
 }
 
-function WatchPanel({ jobs, risk = "LOW", health }) {
-  const watchJob = jobs.find((job) => job.label === "부정기사 감시") || jobs[0] || {};
-  const status = health?.status || "unknown";
-  const heading = status === "fail"
-    ? "감시 확인 필요"
-    : status === "warn"
-      ? "감시 지연 주의"
-      : status === "pending"
-        ? "감시 확인 중"
-        : "정상 감시";
-  const detail = health?.detail || (watchJob.latest ? `${watchJob.latest} 실행` : "최근 실행 확인 대기");
-  const meta = health?.meta || `${watchJob.cadence || NEGATIVE_WATCH_SHORT_LABEL} · ${watchJob.state || "확인"}`;
-  return (
-    <section className="watch-panel">
-      <div className="watch-title-row">
-        <span><Radar />부정기사 탐색</span>
-        <HealthStatusPill status={status} label={health?.label || risk} />
-      </div>
-      <div className="watch-top">
-        <div className="radar-asset">
-          <span className="radar-sweep" />
-          <span className="radar-ring r1" />
-          <span className="radar-ring r2" />
-          <span className="radar-dot d1" />
-          <span className="radar-dot d2" />
-          <Radar />
-        </div>
-        <div className="watch-copy">
-          <h2>{heading}</h2>
-          <p>{detail}</p>
-          <strong>{meta}</strong>
-          <span>{NEGATIVE_WATCH_SHORT_LABEL}</span>
-        </div>
-      </div>
-      <div className="watch-progress"><span /></div>
-    </section>
-  );
-}
-
 function aiSummaryRuntimeStatus(status) {
   const gemini = status?.gemini;
   if (!gemini || typeof gemini.has_key !== "boolean") {
@@ -4593,42 +4078,6 @@ function aiSummaryRuntimeStatus(status) {
     return { value: "기본형", detail: "규칙 기반 보고서", status: "warning" };
   }
   return { value: "연결 설정", detail: "Gemini", status: "success" };
-}
-
-function AiUsagePanel({ status }) {
-  const state = aiSummaryRuntimeStatus(status);
-  return (
-    <section className="ai-usage-panel compact-provider">
-      <div className="ai-usage-head">
-        <span><Gauge />AI 요약</span>
-        <b>{state.detail}</b>
-      </div>
-      <div className="ai-compact-value">
-        <strong>{state.value}</strong>
-      </div>
-    </section>
-  );
-}
-
-function AiMeterRow({ label, percent, value, mode = "remaining", emptyStatus = "미수신" }) {
-  const fill = Number.isFinite(percent) ? percent : 0;
-  const status = percent === null || percent === undefined
-    ? emptyStatus
-    : percent >= 70 ? "정상"
-    : percent >= 35 ? "주의"
-    : "낮음";
-  return (
-    <div className="ai-meter-row" style={{ "--bar-fill": `${fill}%` }}>
-      <div>
-        <span>{label}</span>
-        <b>{status}</b>
-      </div>
-      <div className="ai-meter-track" aria-label={`${label} ${mode === "used" ? "사용량" : "잔량"}`}>
-        <i />
-      </div>
-      <em>{value}</em>
-    </div>
-  );
 }
 
 function percentRemaining(remaining, limit) {
@@ -4852,18 +4301,6 @@ function NotificationHistoryDialog({ rows = [], onClose }) {
           )}
         </div>
       </section>
-    </div>
-  );
-}
-
-function NotificationStatusSummary({ health, total = 0 }) {
-  return (
-    <div className={`operation-status-summary ${health?.status || "unknown"}`}>
-      <div>
-        <HealthStatusPill status={health?.status || "unknown"} label={health?.label || "확인"} />
-        <b>{health?.detail || "발송 이력 확인 대기"}</b>
-      </div>
-      <span>{health?.meta || `누적 ${Number(total || 0).toLocaleString("ko-KR")}건`}</span>
     </div>
   );
 }

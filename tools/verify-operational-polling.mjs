@@ -88,7 +88,7 @@ try {
     title: `일일 언론 동향 ${date}`, body: `${date} report_slot=08`, status: 'success' });
   revisions.notification_sends = 'n2';
   await advance(61000); await settle();
-  assert.match(await page.locator('.signal-operation-row.slack').innerText(), /08:12/);
+  assert.match(await page.locator('.desk-slack').innerText(), /08:12/);
   assert.equal(calls.snapshot, initialSnapshots);
   const negative = { ...data.articles[0], article_hash: 'negative', title: '인카금융서비스 보험 모집질서 위반 제재', tone: '부정', negative_target: 'own', score: 95, link: 'https://example.com/negative' };
   data.articles.unshift(negative); revisions.news_articles = 'a2';
@@ -103,9 +103,9 @@ try {
   assert.ok(calls.changes > beforeHidden);
   fail = true; await advance(61000); await settle();
   await page.getByText(negative.title, { exact: true }).first().waitFor();
-  assert.match(await page.locator('.signal-operation-row.system').innerText(), /확인 불가/);
+  assert.match(await page.locator('.desk-watch').innerText(), /확인 불가/);
   fail = false; await page.evaluate(() => window.dispatchEvent(new Event('online'))); await settle();
-  assert.doesNotMatch(await page.locator('.signal-operation-row.system').innerText(), /확인 불가/);
+  assert.doesNotMatch(await page.locator('.desk-watch').innerText(), /확인 불가/);
   await page.locator('.editorial-dashboard-header').getByRole('button', { name: '새로고침', exact: true }).click();
   await page.waitForTimeout(100); await advance(65000); await settle();
   const refreshButton = page.locator('.editorial-header-actions button').first();

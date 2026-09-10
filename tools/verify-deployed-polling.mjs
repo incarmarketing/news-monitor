@@ -31,7 +31,7 @@ try {
   assert.deepEqual(errors, []);
   const result = { passed: true, requests, errors,
     header: await page.locator('.editorial-data-status').innerText(),
-    operations: await page.locator('.signal-operations-panel').innerText() };
+    operations: await page.locator('.desk-operations').innerText() };
   await page.screenshot({ path: fileURLToPath(new URL('desktop.png', out)), fullPage: false });
   await writeFile(new URL('summary.json', out), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));

@@ -1,85 +1,55 @@
-**Comparison Target**
-- Source visual truth: `C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-f24fdc37-546f-4985-8d35-061126999bd4.png`
-- Rendered implementation: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/dashboard-v51-implementation.png`
-- Combined comparison: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/dashboard-v51-comparison.png`
-- Source pixels: 1702 x 924.
-- Implementation pixels: 1675 x 909.
-- CSS viewport: 1675 x 909 at device scale factor 1.
-- Normalization: source was proportionally resampled to 1674 x 909 for the side-by-side comparison; implementation remained at native 1675 x 909.
-- State: light theme, overview route, local static operational data.
-
-**Full-View Comparison Evidence**
-- The source and implementation now share the same hierarchy: compact header, reduced KPI strip, one TOP 5 command board, one unified operations rail, and a full-height lower analysis row.
-- The implementation intentionally retains the production sidebar, which was omitted from the concept image. This reduces the content canvas width but preserves the product's required navigation.
-- At 1675 x 909, the implementation has zero page and workspace overflow. Vertical gaps between all four major rows are consistently 9 px.
-
-**Focused Region Evidence**
-- Command board: exactly one featured issue and four secondary rows are visible; no empty grid tracks remain.
-- Operations rail: system, Slack, and report schedule are contained in one 420 px panel instead of three detached cards.
-- Analysis row: momentum and composition panels both measure 306 px high; charts and legends remain fully visible.
-- Header controls: data status, refresh, search, filter, and theme controls share one aligned row.
-
-**Required Fidelity Surfaces**
-- Fonts and typography: existing Noto Sans KR/product typography was preserved. Headings, KPI values, metadata, and labels use the source hierarchy without unintended wrapping at the target viewport.
-- Spacing and layout rhythm: 52 / 80 / 420 / 306 px row allocation matches the selected composition and removes the prior crushed lower charts.
-- Colors and visual tokens: production navy, green, red, amber, and blue semantic colors were retained; no decorative gradient or new palette was introduced.
-- Image quality and asset fidelity: the supplied INCAR logo and Slack image asset remain intact and sharp. No visible design asset was replaced with a placeholder.
-- Copy and content: `우선 이슈 TOP 5` reflects the actual five displayed items; the right panel is labeled `운영 현황` and groups the three operational states.
-
-**Findings**
-- No actionable P0, P1, or P2 visual mismatch remains at the selected 1675 x 909 viewport.
-- [P3] The production sidebar makes the implementation's content columns narrower than the concept image. This is an accepted product constraint because removing navigation would regress the existing application.
-- [P3] Local fallback data has a different date and issue mix than the concept. The production layout is data-independent and the difference does not change structure or density.
-
-**Comparison History**
-- Iteration 1 finding: final-loaded `dashboard-option1.css` overrode the selected design with a 98 px KPI strip, seven issue tracks, three detached operation rows, and a 202 px analysis row. Result: blocked.
-- Iteration 1 fix: moved the compact workspace contract to the final stylesheet, changed the command list to TOP 5, unified operations markup, and set explicit vertical budgets.
-- Iteration 2 evidence: implementation measures KPI 80 px, command board 420 px, operations panel 420 px, analysis row 306 px, and workspace overflow 0. Laptop 1365 x 768 also has overflow 0. Result: passed.
-
-**Primary Interactions Tested**
-- `기사 검색` opens the monitoring view.
-- Sidebar `대시보드` returns to the overview.
-- Browser console checked after reload and route transitions; no error-level messages were present.
-
-**Implementation Checklist**
-- [x] Reduce KPI strip height.
-- [x] Display exactly TOP 5 issues.
-- [x] Merge system, Slack, and report status into one panel.
-- [x] Reserve enough height for the momentum and composition charts.
-- [x] Verify desktop, compact laptop, and narrow responsive layouts.
-- [x] Verify build and primary route transitions.
-
-**Follow-up Polish**
-- A later data-quality pass can improve the issue titles and classifications independently of this layout change.
+# Dashboard Workbench QA - 2026-09-10
 
 final result: passed
 
----
+## Visual Sources
 
-**Composition Redesign QA - 2026-08-14**
-- Selected visual: `C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-12813630-d3d0-4abd-a9f3-2dd2ee14eab4.png`
-- Desktop render: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/.qa/dashboard-composition-desktop-final.png`
-- Focused implementation: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/.qa/composition-bar-implementation-focus.png`
-- Side-by-side comparison: `C:/Users/User/Desktop/COWORK/news-monitor-dashboard-perf/.qa/composition-bar-comparison.png`
-- Target viewport: 1675 x 909 at device scale factor 1.
+- Source: C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-778aa2a8-4fb1-4582-8b05-9aa9cd920eac.png
+- Selected direction: third dashboard proposal, analysis above a full-width priority table.
+- Reference raster: 1672 x 941; intended CSS viewport: 1280 x 720. Normalized proportionally to 1280 x 720, not used as a background asset.
+- Implementation: http://127.0.0.1:5198/?section=overview
+- Screenshot: C:/Users/User/Desktop/COWORK/news-monitor-publisher-fix/out/dashboard-workbench/desktop-final-1280.png
+- Combined comparison: C:/Users/User/Desktop/COWORK/news-monitor-publisher-fix/out/dashboard-workbench/comparison.png
+- CSS viewport: 1280 x 720, devicePixelRatio 1. Additional responsive checks: 1672 x 941 and 390 x 844.
+- State: light theme, actual saved operational data, read-only/no login. Mock article counts in the design are not copied into production.
 
-**Verified Behavior**
-- The donut chart was replaced by a single 100% stacked bar and a compact exact-value table.
-- Percentage labels remain inside their bar segments. Non-zero shares below 1% display as `<1%` instead of disappearing as `0%`.
-- The table keeps all four operating categories visible, including zero-value categories, so its row order is stable across refreshes.
-- The stacked bar, exact counts, percentages, and mini bars all reuse the same category colors.
-- The component has no clipped labels or internal horizontal overflow at the target desktop viewport.
-- The selected concept was responsively adapted to the narrower production rail without changing its information hierarchy.
+## Comparison History
 
-**Findings**
-- No actionable P0, P1, or P2 mismatch remains in the composition component.
-- [P3] The selected concept has a wider standalone canvas than the production rail. The implementation therefore uses tighter row spacing while preserving all values and labels.
-- [P3] Local fallback data contains two non-zero categories rather than the four-category sample in the concept. Zero-value rows remain visible to make this state explicit.
+1. First render: header status wrapped awkwardly; publication times were absent from summary rows; mobile search icon shrank. Classified P2, result blocked.
+2. Kept status/time tokens together, used exact-URL article records to restore display titles/timestamps without replacing classification or sorting, removed mobile search flex gap. Recaptured and compared against the source. No remaining actionable P0/P1/P2 differences.
+3. In-app advanced screenshot after a viewport override returned a scaled/cropped image. This was a capture artifact, not layout overflow. Replaced it with the native CUA screenshot after the compositor updated. DOM bounds confirmed the expected viewport and zero horizontal overflow.
 
-**Verification**
-- Dashboard risk unit tests: passed.
-- Production frontend build: passed.
-- Desktop visual comparison: passed.
-- Narrow responsive capture: passed for the composition component; the existing dashboard-wide mobile density is outside this scoped component change.
+## Required Fidelity Surfaces
 
-final result: passed
+- Typography: fixed pixel sizes, no viewport-scaled text; Korean system sans fallback; readable full titles with wrapping rather than CSS ellipsis. Main title 25px, section headings 16px, article titles 13px/14px mobile. Preserved real source headlines, including ellipses already stored upstream.
+- Layout: white navigation and KPI band, single-line desktop operations strip, shared chart/distribution surface, full-width five-row issue table. Desktop document height equals viewport height at 1280 x 720 and 1672 x 941. Mobile deliberately scrolls; chart retains a 190px plotting region.
+- Colors: chart/distribution use the same four series tokens. Warning and unknown statuses are not painted as successful. Low-glare theme retained.
+- Assets: existing official blue Incar signature bitmap and Slack bitmap, existing Lucide icons. The official signature contains company text unlike the generated mock logo; this is an intentional brand-asset correction, not a substituted drawing.
+- Content: actual data replaces illustrative numbers. Read-only login identity, unknown operational states, theme toggle, risk-history dialog and day-over-day detail remain available. These retained functional elements account for small differences from the mock.
+- Focused checks: header alignment, KPI values, source/time columns, mobile search icon and two-line headlines inspected at native screenshot size. Full comparison alone was not used for typography acceptance.
+
+## Functional Verification
+
+- Sidebar: overview, monitoring, media analysis, regulators, clipping, scraps, reports, stocks, management render nonempty views.
+- Monitoring: nonexistent search returns zero rows; reset restores 20 visible rows. Publisher metadata and headline source cleanup remain intact.
+- Priority sort remains on overview; own-only filtering retains direct-mention evidence behavior.
+- Risk KPI opens the risk chart dialog. Slack opens the existing delivery-history dialog on overview, not management.
+- Article links retain direct external navigation and noopener/noreferrer.
+- Browser console: no JavaScript errors in checked views. A development media-analysis first load temporarily delayed one automation click; the view completed and subsequent navigation succeeded. This is not a claim that all historical media-analysis latency has been eliminated.
+- Build and reference validation: passed (28 modules).
+- Frontend tests: 161 passed. API tests: 20 passed. Python regression tests: 363 passed.
+- No collection dispatches, Slack sends, classification writes, DB migrations or paid API calls were performed during UI QA.
+
+## Cleanup Boundary
+
+- Removed dashboard v3/v4/v5/v6 rules and deleted dashboard-option1.css.
+- Removed eight unreferenced legacy visual components plus replaced old layout components.
+- Kept active clipping styles under clipping-candidate-*; management CRM styles and unrelated feature/report styles remain.
+- New dashboard and navigation definitions live in dashboard-workbench.css. Visibility selectors retain the warm-mounted overview/monitoring performance contract.
+- Combined styles.css + dashboard stylesheet source size: 407224 to 259340 bytes (36.3% reduction). This measures source footprint, not measured network latency.
+
+## Residual Scope
+
+- Stock collection was empty in the local data snapshot; verified its existing empty state, not live market collection.
+- Backend operational statuses reflect the provided stored data; this redesign does not repair upstream service incidents.
+- Monitoring redesign remains an image proposal until the user selects a direction.
