@@ -21,6 +21,7 @@ from dotenv import load_dotenv
 
 import archiver
 import config
+import publisher_identity
 from supabase_store import notification_already_sent, save_notification_send
 
 BASE_DIR = Path(__file__).parent
@@ -557,7 +558,7 @@ def article_issue_lines(report: dict, limit: int = 3, *, include_summary: bool =
     rows.sort(key=lambda row: (-row[0], row[1]))
     lines: list[str] = []
     for _, _, article, title in rows[:limit]:
-        headline = compact(title, 110, ellipsis=False)
+        headline = compact(publisher_identity.display_headline({**article, "title": title}), 110, ellipsis=False)
         summary = article_summary(article, title) if include_summary else ""
         if include_summary and summary:
             lines.append(f"- *{headline}*\n  {summary}")

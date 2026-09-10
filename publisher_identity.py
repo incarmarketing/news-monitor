@@ -171,6 +171,33 @@ def normalize_article(article: dict) -> dict:
     }
 
 
+_HEADLINE_SOURCE_URL = re.compile(
+    r"^(?:https?://)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}"
+    r"(?::\d{1,5})?(?:[/?#][^\s]*)?\.?$", re.I
+)
+
+
+def display_headline(article: dict | str) -> str:
+    """Remove terminal publisher/distributor labels, without changing stored titles."""
+    row = article if isinstance(article, dict) else {"title": article}
+    raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    title = " ".join(str(row.get("title") or "").split())
+    source_names = {valid_name(container.get(key)) for container in (row, raw)
+                    for key in ("source", "press", "publisher", "media", "source_name", "rss_source_name")}
+    source_names.discard("")
+    for _ in range(5):
+        match = re.fullmatch(r"(.*\S)\s+[-–—|]\s+(\S.*)", title)
+        if not match:
+            break
+        candidate = match.group(2).strip()
+        name = NAME_ALIASES.get(candidate, candidate)
+        if not (_HEADLINE_SOURCE_URL.fullmatch(candidate) or candidate.lower() in PORTAL_NAMES
+                or name in KNOWN_NAMES or name in source_names):
+            break
+        title = match.group(1).rstrip()
+    return title
+
+
 class _PublisherPage(HTMLParser):
     """Read site metadata and scoped copyright notices, not article prose."""
 

@@ -1,6 +1,6 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createRoot } from "react-dom/client";
-import { resolvePublisher, isPublisherPortal, UNKNOWN_PUBLISHER } from "./publisherIdentity.js";
+import { resolvePublisher, displayHeadline, isPublisherPortal, UNKNOWN_PUBLISHER } from "./publisherIdentity.js";
 import {
   Activity,
   AlertTriangle,
@@ -1222,7 +1222,7 @@ function EditorialLeadIssue({ issue, riskMomentumRows = [], onOpenMonitoring, em
               <time>{issue.time || formatRelativeArticleTime(issue)}</time>
             </div>
             <DashboardIssueAction issue={issue} onOpenMonitoring={onOpenMonitoring}>
-              <h2>{issue.title}</h2>
+              <h2>{displayHeadline(issue)}</h2>
               {summary && <p className="editorial-lead-summary">{summary}</p>}
               <p className="editorial-lead-meta">
                 {String(issue.source || "언론사")} <span /> 관련 기사 {relatedCount.toLocaleString("ko-KR")}건 <span /> 당사 직접 부정 {ownNegativeCount}건
@@ -1249,7 +1249,7 @@ function EditorialIssueList({ issues = [], onOpenMonitoring }) {
             <span className={`editorial-issue-tone ${toneCssClass(issue.tone)}`}>{issue.tone || "중립"}</span>
             <span className="editorial-issue-category">{displayDashboardCategory(issue.category)}</span>
             <time>{issue.time || formatRelativeArticleTime(issue)}</time>
-            <b>{issue.title}</b>
+            <b>{displayHeadline(issue)}</b>
             <em
               className={`editorial-issue-score ${riskScore > 0 ? "risk" : "information"}`}
               title={riskScore > 0 ? "부정·주의 신호만 반영한 운영 리스크 지수" : "부정·주의 신호가 없는 업계 정보"}
@@ -1707,7 +1707,7 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
                   )}
                 </div>
               </div>
-              <h3>{article.title}</h3>
+              <h3>{displayHeadline(article)}</h3>
               <ArticleSummaryBlock item={article} dense />
               <ArticleDecisionNote item={article} hideClippingLabel />
             </article>
@@ -1826,7 +1826,7 @@ function RiskPriorityQueue({ issues = [], onOpenMonitoring }) {
                   <Chip>{issue.category}</Chip>
                   <span>{formatIssueMeta(issue)}</span>
                 </div>
-                <h3>{issue.title}</h3>
+                <h3>{displayHeadline(issue)}</h3>
               </div>
               <div className="queue-actions">
                 {bundleCount > 1 && (
@@ -2513,7 +2513,7 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
               <div className="feed-title-line">
                 <Chip tone={row.tone}>{row.tone}</Chip>
                 <span className="regulator-keyword-pill">{row.regulatorKeyword}</span>
-                <b>{row.title}</b>
+                <b>{displayHeadline(row)}</b>
               </div>
               <span className="feed-meta">{formatFeedMeta(row, false)}</span>
             </div>
@@ -2863,7 +2863,7 @@ function formatScrapAnalysisText(report = {}, meta = {}) {
     "",
     "근거 기사",
     ...(Array.isArray(report.evidenceArticles) ? report.evidenceArticles.map((article) => (
-      `- [${article.no || "-"}] ${article.press || "출처 확인"}: ${article.title || "제목 확인"}${article.summary ? ` / ${article.summary}` : ""}`
+      `- [${article.no || "-"}] ${article.press || "출처 확인"}: ${displayHeadline(article) || "제목 확인"}${article.summary ? ` / ${article.summary}` : ""}`
     )) : []),
   ];
   return lines.filter((line, index, array) => line || array[index - 1]).join("\n").trim();
@@ -2984,7 +2984,7 @@ function htmlEvidenceRow(article = {}) {
       <span class="no">${escapeHtml(article.no || "-")}</span>
       <div>
         <span class="source">${escapeHtml(article.press || "출처 확인")}</span>
-        <h3>${escapeHtml(article.title || "제목 확인")}</h3>
+        <h3>${escapeHtml(displayHeadline(article) || "제목 확인")}</h3>
         <p>${escapeHtml(article.summary || "요약 확인")}</p>
       </div>
       <span class="tone">${escapeHtml(article.tone || "논조")}</span>
@@ -3647,7 +3647,7 @@ function MonthlyIssueDigest({ issues, period = "monthly" }) {
           <span>{formatIssueMeta(lead)}</span>
         </div>
         <span className="monthly-issue-kicker">{meta.kicker}</span>
-        <h3>{lead.title}</h3>
+        <h3>{displayHeadline(lead)}</h3>
         {lead.link && lead.link !== "#" && (
           <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
             <ExternalLink />기사 열기
@@ -3660,7 +3660,7 @@ function MonthlyIssueDigest({ issues, period = "monthly" }) {
           <article key={`${issue.source}-${issue.title}`}>
             <div>
               <span>{formatIssueMeta(issue)}</span>
-              <h4>{issue.title}</h4>
+              <h4>{displayHeadline(issue)}</h4>
               <RelatedIssueDetails issue={issue} compact />
             </div>
             <Chip tone={issue.tone}>{issue.tone}</Chip>
@@ -3725,7 +3725,7 @@ function RelatedIssueDetails({ issue = {}, compact = false }) {
             onClick={(event) => article.link && article.link !== "#" ? openArticleLink(event, article.link) : undefined}
           >
             <span>{article.source || "-"}</span>
-            <b>{article.title}</b>
+            <b>{displayHeadline(article)}</b>
             <em>{[article.date, article.time].filter(Boolean).join(" ") || "-"}</em>
           </a>
         ))}
@@ -3934,7 +3934,7 @@ function RelatedArticleDisclosure({ rows = [] }) {
               onClick={(event) => item.link && item.link !== "#" ? openArticleLink(event, item.link) : undefined}
             >
               <span>{item.source}</span>
-              <b>{item.title}</b>
+              <b>{displayHeadline(item)}</b>
               <em>{item.time || item.date || "-"}</em>
             </a>
           ))}
@@ -3957,7 +3957,7 @@ function ArticleFeed({ rows, compact = false, showTime = false, scraps = [], onF
             <div className="feed-main">
               <div className="feed-title-line">
                 <Chip tone={displayRow.tone}>{displayRow.tone}</Chip>
-                <b>{displayRow.title}</b>
+                <b>{displayHeadline(displayRow)}</b>
               </div>
               <span className="feed-meta">{formatFeedMeta(displayRow, hasRelated)}</span>
               {!compact && <ArticleSummaryBlock item={displayRow} dense />}

@@ -576,6 +576,7 @@ def build_html_report(
     ensure_report_ids(clustered)
     metrics = normalize_metrics_for_template(metrics)
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
+    env.globals["display_headline"] = publisher_identity.display_headline
     template = env.get_template("email.html")
     y_metrics = yesterday.get("metrics") if yesterday else None
     market_count = metrics["by_category"]["competitor"] + metrics["by_category"]["industry"]

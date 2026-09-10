@@ -742,7 +742,7 @@
               <span class="pill cat-{{ a._category }}">{{ a._category_label }}</span>
             </div>
             <div class="article-body">
-              <b class="headline">[{{ a.source }}] {{ a.title }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</b>
+              <b class="headline">[{{ a.source }}] {{ display_headline(a)|e }}{% if a._cluster_size > 1 %} · 관련 {{ a._cluster_size }}건{% endif %}</b>
             </div>
           </a>
           {% endfor %}

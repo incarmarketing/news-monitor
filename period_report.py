@@ -21,6 +21,7 @@ import archiver
 import config
 import gemini_helper
 import public_urls
+import publisher_identity
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -234,10 +235,6 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
     def article_tone(article: dict) -> str:
         return article.get("_tone") or article.get("tone") or "neutral"
 
-    def clean_article_title(title: str) -> str:
-        title = re.sub(r"\s+", " ", title or "").strip()
-        return title
-
     def article_meta(article: dict) -> str:
         parts = [
             article.get("_date") or article.get("date") or "-",
@@ -248,7 +245,7 @@ def build_report_context(aggregate: dict, top_articles: list[dict]) -> dict:
 
     def article_brief(article: dict) -> dict:
         return {
-            "title": clean_article_title(article.get("title", "")),
+            "title": publisher_identity.display_headline(article),
             "link": article.get("link", "#"),
             "meta": article_meta(article),
             "score": article.get("_score", article.get("score", 0)),
@@ -556,6 +553,7 @@ def run(period: str, custom_arg: str | int | None = None) -> Path | None:
     ))
 
     env = Environment(loader=FileSystemLoader(BASE_DIR / "templates"))
+    env.globals["display_headline"] = publisher_identity.display_headline
     template = env.get_template("period_report.html")
     max_neg = max((d["value"] for d in aggregate.get("daily_own_negative", [])), default=0)
 

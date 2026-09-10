@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Search } from "lucide-react";
 import { loadMediaRegistry, saveArticlePublisher, savePressAlias } from "./liveData";
 import { registryError, registryRows, safeArticleUrl } from "./mediaRegistryModel.mjs";
+import { displayHeadline } from "./publisherIdentity.js";
 import "./mediaRegistry.css";
 
 const date = (value) => value ? new Date(value).toLocaleDateString("ko-KR") : "-";
@@ -95,7 +96,7 @@ function RegistryDetail({ selection, onBack, onSaved }) {
     {!data && !error && <p className="registry-empty" role="status">기사 이력 조회 중</p>}
     {data && <><ul className="registry-articles">{data.rows.map((row) => <li key={row.article_hash}>
       <div className="registry-article-meta"><span>{date(row.pub_date)}</span><span>{row.source}</span>{row.own_mentioned && <span>당사 언급</span>}</div>
-      <a className="registry-headline" href={safeArticleUrl(row.link) || undefined} target="_blank" rel="noreferrer">{row.title}<ExternalLink size={15} /></a>
+      <a className="registry-headline" href={safeArticleUrl(row.link) || undefined} target="_blank" rel="noreferrer">{displayHeadline(row)}<ExternalLink size={15} /></a>
       <div className="registry-evidence"><span>기자: {row.authors.map((author) => author.name).join(", ") || statuses[row.byline_status] || "미확인"}</span>
         {row.checked_at && <span>{date(row.checked_at)} 확인</span>}
         {safeArticleUrl(row.evidence_url) && <a href={safeArticleUrl(row.evidence_url)} target="_blank" rel="noreferrer">확인 출처 <ExternalLink size={13} /></a>}</div>

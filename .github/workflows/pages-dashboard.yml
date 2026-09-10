@@ -119,6 +119,7 @@ jobs:
           tests.test_negative_watch
           tests.test_news_collector
           tests.test_publisher_identity
+          tests.test_headline_display
           tests.test_media_byline
           tests.test_supabase_store_feedback
           tests.test_context_rule_fixes

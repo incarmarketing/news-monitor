@@ -14,9 +14,9 @@ const output = path.join(root, "out/category-flows");
 await mkdir(output, { recursive: true });
 const date = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Seoul"}).format(new Date());
 const articles = [
-  {title:"인카금융서비스 보험설계사 교육 및 소비자보호 지원 확대", category:"당사",tone:"긍정",own_mentioned:true},
+  {title:"인카금융서비스 보험설계사 교육 및 소비자보호 지원 확대 - v.daum.net", category:"당사",tone:"긍정",own_mentioned:true},
   {title:"금융감독원 보험대리점 판매수수료 제도 개선 발표", category:"정책/규제",tone:"주의",source:"금융감독원"},
-  {title:"보험업계 건강보험 보장 서비스 개편",category:"보험사",tone:"중립"},
+  {title:"보험업계 건강보험 보장 서비스 개편 - 보험매일",category:"보험사",tone:"중립"},
 ].map((article, index) => ({...article, id:`flow-${index}`,article_hash:`flow-${index}`,
   source:article.source || "보험매일",link:`https://example.com/article-${index}`,
   date,report_date:date,pub_date:`${date}T08:00:00+09:00`,time:"08:00",keyword:"보험",
@@ -80,6 +80,10 @@ try {
       if (section.id === "monitoring") {
         const workspace=page.locator(".monitoring-workspace");
         await workspace.locator(".feed-row").first().waitFor();
+        const headlines = await workspace.locator(".feed-title-line > b").allTextContents();
+        assert.ok(headlines.some(title => title.includes("인카금융서비스")));
+        assert.ok(headlines.every(title => !/ - (v\.daum\.net|보험매일)$/.test(title)), "Headline source suffix should be hidden");
+        assert.ok((await workspace.locator(".feed-meta").allTextContents()).some(meta => meta.includes("보험매일")), "Separate publisher metadata must stay visible");
         await workspace.getByPlaceholder("제목, 언론사, 키워드 검색").fill("없는검색어xyz");
         await workspace.getByRole("button",{name:"조회/검색",exact:true}).click();
         await page.waitForFunction(()=>!document.querySelector(".monitoring-workspace .feed-row"));

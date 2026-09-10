@@ -1016,7 +1016,7 @@
           <div class="evidence-list">
             {% for a in group.articles %}
             <a class="evidence-card" href="{{ a.link }}" target="_blank">
-              <b>{{ a.title }}</b>
+              <b>{{ display_headline(a)|e }}</b>
               <span>{{ a.meta }}</span>
             </a>
             {% endfor %}

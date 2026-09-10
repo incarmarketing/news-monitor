@@ -68,3 +68,22 @@ export function resolvePublisher(article = {}, aliasRows = []) {
   }
   return validName(article.rss_source_name || raw.rss_source_name) || validName(source) || fromTitle(article.title || raw.title, aliases) || fromDomain(article.source_raw || raw.source_raw, aliases) || fromDomain(article.source_raw || raw.source_raw) || UNKNOWN_PUBLISHER;
 }
+
+const headlineSourceUrl = /^(?:https?:\/\/)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?::\d{1,5})?(?:[/?#][^\s]*)?\.?$/i;
+
+export function displayHeadline(article = {}) {
+  const row = typeof article === "string" ? { title: article } : article || {};
+  const sources = new Set([row, row.raw || {}].flatMap(value =>
+    ["source", "press", "publisher", "media", "source_name", "rss_source_name"].map(key => validName(value[key]))).filter(Boolean));
+  let title = String(row.title || "").replace(/\s+/g, " ").trim();
+  // Only terminal source labels are removed. In-title brands and research firms remain.
+  for (let i = 0; i < 5; i += 1) {
+    const match = title.match(/^(.*\S)\s+[-–—|]\s+(\S.*)$/);
+    if (!match) break;
+    const candidate = match[2].trim();
+    const name = registry.name_aliases[candidate] || candidate;
+    if (!headlineSourceUrl.test(candidate) && !portals.has(candidate.toLowerCase()) && !known.has(name) && !sources.has(name)) break;
+    title = match[1].trimEnd();
+  }
+  return title;
+}

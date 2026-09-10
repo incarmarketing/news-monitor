@@ -3,6 +3,7 @@ import { Download } from "lucide-react";
 import { periodData } from "./data";
 import { A4BarList, A4PressRows } from "./reportComponents";
 import { buildA4ReportStats, publicationMeta, reportPurposeConfig } from "./reportModel";
+import { displayHeadline } from "./publisherIdentity.js";
 
 let reportHelpers = {};
 
@@ -452,7 +453,7 @@ function formatA4ArticleMeta(item = {}, fallback = "-") {
 
 function formatA4ArticleHeadline(item = {}) {
   const source = cleanA4InlineText(item.source || item.media || item.publisher || "");
-  const title = cleanA4InlineText(item.title || "제목 확인 필요");
+  const title = cleanA4InlineText(displayHeadline(item) || "제목 확인 필요");
   const relatedCount = Number(item.relatedCount || item.clusterSize || 1);
   const related = relatedCount > 1 ? ` · 관련 ${relatedCount.toLocaleString("ko-KR")}건` : "";
   return `${source ? `[${source}] ` : ""}${title}${related}`;
