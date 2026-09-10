@@ -61,3 +61,19 @@ Apply `20260910001814_dashboard_change_tracking.sql` before deploying the Edge A
 frontend. The old snapshot endpoint remains compatible. To revert UI/API, keep the additive DB
 objects initially; the old UI does not depend on them. Drop only the named triggers/cache objects
 after confirming no deployed client/API uses them. Do not change pg_net or existing article data.
+
+## Deployment verification
+
+- Application commit: `56f71a4aab4958adf1f3458e1cf7d022954ac606`.
+- Edge deploy run `34422302139` and Pages run `34422302036`: success.
+- Live read contract: 910 API articles, 14,411 marketing-feed articles, publisher registry 200,
+  private raw REST 401, non-exposed net schema 406, no snapshot warnings.
+- Unchanged response: 369 bytes versus 1,363,188 bytes for that full snapshot (JSON bytes,
+  before transport compression; not an estimate of total traffic/cost savings).
+- Two actual diagnostic reads returned the same DB cache timestamp and successful workflow
+  status. Compare parsed timestamps, since Postgres and JavaScript serialize UTC differently.
+- `verify-deployed-polling.mjs`: real 65-second observation, zero browser GitHub requests,
+  no collection dispatch, change checks active; a concurrent DB article change triggered reload.
+- Production category QA: all 27 desktop/tablet/mobile scenarios passed. Visible operation
+  state: normal watch, latest Slack 08:16, today's daily report 1/3 complete.
+- No actual Slack message was sent for verification; delivery regression paths were mocked.
