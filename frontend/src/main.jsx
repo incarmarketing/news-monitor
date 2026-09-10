@@ -76,6 +76,8 @@ import "./report.css";
 import { DashboardAnalysis, DashboardDialog, DashboardOperationsStrip, DashboardPriorityTable } from "./DashboardWorkbench.jsx";
 import { articleClock, priorityDisplayRows, dashboardSeries as dashboardMomentumSeries } from "./dashboardPresentation.js";
 import "./dashboard-workbench.css";
+import MonitoringWorkbench from "./MonitoringWorkbench.jsx";
+import { monitoringCategoryCounts, monitoringCategoryKey } from "./monitoringPresentation.js";
 
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
@@ -1608,7 +1610,7 @@ function Monitoring({
   onScrapSaved,
 }) {
   const [isFilterPending, startFilterTransition] = useTransition();
-  const workingArticles = monitoringRangeArticles.length ? monitoringRangeArticles : articles;
+  const workingArticles = useMemo(() => (monitoringRangeArticles.length ? monitoringRangeArticles : articles).map(normalizeArticleDisplay), [monitoringRangeArticles, articles]);
   const latestDate = useMemo(
     () => latestArticleDate(articles.filter((article) => !isOfficialRegulatorSource(article.source))),
     [articles],
@@ -1619,8 +1621,7 @@ function Monitoring({
   const [category, setCategory] = useState("all");
   const [source, setSource] = useState("all");
   const [ownOnly, setOwnOnly] = useState(false);
-  const [viewMode, setViewMode] = useState("related");
-  const [visible, setVisible] = useState(20);
+  const [viewMode, setViewMode] = useState("latest");
   const [startDateInput, setStartDateInput] = useState(latestDate);
   const [endDateInput, setEndDateInput] = useState(latestDate);
   const [startDate, setStartDate] = useState(latestDate);
@@ -1659,8 +1660,7 @@ function Monitoring({
   }, [workingArticles, effectiveEndDate, effectiveStartDate, focusPreset, query]);
   const deferredRegularArticles = useDeferredValue(regularArticles);
 
-  const sources = useMemo(() => unique(deferredRegularArticles.map((article) => article.source)).slice(0, 80), [deferredRegularArticles]);
-  const categories = useMemo(() => unique(deferredRegularArticles.map((article) => article.category)).slice(0, 40), [deferredRegularArticles]);
+  const sources = useMemo(() => unique(deferredRegularArticles.map((article) => article.source)).sort((a, b) => a.localeCompare(b, "ko")), [deferredRegularArticles]);
   useEffect(() => {
     if (!latestDate || startDateInput || endDateInput || startDate || endDate) return;
     setStartDateInput(latestDate);
@@ -1690,10 +1690,9 @@ function Monitoring({
         onLoadMonitoringRange?.({ startDate: range.start, endDate: range.end });
       }
     }
-    setVisible(20);
     appliedPresetStamp.current = presetStamp;
   }, [monitoringPreset, deferredRegularArticles, latestDate, onLoadMonitoringRange]);
-  const filtered = useMemo(() => {
+  const categoryCandidates = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const focusArticleHash = String(focusPreset?.articleHash || "").trim();
     const focusArticleLink = String(focusPreset?.articleLink || "").trim();
@@ -1720,12 +1719,16 @@ function Monitoring({
         (bypassDateFilter || !effectiveStartDate || !articleDate || articleDate >= effectiveStartDate) &&
         (bypassDateFilter || !effectiveEndDate || !articleDate || articleDate <= effectiveEndDate) &&
         (hasResolvedTarget || tone === "all" || article.tone === tone) &&
-        (hasResolvedTarget || category === "all" || article.category === category) &&
         (hasResolvedTarget || !ownOnly || isOwnArticle(article)) &&
         (hasResolvedTarget || source === "all" || article.source === source)
       );
     });
-  }, [deferredRegularArticles, category, effectiveEndDate, effectiveStartDate, focusPreset, ownOnly, query, source, tone]);
+  }, [deferredRegularArticles, effectiveEndDate, effectiveStartDate, focusPreset, ownOnly, query, source, tone]);
+  const filtered = useMemo(() => {
+    const focused = Boolean(focusPreset?.articleHash || focusPreset?.articleLink || focusPreset?.articleTitle || focusPreset?.issueLinks?.length);
+    return categoryCandidates.filter(article => focused || category === "all" || monitoringCategoryKey(article.category) === monitoringCategoryKey(category));
+  }, [categoryCandidates, category, focusPreset]);
+  const categoryCounts = useMemo(() => monitoringCategoryCounts(categoryCandidates), [categoryCandidates]);
   const applyDateFilter = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
@@ -1736,17 +1739,13 @@ function Monitoring({
     }
     setStartDate(nextStart);
     setEndDate(nextEnd);
-    setVisible(20);
   };
   const deferredFiltered = useDeferredValue(filtered);
   const grouped = useMemo(
     () => viewMode === "related" ? buildRelatedArticleGroups(deferredFiltered) : [],
     [deferredFiltered, viewMode],
   );
-  const visibleRows = viewMode === "related" ? grouped : deferredFiltered;
-  const feedMeta = viewMode === "related"
-    ? `${filtered.length.toLocaleString("ko-KR")}건 · 묶음 ${grouped.length.toLocaleString("ko-KR")}개`
-    : `${filtered.length.toLocaleString("ko-KR")}건`;
+  const visibleRows = useMemo(() => viewMode === "related" ? grouped : [...deferredFiltered].sort((a, b) => articleTimeValue(b) - articleTimeValue(a)), [viewMode, grouped, deferredFiltered]);
   const isLoading = operations?.status === "loading" || isWorking || isFilterPending || monitoringRangeLoading;
   const applyFilters = () => {
     let nextStart = startDateInput;
@@ -1754,8 +1753,8 @@ function Monitoring({
     if (nextStart && nextEnd && nextStart > nextEnd) [nextStart, nextEnd] = [nextEnd, nextStart];
     startFilterTransition(() => {
       applyDateFilter();
+      setFocusPreset({});
       setQuery(queryInput);
-      setVisible(20);
     });
     if ((nextStart && nextStart !== latestDate) || (nextEnd && nextEnd !== latestDate)) {
       onLoadMonitoringRange?.({ startDate: nextStart, endDate: nextEnd });
@@ -1772,94 +1771,58 @@ function Monitoring({
     setCategory("all");
     setSource("all");
     setOwnOnly(false);
-    setViewMode("related");
+    setViewMode("latest");
     setStartDateInput(latestDate);
     setEndDateInput(latestDate);
     setStartDate(latestDate);
     setEndDate(latestDate);
-    setVisible(20);
+  };
+
+  const changeFilter = (field, value) => {
+    const setters = { queryInput: setQueryInput, tone: setTone, category: setCategory, source: setSource, viewMode: setViewMode, startDateInput: setStartDateInput, endDateInput: setEndDateInput };
+    setters[field]?.(value);
+    if (["tone", "category", "source"].includes(field)) setFocusPreset({});
+    if (field === "category") setOwnOnly(false);
+  };
+  const selectPeriod = (range) => {
+    setFocusPreset({});
+    setQuery("");
+    setQueryInput("");
+    setStartDateInput(range.startDate);
+    setEndDateInput(range.endDate);
+    setStartDate(range.startDate);
+    setEndDate(range.endDate);
+    if (range.startDate !== latestDate || range.endDate !== latestDate) onLoadMonitoringRange?.(range);
+    else onClearMonitoringRange?.();
   };
 
   return (
-    <main className="workspace monitoring-workspace">
-      <section className="filter-card monitoring-filter-card">
-        <label>
-          <span>시작 기준일</span>
-          <input type="date" value={startDateInput} onChange={(event) => setStartDateInput(event.target.value)} />
-        </label>
-        <label>
-          <span>종료 기준일</span>
-          <input type="date" value={endDateInput} onChange={(event) => setEndDateInput(event.target.value)} />
-        </label>
-        <label className="tone-filter">
-          <span>논조</span>
-          <select value={tone} onChange={(event) => setTone(event.target.value)}>
-            <option value="all">전체</option>
-            {TONE_FILTER_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
-          </select>
-        </label>
-        <label className="sort-filter">
-          <span>정렬</span>
-          <select value={viewMode} onChange={(event) => { setViewMode(event.target.value); setVisible(20); }}>
-            <option value="related">관련순</option>
-            <option value="latest">최신순</option>
-          </select>
-        </label>
-        <label>
-          <span>분류</span>
-          <select value={category} onChange={(event) => setCategory(event.target.value)}>
-            <option value="all">전체</option>
-            {categories.map((item) => <option key={item}>{item}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>언론사</span>
-          <select value={source} onChange={(event) => setSource(event.target.value)}>
-            <option value="all">전체</option>
-            {sources.map((item) => <option key={item}>{item}</option>)}
-          </select>
-        </label>
-        <label className="wide-filter">
-          <span>검색어</span>
-          <input
-            value={queryInput}
-            onChange={(event) => setQueryInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                setQuery(queryInput);
-                setVisible(20);
-              }
-            }}
-            placeholder="제목, 언론사, 키워드 검색"
-          />
-        </label>
-        <div className="monitoring-filter-actions">
-          <button className="primary-button filter-action" onClick={applyFilters}>
-            조회/검색
-          </button>
-          <button className="ghost-button compact-button" onClick={resetMonitoringFilters}>
-            초기화
-          </button>
-          <button type="button" className="primary-button compact-button"><Download />CSV 출력</button>
-        </div>
-      </section>
-      <section className="monitoring-layout">
-        <Panel title="수집 기사 피드" icon={Newspaper} meta={feedMeta}>
-          <ArticleFeed
-            rows={visibleRows.slice(0, visible)}
-            scraps={scraps}
-            onFeedbackSaved={onFeedbackSaved}
-            onScrapSaved={onScrapSaved}
-          />
-          {visibleRows.length > visible && (
-            <button className="ghost-button full" onClick={() => setVisible((count) => count + 20)}>
-              더보기
-            </button>
-          )}
-        </Panel>
-      </section>
-    </main>
+    <MonitoringWorkbench rows={visibleRows} exportRows={filtered} categoryCounts={categoryCounts}
+      filters={{ queryInput, query, tone, category, source, viewMode, startDateInput, endDateInput, sources, tones: TONE_FILTER_OPTIONS }}
+      filterKey={JSON.stringify([query, tone, category, source, viewMode, startDate, endDate, ownOnly, focusPreset])}
+      focusLabel={focusPreset?.issueTitle || focusPreset?.articleTitle || (ownOnly ? "당사 직접 언급" : "")}
+      onChange={changeFilter} onApply={applyFilters} onReset={resetMonitoringFilters} onPeriod={selectPeriod}
+      isLoading={isLoading} isUpdating={isFilterPending || monitoringRangeLoading || filtered !== deferredFiltered || regularArticles !== deferredRegularArticles}
+      updatedLabel={`${formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || latestDate || "-")} 기준`}
+      onRefresh={onRefreshOperations} normalizeRow={normalizeArticleDisplay} rowKey={articleSelectionKey}
+      timeLabel={(article) => articleClock(article, articleTimeValue(article))} onOpenArticle={openArticleLink}
+      ScrapButton={ArticleScrapButton} isScrapped={isArticleScrapped} scraps={scraps} onScrapSaved={onScrapSaved}
+      Details={MonitoringArticleDetails} onFeedbackSaved={onFeedbackSaved}/>
   );
+}
+
+function MonitoringArticleDetails({ article, onFeedbackSaved }) {
+  const related = Array.isArray(article.relatedArticles) ? article.relatedArticles : [];
+  return <div className="monitor-article-details">
+    <h2>{displayHeadline(article)}</h2>
+    <span className="feed-meta">{formatFeedMeta(article, related.length > 1)}</span>
+    <ArticleSummaryBlock item={article} dense/>
+    <ArticleDecisionNote item={article}/>
+    {related.length > 1 && <RelatedArticleDisclosure rows={related}/>}
+    <div className="monitor-detail-actions"><ArticleCorrectionControl article={article} onSaved={onFeedbackSaved}/>
+      {/^https?:\/\//i.test(article.link || "") && <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={event => openArticleLink(event, article.link)}><ExternalLink/>기사 열기</a>}
+    </div>
+  </div>;
 }
 
 function Regulators({ articles = [], operations, isWorking, onRefreshOperations }) {

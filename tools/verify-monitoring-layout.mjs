@@ -57,31 +57,28 @@ try {
     }, snapshot);
     await page.goto(`${base}/?section=monitoring`, { waitUntil: "networkidle" });
     const workspace = page.locator(".monitoring-workspace");
-    await workspace.locator(".feed-row").first().waitFor();
+    await workspace.locator(".monitor-article-row").first().waitFor();
     assert.equal(await workspace.getByText("문맥 필터 기준", { exact: true }).count(), 0);
-    assert.equal(await workspace.locator(".monitoring-layout > .panel").count(), 1);
+    assert.equal(await workspace.locator(".monitor-results").count(), 1);
     const geometry = await workspace.evaluate((element) => {
-      const title = [...element.querySelectorAll(".feed-title-line > b")].sort((a, b) => b.textContent.length - a.textContent.length)[0];
-      const row = title.closest(".feed-row");
-      const actions = row.querySelector(".feed-actions");
-      const main = row.querySelector(".feed-main");
+      const title = [...element.querySelectorAll(".monitor-headline a")].sort((a, b) => b.textContent.length - a.textContent.length)[0];
       const bounds = (node) => node.getBoundingClientRect();
-      const panel = element.querySelector(".monitoring-layout > .panel");
+      const panel = element.querySelector(".monitor-results");
       const style = getComputedStyle(element);
       return {
         overflow: document.documentElement.scrollWidth - innerWidth,
         panelGap: bounds(element).width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - bounds(panel).width,
         title: title.textContent, clipped: title.scrollHeight > title.clientHeight + 1 || title.scrollWidth > title.clientWidth + 1,
-        actionsBelow: bounds(actions).top >= bounds(main).bottom,
         titleWidth: Math.round(bounds(title).width), fontSize: getComputedStyle(title).fontSize,
+        tableOverflow: element.querySelector(".monitor-table-scroll").scrollWidth - element.querySelector(".monitor-table-scroll").clientWidth,
       };
     });
     assert.ok(geometry.overflow <= 1, `horizontal overflow at ${width}: ${geometry.overflow}`);
     assert.ok(Math.abs(geometry.panelGap) <= 2, `feed does not fill workspace at ${width}`);
     assert.equal(geometry.title, longTitle);
     assert.equal(geometry.clipped, false);
-    assert.equal(geometry.actionsBelow, true);
-    const filterFits = await workspace.locator(".monitoring-filter-card").evaluate((filter) => {
+    assert.ok(geometry.tableOverflow <= 1);
+    const filterFits = await workspace.locator(".monitor-filters").evaluate((filter) => {
       const box = filter.getBoundingClientRect();
       return [...filter.querySelectorAll("input, select, button")].every((control) => {
         const item = control.getBoundingClientRect();
@@ -91,11 +88,12 @@ try {
     assert.equal(filterFits, true, `filter controls clipped at ${width}`);
     await workspace.getByPlaceholder("제목, 언론사, 키워드 검색").fill("일치하지않는검색어");
     await workspace.getByRole("button", { name: "조회/검색", exact: true }).click();
-    await page.waitForFunction(() => document.querySelectorAll(".monitoring-workspace .feed-row").length === 0);
-    await workspace.getByRole("button", { name: "초기화", exact: true }).click();
-    await workspace.locator(".feed-row").first().waitFor();
+    await page.waitForFunction(() => document.querySelectorAll(".monitor-article-row").length === 0);
+    await workspace.locator(".monitor-search").getByRole("button", { name: "초기화", exact: true }).click();
+    await workspace.locator(".monitor-article-row").first().waitFor();
     assert.equal(await workspace.getByPlaceholder("제목, 언론사, 키워드 검색").inputValue(), "");
     assert.ok((await workspace.getByRole("link", { name: "기사 열기", exact: true }).first().getAttribute("href")).startsWith("https://example.com/"));
+    await workspace.getByRole("button", { name: "기사 상세", exact: true }).first().click();
     await workspace.getByRole("button", { name: "분류 수정", exact: true }).first().click();
     await workspace.locator(".correction-editor").first().waitFor();
     await workspace.getByRole("button", { name: "분류 수정", exact: true }).first().click();

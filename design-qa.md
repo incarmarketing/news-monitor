@@ -1,4 +1,56 @@
-# Dashboard Workbench QA - 2026-09-10
+# Monitoring Ledger QA - 2026-09-10
+
+final result: passed
+
+## Selected Source And Comparison
+
+- Selected direction: monitoring option 1, a full-width article table.
+- Reference: C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-0a96d51f-47c6-46e9-bcfc-577d78b31a34.png
+- Reference raster: 1672 x 941, normalized proportionally to the intended 1280 x 720 CSS viewport.
+- Preview: http://127.0.0.1:5198/?section=monitoring
+- Capture folder: C:/Users/User/Desktop/COWORK/news-monitor-publisher-fix/out/monitoring-ledger/
+- Combined reference/implementation comparison: comparison.png. Focused table comparison: table-comparison.png.
+- Native captures: desktop-1280.png, desktop-1672.png, mobile-390.png and detail-1280.png.
+- Checked the combined images, not just separate screenshots. Actual saved articles replace the mock's illustrative titles/counts. Existing official logo and read-only identity remain unchanged.
+
+## Iteration And Fidelity
+
+- First render had 6px table overflow caused by action-cell padding; removed that padding. Final desktop horizontal overflow is zero.
+- At 1280 x 720, reduced table/header/footer spacing until all ten default rows fit. Document size equals viewport, no vertical or horizontal overflow. Full longer headlines still wrap; expanded details and larger page sizes intentionally scroll within the table.
+- Mobile tabs initially shrank into one another; fixed their flex sizing. At 390 x 844 the category strip scrolls independently, document has no horizontal overflow and headlines are not clipped.
+- Widened the page-size selector after visual review found the final character clipped.
+- Direct date input could retain a stale controlled value with input-only browser events. Both input and change events now update the date. Verified 2026-09-10 to 2026-09-09 applies as 2026-09-09 to 2026-09-10 and returns 148 stored articles.
+- Layout: compact heading, search/reset/export row, period/tone/publisher row, category tabs and one article table. No additional dashboard hero or nested cards.
+- Typography: fixed 28px heading and 15px headlines, 14px table text; no viewport-scaled type, negative spacing or CSS headline ellipsis. Actual upstream ellipses are preserved.
+- Color: existing desk tokens, white surfaces, restrained blue selected controls and semantic tone badges. Existing low-glare theme remains available through the dashboard.
+- Assets: official existing Incar bitmap and Lucide icons, no recreated brand drawings.
+- Content differences: publication time labeled accurately instead of the mock's collection time; actual additional categories remain visible. Existing source-based related groups remain available under the retained related sort.
+- Final combined comparison: no remaining actionable P0/P1/P2 layout differences. Deliberate production-data and retained-function differences are listed above.
+
+## Functional Evidence
+
+- Search with zero results and reset: restores default dates, latest sort, cleared query/category/tone/source/focus/selection and ten first-page rows.
+- Category selection resets pagination; publisher filter returned only its three stored articles. 50-row page selection displays 50 rows; ten-row reset/default verified.
+- Seven-day period loads the existing range API without collector dispatch. Custom reverse date range normalized correctly.
+- Related sort uses existing grouping. Five-member group expands to five actual related links; single-article rows have no false grouped disclosure.
+- First-row detail and correction editor open inline. Direct headline and external-icon URLs preserve the existing external link handler.
+- Page checkbox selects ten rows, selected CSV command runs. CSV helper tests verify UTF-8 BOM, quotes, newlines, source-suffix cleanup, safe URLs and spreadsheet formula escaping.
+- Dashboard direct-company KPI reported 17; linked monitoring scope also returned 17. Reset removes the scope.
+- Authenticated scrap/correction persistence was not executed: verification used read-only state and did not modify real classifications or scraps.
+- No collection dispatches, Slack sends, DB migrations or new polling were introduced.
+- Frontend: 169 tests. API: 20 tests. Python release suite: 332 tests. Build and reference validation passed.
+- Updated tools/verify-monitoring-layout.mjs for the new selectors; browser verification used the existing hidden CUA browser rather than launching its standalone Playwright CLI.
+
+## Cleanup Boundary
+
+- Removed superseded monitoring-filter-card, monitoring-filter-actions, monitoring-layout and monitoring-workspace feed overrides from styles.css.
+- Current monitoring presentation lives only in MonitoringWorkbench.jsx and monitoring-workbench.css.
+- Kept shared ArticleFeed, summary, decision, correction, related-article and scrap components because other categories still use them.
+- Preserved warm-mounted route visibility, existing data cache, classification rules and collection/sending schedule.
+
+---
+
+# Historical Dashboard Workbench QA - 2026-09-10
 
 final result: passed
 
@@ -54,4 +106,4 @@ final result: passed
 
 - Stock collection was empty in the local data snapshot; verified its existing empty state, not live market collection.
 - Backend operational statuses reflect the provided stored data; this redesign does not repair upstream service incidents.
-- Monitoring redesign remains an image proposal until the user selects a direction.
+- Monitoring direction was selected subsequently and implemented; see the current monitoring QA above.
