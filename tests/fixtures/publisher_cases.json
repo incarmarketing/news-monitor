@@ -2,6 +2,60 @@
   [
     {
       "source": "언론사 확인 필요",
+      "link": "https://www.alphabiz.co.kr/news/articleView.html?idxno=183959"
+    },
+    "알파경제"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "link": "https://news.google.com/rss/articles/alphabiz-fixture",
+      "raw": {
+        "source_url": "https://www.alphabiz.co.kr",
+        "rss_source_name": "alphabiz.co.kr"
+      }
+    },
+    "알파경제"
+  ],
+  [
+    {
+      "source": "google",
+      "title": "보험업계 소식 - alphabiz.co.kr"
+    },
+    "알파경제"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "raw": { "source_raw": "alphabiz.co.kr" }
+    },
+    "알파경제"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "link": "https://m.alphabiz.co.kr/news/articleView.html?idxno=183959"
+    },
+    "알파경제"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "link": "https://alphabiz.co.kr.unrelated.example/news/1"
+    },
+    "언론사 확인 필요"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
+      "link": "https://www.alphabiz.co.kr/news/articleView.html?idxno=183959",
+      "raw": { "publisher_manual_override": "관리자 지정 매체" }
+    },
+    "관리자 지정 매체"
+  ],
+  [
+    {
+      "source": "언론사 확인 필요",
       "link": "https://www.busan.com/view/busan/view.php?code=1"
     },
     "부산일보"

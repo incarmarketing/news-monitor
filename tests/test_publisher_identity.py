@@ -103,6 +103,40 @@ class PublisherIdentityTests(unittest.TestCase):
         self.assertEqual(stored["source"], "SBS Biz")
         self.assertEqual(stored["raw"]["source_url"], "https://biz.sbs.co.kr")
 
+    def test_alphabiz_domain_only_rss_survives_collection_archive_and_repair(self):
+        feed = SimpleNamespace(entries=[{
+            "title": "보험업계 소식 - alphabiz.co.kr",
+            "link": "https://news.google.com/rss/articles/alphabiz-fixture",
+            "source": {"title": "alphabiz.co.kr", "href": "https://www.alphabiz.co.kr"},
+        }])
+        with patch.object(news_collector.feedparser, "parse", return_value=feed), patch.object(news_collector.requests, "get") as get:
+            article = news_collector.fetch_google_news("보험")[0]
+        get.assert_not_called()
+        self.assertEqual(article["source"], "알파경제")
+        light = archiver.lighten(article)
+        with patch.object(supabase_store, "normalized_article_context", return_value={}):
+            stored = supabase_store.normalize_article(light, {})
+        self.assertEqual(stored["source"], "알파경제")
+        self.assertEqual(stored["raw"]["source_url"], "https://www.alphabiz.co.kr")
+        old = {**stored, "source": publishers.UNKNOWN,
+               "raw": {**stored["raw"], "source": publishers.UNKNOWN, "_tone": "neutral"}}
+        repaired = repair_patch(old)
+        self.assertEqual(set(repaired), {"source", "raw"})
+        self.assertEqual(repaired["source"], "알파경제")
+        self.assertEqual(repaired["raw"]["_tone"], "neutral")
+        self.assertIsNone(repair_patch({**old, **repaired}))
+
+    def test_alphabiz_page_evidence_and_byline_agree(self):
+        from media_byline import extract_bylines
+        page = (Path(__file__).parent / "fixtures/alphabiz_publisher.html").read_text(encoding="utf-8")
+        evidence = publishers.publisher_from_html(page, "https://www.alphabiz.co.kr/news/articleView.html?idxno=183959")
+        self.assertEqual(evidence["name"], "알파경제")
+        self.assertEqual(evidence["signals"], ["copyright", "og_site_name", "schema_publisher"])
+        self.assertTrue(publishers.valid_page_evidence(evidence))
+        self.assertEqual(extract_bylines(page)[0]["name"], "김혜실")
+        # The HTML parser also recognizes an unregistered domain when evidence agrees.
+        self.assertEqual(publishers.publisher_from_html(page, "https://unregistered-press.example/1")["name"], "알파경제")
+
     def test_missing_rss_source_does_not_lose_article(self):
         feed = SimpleNamespace(entries=[{"title": "출처 불명 기사", "link": "https://news.google.com/rss/a"}])
         with patch.object(news_collector.feedparser, "parse", return_value=feed):
