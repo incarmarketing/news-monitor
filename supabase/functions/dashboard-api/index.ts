@@ -97,11 +97,16 @@ Deno.serve(async (req) => {
   const publicDashboardRefresh = isPublicDashboardRefreshRequest(action, payload, requestOrigin);
   const publicDashboardSnapshot = isPublicDashboardSnapshotRequest(action, requestOrigin);
   const publicMediaRegistry = action === "media_registry" && isAllowedPublicRefreshOrigin(requestOrigin);
-  if (!session.ok && !publicDashboardRefresh && !publicDashboardSnapshot && !publicMediaRegistry) {
+  const publicChanges = action === "changes" && isAllowedPublicRefreshOrigin(requestOrigin);
+  const publicRefreshStatus = action === "workflow_health" && payload.workflow === "dashboard-refresh.yml"
+    && isAllowedPublicRefreshOrigin(requestOrigin);
+  if (!session.ok && !publicDashboardRefresh && !publicDashboardSnapshot && !publicMediaRegistry && !publicChanges && !publicRefreshStatus) {
     return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
   }
 
   try {
+    if (action === "changes") return await handleChanges(payload, session.ok === true);
+    if (action === "workflow_health") return await handleWorkflowHealth(payload);
     if (action === "classification_maintenance") {
       if (!session.ok || !["admin", "editor"].includes(session.role || "")) {
         return jsonResponse({ error: "read_not_allowed" }, 403);
@@ -246,6 +251,108 @@ async function handleSnapshot(payload: Record<string, unknown>, authenticated = 
     data: authenticated ? data : publicSnapshotData(data),
     warnings,
   });
+}
+
+const statusPaths: Record<string, string> = {
+  notification_sends: "notification_sends?select=id,sent_at,channel,message_type,dedupe_key,title,body,link_url,status,error,created_at&order=sent_at.desc&limit=120",
+  negative_watch_runs: "negative_watch_runs?select=run_key,scanned_at,minutes_back,scanned_count,negative_count,new_negative_count,status,message,created_at&order=scanned_at.desc,created_at.desc&limit=80",
+  report_runs: "report_runs?select=run_key,report_date,report_slot,timestamp,window_label,risk_level,metrics&order=report_date.desc,report_slot.desc&limit=500",
+  job_runs: "job_runs?select=run_key,job_type,report_date,report_slot,workflow,status,started_at,finished_at,last_seen_at,error,details,created_at,updated_at&job_type=in.(daily_report,period_report,weekly_report,monthly_report)&order=started_at.desc,created_at.desc&limit=200",
+};
+const statusKeys: Record<string, string> = { notification_sends: "notifications", negative_watch_runs: "watch_runs", report_runs: "report_runs", job_runs: "job_runs" };
+let versionCache: { until: number; value: Record<string, string> } | null = null;
+let versionRequest: Promise<Record<string, string>> | null = null;
+
+async function changeVersions() {
+  if (versionCache && versionCache.until > Date.now()) return versionCache.value;
+  if (versionRequest) return versionRequest;
+  versionRequest = (async () => {
+    const result = await supabaseRest("dashboard_change_versions?select=topic,revision&limit=5", { method: "GET" });
+    if (!result.ok || !Array.isArray(result.data)) throw new Error("changes_unavailable");
+    const revisions = Object.fromEntries(result.data.map((row: any) => [row.topic, row.revision]));
+    if (!["news_articles", ...Object.keys(statusPaths)].every((key) => typeof revisions[key] === "string" && revisions[key])) {
+      throw new Error("changes_incomplete");
+    }
+    versionCache = { until: Date.now() + 10000, value: revisions };
+    return revisions;
+  })();
+  try { return await versionRequest; }
+  finally { versionRequest = null; }
+}
+
+async function handleChanges(payload: Record<string, unknown>, authenticated: boolean) {
+  try {
+    // Read versions BEFORE ledger rows; writes during the read are picked up next time.
+    const revisions = await changeVersions();
+    const previous = auditObject(payload.revisions);
+    const data: Record<string, unknown> = {};
+    const warnings: string[] = [];
+    await Promise.all(Object.entries(statusPaths).map(async ([topic, path]) => {
+      if (previous[topic] === revisions[topic]) return;
+      const result = await supabaseRest(path, { method: "GET" });
+      const key = statusKeys[topic];
+      if (result.ok && Array.isArray(result.data)) data[key] = result.data;
+      else warnings.push(key + "_unavailable");
+    }));
+    if (previous.job_runs !== revisions.job_runs) {
+      const result = await supabaseRest("job_runs?select=run_key,status,started_at,finished_at,last_seen_at,workflow,github_run_id&job_type=eq.negative_watch&order=last_seen_at.desc.nullslast&limit=1", { method: "GET" });
+      if (result.ok && Array.isArray(result.data)) data.watch_job = result.data[0] || null;
+      else warnings.push("watch_job_unavailable");
+    }
+    const filtered = authenticated ? data : publicSnapshotData(data);
+    // Partial responses must not erase unchanged or temporarily unavailable ledgers.
+    const visibleData = Object.fromEntries(Object.keys(data).map((key) => [key, key === "watch_job" ? data[key] : filtered[key]]));
+    return jsonResponse({ ok: true, revisions, data: visibleData, warnings, snapshot_at: new Date().toISOString() });
+  } catch {
+    return jsonResponse({ error: "changes_unavailable" }, 503);
+  }
+}
+
+const workflowLabels: Record<string, string> = {
+  "negative-watch.yml": "부정기사 감시", "dashboard-refresh.yml": "기사 수집 갱신",
+  "news-briefing.yml": "보고서 생성·발송", "regulator-releases.yml": "금융당국 보도자료",
+  "pages-dashboard.yml": "대시보드 배포",
+};
+
+async function handleWorkflowHealth(payload: Record<string, unknown>) {
+  const id = String(payload.workflow || "");
+  if (!Object.hasOwn(workflowLabels, id)) return jsonResponse({ error: "unsupported_workflow" }, 400);
+  const unavailable = { id, label: workflowLabels[id], status: "error", latest: null, previousFailures: 0 };
+  const claim = await supabaseRpc("claim_dashboard_workflow_read", { p_workflow: id });
+  const reserved = auditObject(claim.data);
+  if (!claim.ok || typeof reserved.acquired !== "boolean") return jsonResponse({ ok: false, workflow: unavailable }, 503);
+  if (!reserved.acquired) return jsonResponse({ ok: true, workflow: reserved.payload || { ...unavailable, status: "loading" }, checkedAt: reserved.checked_at });
+  if (!reserved.lease_token) return jsonResponse({ ok: false, workflow: unavailable }, 503);
+  let workflow: Record<string, unknown> = unavailable;
+  let retryUntil: string | null = null;
+  try {
+    const token = Deno.env.get("GITHUB_DISPATCH_TOKEN") || Deno.env.get("GITHUB_TOKEN");
+    if (!token) throw new Error("github_auth_missing");
+    const response = await fetchWithTimeout(`https://api.github.com/repos/incarmarketing/news-monitor/actions/workflows/${id}/runs?branch=main&per_page=5`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+    }, githubRequestTimeoutMs);
+    if (!response.ok) {
+      if (response.status === 429 || response.headers.get("x-ratelimit-remaining") === "0") {
+        const delayMs = Math.max(60000, Number(response.headers.get("retry-after") || 0) * 1000,
+          Number(response.headers.get("x-ratelimit-reset") || 0) * 1000 - Date.now());
+        retryUntil = new Date(Date.now() + Math.min(delayMs, 24 * 60 * 60 * 1000)).toISOString();
+      }
+      throw new Error("github_read_failed");
+    }
+    const body = await response.json();
+    if (!Array.isArray(body.workflow_runs)) throw new Error("github_read_malformed");
+    const latest = body.workflow_runs[0];
+    workflow = { id, label: workflowLabels[id], status: "live", previousFailures: body.workflow_runs.filter((row: any) => ["failure", "timed_out", "action_required"].includes(row.conclusion)).length,
+      latest: latest ? { id: latest.id, title: latest.display_title || latest.name, event: latest.event,
+        status: latest.status, conclusion: latest.conclusion, createdAt: latest.created_at,
+        updatedAt: latest.updated_at, url: latest.html_url } : null };
+  } catch { /* Rate limits and provider details are not collection failures or public error text. */ }
+  const checkedAt = new Date().toISOString();
+  const saved = await supabaseRest(`dashboard_workflow_cache?workflow=eq.${encodeURIComponent(id)}&lease_token=eq.${encodeURIComponent(reserved.lease_token)}`, {
+    method: "PATCH", contentType: "application/json", body: JSON.stringify({ payload: workflow, checked_at: checkedAt, lease_until: retryUntil, lease_token: null }),
+  });
+  if (!saved.ok) return jsonResponse({ ok: false, workflow: unavailable }, 503);
+  return jsonResponse({ ok: true, workflow, checkedAt });
 }
 
 function pickFields(row: Record<string, unknown>, fields: string[]) {

@@ -46,6 +46,8 @@ import {
   loadArticleRange,
   loadCachedCoreSnapshot,
   loadOperationalData,
+  loadOperationalChanges,
+  loadGithubWorkflowHealth,
   saveArticleScrap,
   saveCachedCoreSnapshot,
   saveClassificationFeedback,
@@ -70,6 +72,7 @@ import {
   mergeDashboardMomentumWithReportRuns,
 } from "./dashboardRisk";
 import slackMarkUrl from "./assets/slack-mark.png";
+import { createOperationalPoller } from "./operationalPolling.js";
 import "./styles.css";
 import "./report.css";
 import "./dashboard-option1.css";
@@ -123,73 +126,7 @@ const navItemMap = new Map(navItems.map((item) => [item.id, item]));
 const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
 const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
-const GITHUB_REPO = "incarmarketing/news-monitor";
 const PRESS_INFLUENCE_LIMIT = 6;
-const WORKFLOW_HEALTH_TARGETS = [
-  { id: "negative-watch.yml", label: "부정기사 감시" },
-  { id: "dashboard-refresh.yml", label: "기사 수집 갱신" },
-  { id: "news-briefing.yml", label: "보고서 생성·발송" },
-  { id: "regulator-releases.yml", label: "금융당국 보도자료" },
-  { id: "pages-dashboard.yml", label: "대시보드 배포" },
-];
-
-async function fetchWorkflowHealth(url) {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort("workflow_health_timeout"), 8000);
-  try {
-    return await fetch(url, {
-      cache: "no-store",
-      headers: { Accept: "application/vnd.github+json" },
-      signal: controller.signal,
-    });
-  } finally {
-    window.clearTimeout(timeout);
-  }
-}
-
-async function loadGithubWorkflowHealth() {
-  if (typeof fetch === "undefined") return { status: "unsupported", workflows: [] };
-  const workflows = await Promise.all(WORKFLOW_HEALTH_TARGETS.map(async (target) => {
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${target.id}/runs?branch=main&per_page=5`;
-    try {
-      const response = await fetchWorkflowHealth(url);
-      if (!response.ok) throw new Error(`github_${response.status}`);
-      const payload = await response.json();
-      const latest = Array.isArray(payload.workflow_runs) ? payload.workflow_runs[0] : null;
-      const previousFailures = Array.isArray(payload.workflow_runs)
-        ? payload.workflow_runs.filter((run) => ["failure", "timed_out", "action_required"].includes(run.conclusion)).length
-        : 0;
-      return {
-        ...target,
-        status: "live",
-        previousFailures,
-        latest: latest ? {
-          id: latest.id,
-          title: latest.display_title || latest.name || target.label,
-          event: latest.event || "",
-          status: latest.status || "",
-          conclusion: latest.conclusion || "",
-          createdAt: latest.created_at || "",
-          updatedAt: latest.updated_at || latest.created_at || "",
-          url: latest.html_url || "",
-        } : null,
-      };
-    } catch (error) {
-      return {
-        ...target,
-        status: "error",
-        error: error?.message || "workflow_fetch_failed",
-        latest: null,
-        previousFailures: 0,
-      };
-    }
-  }));
-  return {
-    status: workflows.some((item) => item.status === "live") ? "live" : "error",
-    checkedAt: new Date().toISOString(),
-    workflows,
-  };
-}
 
 function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -322,7 +259,7 @@ function App() {
   const [monitoringWarmed, setMonitoringWarmed] = useState(initialRoute.section === "monitoring");
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
-  const [workflowHealth, setWorkflowHealth] = useState({ status: "loading", workflows: [] });
+  const [workflowHealth, setWorkflowHealth] = useState({ status: "deferred", workflows: [] });
   const [dashboardSnapshot, setDashboardSnapshot] = useState(() => {
     const cachedArticles = Array.isArray(initialCachedCore?.articles) ? initialCachedCore.articles : [];
     const contextArticles = lastNDays(cachedArticles, 8).slice(0, 500);
@@ -340,10 +277,11 @@ function App() {
   const loadedDataProfiles = useRef(new Set());
   const loadingDataProfiles = useRef(new Set());
   const pendingRefreshOptions = useRef(null);
+  const operationalPoller = useRef(null);
 
   const rememberArticleProfile = (profile, snapshot) => {
     const rows = Array.isArray(snapshot?.articles) ? snapshot.articles : [];
-    if (!profile || !rows.length) return;
+    if (!profile || (!rows.length && !(snapshot?.source === "supabase" && snapshot?.status === "live"))) return;
     if (profile === "core") saveCachedCoreSnapshot(snapshot);
     setArticleProfiles((current) => {
       if (current[profile] === rows) return current;
@@ -460,15 +398,12 @@ function App() {
         setWorkLabel(`${label} 반영 확인 중 · ${attempt}/${maxAttempts}`);
         await wait(intervalMs);
         if (refreshGeneration.current !== generation) return;
-        latestData = await loadOperationalData({ profile: "core" });
-        rememberArticleProfile("core", latestData);
-        setOperations((current) => mergeOperationalSnapshots(
-          current,
-          { ...latestData, message: `${label} 반영 확인 중 · ${latestData.message}` },
-          true,
-        ));
-        changed = operationsFingerprint(latestData) !== beforeFingerprint;
-        const nextWorkflowHealth = await loadGithubWorkflowHealth();
+        const update = await operationalPoller.current?.check();
+        if (update?.snapshot) {
+          latestData = update.snapshot;
+          changed = operationsFingerprint(latestData) !== beforeFingerprint;
+        }
+        const nextWorkflowHealth = await loadGithubWorkflowHealth(workflows);
         setWorkflowHealth(nextWorkflowHealth);
         const workflowConclusions = workflows
           .map((workflow) => workflowFinishedAfter(nextWorkflowHealth, workflow, startedAt))
@@ -497,29 +432,42 @@ function App() {
       finishWorkStatus(label, `${label} ${suffix}`);
       return;
     }
+    if (activeSectionRef.current === "management" && session?.session_token) {
+      setWorkflowHealth(await loadGithubWorkflowHealth());
+    }
     finishWorkStatus(label);
   };
 
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      loadingDataProfiles.current.add("core");
-      try {
-        const next = await loadOperationalData({ profile: "core" });
-        if (active) {
-          if (next?.status === "live") loadedDataProfiles.current.add("core");
-          rememberArticleProfile("core", next);
-          setOperations((current) => mergeOperationalSnapshots(current, next, true));
-        }
-      } finally {
+    loadingDataProfiles.current.add("core");
+    const poller = createOperationalPoller({
+      readChanges: loadOperationalChanges,
+      readCore: () => loadOperationalData({ profile: "core" }),
+      visible: () => document.visibilityState !== "hidden",
+      onCore: (next) => {
         loadingDataProfiles.current.delete("core");
-      }
-    };
-    load();
-    const timer = window.setInterval(load, 5 * 60 * 1000);
+        if (next?.status === "live") loadedDataProfiles.current.add("core");
+        rememberArticleProfile("core", next);
+        setOperations((current) => mergeOperationalSnapshots(current, next, true));
+      },
+      onStatus: (patch, watchJob, warnings) => {
+        setOperations((current) => ({ ...current, ...patch,
+          ...(watchJob !== undefined ? { watchJob } : {}),
+          statusCheckedAt: new Date().toISOString(),
+          statusReadFailed: warnings.length > 0,
+        }));
+      },
+      onError: () => setOperations((current) => ({ ...current, statusReadFailed: true })),
+    });
+    operationalPoller.current = poller;
+    poller.start();
+    const resume = () => { poller.resume(); };
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("online", resume);
     return () => {
-      active = false;
-      window.clearInterval(timer);
+      poller.stop();
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("online", resume);
     };
   }, []);
 
@@ -554,31 +502,12 @@ function App() {
   }, [activeSection]);
 
   useEffect(() => {
+    if (activeSection !== "management") return undefined;
     let active = true;
-    let intervalId = null;
-    let startTimerId = null;
-    let idleId = null;
-    const load = async () => {
-      const next = await loadGithubWorkflowHealth();
-      if (active) setWorkflowHealth(next);
-    };
-    const start = () => {
-      if (!active) return;
-      load();
-      intervalId = window.setInterval(load, 5 * 60 * 1000);
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      idleId = window.requestIdleCallback(start, { timeout: 4000 });
-    } else {
-      startTimerId = window.setTimeout(start, 2000);
-    }
-    return () => {
-      active = false;
-      if (intervalId) window.clearInterval(intervalId);
-      if (startTimerId) window.clearTimeout(startTimerId);
-      if (idleId) window.cancelIdleCallback?.(idleId);
-    };
-  }, []);
+    // Diagnostics are on demand, never one five-workflow timer per visitor.
+    if (getStoredSession()) loadGithubWorkflowHealth().then((next) => { if (active) setWorkflowHealth(next); });
+    return () => { active = false; };
+  }, [activeSection]);
 
   useEffect(() => () => clearWorkTimers(), []);
 
@@ -630,10 +559,10 @@ function App() {
     scraps: "engagement",
   }[activeSection] || "core";
   const fallbackArticles = Array.isArray(operations.articles) ? operations.articles : [];
-  const allArticles = Array.isArray(articleProfiles[activeArticleProfile]) && articleProfiles[activeArticleProfile].length
+  const allArticles = Array.isArray(articleProfiles[activeArticleProfile])
     ? articleProfiles[activeArticleProfile]
     : fallbackArticles;
-  const coreArticles = Array.isArray(articleProfiles.core) && articleProfiles.core.length
+  const coreArticles = Array.isArray(articleProfiles.core)
     ? articleProfiles.core
     : fallbackArticles;
   const scraps = Array.isArray(operations.scraps) ? operations.scraps : [];
@@ -1228,7 +1157,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
 }
 
 function DashboardEditorialHeader({ data, status, operations, onOpenMonitoring, onRefresh, isLoading = false, theme = "light", onToggleTheme }) {
-  const live = status === "live" && operations?.source === "supabase" && !operations?.degraded && !operations?.dataLoadWarnings?.length;
+  const live = status === "live" && operations?.source === "supabase" && !operations?.degraded && !operations?.statusReadFailed && !operations?.dataLoadWarnings?.length;
   const sourceTime = formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || "-");
   return (
     <header className="editorial-dashboard-header">

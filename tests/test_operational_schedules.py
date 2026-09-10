@@ -244,8 +244,12 @@ class OperationalScheduleTests(unittest.TestCase):
         self.assertIn('new Error("request_timeout")', live_data)
         self.assertIn("supabaseApiHeaders", live_data)
         self.assertNotIn('Authorization: `Bearer ${config.anon_key}`', live_data)
-        self.assertIn("fetchWorkflowHealth", app)
-        self.assertIn("workflow_health_timeout", app)
+        api = (ROOT / "supabase/functions/dashboard-api/index.ts").read_text(encoding="utf-8")
+        self.assertNotIn("https://api.github.com", app)
+        self.assertIn("loadGithubWorkflowHealth", live_data)
+        self.assertIn('"workflow_health"', live_data)
+        self.assertIn("githubRequestTimeoutMs = 10000", api)
+        self.assertIn("}, githubRequestTimeoutMs)", api)
 
     def test_every_static_report_publish_receives_dart_credentials(self) -> None:
         for workflow_name in ("pages-dashboard.yml", "news-briefing.yml"):

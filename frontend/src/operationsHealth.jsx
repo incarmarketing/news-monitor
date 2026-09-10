@@ -10,12 +10,21 @@ export function HealthStatusPill({ status = "unknown", label }) {
 
 export function buildOperationsHealth({ operations, notifications, watchRuns, reportRuns, jobRuns, workflowHealth }) {
   const items = [
-    buildWatchHealth(watchRuns, workflowHealth),
+    buildWatchHealth(watchRuns, workflowHealth, operations?.watchJob),
     buildDailyReportHealth(notifications, reportRuns, jobRuns, operations),
     buildNotificationHealth(notifications),
     buildWorkflowActionsHealth(workflowHealth),
     buildHistorySourceHealth(operations, notifications, watchRuns, reportRuns, jobRuns),
   ];
+  if (operations?.statusReadFailed) {
+    for (const item of items.slice(0, 3)) {
+      if (item.status !== "fail") {
+        item.status = "warn";
+        item.label = "확인 불가";
+        item.detail = "최신 상태 조회 지연 · 마지막 확인 기록 유지";
+      }
+    }
+  }
   // An empty bootstrap payload means that the browser is still checking the
   // operational sources. Missing rows during this short phase are not failures.
   if (operations?.status === "loading") {
@@ -46,10 +55,19 @@ export function buildOperationsHealth({ operations, notifications, watchRuns, re
   return { status, label: healthStatusLabel(status), headline, items };
 }
 
-function buildWatchHealth(watchRuns = [], workflowHealth = {}) {
+function buildWatchHealth(watchRuns = [], workflowHealth = {}, watchJob) {
   const latestRun = watchRuns[0] || {};
   const workflow = findWorkflowHealth(workflowHealth, "negative-watch.yml");
-  const latestWorkflow = workflow?.latest || null;
+  const diagnosticFresh = !workflowHealth.checkedAt || Date.now() - new Date(workflowHealth.checkedAt).getTime() < 90_000;
+  const diagnostic = diagnosticFresh ? workflow?.latest : null;
+  const ledgerWorkflow = watchJob ? {
+    status: ["started", "dispatched", "watchdog_dispatched"].includes(watchJob.status) ? "in_progress" : "completed",
+    conclusion: watchJob.status === "failed" ? "failure" : watchJob.status,
+    createdAt: watchJob.started_at,
+    updatedAt: watchJob.finished_at || watchJob.last_seen_at || watchJob.started_at,
+  } : null;
+  const latestWorkflow = ledgerWorkflow && (!diagnostic || new Date(ledgerWorkflow.updatedAt) >= new Date(diagnostic.updatedAt))
+    ? ledgerWorkflow : diagnostic;
   const watchState = deriveWatchHealthState({
     runStatus: latestRun.rawStatus,
     runMessage: latestRun.message,
@@ -196,6 +214,10 @@ function notificationLogicalKey(item = {}) {
 
 function buildWorkflowActionsHealth(workflowHealth = {}) {
   const workflows = Array.isArray(workflowHealth.workflows) ? workflowHealth.workflows : [];
+  if (workflowHealth.status === "deferred" || (workflowHealth.checkedAt && Date.now() - new Date(workflowHealth.checkedAt).getTime() >= 90_000)) {
+    return { title: "GitHub Actions", icon: RefreshCw, status: "pending", label: "필요 시 조회",
+      detail: "감시·발송 상태는 DB 실행 기록 기준", meta: "운영 진단 시 실행 이력 조회" };
+  }
   if (workflowHealth.status === "loading") {
     return {
       title: "GitHub Actions",

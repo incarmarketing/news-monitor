@@ -98,7 +98,9 @@ export function deriveWatchHealthState({
 
   let status = "ok";
   if (workflowRunning) {
-    status = recentRunSuccess || recentWorkflowSuccess ? "ok" : "pending";
+    status = delay !== null && delay > 45 ? "fail"
+      : delay !== null && delay > 25 ? "warn"
+        : recentRunSuccess || recentWorkflowSuccess ? "ok" : "pending";
   } else if (authoritativeWorkflowFailure || authoritativeRunFailure) {
     status = "fail";
   } else if (recentWorkflowSuccess || recentRunSuccess) {

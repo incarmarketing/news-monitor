@@ -1381,7 +1381,7 @@ async function loadOperationalDataFromSupabasePublic(loadOptions = operationalLo
       : Promise.resolve(null);
     const articlesRequest = loadOptions.includeArticles
       ? operationalStatusPromise.then((snapshot) => {
-          if (Array.isArray(snapshot?.articles) && snapshot.articles.length) return snapshot.articles;
+          if (Array.isArray(snapshot?.articles) && (snapshot.articles.length || snapshot.source === "supabase_snapshot")) return snapshot.articles;
           return fetchPublicTable(
             config,
             "news_articles",
@@ -1807,6 +1807,34 @@ function isStockListingNoise(row = {}) {
 
 function normalizeArticleSource(source, link = "", title = "") {
   return resolvePublisher({ source, link, title });
+}
+
+export async function loadOperationalChanges(revisions = {}) {
+  const config = await loadSupabaseConfig();
+  const result = await dashboardApi(config, getStoredSession(), "changes", { revisions }, { allowAnonymous: true });
+  if (!result.ok || !result.revisions?.news_articles || !result.data) throw new Error("changes_unavailable");
+  const normalized = normalizeOperationalStatusPayload(result);
+  const fields = { notifications: "notifications", watch_runs: "watchRuns", report_runs: "reportRuns", job_runs: "jobRuns" };
+  const patch = Object.fromEntries(Object.entries(fields)
+    .filter(([key]) => Object.hasOwn(result.data, key))
+    .map(([, field]) => [field, normalized[field]]));
+  return { revisions: result.revisions, patch, warnings: result.warnings || [],
+    watchJob: Object.hasOwn(result.data, "watch_job") ? result.data.watch_job : undefined };
+}
+
+export async function loadGithubWorkflowHealth(workflows = ["negative-watch.yml", "dashboard-refresh.yml", "news-briefing.yml", "regulator-releases.yml", "pages-dashboard.yml"]) {
+  const config = await loadSupabaseConfig();
+  const session = getStoredSession();
+  const results = [];
+  for (const workflow of workflows) {
+    try {
+      const result = await dashboardApi(config, session, "workflow_health", { workflow }, { allowAnonymous: true });
+      results.push({ ...result.workflow, checkedAt: result.checkedAt });
+    } catch {
+      results.push({ id: workflow, status: "error", latest: null, previousFailures: 0 });
+    }
+  }
+  return { status: results.some((row) => row.status === "live") ? "live" : "error", checkedAt: new Date().toISOString(), workflows: results };
 }
 
 export async function loadClassificationMaintenance(runId = "", mode = "reviews", offset = 0) {

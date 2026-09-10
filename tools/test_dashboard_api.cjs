@@ -20,6 +20,8 @@ function runtime(options = {}) {
   const calls = [];
   let handler;
   let claimed = false;
+  const shared = options.shared || { workflowCache: null, workflowClaimed: false };
+  const versions = { news_articles: 'articles-1', notification_sends: 'send-1', negative_watch_runs: 'watch-1', report_runs: 'report-1', job_runs: 'job-1' };
   const env = { PUBLIC_SUPABASE_ANON_KEY: 'public-test-key', SUPABASE_URL: 'https://db.example', SUPABASE_SERVICE_ROLE_KEY: 'server-test-key', GITHUB_DISPATCH_TOKEN: 'dispatch-test-key' };
   const context = vm.createContext({
     console, Response, Request, URL, AbortController, DOMException, setTimeout, clearTimeout,
@@ -27,6 +29,20 @@ function runtime(options = {}) {
     fetch: async (url, init) => {
       calls.push({ url, init });
       const reply = (body, status = 200) => new Response(JSON.stringify(body), { status });
+      if (url.includes('/rpc/claim_dashboard_workflow_read')) {
+        if (options.diagnosticClaimError) return reply({}, 500);
+        const acquired = !shared.workflowClaimed;
+        shared.workflowClaimed = true;
+        return reply({ acquired, lease_token: acquired ? 'lease-test' : null, payload: shared.workflowCache, checked_at: new Date().toISOString() });
+      }
+      if (url.includes('/dashboard_workflow_cache?') && init.method === 'PATCH') {
+        shared.workflowCache = JSON.parse(init.body).payload;
+        return reply([]);
+      }
+      if (url.includes('/dashboard_change_versions?')) {
+        if (options.versionError) return reply({}, 503);
+        return reply(Object.entries(options.versions || versions).map(([topic, revision]) => ({ topic, revision })));
+      }
       if (url.includes('/rpc/verify_dashboard_session')) return reply({ ok: true, role: options.role || 'viewer', employee_no: 'test-user' });
       if (url.includes('/rpc/get_media_registry')) return reply(options.registryError ? { message: 'PRIVATE_SQL_ERROR' } : { media: [{ name: 'Publisher', article_count: 1 }] }, options.registryError ? 400 : 200);
       if (url.includes('/rpc/claim_dashboard_refresh')) {
@@ -36,18 +52,21 @@ function runtime(options = {}) {
         claimed = true;
         return reply({ claimed: acquired, retry_after_seconds: acquired ? 0 : 120 });
       }
-      if (url.includes('api.github.com')) return options.githubError ? reply({ message: 'PRIVATE_GITHUB_ERROR' }, 403) : new Response(null, { status: 204 });
+      if (url.includes('api.github.com')) return options.githubError ? reply({ message: 'PRIVATE_GITHUB_ERROR' }, 403)
+        : url.includes('/runs?') ? reply({ workflow_runs: [{ id: 123, status: 'completed', conclusion: 'success', updated_at: '2026-09-10T00:00:00Z' }] })
+        : new Response(null, { status: 204 });
       if (init.method === 'POST') return reply([]);
       const table = url.split('/rest/v1/')[1]?.split('?')[0];
       const key = { news_articles: 'articles', notification_sends: 'notifications', negative_watch_runs: 'watch_runs' }[table] || table;
       if (options.failedTable === table) return reply({ message: 'PRIVATE_QUERY_ERROR' }, 503);
+      if (table === 'job_runs' && url.includes('job_type=eq.negative_watch')) return reply([{ status: 'success', last_seen_at: '2026-09-10T00:00:00Z' }]);
       if (table === 'classification_maintenance_runs') return reply(options.auditRows ?? []);
       return reply(fixture[key] || []);
     },
   });
   vm.runInContext(compiled, context);
   return {
-    context, calls,
+    context, calls, versions,
     async request(action, payload = {}, extraHeaders = {}) {
       const result = await handler(new Request('https://db.example/functions/v1/dashboard-api', { method: 'POST', headers: { apikey: 'public-test-key', origin, 'content-type': 'application/json', ...extraHeaders }, body: JSON.stringify({ action, payload }) }));
       return { status: result.status, headers: result.headers, body: await result.json() };
@@ -68,6 +87,73 @@ test('anonymous snapshot keeps articles, counts, report slots and ledger states 
   assert.deepEqual(body.data.report_runs[0].metrics.by_category, fixture.report_runs[0].metrics.by_category);
   assert.equal(body.data.job_runs[0].status, 'success');
   assert.doesNotMatch(JSON.stringify(body), /PRIVATE_/);
+});
+
+test('lightweight changes read versions only when ledgers are unchanged, never articles or GitHub', async () => {
+  const r = runtime();
+  const result = await r.request('changes', { revisions: r.versions });
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body.data, {});
+  assert.equal(r.calls.length, 1);
+  assert.match(r.calls[0].url, /dashboard_change_versions/);
+  assert.equal(result.headers.get('cache-control'), 'no-store');
+  await r.request('changes', { revisions: r.versions });
+  assert.equal(r.calls.length, 1, 'warm isolate reuses only the ten-second version marker');
+});
+
+test('changes return only changed ledgers and keep public details redacted', async () => {
+  const r = runtime();
+  const previous = { ...r.versions, notification_sends: 'old', job_runs: 'old' };
+  const result = await r.request('changes', { revisions: previous });
+  assert.equal(result.status, 200);
+  assert.deepEqual(Object.keys(result.body.data).sort(), ['job_runs', 'notifications', 'watch_job']);
+  assert.equal(result.body.data.notifications[0].status, 'success');
+  assert.equal(result.body.data.watch_job.status, 'success');
+  assert.doesNotMatch(JSON.stringify(result.body), /PRIVATE_/);
+  assert.equal(r.calls.some((call) => call.url.includes('news_articles?')), false);
+});
+
+test('version/ledger failure is not an empty successful update and can be retried', async () => {
+  assert.equal((await runtime({ versionError: true }).request('changes')).status, 503);
+  const result = await runtime({ failedTable: 'notification_sends' }).request('changes');
+  assert.equal(Object.hasOwn(result.body.data, 'notifications'), false);
+  assert.ok(result.body.warnings.includes('notifications_unavailable'));
+  assert.doesNotMatch(JSON.stringify(result.body), /PRIVATE_/);
+});
+
+test('public and authenticated change responses cannot share private ledger payloads', async () => {
+  const r = runtime();
+  const signedIn = await r.request('changes', {}, { 'x-dashboard-session': 'test' });
+  assert.match(JSON.stringify(signedIn.body), /PRIVATE_/);
+  const publicResult = await r.request('changes');
+  assert.doesNotMatch(JSON.stringify(publicResult.body), /PRIVATE_/);
+});
+
+test('diagnostic reads share a DB lease across Edge instances; no browser GitHub token', async () => {
+  const shared = { workflowCache: null, workflowClaimed: false };
+  const a = runtime({ shared });
+  const b = runtime({ shared });
+  const results = await Promise.all(Array.from({ length: 10 }, (_, i) => (i % 2 ? a : b).request('workflow_health', { workflow: 'dashboard-refresh.yml' })));
+  assert.equal(results.every((result) => result.status === 200), true);
+  const calls = [...a.calls, ...b.calls].filter((call) => call.url.includes('api.github.com'));
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].init.headers.Authorization, /^Bearer /);
+  assert.doesNotMatch(JSON.stringify(results), /dispatch-test-key|server-test-key|lease-test/);
+  const cached = await b.request('workflow_health', { workflow: 'dashboard-refresh.yml' });
+  assert.equal(cached.body.workflow.latest.id, 123);
+});
+
+test('GitHub diagnostic restrictions and failed reservations never bypass auth or call upstream', async () => {
+  const r = runtime();
+  assert.equal((await r.request('workflow_health', { workflow: 'negative-watch.yml' })).status, 401);
+  assert.equal((await r.request('workflow_health', { workflow: '../../evil' }, { 'x-dashboard-session': 'test' })).status, 400);
+  const failure = runtime({ diagnosticClaimError: true });
+  assert.equal((await failure.request('workflow_health', { workflow: 'dashboard-refresh.yml' })).status, 503);
+  assert.equal(failure.calls.some((call) => call.url.includes('api.github.com')), false);
+  const providerFailure = await runtime({ githubError: true }).request('workflow_health', { workflow: 'dashboard-refresh.yml' });
+  assert.equal(providerFailure.body.workflow.status, 'error');
+  assert.equal(providerFailure.body.workflow.latest, null);
+  assert.doesNotMatch(JSON.stringify(providerFailure), /PRIVATE_/);
 });
 
 test('classification audit is private and role-scoped with no REST bypass', async () => {

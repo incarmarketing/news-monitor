@@ -9,6 +9,13 @@ import {
 
 const NOW = Date.parse("2026-08-14T03:50:00Z");
 
+test("a missing finish record cannot stay running forever", () => {
+  for (const [age, expected] of [[10, "pending"], [30, "warn"], [50, "fail"]]) {
+    const result = deriveWatchHealthState({ workflowStatus: "in_progress", workflowUpdatedAt: NOW - age * 60000, now: NOW });
+    assert.equal(result.status, expected);
+  }
+});
+
 test("empty scan variants are successful watch executions", () => {
   assert.equal(isEmptyWatchResult("no_new_negative_article", ""), true);
   assert.equal(isEmptyWatchResult("failed", "No-new-negative-article"), true);

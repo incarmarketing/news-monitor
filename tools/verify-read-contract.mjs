@@ -16,6 +16,15 @@ assert.equal(snapshot.status,200);
 assert.equal(snapshot.body.ok,true);
 assert.ok(snapshot.body.data.articles.length>0);
 assert.equal(snapshot.headers.get("cache-control"),"no-store");
+const changes=await call("changes");
+assert.equal(changes.status,200);
+assert.ok(changes.body.revisions.news_articles);
+assert.equal(changes.body.warnings.length,0);
+assert.equal(Object.hasOwn(changes.body.data,"articles"),false);
+const unchanged=await call("changes",{revisions:changes.body.revisions});
+assert.equal(unchanged.status,200);
+assert.deepEqual(unchanged.body.data,{});
+assert.equal(unchanged.headers.get("cache-control"),"no-store");
 const registry=await call("media_registry",{mode:"summary"});
 assert.equal(registry.status,200);
 const feed=await json(`${base}data/articles.json`);
@@ -30,3 +39,5 @@ assert.equal(net.body.code,"PGRST106");
 console.log(JSON.stringify({passed:true,apiArticles:snapshot.body.data.articles.length,
   marketingFeedArticles:feed.body.articles.length,registryStatus:registry.status,
   privateRestStatus:forbidden.status,netRestStatus:net.status,warnings:snapshot.body.warnings}));
+console.log(JSON.stringify({snapshotBytes:Buffer.byteLength(JSON.stringify(snapshot.body)),
+  unchangedBytes:Buffer.byteLength(JSON.stringify(unchanged.body)),changesStatus:changes.status}));
