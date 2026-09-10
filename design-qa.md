@@ -37,7 +37,9 @@ final result: passed
 - Article links retain direct external navigation and noopener/noreferrer.
 - Browser console: no JavaScript errors in checked views. A development media-analysis first load temporarily delayed one automation click; the view completed and subsequent navigation succeeded. This is not a claim that all historical media-analysis latency has been eliminated.
 - Build and reference validation: passed (28 modules).
-- Frontend tests: 161 passed. API tests: 20 passed. Python regression tests: 363 passed.
+- Frontend tests: 162 passed. API tests: 20 passed. Python regression tests: 363 passed.
+- Production smoke check: new stylesheet and layout loaded, live data recovered from the saved initial snapshot, no console errors or document overflow at 1280x720.
+- Follow-up display guard: date-only articles show an unknown publication time rather than the midnight fallback used for sorting. Explicit midnight timestamps remain supported.
 - No collection dispatches, Slack sends, classification writes, DB migrations or paid API calls were performed during UI QA.
 
 ## Cleanup Boundary

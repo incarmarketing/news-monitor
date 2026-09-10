@@ -19,7 +19,10 @@ export function latestDeliveryLabel(health) {
 
 export function articleClock(issue, timestamp) {
   const time = String(issue?.time || "");
-  if (/^\d{2}:\d{2}$/.test(time)) return time;
+  if (/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) return time;
+  // Sorting falls back to midnight for date-only records; do not display that as a known time.
+  const published = String(issue?.pubDate || issue?.pub_date || "");
+  if (!/\d{1,2}:\d{2}/.test(published)) return "-";
   if (!Number.isFinite(timestamp) || timestamp <= 0) return "-";
   return new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Asia/Seoul" }).format(timestamp);
 }

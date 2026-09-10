@@ -18,9 +18,17 @@ test("delivery label retains the known latest timestamp and missing state", () =
   assert.equal(latestDeliveryLabel(), "미확인");
 });
 test("article time is Korean time and never fabricated for missing dates", () => {
-  assert.equal(articleClock({}, Date.parse("2026-09-10T04:09:00Z")), "13:09");
+  assert.equal(articleClock({pubDate:"2026-09-10T04:09:00Z"}, Date.parse("2026-09-10T04:09:00Z")), "13:09");
   assert.equal(articleClock({time:"08:12"}, 0), "08:12");
   assert.equal(articleClock({time:"최근 수집"}, 0), "-");
+});
+test("date-only sorting fallbacks are not displayed as publication midnight", () => {
+  const midnight = Date.parse("2026-09-10T00:00:00+09:00");
+  assert.equal(articleClock({date:"2026-09-10"}, midnight), "-");
+  assert.equal(articleClock({pubDate:"2026-09-10"}, midnight), "-");
+  assert.equal(articleClock({time:"99:99",date:"2026-09-10"}, midnight), "-");
+  assert.equal(articleClock({time:"00:00"}, midnight), "00:00");
+  assert.equal(articleClock({pub_date:"2026-09-10T00:00:00+09:00"}, midnight), "00:00");
 });
 test("category colors are shared across chart and distribution", () => {
   assert.equal(new Set(dashboardSeries.map(row => row.color)).size, 4);
