@@ -17,6 +17,7 @@ from urllib.parse import urlparse
 
 import google.generativeai as genai
 import publisher_identity
+from article_quality import is_non_article_result
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
@@ -718,8 +719,12 @@ def validate_report_sections(sections: dict, clustered: list[dict], metrics: dic
 
 
 def is_report_evidence_candidate(article: dict) -> bool:
+    if is_non_article_result(article):
+        return False
     category = article.get("_category") or article.get("category")
     tone = article.get("_tone") or article.get("tone")
+    if tone == "exclude":
+        return False
     if category == "other" and tone in {"neutral", "exclude"} and not article.get("own_mentioned"):
         return False
     return True
@@ -816,6 +821,15 @@ def select_evidence_articles(clustered: list[dict], sections: dict, limit: int =
             return
         selected.append(article)
         seen_links.add(key)
+
+    # Source-backed company risks must not lose their slots to model references
+    # or routine brand-rank articles, even when the headline omits the company.
+    for article in sorted(clustered, key=lambda row: (row.get("_tone") or row.get("tone")) != "negative"):
+        context = article.get("_ai_context") or {}
+        own = article.get("own_mentioned") or context.get("own_mentioned") or analyzer.is_own_article(article)
+        tone = article.get("_tone") or article.get("tone")
+        if own and tone in {"negative", "caution"}:
+            add_article(article)
 
     for issue in sections.get("issues", []):
         for ref_id in issue.get("refs", []):

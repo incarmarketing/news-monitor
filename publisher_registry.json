@@ -1,6 +1,11 @@
 {
   "version": 1,
   "domains": {
+    "economychosun.com": "이코노미조선",
+    "news.mbccb.co.kr": "MBC충북",
+    "laborplus.co.kr": "참여와혁신",
+    "dhnews.co.kr": "대학저널",
+    "lawtv.kr": "법률방송뉴스",
     "marketin.edaily.co.kr": "마켓인",
     "vop.co.kr": "민중의소리",
     "yeongnam.com": "영남일보",

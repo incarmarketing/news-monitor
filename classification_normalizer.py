@@ -11,6 +11,7 @@ import re
 from collections import Counter
 
 import analyzer
+import deterministic_risk
 
 
 OWN_BRAND_REPUTATION_LEADER_RE = re.compile(
@@ -117,6 +118,13 @@ def is_non_insurance_financial_legal_noise(article: dict) -> bool:
 
 def normalize_article(article: dict, *, inplace: bool = False) -> dict:
     row = article if inplace else dict(article)
+    if not row.get("_feedback_applied") and deterministic_risk.security_capacity_evidence(row):
+        context = analyzer.apply_context_safety_guardrails(row, row.get("_ai_context"))
+        row["classification_provider"] = context["provider"]
+        row["classification_reason"] = context["reason"]
+        row["classification_evidence"] = context["evidence"]
+        row["own_mentioned"] = True
+        return row
     reason = analyzer.source_role_noise_reason(row)
     if reason and not row.get("_feedback_applied"):
         context = analyzer.apply_context_safety_guardrails(row, {
@@ -246,6 +254,8 @@ def recompute_metrics(metrics: dict | None, articles: list[dict]) -> dict:
         for key in ("positive", "caution", "neutral", "negative")
     }
     normalized["own_negative"] = normalized["own_by_tone"].get("negative", 0)
+    normalized["own_total"] = categories.get("own", 0)
+    normalized["sponsorship_total"] = categories.get("sponsorship", 0)
     normalized["total_after_cluster"] = len(articles)
     normalized.setdefault("total_collected", len(articles))
     normalized.setdefault("risk_level", "LOW")

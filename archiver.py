@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import report_window
 import supabase_store
 import publisher_identity
+from article_quality import is_non_article_result
 
 BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
@@ -106,6 +107,16 @@ def lighten(article: dict) -> dict:
         "_category": article.get("_category", "other"),
         "_tone": article.get("_tone", "neutral"),
         "_cluster_size": article.get("_cluster_size", 1),
+        "own_mentioned": bool(article.get("own_mentioned") or (article.get("_ai_context") or {}).get("own_mentioned")),
+        "classification_provider": article.get("classification_provider", ""),
+        "classification_ruleset_version": article.get("classification_ruleset_version", ""),
+        "classification_evidence": "" if metadata_only else article.get("classification_evidence", ""),
+        "_feedback_applied": bool(article.get("_feedback_applied")),
+        "_ai_context": {
+            key: value for key, value in (article.get("_ai_context") or {}).items()
+            if key in {"category", "tone", "own_mentioned", "own_role", "negative_target",
+                       "risk_event_type", "alert_eligible", "review_required", "provider", "reason"}
+        },
         "storage_policy": article.get("storage_policy", "standard"),
     }
 
@@ -120,6 +131,8 @@ def canonical_host(value: str) -> str:
 
 
 def is_excluded_article(article: dict) -> bool:
+    if is_non_article_result(article):
+        return True
     raw_link = str(article.get("link") or article.get("url") or "")
     host = canonical_host(raw_link)
     names = {

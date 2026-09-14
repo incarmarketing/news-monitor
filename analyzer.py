@@ -418,7 +418,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-subject-2026-09-09-r1"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-subject-2026-09-15-r1"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -1194,6 +1194,15 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
         result["tone"] = "neutral"
     if result["tone"] == "positive" and result["category"] == "own" and not is_own_positive_focus_article(article):
         result["tone"] = "neutral" if rule_tone != "caution" else "caution"
+
+    capacity_evidence = deterministic_risk.security_capacity_evidence(article)
+    if capacity_evidence and not deterministic_risk.classify(article).get("alert_eligible"):
+        result.update(category="own", tone="caution", own_mentioned=True,
+                      negative_target="none", evidence=capacity_evidence,
+                      reason="당사 정보보호 인력·투자 부족을 지적한 보도. 실제 침해 사고와 구분해 우선 확인",
+                      provider="rules:own_security_capacity_review", confidence=0.95,
+                      clipping_recommended=True,
+                      clipping_reason="당사 정보보호 역량에 관한 원문 지적을 확인할 기사입니다.")
 
     direct_own_negative = (
         result["category"] == "own"

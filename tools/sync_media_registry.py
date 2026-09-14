@@ -22,6 +22,8 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from media_byline import VERSION, extract_bylines
 from tools.backfill_publisher_identity import save_page_evidence
+from tools.resolve_news_original import resolve_google_original
+from article_quality import is_media_url
 import publisher_identity
 import supabase_store
 
@@ -73,7 +75,11 @@ def inspect_article(row):
     result = {"article_hash": row["article_hash"], "authors": [], "status": "fetch_failed",
               "evidence_url": url, "checked_at": datetime.now(timezone.utc).isoformat(),
               "attempts": int(row.get("attempts") or 0) + 1, "parser_version": VERSION}
-    if not url or (publisher_identity.is_portal(url) and not publisher_identity.is_daum_article(url)):
+    if publisher_identity.host_of(url) == "news.google.com":
+        url = resolve_google_original(url)
+        if url:
+            result["evidence_url"] = url
+    if not url or is_media_url(url) or (publisher_identity.is_portal(url) and not publisher_identity.is_daum_article(url)):
         result["status"] = "needs_original"
         return result
     host = urlparse(url).netloc

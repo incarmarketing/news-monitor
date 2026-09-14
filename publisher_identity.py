@@ -66,8 +66,9 @@ def valid_page_evidence(evidence: dict) -> bool:
     if not is_portal(host):
         return True
     signals = evidence.get("signals")
-    return (is_daum_article(url) and name in KNOWN_NAMES and evidence.get("method") == "page_copyright"
-            and isinstance(signals, list) and "daum_site_name" in signals and "article_copyright" in signals)
+    return (is_daum_article(url) and name in KNOWN_NAMES and isinstance(signals, list)
+            and ((evidence.get("method") == "page_copyright" and {"daum_site_name", "article_copyright"}.issubset(signals))
+                 or (evidence.get("method") == "page_metadata" and {"daum_site_name", "daum_publisher_meta", "daum_header"}.issubset(signals))))
 
 
 def valid_name(value: object) -> str:
@@ -211,6 +212,8 @@ class _PublisherPage(HTMLParser):
         self.schemas = []
         self.copyright_lines = set()
         self.daum_names = set()
+        self.daum_authors = set()
+        self.daum_headers = set()
         self.daum_copyright_lines = set()
         self._daum_article = daum_article
         self._frames = []
@@ -233,7 +236,10 @@ class _PublisherPage(HTMLParser):
         if tag not in self._void:
             if len(self._frames) >= 256:
                 raise ValueError("publisher_html_nesting_limit")
+            header = (self._daum_article and not blocked and tag == "a"
+                      and attrs.get("id") == "kakaoServiceLogo" and attrs.get("data-tiara") == "언론사명")
             self._frames.append({"tag": tag, "blocked": blocked,
+                                 "daum_header_text": [] if header else None,
                                  "text": [] if scoped and not blocked else None,
                                  "daum_body": self._daum_article and "news_view" in str(attrs.get("class") or "").split(),
                                  "daum_text": [] if daum_notice else None})
@@ -247,6 +253,8 @@ class _PublisherPage(HTMLParser):
                     self.daum_names.add(valid_name(match.group(1)))
         if tag == "title":
             self._title = True
+        if self._daum_article and not blocked and tag == "meta" and attrs.get("property") == "og:article:author":
+            self.daum_authors.add(valid_name(attrs.get("content")))
         if tag == "script" and (attrs.get("type") or "").lower() == "application/ld+json":
             self._schema = []
 
@@ -260,6 +268,8 @@ class _PublisherPage(HTMLParser):
                         self.copyright_lines.update(clean(line) for line in "".join(frame["text"]).splitlines() if clean(line))
                     if frame.get("daum_text") is not None:
                         self.daum_copyright_lines.add(clean("".join(frame["daum_text"])))
+                    if frame.get("daum_header_text") is not None:
+                        self.daum_headers.add(valid_name("".join(frame["daum_header_text"])))
                 del self._frames[index:]
                 break
         if tag == "title":
@@ -286,6 +296,8 @@ class _PublisherPage(HTMLParser):
                 frame["text"].append(text)
             if frame.get("daum_text") is not None:
                 frame["daum_text"].append(text)
+            if frame.get("daum_header_text") is not None:
+                frame["daum_header_text"].append(text)
 
     def handle_startendtag(self, tag, attrs):
         self.handle_starttag(tag, attrs)
@@ -298,7 +310,7 @@ def _copyright_owner(line: str) -> str:
     if len(line) > 500:
         return ""
     text = clean(line).lstrip("[ ")
-    prefix = re.match(r"^(?:copyright(?:s)?\s*(?:©|ⓒ|\(c\))?|저작권자\s*(?:©|ⓒ)?|©|ⓒ)\s*", text, re.I)
+    prefix = re.match(r"^(?:(?:copyright(?:s)?\s*(?:©|ⓒ|\(c\))?|저작권자\s*(?:©|ⓒ)?|©|ⓒ)\s*)+", text, re.I)
     if prefix:
         owner = text[prefix.end():]
         owner = re.sub(r"^\s*(?:\d{4}(?:\s*[-–]\s*\d{4})?\s*[.,]?\s*)", "", owner)
@@ -310,6 +322,9 @@ def _copyright_owner(line: str) -> str:
         owner = suffix.group(1)
     owner = re.sub(r"^(?:주식회사|\(주\)|㈜)\s*", "", owner.strip())
     owner = owner.strip(" .,;:[]()")
+    co_brand = re.fullmatch(r"(.+?)\s*&\s*([A-Za-z0-9.-]+)", owner)
+    if co_brand and domain_name(co_brand.group(2)) == valid_name(co_brand.group(1)):
+        owner = valid_name(co_brand.group(1))
     # Newsroom software, a photo agency and a parent company are not inferred
     # from generic corporate text. New brands need corroborating site metadata.
     return domain_name(owner) or valid_name(owner)
@@ -334,10 +349,15 @@ def publisher_from_html(document: str, page_url: str) -> dict | None:
     if daum_article:
         owners = {_copyright_owner(line) for line in page.daum_copyright_lines}
         owners.discard("")
-        if len(page.daum_names) != 1 or owners != page.daum_names:
+        if len(page.daum_names) != 1:
             return None
-        owner = next(iter(owners))
+        owner = next(iter(page.daum_names))
         if owner not in KNOWN_NAMES:
+            return None
+        if not owners and page.daum_authors == page.daum_headers == {owner}:
+            return {"name": owner, "method": "page_metadata", "host": host, "url": page_url,
+                    "signals": ["daum_site_name", "daum_publisher_meta", "daum_header"]}
+        if owners != {owner}:
             return None
         return {"name": owner, "method": "page_copyright", "host": host, "url": page_url,
                 "signals": ["daum_site_name", "article_copyright"]}

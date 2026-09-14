@@ -14,6 +14,9 @@ on:
       - "publisher_identity.py"
       - "media_byline.py"
       - "tools/sync_media_registry.py"
+      - "article_quality.py"
+      - "tools/resolve_news_original.py"
+      - "tests/test_article_quality.py"
       - "publisher_registry.json"
       - "tools/backfill_publisher_identity.py"
       - "tests/test_publisher_identity.py"
@@ -118,6 +121,7 @@ jobs:
           tests.test_source_role_relevance
           tests.test_negative_watch
           tests.test_news_collector
+          tests.test_article_quality
           tests.test_publisher_identity
           tests.test_headline_display
           tests.test_media_byline

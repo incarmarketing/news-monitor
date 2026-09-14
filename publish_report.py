@@ -14,6 +14,7 @@ import dashboard_builder
 import period_report
 import stock_collector
 import supabase_store
+from article_quality import is_non_article_result
 
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / "logs"
@@ -35,7 +36,10 @@ def render_archive_report(payload: dict) -> tuple[str, str | None, str]:
     report_name = f"briefing_{timestamp.strftime('%Y%m%d_%H%M')}.html"
     stable_name = stable_daily_report_name(payload)
     report_md = payload.get("briefing", "")
-    articles = classification_normalizer.normalize_articles(payload.get("articles", []))
+    articles = classification_normalizer.normalize_articles([
+        article for article in payload.get("articles", [])
+        if not is_non_article_result(article)
+    ])
     metrics = classification_normalizer.recompute_metrics(payload.get("metrics", {}), articles)
     previous_day = archiver.load_day(timestamp.date() - timedelta(days=1))
     html_body = ai_briefing.build_html_report(

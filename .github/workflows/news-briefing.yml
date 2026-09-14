@@ -386,11 +386,22 @@ jobs:
           git pull --rebase
           git push
 
-      - name: Enrich verified media bylines after briefing completion
+      - name: Verify unknown publishers and media bylines after briefing completion
         if: success() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual'
         continue-on-error: true
         timeout-minutes: 3
-        run: python tools/sync_media_registry.py --limit 20 --apply
+        run: |
+          pip install googlenewsdecoder==0.1.7
+          python tools/sync_media_registry.py --limit 20 --apply
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Save publisher verification audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-verification-audit
+          path: out/media-byline-audit.json
+          retention-days: 14
+          if-no-files-found: ignore

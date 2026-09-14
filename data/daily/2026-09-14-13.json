@@ -12,26 +12,26 @@
     "total_collected": 66,
     "total_after_cluster": 48,
     "by_category": {
-      "own": 0,
+      "own": 1,
       "regulation": 5,
-      "competitor": 4,
+      "competitor": 3,
       "industry": 37,
       "sponsorship": 0,
       "other": 2
     },
     "by_tone": {
       "positive": 0,
-      "caution": 7,
-      "neutral": 41,
+      "caution": 8,
+      "neutral": 40,
       "negative": 0,
       "exclude": 0
     },
     "own_negative": 0,
-    "own_total": 0,
-    "sponsorship_total": 1,
+    "own_total": 1,
+    "sponsorship_total": 0,
     "own_by_tone": {
       "positive": 0,
-      "caution": 0,
+      "caution": 1,
       "neutral": 0,
       "negative": 0
     },
@@ -314,16 +314,32 @@
       "publisher_evidence": {},
       "publisher_manual_override": "",
       "_original_url": "",
-      "keyword": "보험설계사",
-      "description": "반면 올해 상반기 기준 소속 보험설계사는 2만4725명에 달하고, 여러 보험사와 모집위탁 계약을 맺어 고객의 개인·신용정보를 대량으로 취급한다. 비교적 규모가 크고 상장까지 한 GA의 정보보호 전담인력이 1명대라는...",
+      "keyword": "인카금융",
+      "description": "코스닥 상장사이자 대형 GA인 인카금융서비스조차 올해 정보보호 전담인력은 1.3명, 투자액은 2억4360만원에 그쳤다. 2023년부터 2025년까지 3년 연속 전담인력 1명을 유지하다 올해 소폭 늘어난 수준이다. 반면 올해 상반기...",
       "_summary": "코스닥 상장사이자 대형 GA인 인카금융서비스조차 올해 정보보호 전담인력은 1.3명, 투자액은 2억4360만원에 그쳤다 2023년부터 2025년까지 3년 연속 전담인력 1명을 유지하다 올해 소폭 늘어난 수준이다",
       "pub_date": "Mon, 14 Sep 2026 10:45:00 +0900",
       "_report_id": 10,
-      "_score": 8,
-      "_category": "competitor",
-      "_tone": "neutral",
+      "_score": 14,
+      "_category": "own",
+      "_tone": "caution",
       "_cluster_size": 1,
-      "storage_policy": "standard"
+      "storage_policy": "standard",
+      "own_mentioned": true,
+      "classification_provider": "rules:own_security_capacity_review",
+      "classification_ruleset_version": "classification-contract-v6-subject-2026-09-15-r1:code-default",
+      "classification_evidence": "코스닥 상장사이자 대형 GA인 인카금융서비스조차 올해 정보보호 전담인력은 1.3명, 투자액은 2억4360만원에 그쳤다.",
+      "_feedback_applied": false,
+      "_ai_context": {
+        "category": "own",
+        "tone": "caution",
+        "own_mentioned": true,
+        "negative_target": "none",
+        "reason": "당사 정보보호 인력·투자 부족을 지적한 보도. 실제 침해 사고와 구분해 우선 확인",
+        "provider": "rules:own_security_capacity_review",
+        "own_role": "primary",
+        "risk_event_type": "governance",
+        "alert_eligible": false
+      }
     },
     {
       "title": "한화손보, 경인지역 고령층 대상 '디지털 금융 스쿨' 운영",
@@ -1351,5 +1367,6 @@
       "_cluster_size": 1,
       "storage_policy": "standard"
     }
-  ]
+  ],
+  "quality_revision": "2026-09-15-source-evidence-v1"
 }

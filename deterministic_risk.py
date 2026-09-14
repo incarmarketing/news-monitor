@@ -451,6 +451,21 @@ def _is_direct_binding(sentence: str, event_match: re.Match[str], *, is_title: b
     )
 
 
+def security_capacity_evidence(article: dict[str, Any]) -> str:
+    """A disclosed staffing weakness is reviewable, not a confirmed breach."""
+    for sentence in source_sentences(article):
+        own = OWN_PATTERN.search(sentence)
+        if not own:
+            continue
+        clause = sentence[own.start():own.start() + 240]
+        if not re.search(r"(?:정보\s*보호|보안).{0,35}(?:전담\s*인력|인력|투자액|예산)", clause):
+            continue
+        if re.search(r"(?:부족|미흡|열악|부실|한\s*자릿수|단\s*\d+(?:\.\d+)?\s*명|그쳤다|못\s*미쳤다)", clause):
+            if not re.search(r"(?:부족|미흡|부실)(?:하지\s*않|이\s*아니)|(?:확충|증원|강화|해소|개선)(?:했다|한다|할\s*계획)", clause):
+                return sentence[:500]
+    return ""
+
+
 def classify(article: dict[str, Any]) -> dict[str, Any]:
     """Return the deterministic risk decision contract for one article."""
     text = source_text(article)
@@ -507,6 +522,16 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
                 decision="alert",
             )
             return base
+
+    capacity_evidence = security_capacity_evidence(article)
+    if capacity_evidence:
+        base.update(
+            own_role="primary", document_type="risk_event", risk_event_type="governance",
+            review_required=True, confidence=0.95, evidence=capacity_evidence,
+            matched_rule_keys=["own_security_capacity_review"], suggested_tone="caution",
+            decision="review",
+        )
+        return base
 
     positive_override = _positive_document_override(article)
     if positive_override:

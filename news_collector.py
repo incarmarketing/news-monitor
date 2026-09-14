@@ -22,6 +22,7 @@ import analyzer
 import report_window
 import supabase_store
 import publisher_identity
+from article_quality import is_non_article_result, is_media_url
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -921,10 +922,12 @@ def fetch_article_html(link: str, timeout: int = 6) -> tuple[str, str]:
         response = requests.get(
             link,
             timeout=timeout,
-            headers={"User-Agent": "Mozilla/5.0 news-monitor/1.0"},
+            headers=RSS_REQUEST_HEADERS,
             allow_redirects=True,
         )
         response.raise_for_status()
+        if response.headers.get("Content-Type", "").lower().startswith(("image/", "video/", "application/pdf")):
+            return "", ""
         return response.text or "", response.url
     except Exception:
         return "", ""
@@ -948,6 +951,7 @@ def enrich_sensitive_article_bodies(articles: list[dict]) -> None:
         if not should_enrich_article_body(article):
             continue
 
+        enriched += 1
         html, final_url = fetch_article_html(article.get("link", ""), timeout=6)
         if not html:
             continue
@@ -970,7 +974,6 @@ def enrich_sensitive_article_bodies(articles: list[dict]) -> None:
         article["content"] = body[:5000]
         article["body"] = body[:5000]
         article["_body_enriched"] = True
-        enriched += 1
 
 
 def should_enrich_article_body(article: dict) -> bool:
@@ -1000,7 +1003,8 @@ def should_enrich_article_body(article: dict) -> bool:
         text,
         re.I,
     )
-    return bool(own_or_ga_signal and risk_signal)
+    security_signal = re.search(r"(?:보안|정보\s*보호|해킹).{0,40}(?:인력|투자|부족|위협|사각지대|취약)", text, re.I)
+    return bool(own_or_ga_signal and (risk_signal or security_signal))
 
 
 def extract_article_body_from_html(html: str) -> str:
@@ -1224,7 +1228,6 @@ def extract_original_article_url(html: str, final_url: str = "") -> str:
         r'href=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*media_end_head_origin_link[^"\']*["\']',
         r'data-clk=["\']are\.ori["\'][^>]+href=["\']([^"\']+)["\']',
         r'href=["\']([^"\']+)["\'][^>]+data-clk=["\']are\.ori["\']',
-        r'https?://[^"\'<>\\\s]+',
     ]
     candidates = []
     for pattern in patterns:
@@ -1273,6 +1276,8 @@ def is_excluded_press_article(article: dict) -> bool:
 
 
 def is_rejected_original_url(value: str) -> bool:
+    if is_media_url(value):
+        return True
     host = (urlparse(value).hostname or "").removeprefix("www.").lower()
     if not host or host in PORTAL_HOSTS or host in STATIC_HOSTS:
         return True
@@ -1289,6 +1294,9 @@ def deduplicate(articles: list[dict]) -> list[dict]:
     seen = set()
     unique = []
     for article in articles:
+        if is_non_article_result(article):
+            article["_excluded_reason"] = "media_asset_or_photo_caption"
+            continue
         key = normalize_for_dedup(article.get("title", ""))
         if key and key not in seen:
             seen.add(key)
