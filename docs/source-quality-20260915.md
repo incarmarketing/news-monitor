@@ -58,12 +58,15 @@ source-reviewed changes with regression tests, not an automatic rule promotion.
 
 ## Verification
 
-- Python release/report regressions: 355 passed.
+- Python release/report regressions: 356 passed.
 - Frontend: 169 passed; reference validation and Vite build passed.
 - Live publisher queue: returns the bounded candidate list; execute permission
   remains service_role only (anon/authenticated false).
 - Rendered the corrected September 14 13:00 report and asserted the Asiae URL
   is included. Photo popup captions are excluded before report metrics.
+- Public browser verification also caught old reports using the rebuild time
+  as their generation date. Pass the archive timestamp explicitly and preserve
+  its Korean-time display when regenerating an existing report.
 - Source-page checks were repeated with actual decoded Google/Daum destinations.
 - No report notifications or negative alerts were sent during repair.
 

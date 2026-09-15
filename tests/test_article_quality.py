@@ -16,6 +16,13 @@ from article_quality import is_non_article_result, is_media_url
 
 
 class ArticleQualityTests(unittest.TestCase):
+    def test_rebuilt_report_keeps_original_korean_generation_time(self):
+        payload = {"timestamp": "2026-09-14T04:07:20+00:00", "articles": [], "metrics": {},
+                   "window": {"label": "당일 08:00~13:00", "slot": "13"}}
+        with patch.object(archiver, "load_day", return_value=None):
+            _, _, html = publish_report.render_archive_report(payload)
+        self.assertIn("2026.09.14 13:07 생성", html)
+
     def test_archive_keeps_verified_classification_without_full_body(self):
         row = {"title": "GA 보안 투자 점검", "link": "https://www.asiae.co.kr/article/123",
                "content": "Full source body", "_tone": "caution", "_category": "own",

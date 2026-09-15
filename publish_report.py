@@ -48,6 +48,7 @@ def render_archive_report(payload: dict) -> tuple[str, str | None, str]:
         metrics,
         previous_day,
         window_override=payload.get("window") or None,
+        generated_at=timestamp,
     )
     return report_name, stable_name, html_body
 

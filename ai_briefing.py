@@ -570,6 +570,7 @@ def build_html_report(
     metrics: dict,
     yesterday: dict | None,
     window_override: dict | None = None,
+    generated_at: datetime | None = None,
 ) -> str:
     clustered = classification_normalizer.normalize_articles(clustered)
     clustered = [publisher_identity.normalize_article(article) for article in clustered]
@@ -584,10 +585,12 @@ def build_html_report(
     window = window_override or report_window.current_window()
     report_md = normalize_window_phrasing(report_md, window)
     sections = validate_report_sections(parse_report_sections(report_md, metrics), clustered, metrics)
+    generated_at = generated_at or datetime.now(KST)
+    generated_at = generated_at.astimezone(KST) if generated_at.tzinfo else generated_at.replace(tzinfo=KST)
 
     return template.render(
         subject_prefix=config.EMAIL_SUBJECT_PREFIX,
-        date_str=datetime.now(KST).strftime("%Y.%m.%d %H:%M"),
+        date_str=generated_at.strftime("%Y.%m.%d %H:%M"),
         company=config.COMPANY_NAME,
         team=config.TEAM_NAME,
         metrics=metrics,
