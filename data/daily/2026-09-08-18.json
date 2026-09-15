@@ -706,17 +706,33 @@
     {
       "title": "'내보험찾아줌'인 줄 알고 정보 넣었더니…GA 설계사 전화 - v.daum.net",
       "link": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFBYNWJ0UVRwb00wbWttVXpvVzl1U2xrYkdhcGJZUTBkdnI1eHpVZjFKUVQ3R25BWjU1dUFxZ2hXLWMxc0tfbnFFNTV5ZG1ucTg?oc=5",
-      "source": "언론사 확인 필요",
+      "source": "아주경제",
       "source_raw": "v.daum.net",
       "rss_source_name": "v.daum.net",
       "source_url": "https://v.daum.net",
       "portal": "google",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
-        "host": "v.daum.net"
+        "name": "아주경제",
+        "method": "page_metadata",
+        "host": "v.daum.net",
+        "url": "https://v.daum.net/v/20260908143936119",
+        "signals": [
+          "daum_site_name",
+          "daum_publisher_meta",
+          "daum_header"
+        ]
       },
-      "publisher_evidence": {},
+      "publisher_evidence": {
+        "name": "아주경제",
+        "method": "page_metadata",
+        "host": "v.daum.net",
+        "url": "https://v.daum.net/v/20260908143936119",
+        "signals": [
+          "daum_site_name",
+          "daum_publisher_meta",
+          "daum_header"
+        ]
+      },
       "publisher_manual_override": "",
       "_original_url": "",
       "keyword": "설계사",
@@ -1135,5 +1151,6 @@
       "_cluster_size": 1,
       "storage_policy": "standard"
     }
-  ]
+  ],
+  "publisher_quality_revision": "2026-09-15-verified-source-v1"
 }

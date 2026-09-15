@@ -760,17 +760,31 @@
     {
       "title": "한화생명, GA 설계사 위한 영업지원 플랫폼 고도화 - businessreport.kr",
       "link": "https://news.google.com/rss/articles/CBMib0FVX3lxTFBrQkNCSFgxMnBaSjZscWdnRmMwU19GQV9EUnBjQkpHdnBjdzk0UGxvZmpKXzF0VGNpZGU5WkhVMnY4aHNfLUUxSVhjcjkxcDlzWm50MGlkUmhiOVk5Z3FGUXY0elNOZU10REJ0dmVyRQ?oc=5",
-      "source": "언론사 확인 필요",
+      "source": "비즈니스리포트",
       "source_raw": "businessreport.kr",
       "rss_source_name": "businessreport.kr",
       "source_url": "http://www.businessreport.kr",
       "portal": "google",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
-        "host": "businessreport.kr"
+        "name": "비즈니스리포트",
+        "method": "page_copyright",
+        "host": "businessreport.kr",
+        "url": "http://www.businessreport.kr/news/articleView.html?idxno=54088",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ]
       },
-      "publisher_evidence": {},
+      "publisher_evidence": {
+        "name": "비즈니스리포트",
+        "method": "page_copyright",
+        "host": "businessreport.kr",
+        "url": "http://www.businessreport.kr/news/articleView.html?idxno=54088",
+        "signals": [
+          "copyright",
+          "og_site_name"
+        ]
+      },
       "publisher_manual_override": "",
       "_original_url": "",
       "keyword": "설계사",
@@ -1054,5 +1068,6 @@
       "_cluster_size": 1,
       "storage_policy": "standard"
     }
-  ]
+  ],
+  "publisher_quality_revision": "2026-09-15-verified-source-v1"
 }

@@ -11,11 +11,28 @@ import classification_normalizer
 import subprocess
 import archiver
 import publish_report
+import supabase_store
 from tools.resolve_news_original import resolve_google_original
 from article_quality import is_non_article_result, is_media_url
 
 
 class ArticleQualityTests(unittest.TestCase):
+    def test_verified_publisher_survives_stale_classification_cache(self):
+        article = {"title": "금융 현황", "link": "https://v.daum.net/v/20260908143936119", "source": "언론사 확인 필요"}
+        stored = {**article, "source": "아주경제", "category": "industry", "tone": "neutral", "classification_ruleset_version": "old"}
+        applied = supabase_store.apply_article_analysis_cache(article, {supabase_store.article_hash(article): stored})
+        self.assertFalse(applied)
+        self.assertEqual(article["source"], "아주경제")
+        self.assertTrue(article["_analysis_cache_stale"])
+        self.assertNotIn("_tone", article)
+        self.assertEqual(archiver.lighten(article)["source"], "아주경제")
+
+    def test_publisher_cache_does_not_replace_manual_identity(self):
+        article = {"title": "금융 현황", "link": "https://v.daum.net/v/20260908143936119", "publisher_manual_override": "뉴스1", "source": "뉴스1", "_feedback_applied": True}
+        stored = {**article, "source": "아주경제", "publisher_manual_override": "", "raw": {}}
+        self.assertFalse(supabase_store.apply_article_analysis_cache(article, {supabase_store.article_hash(article): stored}))
+        self.assertEqual(article["source"], "뉴스1")
+
     def test_rebuilt_report_keeps_original_korean_generation_time(self):
         payload = {"timestamp": "2026-09-14T04:07:20+00:00", "articles": [], "metrics": {},
                    "window": {"label": "당일 08:00~13:00", "slot": "13"}}

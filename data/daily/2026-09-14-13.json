@@ -425,17 +425,33 @@
     {
       "title": "Coventry ‘생명보험 인식의 달’ 맞아 보험계약 가치 재점검 강조 - koreasprint.com",
       "link": "https://news.google.com/rss/articles/CBMibkFVX3lxTFA2OFBPeWd6TkNVNVFoVktOVGJNcGhqZE9TRklwTGJ4NURYektuamxaaG5jaWN4RUxHZldEM2F3NXRvU0lncE13akJDNm94cDRiMURYLVo4dVEtSXhiNWdQYnRTOEJwR2FZLUszLUhB?oc=5",
-      "source": "언론사 확인 필요",
+      "source": "코리아스프린트",
       "source_raw": "koreasprint.com",
       "rss_source_name": "koreasprint.com",
       "source_url": "https://www.koreasprint.com",
       "portal": "google",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
-        "host": "koreasprint.com"
+        "name": "코리아스프린트",
+        "method": "page_copyright",
+        "host": "koreasprint.com",
+        "url": "https://www.koreasprint.com/news/articleView.html?idxno=19238",
+        "signals": [
+          "copyright",
+          "og_site_name",
+          "schema_publisher"
+        ]
       },
-      "publisher_evidence": {},
+      "publisher_evidence": {
+        "name": "코리아스프린트",
+        "method": "page_copyright",
+        "host": "koreasprint.com",
+        "url": "https://www.koreasprint.com/news/articleView.html?idxno=19238",
+        "signals": [
+          "copyright",
+          "og_site_name",
+          "schema_publisher"
+        ]
+      },
       "publisher_manual_override": "",
       "_original_url": "",
       "keyword": "생명보험",
@@ -668,14 +684,14 @@
     {
       "title": "대한생명 창립 80주년 기념식",
       "link": "https://dhnews.co.kr/news/view/1065585430669301",
-      "source": "언론사 확인 필요",
+      "source": "대학저널",
       "source_raw": "dhnews.co.kr",
       "rss_source_name": "",
       "source_url": "",
       "portal": "naver",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
+        "name": "대학저널",
+        "method": "original_domain",
         "host": "dhnews.co.kr"
       },
       "publisher_evidence": {},
@@ -1127,14 +1143,14 @@
     {
       "title": "민법개정 후 폭증한 상속분쟁... 올해 연 4,000건 전망",
       "link": "https://www.lawtv.kr/news/articleView.html?idxno=60927",
-      "source": "언론사 확인 필요",
+      "source": "법률방송뉴스",
       "source_raw": "lawtv.kr",
       "rss_source_name": "",
       "source_url": "",
       "portal": "naver",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
+        "name": "법률방송뉴스",
+        "method": "original_domain",
         "host": "lawtv.kr"
       },
       "publisher_evidence": {},
@@ -1368,5 +1384,6 @@
       "storage_policy": "standard"
     }
   ],
-  "quality_revision": "2026-09-15-source-evidence-v1"
+  "quality_revision": "2026-09-15-source-evidence-v1",
+  "publisher_quality_revision": "2026-09-15-verified-source-v1"
 }

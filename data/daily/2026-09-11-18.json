@@ -166,17 +166,31 @@
     {
       "title": "금감원, 보험사 분쟁 처리 실태 점검 착수 - v.daum.net",
       "link": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9DQjBhRXJOZUNFSk1YMnR5VGZyZFNLc205aXNaVm1wWnpDTWlXbXNWaVRFWTEwMkRqc3B5OG0yRmNCdVZ2cVFaYU9tV2VLdE0?oc=5",
-      "source": "언론사 확인 필요",
+      "source": "더팩트",
       "source_raw": "v.daum.net",
       "rss_source_name": "v.daum.net",
       "source_url": "https://v.daum.net",
       "portal": "google",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
-        "host": "v.daum.net"
+        "name": "더팩트",
+        "method": "page_copyright",
+        "host": "v.daum.net",
+        "url": "https://v.daum.net/v/20260911144237938",
+        "signals": [
+          "daum_site_name",
+          "article_copyright"
+        ]
       },
-      "publisher_evidence": {},
+      "publisher_evidence": {
+        "name": "더팩트",
+        "method": "page_copyright",
+        "host": "v.daum.net",
+        "url": "https://v.daum.net/v/20260911144237938",
+        "signals": [
+          "daum_site_name",
+          "article_copyright"
+        ]
+      },
       "publisher_manual_override": "",
       "_original_url": "",
       "keyword": "보험사",
@@ -1243,5 +1257,6 @@
       "_cluster_size": 1,
       "storage_policy": "standard"
     }
-  ]
+  ],
+  "publisher_quality_revision": "2026-09-15-verified-source-v1"
 }

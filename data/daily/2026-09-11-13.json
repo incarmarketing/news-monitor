@@ -1111,14 +1111,14 @@
     {
       "title": "[엄여진의 마켓잠망경 <75>] \"대형 로펌서도 된다고 했는데요\"… 법률 넘...",
       "link": "https://economychosun.com/site/data/html_dir/2026/09/07/2026090700024.html",
-      "source": "언론사 확인 필요",
+      "source": "이코노미조선",
       "source_raw": "economychosun.com",
       "rss_source_name": "",
       "source_url": "",
       "portal": "naver",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
+        "name": "이코노미조선",
+        "method": "original_domain",
         "host": "economychosun.com"
       },
       "publisher_evidence": {},
@@ -1243,5 +1243,6 @@
       "_cluster_size": 1,
       "storage_policy": "standard"
     }
-  ]
+  ],
+  "publisher_quality_revision": "2026-09-15-verified-source-v1"
 }

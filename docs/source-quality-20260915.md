@@ -39,6 +39,10 @@
   ownership is still unresolved. Support repeated copyright prefixes and a
   co-branded copyright domain only when it maps to the same known publisher.
 - Save publisher audit artifacts separately from reporter availability.
+- Reuse the verified publisher from the existing article-cache response even
+  when classification rules change. This keeps new report archives from losing
+  the resolved newsroom name, without additional network requests. Manual
+  publisher overrides still win.
 
 ## Reviewed data repairs
 
@@ -58,7 +62,7 @@ source-reviewed changes with regression tests, not an automatic rule promotion.
 
 ## Verification
 
-- Python release/report regressions: 356 passed.
+- Python release/report regressions: 358 passed.
 - Frontend: 169 passed; reference validation and Vite build passed.
 - Live publisher queue: returns the bounded candidate list; execute permission
   remains service_role only (anon/authenticated false).

@@ -85,17 +85,31 @@
     {
       "title": "금감원 \"제왕절개 미고지로 태아보험 해지 사례…과도한 불이익 안돼\" - v.daum.net",
       "link": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9CWlJvZV9nMUdIeGFxQ0piYVdkaXVGbkxFRE42X05WUnVKQXd5c2JuanA5S3hENW5KQTJFUlFqZnRtLVlsT2VVVVZvcFlnV3M?oc=5",
-      "source": "언론사 확인 필요",
+      "source": "SBS",
       "source_raw": "v.daum.net",
       "rss_source_name": "v.daum.net",
       "source_url": "https://v.daum.net",
       "portal": "google",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
-        "host": "v.daum.net"
+        "name": "SBS",
+        "method": "page_copyright",
+        "host": "v.daum.net",
+        "url": "https://v.daum.net/v/20260914151800784",
+        "signals": [
+          "daum_site_name",
+          "article_copyright"
+        ]
       },
-      "publisher_evidence": {},
+      "publisher_evidence": {
+        "name": "SBS",
+        "method": "page_copyright",
+        "host": "v.daum.net",
+        "url": "https://v.daum.net/v/20260914151800784",
+        "signals": [
+          "daum_site_name",
+          "article_copyright"
+        ]
+      },
       "publisher_manual_override": "",
       "_original_url": "",
       "keyword": "금감원",
@@ -517,14 +531,14 @@
     {
       "title": "[심사평] [국가공헌대상] ESG 경영과 글로벌 리스크 관리, 함께 추구해야",
       "link": "https://economychosun.com/site/data/html_dir/2026/09/11/2026091100034.html",
-      "source": "언론사 확인 필요",
+      "source": "이코노미조선",
       "source_raw": "economychosun.com",
       "rss_source_name": "",
       "source_url": "",
       "portal": "naver",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
+        "name": "이코노미조선",
+        "method": "original_domain",
         "host": "economychosun.com"
       },
       "publisher_evidence": {},
@@ -1324,5 +1338,6 @@
       "_cluster_size": 1,
       "storage_policy": "standard"
     }
-  ]
+  ],
+  "publisher_quality_revision": "2026-09-15-verified-source-v1"
 }

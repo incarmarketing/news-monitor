@@ -540,7 +540,7 @@ def load_article_analysis_cache(articles: list[dict], batch_size: int = 80) -> d
 
 
 def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) -> bool:
-    if not cache_index or article.get("_feedback_applied"):
+    if not cache_index:
         return False
     try:
         key = article_hash(article)
@@ -551,6 +551,19 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
         return False
 
     raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    # Publisher evidence survives classification-rule changes and is reused
+    # from the same fetched row, without another lookup or page request.
+    if publisher_identity.resolve_publisher(article)["name"] == publisher_identity.UNKNOWN:
+        identity = publisher_identity.resolve_publisher(row)
+        if identity["name"] != publisher_identity.UNKNOWN:
+            article.setdefault("source_raw", article.get("source", ""))
+            article["source"] = identity["name"]
+            article["publisher_resolution"] = identity
+            evidence = raw.get("publisher_evidence")
+            if isinstance(evidence, dict) and publisher_identity.valid_page_evidence(evidence):
+                article["publisher_evidence"] = dict(evidence)
+    if article.get("_feedback_applied"):
+        return False
     cached_context = raw.get("_ai_context") if isinstance(raw.get("_ai_context"), dict) else raw.get("ai_context")
     cached_context = cached_context if isinstance(cached_context, dict) else {}
     current_ruleset = analyzer.classification_ruleset_version()

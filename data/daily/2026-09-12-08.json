@@ -382,14 +382,14 @@
     {
       "title": "보이스피싱 기획②\"1시간마다 보고해\"..'가짜 검사'의 심리 감옥",
       "link": "http://news.mbccb.co.kr/home/sub.php?menukey=61&mod=view&RECEIVE_DATE=20260911&SEQUENCE=4122",
-      "source": "언론사 확인 필요",
+      "source": "MBC충북",
       "source_raw": "news.mbccb.co.kr",
       "rss_source_name": "",
       "source_url": "",
       "portal": "naver",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
+        "name": "MBC충북",
+        "method": "original_domain",
         "host": "news.mbccb.co.kr"
       },
       "publisher_evidence": {},
@@ -463,14 +463,14 @@
     {
       "title": "[위클립] 9월 2주",
       "link": "https://www.laborplus.co.kr/news/articleView.html?idxno=41470",
-      "source": "언론사 확인 필요",
+      "source": "참여와혁신",
       "source_raw": "laborplus.co.kr",
       "rss_source_name": "",
       "source_url": "",
       "portal": "naver",
       "publisher_resolution": {
-        "name": "언론사 확인 필요",
-        "method": "unresolved",
+        "name": "참여와혁신",
+        "method": "original_domain",
         "host": "laborplus.co.kr"
       },
       "publisher_evidence": {},
@@ -973,5 +973,6 @@
       "_cluster_size": 2,
       "storage_policy": "standard"
     }
-  ]
+  ],
+  "publisher_quality_revision": "2026-09-15-verified-source-v1"
 }
