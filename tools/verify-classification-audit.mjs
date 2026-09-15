@@ -20,7 +20,7 @@ const server = createServer(async (request, response) => {
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
-const report = JSON.parse(await readFile(path.join(root, "out/classification-review-20260909/latest-report.json"), "utf8"));
+const report = JSON.parse(await readFile(path.join(root, process.env.CLASSIFICATION_AUDIT_FIXTURE || "out/classification-review-20260909/latest-report.json"), "utf8"));
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const results = [];
 try {
@@ -39,7 +39,7 @@ try {
           auditRequests.push(body.payload);
           if (failure) return route.fulfill({ status: 502, json: { error: "classification_audit_unavailable" } });
           const offset = body.payload.offset || 0;
-          const rows = body.payload.mode === "repairs" || empty ? [] : body.payload.mode === "candidates" ? report.repair_candidates || [] : report.reviews;
+          const rows = body.payload.mode === "repairs" || empty ? [] : body.payload.mode === "candidates" ? report.repair_candidates || [] : body.payload.mode === "feedback" ? report.feedback_replay?.items || [] : report.reviews;
           return route.fulfill({ json: { ok: true, data: { runs: empty ? [] : [report], run: empty ? null : report, items: rows.slice(offset, offset + 25), total: rows.length, offset, page_size: 25 } } });
         }
         if (body.action === "media_registry") return route.fulfill({ json: { ok: true, data: { media: [], unknown: [], reporters: [], own_articles: 0 } } });
@@ -56,7 +56,7 @@ try {
     const panel = page.locator(".classification-audit");
     await panel.locator(".audit-articles tbody tr").first().waitFor();
     assert.equal(await panel.locator(".audit-articles tbody tr").count(), 25);
-    assert.match(await panel.innerText(), /자동 보정 보류/);
+    assert.match(await panel.innerText(), report.gate?.version === "scoped-v2" ? /당사·경보 보호 검증/ : /자동 보정 보류/);
     await panel.getByRole("button", { name: "다음 페이지", exact: true }).click();
     await page.waitForFunction(() => document.querySelector(".audit-pagination")?.textContent.includes("26–50"));
     assert.equal(auditRequests.at(-1).run_id, report.run_id, "pagination pins the selected run");
@@ -65,6 +65,12 @@ try {
     await panel.getByRole("button", { name: "재검토 후보", exact: true }).click();
     await panel.locator(".audit-articles tbody tr").nth(24).waitFor();
     assert.ok(await panel.locator(".audit-articles a").first().getAttribute("href"));
+    if (report.gate?.version === "scoped-v2") {
+      await panel.getByRole("button", { name: "수동 수정 재검사", exact: true }).click();
+      await panel.getByText("수동 수정 유지 · 규칙 재검토", { exact: false }).first().waitFor();
+      await panel.getByRole("button", { name: "재검토 후보", exact: true }).click();
+      await panel.locator(".audit-articles tbody tr").nth(24).waitFor();
+    }
     await panel.screenshot({ path: path.join(output, `audit-${width}.png`) });
     const box = await panel.boundingBox();
     assert.ok(box.width <= width, "audit panel fits viewport");

@@ -30,6 +30,8 @@ export default function ClassificationMaintenance() {
   const changeQuery = (patch) => { const runId = data?.run?.run_id; setData(null); setQuery((value) => ({ ...value, runId: runId || value.runId, offset: 0, ...patch })); };
   const run = data?.run;
   const gate = run?.gate || {};
+  const scoped = gate.version === "scoped-v2";
+  const quality = scoped ? gate.common || {} : gate;
   const failures = Array.isArray(gate.failures) ? gate.failures : [];
   return <section className="classification-audit" aria-busy={loading}>
     <div className="audit-toolbar"><h2><ShieldCheck size={20} />분류 점검</h2>
@@ -51,13 +53,26 @@ export default function ClassificationMaintenance() {
       </dl>
       {(run.block_reason || failures.length > 0) && <div className="audit-warning" role="status"><strong>{auditLabel(run.block_reason)}</strong>
         <span>{failures.map(auditLabel).join(" · ")}</span></div>}
-      <div className="audit-quality"><div><h3>검증 결과</h3><p>표본 {gate.case_count ?? 0}건 · 부정 {Number(gate.alert_confusion?.true_positive || 0) + Number(gate.alert_confusion?.false_negative || 0)}건</p></div>
+      <div className="audit-quality"><div><h3>{scoped ? "당사·경보 보호 검증" : "검증 결과"}</h3><p>표본 {quality.case_count ?? 0}건 · 부정 {Number(quality.alert_confusion?.true_positive || 0) + Number(quality.alert_confusion?.false_negative || 0)}건</p>
+        {scoped && <p>회귀 시험용 사례 · 전체 기사 정확도와 구분</p>}
+        {run.verification?.status && <p>{auditLabel(run.verification.status)} · {run.verification.verified ?? 0}건</p>}
+        {run.rechecks?.checked > 0 && <p>원문 재확인 {run.rechecks.checked}건 · 확보 {run.rechecks.verified}건</p>}
+        {run.feedback_replay?.checked > 0 && <p>수동 수정 재검사 {run.feedback_replay.checked}건 · 규칙 불일치 {run.feedback_replay.mismatches}건</p>}
+      </div>
         <div className="audit-table-wrap"><table><thead><tr><th>항목</th><th>결과</th><th>통과 기준</th></tr></thead><tbody>
-          {["category_accuracy", "tone_accuracy", "exact_accuracy", "alert_precision", "alert_recall"].map((key) => <tr key={key}><th scope="row">{auditLabel(key)}</th><td>{auditPercent(gate[key])}</td><td>{auditPercent(gate.thresholds?.[key])}</td></tr>)}
+          {(scoped ? ["own_mention_accuracy", "alert_precision", "alert_recall"] : ["category_accuracy", "tone_accuracy", "exact_accuracy", "alert_precision", "alert_recall"]).map((key) => <tr key={key}><th scope="row">{auditLabel(key)}</th><td>{auditPercent(quality[key])}</td><td>{auditPercent(quality.thresholds?.[key])}</td></tr>)}
         </tbody></table></div>
       </div>
+      {scoped && <div className="audit-quality"><div><h3>유형별 자동수정</h3><p>과거 기사 재노출 검사: {gate.delivery?.passed ? "통과" : "보류"}</p></div>
+        <div className="audit-table-wrap"><table><thead><tr><th>수정 유형</th><th>검증 사례</th><th>검증 결과</th></tr></thead><tbody>
+          {Object.entries(gate.families || {}).map(([name, item]) => <tr key={name}><th scope="row">{auditLabel(name)}</th><td>{item.case_count}건 · {auditPercent(item.exact_accuracy)}</td><td>{gate.common?.passed && gate.delivery?.passed && item.passed ? "통과" : "보류"}</td></tr>)}
+        </tbody></table></div></div>}
+      {scoped && run.historical_gate?.case_count > 0 && <details className="audit-historical"><summary>기존 검토 표본 {run.historical_gate.case_count}건</summary>
+        <p>분류 {auditPercent(run.historical_gate.category_accuracy)} · 논조 {auditPercent(run.historical_gate.tone_accuracy)} · 분류상 노출 {auditPercent(run.historical_gate.visibility_accuracy)}</p>
+        <p>경보 정답 미검토 {run.historical_gate.alert_unlabelled_count ?? 0}건</p>
+      </details>}
       <div className="audit-toolbar"><div className="audit-modes" role="group" aria-label="점검 항목">
-        {[ ["reviews", "재검토 후보"], ["candidates", "자동 보정 후보"], ["repairs", "실제 보정 이력"] ].map(([mode, label]) => <button key={mode} aria-pressed={query.mode === mode} disabled={loading} onClick={() => changeQuery({ mode })}>{label}</button>)}
+        {[ ["reviews", "재검토 후보"], ["candidates", "자동 보정 후보"], ["repairs", "실제 보정 이력"], ["feedback", "수동 수정 재검사"] ].map(([mode, label]) => <button key={mode} aria-pressed={query.mode === mode} disabled={loading} onClick={() => changeQuery({ mode })}>{label}</button>)}
       </div><span>{data.total}건</span></div>
       <div className="audit-table-wrap"><table className="audit-articles"><thead><tr><th>기사</th><th>기존</th><th aria-label="변경 방향"></th><th>{query.mode !== "repairs" ? "재검토 결과" : "보정 후"}</th><th>근거·처리</th></tr></thead><tbody>
         {data.items.map((item) => <tr key={item.id}><td>{safeArticleUrl(item.link) ? <a href={safeArticleUrl(item.link)} target="_blank" rel="noopener noreferrer">{item.title || "제목 미기록"}<ExternalLink size={14} /></a> : item.title}<small>{item.source || "언론사 미기록"} · #{item.id}</small></td>

@@ -43,10 +43,16 @@ def public_url(url):
     return parsed
 
 
-def fetch_document(url):
-    deadline = time.monotonic() + 20
+def fetch_document(url, before_request=None, deadline=None):
+    deadline = min(deadline or float("inf"), time.monotonic() + 20)
     for _ in range(5):
+        if time.monotonic() >= deadline:
+            raise ValueError("article_fetch_limit")
         public_url(url)
+        if before_request:
+            before_request(url)
+        if time.monotonic() >= deadline:
+            raise ValueError("article_fetch_limit")
         with requests.get(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html"}, timeout=(4, 6), stream=True, allow_redirects=False) as response:
             if response.is_redirect:
                 url = urljoin(url, response.headers.get("Location", ""))

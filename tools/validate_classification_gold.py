@@ -74,8 +74,8 @@ def expected_label(value: object, *, tone: bool = False) -> str:
     return normalized or str(value or "").strip().lower()
 
 
-def safe_ratio(numerator: int, denominator: int) -> float:
-    return round(numerator / denominator, 6) if denominator else 1.0
+def safe_ratio(numerator: int, denominator: int) -> float | None:
+    return round(numerator / denominator, 6) if denominator else None
 
 
 def evaluate(cases: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
@@ -85,6 +85,8 @@ def evaluate(cases: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
     true_positive = 0
     false_positive = 0
     false_negative = 0
+    labelled_alerts = 0
+    own_ok = own_count = visible_ok = visible_count = 0
     mismatch_types: Counter[str] = Counter()
     mismatches: list[dict[str, Any]] = []
 
@@ -100,23 +102,41 @@ def evaluate(cases: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         tone_ok += int(tone_match)
         exact_ok += int(category_match and tone_match)
 
-        expected_alert = expected_category == "own" and expected_tone == "negative"
+        # A classification label is not an alert label. Unreviewed labels remain
+        # unmeasured, rather than manufacturing perfect alert precision.
+        expected_alert = case.get("expected_alert_eligible")
         predicted_alert = bool(context.get("alert_eligible"))
-        if predicted_alert and expected_alert:
-            true_positive += 1
-        elif predicted_alert:
-            false_positive += 1
-        elif expected_alert:
-            false_negative += 1
+        if isinstance(expected_alert, bool):
+            labelled_alerts += 1
+            if predicted_alert and expected_alert:
+                true_positive += 1
+            elif predicted_alert:
+                false_positive += 1
+            elif expected_alert:
+                false_negative += 1
+        own_expected = case.get("expected_own_mentioned")
+        if isinstance(own_expected, bool):
+            own_count += 1
+            own_ok += int(bool(context.get("own_mentioned")) == own_expected)
+        visible_expected = case.get("expected_visible")
+        visible = context.get("category") not in {"other", "exclude"} and context.get("tone") != "exclude"
+        if isinstance(visible_expected, bool):
+            visible_count += 1
+            visible_ok += int(visible == visible_expected)
 
-        if category_match and tone_match and predicted_alert == expected_alert:
+        alert_match = expected_alert is None or predicted_alert == expected_alert
+        if category_match and tone_match and alert_match and (visible_expected is None or visible == visible_expected) and (own_expected is None or bool(context.get("own_mentioned")) == own_expected):
             continue
         if not category_match:
             mismatch_types["category"] += 1
         if not tone_match:
             mismatch_types["tone"] += 1
-        if predicted_alert != expected_alert:
+        if isinstance(expected_alert, bool) and predicted_alert != expected_alert:
             mismatch_types["alert"] += 1
+        if isinstance(visible_expected, bool) and visible != visible_expected:
+            mismatch_types["visibility"] += 1
+        if isinstance(own_expected, bool) and bool(context.get("own_mentioned")) != own_expected:
+            mismatch_types["own_mention"] += 1
         if len(mismatches) < sample_limit:
             mismatches.append(
                 {
@@ -127,11 +147,15 @@ def evaluate(cases: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
                         "category": expected_category,
                         "tone": expected_tone,
                         "alert_eligible": expected_alert,
+                        "visible": visible_expected,
+                        "own_mentioned": own_expected,
                     },
                     "predicted": {
                         "category": predicted_category,
                         "tone": predicted_tone,
                         "alert_eligible": predicted_alert,
+                        "visible": visible,
+                        "own_mentioned": bool(context.get("own_mentioned")),
                         "decision": (context.get("classification_decision_path") or {}).get(
                             "decision"
                         ),
@@ -147,11 +171,17 @@ def evaluate(cases: list[dict[str, Any]], sample_limit: int) -> dict[str, Any]:
         "exact_accuracy": safe_ratio(exact_ok, total),
         "alert_precision": safe_ratio(true_positive, true_positive + false_positive),
         "alert_recall": safe_ratio(true_positive, true_positive + false_negative),
+        "alert_labelled_count": labelled_alerts,
+        "alert_unlabelled_count": total - labelled_alerts,
+        "own_mention_accuracy": safe_ratio(own_ok, own_count),
+        "own_labelled_count": own_count,
+        "visibility_accuracy": safe_ratio(visible_ok, visible_count),
+        "visibility_labelled_count": visible_count,
         "alert_confusion": {
             "true_positive": true_positive,
             "false_positive": false_positive,
             "false_negative": false_negative,
-            "true_negative": total - true_positive - false_positive - false_negative,
+            "true_negative": labelled_alerts - true_positive - false_positive - false_negative,
         },
         "mismatch_types": dict(mismatch_types),
         "mismatches": mismatches,
@@ -173,6 +203,10 @@ def quality_gate(result: dict[str, Any]) -> dict[str, Any]:
         failures.append("insufficient_positive_cases")
     if confusion.get("true_negative", 0) + confusion.get("false_positive", 0) < 20:
         failures.append("insufficient_negative_cases")
+    if result.get("alert_unlabelled_count", 0):
+        failures.append("unreviewed_alert_labels")
+    if result.get("visibility_labelled_count", 0) and (result.get("visibility_accuracy") or 0) < .95:
+        failures.append("visibility_accuracy")
     return {**result, "passed": not failures, "failures": failures, "thresholds": thresholds,
             "minimum_cases": 30, "minimum_positive_cases": 5, "minimum_negative_cases": 20}
 
@@ -180,7 +214,7 @@ def quality_gate(result: dict[str, Any]) -> dict[str, Any]:
 def load_cases() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     reviews = get_rows(
         "monitor_classification_review_cases?select=review_batch,article_id,"
-        "expected_category,expected_tone,expected_visible,review_note&order=article_id.asc"
+        "expected_category,expected_tone,expected_visible,expected_own_mentioned,expected_alert_eligible,review_note&order=article_id.asc"
     )
     article_ids = [int(row["article_id"]) for row in reviews if row.get("article_id")]
     article_map = fetch_articles(article_ids)
@@ -199,12 +233,15 @@ def load_cases() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
                 "article": article_from_row(article_row),
                 "expected_category": row.get("expected_category"),
                 "expected_tone": row.get("expected_tone"),
+                "expected_visible": row.get("expected_visible"),
+                "expected_own_mentioned": row.get("expected_own_mentioned"),
+                "expected_alert_eligible": row.get("expected_alert_eligible"),
             }
         )
 
     fixtures = get_rows(
         "monitor_classification_test_cases?select=case_key,title,body,source,keyword,"
-        "expected_category,expected_tone,expected_in_dashboard,reason&enabled=eq.true&order=case_key.asc"
+        "expected_category,expected_tone,expected_in_dashboard,expected_own_mentioned,expected_alert_eligible,reason&enabled=eq.true&order=case_key.asc"
     )
     fixture_cases = [
         {
@@ -217,6 +254,9 @@ def load_cases() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
             },
             "expected_category": row.get("expected_category"),
             "expected_tone": row.get("expected_tone"),
+            "expected_visible": row.get("expected_in_dashboard"),
+            "expected_own_mentioned": row.get("expected_own_mentioned"),
+            "expected_alert_eligible": row.get("expected_alert_eligible"),
         }
         for row in fixtures
     ]
@@ -251,11 +291,11 @@ def main() -> int:
     print(f"report_file={output.resolve()}")
 
     failures: list[str] = list(combined["failures"])
-    if combined["alert_precision"] < args.min_alert_precision:
+    if combined["alert_precision"] is not None and combined["alert_precision"] < args.min_alert_precision:
         failures.append(
             f"alert precision {combined['alert_precision']:.4f} < {args.min_alert_precision:.4f}"
         )
-    if combined["alert_recall"] < args.min_alert_recall:
+    if combined["alert_recall"] is not None and combined["alert_recall"] < args.min_alert_recall:
         failures.append(
             f"alert recall {combined['alert_recall']:.4f} < {args.min_alert_recall:.4f}"
         )

@@ -235,6 +235,26 @@ test('classification audit distinguishes no history, missing run and outage', as
   assert.doesNotMatch(JSON.stringify(failed), /PRIVATE_/);
 });
 
+test('scoped classification audit exposes gates but not private evidence or raw cases', async () => {
+  const r = runtime({ role: 'admin', auditRows: [{ run_id: 'scoped-test', report: {
+    status: 'audited', gate: { version: 'scoped-v2', common: { passed: true, case_count: 72, mismatches: ['PRIVATE_SAMPLE'] },
+      delivery: { passed: true, case_count: 4, exact_accuracy: 1, mismatches: ['PRIVATE_DATE'] },
+      families: { insurance_subject: { passed: true, case_count: 20, exact_accuracy: 1, mismatches: ['PRIVATE_BODY'] } } },
+    historical_gate: { alert_unlabelled_count: 150, mismatches: ['PRIVATE_OLD_BODY'] },
+    source_rechecks: [{ status: 'source_verified_review', source_excerpt: 'PRIVATE_FULL_EXCERPT' }],
+    feedback_replay: { checked: 1, mismatches: 1, items: [{ id: 1, title: 'Reviewed title', protected: true,
+      before: { category: 'industry', raw: 'PRIVATE_RAW' }, proposed: { category: 'competitor' }, raw: 'PRIVATE_RAW' }] },
+  } }] });
+  const result = await r.request('classification_maintenance', { mode: 'feedback' }, { 'x-dashboard-session': 'test' });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.data.run.gate.families.insurance_subject.passed, true);
+  assert.equal(result.body.data.run.historical_gate.alert_unlabelled_count, 150);
+  assert.equal(result.body.data.items[0].protected, true);
+  assert.equal(result.body.data.run.rechecks.verified, 1);
+  assert.doesNotMatch(JSON.stringify(result.body), /PRIVATE_/);
+  assert.match(r.calls.find(c => c.url.includes('order=created_at')).url, /not.like.\*-verification/);
+});
+
 test('authenticated snapshot retains authorized operational details', async () => {
   const { body } = await runtime().request('snapshot', {}, { 'x-dashboard-session': 'test-session' });
   assert.deepEqual(body.data, fixture);

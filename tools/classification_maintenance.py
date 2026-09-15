@@ -23,6 +23,8 @@ from tools.audit_classification_drift import (
     current_classification, normalize_value, priority_score,
 )
 from tools import validate_classification_gold as gold
+from tools import classification_policy
+from tools import classification_source_review
 
 KST = timezone(timedelta(hours=9))
 MAX_REPAIRS = 25
@@ -34,6 +36,7 @@ PATCH_FIELDS = (
     "clipping_recommended", "clipping_reason", "raw",
 )
 FIELDS = SELECT_FIELDS + ",updated_at,classification_reason,clipping_recommended,clipping_reason"
+FAMILIES = ("source_role", "insurance_subject")
 
 
 def fetch_records(table, *, select="*", filters=None, key="id", cap=5000):
@@ -120,7 +123,42 @@ def source_role_patch(row, article, reason):
     return patch
 
 
-def build_plan(rows, feedback_index):
+def insurance_subject_patch(row, article, context):
+    """Only re-label neutral GA/insurer rows; never change tone or alert scope."""
+    subject = analyzer.insurance_subject_category(article)
+    if (row.get("category") not in {"industry", "competitor"}
+            or subject not in {"industry", "competitor"} or subject == row.get("category")
+            or context.get("category") != subject or row.get("tone") != "neutral"
+            or context.get("tone") != "neutral" or context.get("own_mentioned")
+            or context.get("alert_eligible") or context.get("negative_target") not in {None, "none"}
+            or context.get("review_required") or row.get("clipping_recommended")
+            or len(analyzer.original_article_text(article)) < 40):
+        return None
+    reason = "원문 제목의 보험사·보험대리점 주체를 확인해 분류만 보정했습니다. 논조와 경보는 변경하지 않습니다."
+    context = copy.deepcopy(context)
+    context.update(provider="rules:insurance-subject-v1", reason=reason,
+                   clipping_recommended=False, clipping_reason="")
+    patch = {key: context.get(key) for key in (*SEMANTIC_FIELDS, *CONTRACT_FIELDS)}
+    patch.update({
+        "classification_provider": context["provider"], "classification_reason": reason,
+        "classification_evidence": str(article.get("title") or "")[:500],
+        "classification_confidence": context.get("classification_confidence", context.get("confidence", 1)),
+        "classification_ruleset_version": analyzer.classification_ruleset_version(),
+        "classification_decision_path": {**(context.get("classification_decision_path") or {}),
+                                          "maintenance_family": "insurance_subject"},
+        "clipping_recommended": False, "clipping_reason": "",
+    })
+    raw = copy.deepcopy(row.get("raw") or {})
+    if not isinstance(raw, dict):
+        raise RuntimeError("invalid article source data")
+    raw.update(patch)
+    raw.update(_category=subject, _tone="neutral", _ai_context=context)
+    raw.pop("ai_context", None)
+    patch["raw"] = raw
+    return patch
+
+
+def build_plan(rows, feedback_index, gate=None):
     reviews, repairs, protected, contract_drift = [], [], 0, 0
     for row in rows:
         article = article_from_row(row)
@@ -132,11 +170,21 @@ def build_plan(rows, feedback_index):
         after = {key: normalize_value(key, context.get(key)) for key in before}
         changed = [key for key in before if before[key] != after[key]]
         contract_drift += int(any(key in CONTRACT_FIELDS for key in changed))
-        if reason and not guard:
-            patch = source_role_patch(row, article, reason)
+        patch = None
+        family = ""
+        if not guard:
+            if reason:
+                patch, family = source_role_patch(row, article, reason), "source_role"
+            else:
+                patch = insurance_subject_patch(row, article, context)
+                family = "insurance_subject" if patch else ""
+        family_passed = gate is None or (gate.get("common", {}).get("passed") is True
+                                        and gate.get("families", {}).get(family, {}).get("passed") is True)
+        if patch and family_passed:
             if any(row.get(key) != value for key, value in patch.items()):
                 repairs.append({
                     "id": row["id"], "article_hash": row["article_hash"],
+                    "family": family,
                     "expected": {key: row.get(key) for key in (*PATCH_FIELDS, "updated_at", "title", "link")},
                     "patch": patch,
                 })
@@ -157,6 +205,7 @@ def build_plan(rows, feedback_index):
                 "reason": review_reason(article, context, evidence_status),
                 "priority": priority_score(before, after),
                 "evidence_status": evidence_status,
+                "family": family,
                 "source_excerpt": analyzer.original_article_lead(article, 240),
             })
     reviews.sort(key=lambda row: (-row["priority"], row["id"]))
@@ -165,13 +214,15 @@ def build_plan(rows, feedback_index):
         "row_count": len(rows), "protected_count": protected,
         "contract_drift_count": contract_drift,
         "candidate_count": len(repairs), "review_count": len(reviews),
+        "family_counts": dict(Counter(r["family"] for r in repairs)),
         "review_transitions": dict(transitions), "reviews": reviews,
         "evidence_counts": dict(Counter(r["evidence_status"] for r in reviews)),
         "repair_candidates": [{"id": item["id"], "title": item["expected"].get("title"),
             "link": item["expected"].get("link"),
             "before": {key: item["expected"].get(key) for key in SEMANTIC_FIELDS},
             "proposed": {key: item["patch"].get(key) for key in SEMANTIC_FIELDS},
-            "reason": item["patch"]["classification_reason"], "evidence_status": "gate_required"} for item in repairs],
+            "family": item["family"], "reason": item["patch"]["classification_reason"],
+            "evidence_status": "validated_candidate" if gate else "gate_required"} for item in repairs],
         "repairs": repairs,
     }
 
@@ -212,6 +263,9 @@ def review_reason(article, context, evidence_status):
 def guard_plan(plan, gate):
     if not gate.get("passed"):
         return "reviewed_case_gate_failed"
+    if gate.get("version") == "scoped-v2" and (not gate.get("common", {}).get("passed")
+                                               or not gate.get("delivery", {}).get("passed")):
+        return "safety_contract_failed"
     if not plan["row_count"]:
         return "empty_scan"
     count = plan["candidate_count"]
@@ -226,6 +280,67 @@ def validate_gold():
         raise RuntimeError("reviewed validation set is missing")
     result = gold.evaluate(reviewed + fixtures, sample_limit=30)
     return gold.quality_gate(result)
+
+
+def verify_applied(repairs, applied_ids):
+    expected = {item["id"]: item for item in repairs if item["id"] in set(applied_ids)}
+    if not expected:
+        return {"status": "not_needed", "checked": 0, "verified": 0, "conflicts": []}
+    rows = fetch_records("news_articles", select=FIELDS,
+                         filters={"id": "in.(" + ",".join(map(str, expected)) + ")"}, cap=MAX_REPAIRS)
+    found = {row["id"]: row for row in rows}
+    conflicts = []
+    for article_id, item in expected.items():
+        row = found.get(article_id, {})
+        raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+        proposed_raw = item["patch"].get("raw") or {}
+        # Publisher/byline triggers may independently enrich source metadata.
+        # Verify classification and its cached contract, not unrelated fields.
+        if (any(row.get(key) != item["patch"].get(key) for key in PATCH_FIELDS if key != "raw")
+                or any(raw.get(key) != proposed_raw.get(key) for key in
+                       (*SEMANTIC_FIELDS, *CONTRACT_FIELDS, "_category", "_tone", "_ai_context"))):
+            conflicts.append(article_id)
+    return {"status": "verified" if not conflicts else "verification_conflict",
+            "checked": len(expected), "verified": len(expected) - len(conflicts), "conflicts": conflicts}
+
+
+def previous_source_rechecks(now):
+    response = supabase_store.request("GET", "classification_maintenance_runs", params={
+        "select": "checks:report->source_rechecks", "order": "created_at.desc",
+        "created_at": "gte." + (now - timedelta(days=30)).isoformat(), "limit": 101,
+    }).json()
+    if not isinstance(response, list) or len(response) > 100:
+        raise RuntimeError("source recheck history incomplete")
+    previous = {}
+    for row in response:
+        for check in row.get("checks") or []:
+            previous.setdefault(check["fingerprint"], check)
+    return previous
+
+
+def replay_manual_corrections(feedback, feedback_index):
+    hashes = sorted({row["article_hash"] for row in feedback if row.get("article_hash")})
+    samples = []
+    checked = 0
+    for offset in range(0, len(hashes), 80):
+        rows = fetch_records("news_articles", select=FIELDS, cap=500,
+                             filters={"article_hash": "in.(" + ",".join(hashes[offset:offset + 80]) + ")"})
+        for row in rows:
+            article = article_from_row(row)
+            correction = next((feedback_index[key] for key in supabase_store.classification_feedback_keys_for_article(article)
+                               if key in feedback_index), None)
+            if not correction:
+                continue
+            checked += 1
+            actual = gold.classify(article)
+            changed = [key for key in ("category", "tone") if correction.get(key) and correction[key] != actual.get(key)]
+            if changed:
+                samples.append({"id": row["id"], "title": row["title"], "link": row["link"], "source": row.get("source", ""),
+                                "before": {key: correction.get(key) for key in ("category", "tone")},
+                                "proposed": {key: actual.get(key) for key in ("category", "tone")},
+                                "changed_fields": changed, "protected": True, "manual": True,
+                                "evidence_status": "manual_rule_gap", "reason": "수동 수정은 유지됩니다. 같은 오류 재발 방지를 위해 규칙과 수정 결과의 차이를 검토합니다."})
+    return {"checked": checked, "unavailable": len(hashes) - checked, "mismatches": len(samples), "items": samples}
 
 
 def record_report(run_id, report):
@@ -272,6 +387,7 @@ def write_report(path, report):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--recheck-sources", action="store_true")
     parser.add_argument("--output", default="logs/classification-maintenance.json")
     args = parser.parse_args()
     os.environ.update(AI_CONTEXT_CLASSIFICATION="rules", AI_CONTEXT_PRO_REVIEW="false")
@@ -287,16 +403,25 @@ def main():
         feedback, rules = config_snapshot()
         analyzer.configure_context_rules([r for r in rules if r.get("enabled")])
         report["ruleset"] = analyzer.classification_ruleset_version()
-        gate = validate_gold()
+        historical_gate = validate_gold()
+        gate = classification_policy.validate(build_plan)
         since = (now.date() - timedelta(days=6)).isoformat()
         rows = fetch_records("news_articles", select=FIELDS, cap=2500, filters={
             "report_date": f"gte.{since}", "updated_at": f"lte.{now.isoformat()}",
             "and": f"(report_date.lte.{now.date().isoformat()})",
         })
         feedback_index = supabase_store.build_classification_feedback_index(list(reversed(feedback)))
-        plan = build_plan(rows, feedback_index)
+        feedback_replay = replay_manual_corrections(feedback, feedback_index)
+        plan = build_plan(rows, feedback_index, gate)
         repairs = plan.pop("repairs")
-        report.update(plan, gate=gate, window_start=since, window_end=now.date().isoformat())
+        report.update(plan, gate=gate, historical_gate=historical_gate, feedback_replay=feedback_replay,
+                      window_start=since, window_end=now.date().isoformat())
+        if args.recheck_sources:
+            try:
+                report["source_rechecks"] = classification_source_review.recheck(
+                    rows, report["reviews"], previous_source_rechecks(now), now=now)
+            except Exception:
+                report["source_recheck_status"] = "source_history_unavailable"
         blocked = guard_plan(plan, gate)
         report["block_reason"] = blocked
         report["status"] = "blocked" if blocked else "audited"
@@ -305,6 +430,12 @@ def main():
         elif args.apply and repairs:
             result = apply_plan(run_id, report, repairs, feedback, rules)
             report.update(result)
+            verification = verify_applied(repairs, result.get("applied_ids", []))
+            report["verification"] = verification
+            record_report(run_id + "-verification", {"parent_run_id": run_id, "verification": verification,
+                          "status": "verified" if verification["status"] in {"verified", "not_needed"} else "verification_conflict"})
+            if verification["status"] == "verification_conflict":
+                exit_code = 1
         if report["status"] != "applied":
             record_report(run_id, report)
     except Exception as error:
@@ -318,6 +449,9 @@ def main():
         except Exception:
             print("Private audit ledger unavailable; retained runner artifact")
     write_report(Path(args.output), report)
+    if os.getenv("GITHUB_OUTPUT"):
+        with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+            output.write(f"applied_count={report.get('applied_count', 0)}\n")
     return exit_code
 
 

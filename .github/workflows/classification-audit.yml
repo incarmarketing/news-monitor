@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       apply_repairs:
-        description: "Apply only protected, capped source-role repairs"
+        description: "Apply only validated, capped non-alert classification repairs"
         required: false
         default: false
         type: boolean
@@ -29,11 +29,16 @@ on:
       - "tools/reclassify_deterministic.py"
       - "tools/classification_maintenance.py"
       - "tools/validate_classification_gold.py"
+      - "tools/classification_policy.py"
+      - "tools/classification_source_review.py"
+      - "tests/fixtures/classification_maintenance_v2.json"
+      - "tests/test_classification_policy.py"
       - "tests/test_classification_maintenance.py"
       - ".github/workflows/classification-audit.yml"
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: classification-maintenance
@@ -66,16 +71,19 @@ jobs:
           tests.test_analyzer
           tests.test_source_role_relevance
           tests.test_classification_maintenance
+          tests.test_classification_policy
           tests.test_no_llama_fallback
           tests.test_negative_watch
           tests.test_context_rule_fixes
           tests.test_supabase_store_feedback
 
       - name: Validate reviewed cases and maintain recent seven days
+        id: maintenance
         run: >-
           python tools/classification_maintenance.py
           --output "${RUNNER_TEMP}/classification-maintenance.json"
           ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.apply_repairs)) && vars.CLASSIFICATION_MAINTENANCE_PAUSED != 'true' && '--apply' || '' }}
+          ${{ github.event_name == 'schedule' && '--recheck-sources' || '' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
@@ -83,6 +91,12 @@ jobs:
           AI_CONTEXT_ENABLED: "false"
           AI_CONTEXT_PRO_REVIEW: "false"
           AI_CONTEXT_CLASSIFICATION: "rules"
+
+      - name: Refresh published dashboard after verified repairs
+        if: success() && steps.maintenance.outputs.applied_count != '' && steps.maintenance.outputs.applied_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/pages-dashboard.yml/dispatches" -f ref=main
 
       - name: Run read-only aggregate classification audit
         if: github.event_name == 'workflow_dispatch' && inputs.full_history

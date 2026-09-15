@@ -155,14 +155,14 @@ function auditPick(value: unknown, keys: string[]) {
 async function handleClassificationMaintenance(payload: Record<string, unknown>) {
   const runId = String(payload.run_id || "");
   const mode = String(payload.mode || "reviews");
-  if ((runId && !/^[A-Za-z0-9_-]{1,160}$/.test(runId)) || !["reviews", "repairs", "candidates"].includes(mode)) {
+  if ((runId && !/^[A-Za-z0-9_-]{1,160}$/.test(runId)) || !["reviews", "repairs", "candidates", "feedback"].includes(mode)) {
     return jsonResponse({ error: "invalid_audit_request" }, 400);
   }
   const offset = boundedInteger(payload.offset, 0, 0, 1000000);
   const summaryKeys = ["status", "generated_at", "row_count", "review_count", "applied_count", "block_reason"];
   const summarySelect = ["run_id", "created_at", ...summaryKeys.map((key) => `${key}:report->${key}`)].join(",");
   try {
-    const history = await supabaseRest(`classification_maintenance_runs?select=${summarySelect}&order=created_at.desc,run_id.desc&limit=25`, { method: "GET" });
+    const history = await supabaseRest(`classification_maintenance_runs?select=${summarySelect}&run_id=not.like.*-verification&order=created_at.desc,run_id.desc&limit=25`, { method: "GET" });
     if (!history.ok || !Array.isArray(history.data)) throw new Error("history_unavailable");
     const runs = history.data.map((row) => auditPick(row, ["run_id", "created_at", ...summaryKeys]));
     const selected = runId || String(runs[0]?.run_id || "");
@@ -172,9 +172,27 @@ async function handleClassificationMaintenance(payload: Record<string, unknown>)
     if (!detail.data.length) return jsonResponse({ error: "audit_not_found" }, 404);
     const record = detail.data[0];
     const report = auditObject(record.report);
-    const gate = auditPick(report.gate, ["passed", "failures", "thresholds", "case_count", "category_accuracy", "tone_accuracy", "exact_accuracy", "alert_precision", "alert_recall", "alert_confusion", "minimum_cases", "minimum_positive_cases", "minimum_negative_cases"]);
-    const run = { run_id: record.run_id, created_at: record.created_at, ...auditPick(report, [...summaryKeys, "ruleset", "window_start", "window_end", "candidate_count", "protected_count", "evidence_counts"]), gate };
-    const rawItems = mode === "repairs" ? record.repairs : mode === "candidates" ? report.repair_candidates : report.reviews;
+    const gateKeys = ["passed", "failures", "thresholds", "case_count", "category_accuracy", "tone_accuracy", "exact_accuracy", "alert_precision", "alert_recall", "alert_confusion", "minimum_cases", "minimum_positive_cases", "minimum_negative_cases", "own_mention_accuracy", "visibility_accuracy", "alert_labelled_count", "alert_unlabelled_count"];
+    const gate = auditPick(report.gate, [...gateKeys, "version", "purpose"]);
+    if (gate.version === "scoped-v2") {
+      const value = auditObject(report.gate);
+      gate.common = auditPick(value.common, gateKeys);
+      gate.delivery = auditPick(value.delivery, ["passed", "case_count", "exact_accuracy"]);
+      const families = auditObject(value.families);
+      gate.families = Object.fromEntries(["source_role", "insurance_subject"].map((name) => [name, auditPick(families[name], ["passed", "case_count", "repair_cases", "protected_cases", "exact_accuracy", "failures"])]));
+    }
+    let verification = {};
+    if (report.status === "applied") {
+      const check = await supabaseRest(`classification_maintenance_runs?select=report&run_id=eq.${encodeURIComponent(selected + "-verification")}&limit=1`, { method: "GET" });
+      verification = check.ok && Array.isArray(check.data) && check.data.length
+        ? auditPick(auditObject(check.data[0].report).verification, ["status", "checked", "verified", "conflicts"])
+        : { status: "verification_pending" };
+    }
+    const sourceRechecks = Array.isArray(report.source_rechecks) ? report.source_rechecks : [];
+    const rechecks = { checked: sourceRechecks.length, verified: sourceRechecks.filter((r) => auditObject(r).status === "source_verified_review").length };
+    const run = { run_id: record.run_id, created_at: record.created_at, ...auditPick(report, [...summaryKeys, "ruleset", "window_start", "window_end", "candidate_count", "protected_count", "evidence_counts", "family_counts", "source_recheck_status"]), gate,
+      historical_gate: auditPick(report.historical_gate, gateKeys), feedback_replay: auditPick(report.feedback_replay, ["checked", "unavailable", "mismatches"]), verification, rechecks };
+    const rawItems = mode === "repairs" ? record.repairs : mode === "candidates" ? report.repair_candidates : mode === "feedback" ? auditObject(report.feedback_replay).items : report.reviews;
     if (rawItems != null && !Array.isArray(rawItems)) throw new Error("invalid_audit_items");
     const fields = ["category", "tone", "own_mentioned", "alert_eligible", "negative_target"];
     const items = (rawItems || []).slice(offset, offset + 25).map((entry: unknown) => {
@@ -184,7 +202,7 @@ async function handleClassificationMaintenance(payload: Record<string, unknown>)
         before: auditPick(item.before, fields), proposed: auditPick(item.patch, fields),
         reason: String(auditObject(item.patch).classification_reason || "").slice(0, 1000),
       };
-      return { ...auditPick(item, ["id", "title", "link", "source", "protected", "manual", "evidence_status", "changed_fields"]),
+      return { ...auditPick(item, ["id", "title", "link", "source", "protected", "manual", "evidence_status", "changed_fields", "family"]),
         before: auditPick(item.before, fields), proposed: auditPick(item.proposed, fields),
         reason: String(item.reason || "").slice(0, 1000), source_excerpt: String(item.source_excerpt || "").slice(0, 240),
       };

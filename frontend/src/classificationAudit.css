@@ -13,6 +13,9 @@
 .audit-warning { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 12px; background: #fff4d9; color: #734714; border-left: 3px solid #bc7f20; }
 .audit-quality { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; padding: 20px 0; border-bottom: 1px solid #dae1e7; }
 .audit-quality p { margin-top: 8px; color: #586875; }
+.audit-historical { padding: 14px 0; border-bottom: 1px solid #dae1e7; }
+.audit-historical summary { cursor: pointer; font-weight: 600; }
+.audit-historical p { margin-top: 8px; line-height: 1.5; }
 .audit-table-wrap { overflow-x: auto; min-width: 0; }
 .classification-audit table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 14px; }
 .classification-audit th, .classification-audit td { padding: 10px 12px; border-bottom: 1px solid #dae1e7; text-align: center; vertical-align: middle; overflow-wrap: anywhere; }
@@ -27,7 +30,7 @@
 .audit-articles small { display: block; color: #586875; font-size: 12px; line-height: 1.6; margin-top: 6px; }
 .audit-articles td:last-child p { margin-top: 5px; line-height: 1.5; }
 .audit-decision { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.audit-modes { display: flex; gap: 0; }
+.audit-modes { display: flex; flex-wrap: wrap; gap: 0; }
 .audit-modes button { padding: 6px 14px; }
 .audit-modes button[aria-pressed="true"] { background: #e5f0fa; color: #13559b; border-color: #6295c4; }
 .audit-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 14px 0; }
