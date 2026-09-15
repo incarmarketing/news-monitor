@@ -833,16 +833,19 @@ export async function loadArticleRange({ startDate = "", endDate = "", maxRows =
   const start = String(startDate || "").trim();
   const end = String(endDate || "").trim();
   const safeMaxRows = Math.min(HISTORY_ARTICLE_MAX_ROWS, Math.max(100, Number(maxRows || HISTORY_ARTICLE_MAX_ROWS)));
-  const query = [
-    NEWS_ARTICLE_SELECT,
-    start ? `report_date=gte.${start}` : "",
-    end ? `report_date=lte.${end}` : "",
-    "order=report_date.desc,score.desc",
-  ].filter(Boolean).join("&");
   const session = getStoredSession();
-  const rows = session?.session_token
-    ? await fetchTable(config, session, "news_articles", query, ARTICLE_PAGE_SIZE, safeMaxRows)
-    : await fetchPublicTable(config, "news_articles", query, ARTICLE_PAGE_SIZE, safeMaxRows);
+  const rows = [];
+  let offset = 0;
+  while (rows.length < safeMaxRows) {
+    const page = await dashboardApi(config, session, "article_range", {
+      start_date: start, end_date: end,
+      limit: Math.min(1000, safeMaxRows - rows.length), offset,
+    }, { allowAnonymous: true });
+    if (!page?.ok || !Array.isArray(page.articles)) throw new Error("article_range_unavailable");
+    rows.push(...page.articles);
+    if (!Number.isInteger(page.next_offset) || page.next_offset <= offset || !page.articles.length) break;
+    offset = page.next_offset;
+  }
   return deduplicateArticles((Array.isArray(rows) ? rows : []).map(normalizeArticle).filter(Boolean));
 }
 

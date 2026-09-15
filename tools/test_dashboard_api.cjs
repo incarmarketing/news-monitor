@@ -74,6 +74,43 @@ function runtime(options = {}) {
   };
 }
 
+test('article range is read-only, paginated and filters Korean publication dates', async () => {
+  const r = runtime();
+  const result = await r.request('article_range', { start_date: '2026-09-14', end_date: '2026-09-14', limit: 1, offset: 10, path: 'reporters', method: 'DELETE' });
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body.articles, fixture.articles);
+  assert.equal(result.body.next_offset, 11);
+  assert.equal(r.calls.length, 1);
+  assert.equal(r.calls[0].init.method, 'GET');
+  assert.match(r.calls[0].url, /news_articles\?select=article_hash/);
+  assert.match(r.calls[0].url, /pub_date.gte.2026-09-13T15:00:00.000Z/);
+  assert.match(r.calls[0].url, /pub_date.lt.2026-09-14T15:00:00.000Z/);
+  assert.match(r.calls[0].url, /pub_date.is.null,report_date.gte.2026-09-14/);
+  assert.match(r.calls[0].url, /tone=neq.exclude/);
+  assert.match(r.calls[0].url, /limit=1&offset=10/);
+  assert.doesNotMatch(r.calls[0].url, /\braw\b|reporters/);
+});
+
+test('article range rejects invalid dates and unapproved origins without database calls', async () => {
+  for (const dates of [{ start_date: '2026-02-30', end_date: '2026-09-14' }, { start_date: '2026-09-15', end_date: '2026-09-14' }, { start_date: '2026-09-14&select=*', end_date: '2026-09-14' }]) {
+    const r = runtime();
+    assert.equal((await r.request('article_range', dates)).status, 400);
+    assert.equal(r.calls.length, 0);
+  }
+  const r = runtime();
+  assert.equal((await r.request('article_range', { start_date: '2026-09-14', end_date: '2026-09-14' }, { origin: 'https://unapproved.example' })).status, 401);
+  assert.equal(r.calls.length, 0);
+});
+
+test('article range bounds pages and does not expose database failure details', async () => {
+  const r = runtime();
+  await r.request('article_range', { start_date: '2026-09-14', end_date: '2026-09-14', limit: 999999, offset: 999999 });
+  assert.match(r.calls[0].url, /limit=1000&offset=20000/);
+  const failed = await runtime({ failedTable: 'news_articles' }).request('article_range', { start_date: '2026-09-14', end_date: '2026-09-14' });
+  assert.equal(failed.status, 502);
+  assert.doesNotMatch(JSON.stringify(failed.body), /PRIVATE_/);
+});
+
 test('anonymous snapshot keeps articles, counts, report slots and ledger states without internal text', async () => {
   const r = runtime();
   const { status, headers, body } = await r.request('snapshot');

@@ -63,7 +63,7 @@ source-reviewed changes with regression tests, not an automatic rule promotion.
 ## Verification
 
 - Python release/report regressions: 358 passed.
-- Frontend: 169 passed; reference validation and Vite build passed.
+- Frontend: 171 passed; API contract: 23 passed; reference validation and Vite build passed.
 - Live publisher queue: returns the bounded candidate list; execute permission
   remains service_role only (anon/authenticated false).
 - Rendered the corrected September 14 13:00 report and asserted the Asiae URL
@@ -73,6 +73,15 @@ source-reviewed changes with regression tests, not an automatic rule promotion.
   its Korean-time display when regenerating an existing report.
 - Source-page checks were repeated with actual decoded Google/Daum destinations.
 - No report notifications or negative alerts were sent during repair.
+
+Public monitoring verification found a separate old path: date-range searches
+still queried the protected `news_articles` table directly and raised unhandled
+permission errors, even when a cached article happened to be visible. Route the
+search through an origin-restricted, read-only API action with the same public
+article columns, validated dates, and bounded pagination. Do not grant anonymous
+table access. Use Korean publication dates, because watch runs can move an
+article's report_date. Preserve existing rows and show a failed-query notice on
+transient errors instead of silently treating an outage as an empty result.
 
 Migration note: PostgreSQL rejected the initial long regex repetition bound at
 runtime; the subsequent corrective migration changes it to a supported bound.

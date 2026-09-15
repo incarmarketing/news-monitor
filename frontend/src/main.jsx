@@ -672,6 +672,9 @@ function App() {
       const rows = await loadArticleRange({ startDate, endDate, maxRows: ARTICLE_PROFILE_LIMITS.history });
       setMonitoringRangeArticles(rows);
       return rows;
+    } catch {
+      finishWorkStatus("기간 조회", "기간 조회 실패: 기존 목록을 유지합니다. 다시 시도해 주세요.");
+      return [];
     } finally {
       setMonitoringRangeLoading(false);
     }

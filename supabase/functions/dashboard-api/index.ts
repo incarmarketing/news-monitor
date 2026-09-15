@@ -98,13 +98,15 @@ Deno.serve(async (req) => {
   const publicDashboardSnapshot = isPublicDashboardSnapshotRequest(action, requestOrigin);
   const publicMediaRegistry = action === "media_registry" && isAllowedPublicRefreshOrigin(requestOrigin);
   const publicChanges = action === "changes" && isAllowedPublicRefreshOrigin(requestOrigin);
+  const publicArticleRange = action === "article_range" && isAllowedPublicRefreshOrigin(requestOrigin);
   const publicRefreshStatus = action === "workflow_health" && payload.workflow === "dashboard-refresh.yml"
     && isAllowedPublicRefreshOrigin(requestOrigin);
-  if (!session.ok && !publicDashboardRefresh && !publicDashboardSnapshot && !publicMediaRegistry && !publicChanges && !publicRefreshStatus) {
+  if (!session.ok && !publicDashboardRefresh && !publicDashboardSnapshot && !publicMediaRegistry && !publicChanges && !publicRefreshStatus && !publicArticleRange) {
     return jsonResponse({ error: "invalid_session", detail: session.message || "" }, 401);
   }
 
   try {
+    if (action === "article_range") return await handleArticleRange(payload);
     if (action === "changes") return await handleChanges(payload, session.ok === true);
     if (action === "workflow_health") return await handleWorkflowHealth(payload);
     if (action === "classification_maintenance") {
@@ -191,6 +193,29 @@ async function handleClassificationMaintenance(payload: Record<string, unknown>)
   } catch {
     return jsonResponse({ error: "classification_audit_unavailable" }, 502);
   }
+}
+
+async function handleArticleRange(payload: Record<string, unknown>) {
+  const validDate = (value: unknown): value is string => {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  };
+  if (!validDate(payload.start_date) || !validDate(payload.end_date) || payload.start_date > payload.end_date) {
+    return jsonResponse({ error: "invalid_article_date_range" }, 400);
+  }
+  const limit = boundedInteger(payload.limit, 1000, 1, 1000);
+  const offset = boundedInteger(payload.offset, 0, 0, 20000);
+  const start = new Date(`${payload.start_date}T00:00:00+09:00`).toISOString();
+  const end = new Date(new Date(`${payload.end_date}T00:00:00+09:00`).getTime() + 86400000).toISOString();
+  // Watch runs update report_date; historical searches must use publication time.
+  const dates = `or=(and(pub_date.gte.${start},pub_date.lt.${end}),and(pub_date.is.null,report_date.gte.${payload.start_date},report_date.lte.${payload.end_date}))`;
+  const result = await supabaseRest(
+    `news_articles?select=${DASHBOARD_ARTICLE_SELECT}&tone=neq.exclude&${dates}&order=pub_date.desc.nullslast,article_hash.asc&limit=${limit}&offset=${offset}`,
+    { method: "GET" },
+  );
+  if (!result.ok || !Array.isArray(result.data)) return jsonResponse({ error: "article_range_unavailable" }, 502);
+  return jsonResponse({ ok: true, articles: result.data, next_offset: result.data.length === limit ? offset + limit : null });
 }
 
 async function handleSnapshot(payload: Record<string, unknown>, authenticated = false) {
