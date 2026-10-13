@@ -22,6 +22,7 @@ import analyzer
 import report_window
 import supabase_store
 import publisher_identity
+import article_body
 from article_quality import is_non_article_result, is_media_url
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -652,6 +653,7 @@ def fetch_trade_press_rss_articles(source: dict, limit: int) -> list[dict]:
                     "description": description[:600],
                     "body": body[:5000],
                     "content": body[:5000],
+                    "_body_scope": article_body.body_scope(body[:5000], "official_rss", link),
                     "author": clean_html(entry.get("author") or entry.get("dc_creator") or ""),
                     "pub_date": format_pub_date(published) if published else published_raw,
                     "source": source.get("name", "보험전문지"),
@@ -675,10 +677,10 @@ def extract_rss_entry_content(entry: dict) -> str:
     if isinstance(values, list):
         for item in values:
             if isinstance(item, dict) and item.get("value"):
-                return clean_html(item.get("value", ""))
+                return article_body.sanitize_rss_body(item.get("value", ""))
             value = getattr(item, "value", "")
             if value:
-                return clean_html(value)
+                return article_body.sanitize_rss_body(value)
     return ""
 
 
@@ -818,7 +820,8 @@ def fetch_trade_press_article(source: dict, url: str) -> dict | None:
     link = final_url or url
     title = extract_article_title_from_html(html)
     description = extract_article_description_from_html(html)
-    body = extract_article_body_from_html(html)
+    extraction = article_body.extract_article_body(html)
+    body = extraction["body"]
     published = parse_article_date_from_html(html) or parse_korean_datetime_from_html(html)
     if not title:
         return None
@@ -830,6 +833,7 @@ def fetch_trade_press_article(source: dict, url: str) -> dict | None:
         "description": description,
         "body": body[:5000],
         "content": body[:5000],
+        "_body_scope": article_body.body_scope(body[:5000], extraction["method"], final_url or url),
         "pub_date": format_pub_date(published) if published else "",
         "source": source.get("name", "보험전문지"),
         "keyword": "보험",
@@ -946,10 +950,14 @@ def enrich_sensitive_article_bodies(articles: list[dict]) -> None:
     for article in articles:
         if enriched >= limit:
             return
-        if article.get("content") or article.get("body"):
+        revalidation = bool(article.get("_body_revalidation_required"))
+        if (article.get("content") or article.get("body")) and (not revalidation or article_body.verified_body(article)):
             continue
-        if not should_enrich_article_body(article):
+        if not revalidation and not should_enrich_article_body(article):
             continue
+        if revalidation:
+            article.pop("body", None)
+            article.pop("content", None)
 
         enriched += 1
         html, final_url = fetch_article_html(article.get("link", ""), timeout=6)
@@ -968,11 +976,14 @@ def enrich_sensitive_article_bodies(articles: list[dict]) -> None:
                 source_url = article["_original_url"]
 
         publisher_identity.enrich_from_html(article, source_html, source_url)
-        body = extract_article_body_from_html(source_html)
+        extraction = article_body.extract_article_body(source_html)
+        body = extraction["body"]
         if not body:
             continue
         article["content"] = body[:5000]
         article["body"] = body[:5000]
+        article["_body_scope"] = article_body.body_scope(body[:5000], extraction["method"], source_url)
+        article.pop("_body_revalidation_required", None)
         article["_body_enriched"] = True
 
 
@@ -1008,36 +1019,7 @@ def should_enrich_article_body(article: dict) -> bool:
 
 
 def extract_article_body_from_html(html: str) -> str:
-    if not html:
-        return ""
-    candidates: list[str] = []
-    patterns = [
-        r'<article[^>]+id=["\']article-view-content-div["\'][^>]*>(.*?)</article>',
-        r'<div[^>]+id=["\']article-view-content-div["\'][^>]*>(.*?)</div>\s*</div>',
-        r'<div[^>]+class=["\'][^"\']*(?:article-view-content|article-body|article-veiw-body|view-content|article_cont|article-content|news-article)[^"\']*["\'][^>]*>(.*?)</div>',
-        r'<section[^>]+class=["\'][^"\']*(?:article|news)[^"\']*["\'][^>]*>(.*?)</section>',
-        r'<article[^>]*>(.*?)</article>',
-        r'<div[^>]+itemprop=["\']articleBody["\'][^>]*>(.*?)</div>',
-    ]
-    for pattern in patterns:
-        for match in re.finditer(pattern, html, re.I | re.S):
-            text = clean_html(match.group(1))
-            if len(text) >= 120:
-                candidates.append(text)
-
-    paragraphs = [
-        clean_html(match.group(1))
-        for match in re.finditer(r"<p[^>]*>(.*?)</p>", html, re.I | re.S)
-    ]
-    paragraph_text = " ".join(p for p in paragraphs if len(p) >= 20)
-    if len(paragraph_text) >= 120:
-        candidates.append(paragraph_text)
-
-    if not candidates:
-        return ""
-    body = max(candidates, key=len)
-    body = re.sub(r"\s+", " ", body).strip()
-    return body
+    return article_body.extract_article_body(html)["body"]
 
 
 def parse_article_date_from_html(html: str) -> datetime | None:

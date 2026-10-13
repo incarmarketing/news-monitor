@@ -546,7 +546,7 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
                 "article_hash": row.get("article_hash", ""),
                 "title": row.get("title", ""),
                 "link": row.get("link", ""),
-                "description": row.get("summary", "") or row.get("raw", {}).get("description", ""),
+                "description": (row.get("raw") or {}).get("description", ""),
                 "summary": row.get("summary", ""),
                 "source": row.get("source", ""),
                 "keyword": row.get("keyword", ""),
@@ -568,6 +568,17 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
                 "_ai_context": {**stored_context, **contract_context},
             }
         )
+    for article, row in zip(articles, rows):
+        raw = row.get("raw") or {}
+        article["body"] = raw.get("body") or raw.get("content") or ""
+        article["_body_scope"] = raw.get("_body_scope") or {}
+        if not news_collector.article_body.verified_body(article):
+            article.pop("body", None)
+            # A title with a direct actor/event binding is already original evidence.
+            article["_body_revalidation_required"] = not analyzer.is_direct_own_negative_article(
+                {"title": article["title"], "description": article["description"]})
+    news_collector.enrich_sensitive_article_bodies(
+        [article for article in articles if article.get("_body_revalidation_required")])
     return classification_normalizer.normalize_articles(articles)
 
 

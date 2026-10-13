@@ -21,6 +21,9 @@ on:
     paths:
       - "analyzer.py"
       - "deterministic_risk.py"
+      - "article_body.py"
+      - "news_collector.py"
+      - "tests/test_article_body.py"
       - "supabase_store.py"
       - "tests/test_analyzer.py"
       - "tests/test_source_role_relevance.py"
@@ -68,6 +71,7 @@ jobs:
         run: >-
           python -m unittest
           tests.test_deterministic_risk
+          tests.test_article_body
           tests.test_analyzer
           tests.test_source_role_relevance
           tests.test_classification_maintenance

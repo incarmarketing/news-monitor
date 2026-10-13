@@ -591,6 +591,12 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
         article["_analysis_cache_current_ruleset"] = current_ruleset
         return False
 
+    fresh_scope = article.get("_body_scope") or {}
+    cached_scope = raw.get("_body_scope") or {}
+    if fresh_scope.get("body_sha256") and fresh_scope.get("body_sha256") != cached_scope.get("body_sha256"):
+        article["_analysis_cache_source_mismatch"] = True
+        return False
+
     cached_own_scope = (
         category in {"own", "sponsorship"}
         or row.get("own_mentioned") is True

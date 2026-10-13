@@ -176,13 +176,15 @@ def configure_rules(rows: Iterable[dict[str, Any]] | None) -> None:
     _context_rules = [dict(row) for row in rows or [] if isinstance(row, dict)]
 
 
-def _clean_text(value: object) -> str:
+def _clean_text(value: object, *, preserve_lines: bool = False) -> str:
     text = html.unescape(str(value or ""))
     text = re.sub(r"<[^>]+>", " ", text)
+    if preserve_lines:
+        return "\n".join(line.strip() for line in re.sub(r"[^\S\n]+", " ", text).splitlines() if line.strip())
     return re.sub(r"\s+", " ", text).strip()
 
 
-def source_values(article: dict[str, Any]) -> list[str]:
+def source_values(article: dict[str, Any], *, preserve_lines: bool = False) -> list[str]:
     """Return unique source fields; never include keyword, summary, or AI output."""
     raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
     values: list[str] = []
@@ -197,7 +199,7 @@ def source_values(article: dict[str, Any]) -> list[str]:
         raw.get("content"),
         raw.get("body"),
     ):
-        cleaned = _clean_text(value)
+        cleaned = _clean_text(value, preserve_lines=preserve_lines)
         if cleaned and cleaned not in seen:
             seen.add(cleaned)
             values.append(cleaned)
@@ -211,7 +213,7 @@ def source_text(article: dict[str, Any]) -> str:
 def source_sentences(article: dict[str, Any]) -> list[str]:
     sentences: list[str] = []
     seen: set[str] = set()
-    for value in source_values(article):
+    for value in source_values(article, preserve_lines=True):
         for sentence in re.split(r"(?<=[.!?。！？])\s+|[\r\n]+", value):
             cleaned = _clean_text(sentence)
             if cleaned and cleaned not in seen:

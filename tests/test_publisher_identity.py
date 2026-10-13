@@ -289,7 +289,7 @@ class PublisherIdentityTests(unittest.TestCase):
     def test_reuses_body_fetch_and_preserves_identity_evidence_through_storage(self):
         article = {"source": publishers.UNKNOWN, "source_raw": "new-press.example", "link": "https://new-press.example/1", "title": "보험사기 제재"}
         page = '<meta property="og:site_name" content="새로운매체"><title>보험사기 제재 - 새로운매체</title>'
-        with patch.object(news_collector, "should_enrich_article_body", return_value=True), patch.object(news_collector, "fetch_article_html", return_value=(page, article["link"])) as fetch, patch.object(news_collector, "extract_original_article_url", return_value=""), patch.object(news_collector, "extract_article_body_from_html", return_value="본문은 그대로 보존"):
+        with patch.object(news_collector, "should_enrich_article_body", return_value=True), patch.object(news_collector, "fetch_article_html", return_value=(page, article["link"])) as fetch, patch.object(news_collector, "extract_original_article_url", return_value=""), patch.object(news_collector.article_body, "extract_article_body", return_value={"body": "본문은 그대로 보존", "method": "explicit_body"}):
             news_collector.enrich_sensitive_article_bodies([article])
         fetch.assert_called_once()
         self.assertEqual(article["source"], "새로운매체")

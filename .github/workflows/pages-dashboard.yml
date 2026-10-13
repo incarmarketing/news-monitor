@@ -11,6 +11,8 @@ on:
       - "frontend/**"
       - "dashboard_builder.py"
       - "news_collector.py"
+      - "article_body.py"
+      - "tests/test_article_body.py"
       - "publisher_identity.py"
       - "media_byline.py"
       - "tools/sync_media_registry.py"
@@ -121,6 +123,7 @@ jobs:
           tests.test_source_role_relevance
           tests.test_negative_watch
           tests.test_news_collector
+          tests.test_article_body
           tests.test_article_quality
           tests.test_publisher_identity
           tests.test_headline_display

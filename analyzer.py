@@ -418,7 +418,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v6-subject-2026-09-15-r1"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v7-source-scope-2026-10-13-r1"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:

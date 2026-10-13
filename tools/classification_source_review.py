@@ -2,7 +2,6 @@
 
 import hashlib
 from datetime import datetime, timedelta, timezone
-from html.parser import HTMLParser
 import re
 import time
 from urllib.parse import urljoin, urlparse
@@ -12,6 +11,7 @@ import requests
 
 import analyzer
 import publisher_identity
+import article_body
 from article_quality import is_media_url
 from tools.audit_classification_drift import article_from_row
 from tools import validate_classification_gold as gold
@@ -21,57 +21,19 @@ MAX_RECHECKS = 5
 MAX_SECONDS = 120
 
 
-class ArticleBody(HTMLParser):
+class ArticleBody:
     def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.stack, self.parts, self.titles = [], [], []
-        self.root = None
-        self.title_depth = None
-        self.skip_depth = None
-        self.completed = False
+        self.document = ""
+        self.titles = []
 
-    def handle_starttag(self, tag, attrs):
-        attrs = dict(attrs)
-        if tag in {"meta", "link", "img", "br", "hr", "input", "source", "wbr"}:
-            if tag == "meta" and attrs.get("property") == "og:title":
-                self.titles.append(attrs.get("content", ""))
-            if tag in {"br", "hr"} and self.root is not None:
-                self.parts.append(" ")
-            return
-        self.stack.append(tag)
-        depth = len(self.stack)
-        marker = " ".join(attrs.get(key, "") for key in ("id", "class", "itemprop"))
-        if self.root is None and not self.completed and (tag == "article" or re.search(
-                r"article-view-content-div|articleBody|article[_-](?:body|content)|news[_-]body", marker, re.I)):
-            self.root = depth
-        if tag == "h1" and self.title_depth is None:
-            self.title_depth = depth
-        if self.root is not None and self.skip_depth is None and (
-                tag in {"aside", "nav", "footer", "header", "figure", "figcaption", "script", "style", "form"}
-                or re.search(r"related|copyright|caption|recommend|byline", marker, re.I)):
-            self.skip_depth = depth
-
-    def handle_endtag(self, tag):
-        if tag not in self.stack:
-            return
-        depth = len(self.stack) - self.stack[::-1].index(tag)
-        if self.title_depth is not None and depth <= self.title_depth:
-            self.title_depth = None
-        if self.skip_depth is not None and depth <= self.skip_depth:
-            self.skip_depth = None
-        if self.root is not None and depth <= self.root:
-            self.root, self.completed = None, True
-        self.stack = self.stack[:depth - 1]
-        self.parts.append(" ")
-
-    def handle_data(self, data):
-        if self.title_depth is not None:
-            self.titles.append(data)
-        if self.root is not None and self.skip_depth is None:
-            self.parts.append(data)
+    def feed(self, data):
+        self.document += data
+        parser = article_body.ArticleDocument()
+        parser.feed(self.document)
+        self.titles = parser.titles
 
     def body(self):
-        return re.sub(r"\s+", " ", "".join(self.parts)).strip()
+        return article_body.extract_article_body(self.document, min_length=1)["body"]
 
 
 def fingerprint(row):
