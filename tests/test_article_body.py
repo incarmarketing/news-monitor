@@ -49,6 +49,17 @@ class ArticleScopeTests(unittest.TestCase):
         document = f'<div class="article-body"><p>{BENIGN}</p><article class="relation"><ul><li>{RISK}</li></ul></article></div>'
         self.assertNotIn("인카금융", news_collector.extract_article_body_from_html(document))
 
+    def test_page_form_preserves_real_body_but_embedded_form_is_excluded(self):
+        document = f'<form id="aspnetForm"><div id="ctl00_ContentPlaceHolder1_WebNewsView_ltContentDiv"><p>{BENIGN}</p><p>{RISK}</p><form><p>가짜 {RISK}</p></form></div></form>'
+        body = news_collector.extract_article_body_from_html(document)
+        self.assertIn(RISK, body)
+        self.assertNotIn("가짜", body)
+        self.assertTrue(deterministic_risk.classify({"title": "GA 관련 보도", "body": body})["alert_eligible"])
+
+    def test_news2day_nested_document_stays_in_its_body_scope(self):
+        document = f'<div class="view_con_wrap"><html><body><p>{BENIGN}</p><p>{RISK}</p></body></html></div><aside>{RISK * 10}</aside>'
+        self.assertEqual(news_collector.extract_article_body_from_html(document).count(RISK), 1)
+
     def test_rss_fragment_retains_article_paragraphs_without_widgets(self):
         body = news_collector.extract_rss_entry_content({"content": [{"value": f'<p>{BENIGN}</p><div class="related-news">{RISK}</div><script>{RISK}</script>'}]})
         self.assertIn("행동교정", body)

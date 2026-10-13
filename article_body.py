@@ -11,16 +11,16 @@ import re
 SOURCE_SCOPE_VERSION = "article-body-dom-2026-10-13-v1"
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 BLOCK_TAGS = {"article", "blockquote", "div", "h1", "h2", "h3", "h4", "li", "p", "section", "tr", "ul", "ol"}
-EXCLUDED_TAGS = {"aside", "nav", "footer", "header", "script", "style", "form", "figure", "figcaption", "button", "noscript", "iframe"}
+EXCLUDED_TAGS = {"aside", "nav", "footer", "header", "script", "style", "figure", "figcaption", "button", "noscript", "iframe"}
 EXCLUDED_MARKER = re.compile(
     r"(?:^|[\s_-])(?:related(?:articles?)?|relation|relate|recommend(?:ed|ation)?|popular|ranking|sidebar|"
     r"copyright|share|social|byline|author|reporter|comments?|advert(?:isement)?|ads?|"
     r"photo(?:layout)?|caption|tag(?:s|box)?|auto-article|box-skin)(?:$|[\s_-])", re.I,
 )
-BODY_IDS = {"article-view-content-div", "articlebody", "articlebodycontents", "dic_area", "newsct_article", "arttext", "newsendcontents", "newsbody", "news_body", "article_body", "articlebodycontent", "articlecontent", "contentbody", "readarea"}
+BODY_IDS = {"article-view-content-div", "articlebody", "articlebodycontents", "dic_area", "newsct_article", "arttext", "newsendcontents", "newsbody", "news_body", "article_body", "articlebodycontent", "articlecontent", "contentbody", "readarea", "ctl00_contentplaceholder1_webnewsview_ltcontentdiv"}
 BODY_MARKER = re.compile(
     r"(?:^|\s)(?:article[-_](?:body|content|cont|veiw-body)|article-view-content(?:-div)?|"
-    r"news[-_](?:body|content|article)|view-content|contentbody)(?:$|\s)", re.I,
+    r"news[-_](?:body|content|article)|view-content|view_con_wrap|rns_text|contentbody)(?:$|\s)", re.I,
 )
 
 
@@ -47,7 +47,12 @@ class ArticleDocument(HTMLParser):
         if tag in BLOCK_TAGS and self.stack[-1].tag == "p":
             self.stack.pop()
         marker = " ".join(attrs.get(key, "") for key in ("id", "class", "role"))
+        # ASP.NET pages wrap the whole document in a form; only embedded forms
+        # inside an article are non-editorial widgets.
+        embedded_form = tag == "form" and any(
+            node is ancestor for _, node, _ in self.candidates for ancestor in self.stack)
         excluded = (self.stack[-1].excluded or tag in EXCLUDED_TAGS
+                    or embedded_form
                     or bool(EXCLUDED_MARKER.search(marker)) or attrs.get("aria-hidden") == "true"
                     or "hidden" in attrs)
         node = Node(tag, attrs, excluded=excluded)
