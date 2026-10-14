@@ -5,6 +5,9 @@ import article_body
 import deterministic_risk
 import news_collector
 import negative_watch
+import analyzer
+import supabase_store
+from tools import classification_source_review
 
 
 BENIGN = "보험사가 반려동물 치료비와 행동교정 보장을 확대했습니다. " * 8
@@ -12,6 +15,56 @@ RISK = "금융감독원은 인카금융서비스 소속 설계사의 보험사�
 
 
 class ArticleScopeTests(unittest.TestCase):
+    def test_original_recheck_replaces_all_stale_source_fields(self):
+        title = "보험대리점 상품추천 규제"
+        document = f'<title>{title}</title><div id="article-view-content-div"><p>{BENIGN}</p></div>'
+        row = {"title": title, "link": "https://example.com/article", "raw": {
+            "body": RISK, "content": RISK, "description": RISK, "title": RISK}}
+        with patch.object(classification_source_review, "fetch_document", return_value=(document,row["link"])):
+            result = classification_source_review.inspect(row, {})
+        self.assertEqual(result["status"], "source_verified_review")
+        self.assertFalse(result["proposed"]["own_mentioned"])
+        self.assertFalse(result["proposed"]["alert_eligible"])
+
+    def test_metadata_only_body_evidence_survives_collection_and_save(self):
+        title, link = "보험업계 감독 강화", "https://example.com/article"
+        article = {"title": title, "link": link, "body": RISK, "content": RISK,
+                   "_body_scope": article_body.body_scope(RISK,"explicit_body",link),
+                   "storage_policy": "metadata_only"}
+        analyzer.apply_context_safety_guardrails(article)
+        row = supabase_store.normalize_article(article,{"date":"2026-10-14","window":{},"metrics":{}})
+        self.assertTrue(row["alert_eligible"])
+        self.assertNotIn("body", row["raw"])
+        self.assertEqual(article_body.verified_source_evidence(row), RISK)
+        fresh = {"title": title, "link": link, "description": "보험 업계의 감독 개선 동향입니다."}
+        self.assertTrue(supabase_store.apply_article_analysis_cache(fresh,{row["article_hash"]:row}))
+        analyzer.apply_context_safety_guardrails(fresh)
+        repeated = supabase_store.normalize_article(fresh,{"date":"2026-10-14","window":{},"metrics":{}})
+        self.assertTrue(repeated["alert_eligible"])
+        self.assertTrue(repeated["own_mentioned"])
+        self.assertNotIn("body", repeated["raw"])
+
+    def test_evidence_proof_is_bound_to_article_and_body(self):
+        article = {"title":"GA 동향","link":"https://example.com/a","body":RISK,
+                   "_body_scope":article_body.body_scope(RISK,"explicit_body","https://example.com/a")}
+        proof = article_body.source_evidence_scope(article,RISK)
+        candidate = {"title":article["title"],"link":article["link"],"_source_evidence_scope":proof}
+        self.assertTrue(deterministic_risk.classify(candidate)["alert_eligible"])
+        for changes in ({"title":"다른 기사"},{"link":"https://example.com/b"},
+                        {"_body_scope":article_body.body_scope(BENIGN,"explicit_body",article["link"])},
+                        {"_source_evidence_scope":{**proof,"text":RISK+" altered"}}):
+            with self.subTest(changes=changes):
+                self.assertFalse(deterministic_risk.classify({**candidate,**changes})["alert_eligible"])
+        self.assertIsNone(article_body.source_evidence_scope(article,"인카금융서비스 횡령 사건"))
+        self.assertIsNone(article_body.source_evidence_scope({**article,"_body_scope":{}},RISK))
+
+    def test_metadata_only_storage_also_strips_nested_source_body(self):
+        article = {"title":"보험기사","storage_policy":"metadata_only","body":RISK,
+                   "raw":{"body":RISK,"content":RISK,"description":RISK,"source":"매체"}}
+        stored = supabase_store.storage_safe_article(article)
+        self.assertNotIn("body",stored)
+        self.assertEqual(stored["raw"],{"source":"매체"})
+
     def test_larger_page_paragraphs_never_beat_explicit_body(self):
         document = f'<div id="article-view-content-div"><p>{BENIGN}</p></div><aside><p>{RISK * 20}</p></aside>'
         body = news_collector.extract_article_body_from_html(document)

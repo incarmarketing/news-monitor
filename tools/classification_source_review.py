@@ -65,6 +65,7 @@ def check_robots(url, cache):
 
 
 def inspect(row, cache):
+    import news_collector
     raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
     url = raw.get("_original_url") or row.get("link") or ""
     if not url or is_media_url(url) or publisher_identity.host_of(url) == "news.google.com":
@@ -75,13 +76,16 @@ def inspect(row, cache):
     parser = ArticleBody()
     parser.feed(document)
     tokens = set(re.findall(r"[가-힣A-Za-z0-9]{2,}", row.get("title") or ""))
-    heading = " ".join(parser.titles)
+    heading = news_collector.extract_article_title_from_html(document)
     overlap = sum(token in heading for token in tokens) / max(1, len(tokens))
     body = parser.body()
     if overlap < .6 or len(body) < 120:
         return {"status": "source_unverified"}
-    article = article_from_row(row)
-    article["body"] = body[:16000]
+    extraction = article_body.extract_article_body(document)
+    article = article_body.replace_source_fields(
+        article_from_row(row), title=heading,
+        description=news_collector.extract_article_description_from_html(document),
+        body=body[:16000], method=extraction["method"], source_url=final_url)
     context = gold.classify(article)
     return {"status": "source_verified_review", "evidence_url": final_url,
             "source_excerpt": body[:800], "source_hash": hashlib.sha256(body.encode()).hexdigest(),

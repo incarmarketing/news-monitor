@@ -144,6 +144,26 @@ FALSE_ALERT_CASES = [
 
 
 class DeterministicRiskPrecisionTests(unittest.TestCase):
+    def test_sales_quality_improvement_is_not_consumer_harm(self):
+        for statistic in ("불완전판매비율이 0% 수준으로 나타나 최저권에 이름을 올렸다",
+                          "불완전판매비율이 0.00%를 기록했다", "불완전판매비율이 0.01%로 낮아졌다",
+                          "불완전판매율이 전년보다 감소했다"):
+            with self.subTest(statistic=statistic):
+                decision = deterministic_risk.classify({"title":"GA 판매품질 개선",
+                    "body":"인카금융서비스가 공시상 " + statistic + "."})
+                self.assertFalse(decision["alert_eligible"])
+                self.assertEqual(decision["suggested_tone"], "neutral")
+                context = analyzer.apply_context_safety_guardrails({"title":"GA 판매품질 개선",
+                    "body":"인카금융서비스가 공시상 " + statistic + "."})
+                self.assertEqual(context["tone"], "neutral")
+
+    def test_improving_statistic_does_not_hide_independent_incident(self):
+        for body in ("인카금융서비스의 불완전판매비율은 0%지만 보험사기 제재로 과태료를 받았다.",
+                     "인카금융서비스의 불완전판매비율은 0%로 낮아졌다. 인카금융서비스 설계사가 보험사기로 기소됐다.",
+                     "인카금융서비스의 불완전판매비율이 급증해 소비자 피해가 발생했다."):
+            with self.subTest(body=body):
+                self.assertTrue(deterministic_risk.classify({"title":"GA 동향","body":body})["alert_eligible"])
+
     def tearDown(self) -> None:
         deterministic_risk.configure_rules([])
         analyzer.configure_context_rules([])

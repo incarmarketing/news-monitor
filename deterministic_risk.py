@@ -12,6 +12,8 @@ import html
 import re
 from typing import Any, Iterable
 
+import article_body
+
 
 OWN_PATTERN = re.compile(
     r"(?:인카금융서비스|인카금융|(?<![0-9A-Za-z가-힣])인카(?![0-9A-Za-z가-힣]))",
@@ -192,6 +194,7 @@ def source_values(article: dict[str, Any], *, preserve_lines: bool = False) -> l
     for value in (
         article.get("title"),
         article.get("description"),
+        article_body.verified_source_evidence(article),
         article.get("content"),
         article.get("body"),
         raw.get("title"),
@@ -297,6 +300,9 @@ def _positive_document_override(article: dict[str, Any]) -> tuple[str, str] | No
         return None
     if ROUTINE_STATISTICS_PATTERN.search(text) and not POSITIVE_RISK_EXCEPTION_PATTERN.search(title):
         return "routine_statistics", "neutral"
+    if any(OWN_PATTERN.search(sentence) and _is_improving_sales_quality(sentence)
+           for sentence in source_sentences(article)):
+        return "routine_statistics", "neutral"
     if BRAND_REPUTATION_PATTERN.search(text) and BRAND_FIRST_PATTERN.search(text):
         return "brand_reputation", "positive"
     if (
@@ -367,6 +373,11 @@ def _is_peer_list(sentence: str) -> bool:
 
 
 def _event_in_sentence(sentence: str) -> tuple[str, str, re.Match[str]] | None:
+    # A zero/improving rate is a quality statistic, not a newly harmed customer.
+    # Only skip the statistical term: independent incidents in this sentence
+    # or elsewhere still pass through the normal event binding checks.
+    if _is_improving_sales_quality(sentence):
+        sentence = re.sub(r"불완전\s*판매(?:\s*(?:비율|율|률))?", "판매품질지표", sentence)
     for rule in sorted(_context_rules, key=lambda item: int(item.get("priority") or 100)):
         if str(rule.get("decision") or "") != "alert_direct_own_risk":
             continue
@@ -402,6 +413,17 @@ def _event_in_sentence(sentence: str) -> tuple[str, str, re.Match[str]] | None:
         if match:
             return event_type, rule_key, match
     return None
+
+
+def _is_improving_sales_quality(sentence: str) -> bool:
+    metric = re.search(r"불완전\s*판매\s*(?:비율|율|률)|불판율", sentence)
+    if not metric:
+        return False
+    # Do not let '개선' hide an actual incident, penalty, or worsening rate.
+    if re.search(r"피해|사기|제재|처분|과태료|과징금|적발|위반|기소|구속|소송|급증|악화", sentence):
+        return False
+    tail = sentence[metric.end():metric.end() + 100]
+    return bool(re.search(r"(?<![\d.])0(?:\.0+)?\s*%|감소|하락|낮아|낮은|낮게|최저|개선", tail))
 
 
 def _is_historical_one_off_performance_disclosure(
@@ -539,6 +561,9 @@ def classify(article: dict[str, Any]) -> dict[str, Any]:
     if positive_override:
         document_type, tone = positive_override
         matched_rule_keys = [f"guardrail_{document_type}"]
+        if any(OWN_PATTERN.search(sentence) and _is_improving_sales_quality(sentence)
+               for sentence in sentences):
+            matched_rule_keys.append("guardrail_sales_quality_improvement")
         if historical_disclosure_suppressed:
             matched_rule_keys.append("guardrail_historical_one_off_performance_disclosure")
         base.update(

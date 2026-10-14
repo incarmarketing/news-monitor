@@ -6,6 +6,16 @@ import regulator_collector
 
 
 class RegulatorCollectorTests(unittest.TestCase):
+    def test_official_post_identity_ignores_changing_list_query(self):
+        fss = "https://www.fss.or.kr/fss/bbs/B0000188/view.do?nttId=228833&menuNo=200218"
+        for tail in ("&pageIndex=1", "&pageIndex=6&searchCnd=all", "&srchEndDt=2026-10-14"):
+            self.assertEqual(regulator_collector.canonical_release_url(fss+tail),fss)
+        fsc = "https://www.fsc.go.kr/no010101/87572"
+        self.assertEqual(regulator_collector.canonical_release_url(fsc+"?curPage=8&srchEndDt=2026-10-14"),fsc)
+        self.assertNotEqual(regulator_collector.canonical_release_url(fss.replace("228833","228834")),fss)
+        unrelated = "https://example.com/article?idxno=12&pageIndex=1"
+        self.assertEqual(regulator_collector.canonical_release_url(unrelated),unrelated)
+
     def test_keeps_insurance_related_regulator_release(self) -> None:
         self.assertTrue(
             regulator_collector.is_relevant_release(

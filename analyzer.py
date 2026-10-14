@@ -418,7 +418,7 @@ DIRECT_ALERT_RISK_EVENTS = {
     "reputational",
 }
 CONTEXT_RULES: list[dict] = []
-CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v7-source-scope-2026-10-13-r1"
+CLASSIFICATION_RULESET_BASE_VERSION = "classification-contract-v8-source-evidence-2026-10-14-r1"
 
 
 def configure_context_rules(rows: list[dict] | None) -> None:
@@ -563,6 +563,7 @@ def article_context_text(article: dict, limit: int = 1800) -> str:
     parts = [
         article.get("title", ""),
         article.get("description", ""),
+        deterministic_risk.article_body.verified_source_evidence(article),
         article.get("content", ""),
         article.get("body", ""),
         article.get("summary", ""),
@@ -579,6 +580,7 @@ def original_article_text(article: dict, limit: int = 12000) -> str:
     parts = [
         article.get("title", ""),
         article.get("description", ""),
+        deterministic_risk.article_body.verified_source_evidence(article),
         article.get("content", ""),
         article.get("body", ""),
         raw.get("title", ""),
@@ -1189,6 +1191,13 @@ def apply_context_safety_guardrails(article: dict, context: dict | None = None) 
 
     if is_own_direct_negative_article(article):
         force_own_direct_negative_context()
+
+    quality_decision = deterministic_risk.classify(article)
+    if (not article.get("_feedback_applied") and not quality_decision["alert_eligible"]
+            and "guardrail_sales_quality_improvement" in quality_decision["matched_rule_keys"]):
+        result.update(tone="neutral", negative_target="none", clipping_recommended=False,
+                      clipping_reason="", provider="rules:sales-quality-statistics-v1",
+                      reason="불완전판매비율 0%·감소·최저권은 판매품질 개선 지표이며 피해 발생과 구분합니다.")
 
     if result["tone"] == "positive" and result["category"] != "own":
         result["tone"] = "neutral"
@@ -2369,6 +2378,8 @@ def analyze_tone(article: dict) -> str:
         return "neutral"
     if is_own_direct_negative_article(article):
         return "negative"
+    if "guardrail_sales_quality_improvement" in deterministic_risk.classify(article)["matched_rule_keys"]:
+        return "neutral"
     if is_own_sales_performance_positive_article(article):
         return "positive"
     if is_own_brand_reputation_leader_article(article):
@@ -2735,6 +2746,7 @@ def has_own_evidence(article: dict) -> bool:
         for value in (
             article.get("title", ""),
             article.get("description", ""),
+            deterministic_risk.article_body.verified_source_evidence(article),
             article.get("content", ""),
             article.get("body", ""),
             raw.get("title", ""),

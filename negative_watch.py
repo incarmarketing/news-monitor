@@ -572,11 +572,13 @@ def collect_recent_db_negatives(minutes_back: int) -> list[dict]:
         raw = row.get("raw") or {}
         article["body"] = raw.get("body") or raw.get("content") or ""
         article["_body_scope"] = raw.get("_body_scope") or {}
+        article["_source_evidence_scope"] = raw.get("_source_evidence_scope") or {}
         if not news_collector.article_body.verified_body(article):
             article.pop("body", None)
             # A title with a direct actor/event binding is already original evidence.
             article["_body_revalidation_required"] = not analyzer.is_direct_own_negative_article(
-                {"title": article["title"], "description": article["description"]})
+                {"title": article["title"], "link": article["link"], "description": article["description"],
+                 "_body_scope": article["_body_scope"], "_source_evidence_scope": article["_source_evidence_scope"]})
     news_collector.enrich_sensitive_article_bodies(
         [article for article in articles if article.get("_body_revalidation_required")])
     return classification_normalizer.normalize_articles(articles)
@@ -1097,7 +1099,9 @@ def main() -> None:
 
     state = load_state()
     sent = set(state.get("sent_keys", []))
-    all_negatives = merge_negative_candidates(db_negatives, negatives, alert_state_articles(state))
+    state_articles = alert_state_articles(state)
+    apply_cached_analysis_to_articles(state_articles)
+    all_negatives = merge_negative_candidates(db_negatives, negatives, direct_negative_articles(state_articles))
     persist_negative_articles(all_negatives, metrics, scanned_at, minutes_back)
     new_negatives = filter_unsent_negative_articles(all_negatives, sent)
 

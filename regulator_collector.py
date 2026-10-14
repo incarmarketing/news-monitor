@@ -7,7 +7,7 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit, parse_qs
 
 import requests
 
@@ -225,7 +225,7 @@ def build_release_article(*, source: str, title: str, link: str, dept: str, date
     release_keyword = classify_release_keyword(title, dept)
     return {
         "title": title,
-        "link": link,
+        "link": canonical_release_url(link),
         "description": compact_release_description(dept, release_keyword),
         "pub_date": format_datetime(pub_date),
         "source": source,
@@ -310,12 +310,27 @@ def deduplicate_releases(rows: list[dict]) -> list[dict]:
     seen: set[str] = set()
     unique: list[dict] = []
     for row in rows:
-        key = row.get("link") or row.get("title")
+        key = canonical_release_url(row.get("link") or "") or row.get("title")
         if not key or key in seen:
             continue
         seen.add(key)
         unique.append(row)
     return unique
+
+
+def canonical_release_url(link: str) -> str:
+    """Preserve the official post identity, omit changing list/search state."""
+    parsed = urlsplit(str(link or ""))
+    host = (parsed.hostname or "").lower().removeprefix("www.")
+    query = parse_qs(parsed.query)
+    if host == "fss.or.kr" and parsed.path == "/fss/bbs/B0000188/view.do" and query.get("nttId"):
+        identity = query["nttId"][0]
+        if identity.isdigit():
+            return urlunsplit(("https", "www.fss.or.kr", parsed.path,
+                               urlencode({"nttId": identity, "menuNo": "200218"}), ""))
+    if host == "fsc.go.kr" and re.fullmatch(r"/no01010[1-3]/\d+", parsed.path):
+        return urlunsplit(("https", "www.fsc.go.kr", parsed.path, "", ""))
+    return link
 
 
 def first_match(text: str, pattern: str) -> str:

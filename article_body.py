@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import hashlib
+import html
 from html.parser import HTMLParser
 import re
 
@@ -124,6 +125,61 @@ def body_scope(body, method, source_url):
 def verified_body(article):
     scope = article.get("_body_scope") or {}
     body = str(article.get("body") or article.get("content") or "")
-    return bool(body and scope.get("version") == SOURCE_SCOPE_VERSION
+    return bool(body and isinstance(scope, dict) and scope.get("version") == SOURCE_SCOPE_VERSION
                 and scope.get("method") in {"explicit_body", "article_element", "official_rss"}
                 and scope.get("body_sha256") == hashlib.sha256(body.encode("utf-8")).hexdigest())
+
+
+def replace_source_fields(article, *, title, description, body, method, source_url):
+    """Replace source text together; never mix a new body with old raw text."""
+    updated = dict(article)
+    raw = dict(article.get("raw") or {})
+    for target in (updated, raw):
+        for key in ("title", "description", "body", "content", "_body_scope",
+                    "_source_evidence_scope", "_ai_context", "ai_context"):
+            target.pop(key, None)
+    fields = {"title": title, "description": description, "body": body, "content": body,
+              "_body_scope": body_scope(body, method, source_url)}
+    updated.update(fields)
+    raw.update(fields)
+    updated["raw"] = raw
+    return updated
+
+
+def source_evidence_scope(article, text):
+    """Keep a bounded, verbatim evidence sentence when full-body storage is off."""
+    text = str(text or "")[:500].strip()
+    body = str(article.get("body") or article.get("content") or "")
+    if not text or not verified_body(article):
+        return None
+    if re.sub(r"\s+", " ", html.unescape(text)) not in re.sub(r"\s+", " ", html.unescape(body)):
+        return None
+    return {"version": "article-source-evidence-2026-10-14-v1", "text": text,
+            "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "title_sha256": hashlib.sha256(str(article.get("title") or "").encode("utf-8")).hexdigest(),
+            "article_link": str(article.get("link") or ""), "body_scope": dict(article["_body_scope"])}
+
+
+def verified_source_evidence(article):
+    raw = article.get("raw") if isinstance(article.get("raw"), dict) else {}
+    proof = article.get("_source_evidence_scope") or raw.get("_source_evidence_scope") or {}
+    if not isinstance(proof, dict):
+        return ""
+    scope = proof.get("body_scope") or {}
+    text = str(proof.get("text") or "")
+    title = str(article.get("title") or raw.get("title") or "")
+    link = str(article.get("link") or raw.get("link") or "")
+    if (not isinstance(scope, dict) or not 0 < len(text) <= 500
+            or proof.get("version") != "article-source-evidence-2026-10-14-v1"
+            or scope.get("version") != SOURCE_SCOPE_VERSION
+            or scope.get("method") not in {"explicit_body", "article_element", "official_rss"}
+            or not re.fullmatch(r"[0-9a-f]{64}", str(scope.get("body_sha256") or ""))
+            or not link or proof.get("article_link") != link
+            or proof.get("title_sha256") != hashlib.sha256(title.encode("utf-8")).hexdigest()
+            or proof.get("text_sha256") != hashlib.sha256(text.encode("utf-8")).hexdigest()):
+        return ""
+    current_scope = article.get("_body_scope") or raw.get("_body_scope") or {}
+    if current_scope and (not isinstance(current_scope, dict)
+                          or current_scope.get("body_sha256") != scope.get("body_sha256")):
+        return ""
+    return text

@@ -15,6 +15,7 @@ import requests
 from dotenv import load_dotenv
 
 import analyzer
+import article_body
 import publisher_identity
 
 load_dotenv()
@@ -551,6 +552,17 @@ def apply_article_analysis_cache(article: dict, cache_index: dict[str, dict]) ->
         return False
 
     raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+    # Reuse original evidence, not the cached verdict. Metadata-only sources
+    # keep a bounded verified sentence; full bodies remain subject to policy.
+    if not (article.get("body") or article.get("content")):
+        if article_body.verified_body(raw):
+            article.update(article_body.replace_source_fields(
+                article, title=article.get("title", ""), description=article.get("description", ""),
+                body=raw.get("body") or raw.get("content"), method=raw["_body_scope"]["method"],
+                source_url=raw["_body_scope"]["source_url"]))
+        proof_article = {**article, "_source_evidence_scope": raw.get("_source_evidence_scope")}
+        if article_body.verified_source_evidence(proof_article):
+            article["_source_evidence_scope"] = dict(raw["_source_evidence_scope"])
     # Publisher evidence survives classification-rule changes and is reused
     # from the same fetched row, without another lookup or page request.
     if publisher_identity.resolve_publisher(article)["name"] == publisher_identity.UNKNOWN:
@@ -1200,6 +1212,18 @@ def article_risk_level(article: dict, metrics: dict | None = None) -> str:
 
 
 def normalize_article(article: dict, archive_payload: dict) -> dict:
+    if article_body.verified_body(article):
+        decision = analyzer.deterministic_risk.classify(article)
+        evidence = decision.get("evidence") or next(
+            (s for s in analyzer.deterministic_risk.source_sentences(article)
+             if analyzer.deterministic_risk.OWN_PATTERN.search(s)), "")
+        proof = article_body.source_evidence_scope(article, evidence)
+        if not proof:
+            body_decision = analyzer.deterministic_risk.classify({"body":article.get("body") or article.get("content")})
+            proof = article_body.source_evidence_scope(article, body_decision.get("evidence"))
+        article.pop("_source_evidence_scope", None)
+        if proof:
+            article["_source_evidence_scope"] = proof
     identity_article = publisher_identity.normalize_article(article)
     window = archive_payload.get("window", {})
     metrics = archive_payload.get("metrics", {})
@@ -1253,7 +1277,7 @@ def storage_safe_article(article: dict) -> dict:
     raw = dict(article)
     if str(article.get("storage_policy") or "").strip() != "metadata_only":
         return raw
-    for field in (
+    text_fields = (
         "body",
         "content",
         "description",
@@ -1261,8 +1285,11 @@ def storage_safe_article(article: dict) -> dict:
         "article_text",
         "full_text",
         "html",
-    ):
+    )
+    for field in text_fields:
         raw.pop(field, None)
+    if isinstance(raw.get("raw"), dict):
+        raw["raw"] = {key: value for key, value in raw["raw"].items() if key not in text_fields}
     raw["storage_policy"] = "metadata_only"
     return raw
 
