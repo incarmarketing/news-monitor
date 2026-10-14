@@ -39,3 +39,14 @@ unchanged. No correction announcement is sent.
 
 Any additional delivery must use the existing Slack destination and duplicate
 checks. Historical QA corrections are not automatically treated as new incidents.
+
+## Explicit missed-alert recovery
+
+The manual `reviewed-alert-recovery.yml` workflow defaults to a non-sending check.
+It requires an applied review ledger and at most six explicit article IDs.
+Before sending, it checks current identity/classification, the reviewed source
+evidence, and successful current/legacy Slack notification identities. Only
+reviewed articles aged 1-14 days are eligible; the ordinary watch window does not
+change. The message includes the original publication date and identifies a past
+article. A persistent atomic delivery claim prevents blind retries after uncertain
+Slack/network results. No briefing resend, correction notice, or AI call occurs.

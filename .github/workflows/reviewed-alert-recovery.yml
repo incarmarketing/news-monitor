@@ -1,0 +1,50 @@
+name: Reviewed Alert Recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      review_id:
+        description: "Applied original-source QA ledger ID"
+        required: true
+        type: string
+      article_ids:
+        description: "Up to six reviewed article IDs, comma-separated"
+        required: true
+        type: string
+      send:
+        description: "Send only verified unsent historical negative alerts"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reviewed-alert-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
+      - name: Recover reviewed unsent alerts
+        env:
+          REVIEW_ID: ${{ inputs.review_id }}
+          ARTICLE_IDS: ${{ inputs.article_ids }}
+          SEND: ${{ inputs.send }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLACK_ALERT_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AI_CONTEXT_ENABLED: "false"
+          AI_CONTEXT_CLASSIFICATION: "rules"
+        run: |
+          args=(--review-id "$REVIEW_ID" --article-ids "$ARTICLE_IDS")
+          if [ "$SEND" = "true" ]; then args+=(--send); fi
+          python tools/send_reviewed_alerts.py "${args[@]}"
