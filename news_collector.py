@@ -1014,8 +1014,15 @@ def should_enrich_article_body(article: dict) -> bool:
         text,
         re.I,
     )
+    # These are body-review triggers, not grounds for a negative alert.
+    # A market-related headline can still report actual misconduct in its body.
+    adverse_practice_signal = re.search(
+        r"국감|국정감사|질타|환수|채권\s*추심|불공정\s*계약|"
+        r"형사\s*사건|기소|구속|고발|명의\s*도용|정착\s*지원금",
+        text, re.I,
+    )
     security_signal = re.search(r"(?:보안|정보\s*보호|해킹).{0,40}(?:인력|투자|부족|위협|사각지대|취약)", text, re.I)
-    return bool(own_or_ga_signal and (risk_signal or security_signal))
+    return bool(own_or_ga_signal and (risk_signal or adverse_practice_signal or security_signal))
 
 
 def extract_article_body_from_html(html: str) -> str:

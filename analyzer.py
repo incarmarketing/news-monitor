@@ -738,6 +738,17 @@ def apply_classification_contract(article: dict, context: dict) -> dict:
     """Enforce alert gates and downgrade stale/ambiguous direct-negative labels."""
     result = dict(context or {})
     contract = build_classification_contract(article, result)
+    # A confirmed source event must not coexist with sponsorship/market labels.
+    # All early-return branches pass here; explicit operator feedback still wins.
+    if contract["alert_eligible"] and not article.get("_feedback_applied"):
+        decision = deterministic_risk.classify(article)
+        result.update(category="own", tone="negative", own_mentioned=True,
+                      negative_target="own", evidence=decision["evidence"],
+                      confidence=decision["confidence"], clipping_recommended=True,
+                      clipping_reason="당사 직접 리스크로 사실관계와 대응 필요성을 우선 확인할 기사입니다.")
+        if not str(result.get("provider") or "").startswith(("groq:", "gemini:")):
+            result["provider"] = "rules:deterministic-risk-v1"
+        contract = build_classification_contract(article, result)
     direct_negative_shape = (
         result.get("category") == "own"
         and result.get("tone") == "negative"

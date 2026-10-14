@@ -50,3 +50,23 @@ reviewed articles aged 1-14 days are eligible; the ordinary watch window does no
 change. The message includes the original publication date and identifies a past
 article. A persistent atomic delivery claim prevents blind retries after uncertain
 Slack/network results. No briefing resend, correction notice, or AI call occurs.
+
+## Greened false-negative follow-up (351992)
+
+The article was collected at 09:30 KST, but the original-body fetch gate omitted
+audit/clawback/criticism terms. Its title/snippet alone yielded `market_caution`.
+The verified body establishes a company-specific clawback controversy and sanctions.
+Full-pipeline replay also exposed a sponsorship early return caused by a sports
+marketing paragraph in the same article.
+
+- Expand only the bounded original-body review gate for audit, clawback, unfair
+  contract, and criminal-case signals. These signals do not themselves alert.
+- At the shared final contract, an existing source-backed direct-risk decision
+  must produce coherent own/negative labels, even after a sponsorship or market
+  branch. Operator suppression and source-only event requirements stay intact.
+- No contract schema change or broad cache invalidation is needed: fresh body
+  hashes already invalidate old source-less verdicts; cached analyses also pass
+  through the final safety contract.
+- Regression coverage includes ordinary sponsorship, pure share-price articles,
+  audit attendance, sidebar contamination, operator suppression, and three cache
+  round trips. Existing 65 original-source cases/28 true alerts are preserved.
