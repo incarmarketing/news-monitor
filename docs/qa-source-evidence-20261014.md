@@ -15,6 +15,8 @@ Original-source checks: 72 attempted, 65 verified, seven unverified.
   Metadata-only sources still do not persist their full body or description.
 - Reuse verified source evidence before checking cached classifications; stale
   verdicts are recalculated under the current ruleset.
+- Prefer current verified DB source evidence over unverified text in older
+  archive files during a manual archive re-sync.
 - Rehydrate historical alert-state rows using verified DB evidence and filter
   them through the current direct-risk contract before persisting them again.
 - Canonicalize only recognized FSS/FSC post URLs. Keep post identifiers and omit

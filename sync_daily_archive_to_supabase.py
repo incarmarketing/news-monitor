@@ -13,6 +13,7 @@ from pathlib import Path
 
 import supabase_store
 import analyzer
+import article_body
 
 BASE_DIR = Path(__file__).parent
 ARCHIVE_DIR = BASE_DIR / "data" / "daily"
@@ -56,7 +57,23 @@ def sync_file(path: Path) -> bool:
 
 def reclassify_articles(articles: list[dict]) -> None:
     """Refresh stored category/tone before repairing Supabase rows."""
+    cache = supabase_store.load_article_analysis_cache(articles)
     for article in articles:
+        row = cache.get(supabase_store.article_hash(article)) or {}
+        raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+        if not article_body.verified_body(article) and row.get("title") == article.get("title"):
+            if article_body.verified_body(raw):
+                article.update(article_body.replace_source_fields(
+                    article, title=article["title"], description=raw.get("description", ""),
+                    body=raw.get("body") or raw.get("content"), method=raw["_body_scope"]["method"],
+                    source_url=raw["_body_scope"]["source_url"]))
+            elif article_body.verified_source_evidence(row):
+                article.update(article_body.replace_source_fields(
+                    article, title=article["title"], description="", body="", method="unverified",
+                    source_url=article["link"]))
+                article["_source_evidence_scope"] = dict(raw["_source_evidence_scope"])
+                article["_body_scope"] = dict(raw["_source_evidence_scope"]["body_scope"])
+                article["raw"]["_body_scope"] = article["_body_scope"]
         article["_category"] = analyzer.categorize(article)
         article["_tone"] = analyzer.analyze_tone(article)
         analyzer.apply_context_safety_guardrails(article)

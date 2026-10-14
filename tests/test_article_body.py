@@ -7,6 +7,7 @@ import news_collector
 import negative_watch
 import analyzer
 import supabase_store
+import sync_daily_archive_to_supabase
 from tools import classification_source_review
 
 
@@ -64,6 +65,28 @@ class ArticleScopeTests(unittest.TestCase):
         stored = supabase_store.storage_safe_article(article)
         self.assertNotIn("body",stored)
         self.assertEqual(stored["raw"],{"source":"매체"})
+
+    def test_old_archive_cannot_reintroduce_disproved_company_mention(self):
+        title, link = "보험대리점 상품추천", "https://example.com/a"
+        row = {"title":title,"link":link,"raw":{"body":BENIGN,
+               "_body_scope":article_body.body_scope(BENIGN,"explicit_body",link)}}
+        archived = {"title":title,"link":link,"body":RISK,"content":RISK,"raw":{"body":RISK}}
+        with patch.object(supabase_store,"load_article_analysis_cache",return_value={supabase_store.article_hash(archived):row}):
+            sync_daily_archive_to_supabase.reclassify_articles([archived])
+        self.assertFalse(archived["alert_eligible"])
+        self.assertFalse(analyzer.has_own_evidence(archived))
+
+    def test_old_archive_reuses_metadata_only_verified_risk_sentence(self):
+        title, link = "보험업계 감독 강화", "https://example.com/a"
+        original = {"title":title,"link":link,"body":RISK,
+                    "_body_scope":article_body.body_scope(RISK,"explicit_body",link)}
+        proof=article_body.source_evidence_scope(original,RISK)
+        row={"title":title,"link":link,"raw":{"_source_evidence_scope":proof}}
+        archived={"title":title,"link":link,"body":BENIGN,"raw":{"body":BENIGN},"storage_policy":"metadata_only"}
+        with patch.object(supabase_store,"load_article_analysis_cache",return_value={supabase_store.article_hash(archived):row}):
+            sync_daily_archive_to_supabase.reclassify_articles([archived])
+        self.assertTrue(archived["alert_eligible"])
+        self.assertNotIn("body",supabase_store.storage_safe_article(archived))
 
     def test_larger_page_paragraphs_never_beat_explicit_body(self):
         document = f'<div id="article-view-content-div"><p>{BENIGN}</p></div><aside><p>{RISK * 20}</p></aside>'
