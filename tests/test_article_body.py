@@ -88,6 +88,16 @@ class ArticleScopeTests(unittest.TestCase):
         self.assertTrue(archived["alert_eligible"])
         self.assertNotIn("body",supabase_store.storage_safe_article(archived))
 
+    def test_alert_state_never_rewrites_existing_verified_article(self):
+        alert={"title":"인카금융서비스 보험사기 제재","link":"https://example.com/a","sent_at":"2026-10-08T12:00:00+09:00"}
+        key=supabase_store.article_hash(alert)
+        with patch.object(negative_watch,"load_article_analysis_cache",return_value={key:{"title":alert["title"]}}):
+            self.assertEqual(negative_watch.recover_missing_alert_state_articles({"alerts":[alert]}),[])
+        with patch.object(negative_watch,"load_article_analysis_cache",return_value={}):
+            self.assertEqual(len(negative_watch.recover_missing_alert_state_articles({"alerts":[alert]})),1)
+        with patch.object(negative_watch,"load_article_analysis_cache",side_effect=RuntimeError("timeout")):
+            self.assertEqual(negative_watch.recover_missing_alert_state_articles({"alerts":[alert]}),[])
+
     def test_larger_page_paragraphs_never_beat_explicit_body(self):
         document = f'<div id="article-view-content-div"><p>{BENIGN}</p></div><aside><p>{RISK * 20}</p></aside>'
         body = news_collector.extract_article_body_from_html(document)

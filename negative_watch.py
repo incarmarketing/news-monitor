@@ -30,6 +30,7 @@ from supabase_store import (
     article_alert_identity,
     article_hash as supabase_article_hash,
     load_article_observation_index,
+    load_article_analysis_cache,
     load_latest_negative_watch_run,
     load_recent_negative_articles,
     notification_already_sent,
@@ -661,6 +662,20 @@ def alert_state_articles(state: dict, limit: int = 30) -> list[dict]:
     return rows
 
 
+def recover_missing_alert_state_articles(state: dict) -> list[dict]:
+    """Recover legacy missing rows, never rewrite existing articles from state."""
+    articles = alert_state_articles(state)
+    if not articles:
+        return []
+    try:
+        cache = load_article_analysis_cache(articles, strict=True)
+    except Exception as error:
+        print(f"Legacy alert recovery deferred: {type(error).__name__}")
+        return []
+    missing = [article for article in articles if supabase_article_hash(article) not in cache]
+    return direct_negative_articles(missing)
+
+
 def compact(text: str, limit: int) -> str:
     cleaned = re.sub(r"\s+", " ", text or "").strip()
     return cleaned if len(cleaned) <= limit else cleaned[: limit - 1].rstrip() + "…"
@@ -1099,9 +1114,7 @@ def main() -> None:
 
     state = load_state()
     sent = set(state.get("sent_keys", []))
-    state_articles = alert_state_articles(state)
-    apply_cached_analysis_to_articles(state_articles)
-    all_negatives = merge_negative_candidates(db_negatives, negatives, direct_negative_articles(state_articles))
+    all_negatives = merge_negative_candidates(db_negatives, negatives, recover_missing_alert_state_articles(state))
     persist_negative_articles(all_negatives, metrics, scanned_at, minutes_back)
     new_negatives = filter_unsent_negative_articles(all_negatives, sent)
 

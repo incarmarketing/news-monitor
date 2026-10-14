@@ -17,8 +17,9 @@ Original-source checks: 72 attempted, 65 verified, seven unverified.
   verdicts are recalculated under the current ruleset.
 - Prefer current verified DB source evidence over unverified text in older
   archive files during a manual archive re-sync.
-- Rehydrate historical alert-state rows using verified DB evidence and filter
-  them through the current direct-risk contract before persisting them again.
+- Historical alert state only recovers missing DB rows. Existing rows must not
+  be rewritten from a title-only state record. A failed lookup defers recovery;
+  current RSS/DB risk detection is unaffected.
 - Canonicalize only recognized FSS/FSC post URLs. Keep post identifiers and omit
   variable pagination/search parameters; unrelated article URLs are unchanged.
 

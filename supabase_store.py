@@ -478,7 +478,7 @@ def apply_classification_feedback_to_articles(
     return applied
 
 
-def load_article_analysis_cache(articles: list[dict], batch_size: int = 80) -> dict[str, dict]:
+def load_article_analysis_cache(articles: list[dict], batch_size: int = 80, *, strict: bool = False) -> dict[str, dict]:
     """Return existing article analysis keyed by article_hash.
 
     This keeps scheduled jobs light: previously analyzed articles reuse stored
@@ -529,9 +529,13 @@ def load_article_analysis_cache(articles: list[dict], batch_size: int = 80) -> d
                     "&order=created_at.desc",
                 ).json()
             except Exception as fallback_error:
+                if strict:
+                    raise RuntimeError("article_cache_lookup_failed") from fallback_error
                 print(f"Supabase article analysis cache skipped: {error}; fallback: {fallback_error}")
                 continue
         if not isinstance(rows, list):
+            if strict:
+                raise RuntimeError("invalid_article_cache_response")
             continue
         for row in rows:
             key = str(row.get("article_hash") or "").strip()
