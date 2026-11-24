@@ -1,4 +1,4 @@
-.classification-audit { color: var(--text, #17232c); font-size: 14px; min-width: 0; }
+.classification-audit { color: var(--ink); font-size: 14px; min-width: 0; }
 .classification-audit h2, .classification-audit h3, .classification-audit p { margin: 0; }
 .classification-audit h2 { display: flex; align-items: center; gap: 8px; font-size: 18px; }
 .classification-audit h3 { font-size: 16px; }
@@ -32,6 +32,6 @@
 .audit-decision { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .audit-modes { display: flex; flex-wrap: wrap; gap: 0; }
 .audit-modes button { padding: 6px 14px; }
-.audit-modes button[aria-pressed="true"] { background: #e5f0fa; color: #13559b; border-color: #6295c4; }
+.audit-modes button[aria-pressed="true"] { background: var(--accent); color: var(--ink); border-color: var(--line); }
 .audit-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 14px 0; }
 @media (max-width: 800px) { .audit-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .audit-quality { grid-template-columns: 1fr; } .audit-toolbar label { margin-left: 0; flex-wrap: wrap; } }

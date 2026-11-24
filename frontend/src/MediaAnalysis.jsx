@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Activity, Building2, Gauge, LineChart, Newspaper } from "lucide-react";
+import { Building2, Check, Download, Newspaper } from "lucide-react";
+import { monitoringCsv } from "./monitoringPresentation.js";
 
 let mediaHelpers = {};
 
@@ -17,11 +18,8 @@ function HelperComponent({ name, fallback: Fallback = "div", props = {}, childre
   return <Component {...componentProps}>{resolvedChildren}</Component>;
 }
 
-function PageTitle(props) { return <HelperComponent name="PageTitle" props={props} />; }
 function Panel(props) { return <HelperComponent name="Panel" fallback="section" props={props} />; }
 function ToneTrend(props) { return <HelperComponent name="ToneTrend" fallback="div" props={props} />; }
-function CategoryChart(props) { return <HelperComponent name="CategoryChart" fallback="div" props={props} />; }
-function KeywordBrief(props) { return <HelperComponent name="KeywordBrief" fallback="div" props={props} />; }
 function InsightList(props) { return <HelperComponent name="InsightList" fallback="div" props={props} />; }
 function PressInfluence(props) { return <HelperComponent name="PressInfluence" fallback="div" props={props} />; }
 function MonthlyIssueDigest(props) { return <HelperComponent name="MonthlyIssueDigest" fallback="div" props={props} />; }
@@ -84,9 +82,10 @@ export default function MediaAnalysis({ data, period, setPeriod, articles = [], 
   const [rangeDraft, setRangeDraft] = useState({ start: "", end: "" });
   const [activeRange, setActiveRange] = useState({ start: "", end: "" });
   const [rangeNotice, setRangeNotice] = useState("");
+  const [detailTab, setDetailTab] = useState("keywords");
   const defaultRange = useMemo(() => {
     if (!latestDate) return { start: "", end: "" };
-    const start = addDaysToDateKey(latestDate, -29);
+    const start = addDaysToDateKey(latestDate, -6);
     return { start: start || latestDate, end: latestDate };
   }, [latestDate]);
   const effectiveRange = useMemo(
@@ -127,6 +126,15 @@ export default function MediaAnalysis({ data, period, setPeriod, articles = [], 
     [analysisDays, data, deferredAnalysisArticles, effectiveRange.end, effectiveRange.start, scopeLabel, selectedKeywords],
   );
   const { mediaSummaryData, dailyTrend, keywordRows, issueRows, observations } = mediaAnalysis;
+  const maxKeywordCount = Math.max(1, ...keywordRows.map(row => Number(row.value) || 0));
+  const downloadArticles = () => {
+    const url = URL.createObjectURL(new Blob([monitoringCsv(deferredAnalysisArticles)], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `media-analysis-${effectiveRange.start}-${effectiveRange.end}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   const applyRange = (days = null) => {
     const fallbackEnd = latestDate || effectiveRange.end || rangeDraft.end;
     let nextStart = rangeDraft.start;
@@ -141,60 +149,52 @@ export default function MediaAnalysis({ data, period, setPeriod, articles = [], 
     setRangeNotice(normalized.clamped ? "최대 90일 기준으로 시작일을 조정했습니다." : "");
   };
   return (
-    <main className="workspace">
-      <PageTitle
-        eyebrow={`${scopeLabel} 분석`}
-        title="언론 동향 분석"
-        description="보고서 형식과 분리해 원하는 기간의 트렌드, 언론사별 보도량, 키워드 흐름, 핵심 이슈를 확인합니다."
-        right={(
+    <main className="workspace media-page">
+      <header className="page-title media-command-panel">
+        <h1>언론동향</h1>
           <div className="media-range-actions">
             {[7, 30, 90].map((days) => (
-              <button key={days} type="button" className="ghost-button compact-button" onClick={() => applyRange(days)}>
+              <button key={days} type="button" className={`ghost-button compact-button ${analysisDays === days ? "active" : ""}`} aria-pressed={analysisDays === days} onClick={() => applyRange(days)}>
                 {days}일
               </button>
             ))}
           </div>
-        )}
-      />
-      <section className="media-range-panel">
-        <div>
-          <span>분석 기간</span>
-          <b>{scopeLabel}</b>
-          <em>최대 90일 · 금융당국 공식 보도자료 제외</em>
-        </div>
+      <div className="media-range-panel">
         <label>
-          <span>시작 기준일</span>
+          <span className="sr-only">시작 기준일</span>
           <input type="date" value={rangeDraft.start} onChange={(event) => setRangeDraft((current) => ({ ...current, start: event.target.value }))} />
         </label>
+        <span aria-hidden="true">~</span>
         <label>
-          <span>종료 기준일</span>
+          <span className="sr-only">종료 기준일</span>
           <input type="date" value={rangeDraft.end} onChange={(event) => setRangeDraft((current) => ({ ...current, end: event.target.value }))} />
         </label>
         <button type="button" className="primary-button" onClick={() => applyRange()}>
-          분석 적용
+          <Check />적용
         </button>
-        {rangeNotice && <small>{rangeNotice}</small>}
-      </section>
+      </div>
+      <button type="button" className="ghost-button media-export" onClick={downloadArticles} disabled={!deferredAnalysisArticles.length}><Download />다운로드</button>
+      </header>
+      {rangeNotice && <p className="media-range-notice" role="status">{rangeNotice}</p>}
       <section className="media-analysis-layout media-intel-board">
-        <div className="media-analysis-column">
-          <Panel title="일별 논조 추이" icon={Activity} meta={`${Math.min(analysisDays, 90)}일 · 긍정/중립/주의/부정`}>
+        <div className="media-main-trend">
+          <section className="panel media-trend-panel">
+            <header className="media-trend-heading"><h2>일별 논조 흐름</h2><span>{deferredAnalysisArticles.length.toLocaleString("ko-KR")}건</span><div className="newsroom-tone-legend"><span>긍정</span><span>중립</span><span>주의</span><span>부정</span></div></header>
             <ToneTrend rows={dailyTrend} />
-          </Panel>
-          <Panel title="키워드별 기사량" icon={LineChart} meta="선정 키워드 10개">
-            <CategoryChart rows={keywordRows} tall onOpenMonitoring={onOpenMonitoring} drillBy="keyword" labelWidth={132} />
-            <KeywordBrief rows={keywordRows} />
-          </Panel>
-          <Panel title="관찰 코멘트" icon={Gauge} meta="핵심 흐름 요약">
-            <InsightList insights={observations} />
-          </Panel>
+          </section>
         </div>
-        <div className="media-analysis-column">
-          <Panel title="언론사별 보도량" icon={Building2} meta="선택 기간 기준">
-            <PressInfluence rows={mediaSummaryData.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />
-          </Panel>
-          <Panel title="핵심 이슈" icon={Newspaper} meta={periodIssueMeta("custom", issueRows)}>
+        <div className="media-keywords">
+          <div className="newsroom-content-tabs" role="tablist" aria-label="기사량 집계 기준"><button type="button" role="tab" aria-selected={detailTab === "keywords"} onClick={() => setDetailTab("keywords")}>주요 키워드</button><button type="button" role="tab" aria-selected={detailTab === "publishers"} onClick={() => setDetailTab("publishers")}>언론사별 보도량</button></div>
+          {detailTab === "keywords" ? <div className="media-keyword-bars">
+            {keywordRows.filter(row => Number(row.value) > 0).slice(0, 10).map(row => <button type="button" key={row.keyword || row.name} onClick={() => onOpenMonitoring?.({ keyword: row.keyword || row.name })}><b>{row.name}</b><span><i style={{ width: `${Math.max(1, Number(row.value) / maxKeywordCount * 100)}%` }} /></span><strong>{Number(row.value).toLocaleString("ko-KR")}건</strong></button>)}
+            {!keywordRows.some(row => Number(row.value) > 0) && <p className="empty-list-note">해당 기간의 키워드 기사가 없습니다.</p>}
+          </div> : <Panel title="언론사별 보도량" icon={Building2} meta="선택 기간 기준"><PressInfluence rows={mediaSummaryData.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} /></Panel>}
+        </div>
+        <div className="media-issues">
+          <Panel title="주요 보도 이슈" icon={Newspaper} meta={periodIssueMeta("custom", issueRows)}>
             <MonthlyIssueDigest issues={issueRows} period="custom" />
           </Panel>
+          <details className="media-observations"><summary>관찰 코멘트</summary><InsightList insights={observations} /></details>
         </div>
       </section>
     </main>

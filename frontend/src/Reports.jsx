@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Download } from "lucide-react";
 import { periodData } from "./data";
 import { A4BarList, A4PressRows } from "./reportComponents";
-import { buildA4ReportStats, publicationMeta, reportPurposeConfig } from "./reportModel";
-import { displayHeadline } from "./publisherIdentity.js";
+import { buildA4ReportStats, publicationMeta, reportArticleHeadline, reportCategoryLabel, reportPurposeConfig } from "./reportModel";
+import NewsroomChart from "./NewsroomChart.jsx";
 
 let reportHelpers = {};
 
@@ -83,18 +83,13 @@ export default function Reports({ data, period, setPeriod, articles, allArticles
       : data
   ), [period, selectedMonth, reportArticles, reportRuns, data]);
   const edition = publicationMeta(period, reportData);
-  const reportSummary = reportData.summary || {};
+  const calendarLabel = selectedMonth || String(reportArticles[0]?.date || reportData.scope || "").match(/\d{4}-\d{2}-\d{2}/)?.[0] || "";
   return (
     <main className="workspace report-workspace">
       <section className="report-command-panel no-print">
         <div className="report-command-copy">
-          <span>{edition.kicker}</span>
-          <h1>언론 동향 리포트</h1>
-          <p>{periodScopeLabel(period)} 기준 핵심 기사와 분류·언론사 보도량만 압축해 한 장 보고서로 정리합니다.</p>
-        </div>
-        <div className="report-command-actions">
+          <h1>리포트</h1>
           <div className="report-period-picker">
-            <span>보고서 유형</span>
             <PeriodControl period={period} setPeriod={setPeriod} compact />
           </div>
           {period === "monthly" && (
@@ -104,22 +99,19 @@ export default function Reports({ data, period, setPeriod, articles, allArticles
               onChange={setReportMonth}
             />
           )}
+          {calendarLabel && period !== "monthly" && <span className="report-calendar"><CalendarDays />{calendarLabel.replaceAll("-", ".")}</span>}
+        </div>
+        <div className="report-command-actions">
           <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${reportData.scope || ""}`)}>
             <Download />PDF 저장
           </button>
-        </div>
-        <div className="report-command-kpis">
-          <span className={`risk ${String(reportSummary.risk || "LOW").toLowerCase()}`}><em>리스크</em><b>{reportSummary.risk || "LOW"}</b></span>
-          <span><em>분석</em><b>{Number(reportSummary.analyzed || reportArticles.length || 0).toLocaleString("ko-KR")}</b></span>
-          <span><em>당사</em><b>{Number(reportSummary.ownMentions || 0).toLocaleString("ko-KR")}</b></span>
-          <span><em>부정</em><b>{Number(reportSummary.ownNegative || 0).toLocaleString("ko-KR")}</b></span>
-          <span><em>주의</em><b>{Number(reportSummary.caution || 0).toLocaleString("ko-KR")}</b></span>
         </div>
       </section>
       <A4ReportStage
         data={reportData}
         period={period}
         articles={reportArticles || []}
+        historyArticles={normalizedReportSourceArticles}
         scraps={scraps}
         onOpenMonitoring={onOpenMonitoring}
       />
@@ -145,6 +137,7 @@ function A4ReportStage({
   data,
   period,
   articles = [],
+  historyArticles = [],
   scraps = [],
   onOpenMonitoring,
   keywordRows,
@@ -163,17 +156,15 @@ function A4ReportStage({
   const reportTrend = trendRows?.length
     ? trendRows
     : buildReportToneTrend(reportArticles, period, data.toneTrend);
+  const dailyHistory = useMemo(() => period === "daily" && typeof reportHelpers.buildDashboardMomentum === "function"
+    ? reportHelpers.buildDashboardMomentum(historyArticles).map(row => ({ ...row, total: ["own", "ga", "insurance", "regulation"].reduce((sum, key) => sum + Number(row[key] || 0), 0) }))
+    : [], [historyArticles, period]);
   const reportKeywords = keywordRows?.length
     ? keywordRows
     : buildKeywordFlow(reportArticles, selectDashboardKeywords()).slice(0, 10);
 
   return (
     <section className={`a4-report-stage ${embedded ? "embedded" : "standalone"}`}>
-      <div className="a4-report-stage-head no-print">
-        <span>PRINT PREVIEW</span>
-        <b>{periodScopeLabel(period)} 보고서</b>
-        <em>아래 지면 기준으로 PDF가 생성됩니다.</em>
-      </div>
       <A4ReportSheet
         data={data}
         period={period}
@@ -182,7 +173,7 @@ function A4ReportStage({
         lead={lead}
         issues={secondary}
         articles={reportArticles}
-        trendRows={reportTrend}
+        trendRows={period === "daily" ? dailyHistory : reportTrend}
         keywordRows={reportKeywords}
         scraps={scraps}
         onOpenMonitoring={onOpenMonitoring}
@@ -204,53 +195,39 @@ function A4ReportSheet({
   scraps = [],
   onOpenMonitoring,
 }) {
+  const [breakdownTab, setBreakdownTab] = useState("categories");
   const summary = data.summary || {};
   const scope = reportScope || data.periodScope || buildReportPeriodScope(articles, period, data.scope);
-  const stats = buildA4ReportStats(summary, articles, { isOwnArticle });
-  const pressRows = (data.pressInfluence?.length ? data.pressInfluence : buildPressInfluence(articles))
+  const stats = useMemo(() => buildA4ReportStats(summary, articles, { isOwnArticle }), [summary, articles]);
+  const pressRows = useMemo(() => (data.pressInfluence?.length ? data.pressInfluence : buildPressInfluence(articles))
     .filter((item) => !isOfficialRegulatorSource(item.source))
-    .slice(0, 6);
-  const categoryRows = buildReportCategoryFlowRows(articles, summary, 6)
+    .slice(0, 6), [data.pressInfluence, articles]);
+  const categoryRows = useMemo(() => buildReportCategoryFlowRows(articles, summary, 6)
     .filter((row) => Number(row.value || 0) > 0)
-    .slice(0, 6);
-  const issueGroups = buildA4IssueGroups(lead, issues, articles, period);
+    .slice(0, 6).map(row => ({ ...row, name: reportCategoryLabel(row.category || row.name) })), [articles, summary]);
+  const issueGroups = useMemo(() => buildA4IssueGroups(lead, issues, articles, period), [lead, issues, articles, period]);
   const purpose = reportPurposeConfig(period);
   const briefingTitle = period === "daily"
-    ? "일일 언론 브리핑"
+    ? "일일 언론 동향"
     : period === "weekly"
       ? "주간 뉴스 브리핑"
       : "월간 미디어 브리핑";
   return (
     <article className={`a4-report-sheet newspaper-report-sheet ${period}`}>
       <header className="newspaper-masthead">
-        <div className="newspaper-edition">
-          <b>{periodScopeLabel(period)}</b>
+        <div className="newspaper-nameplate">
+          <h2>{briefingTitle}</h2>
+        </div>
+        <NewspaperMetricBand stats={stats} onOpenMonitoring={onOpenMonitoring} />
+        <div className="newspaper-publisher">
           <span>{scope.scopeLabel || data.scope || edition.issue}</span>
         </div>
-        <div className="newspaper-nameplate">
-          <p>INCAR MEDIA INTELLIGENCE</p>
-          <h2>{briefingTitle}</h2>
-          <em>{purpose.focus}</em>
-        </div>
-        <div className="newspaper-publisher">
-          <b>인카금융서비스</b>
-          <span>마케팅부</span>
-          <em>{edition.kicker}</em>
-        </div>
       </header>
-
-      <div className="newspaper-section-rule">
-        <strong>MEDIA BRIEFING</strong>
-        <span>기사 원문과 운영 분류 기준으로 정리한 내부 모니터링 지면</span>
-      </div>
-
-      <NewspaperMetricBand stats={stats} onOpenMonitoring={onOpenMonitoring} />
 
       <section className="newspaper-report-body">
         <div className="newspaper-article-desk">
           <div className="newspaper-panel-heading">
-            <b>{purpose.issueTitle}</b>
-            <span>{purpose.issueMeta}</span>
+            <b>{period === "daily" ? "우선 확인 기사" : purpose.issueTitle}</b>
           </div>
           <div className="newspaper-article-index">
             <A4PriorityArticleCards groups={issueGroups} period={period} />
@@ -259,18 +236,19 @@ function A4ReportSheet({
 
         <aside className="newspaper-brief-rail">
           <section className="newspaper-data-section">
-            <div className="newspaper-panel-heading">
-              <b>{purpose.categoryTitle}</b>
-              <span>기간 기준</span>
+            <div className="newsroom-content-tabs" role="tablist" aria-label="보고서 기사량 기준">
+              <button type="button" role="tab" aria-selected={breakdownTab === "categories"} onClick={() => setBreakdownTab("categories")}>분류별 기사량</button>
+              <button type="button" role="tab" aria-selected={breakdownTab === "publishers"} onClick={() => setBreakdownTab("publishers")}>언론사 보도량</button>
             </div>
-            <A4BarList rows={categoryRows} />
+            {breakdownTab === "categories" ? <A4BarList rows={categoryRows} /> : <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />}
+            {breakdownTab === "categories" && <div className="report-category-total"><span>표시 분류 합계</span><strong>{categoryRows.reduce((sum, row) => sum + Number(row.value || 0), 0).toLocaleString("ko-KR")}건</strong></div>}
+            <div className="print-only">{breakdownTab === "categories" ? <><h3>{purpose.pressTitle}</h3><A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} /></> : <><h3>{purpose.categoryTitle}</h3><A4BarList rows={categoryRows} /></>}</div>
           </section>
           <section className="newspaper-data-section">
             <div className="newspaper-panel-heading">
-              <b>{purpose.pressTitle}</b>
-              <span>상위 6개사</span>
+              <b>{period === "daily" ? "최근 7일 기사 수" : period === "weekly" ? "일별 기사 수" : "주별 기사 수"}</b>
             </div>
-            <A4PressRows rows={pressRows} onOpenMonitoring={onOpenMonitoring} />
+            <div className="report-count-chart"><NewsroomChart rows={trendRows.map(row => ({ ...row, total: row.total ?? ["positive", "neutral", "caution", "negative"].reduce((sum, key) => sum + Number(row[key] || 0), 0) }))} series={reportCountSeries} ariaLabel="선택 기간 기사 수" compact /></div>
           </section>
         </aside>
       </section>
@@ -283,11 +261,13 @@ function A4ReportSheet({
   );
 }
 
+const reportCountSeries = [{ key: "total", label: "기사 수", color: "#7b901c" }];
+
 function NewspaperMetricBand({ stats = [], onOpenMonitoring }) {
   return (
     <div className="newspaper-metric-band" aria-label="report metrics">
       {stats.map((item) => (
-        <button key={item.label} type="button" className={item.tone || ""} onClick={() => onOpenMonitoring?.(item.preset || {})}>
+        <button key={item.label} type="button" data-metric={item.label} className={item.tone || ""} onClick={() => onOpenMonitoring?.(item.preset || {})}>
           <span>{item.label}</span>
           <b>{item.value}</b>
           <em>{item.detail}</em>
@@ -298,7 +278,7 @@ function NewspaperMetricBand({ stats = [], onOpenMonitoring }) {
 }
 
 function A4PriorityArticleCards({ groups = [], period = "daily" }) {
-  const limit = period === "daily" ? 12 : 10;
+  const limit = period === "daily" ? 5 : 10;
   const cards = [];
   const seen = new Set();
   groups.forEach((group) => {
@@ -330,12 +310,11 @@ function A4PriorityArticleCards({ groups = [], period = "daily" }) {
             <div className="a4-priority-main">
               <div className="a4-priority-meta">
                 <Chip tone={issue.tone}>{issue.tone}</Chip>
-                <Chip>{issue.category || issue.bucketTitle || "분류"}</Chip>
-                <em>{formatA4ArticleMeta(issue)}</em>
+                <Chip>{reportCategoryLabel(issue.category || issue.bucketTitle || "분류")}</Chip>
               </div>
-              <b>{formatA4ArticleHeadline(issue)}</b>
+              <b>{reportArticleHeadline(issue)}</b>
             </div>
-            <span className="a4-priority-open">열기</span>
+            <span className="a4-priority-open"><ArrowUpRight aria-hidden="true" /><span className="sr-only">기사 원문 열기</span></span>
           </a>
         );
       })}
@@ -449,21 +428,6 @@ function formatA4ArticleMeta(item = {}, fallback = "-") {
   const dateTime = [item.date, item.time].filter(Boolean).join(" ") || item.publishedAt || fallback;
   const related = Number(item.relatedCount || item.clusterSize || 1) > 1 ? ` · 관련 ${Number(item.relatedCount || item.clusterSize).toLocaleString("ko-KR")}건` : "";
   return `${source} · ${dateTime}${related}`;
-}
-
-function formatA4ArticleHeadline(item = {}) {
-  const source = cleanA4InlineText(item.source || item.media || item.publisher || "");
-  const title = cleanA4InlineText(displayHeadline(item) || "제목 확인 필요");
-  const relatedCount = Number(item.relatedCount || item.clusterSize || 1);
-  const related = relatedCount > 1 ? ` · 관련 ${relatedCount.toLocaleString("ko-KR")}건` : "";
-  return `${source ? `[${source}] ` : ""}${title}${related}`;
-}
-
-function cleanA4InlineText(value = "") {
-  return String(value || "")
-    .replace(/\s+/g, " ")
-    .replace(/\s+([.,!?…])/g, "$1")
-    .trim();
 }
 
 function buildReportLead(period, data, articles, issues) {

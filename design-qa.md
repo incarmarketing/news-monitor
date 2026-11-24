@@ -1,6 +1,74 @@
-# Monitoring Ledger QA - 2026-09-10
+# Newsroom Design QA - 2026-11-25
 
 final result: passed
+
+## Current Target
+
+- Selected first newsroom concept and the eight matching category samples from November 24, not the earlier September design.
+- Source root: `C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/`.
+- Dashboard: `exec-33cb8538-fadb-4f52-a6e7-2fd6fa57ddb1.png`.
+- Monitoring: `exec-86a2ecc8-ab3f-4a36-ae78-e2857546ba51.png`.
+- Media: `exec-6f1f199d-1a5d-480a-abc0-0b0d53ff42a4.png`.
+- Regulators: `exec-498d5203-fc28-4db9-9568-1ffd8699fab8.png`.
+- Clipping: `exec-6673751a-40ff-425e-9654-0107cfdebfc3.png`.
+- Scraps: `exec-52e35d01-ee63-439e-bc1b-d5f742154004.png`.
+- Reports: `exec-ee9cbf64-37b7-4d7d-a2ed-8d9a65c648bf.png`.
+- Stocks: `exec-8031b064-f331-4147-9a15-cfd068f903fe.png`.
+- Management: `exec-0d863226-83f1-47ec-9a08-f2f8257363a3.png`.
+- Implementation: `http://127.0.0.1:4186/` in background Chrome through user-approved Playwright.
+- Evidence root: `C:/Users/User/Desktop/COWORK/news-monitor-newsroom/.qa/newsroom-final/`.
+- Source and implementation are composited together in `compare-{section}.png`, not reviewed as unrelated separate images.
+- Comparison viewport 1440 x 1024 CSS pixels, device scale factor 1. Sources approximately 1488 x 1056 pixels are proportionally normalized to 1440 x 1024 without cropping; each comparison is 2880 x 1024.
+- Additional actual viewport captures: 1280 x 720, 1366 x 768, 1672 x 941, 900 x 1180, 390 x 844. The broad responsive suite uses mobile scale factor 2; the focused mobile suite uses scale factor 1.
+- State: light theme, actual public read-only operational data. November 25 counts and headlines intentionally differ from the November 24 illustrative source. No illustrative articles or success states are copied into production.
+
+## Findings And Fix History
+
+1. [P1, fixed] November 24 implementation used a fallback font and substantially smaller titles, headlines and controls. Bundled Pretendard Variable 1.3.9 with its OFL license; explicit family/weights replace platform-dependent fallback. Browser checks confirm loaded WOFF2 resources and Chrome reports the actual custom platform font as `Pretendard Variable` at all three additional desktop widths.
+2. [P1, fixed] Dashboard lead and navigation proportions diverged from the selected image. Matched the horizontal masthead, inline date/KPIs, five-story editorial grid, operating strip and four separate trend charts. Restored readable 48px lead, 24px secondary titles, and fixed-height 150px plotting surfaces instead of squeezing charts to fill a viewport.
+3. [P2, fixed] Monitoring publisher column removal left a zero-width action column. Removed the obsolete column from both the table and colgroup, adjusted detail colspan/mobile tracks, and added browser assertions for non-overlapping action columns. Publisher remains below each full headline.
+4. [P2, fixed] Media date tools occupied a separate row; keyword labels were too small. Consolidated the command row, enlarged actual bars/labels, made CSV download functional, and retained keyword/publisher tabs and range constraints.
+5. [P2, fixed] Regulator headings and summary blocks pushed the release list down. Moved selection into the toolbar, compacted classification counts to one band and corrected fixed table widths. Existing filters and source links remain available.
+6. [P2, fixed] Clipping, scraps and management text did not match the sample hierarchy. Enlarged titles and table text, aligned work areas, added matching local category/search/sort controls, and kept saved articles, evidence disclosures and management tabs intact. Management page size defaults to six and still supports 20/50 rows.
+7. [P2, fixed] Stock supplementary statistics preceded and displaced the main chart. Moved quotes into a compact top band, chart/market facts into the primary row and returns/disclosures below. Existing custom periods, detailed statistics, indices and peer tables remain accessible.
+8. [P2, fixed] Mobile navigation buttons shrank into overlapping text. Disabled item shrinking; the navigation strip scrolls independently while the page retains zero horizontal overflow.
+9. [P2, fixed] Print-only publisher bars made the report rail disproportionately tall. Added dedicated print typography, compact two-column publisher rows and bounded chart height. Short report category labels avoid broken policy labels; already-bracketed publisher names are not duplicated.
+
+Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-overview.png`, `focus-monitoring.png`, `focus-reports.png`, `mobile-{section}.png`, `desktop-1280.png`, `desktop-1366.png`, `desktop-1672.png`, `report-print.png`.
+
+## Required Fidelity Surfaces
+
+- Fonts/typography: actual self-hosted font loading verified, fixed pixel sizes, 0 letter spacing, no viewport-scaled fonts or CSS headline ellipsis. Existing ellipses already present in stored headlines remain factual source content.
+- Spacing/layout rhythm: common 30px desktop page margins, black section rules, aligned toolbar controls, 12-column editorial story composition and stable chart heights. Longer real data may make a page scroll rather than shrink its text or plot.
+- Colors/tokens: cool near-white paper, black ink, gray hairlines and restrained citron selections. Semantic positive/caution/negative states remain distinct; unknown or generated reports are not painted as sent.
+- Assets: existing official Incar and Slack bitmap assets, existing Lucide icons; no generated screenshot or mock is used as an application background.
+- Copy/content: actual operational data and article URLs remain in use. Simplified display labels do not write back classifications. Read-only scraps are empty in the actual test session; the mock's saved articles are not fabricated.
+
+## Verification
+
+- Frontend unit suite: 178 tests passed.
+- Python release regression suite: 378 tests passed; mocked tests only, no production writes or sends.
+- Reference validation: 32 modules, zero unresolved or invalid local references.
+- Production Vite build: passed, screen chunks retained and no oversized-JS-chunk warning.
+- Repeated navigation/interaction suite: 26 captures across two desktop rounds and one mobile round. Search/reset, selected CSV, media CSV/ranges/tabs, article URLs, chart hover/focus/arrows, all report periods/month selector, delayed print command, stock periods/modes and six management tabs checked.
+- Broad responsive suite: 27 cases across desktop/tablet/mobile, all passed with no page-level horizontal overflow or runtime exceptions. Independent overflow is intentional for the mobile navigation and wide financial/registry tables.
+- Extra desktop checks: three viewport widths, no page overflow, custom font actually rendered, chart plotting height at least 140px.
+- No login, collector dispatch, classification save, scrap save, paid analysis or Slack send was performed during browser verification.
+- Final targeted recapture reviewed: monitoring bookmark/external/detail actions occupy separate columns, report category labels remain on one line, publisher prefixes are not duplicated, and print-only rail fits beside the five article rows. No actionable P0/P1/P2 visual findings remain in the reviewed states.
+- Deployment verification is recorded separately after publication; passing this local visual gate does not by itself claim successful deployment.
+
+## Scope And Residual Notes
+
+- This change does not repair the earlier 13:00 briefing deployment/authentication incident or change collection, classification, risk scoring, polling or scheduling.
+- Report-run totals and currently loaded article subsets may differ in existing data; this visual change does not invent missing category counts. The report rail explicitly labels its displayed category sum.
+- P3: exact glyph shapes can differ slightly from the image-generated sample. Long real headlines and empty/private workspaces cannot reproduce the mock's illustrative text density without fabricating content.
+- Authenticated saves, analysis execution and OS printer dialog were intentionally not exercised; print CSS was browser-rendered and the print command was intercepted only in the isolated test page.
+
+---
+
+# Historical Monitoring Ledger QA - 2026-09-10
+
+Historical result: passed (superseded by the current newsroom review above).
 
 ## Selected Source And Comparison
 
@@ -52,7 +120,7 @@ final result: passed
 
 # Historical Dashboard Workbench QA - 2026-09-10
 
-final result: passed
+Historical result: passed (superseded by the current newsroom review above).
 
 ## Visual Sources
 

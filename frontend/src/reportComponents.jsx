@@ -1,6 +1,6 @@
 import React from "react";
 
-const reportChartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
+const reportChartColors = ["#7b901c", "#738d70", "#bd744d", "#787b7c", "#525953"];
 
 export function A4MetricTable({ stats = [], onOpenMonitoring }) {
   return (

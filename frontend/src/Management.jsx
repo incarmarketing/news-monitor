@@ -181,8 +181,7 @@ export default function Management({ management, operations, onRefreshOperations
   return (
     <main className="workspace">
       <PageTitle
-        eyebrow="Operations"
-        title="운영 관리"
+        title="운영관리"
         description="언론사, 기자, 광고비, 키워드, 분류 피드백을 운영 데이터 기준으로 관리합니다."
         right={(
           <div className="page-actions">

@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Bookmark, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, RefreshCw, RotateCcw, Search, X } from "lucide-react";
+import { ArrowUpRight, Bookmark, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, RefreshCw, RotateCcw, Search, X } from "lucide-react";
 import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
 import { monitoringCategories, monitoringCategoryKey, monitoringCategoryLabel, monitoringCsv, monitoringDateRange, monitoringPage } from "./monitoringPresentation.js";
 import "./monitoring-workbench.css";
@@ -60,11 +60,10 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
     : `${(filters.startDateInput || "").replaceAll("-", ".")} - ${(filters.endDateInput || "").replaceAll("-", ".")}`;
 
   return <main className="workspace monitoring-workspace monitoring-workbench">
-    <header className="monitor-header"><h1>모니터링</h1><div><span>{updatedLabel}</span><button type="button" className="monitor-icon" aria-label="모니터링 새로고침" title="새로고침" onClick={onRefresh} disabled={isLoading}><RefreshCw className={isLoading ? "monitor-spin" : ""} /></button></div></header>
+    <header className="monitor-header"><h1>모니터링</h1><div><span>{updatedLabel}</span><button type="button" className="monitor-icon" aria-label="모니터링 새로고침" title="새로고침" onClick={onRefresh} disabled={isLoading}><RefreshCw className={isLoading ? "monitor-spin" : ""} /></button><button type="button" className="monitor-command" onClick={exportCsv} disabled={!exportRows.length || isUpdating}><Download/><span>{selectedRows.length ? `선택 ${selectedRows.length}건 CSV` : "CSV 내보내기"}</span></button></div></header>
     <form className="monitor-search" onSubmit={apply}>
       <div className="monitor-search-input"><Search aria-hidden="true"/><input aria-label="검색어" placeholder="제목, 언론사, 키워드 검색" value={filters.queryInput} onChange={event => onChange("queryInput", event.target.value)} /><button className="monitor-search-submit" type="submit" aria-label="조회/검색" title="검색"><Search /></button></div>
-      <button type="button" className="monitor-command" onClick={reset}><RotateCcw/><span>초기화</span></button>
-      <button type="button" className="monitor-command" onClick={exportCsv} disabled={!exportRows.length || isUpdating}><Download/><span>{selectedRows.length ? `선택 ${selectedRows.length}건 CSV` : "CSV 다운로드"}</span></button>
+      <button type="button" className="monitor-command" onClick={reset} title="검색 초기화" aria-label="검색 초기화"><RotateCcw/><span>초기화</span></button>
     </form>
     <section className="monitor-filters" aria-label="기사 검색 조건">
       <div className="monitor-period" aria-label="조회 기간">{[[1, "오늘"], [7, "7일"], [30, "30일"]].map(([days, label]) => {
@@ -93,8 +92,8 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
       </header>
       <div className="monitor-loading" role="status" aria-live="polite">{isUpdating ? "검색 결과 확인 중" : ""}</div>
       <div className="monitor-table-scroll" ref={scrollBox}>
-        <table className="monitor-table"><caption className="sr-only">수집 기사 목록</caption><colgroup><col className="monitor-col-check"/><col className="monitor-col-time"/><col className="monitor-col-tone"/><col className="monitor-col-category"/><col/><col className="monitor-col-publisher"/><col className="monitor-col-action"/><col className="monitor-col-action"/><col className="monitor-col-expand"/></colgroup>
-          <thead><tr><th><PageCheckbox aria-label="현재 페이지 기사 전체 선택" checked={allSelected} mixed={someSelected && !allSelected} onChange={togglePage}/></th><th>작성 시간</th><th>논조</th><th>분류</th><th className="monitor-title-column">기사 제목</th><th>언론사</th><th><Bookmark aria-label="스크랩"/></th><th><ExternalLink aria-label="원문"/></th><th><span className="sr-only">상세</span></th></tr></thead>
+        <table className="monitor-table"><caption className="sr-only">수집 기사 목록</caption><colgroup><col className="monitor-col-check"/><col className="monitor-col-time"/><col className="monitor-col-tone"/><col className="monitor-col-category"/><col/><col className="monitor-col-action"/><col className="monitor-col-action"/><col className="monitor-col-expand"/></colgroup>
+          <thead><tr><th><PageCheckbox aria-label="현재 페이지 기사 전체 선택" checked={allSelected} mixed={someSelected && !allSelected} onChange={togglePage}/></th><th>작성 시간</th><th>논조</th><th>분류</th><th className="monitor-title-column">기사 제목</th><th><Bookmark aria-label="스크랩"/></th><th><ExternalLink aria-label="원문"/></th><th><span className="sr-only">상세</span></th></tr></thead>
           <tbody>{pageRows.map((row, index) => {
             const key = rowKey(row);
             const open = expanded === key;
@@ -104,15 +103,14 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
             const detailId = `${id}-row-${index}`;
             return <Fragment key={key}><tr className="monitor-article-row" data-selected={selected.has(key)} data-expanded={open}>
               <td className="monitor-check"><input type="checkbox" aria-label={`${headline} 선택`} checked={selected.has(key)} onChange={() => toggle(key)}/></td>
-              <td className="monitor-time"><time title={[row.date, timeLabel(row)].filter(Boolean).join(" ")}>{filters.startDateInput !== filters.endDateInput && <small>{String(row.date || "").slice(5).replace("-", ".")}</small>}{timeLabel(row)}</time></td>
+              <td className="monitor-time"><time title={[row.date, timeLabel(row)].filter(Boolean).join(" ")}><small>{String(row.date || "").replaceAll("-", ".") || "날짜 미확인"}</small>{timeLabel(row)}</time></td>
               <td className="monitor-tone-cell"><span className="monitor-tone" data-tone={row.tone}>{row.tone || "중립"}</span></td>
               <td className="monitor-category-cell">{monitoringCategoryLabel(row.category)}</td>
-              <td className="monitor-headline">{safeLink ? <a href={safeLink} target="_blank" rel="noopener noreferrer" title={headline} onClick={event => onOpenArticle(event, safeLink)}>{headline}</a> : <span>{headline}</span>}</td>
-              <td className="monitor-publisher" title={resolvePublisher(row)}>{resolvePublisher(row)}</td>
+              <td className="monitor-headline">{safeLink ? <a href={safeLink} target="_blank" rel="noopener noreferrer" title={headline} onClick={event => onOpenArticle(event, safeLink)}>{headline}</a> : <span>{headline}</span>}<small>{resolvePublisher(row)}</small></td>
               <td className="monitor-action"><ScrapButton article={row} scrapped={isScrapped(row, scraps)} onScrapSaved={onScrapSaved}/></td>
-              <td className="monitor-action">{safeLink && <a href={safeLink} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" title="기사 열기" onClick={event => onOpenArticle(event, safeLink)}><ExternalLink/></a>}</td>
+              <td className="monitor-action">{safeLink && <a href={safeLink} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" title="기사 열기" onClick={event => onOpenArticle(event, safeLink)}><ArrowUpRight/></a>}</td>
               <td className="monitor-expand"><button type="button" aria-label={relatedCount > 1 ? `기사 상세 및 묶음 ${relatedCount}건` : "기사 상세"} title={relatedCount > 1 ? `기사 상세 · 관련 ${relatedCount}건` : "기사 상세"} aria-expanded={open} aria-controls={detailId} onClick={() => setExpanded(open ? null : key)}>{open ? <ChevronDown/> : <ChevronRight/>}</button></td>
-            </tr>{open && <tr className="monitor-detail-row"><td colSpan={9}><div id={detailId}><Details article={row} onFeedbackSaved={onFeedbackSaved}/></div></td></tr>}</Fragment>;
+            </tr>{open && <tr className="monitor-detail-row"><td colSpan={8}><div id={detailId}><Details article={row} onFeedbackSaved={onFeedbackSaved}/></div></td></tr>}</Fragment>;
           })}</tbody>
         </table>
         {!pageRows.length && <div className="monitor-empty" role="status"><Search/><strong>{isUpdating ? "기사를 불러오고 있습니다." : "검색 조건에 맞는 기사가 없습니다."}</strong>{!isUpdating && <button className="monitor-command" type="button" onClick={reset}><RotateCcw/>초기화</button>}</div>}

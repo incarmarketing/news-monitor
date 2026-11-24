@@ -25,12 +25,9 @@ import {
   stockToneClass,
 } from "./stockUtils";
 
-function PageTitle({ right }) {
-  if (!right) return null;
+function PageTitle({ title, right }) {
   return (
-    <div className="page-title-actions-only">
-      {right}
-    </div>
+    <header className="page-title"><h1>{title}</h1><div className="page-title-right">{right}</div></header>
   );
 }
 
@@ -52,7 +49,8 @@ function openArticleLink(event, url) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 export default function StockMarketDashboard({ stockMarket }) {
-  const [stockRange, setStockRange] = useState("60d");
+  const [stockRange, setStockRange] = useState("5d");
+  const [chartMode, setChartMode] = useState("price");
   const [customRangeDays, setCustomRangeDays] = useState("45");
   const [dateRangeDraft, setDateRangeDraft] = useState({ start: "", end: "" });
   const company = stockMarket?.company || {};
@@ -90,6 +88,7 @@ export default function StockMarketDashboard({ stockMarket }) {
   const activeRange = activeRangeSelection.range;
   const activeRangeReturn = activeRange.return ?? company.returns?.[activeRangeSelection.returnKey] ?? company.returns?.[activeRangeKey];
   const activeTrend = sliceStockTrend(relativeTrend, activeRangeSelection.count || activeRangeKey);
+  const selectedPrices = stockHistory.filter(row => (!activeRange.start_date || row.date >= activeRange.start_date) && (!activeRange.end_date || row.date <= activeRange.end_date));
   const activePeerReturn = averagePeerReturnByPeriod(
     peerGroups,
     activeRangeKey,
@@ -109,10 +108,10 @@ export default function StockMarketDashboard({ stockMarket }) {
   );
 
   return (
-    <main className="workspace">
+    <main className="workspace stock-workspace">
       <PageTitle
         eyebrow="Market Control"
-        title="주가·시장 관제 대시보드"
+        title="주가·시장"
         description="정규장, NXT, 동종업계, 시장지수를 한 화면에서 비교해 주가성 기사와 실제 가격 흐름을 분리합니다."
         right={(
           <div className="page-actions">
@@ -133,7 +132,9 @@ export default function StockMarketDashboard({ stockMarket }) {
         </section>
       ) : (
         <>
-          <section className="stock-source-grid">
+          <section className="stock-ticker-band">
+          <div className="stock-company-name"><h2>{company.name || "인카금융서비스"}</h2><span>KOSDAQ {company.code || ""}</span></div>
+          <div className="stock-source-grid">
             <StockSourceTile
               label="KRX 정규장"
               status={regularMarket.status}
@@ -160,21 +161,8 @@ export default function StockMarketDashboard({ stockMarket }) {
               detail={priceGap.available ? `${priceGap.label} · ${formatStockPercent(priceGap.rate)}` : "정규장 대비 비교 대기"}
               toneValue={priceGap.price}
             />
-            <StockMetricCard
-              icon={Building2}
-              label="시가총액"
-              value={formatStockMarketCap(marketCap.value || company.latest?.market_cap)}
-              detail={marketCap.implied_shares ? `환산 주식수 ${formatStockShares(marketCap.implied_shares)}` : "네이버 금융 기준"}
-            />
-            <StockMetricCard
-              icon={WalletCards}
-              label="통합 거래대금"
-              value={formatStockTradingValue(integratedMarket.trading_value)}
-              detail={`거래량 ${formatStockVolume(integratedMarket.volume || company.latest?.volume)}`}
-            />
+          </div>
           </section>
-
-          <StockDisclosureBoard disclosures={dartDisclosures} companyName={company.name || "인카금융서비스"} />
 
           <section className="stock-range-board">
             <div className="stock-range-head">
@@ -198,6 +186,7 @@ export default function StockMarketDashboard({ stockMarket }) {
                     </button>
                   ))}
                 </div>
+                <details className="stock-custom-range"><summary>직접 선택</summary><div>
                 <label className={`stock-range-input ${stockRange === "custom" ? "active" : ""}`}>
                   <span>직접</span>
                   <input
@@ -244,16 +233,17 @@ export default function StockMarketDashboard({ stockMarket }) {
                     type="button"
                     className="stock-range-reset"
                     onClick={() => {
-                      setStockRange("60d");
+                      setStockRange("5d");
                       setDateRangeDraft({ start: "", end: "" });
                     }}
                   >
                     기본
                   </button>
                 </div>
+                </div></details>
               </div>
             </div>
-            <div className="stock-range-cards">
+            <details className="stock-range-details"><summary>기간별 상세 지표</summary><div className="stock-range-cards">
               <StockRangeCard
                 label="선택기간 수익률"
                 value={formatStockPercent(activeRangeReturn)}
@@ -278,24 +268,37 @@ export default function StockMarketDashboard({ stockMarket }) {
                 detail={`동종 ${formatStockPercent(activePeerReturn)} · KOSPI ${formatStockPercent(activeKospiReturn)}`}
                 toneValue={safeNumberDiff(activeRangeReturn, activePeerReturn)}
               />
-            </div>
+            </div></details>
           </section>
 
-          <section className="stock-insight-board">
+          <details className="stock-insight-board"><summary>시장 참고 지표</summary>
             <div>
               <span>시장 판단</span>
               <b>{buildStockMarketJudgement(company, summary, activeRange)}</b>
               <p>{buildStockMarketReason(company, summary, activeRange, activeRangeLabel, activePeerReturn, activeKospiReturn)}</p>
             </div>
-          </section>
+          </details>
 
           <section className="stock-dashboard-grid">
-            <Panel title="상대 주가 흐름" icon={LineChart} meta={`${activeRangeLabel} · 첫날 100 기준`}>
-              <StockTrendChart rows={activeTrend} />
+            <Panel title={chartMode === "price" ? "주가 흐름" : "상대 주가 흐름"} icon={LineChart} meta={`${activeRangeLabel}${chartMode === "relative" ? " · 첫날 100 기준" : " · 원"}`}>
+              <div className="newsroom-content-tabs" role="tablist" aria-label="주가 차트 기준"><button type="button" role="tab" aria-selected={chartMode === "price"} onClick={() => setChartMode("price")}>주가</button><button type="button" role="tab" aria-selected={chartMode === "relative"} onClick={() => setChartMode("relative")}>상대 수익률</button></div>
+              {chartMode === "price" ? <StockPriceChart rows={selectedPrices} companyName={company.name || "인카금융서비스"} /> : <StockTrendChart rows={activeTrend} />}
             </Panel>
-            <Panel title="시장 지수" icon={Activity} meta="KOSPI · KOSDAQ">
-              <MarketIndexCards rows={indices} />
+            <Panel title="시장 정보" icon={Activity}>
+              <div className="stock-market-facts">
+                <StockMetricCard icon={Building2} label="시가총액" value={formatStockMarketCap(marketCap.value || company.latest?.market_cap)} detail={marketCap.implied_shares ? `환산 주식수 ${formatStockShares(marketCap.implied_shares)}` : "네이버 금융 기준"} />
+                <StockMetricCard icon={WalletCards} label="거래량" value={`${formatStockVolume(integratedMarket.volume || company.latest?.volume)}주`} />
+                <StockMetricCard icon={WalletCards} label="거래대금" value={formatStockTradingValue(integratedMarket.trading_value)} />
+              </div>
+              <details className="stock-index-details"><summary>시장 지수</summary><MarketIndexCards rows={indices} /></details>
             </Panel>
+          </section>
+
+          <section className="stock-bottom-grid">
+            <Panel title="상대 수익률" icon={LineChart} meta={activeRangeLabel}>
+              <table className="stock-relative-table"><thead><tr><th>구분</th><th>기간 수익률</th></tr></thead><tbody>{[[company.name || "인카금융서비스", activeRangeReturn], ["GA 비교군", activePeerReturn], ["KOSPI", activeKospiReturn]].map(([label, value]) => <tr key={label}><td>{label}</td><td className={stockToneClass(value)}>{formatStockPercent(value)}</td></tr>)}</tbody></table>
+            </Panel>
+            <StockDisclosureBoard disclosures={dartDisclosures} companyName={company.name || "인카금융서비스"} />
           </section>
 
           <section className="stock-peer-section">
@@ -342,7 +345,7 @@ function StockSourceTile({ label, status, price, change, changeRate, volume, tra
         <span>{label}</span>
         <em>{empty ? "미수집" : formatMarketStatus(status)}</em>
       </div>
-      <b>{empty ? "-" : formatStockPrice(price)}</b>
+      <b>{empty ? "-" : `${formatStockPrice(price)}원`}</b>
       <strong>{empty ? "NXT 가격 미수집" : `${formatSignedNumber(change)} · ${formatStockPercent(changeRate)}`}</strong>
       <small>{formatStockTimestamp(tradedAt, "") || "시각 확인 대기"} · 거래량 {formatStockVolume(volume)}</small>
     </article>
@@ -459,6 +462,19 @@ function sanitizeDashboardSecretText(value) {
     .trim();
 }
 
+function StockPriceChart({ rows = [], companyName }) {
+  if (!rows.length) return <p className="a4-empty">선택 기간의 주가 이력이 없습니다.</p>;
+  return <div className="chart-box stock-trend-chart"><ResponsiveContainer width="100%" height="100%">
+    <RechartsLineChart data={rows} margin={{ left: 15, right: 20, top: 20, bottom: 8 }} accessibilityLayer>
+      <CartesianGrid vertical={false} stroke="var(--line-soft)" />
+      <XAxis dataKey="date" tickFormatter={formatStockDate} tickLine={false} axisLine={false} minTickGap={28} tick={{ fontSize: 17 }} />
+      <YAxis domain={["auto", "auto"]} tickFormatter={value => formatStockPrice(Math.round(value))} tickLine={false} axisLine={false} width={94} tick={{ fontSize: 17 }} />
+      <Tooltip labelFormatter={value => String(value)} formatter={value => [`${formatStockPrice(value)}원`, companyName]} />
+      <Line type="linear" dataKey="close" name={companyName} stroke="#7b901c" strokeWidth={2.5} dot={rows.length <= 20 ? { r: 3, fill: "var(--paper)" } : false} activeDot={{ r: 5 }} isAnimationActive={false} />
+    </RechartsLineChart>
+  </ResponsiveContainer></div>;
+}
+
 function StockTrendChart({ rows = [] }) {
   const visibleRows = rows.filter((row) => row.company || row.kospi || row.peer);
   if (!visibleRows.length) return <p className="a4-empty">상대 흐름 데이터가 없습니다.</p>;
@@ -470,9 +486,9 @@ function StockTrendChart({ rows = [] }) {
           <XAxis dataKey="date" tickLine={false} axisLine={false} />
           <YAxis domain={["auto", "auto"]} tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value))}`} />
           <Tooltip formatter={(value, name) => [formatIndexPoint(value), stockSeriesLabel(name)]} />
-          <Line type="monotone" dataKey="company" name="company" stroke="#2855d9" strokeWidth={3} dot={false} connectNulls />
-          <Line type="monotone" dataKey="peer" name="peer" stroke="#14805f" strokeWidth={2.5} dot={false} connectNulls />
-          <Line type="monotone" dataKey="kospi" name="kospi" stroke="#b45309" strokeWidth={2.2} dot={false} strokeDasharray="5 4" connectNulls />
+          <Line type="linear" dataKey="company" name="company" stroke="#7b901c" strokeWidth={2.5} dot={false} connectNulls isAnimationActive={false} />
+          <Line type="linear" dataKey="peer" name="peer" stroke="#738d70" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+          <Line type="linear" dataKey="kospi" name="kospi" stroke="#787b7c" strokeWidth={2} dot={false} strokeDasharray="5 4" connectNulls isAnimationActive={false} />
         </RechartsLineChart>
       </ResponsiveContainer>
       <div className="stock-chart-legend">

@@ -1,8 +1,8 @@
 export const dashboardSeries = [
-  { key: "own", color: "#245bd7", label: "당사" },
-  { key: "ga", color: "#008d78", label: "GA" },
-  { key: "insurance", color: "#ee4051", label: "보험사" },
-  { key: "regulation", color: "#ed9209", label: "정책/규제" },
+  { key: "own", color: "#7b901c", label: "당사" },
+  { key: "ga", color: "#738d70", label: "GA" },
+  { key: "insurance", color: "#bd744d", label: "보험사" },
+  { key: "regulation", color: "#787b7c", label: "정책/규제" },
 ];
 
 export function reportSlotPresentation(health) {
@@ -30,13 +30,17 @@ export function articleClock(issue, timestamp) {
 export function priorityDisplayRows(issues, articles) {
   const byLink = new Map();
   for (const article of articles) {
-    if (article.link && article.link !== "#") byLink.set(article.link, article);
+    if (!article.link || article.link === "#") continue;
+    const existing = byLink.get(article.link);
+    const longerTitle = !existing || String(article.title || "").length > String(existing.title || "").length;
+    const summary = [existing?.summary, article.summary].filter(Boolean).sort((a, b) => String(b).length - String(a).length)[0];
+    byLink.set(article.link, { ...(longerTitle ? article : existing), summary });
   }
   return issues.map(issue => {
     const original = byLink.get(issue.link);
     if (!original) return issue;
     // Enrich presentation only. Ranking, grouping, tone and category stay unchanged.
-    return { ...issue, title: original.title || issue.title,
+    return { ...issue, title: original.title || issue.title, summary: original.summary || issue.summary,
       time: original.time || issue.time, date: original.date || issue.date,
       pubDate: original.pubDate || original.pub_date || issue.pubDate || issue.pub_date };
   });

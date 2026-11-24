@@ -1,3 +1,19 @@
+import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
+import { monitoringCategoryKey } from "./monitoringPresentation.js";
+
+export function reportCategoryLabel(value) {
+  return { own: "당사", ga: "GA", insurance: "보험사", policy: "정책", sponsorship: "스폰서십", exclude: "제외" }[monitoringCategoryKey(value)] || value || "기타";
+}
+
+export function reportArticleHeadline(item = {}) {
+  const clean = value => String(value || "").replace(/\s+/g, " ").replace(/\s+([.,!?…])/g, "$1").trim();
+  const source = clean(resolvePublisher(item));
+  const title = clean(displayHeadline(item) || "제목 확인 필요");
+  const prefix = source && !title.startsWith(`[${source}]`) ? `[${source}] ` : "";
+  const relatedCount = Number(item.relatedCount || item.clusterSize || 1);
+  return `${prefix}${title}${relatedCount > 1 ? ` · 관련 ${relatedCount.toLocaleString("ko-KR")}건` : ""}`;
+}
+
 export function publicationMeta(period, data) {
   const scope = data.periodScope || {};
   const date = scope.scopeLabel || data.scope || data.generatedAt || "";

@@ -1,12 +1,12 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createRoot } from "react-dom/client";
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import { resolvePublisher, displayHeadline, isPublisherPortal, UNKNOWN_PUBLISHER } from "./publisherIdentity.js";
 import {
   Activity,
   AlertTriangle,
   Bell,
   Bookmark,
-  CalendarDays,
   ChevronDown,
   ChevronRight,
   Download,
@@ -14,7 +14,6 @@ import {
   FilePenLine,
   FileText,
   Gauge,
-  LayoutDashboard,
   LineChart,
   LogIn,
   Moon,
@@ -74,10 +73,11 @@ import { createOperationalPoller } from "./operationalPolling.js";
 import "./styles.css";
 import "./report.css";
 import { DashboardAnalysis, DashboardDialog, DashboardOperationsStrip, DashboardPriorityTable } from "./DashboardWorkbench.jsx";
-import { articleClock, priorityDisplayRows, dashboardSeries as dashboardMomentumSeries } from "./dashboardPresentation.js";
+import { articleClock, priorityDisplayRows } from "./dashboardPresentation.js";
 import "./dashboard-workbench.css";
 import MonitoringWorkbench from "./MonitoringWorkbench.jsx";
 import { monitoringCategoryCounts, monitoringCategoryKey } from "./monitoringPresentation.js";
+import NewsroomChart from "./NewsroomChart.jsx";
 
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
@@ -91,7 +91,6 @@ const Reports = React.lazy(loadReports);
 const StockMarketDashboard = React.lazy(loadStockMarketDashboard);
 const HorizontalBarPrimitive = React.lazy(() => loadChartPrimitives().then((module) => ({ default: module.HorizontalBarPrimitive })));
 const CategoryBarPrimitive = React.lazy(() => loadChartPrimitives().then((module) => ({ default: module.CategoryBarPrimitive })));
-const ToneTrendPrimitive = React.lazy(() => loadChartPrimitives().then((module) => ({ default: module.ToneTrendPrimitive })));
 
 const featureModuleLoaders = {
   media: loadMediaAnalysis,
@@ -100,32 +99,15 @@ const featureModuleLoaders = {
   stocks: loadStockMarketDashboard,
 };
 
+const newsroomNavItems = ["overview", "monitoring", "media", "regulators", "clipping", "scraps", "reports", "stocks", "management"]
+  .map(id => navItems.find(item => item.id === id)).filter(Boolean);
+
 function preloadFeatureSection(sectionId) {
   const loader = featureModuleLoaders[sectionId];
   return typeof loader === "function" ? loader() : Promise.resolve();
 }
 
-const navIcons = {
-  overview: LayoutDashboard,
-  monitoring: Search,
-  regulators: FileText,
-  media: LineChart,
-  stocks: WalletCards,
-  clipping: Bookmark,
-  scraps: Bookmark,
-  reports: FileText,
-  management: Settings,
-};
-
-const navSections = [
-  { title: "언론·PR", ids: ["overview", "monitoring", "media", "regulators", "clipping", "scraps", "reports"] },
-  { title: "시장·공시", ids: ["stocks"] },
-  { title: "운영관리", ids: ["management"] },
-];
-
-const navItemMap = new Map(navItems.map((item) => [item.id, item]));
-
-const chartColors = ["#2855d9", "#14805f", "#b45309", "#6d5bd0", "#64748b"];
+const chartColors = ["#7b901c", "#738d70", "#bd744d", "#787b7c", "#525953"];
 const TONE_FILTER_OPTIONS = ["긍정", "중립", "주의", "부정", "제외"];
 const TONE_SORT_WEIGHT = new Map(TONE_FILTER_OPTIONS.map((label, index) => [label, index]));
 const PRESS_INFLUENCE_LIMIT = 6;
@@ -757,6 +739,7 @@ function App() {
     buildArticleSummaryLines,
     buildFeedbackRuleCandidates,
     buildDateRangeToneTrend,
+    buildDashboardMomentum,
     buildKeywordFlow,
     buildKeywordRuleValidation,
     buildMediaAnalysisIssues,
@@ -832,31 +815,31 @@ function App() {
 
   return (
     <div className="app-shell" data-active-section={activeSection}>
-      <aside className="side-nav" aria-label="주요 메뉴">
+      <header className="newsroom-masthead">
         <Header working={working || Boolean(pendingSection)} workLabel={pendingSection ? "화면 준비 중" : workLabel} />
-        {navSections.map((section) => (
-          <div className="side-group" key={section.title}>
-            <div className="side-group-title">{section.title}</div>
-            {section.ids.map((id) => navItemMap.get(id)).filter(Boolean).map((item) => {
-              const Icon = navIcons[item.id] || FileText;
-              return (
+        <nav className="newsroom-navigation" aria-label="주요 메뉴">
+            {newsroomNavItems.map((item) => (
                 <button
                   type="button"
                   key={item.id}
                   className={(pendingSection || activeSection) === item.id ? "active" : ""}
+                  aria-current={(pendingSection || activeSection) === item.id ? "page" : undefined}
                   data-section={item.id}
                   onMouseEnter={() => preloadFeatureSection(item.id).catch(() => null)}
                   onFocus={() => preloadFeatureSection(item.id).catch(() => null)}
                   onClick={() => navigateSection(item.id)}
                 >
-                  <Icon />
-                  <span>{item.label}</span>
+                  <span>{item.id === "stocks" ? "주가·시장" : item.id === "management" ? "운영관리" : item.label}</span>
                 </button>
-              );
-            })}
-          </div>
-        ))}
-      </aside>
+            ))}
+        </nav>
+        <div className="newsroom-global-actions">
+          <time>{formatKstDateKey(new Date()).replaceAll("-", ".")}</time>
+          <button type="button" className="newsroom-search-action" onClick={() => openMonitoring({})} aria-label="기사 검색" title="기사 검색"><Search /><span>기사 검색</span></button>
+          <button type="button" onClick={() => overviewRefreshOperations({ trigger: true, workflow: "dashboard-refresh.yml", source: "dashboard_manual_refresh", label: "기사 수집 갱신" })} disabled={working} aria-label="새로고침" title="기사 수집 갱신"><RefreshCw /></button>
+          <button type="button" onClick={toggleTheme} aria-label={theme === "dim" ? "라이트 모드로 전환" : "저자극 모드로 전환"} title={theme === "dim" ? "라이트 모드" : "저자극 모드"}>{theme === "dim" ? <Sun /> : <Moon />}</button>
+        </div>
+      </header>
       <MemoizedOverview
         data={realtimeData}
         articles={realtimeArticles}
@@ -942,20 +925,14 @@ function Header({ working = false, workLabel = "" }) {
   const userText = dashboardSessionLabel(getStoredSession());
 
   return (
-    <div className="side-brand">
-      <div className="side-brand-main">
+    <div className="newsroom-brand" title={userText}>
         <img
-          className="side-brand-logo"
-          src={`${import.meta.env.BASE_URL || "./"}assets/incar-signature-blue-ko.png`}
+          className="newsroom-logo"
+          src={`${import.meta.env.BASE_URL || "./"}assets/incar-logo-white.png`}
           alt="인카금융서비스"
         />
         <strong>언론 모니터링</strong>
-        <span>Monitoring Workspace</span>
-      </div>
-      <div className="side-brand-user">
-        <span>{userText}</span>
-        {working && <em>작업 중{workLabel ? ` · ${workLabel}` : ""}</em>}
-      </div>
+        {working && <span className="newsroom-work-status" role="status">{workLabel || "갱신 중"}</span>}
     </div>
   );
 }
@@ -1109,9 +1086,9 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
       </nav>
 
-      <DashboardOperationsStrip watchHealth={watchHealth} notificationHealth={notificationHealth} reportHealth={reportHealth} cadence={NEGATIVE_WATCH_SHORT_LABEL} onOpenHistory={() => setSlackHistoryOpen(true)} />
-      <DashboardAnalysis rows={momentumRows} compositionRows={compositionRows} Chart={DashboardSvgLineChart} categoryLabel={displayDashboardCategory} />
       <DashboardPriorityTable rows={visibleIssueRows} sort={issueSort} onSort={setIssueSort} Action={DashboardIssueAction} onOpenMonitoring={onOpenMonitoring} categoryLabel={displayDashboardCategory} timeLabel={(issue) => articleClock(issue, articleTimeValue(issue))} riskScore={dashboardDisplayScore} />
+      <DashboardOperationsStrip watchHealth={watchHealth} notificationHealth={notificationHealth} reportHealth={reportHealth} cadence={NEGATIVE_WATCH_SHORT_LABEL} onOpenHistory={() => setSlackHistoryOpen(true)} />
+      <DashboardAnalysis rows={momentumRows} compositionRows={compositionRows} Chart={NewsroomChart} categoryLabel={displayDashboardCategory} />
       {riskHistoryOpen && <DashboardDialog title="최근 7일 전체 리스크" onClose={() => setRiskHistoryOpen(false)}><DashboardLeadSparkline rows={momentumRows} /></DashboardDialog>}
       {slackHistoryOpen && (
         <NotificationHistoryDialog
@@ -1129,35 +1106,21 @@ function DashboardEditorialHeader({ data, status, operations, onOpenMonitoring, 
   return (
     <header className="editorial-dashboard-header">
       <div className="editorial-header-copy">
-        <h1>언론 모니터링</h1>
+        <h1>오늘의 언론 상황</h1>
         <p>{formatDashboardScopeDate(formatKstDateKey(new Date()))}</p>
       </div>
       <p className={`editorial-data-status ${live ? "live" : ""}`}><i /><span>{live ? "데이터 정상" : status === "live" ? "저장본 · 연결 확인 필요" : "데이터 확인 중"}</span><time>{sourceTime} 기준</time></p>
-      <div className="editorial-header-actions">
-        <button type="button" onClick={onRefresh} disabled={isLoading} aria-label={isLoading ? "갱신 중" : "새로고침"} title="새로고침"><RefreshCw /></button>
-        <button type="button" className="editorial-article-search" onClick={() => onOpenMonitoring?.({})}>기사 검색 <Search /></button>
-        <button
-          type="button"
-          className="editorial-theme-toggle"
-          onClick={onToggleTheme}
-          aria-label={theme === "dim" ? "라이트 모드로 전환" : "저자극 모드로 전환"}
-          title={theme === "dim" ? "라이트 모드" : "저자극 모드"}
-        >
-          <span className={theme === "light" ? "active" : ""}><Sun /></span>
-          <span className={theme === "dim" ? "active" : ""}><Moon /></span>
-        </button>
-      </div>
     </header>
   );
 }
 
 function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk }) {
   const rows = [
-    { label: "리스크", value: summary.risk || "LOW", meta: "당사 기준", Icon: ShieldCheck, className: `risk-${String(summary.risk || "low").toLowerCase()}`, onClick: onOpenRisk },
-    { label: "당일 기사", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), meta: "건", Icon: Newspaper, preset: {} },
-    { label: "당사 언급", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), meta: "건", Icon: Users, className: "own", preset: { ownOnly: true } },
+    { label: "기사", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), meta: "건", Icon: Newspaper, preset: {} },
+    { label: "당사", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), meta: "건", Icon: Users, className: "own", preset: { ownOnly: true } },
     { label: "부정", value: Number(summary.ownNegative || 0).toLocaleString("ko-KR"), meta: "즉시 확인", Icon: TrendingDown, className: "negative", preset: { tone: "부정" } },
     { label: "주의", value: Number(summary.caution || 0).toLocaleString("ko-KR"), meta: "관찰 기사", Icon: AlertTriangle, className: "caution", preset: { tone: "주의" } },
+    { label: "리스크", value: summary.risk || "LOW", meta: "당사 기준", Icon: ShieldCheck, className: `risk-${String(summary.risk || "low").toLowerCase()}`, onClick: onOpenRisk },
   ];
   return (
     <section className="editorial-kpi-strip" aria-label="오늘의 주요 지표">
@@ -1183,7 +1146,7 @@ function DashboardLeadSparkline({ rows = [] }) {
       <div className="editorial-lead-sparkline-chart">
         {chartRows.length
           ? (
-            <DashboardSvgLineChart
+            <NewsroomChart
               rows={chartRows}
               series={[{ key: "riskIndex", color: "#d97706", label: "리스크 지수", unit: "점" }]}
               compact
@@ -1193,73 +1156,6 @@ function DashboardLeadSparkline({ rows = [] }) {
           : <div className="editorial-chart-empty">집계 가능한 리스크 신호가 없습니다.</div>}
       </div>
     </div>
-  );
-}
-
-function DashboardSvgLineChart({ rows = [], series = dashboardMomentumSeries, compact = false, ariaLabel = "기사량 추이" }) {
-  const chartRef = useRef(null);
-  const [size, setSize] = useState({ width: compact ? 320 : 760, height: compact ? 118 : 220 });
-  useEffect(() => {
-    const parent = chartRef.current?.parentElement;
-    if (!parent) return undefined;
-    const observer = new ResizeObserver(([entry]) => {
-      const width = Math.round(entry.contentRect.width);
-      const height = Math.round(entry.contentRect.height);
-      if (width > 0 && height > 0) setSize((previous) => previous.width === width && previous.height === height ? previous : { width, height });
-    });
-    observer.observe(parent);
-    return () => observer.disconnect();
-  }, []);
-  const { width, height } = size;
-  const padding = compact ? { top: 18, right: 14, bottom: 24, left: 12 } : { top: 22, right: 24, bottom: 34, left: 50 };
-  const values = rows.flatMap((row) => series.map((item) => Number(row[item.key] || 0)));
-  const maxValue = Math.max(1, ...values);
-  const roughStep = maxValue / 4;
-  const stepPower = 10 ** Math.floor(Math.log10(Math.max(1, roughStep)));
-  const normalizedStep = roughStep / stepPower;
-  const tickStep = Math.max(1, (normalizedStep <= 1 ? 1 : normalizedStep <= 2 ? 2 : normalizedStep <= 5 ? 5 : 10) * stepPower);
-  const scaleMax = compact ? maxValue : Math.max(tickStep, Math.ceil(maxValue / tickStep) * tickStep);
-  const yTicks = compact
-    ? []
-    : Array.from({ length: Math.floor(scaleMax / tickStep) + 1 }, (_, index) => index * tickStep);
-  const x = (index) => padding.left + (index * (width - padding.left - padding.right)) / Math.max(1, rows.length - 1);
-  const y = (value) => padding.top + (1 - Number(value || 0) / scaleMax) * (height - padding.top - padding.bottom);
-  return (
-    <svg ref={chartRef} className="dashboard-svg-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
-      {compact
-        ? <line x1={padding.left} x2={width - padding.right} y1={y(scaleMax / 2)} y2={y(scaleMax / 2)} className="dashboard-chart-grid" />
-        : (
-          <>
-            <text x="2" y="12" className="dashboard-chart-axis-unit">기사 수(건)</text>
-            {yTicks.map((tick) => (
-              <g key={tick}>
-                <line x1={padding.left} x2={width - padding.right} y1={y(tick)} y2={y(tick)} className="dashboard-chart-grid" />
-                <text x={padding.left - 8} y={y(tick) + 4} textAnchor="end" className="dashboard-chart-y-label">
-                  {Number(tick).toLocaleString("ko-KR")}
-                </text>
-              </g>
-            ))}
-          </>
-        )}
-      {series.map((item) => {
-        const points = rows.map((row, index) => `${x(index)},${y(row[item.key])}`).join(" ");
-        return (
-          <g key={item.key}>
-            <polyline points={points} fill="none" stroke={item.color} strokeWidth={compact ? 3 : 2.5} strokeLinejoin="round" strokeLinecap="round" />
-            {rows.map((row, index) => (
-              <circle key={`${item.key}-${index}`} cx={x(index)} cy={y(row[item.key])} r={compact ? 3.2 : 2.8} fill="#fff" stroke={item.color} strokeWidth="2">
-                <title>{`${row.dateLabel || row.date || index + 1} ${item.label} ${Number(row[item.key] || 0).toLocaleString("ko-KR")}${item.unit || "건"}`}</title>
-              </circle>
-            ))}
-          </g>
-        );
-      })}
-      {rows.map((row, index) => (
-        <text key={`label-${index}`} x={x(index)} y={height - 7} textAnchor="middle" className="dashboard-chart-label">
-          {row.dateLabel || row.date || ""}
-        </text>
-      ))}
-    </svg>
   );
 }
 
@@ -1337,24 +1233,20 @@ function formatDashboardChartDate(value = "") {
   return match ? `${Number(match[1])}/${Number(match[2])}` : value;
 }
 
-function dashboardSeriesLabel(value = "") {
-  return { own: "당사", ga: "GA", insurance: "보험사", regulation: "정책/규제" }[value] || value;
-}
-
 function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, onOpenMonitoring }) {
+  const [visible, setVisible] = useState(6);
   return (
     <section className="clipping-candidate-panel">
       <div className="clipping-panel-head">
         <div>
-          <span>REPORT CLIPPING</span>
-          <h2>AI 클리핑 후보</h2>
+          <h2>클리핑 후보 <small>{candidates.length}건</small></h2>
         </div>
         <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.({ clipping: true })}>
           후보 더보기
         </button>
       </div>
       <div className="clipping-candidate-list">
-        {candidates.length ? candidates.map((article, index) => {
+        {candidates.length ? candidates.slice(0, visible).map((article, index) => {
           const scrapped = isArticleScrapped(article, scraps);
           return (
             <article className={`clipping-candidate-card ${toneCssClass(article.tone)}`} key={`${articleSelectionKey(article)}-${index}`}>
@@ -1362,20 +1254,21 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
                 <div className="clipping-card-meta">
                   <Chip tone={article.tone}>{article.tone}</Chip>
                   <Chip>{article.category}</Chip>
-                  <span>{formatIssueMeta(article)}</span>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
                 </div>
                 <div className="clipping-card-actions">
                   <ArticleScrapButton article={article} scrapped={scrapped} onScrapSaved={onScrapSaved} />
                   {article.link && article.link !== "#" && (
-                    <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, article.link)}>
-                      <ExternalLink /> 기사 열기
+                    <a href={article.link} target="_blank" rel="noopener noreferrer" aria-label="기사 원문 열기" title="기사 원문 열기" onClick={(event) => openArticleLink(event, article.link)}>
+                      <ExternalLink />
                     </a>
                   )}
                 </div>
               </div>
-              <h3>{displayHeadline(article)}</h3>
-              <ArticleSummaryBlock item={article} dense />
-              <ArticleDecisionNote item={article} hideClippingLabel />
+              <h3>{/^https?:\/\//i.test(article.link || "") ? <a href={article.link} target="_blank" rel="noopener noreferrer">{displayHeadline(article)}</a> : displayHeadline(article)}</h3>
+              <p className="clipping-publisher">{resolvePublisher(article)} · {articleClock(article, articleTimeValue(article))}</p>
+              {(index === 0 || index > 2) && <ArticleSummaryBlock item={article} dense />}
+              <details className="clipping-evidence"><summary>선정 근거</summary>{index > 0 && index < 3 && <ArticleSummaryBlock item={article} dense />}<ArticleDecisionNote item={article} hideClippingLabel /></details>
             </article>
           );
         }) : (
@@ -1385,6 +1278,7 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
           </article>
         )}
       </div>
+      {candidates.length > visible && <button className="ghost-button full" type="button" onClick={() => setVisible(count => count + 6)}>기사 더 보기 <ChevronDown /></button>}
     </section>
   );
 }
@@ -1893,10 +1787,10 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
   };
 
   return (
-    <main className="workspace">
+    <main className="workspace regulator-workspace">
       <PageTitle
-        eyebrow="Official Releases"
-        title="금융당국 보도자료"
+        eyebrow={`보도자료 ${filteredRows.length}건`}
+        title="금융당국"
         description="금융감독원·금융위원회 보도자료를 5개 정책 키워드로 자동 분류해 확인합니다."
       />
       <section className="filter-card regulator-filter">
@@ -1938,15 +1832,10 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
         <button className="ghost-button filter-action" onClick={resetFilters}>
           초기화
         </button>
+        <button className="ghost-button filter-action" onClick={toggleVisibleSelection}>{allVisibleSelected ? "선택 해제" : "현재 목록 선택"}</button>
       </section>
       <RegulatorDirectionPanel rows={analysisRows} selectedCount={selectedRows.length} totalCount={filteredRows.length} />
-      <Panel title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>
-        <div className="regulator-list-actions">
-          <button className="ghost-button compact-button" onClick={toggleVisibleSelection}>
-            {allVisibleSelected ? "선택 해제" : "현재 목록 선택"}
-          </button>
-          <span>{selectedRows.length ? `${selectedRows.length.toLocaleString("ko-KR")}건 선택` : "선택 기준 분류"}</span>
-        </div>
+      <Panel className="regulator-list-panel" title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>
         <RegulatorReleaseFeed rows={visibleRows} selected={selected} onToggle={toggleSelected} />
         {!filteredRows.length && (
           <div className="empty-list-note">조건에 맞는 금융당국 보도자료가 없습니다.</div>
@@ -1966,7 +1855,7 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
   return (
     <section className="panel regulator-analysis-panel">
       <div className="panel-head">
-        <h2><ShieldCheck />키워드 자동 분류</h2>
+        <h2><ShieldCheck />분류별 현황</h2>
         <span>{selectedCount ? `${selectedCount.toLocaleString("ko-KR")}건 선택` : `최근 ${Math.min(totalCount, rows.length).toLocaleString("ko-KR")}건 기준`}</span>
       </div>
       <div className="regulator-keyword-board">
@@ -1989,24 +1878,18 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
 
 function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
   return (
-    <div className="regulator-release-list">
+    <div className="regulator-table-scroll"><table className="regulator-release-list"><colgroup><col style={{ width: 50 }} /><col style={{ width: 180 }} /><col style={{ width: 220 }} /><col /><col style={{ width: 76 }} /></colgroup>
+      <thead><tr><th><span className="sr-only">선택</span></th><th>발표일</th><th>기관·분류</th><th>보도자료 제목</th><th>원문</th></tr></thead><tbody>
       {rows.map((row) => {
         const key = articleSelectionKey(row);
         const checked = selected.has(key);
         return (
-          <article key={key} className={checked ? "regulator-release-row selected" : "regulator-release-row"}>
-            <label>
-              <input type="checkbox" checked={checked} onChange={() => onToggle(row)} />
-              <span className="sr-only">보도자료 선택</span>
-            </label>
-            <div>
-              <div className="feed-title-line">
-                <Chip tone={row.tone}>{row.tone}</Chip>
-                <span className="regulator-keyword-pill">{row.regulatorKeyword}</span>
-                <b>{displayHeadline(row)}</b>
-              </div>
-              <span className="feed-meta">{formatFeedMeta(row, false)}</span>
-            </div>
+          <tr key={key} className={checked ? "regulator-release-row selected" : "regulator-release-row"}>
+            <td><input type="checkbox" aria-label={`${displayHeadline(row)} 선택`} checked={checked} onChange={() => onToggle(row)} /></td>
+            <td className="regulator-date">{row.date || "-"}</td>
+            <td className="regulator-institution"><b>{row.source}</b><small>{row.regulatorKeyword}</small></td>
+            <td className="regulator-headline"><b>{displayHeadline(row)}</b></td>
+            <td>
             {row.link && row.link !== "#" && (
               <a
                 href={row.link}
@@ -2018,27 +1901,34 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
                 <ExternalLink />
               </a>
             )}
-          </article>
+            </td>
+          </tr>
         );
       })}
-    </div>
+      </tbody></table></div>
   );
 }
 
 function Clipping({ articles = [], allArticles = [], scraps = [], onOpenMonitoring, onScrapSaved }) {
+  const [category, setCategory] = useState("all");
+  const [sort, setSort] = useState("recommended");
   const sourceArticles = allArticles.length ? allArticles : articles;
   const candidates = useMemo(
-    () => buildClippingCandidates(sourceArticles, scraps, 16),
+    () => priorityDisplayRows(buildClippingCandidates(sourceArticles, scraps, 16), sourceArticles),
     [sourceArticles, scraps],
   );
   const ownCount = candidates.filter((item) => item.category === "당사").length;
   const cautionCount = candidates.filter((item) => item.tone === "주의" || item.tone === "부정").length;
   const unsavedCount = candidates.filter((item) => !isArticleScrapped(item, scraps)).length;
+  const filteredCandidates = useMemo(() => {
+    const rows = candidates.filter(item => category === "all" || monitoringCategoryKey(item.category) === category);
+    return sort === "latest" ? [...rows].sort((a, b) => articleTimeValue(b) - articleTimeValue(a)) : rows;
+  }, [candidates, category, sort]);
 
   return (
-    <main className="workspace">
+    <main className="workspace clipping-page">
       <PageTitle
-        eyebrow="Report Clipping"
+        eyebrow={`후보 ${candidates.length}건 · 스크랩 ${scraps.length}건`}
         title="클리핑"
         description="보고서와 임원 공유에 넣을 만한 기사 후보를 별도로 모아 검토합니다. 통합 대시보드는 현황판으로 두고, 클리핑 판단은 이 화면에서 처리합니다."
         right={(
@@ -2048,7 +1938,7 @@ function Clipping({ articles = [], allArticles = [], scraps = [], onOpenMonitori
         )}
       />
       <section className="clipping-workspace">
-        <div className="clipping-summary-grid">
+        <div className="clipping-summary-grid sr-only">
           <article>
             <span>후보 기사</span>
             <b>{candidates.length.toLocaleString("ko-KR")}</b>
@@ -2070,8 +1960,15 @@ function Clipping({ articles = [], allArticles = [], scraps = [], onOpenMonitori
             <em>검토 후 저장</em>
           </article>
         </div>
+        <div className="clipping-category-toolbar">
+          <div className="newsroom-content-tabs" role="tablist" aria-label="클리핑 기사 분류">
+            {[["all", "전체"], ["own", "당사"], ["policy", "정책·규제"], ["insurance", "보험업계"], ["ga", "GA"]].map(([key, label]) => <button type="button" role="tab" key={key} aria-selected={category === key} onClick={() => setCategory(key)}>{label}</button>)}
+          </div>
+          <select aria-label="클리핑 정렬" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">추천순</option><option value="latest">최신순</option></select>
+        </div>
         <DashboardClippingPanel
-          candidates={candidates}
+          key={category}
+          candidates={filteredCandidates}
           scraps={scraps}
           onScrapSaved={onScrapSaved}
           onOpenMonitoring={onOpenMonitoring}
@@ -2082,19 +1979,36 @@ function Clipping({ articles = [], allArticles = [], scraps = [], onOpenMonitori
 }
 
 function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, onScrapSaved, onScrapAnalysisSaved }) {
+  const [selection, setSelection] = useState(null);
+  const [analysisMode, setAnalysisMode] = useState("홍보 대응");
   const [prompt, setPrompt] = useState("홍보 대응 관점에서 부정 이슈와 우호적으로 활용할 수 있는 기사 흐름을 나눠 분석해줘.");
   const [analysisReport, setAnalysisReport] = useState(null);
   const [analysisStatus, setAnalysisStatus] = useState("");
   const [analysisError, setAnalysisError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
+  const [scrapQuery, setScrapQuery] = useState("");
+  const [scrapSort, setScrapSort] = useState("latest");
+  const [scrapCategory, setScrapCategory] = useState("all");
   const grouped = groupArticles(scraps, "category").slice(0, 5).map(([name, value]) => ({ name, value }));
   const savedReports = Array.isArray(operations.scrapAnalysisReports) ? operations.scrapAnalysisReports : [];
   const activeReport = analysisReport || savedReports[0] || null;
   const activeReportBody = activeReport?.report || null;
-  const canAnalyze = scraps.length > 0 && !analyzing;
+  const selectedArticles = selection === null ? scraps : scraps.filter(article => selection.has(articleSelectionKey(article)));
+  const visibleScraps = useMemo(() => {
+    const needle = scrapQuery.trim().toLocaleLowerCase("ko-KR");
+    return scraps.filter(article => (scrapCategory === "all" || article.category === scrapCategory) && (!needle || `${displayHeadline(article)} ${resolvePublisher(article)}`.toLocaleLowerCase("ko-KR").includes(needle)))
+      .sort((a, b) => scrapSort === "oldest" ? articleTimeValue(a) - articleTimeValue(b) : articleTimeValue(b) - articleTimeValue(a));
+  }, [scraps, scrapQuery, scrapSort, scrapCategory]);
+  const canAnalyze = selectedArticles.length > 0 && !analyzing;
+  const toggleScrap = article => setSelection(current => {
+    const next = new Set(current === null ? scraps.map(articleSelectionKey) : current);
+    const key = articleSelectionKey(article);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
 
   const handleAnalyze = async () => {
-    if (!scraps.length) {
+    if (!selectedArticles.length) {
       setAnalysisError("먼저 분석할 기사를 스크랩해 주세요.");
       return;
     }
@@ -2102,23 +2016,23 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
     setAnalysisError("");
     setAnalysisStatus("Gemini Pro 분석 중");
     try {
-      const payloadArticles = scraps.slice(0, 40).map(scrapAnalysisArticlePayload);
+      const payloadArticles = selectedArticles.slice(0, 40).map(scrapAnalysisArticlePayload);
       const result = await generateScrapAnalysisWithGemini({
         prompt,
         articles: payloadArticles,
       });
-      const localReport = buildLocalScrapAnalysisReport(result, prompt, scraps);
+      const localReport = buildLocalScrapAnalysisReport(result, prompt, selectedArticles);
       setAnalysisReport(localReport);
       setAnalysisStatus("분석 완료 · 저장 중");
       try {
         const saved = await saveScrapAnalysisReport({
           prompt,
-          articles: scraps,
+          articles: selectedArticles,
           report: result.report || localReport.report,
           analysis: result.analysis || localReport.analysis,
           model: result.model || localReport.model,
           usageMetadata: result.usageMetadata || {},
-          articleCount: result.articleCount || scraps.length,
+          articleCount: result.articleCount || selectedArticles.length,
         });
         const finalReport = saved || localReport;
         setAnalysisReport(finalReport);
@@ -2153,10 +2067,10 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
   };
 
   return (
-    <main className="workspace">
+    <main className="workspace scraps-page">
       <PageTitle
-        eyebrow="Scrap File"
-        title="주요 기사 스크랩"
+        eyebrow={`보관 ${scraps.length}건 · 선택 ${selectedArticles.length}건`}
+        title="스크랩"
         description="중요 기사를 모아 임원 보고, 홍보 대응, 동향 점검용으로 다시 분석하는 작업 공간입니다."
         right={(
           <button className="primary-button" disabled={!activeReport} onClick={() => openScrapAnalysisReport(activeReport)}>
@@ -2164,16 +2078,27 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
           </button>
         )}
       />
+      <div className="scrap-category-summary" role="tablist" aria-label="스크랩 기사 분류"><button role="tab" aria-selected={scrapCategory === "all"} onClick={() => setScrapCategory("all")}>전체 <b>{scraps.length}</b></button>{grouped.map(({ name, value }) => <button role="tab" aria-selected={scrapCategory === name} onClick={() => setScrapCategory(name)} key={name}>{name} <b>{value}</b></button>)}</div>
       <section className="scrap-workspace-v2">
-        <Panel title="스크랩 분석" icon={Bookmark} meta={`${scraps.length}건`}>
+        <section className="scrap-collection"><header className="scrap-collection-heading"><h2>보관 기사</h2><label className="scrap-search"><Search /><input aria-label="보관 기사 검색" placeholder="보관 기사 검색" value={scrapQuery} onChange={event => setScrapQuery(event.target.value)} /></label><select aria-label="스크랩 정렬" value={scrapSort} onChange={event => setScrapSort(event.target.value)}><option value="latest">최신순</option><option value="oldest">오래된순</option></select></header>
+          {visibleScraps.map(article => <article className="scrap-collection-row" key={articleSelectionKey(article)}>
+            <input type="checkbox" aria-label={`${displayHeadline(article)} 분석 선택`} checked={selection === null || selection.has(articleSelectionKey(article))} onChange={() => toggleScrap(article)} />
+            <div><p>{resolvePublisher(article)} · {article.date || ""} {articleClock(article, articleTimeValue(article))}</p><h3>{article.link && /^https?:\/\//i.test(article.link) ? <a href={article.link} target="_blank" rel="noopener noreferrer">{displayHeadline(article)}</a> : displayHeadline(article)}</h3></div>
+            <Chip>{article.category}</Chip><Chip tone={article.tone}>{article.tone}</Chip>
+            <ArticleScrapButton article={article} scrapped onScrapSaved={onScrapSaved} />
+          </article>)}
+          {!visibleScraps.length && <p className="empty-list-note">{scraps.length ? "조건에 맞는 보관 기사가 없습니다." : "보관한 기사가 없습니다."}</p>}
+        </section>
+        <div className="scrap-side-stack">
+        <Panel title="선택 기사 분석" icon={Bookmark} meta={`${selectedArticles.length}건 선택`}>
           <div className="scrap-preset-row-v2">
             {["임원 보고", "홍보 대응", "동향 점검"].map((label) => (
-              <button key={label} className="ghost-button" onClick={() => setPrompt(`${label} 관점에서 스크랩 기사를 핵심 판단, 리스크, 후속 확인 포인트로 정리해줘.`)}>
+              <button key={label} className={`ghost-button ${analysisMode === label ? "active" : ""}`} onClick={() => { setAnalysisMode(label); setPrompt(`${label} 관점에서 스크랩 기사를 핵심 판단, 리스크, 후속 확인 포인트로 정리해줘.`); }}>
                 {label}
               </button>
             ))}
           </div>
-          <textarea className="scrap-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} />
+          <label className="scrap-prompt-label">검토 메모<textarea className="scrap-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} /></label>
           <ScrapAnalysisPreview report={activeReportBody} fallbackCount={scraps.length} />
           {analysisStatus && <div className="scrap-analysis-status">{analysisStatus}</div>}
           {analysisError && <div className="scrap-analysis-status warning">{analysisError}</div>}
@@ -2187,7 +2112,6 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
           </div>
           <ScrapAnalysisReportDigest report={activeReportBody} />
         </Panel>
-        <div className="scrap-side-stack">
           <Panel title="최근 클리핑 보고서" icon={FileText} meta={`${savedReports.length}건`}>
             <div className="scrap-report-history">
               {savedReports.slice(0, 5).map((report) => (
@@ -2199,14 +2123,6 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
               ))}
               {!savedReports.length && <div className="risk-empty compact">저장된 클리핑 보고서가 아직 없습니다.</div>}
             </div>
-          </Panel>
-          <Panel title="스크랩 분류" icon={LineChart} meta="근거 구성">
-            {grouped.length
-              ? <CategoryChart rows={grouped} mini onOpenMonitoring={onOpenMonitoring} />
-              : <div className="chart-empty">스크랩한 기사가 없습니다.</div>}
-          </Panel>
-          <Panel title="스크랩 기사 목록" icon={Newspaper} meta={`${scraps.length}건`}>
-            <ArticleFeed rows={scraps} scraps={scraps} onScrapSaved={onScrapSaved} />
           </Panel>
         </div>
       </section>
@@ -3101,18 +3017,15 @@ function formatFeedbackStamp(value) {
   }).format(date).replace(/\s/g, "");
 }
 
-function PageTitle({ right }) {
-  if (!right) return null;
+function PageTitle({ title, eyebrow, right }) {
   return (
-    <div className="page-title-actions-only">
-      {right}
-    </div>
+    <header className="page-title"><div><h1>{title}</h1>{eyebrow && <span>{eyebrow}</span>}</div><div className="page-title-right">{right}</div></header>
   );
 }
 
-function Panel({ title, icon: Icon = FileText, meta, children }) {
+function Panel({ title, icon: Icon = FileText, meta, children, className = "" }) {
   return (
-    <section className="panel">
+    <section className={`panel ${className}`}>
       <div className="panel-head">
         <h2><Icon />{title}</h2>
         {meta ? <span>{meta}</span> : null}
@@ -3137,10 +3050,10 @@ function MonthlyIssueDigest({ issues, period = "monthly" }) {
           <span>{formatIssueMeta(lead)}</span>
         </div>
         <span className="monthly-issue-kicker">{meta.kicker}</span>
-        <h3>{displayHeadline(lead)}</h3>
+        <h3>{/^https?:\/\//i.test(lead.link || "") ? <a href={lead.link} target="_blank" rel="noopener noreferrer">{displayHeadline(lead)}</a> : displayHeadline(lead)}</h3>
         {lead.link && lead.link !== "#" && (
           <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
-            <ExternalLink />기사 열기
+            <ExternalLink /><span className="sr-only">기사 열기</span>
           </a>
         )}
         <RelatedIssueDetails issue={lead} />
@@ -3150,7 +3063,7 @@ function MonthlyIssueDigest({ issues, period = "monthly" }) {
           <article key={`${issue.source}-${issue.title}`}>
             <div>
               <span>{formatIssueMeta(issue)}</span>
-              <h4>{displayHeadline(issue)}</h4>
+              <h4>{/^https?:\/\//i.test(issue.link || "") ? <a href={issue.link} target="_blank" rel="noopener noreferrer">{displayHeadline(issue)}</a> : displayHeadline(issue)}</h4>
               <RelatedIssueDetails issue={issue} compact />
             </div>
             <Chip tone={issue.tone}>{issue.tone}</Chip>
@@ -4386,12 +4299,17 @@ function CategoryChart({ rows, tall = false, mini = false, verticalBars = false,
   );
 }
 
+const toneChartSeries = [
+  { key: "positive", label: "긍정", color: "#7b901c" },
+  { key: "neutral", label: "중립", color: "#787b7c" },
+  { key: "caution", label: "주의", color: "#ad6b28" },
+  { key: "negative", label: "부정", color: "#b33739" },
+];
+
 function ToneTrend({ rows, compact = false }) {
   return (
     <div className={compact ? "chart-box report-trend" : "chart-box tall"}>
-      <React.Suspense fallback={<ChartLoadingState />}>
-        <ToneTrendPrimitive rows={rows} compact={compact} />
-      </React.Suspense>
+      <NewsroomChart rows={rows} series={toneChartSeries} compact={compact} ariaLabel="일별 논조별 기사 수" />
     </div>
   );
 }

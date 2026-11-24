@@ -13,3 +13,5 @@ frontend/out/
 .run-state/
 .watch-state/
 tmp-*
+.qa/
+frontend/vite-newsroom*.log

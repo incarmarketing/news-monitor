@@ -15,6 +15,7 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
   const [mode, setMode] = useState(reportersOnly ? "reporters" : "media");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(6);
   const [selection, setSelection] = useState(null);
   const refresh = useCallback(async () => {
     setBusy(true); setError("");
@@ -38,12 +39,12 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
       : { mode: "media", key: row.name, title: row.name });
   }
   return <section className="media-registry" aria-label={reportersOnly ? "누적 기자 이력" : "누적 언론사 이력"}>
-    <div className="registry-tabs" role="tablist">
+    <header className="registry-section-heading"><h2>{reportersOnly ? "기자 관리" : "언론사 관리"}</h2><div className="registry-tabs" role="tablist">
       {tabs.map(([key, label]) => <button type="button" role="tab" aria-selected={mode === key} className={mode === key ? "active" : ""} onClick={() => chooseMode(key)} key={key}>{label}{key === "unknown" && data && <span>{data.unknown.reduce((sum, row) => sum + row.article_count, 0)}</span>}</button>)}
-    </div>
+    </div></header>
     {mode === "manual" ? children : selection ? <RegistryDetail key={`${selection.mode}:${selection.key}`} selection={selection} onBack={() => setSelection(null)} onSaved={refresh} /> : <>
       <div className="registry-toolbar">
-        <div><h2>{reportersOnly ? "당사 보도 작성 기자" : mode === "unknown" ? "언론사 확인 대기" : "당사 보도 매체"}</h2>
+        <div><h2 className="sr-only">{reportersOnly ? "당사 보도 작성 기자" : mode === "unknown" ? "언론사 확인 대기" : "당사 보도 매체"}</h2>
           {data && <p>누적 당사 언급 {data.own_articles.toLocaleString()}건 · {date(data.as_of)} 기준</p>}</div>
         <label className="registry-search"><Search size={16} /><input aria-label="언론사·기자 검색" placeholder={mode === "unknown" ? "주소 검색" : "언론사·기자 검색"} value={query} onChange={(e) => {setQuery(e.target.value); setPage(0);}} /></label>
         <button type="button" className="registry-icon" title="누적 이력 새로고침" aria-label="누적 이력 새로고침" onClick={refresh} disabled={busy}><RefreshCw size={18} /></button>
@@ -54,7 +55,7 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
           <th>{mode === "unknown" ? "미확인 주소" : mode === "reporters" ? "기자" : "언론사"}</th>
           <th>{mode === "unknown" ? "당사 언급" : mode === "reporters" ? "언론사" : "작성 기자"}</th>
           <th>기사 수</th><th>최근 보도</th><th>이력</th>
-        </tr></thead><tbody>{rows.slice(page * 20, (page + 1) * 20).map((row) => <tr key={mode === "unknown" ? row.host : `${row.media || ""}:${row.name}`}>
+        </tr></thead><tbody>{rows.slice(page * pageSize, (page + 1) * pageSize).map((row) => <tr key={mode === "unknown" ? row.host : `${row.media || ""}:${row.name}`}>
           <td><strong>{row.name || row.host || "주소 미확인"}</strong>{row.portal && <small>기사별 확인</small>}</td>
           <td>{mode === "unknown" ? `${row.own_count}건` : mode === "reporters" ? row.media : <>
             <span title={(mediaAuthors.get(row.name) || []).join(", ")}>{(mediaAuthors.get(row.name) || []).slice(0,2).join(", ") || "확인 필요"}{(mediaAuthors.get(row.name)?.length || 0) > 2 ? ` 외 ${mediaAuthors.get(row.name).length - 2}명` : ""}</span>
@@ -63,7 +64,7 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
           <td><button type="button" className="registry-icon" title="기사 이력 보기" aria-label={`${row.name || row.host || "미확인"} 기사 이력 보기`} onClick={() => open(row)}><ChevronRight size={18} /></button></td>
         </tr>)}</tbody></table></div>
         {!rows.length && <p className="registry-empty">{query ? "검색 결과가 없습니다." : mode === "unknown" ? "확인 대기 중인 언론사가 없습니다." : "확인된 이력이 없습니다."}</p>}
-        <RegistryPager offset={page * 20} count={rows.length} size={20} onPage={(offset) => setPage(offset / 20)} />
+        <div className="registry-pagination-row"><RegistryPager offset={page * pageSize} count={rows.length} size={pageSize} onPage={(offset) => setPage(offset / pageSize)} /><select aria-label="언론사 목록 페이지 크기" value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(0); }}>{[6, 20, 50].map(size => <option key={size} value={size}>{size}개씩 보기</option>)}</select></div>
       </>}
     </>}
   </section>;
