@@ -106,6 +106,7 @@
   .editorial-header-copy h1 { font-size: 27px; }
   .editorial-data-status { right: 16px; bottom: 8px; max-width: none; font-size: 11px; }
   .editorial-kpi-strip { gap: 14px; flex-wrap: wrap; }
+  .editorial-kpi-strip button + button::before { display: none; }
   .editorial-kpi-strip small { font-size: 12px; }
   .editorial-kpi-strip b { font-size: 19px; }
   .editorial-kpi-strip .risk-low b { font-size: 17px; }

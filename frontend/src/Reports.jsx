@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, CalendarDays, Download } from "lucide-react";
 import { periodData } from "./data";
 import { A4BarList, A4PressRows } from "./reportComponents";
-import { buildA4ReportStats, publicationMeta, reportArticleHeadline, reportCategoryLabel, reportPurposeConfig } from "./reportModel";
+import { buildA4ReportStats, publicationMeta, reportArticleHeadline, reportCategoryColor, reportCategoryLabel, reportPurposeConfig } from "./reportModel";
 import NewsroomChart from "./NewsroomChart.jsx";
 
 let reportHelpers = {};
@@ -204,7 +204,7 @@ function A4ReportSheet({
     .slice(0, 6), [data.pressInfluence, articles]);
   const categoryRows = useMemo(() => buildReportCategoryFlowRows(articles, summary, 6)
     .filter((row) => Number(row.value || 0) > 0)
-    .slice(0, 6).map(row => ({ ...row, name: reportCategoryLabel(row.category || row.name) })), [articles, summary]);
+    .slice(0, 6).map(row => ({ ...row, name: reportCategoryLabel(row.category || row.name), color: reportCategoryColor(row.category || row.name) })), [articles, summary]);
   const issueGroups = useMemo(() => buildA4IssueGroups(lead, issues, articles, period), [lead, issues, articles, period]);
   const purpose = reportPurposeConfig(period);
   const briefingTitle = period === "daily"

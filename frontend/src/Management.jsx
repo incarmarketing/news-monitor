@@ -714,21 +714,21 @@ function AdManagement({ rows = [] }) {
             <b>월별 집행 추이</b>
             <span>{adData.monthly.length.toLocaleString("ko-KR")}개월</span>
           </div>
-          <AdSpendChart rows={adData.monthly} color="#2855d9" />
+          <AdSpendChart rows={adData.monthly} color="#7b901c" />
         </article>
         <article className="ad-chart-card">
           <div>
             <b>매체별 집행</b>
             <span>상위 6개</span>
           </div>
-          <AdSpendChart rows={adData.media} color="#14805f" compact />
+          <AdSpendChart rows={adData.media} color="#738d70" compact />
         </article>
         <article className="ad-chart-card">
           <div>
             <b>유형별 집행</b>
             <span>구분</span>
           </div>
-          <AdSpendChart rows={adData.type} color="#b45309" compact />
+          <AdSpendChart rows={adData.type} color="#bd744d" compact />
         </article>
       </div>
       <div className="management-toolbar ad-toolbar">

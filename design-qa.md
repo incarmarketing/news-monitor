@@ -33,6 +33,8 @@ final result: passed
 7. [P2, fixed] Stock supplementary statistics preceded and displaced the main chart. Moved quotes into a compact top band, chart/market facts into the primary row and returns/disclosures below. Existing custom periods, detailed statistics, indices and peer tables remain accessible.
 8. [P2, fixed] Mobile navigation buttons shrank into overlapping text. Disabled item shrinking; the navigation strip scrolls independently while the page retains zero horizontal overflow.
 9. [P2, fixed] Print-only publisher bars made the report rail disproportionately tall. Added dedicated print typography, compact two-column publisher rows and bounded chart height. Short report category labels avoid broken policy labels; already-bracketed publisher names are not duplicated.
+10. [P2, fixed] Additional management-tab review found a mobile keyword ledger exceeding page width by 118px and advertising charts missing explicit plotting height after legacy CSS replacement. Added bounded table scrolling, responsive editor/rule grids and 240px chart surfaces. Post-fix `management-tabs.json` verifies all 12 desktop/mobile subviews with zero page overflow/errors; `management-ads-1440.png` visibly contains all three charts. The reusable browser suite now asserts secondary-tab overflow and chart height.
+11. [P2, fixed] Report category bars inherited positional colors when categories were absent. They now reuse the dashboard's semantic category series colors; unit coverage and the final report/print recaptures verify that insurer and policy colors stay stable.
 
 Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-overview.png`, `focus-monitoring.png`, `focus-reports.png`, `mobile-{section}.png`, `desktop-1280.png`, `desktop-1366.png`, `desktop-1672.png`, `report-print.png`.
 
@@ -46,13 +48,14 @@ Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-over
 
 ## Verification
 
-- Frontend unit suite: 178 tests passed.
+- Frontend unit suite: 179 tests passed.
 - Python release regression suite: 378 tests passed; mocked tests only, no production writes or sends.
 - Reference validation: 32 modules, zero unresolved or invalid local references.
 - Production Vite build: passed, screen chunks retained and no oversized-JS-chunk warning.
 - Repeated navigation/interaction suite: 26 captures across two desktop rounds and one mobile round. Search/reset, selected CSV, media CSV/ranges/tabs, article URLs, chart hover/focus/arrows, all report periods/month selector, delayed print command, stock periods/modes and six management tabs checked.
 - Broad responsive suite: 27 cases across desktop/tablet/mobile, all passed with no page-level horizontal overflow or runtime exceptions. Independent overflow is intentional for the mobile navigation and wide financial/registry tables.
 - Extra desktop checks: three viewport widths, no page overflow, custom font actually rendered, chart plotting height at least 140px.
+- Management secondary views: 12 additional desktop/mobile captures, all six tabs, no page overflow or runtime errors. Advertising charts have three nonzero plotting surfaces; keyword editor and ledger remain inside the page.
 - No login, collector dispatch, classification save, scrap save, paid analysis or Slack send was performed during browser verification.
 - Final targeted recapture reviewed: monitoring bookmark/external/detail actions occupy separate columns, report category labels remain on one line, publisher prefixes are not duplicated, and print-only rail fits beside the five article rows. No actionable P0/P1/P2 visual findings remain in the reviewed states.
 - Deployment verification is recorded separately after publication; passing this local visual gate does not by itself claim successful deployment.

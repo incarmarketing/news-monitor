@@ -127,12 +127,17 @@ try {
           await main.locator(".stock-range-reset").click();
           await main.locator(".stock-custom-range summary").click();
         }
-        if (desktop && round === 1 && section === "management") {
+        if (round === 1 && section === "management") {
           const tabs = main.locator(".management-tabs");
           for (const name of ["기자 관리", "광고비 관리", "키워드 문맥", "분류 피드백", "분류 점검", "언론사 관리"]) {
             await tabs.getByRole("button", { name, exact: true }).click();
             await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
             assert.deepEqual(errors, [], `management/${name}: JavaScript errors`);
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 2), `management/${name}: horizontal page overflow`);
+            if (name === "광고비 관리") {
+              const heights = await main.locator(".ad-chart-box").evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().height));
+              assert.ok(heights.length === 3 && heights.every(height => height >= 200), "advertising charts have no plotting height");
+            }
           }
         }
       }

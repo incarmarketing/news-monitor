@@ -37,7 +37,7 @@ export function A4BarList({ rows = [] }) {
         <div key={row.keyword || row.name}>
           <span>{row.name}</span>
           <b>
-            <i style={{ width: `${Math.max(5, (Number(row.value || 0) / max) * 100)}%`, background: reportChartColors[index % reportChartColors.length] }} />
+            <i style={{ width: `${Math.max(5, (Number(row.value || 0) / max) * 100)}%`, background: row.color || reportChartColors[index % reportChartColors.length] }} />
           </b>
           <em>{Number(row.value || 0).toLocaleString("ko-KR")}건</em>
         </div>

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { chartGeometry, chartPointLabel } from "../src/chartPresentation.js";
 import { priorityDisplayRows } from "../src/dashboardPresentation.js";
-import { reportArticleHeadline, reportCategoryLabel } from "../src/reportModel.js";
+import { reportArticleHeadline, reportCategoryColor, reportCategoryLabel } from "../src/reportModel.js";
+import { dashboardSeries } from "../src/dashboardPresentation.js";
 
 test("chart scale contains all values and keeps a real zero baseline", () => {
   const geometry = chartGeometry([{ own: 0 }, { own: 23 }], [{ key: "own" }], 320, 160, true);
@@ -45,4 +46,9 @@ test("report labels abbreviate existing classifications without changing the art
   assert.equal(reportCategoryLabel("업계동향"), "보험사");
   assert.equal(reportCategoryLabel("경쟁사"), "GA");
   assert.equal(reportCategoryLabel("당사"), "당사");
+});
+
+test("report colors keep category identity when other categories have zero articles", () => {
+  assert.equal(reportCategoryColor("업계동향"), dashboardSeries.find(row => row.key === "insurance").color);
+  assert.equal(reportCategoryColor("정책/규제"), dashboardSeries.find(row => row.key === "regulation").color);
 });

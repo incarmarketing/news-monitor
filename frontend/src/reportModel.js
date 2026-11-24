@@ -1,8 +1,14 @@
 import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
 import { monitoringCategoryKey } from "./monitoringPresentation.js";
+import { dashboardSeries } from "./dashboardPresentation.js";
 
 export function reportCategoryLabel(value) {
   return { own: "당사", ga: "GA", insurance: "보험사", policy: "정책", sponsorship: "스폰서십", exclude: "제외" }[monitoringCategoryKey(value)] || value || "기타";
+}
+
+export function reportCategoryColor(value) {
+  const key = monitoringCategoryKey(value);
+  return dashboardSeries.find(series => series.key === (key === "policy" ? "regulation" : key))?.color || "#525953";
 }
 
 export function reportArticleHeadline(item = {}) {
