@@ -11,18 +11,20 @@ const sections = ["overview", "monitoring", "media", "regulators", "clipping", "
 const results = [];
 const viewportFits = [];
 
-async function assertSelectStyles(main, label, compact = false) {
+async function assertSelectStyles(main, label) {
   const styles = await main.locator("select:visible").evaluateAll(nodes => nodes.map(node => {
     const style = getComputedStyle(node);
-    return { height: node.getBoundingClientRect().height, size: style.fontSize, padding: style.padding, radius: style.borderRadius, border: style.borderWidth, align: style.textAlign };
+    return { height: node.getBoundingClientRect().height, size: style.fontSize, padding: style.padding, radius: style.borderRadius, border: style.borderWidth, align: style.textAlign, appearance: style.appearance, chevron: style.backgroundPosition, icon: style.backgroundImage };
   }));
   for (const style of styles) {
-    assert.equal(style.height, compact ? 32 : 40, `${label}: inconsistent select height`);
-    assert.equal(style.size, compact ? "14px" : "16px", `${label}: inconsistent select type`);
-    assert.equal(style.padding, compact ? "4px 28px 4px 11px" : "8px 28px 8px 11px", `${label}: inconsistent select padding`);
+    assert.equal(style.height, 40, `${label}: inconsistent select height`);
+    assert.equal(style.size, "16px", `${label}: inconsistent select type`);
+    assert.equal(style.padding, "8px 42px 8px 12px", `${label}: inconsistent select padding`);
     assert.equal(style.radius, "4px", `${label}: inconsistent select radius`);
     assert.equal(style.border, "1px", `${label}: inconsistent select border`);
     assert.equal(style.align, "center", `${label}: inconsistent selected-label alignment`);
+    assert.equal(style.appearance, "none", `${label}: duplicate native chevron`);
+    assert.ok(style.icon !== "none" && style.chevron.includes("14px"), `${label}: missing fixed-inset chevron`);
   }
 }
 
@@ -168,7 +170,7 @@ try {
         if (desktop && round === 1 && section === "media") {
           await main.getByRole("button", { name: "30일", exact: true }).click();
           await main.getByRole("button", { name: "7일", exact: true }).click();
-          const point = main.locator(".tone-trend circle").first();
+          const point = main.locator(".tone-trend circle").last();
           if (await point.count()) { await point.hover(); await main.getByRole("tooltip").waitFor(); }
           await main.getByRole("tab", { name: "언론사별 보도량", exact: true }).click();
           await main.getByRole("tab", { name: "주요 키워드", exact: true }).click();
@@ -236,12 +238,12 @@ try {
     const fit = await page.evaluate(() => ({
       overflowX: document.documentElement.scrollWidth - innerWidth,
       overflowY: document.documentElement.scrollHeight - innerHeight,
-      stories: [...document.querySelectorAll(".desk-story-grid > article")].map(node => ({ overflow: node.scrollHeight - node.clientHeight, titleBottom: node.querySelector("h3").getBoundingClientRect().bottom, footerTop: node.querySelector(".desk-story-footer").getBoundingClientRect().top })),
+      stories: [...document.querySelectorAll(".desk-story-grid > article")].map(node => ({ overflow: node.scrollHeight - node.clientHeight, top: node.getBoundingClientRect().top, bottom: node.getBoundingClientRect().bottom, titleTop: node.querySelector("h3").getBoundingClientRect().top, titleBottom: node.querySelector("h3").getBoundingClientRect().bottom, titleRight: node.querySelector("h3").getBoundingClientRect().right, publisherLeft: node.querySelector(".desk-story-publisher").getBoundingClientRect().left })),
       charts: [...document.querySelectorAll(".desk-chart")].map(node => ({ height: node.getBoundingClientRect().height, bottom: node.getBoundingClientRect().bottom })),
     }));
     assert.ok(fit.overflowX <= 1 && fit.overflowY <= 1, `${width}/${height}: dashboard scrolls`);
     assert.equal(fit.stories.length, 5);
-    assert.ok(fit.stories.every(story => story.overflow <= 2 && story.titleBottom <= story.footerTop + 2), `${width}/${height}: article content overlaps`);
+    assert.ok(fit.stories.every(story => story.overflow <= 2 && story.titleTop >= story.top && story.titleBottom <= story.bottom && story.titleRight <= story.publisherLeft), `${width}/${height}: article content overlaps`);
     assert.ok(fit.charts.length === 4 && fit.charts.every(chart => chart.height >= 130 && chart.bottom <= height), `${width}/${height}: clipped chart`);
     await page.mouse.wheel(0, 500);
     assert.equal(await page.evaluate(() => scrollY), 0, `${width}/${height}: dashboard scroll position changed`);

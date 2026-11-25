@@ -19,6 +19,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
   const [datesOpen, setDatesOpen] = useState(false);
   const id = useId();
   const scrollBox = useRef(null);
+  const filtersBox = useRef(null);
   const paginated = useMemo(() => monitoringPage(rows, page, pageSize), [rows, page, pageSize]);
   const pageRows = useMemo(() => paginated.rows.map(normalizeRow), [paginated.rows, normalizeRow]);
   const selectedRows = useMemo(() => rows.filter(row => selected.has(rowKey(row))), [rows, selected, rowKey]);
@@ -30,6 +31,17 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
 
   useEffect(() => { setPage(1); setSelected(new Set()); setExpanded(null); }, [filterKey, pageSize]);
   useEffect(() => { if (scrollBox.current) scrollBox.current.scrollTop = 0; }, [paginated.current, filterKey, pageSize]);
+  useEffect(() => {
+    if (!datesOpen) return undefined;
+    const closeOutside = event => { if (!filtersBox.current?.contains(event.target)) setDatesOpen(false); };
+    const closeOnEscape = event => { if (event.key === "Escape") setDatesOpen(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [datesOpen]);
 
   const toggle = (key) => setSelected(current => {
     const next = new Set(current);
@@ -65,7 +77,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
       <div className="monitor-search-input"><Search aria-hidden="true"/><input aria-label="검색어" placeholder="제목, 언론사, 키워드 검색" value={filters.queryInput} onChange={event => onChange("queryInput", event.target.value)} /><button className="monitor-search-submit" type="submit" aria-label="조회/검색" title="검색"><Search /></button></div>
       <button type="button" className="monitor-command" onClick={reset} title="검색 초기화" aria-label="검색 초기화"><RotateCcw/><span>초기화</span></button>
     </form>
-    <section className="monitor-filters" aria-label="기사 검색 조건">
+    <section className="monitor-filters" aria-label="기사 검색 조건" ref={filtersBox}>
       <div className="monitor-period" aria-label="조회 기간">{[[1, "오늘"], [7, "7일"], [30, "30일"]].map(([days, label]) => {
         const range = monitoringDateRange(today, days);
         const active = !datesOpen && filters.startDateInput === range.startDate && filters.endDateInput === range.endDate;
@@ -81,7 +93,6 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
         <button className="monitor-command" type="submit">적용</button>
       </form>}
     </section>
-    {(focusLabel || filters.query) && <div className="monitor-scope"><span>{focusLabel || `전체 보관 검색: ${filters.query}`}</span><button type="button" aria-label="검색 범위 해제" title="검색 범위 해제" onClick={reset}><X/></button></div>}
     <section className="monitor-results" aria-label="수집 기사 목록" aria-busy={isUpdating}>
       <header className="monitor-results-header">
         <div className="monitor-category-tabs" role="tablist" aria-label="기사 분류">
@@ -90,7 +101,10 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
         </div>
         <label className="monitor-sort"><span>정렬</span><select aria-label="정렬" value={filters.viewMode} onChange={event => onChange("viewMode", event.target.value)}><option value="latest">최신순</option><option value="related">관련순</option></select></label>
       </header>
-      <div className="monitor-loading" role="status" aria-live="polite">{isUpdating ? "검색 결과 확인 중" : ""}</div>
+      <div className="monitor-status-bar">
+        <div className="monitor-scope">{(focusLabel || filters.query) && <><span>{focusLabel || `전체 보관 검색: ${filters.query}`}</span><button type="button" aria-label="검색 범위 해제" title="검색 범위 해제" onClick={reset}><X/></button></>}</div>
+        <div className="monitor-loading" role="status" aria-live="polite">{isUpdating ? "검색 결과 확인 중" : ""}</div>
+      </div>
       <div className="monitor-table-scroll" ref={scrollBox}>
         <table className="monitor-table"><caption className="sr-only">수집 기사 목록</caption><colgroup><col className="monitor-col-check"/><col className="monitor-col-time"/><col className="monitor-col-tone"/><col className="monitor-col-category"/><col/><col className="monitor-col-action"/><col className="monitor-col-action"/><col className="monitor-col-expand"/></colgroup>
           <thead><tr><th><PageCheckbox aria-label="현재 페이지 기사 전체 선택" checked={allSelected} mixed={someSelected && !allSelected} onChange={togglePage}/></th><th>작성 시간</th><th>논조</th><th>분류</th><th className="monitor-title-column">기사 제목</th><th><Bookmark aria-label="스크랩"/></th><th><ExternalLink aria-label="원문"/></th><th><span className="sr-only">상세</span></th></tr></thead>

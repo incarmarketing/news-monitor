@@ -10,30 +10,31 @@
 .monitor-search-submit { display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px; border: 0; color: var(--paper); background: var(--ink); border-radius: 0 3px 3px 0; }
 .monitor-search > .monitor-command { padding: 8px; }
 .monitor-search > .monitor-command span { display: none; }
-.monitor-filters { display: flex; gap: var(--control-gap); align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.monitor-filters { position: relative; display: flex; gap: var(--control-gap); align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 .monitor-period { display: flex; gap: 2px; align-items: center; }
-.monitor-period button { border: 0; border-radius: var(--control-radius); background: none; padding: 8px 9px; height: var(--control-height); font-size: var(--control-font-size); line-height: 22px; white-space: nowrap; }
-.monitor-period button[aria-pressed="true"], .monitor-period button[aria-expanded="true"] { background: var(--accent); font-weight: 700; }
+.monitor-period button { border: 0; border-radius: var(--control-radius); background: none; padding: 8px 9px; height: var(--control-height); font-size: var(--control-font-size); font-weight: 600; line-height: 22px; white-space: nowrap; }
+.monitor-period button[aria-pressed="true"], .monitor-period button[aria-expanded="true"] { background: var(--accent); }
 .monitor-date-label { display: flex; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--paper); height: var(--control-height); padding: 8px 10px; font-size: var(--control-font-size); line-height: 22px; }
 .monitor-date-label svg { width: 17px; }
 .monitor-select { display: flex; gap: 7px; align-items: center; }
 .monitor-select > span { font-size: 16px; }
-.monitor-select select { max-width: 180px; }
-.monitor-custom-dates { display: flex; flex-basis: 100%; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding-top: 10px; }
+.monitor-select select { width: 100px; max-width: 180px; }
+.monitor-source select { width: 180px; }
+.monitor-custom-dates { position: absolute; right: 0; top: calc(100% + 8px); z-index: 8; display: flex; align-items: end; flex-wrap: wrap; gap: 12px; max-width: min(560px, calc(100vw - 48px)); padding: 16px; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--paper); box-shadow: var(--shadow); }
 .monitor-custom-dates label { font-size: 13px; }
-.monitor-scope { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: var(--accent); border-radius: 3px; font-size: 14px; }
+.monitor-status-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+.monitor-scope { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; color: var(--muted); }
 .monitor-scope button { border: 0; background: none; display: grid; place-items: center; }
 .monitor-results { grid-column: 1 / -1; min-width: 0; position: relative; margin-top: 16px; }
 .monitor-results-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 0 15px; border-bottom: 2px solid var(--ink); }
 .monitor-category-tabs { display: flex; gap: 20px; flex-wrap: wrap; }
-.monitor-category-tabs button { border: 0; border-radius: 3px; background: none; padding: 6px 9px; font-size: 21px; font-weight: 600; }
-.monitor-category-tabs button b { margin-left: 7px; }
-.monitor-category-tabs button[aria-selected="true"] { background: var(--accent); font-weight: 700; }
+.monitor-category-tabs button { border: 0; border-radius: 3px; background: none; padding: 6px 9px; font-size: 21px; font-weight: 650; white-space: nowrap; }
+.monitor-category-tabs button b { display: inline-block; min-width: 3ch; margin-left: 7px; font-variant-numeric: tabular-nums; }
+.monitor-category-tabs button[aria-selected="true"] { background: var(--accent); }
 .monitor-sort { display: flex; align-items: center; gap: 7px; }
 .monitor-sort > span { display: none; }
 .monitor-sort select { width: 128px; }
 .monitor-loading { font-size: 13px; color: var(--muted); }
-.monitor-loading:not(:empty) { padding: 8px 0; }
 .monitor-table { width: 100%; table-layout: fixed; }
 .monitor-table-scroll { height: min(568px, calc(100dvh - 385px)); min-height: 360px; overflow: auto; scrollbar-gutter: stable; }
 .monitor-col-check { width: 58px; }
@@ -67,7 +68,27 @@
 .monitor-pagination button { display: grid; place-items: center; width: 36px; height: 38px; border: 0; background: none; border-radius: 3px; }
 .monitor-pagination button[aria-current="page"] { background: var(--accent); font-weight: 750; }
 .monitor-pagination select { width: 140px; }
-@media (max-width: 1250px) { .monitoring-workbench { grid-template-columns: minmax(0, 1fr); } .monitor-search { max-width: 650px; } .monitor-filters { justify-content: flex-start; } .monitor-category-tabs { gap: 10px; } }
+@media screen and (min-width: 1201px) {
+  .monitoring-workbench { grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); grid-template-rows: 60px 90px minmax(0, 1fr); }
+  .monitor-header { min-height: 0; padding-bottom: 14px; }
+  .monitor-header h1 { font-size: 32px; }
+  .monitor-search { align-self: start; }
+  .monitor-filters { align-content: start; }
+  .monitor-date-label { min-width: 224px; justify-content: space-between; font-variant-numeric: tabular-nums; }
+  .monitor-results { display: grid; grid-template-rows: 56px 32px minmax(0, 1fr) 56px; margin: 0; min-height: 0; }
+  .monitor-results-header { min-height: 0; padding-bottom: 10px; }
+  .monitor-category-tabs { gap: 8px; flex-wrap: nowrap; }
+  .monitor-category-tabs button { font-size: 18px; }
+  .monitor-table-scroll { height: 100%; min-height: 0; overscroll-behavior: contain; }
+  .monitor-headline { font-size: 22px; }
+  .monitor-headline small { font-size: 15px; }
+  .monitor-time { font-size: 17px; }
+  .monitor-time small { font-size: 14px; }
+  .monitor-pagination { padding-top: 12px; font-size: 15px; }
+  .monitor-pagination nav { min-width: 300px; justify-content: center; }
+}
+@media screen and (min-width: 1600px) { .monitoring-workbench { grid-template-rows: 60px 40px minmax(0, 1fr); } }
+@media (max-width: 1200px) { .monitoring-workbench { grid-template-columns: minmax(0, 1fr); } .monitor-search { max-width: 650px; } .monitor-filters { justify-content: flex-start; } .monitor-category-tabs { gap: 10px; } }
 @media (max-width: 760px) {
   .monitoring-workbench { display: flex; }
   .monitor-header { flex-wrap: wrap; gap: 12px; }

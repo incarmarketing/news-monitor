@@ -16,14 +16,12 @@ import {
   Gauge,
   LineChart,
   LogIn,
-  Moon,
   Newspaper,
   Radar,
   RefreshCw,
   Search,
   Settings,
   ShieldCheck,
-  Sun,
   TrendingDown,
   Users,
   WalletCards,
@@ -225,11 +223,6 @@ function App() {
   const [activeSection, setActiveSection] = useState(initialRoute.section);
   const [pendingSection, setPendingSection] = useState("");
   const [period, setPeriod] = useState("daily");
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "light";
-    try { return window.localStorage.getItem("incar-dashboard-theme") === "dim" ? "dim" : "light"; }
-    catch { return "light"; }
-  });
   const [operations, setOperations] = useState(
     () => initialCachedCore || { status: "loading", message: "연결 확인 중", articles: [] },
   );
@@ -497,10 +490,10 @@ function App() {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.dataset.theme = theme;
-    try { window.localStorage.setItem("incar-dashboard-theme", theme); }
-    catch { /* Theme remains usable without persistent storage. */ }
-  }, [theme]);
+    document.documentElement.removeAttribute("data-theme");
+    try { window.localStorage.removeItem("incar-dashboard-theme"); }
+    catch { /* Light mode does not require persistent storage. */ }
+  }, []);
 
   useEffect(() => {
     const openLogin = () => setLoginOpen(true);
@@ -642,10 +635,6 @@ function App() {
   }, [navigateSection, period]);
 
   const overviewRefreshOperations = useStableCallback(refreshOperations);
-  const toggleTheme = useCallback(
-    () => setTheme((current) => current === "dim" ? "light" : "dim"),
-    [],
-  );
 
   const loadMonitoringRange = async ({ startDate, endDate }) => {
     if (!startDate && !endDate) return [];
@@ -837,7 +826,6 @@ function App() {
           <time>{formatKstDateKey(new Date()).replaceAll("-", ".")}</time>
           <button type="button" className="newsroom-search-action" onClick={() => openMonitoring({})} aria-label="기사 검색" title="기사 검색"><Search /><span>기사 검색</span></button>
           <button type="button" onClick={() => overviewRefreshOperations({ trigger: true, workflow: "dashboard-refresh.yml", source: "dashboard_manual_refresh", label: "기사 수집 갱신" })} disabled={working} aria-label="새로고침" title="기사 수집 갱신"><RefreshCw /></button>
-          <button type="button" onClick={toggleTheme} aria-label={theme === "dim" ? "라이트 모드로 전환" : "저자극 모드로 전환"} title={theme === "dim" ? "라이트 모드" : "저자극 모드"}>{theme === "dim" ? <Sun /> : <Moon />}</button>
         </div>
       </header>
       <MemoizedOverview
@@ -849,10 +837,6 @@ function App() {
         onOpenMonitoring={openMonitoring}
         operations={operations}
         workflowHealth={workflowHealth}
-        isWorking={working}
-        onRefreshOperations={overviewRefreshOperations}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
       {(monitoringWarmed || activeSection === "monitoring") && (
         <MemoizedMonitoring
@@ -886,8 +870,6 @@ function App() {
           operations={operations}
           stockMarket={operations.stockMarket}
           workflowHealth={workflowHealth}
-          theme={theme}
-          onToggleTheme={() => setTheme((current) => current === "dim" ? "light" : "dim")}
           isWorking={working}
           onRefreshOperations={refreshOperations}
           onFeedbackSaved={handleClassificationFeedbackSaved}
@@ -931,7 +913,6 @@ function Header({ working = false, workLabel = "" }) {
           src={`${import.meta.env.BASE_URL || "./"}assets/incar-logo-white.png`}
           alt="인카금융서비스"
         />
-        <strong>언론 모니터링</strong>
         {working && <span className="newsroom-work-status" role="status">{workLabel || "갱신 중"}</span>}
     </div>
   );
@@ -1003,12 +984,11 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
 
 const MemoizedOverview = React.memo(Overview);
 
-function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, isWorking, onRefreshOperations, theme = "light", onToggleTheme }) {
+function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth }) {
   const { summary } = data;
   const [issueSort, setIssueSort] = useState("risk");
   const [slackHistoryOpen, setSlackHistoryOpen] = useState(false);
   const [riskHistoryOpen, setRiskHistoryOpen] = useState(false);
-  const isLoading = operations?.status === "loading" || isWorking;
   const operationsHealth = useMemo(
     () => buildOperationsHealth({
       operations,
@@ -1055,12 +1035,6 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
     return rows.slice(0, 5);
   }, [data.issues, issueSort]);
   const visibleIssueRows = useMemo(() => priorityDisplayRows(issueRows, articles), [issueRows, articles]);
-  const refreshDashboard = () => onRefreshOperations?.({
-    trigger: true,
-    workflow: "dashboard-refresh.yml",
-    source: "dashboard_manual_refresh",
-    label: "기사 수집 갱신",
-  });
   const focusRiskIssues = useCallback(() => {
     setIssueSort("risk");
     setRiskHistoryOpen(true);
@@ -1068,14 +1042,8 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   return (
     <main className="workspace dashboard-workspace dashboard-workbench">
       <DashboardEditorialHeader
-        data={data}
         status={operations?.status}
         operations={operations}
-        onOpenMonitoring={onOpenMonitoring}
-        onRefresh={refreshDashboard}
-        isLoading={isLoading}
-        theme={theme}
-        onToggleTheme={onToggleTheme}
       />
 
       <DashboardKpiStrip summary={summary} onOpenMonitoring={onOpenMonitoring} onOpenRisk={focusRiskIssues} />
@@ -1086,7 +1054,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
       </nav>
 
-      <DashboardPriorityTable rows={visibleIssueRows} sort={issueSort} onSort={setIssueSort} Action={DashboardIssueAction} onOpenMonitoring={onOpenMonitoring} categoryLabel={displayDashboardCategory} timeLabel={(issue) => articleClock(issue, articleTimeValue(issue))} riskScore={dashboardDisplayScore} />
+      <DashboardPriorityTable rows={visibleIssueRows} sort={issueSort} onSort={setIssueSort} Action={DashboardIssueAction} onOpenMonitoring={onOpenMonitoring} categoryLabel={displayDashboardCategory} riskScore={dashboardDisplayScore} />
       <DashboardOperationsStrip watchHealth={watchHealth} notificationHealth={notificationHealth} reportHealth={reportHealth} cadence={NEGATIVE_WATCH_SHORT_LABEL} onOpenHistory={() => setSlackHistoryOpen(true)} />
       <DashboardAnalysis rows={momentumRows} compositionRows={compositionRows} Chart={NewsroomChart} categoryLabel={displayDashboardCategory} />
       {riskHistoryOpen && <DashboardDialog title="최근 7일 전체 리스크" onClose={() => setRiskHistoryOpen(false)}><DashboardLeadSparkline rows={momentumRows} /></DashboardDialog>}
@@ -1100,7 +1068,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   );
 }
 
-function DashboardEditorialHeader({ data, status, operations, onOpenMonitoring, onRefresh, isLoading = false, theme = "light", onToggleTheme }) {
+function DashboardEditorialHeader({ status, operations }) {
   const live = status === "live" && operations?.source === "supabase" && !operations?.degraded && !operations?.statusReadFailed && !operations?.dataLoadWarnings?.length;
   const sourceTime = formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || "-");
   return (
@@ -1235,6 +1203,7 @@ function formatDashboardChartDate(value = "") {
 
 function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, onOpenMonitoring }) {
   const [visible, setVisible] = useState(6);
+  const [evidence, setEvidence] = useState(null);
   return (
     <section className="clipping-candidate-panel">
       <div className="clipping-panel-head">
@@ -1268,7 +1237,7 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
               <h3>{/^https?:\/\//i.test(article.link || "") ? <a href={article.link} target="_blank" rel="noopener noreferrer">{displayHeadline(article)}</a> : displayHeadline(article)}</h3>
               <p className="clipping-publisher">{resolvePublisher(article)} · {articleClock(article, articleTimeValue(article))}</p>
               {(index === 0 || index > 2) && <ArticleSummaryBlock item={article} dense />}
-              <details className="clipping-evidence"><summary>선정 근거</summary>{index > 0 && index < 3 && <ArticleSummaryBlock item={article} dense />}<ArticleDecisionNote item={article} hideClippingLabel /></details>
+              <button type="button" className="clipping-evidence clipping-evidence-trigger" onClick={() => setEvidence(article)}>선정 근거<ChevronRight aria-hidden="true" /></button>
             </article>
           );
         }) : (
@@ -1279,6 +1248,7 @@ function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, on
         )}
       </div>
       {candidates.length > visible && <button className="ghost-button full" type="button" onClick={() => setVisible(count => count + 6)}>기사 더 보기 <ChevronDown /></button>}
+      {evidence && <DashboardDialog title="클리핑 선정 근거" onClose={() => setEvidence(null)}><h3>{displayHeadline(evidence)}</h3><ArticleSummaryBlock item={evidence} dense /><ArticleDecisionNote item={evidence} hideClippingLabel /></DashboardDialog>}
     </section>
   );
 }
@@ -4274,7 +4244,7 @@ const toneChartSeries = [
 
 function ToneTrend({ rows, compact = false }) {
   return (
-    <div className={compact ? "chart-box report-trend" : "chart-box tall"}>
+    <div className={compact ? "chart-box report-trend" : "chart-box tall tone-trend"}>
       <NewsroomChart rows={rows} series={toneChartSeries} compact={compact} ariaLabel="일별 논조별 기사 수" />
     </div>
   );

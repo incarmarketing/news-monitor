@@ -2,12 +2,46 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 
-test("desktop overview has a scoped viewport layout rather than clipped document overflow", () => {
+test("desktop reading workspaces fit the viewport without hiding document overflow", () => {
+  const shared = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(shared, /@media screen and \(min-width: 1201px\)/);
+  for (const section of ["overview", "monitoring", "media", "clipping", "reports"]) {
+    assert.match(shared, new RegExp(`data-active-section="${section}"`));
+  }
+  assert.match(shared, /grid-template-rows: var\(--app-header-height\) minmax\(0, 1fr\); height: 100dvh/);
+  assert.doesNotMatch(shared, /(?:html|body)\s*\{[^}]*overflow:\s*hidden/s);
+});
+
+test("priority articles use equal editorial rows without lead highlighting", () => {
+  const source = fs.readFileSync(new URL("../src/DashboardWorkbench.jsx", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../src/dashboard-workbench.css", import.meta.url), "utf8");
-  assert.match(css, /@media \(min-width: 1201px\)/);
-  assert.match(css, /app-shell\[data-active-section="overview"\].*height: 100dvh/);
-  assert.match(css, /grid-template-rows: auto minmax\(0, 1fr\)/);
-  assert.doesNotMatch(css, /(?:html|body)\s*\{[^}]*overflow:\s*hidden/s);
+  assert.match(source, /우선 확인 기사/);
+  assert.match(source, /desk-story-rank/);
+  assert.match(source, /desk-story-publisher/);
+  assert.doesNotMatch(source, /<mark>|desk-story-footer/);
+  assert.doesNotMatch(css, /article:first-child h3|grid-column: 1 \/ 8/);
+});
+
+test("light mode is permanent and select chevrons share a fixed right inset", () => {
+  const source = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /setTheme|toggleTheme|onToggleTheme/);
+  assert.doesNotMatch(css, /html\[data-theme=/);
+  assert.match(css, /color-scheme: light/);
+  assert.match(css, /--select-chevron-inset: 14px/);
+  assert.match(css, /background-position: right var\(--select-chevron-inset\) center/);
+  const icon = fs.readFileSync(new URL("../src/assets/select-chevron.svg", import.meta.url), "utf8");
+  assert.match(icon, /lucide-chevron-down/);
+});
+
+test("interactive states reserve space instead of moving the surrounding workspace", () => {
+  const source = fs.readFileSync(new URL("../src/MonitoringWorkbench.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/monitoring-workbench.css", import.meta.url), "utf8");
+  assert.match(source, /monitor-status-bar/);
+  assert.match(source, /closeOnEscape/);
+  assert.match(css, /\.monitor-custom-dates \{ position: absolute/);
+  assert.match(css, /\.monitor-status-bar \{[^}]*min-height: 32px/);
+  assert.doesNotMatch(css, /\[aria-selected="true"\] \{[^}]*font-weight/);
 });
 
 test("form controls share one visual contract across feature stylesheets", () => {

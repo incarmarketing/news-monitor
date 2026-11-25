@@ -57,20 +57,21 @@ export function DashboardAnalysis({ rows, compositionRows, Chart, categoryLabel 
   </section>;
 }
 
-export function DashboardPriorityTable({ rows, sort, onSort, Action, onOpenMonitoring, categoryLabel, timeLabel, riskScore }) {
+export function DashboardPriorityTable({ rows, sort, onSort, Action, onOpenMonitoring, categoryLabel, riskScore }) {
   return <section className="desk-priority" aria-label="우선 이슈">
-    <header className="desk-section-heading"><h2>우선 이슈 {rows.length === 5 ? "TOP 5" : `${rows.length}건`}</h2><select aria-label="우선 이슈 정렬 및 보기" value={sort} onChange={(event) => onSort(event.target.value)}>
+    <header className="desk-section-heading"><h2>우선 확인 기사</h2><div className="desk-priority-legend" aria-label="논조 범례"><span data-tone="부정">부정</span><span data-tone="주의">주의</span></div><select aria-label="우선 이슈 정렬 및 보기" value={sort} onChange={(event) => onSort(event.target.value)}>
       <option value="risk">정렬: 리스크순</option><option value="latest">정렬: 최신순</option><option value="own">보기: 당사 직접 언급만</option><option value="spread">정렬: 확산순</option>
     </select></header>
     <div className="desk-story-grid">{rows.map((issue, index) => {
       const headline = displayHeadline(issue);
-      const highlight = headline.match(/^.{1,16}(?=\s)/u)?.[0] || headline.split(" ")[0].slice(0, 12);
       return <article key={issue.id || `${issue.source}-${issue.title}`} data-tone={issue.tone || "중립"}>
-      <div className="desk-story-kicker"><b>{String(index + 1).padStart(2, "0")}</b><span>/ {categoryLabel(issue.category)}</span><span className="desk-tone" title={`리스크 ${riskScore(issue)}점`}>{issue.tone || "중립"}</span></div>
-      <h3><Action issue={issue} onOpenMonitoring={onOpenMonitoring}>{index === 0 ? <><mark>{highlight}</mark>{headline.slice(highlight.length)}</> : headline}</Action></h3>
-      <div className="desk-story-footer"><span>{resolvePublisher(issue)} · <time>{timeLabel(issue)}</time></span><Action issue={issue} onOpenMonitoring={onOpenMonitoring}><ArrowUpRight aria-hidden="true" /><span className="sr-only">{headline} 원문 열기</span></Action></div>
+      <b className="desk-story-rank">{String(index + 1).padStart(2, "0")}</b>
+      <span className="desk-story-category">{categoryLabel(issue.category)}</span>
+      <span className="desk-tone" title={`리스크 ${riskScore(issue)}점`}>{issue.tone || "중립"}</span>
+      <h3><Action issue={issue} onOpenMonitoring={onOpenMonitoring}>{headline}</Action></h3>
+      <span className="desk-story-publisher">{resolvePublisher(issue)}</span>
+      <Action issue={issue} onOpenMonitoring={onOpenMonitoring}><ArrowUpRight aria-hidden="true" /><span className="sr-only">{headline} 원문 열기</span></Action>
     </article>;
-    })}</div>
-    {!rows.length && <p className="desk-empty">{sort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : "오늘 기준으로 표시할 주요 이슈가 없습니다."}</p>}
+    })}{!rows.length && <p className="desk-empty">{sort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : "오늘 기준으로 표시할 주요 이슈가 없습니다."}</p>}</div>
   </section>;
 }

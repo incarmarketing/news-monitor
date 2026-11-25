@@ -1,4 +1,50 @@
-# Newsroom Design QA - 2026-11-25
+# Editorial Ledger And Stable Workspaces QA - 2026-11-25
+
+final result: passed
+
+## Current Visual Target
+
+- Selected third displayed priority-article proposal: `C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-04fd27e8-e0f9-4f3a-b06e-e9d04fb08f74.png`.
+- Light-only refinement shown before implementation: `C:/Users/User/.codex/generated_images/019e1489-9221-76e2-9cd8-a29490d3d5bf/exec-23279469-ac40-4284-a022-4d25cc2ac97b.png`.
+- Scope: five equal editorial rows, permanent light mode, fixed-inset select arrows, desktop viewport-fit monitoring/media/clipping/reports, and stable surrounding layout on interaction. Existing data, classification, collection, dispatch and authorization behavior are unchanged.
+- Implementation URL: `http://127.0.0.1:4186/`; user-approved background Playwright, no foreground PC control.
+- Reference is 1672 x 941 pixels, proportionally contained at 1600 x 900 without distortion; implementation is 1600 x 900 CSS/pixels at device scale factor 1.
+- State: dashboard, light mode, current read-only data. Different real counts and source-truncated titles are not replaced with illustrative mock data.
+- Full comparison input reviewed: `C:/Users/User/Desktop/COWORK/news-monitor-newsroom/.qa/ledger-layout-final/compare-overview.png`, 3200 x 900.
+- Focused comparison input reviewed: `C:/Users/User/Desktop/COWORK/news-monitor-newsroom/.qa/ledger-layout-final/compare-priority.png`, 3120 x 380.
+- Implementation screenshot: `C:/Users/User/Desktop/COWORK/news-monitor-newsroom/.qa/ledger-layout-final/1600-overview-initial.png`.
+
+## Findings And Iteration History
+
+1. [P1, fixed] Old asymmetric mosaic and yellow lead highlighting did not match the selected equal-row proposal. Replaced that CSS/markup, not another overlapping theme. Category, tone, full available title, publisher and external-link icon have aligned columns; sort belongs to the section header.
+2. [P2, fixed] Initial comparison showed smaller headline and operations type than the reference. Increased desktop headline/menu/operations typography, retained smaller fixed-size laptop variants, removed the redundant logo-side product title, recaptured, then reviewed the combined reference/implementation again. Final evidence is the two comparison inputs above.
+3. [P1, fixed] First 1280 x 720 interaction pass found a media plot covering the lower tabs: the actual plot wrapper did not carry the intended responsive `tone-trend` class. Restored that class and the allocated chart height. Repeated actual clicks and bounded-SVG checks pass; `.qa/ledger-layout-round2/1280-media-initial.png` and final captures show separate, usable regions.
+4. [P2, fixed] Weekly report switching produced document overflow despite a bounded report sheet. Absolutely positioned screen-reader link labels lacked a positioned ancestor inside the scrollable article index. Positioned that index, preserving the labels and all article content. Repeated daily/weekly/monthly switching now keeps document overflow at zero; no body overflow clipping is used.
+5. [P2, fixed] Selected navigation/period/category text changed weight, date filters expanded in flow, and optional scope/loading text added height. Navigation and tabs now retain their weights; the custom date form opens as an anchored popup with outside/Escape dismissal; scope/loading has reserved space; root/content scrollbar gutters are stable.
+6. [P2, fixed] Expanding clipping evidence changed neighboring tile geometry. Evidence now opens in the existing accessible native dialog, preserving the original summary/decision information and article list position. Escape closes it without navigating.
+
+## Required Fidelity Surfaces
+
+- Typography: bundled Pretendard Variable, 0 letter spacing, fixed sizes rather than viewport-scaled text; desktop headline 23px and laptop 18px, natural wrapping with no CSS ellipsis. Browser font-loading checks pass.
+- Spacing/layout: equal middle-aligned editorial rows and hairline separators match the selected hierarchy. Five desktop viewports fit the dashboard, monitoring, media, clipping and report workspaces. Long lists scroll in designated content areas; controls and charts are not hidden to simulate a fit. Mobile/tablet retain readable natural scrolling and the existing mobile-report restriction.
+- Colors/tokens: cool #f7f8f9 base, ink #131615, gray rules, restrained olive navigation, red/amber semantic labels. Removed dim-theme state, toggle, icon imports and CSS; old stored dim preference is cleared. A simulated dark OS preference with the old dim setting still renders light.
+- Assets: existing official Incar and Slack bitmaps, existing Lucide action icons; select arrow asset is exported from Lucide ChevronDown, with a shared 14px right inset and 42px text reservation. Native select options and keyboard access remain intact; forced-colors uses the native arrow.
+- Content: original URLs, ranking, date windows and status meanings remain. Existing source-level title ellipses and the previously documented article-summary/history count-basis discrepancy are separate data-quality matters, not purported fixes in this UI change.
+
+## Verification
+
+- Frontend: 185 passing tests. Reference validation: 32 modules, zero unresolved references. Production Vite build passes without oversized-JS warnings.
+- Backend release regression: 388 passing mocked tests using the existing project Python environment. The first bare-system-Python attempt lacked dependencies; rerunning in that environment resolved the environment-only errors without source changes.
+- Reusable viewport/interaction suite: 65 captures, zero failures, at 1280 x 720, 1366 x 768, 1440 x 900, 1600 x 900, 1920 x 1080, 1024 x 768 and 390 x 844. Five desktop workspaces have zero document overflow. Search/reset, empty/fewer results, date popup, sorting, pagination size, row expansion, media tabs/ranges, clipping dialog and report periods are tested; surrounding anchors and navigation remain within 1px.
+- Evidence: `C:/Users/User/Desktop/COWORK/news-monitor-newsroom/.qa/ledger-layout-final/summary.json`.
+- Full cross-category regression: 26 navigation captures and five additional dashboard viewport checks pass, including CSV, report print command, chart hover/focus/keyboard, stock controls, registry/manual-table alignment and management subviews. Evidence: `.qa/ledger-full-regression-final/`.
+- Print rendering: all article content is retained in daily/weekly/monthly emulated print; screen-only finite-height constraints are released. Evidence: `.qa/ledger-layout-final/print-일간.png`, `print-주간.png`, `print-월간.png`.
+- No browser test logged in, dispatched collection, changed classification, saved scraps, called paid analysis or sent notifications. Publication is checked separately from this local visual gate.
+- No actionable P0/P1/P2 design issues remain in the tested states. P3: exact raster-generated glyph shapes vary slightly from the real licensed font; native menu popup chrome remains OS-controlled.
+
+---
+
+# Historical Newsroom Design QA - 2026-11-25
 
 final result: passed
 
