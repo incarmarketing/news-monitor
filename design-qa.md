@@ -16,6 +16,13 @@
 - `.qa/clipping-media-navigation/` contains 26 passing PC/mobile route captures, search/reset, sorting, CSV, tooltip/report checks and five desktop dashboard viewport fits. Before/after publisher and clipping captures were visually reviewed. Dedicated repeatable UI verification is in `frontend/scripts/media-clipping-qa.mjs`.
 - Final seven-viewport suite `.qa/clipping-media-layout/summary.json` records 65 states and zero failures, including publisher tabs, Media ranges, Clipping categories/evidence dialog and Monitoring detail/page-size changes. Desktop still has no document scroll or offscreen workspace controls.
 
+## Verified Publication
+
+- Commit `a61bc40f`; Publish Dashboard run https://github.com/incarmarketing/news-monitor/actions/runs/45558874468 succeeded in both publish and deploy jobs. Actual service: https://incarmarketing.github.io/news-monitor/dashboard.html?v=a61bc40f .
+- `.qa/media-clipping-live/summary.json` passes all seven viewport checks, equal lower-header heights, zero desktop divider error, Clipping filtering/sorting/evidence/load-more, and complete publisher drilldowns. Live publisher totals increased to 250/799 for 30/90 days; each opened exactly that many matching articles with no additional range request. No JavaScript error or write action was observed. Native publisher and clipping captures were visually reviewed.
+- Today's 08:00 and 13:00 stable daily report URLs both return HTTP 200 after deployment. No test article save, extra collection or Slack/report notification was sent.
+- Scope limit: the baseline Clipping capture includes a television-drama headline among candidates. This UI patch does not certify recommendation/classification accuracy or alter those rules; this existing content-quality issue remains a separate QA item.
+
 ---
 
 # Media Skeletons, Publisher Columns And Commentary Removal QA - 2026-11-25
