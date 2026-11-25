@@ -214,3 +214,34 @@ test("report printing is separate from screen layouts and excludes other workspa
   assert.match(css,/\.app-shell > \.workspace:not\(\.report-workspace\)/);
   assert.match(css,/html, body, #root, \.app-shell \{ min-height: 0; height: auto;/);
 });
+
+test("monitoring puts CSV beside category tabs and keeps only the update date in its title row", () => {
+  const source=fs.readFileSync(new URL('../src/MonitoringWorkbench.jsx',import.meta.url),'utf8');
+  const header=source.slice(source.indexOf('<header className="monitor-header"'),source.indexOf('<section className="monitor-filters"'));
+  assert.match(header,/className="monitor-updated"/);
+  assert.doesNotMatch(header,/<button|CSV/);
+  const resultsHeader=source.slice(source.indexOf('<header className="monitor-results-header"'),source.indexOf('<div className="monitor-status-bar"'));
+  assert.match(resultsHeader,/monitor-category-tabs/);
+  assert.match(resultsHeader,/monitor-export/);
+  assert.match(resultsHeader,/onClick=\{exportCsv\}/);
+  assert.doesNotMatch(source,/RefreshCw|onRefresh|monitor-spin/);
+});
+
+test("global collection is an accessible newspaper-refresh icon without visible label text", () => {
+  const source=fs.readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8');
+  const header=source.slice(source.indexOf('<div className="newsroom-global-actions"'),source.indexOf('<MemoizedOverview'));
+  assert.match(header,/aria-label="새 기사 수집" title="새 기사 수집"/);
+  assert.match(header,/aria-busy=\{working\}/);
+  assert.match(header,/<Newspaper \/><RefreshCw/);
+  assert.match(header,/trigger: true, workflow: "dashboard-refresh.yml"/);
+  assert.doesNotMatch(header,/>기사 수집</);
+});
+
+test("monitoring uses readable column headings and omits unknown clock placeholders", () => {
+  const css=fs.readFileSync(new URL('../src/monitoring-workbench.css',import.meta.url),'utf8');
+  const source=fs.readFileSync(new URL('../src/MonitoringWorkbench.jsx',import.meta.url),'utf8');
+  assert.match(css,/\.monitor-table th \{[^}]*font-size: 16px/);
+  assert.match(css,/\.monitor-time time \{[^}]*align-items: center; justify-content: center;/);
+  assert.match(source,/hasClock && <span className="monitor-clock">/);
+  assert.match(source,/dateTime=\{publishedAt\}/);
+});

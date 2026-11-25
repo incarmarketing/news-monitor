@@ -1674,7 +1674,7 @@ function normalizeScrap(row) {
 function normalizeArticle(row) {
   if (!row?.title) return null;
   if (isStockListingNoise(row)) return null;
-  const publicationSource = row.pub_date || row.pub_date_raw || row.published_at || row.published_date || "";
+  const publicationSource = row.pub_date || row.pub_date_raw || row.pubDate || row.published_at || row.published_date || "";
   const dateSource = publicationSource || row.date || row.report_date || "";
   const showTime = shouldShowArticleTime(row, publicationSource || row.date || row.report_date);
   const aiContext = normalizeAiContext(row);

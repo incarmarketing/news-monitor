@@ -87,7 +87,7 @@ try {
   const chartSizes = () => page.locator('.desk-small-multiples svg').evaluateAll(nodes => nodes.map(node => ({ viewBox:node.getAttribute('viewBox'), width:node.clientWidth, height:node.clientHeight })));
   const committedCharts = await chartSizes();
   await page.evaluate(() => { window.__homeTrace = []; });
-  await page.getByRole("button", { name: "새로고침", exact: true }).click();
+  await page.getByRole("button", { name: "새 기사 수집", exact: true }).click();
   await page.locator('.desk-story-grid > article:not([aria-hidden="true"]) h3').filter({ hasText: fixtureTitle }).waitFor({ timeout: 60000 });
   await page.waitForTimeout(1800);
   const refresh = await page.evaluate(() => window.__homeTrace);

@@ -130,3 +130,19 @@ test('portal aliases do not collapse different original IDs, dates, or truncated
   const {loadArticleRange}=await import('../src/liveData.js?portal-safety');
   assert.equal((await loadArticleRange({startDate:'2026-11-24',endDate:'2026-11-25'})).length,5);
 });
+
+test('re-reading normalized articles retains the known publication timestamp', async (t) => {
+  browserTimers(t);
+  const articles=[
+    {articleHash:'normalized',title:'보험 기사의 발행 시각 보존',source:'보험저널',link:'https://www.insjournal.co.kr/news/articleView.html?idxno=1',pubDate:'2026-11-24T23:10:00+00:00',date:'2026-11-25',tone:'중립',category:'보험사'},
+    {article_hash:'raw',title:'원문 발행 시각 표시',source:'보험저널',link:'https://www.insjournal.co.kr/news/articleView.html?idxno=2',pub_date:'2026-11-24T23:10:00+00:00',tone:'neutral',category:'insurance'},
+    {article_hash:'date-only',title:'발행일만 알려진 기사',source:'보험저널',link:'https://www.insjournal.co.kr/news/articleView.html?idxno=3',pub_date:'2026-11-25',tone:'neutral',category:'insurance'},
+  ];
+  t.mock.method(globalThis,'fetch',async url=>String(url).endsWith('supabase.json')
+    ? new Response(JSON.stringify({url:'https://db.example',anon_key:'public-test'}))
+    : new Response(JSON.stringify({ok:true,articles,next_offset:null})));
+  const {loadArticleRange}=await import('../src/liveData.js?preserve-publication-time');
+  const rows=await loadArticleRange({startDate:'2026-11-25',endDate:'2026-11-25'});
+  assert.deepEqual(rows.map(row=>row.time),['08:10','08:10','']);
+  assert.equal(rows[0].pubDate,articles[0].pubDate);
+});

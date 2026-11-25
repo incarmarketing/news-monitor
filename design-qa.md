@@ -1,3 +1,21 @@
+# Monitoring Toolbar, Collection Icon And Publication Times QA - 2026-11-25
+
+## Scope And Causes
+
+- Move CSV export from the Monitoring title row to the right side of the category tabs. Leave only the update timestamp on the title row's right edge and remove the redundant Monitoring refresh action, its callback/loading-only props and retired spinner CSS. The global collection workflow and export/filter logic remain unchanged.
+- Replace the global plain refresh glyph with an icon-only Lucide Newspaper plus a small RefreshCw badge. Use a stable 44px target, the existing soft accent, an accessible name/native hover title of `새 기사 수집`, and a busy-only rotation respecting reduced-motion preferences. Do not add visible Korean/English button labels, fake unread badges or idle animation. Home refresh QA follows the new accessible name.
+- Increase desktop Monitoring column headings from 12px to 16px (14px on mobile) and retain centered headings. Center the date/time stack within its cell. Render no dash/clock line when publication time is unknown; keep date and time unbroken on mobile.
+- Fix normalization losing a known publication timestamp when a normalized `pubDate` record is read again. Preserve the camelCase timestamp alongside the raw API timestamp fields. The real Insurance Journal 34047 record now renders its actual KST `08:10`; a date-only record still has no invented time. No publication timestamps, classifications, database records or schedules were written.
+
+## Verification
+
+- 222 frontend tests pass; 40 checked frontend modules have no invalid local references. Added contracts for CSV placement, single collection action, readable headings and omitted unknown clocks, plus normalized/raw publication timestamp tests.
+- `.qa/monitor-toolbar-final/summary.json`: seven desktop/tablet/mobile viewports pass same-row CSV alignment, right-aligned update date, no tab-label/clock overlap, readable centered headings and stable selected-export dimensions. Selected CSV downloads correctly. The real article appears once with `08:10` and the correct `+09:00` datetime. A browser-only date-only fixture renders just the date exactly centered vertically. No JavaScript errors or write actions. Repeatable script: `frontend/scripts/monitor-toolbar-qa.mjs`.
+- Native 1600px/390px Monitoring captures and the real article's timestamp were visually reviewed. `.qa/monitor-controls-navigation/` passes 26 PC/mobile route/search/reset/CSV/tooltip/report checks and five desktop Home viewport fits.
+- `.qa/collection-icon-refresh/` verifies the icon still invokes exactly one mocked collection request and accepts new data, with stable Home chart dimensions and no provisional article-ranking bounce. No real collection or Slack dispatch.
+
+---
+
 # Chart Paint, Report Printing, Headers And Article Aliases QA - 2026-11-25
 
 ## Causes And Scope

@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, Bookmark, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, RefreshCw, RotateCcw, Search, X } from "lucide-react";
+import { ArrowUpRight, Bookmark, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, RotateCcw, Search, X } from "lucide-react";
 import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
 import { monitoringCategories, monitoringCategoryKey, monitoringCategoryLabel, monitoringCsv, monitoringDateRange, monitoringPage } from "./monitoringPresentation.js";
 import "./monitoring-workbench.css";
@@ -11,7 +11,7 @@ function PageCheckbox({ mixed = false, ...props }) {
   return <input ref={input} type="checkbox" {...props} />;
 }
 
-export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, filters, onChange, onApply, onReset, onPeriod, isLoading, isUpdating, updatedLabel, onRefresh,
+export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, filters, onChange, onApply, onReset, onPeriod, isUpdating, updatedLabel,
   normalizeRow, rowKey, timeLabel, onOpenArticle, ScrapButton, isScrapped, scraps, onScrapSaved, Details, onFeedbackSaved, filterKey, focusLabel }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -75,7 +75,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
     : `${(filters.startDateInput || "").replaceAll("-", ".")} - ${(filters.endDateInput || "").replaceAll("-", ".")}`;
 
   return <main className="workspace monitoring-workspace monitoring-workbench">
-    <header className="monitor-header"><h1>모니터링</h1><div><span>{updatedLabel}</span><button type="button" className="monitor-icon" aria-label="모니터링 새로고침" title="새로고침" onClick={onRefresh} disabled={isLoading}><RefreshCw className={isLoading ? "monitor-spin" : ""} /></button><button type="button" className="monitor-command" onClick={exportCsv} disabled={!exportRows.length || isUpdating}><Download/><span>{selectedRows.length ? `선택 ${selectedRows.length}건 CSV` : "CSV 내보내기"}</span></button></div></header>
+    <header className="monitor-header"><h1>모니터링</h1><span className="monitor-updated">{updatedLabel}</span></header>
     <section className="monitor-filters" aria-label="기사 검색 조건" ref={filtersBox}>
       <form className="monitor-search" onSubmit={apply}>
       <div className="monitor-search-input"><Search aria-hidden="true"/><input aria-label="검색어" placeholder="제목, 언론사, 키워드 검색" value={filters.queryInput} onChange={event => onChange("queryInput", event.target.value)} /><button className="monitor-search-submit" type="submit" aria-label="조회/검색" title="검색"><Search /></button></div>
@@ -106,6 +106,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
           <button type="button" role="tab" aria-selected={filters.category === "all"} onClick={() => onChange("category", "all")}>전체 <b>{Object.values(categoryCounts).reduce((sum, n) => sum + n, 0)}</b></button>
           {tabs.map(item => <button key={item.key} type="button" role="tab" aria-selected={filters.category !== "all" && activeCategory === item.key} onClick={() => onChange("category", item.key)}>{item.label} <b>{categoryCounts[item.key]}</b></button>)}
         </div>
+        <button type="button" className="monitor-command monitor-export" onClick={exportCsv} disabled={!exportRows.length || isUpdating}><Download aria-hidden="true"/><span>{selectedRows.length ? `선택 ${selectedRows.length}건 CSV` : "CSV 내보내기"}</span></button>
       </header>
       <div className="monitor-status-bar">
         <div className="monitor-scope">{(focusLabel || filters.query) && <><span>{focusLabel || `전체 보관 검색: ${filters.query}`}</span><button type="button" aria-label="검색 범위 해제" title="검색 범위 해제" onClick={reset}><X/></button></>}</div>
@@ -119,11 +120,14 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
             const open = expanded === key;
             const headline = displayHeadline(row);
             const safeLink = /^https?:\/\//i.test(row.link || "") ? row.link : "";
+            const clock = timeLabel(row);
+            const hasClock = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(clock);
+            const publishedAt = /^\d{4}-\d{2}-\d{2}$/.test(row.date || "") ? `${row.date}${hasClock ? `T${clock}:00+09:00` : ""}` : undefined;
             const relatedCount = Array.isArray(row.relatedArticles) ? row.relatedArticles.length : 0;
             const detailId = `${id}-row-${index}`;
             return <Fragment key={key}><tr className="monitor-article-row" data-selected={selected.has(key)} data-expanded={open}>
               <td className="monitor-check"><input type="checkbox" aria-label={`${headline} 선택`} checked={selected.has(key)} onChange={() => toggle(key)}/></td>
-              <td className="monitor-time"><time title={[row.date, timeLabel(row)].filter(Boolean).join(" ")}><small>{String(row.date || "").replaceAll("-", ".") || "날짜 미확인"}</small>{timeLabel(row)}</time></td>
+              <td className="monitor-time"><time dateTime={publishedAt} title={[row.date, hasClock ? clock : ""].filter(Boolean).join(" ")}><small>{String(row.date || "").replaceAll("-", ".") || "날짜 미확인"}</small>{hasClock && <span className="monitor-clock">{clock}</span>}</time></td>
               <td className="monitor-tone-cell"><span className="monitor-tone" data-tone={row.tone}>{row.tone || "중립"}</span></td>
               <td className="monitor-category-cell">{monitoringCategoryLabel(row.category)}</td>
               <td className="monitor-publisher" title={resolvePublisher(row)}>{resolvePublisher(row)}</td>

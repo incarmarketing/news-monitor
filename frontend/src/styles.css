@@ -84,8 +84,16 @@ label > span { color: var(--muted); font-size: 14px; }
 .newsroom-navigation button.active { color: var(--ink); }
 .newsroom-navigation button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--blue); border-radius: 2px; }
 .newsroom-global-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; padding-left: 20px; border-left: 1px solid var(--line); }
-.newsroom-global-actions button { display: grid; place-items: center; width: 28px; height: 34px; border: 0; background: none; border-radius: 3px; }
+.newsroom-global-actions button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); background: var(--blue-soft); border-radius: var(--control-radius); }
 .newsroom-global-actions button:hover { background: var(--accent); }
+.newsroom-collect-glyph { position: relative; display: block; width: 28px; height: 28px; }
+.newsroom-collect-glyph > svg:first-child { position: absolute; left: 0; top: 0; width: 24px; height: 24px; }
+.newsroom-collect-arrow { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; padding: 1px; border-radius: 50%; background: var(--blue-soft); stroke-width: 2.2; }
+.newsroom-collect:hover .newsroom-collect-arrow { background: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .newsroom-collect[aria-busy="true"] .newsroom-collect-arrow { animation: newsroom-collect-spin 1s linear infinite; }
+  @keyframes newsroom-collect-spin { to { transform: rotate(360deg); } }
+}
 .work-notice { position: fixed; right: 24px; bottom: 24px; z-index: 100; display: grid; grid-template-columns: 22px minmax(0, 1fr) 28px; align-items: center; gap: 12px; max-width: min(440px, calc(100vw - 32px)); padding: 14px; border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 4px; background: var(--paper); color: var(--ink); box-shadow: var(--shadow); font-size: 14px; line-height: 1.5; }
 .work-notice[data-error="true"] { border-left-color: var(--red); }
 .work-notice[data-error="true"] > svg { color: var(--red); }

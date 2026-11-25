@@ -843,7 +843,7 @@ function App() {
             ))}
         </nav>
         <div className="newsroom-global-actions">
-          <button type="button" onClick={() => overviewRefreshOperations({ trigger: true, workflow: "dashboard-refresh.yml", source: "dashboard_manual_refresh", label: "기사 수집 갱신" })} disabled={working} aria-label="새로고침" title="기사 수집 갱신"><RefreshCw /></button>
+          <button type="button" className="newsroom-collect" onClick={() => overviewRefreshOperations({ trigger: true, workflow: "dashboard-refresh.yml", source: "dashboard_manual_refresh", label: "기사 수집 갱신" })} disabled={working} aria-busy={working} aria-label="새 기사 수집" title="새 기사 수집"><span className="newsroom-collect-glyph" aria-hidden="true"><Newspaper /><RefreshCw className="newsroom-collect-arrow" /></span></button>
         </div>
       </header>
       {working && workLabel && !workNoticeDismissed && <div className="work-notice" data-error={workFailed} role={workFailed ? "alert" : "status"}>
@@ -871,8 +871,6 @@ function App() {
           onLoadMonitoringRange={stableLoadMonitoringRange}
           onClearMonitoringRange={clearMonitoringRange}
           operations={operations}
-          isWorking={working}
-          onRefreshOperations={overviewRefreshOperations}
           onFeedbackSaved={stableFeedbackSaved}
           onScrapSaved={stableScrapSaved}
         />
@@ -1484,8 +1482,6 @@ function Monitoring({
   onLoadMonitoringRange,
   onClearMonitoringRange,
   operations,
-  isWorking,
-  onRefreshOperations,
   onFeedbackSaved,
   onScrapSaved,
 }) {
@@ -1627,7 +1623,6 @@ function Monitoring({
     [deferredFiltered, viewMode],
   );
   const visibleRows = useMemo(() => viewMode === "related" ? grouped : [...deferredFiltered].sort((a, b) => articleTimeValue(b) - articleTimeValue(a)), [viewMode, grouped, deferredFiltered]);
-  const isLoading = operations?.status === "loading" || isWorking || isFilterPending || monitoringRangeLoading;
   const applyFilters = () => {
     let nextStart = startDateInput;
     let nextEnd = endDateInput;
@@ -1683,9 +1678,9 @@ function Monitoring({
       filterKey={JSON.stringify([query, tone, category, source, viewMode, startDate, endDate, ownOnly, focusPreset])}
       focusLabel={focusPreset?.issueTitle || focusPreset?.articleTitle || (ownOnly ? "당사 직접 언급" : "")}
       onChange={changeFilter} onApply={applyFilters} onReset={resetMonitoringFilters} onPeriod={selectPeriod}
-      isLoading={isLoading} isUpdating={operations?.status === "loading" || isFilterPending || monitoringRangeLoading || filtered !== deferredFiltered || regularArticles !== deferredRegularArticles}
+      isUpdating={operations?.status === "loading" || isFilterPending || monitoringRangeLoading || filtered !== deferredFiltered || regularArticles !== deferredRegularArticles}
       updatedLabel={`${formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || latestDate || "-")} 기준`}
-      onRefresh={onRefreshOperations} normalizeRow={normalizeArticleDisplay} rowKey={articleSelectionKey}
+      normalizeRow={normalizeArticleDisplay} rowKey={articleSelectionKey}
       timeLabel={(article) => articleClock(article, articleTimeValue(article))} onOpenArticle={openArticleLink}
       ScrapButton={ArticleScrapButton} isScrapped={isArticleScrapped} scraps={scraps} onScrapSaved={onScrapSaved}
       Details={MonitoringArticleDetails} onFeedbackSaved={onFeedbackSaved}/>
