@@ -19,18 +19,23 @@ try {
     const action=request.postDataJSON()?.action || '';
     if(/^(save_|delete_|trigger_|dispatch|collect|generate_)/.test(action))result.writes.push(action);
   });
-  await page.addInitScript(()=>{window.__printCalls=0;window.print=()=>{window.__printCalls++;throw new Error('PDF export must not invoke a printer');};});
+  await page.addInitScript(()=>{
+    window.__printCalls=0;window.__pdfTitles=[];
+    window.print=()=>{window.__printCalls++;throw new Error('PDF export must not invoke a printer');};
+    document.addEventListener('click',event=>{
+      if(event.target.closest('.report-download-button'))window.__pdfTitles=[...document.querySelectorAll('.a4-priority-main > b')].map(node=>node.textContent);
+    },true);
+  });
   await page.goto(base,{waitUntil:'domcontentloaded'});
   await page.locator('.desk-priority[aria-busy="false"]').waitFor({timeout:90000});
   await page.locator('[data-section="reports"]').click();
   await page.locator('.a4-priority-card').first().waitFor({timeout:60000});
-  assert.ok(!requests.some(url=>/pdfmake|Pretendard-(Regular|Bold)\.woff(?:\?|$)/.test(url)),'PDF assets were eagerly downloaded');
+  assert.ok(!requests.some(url=>/pdfmake|IncarReportCJK|Pretendard-(Regular|Bold)\.woff(?:\?|$)/.test(url)),'PDF assets were eagerly downloaded');
   const title=await page.title();
   for (const [period,label] of [['daily','일간'],['weekly','주간'],['monthly','월간']]) {
     await page.locator('.report-workspace').getByRole('button',{name:label,exact:true}).click();
     await page.locator(`.newspaper-report-sheet.${period}`).waitFor();
     await page.evaluate(()=>document.fonts.ready);
-    const articleTitles=await page.locator('.a4-priority-main > b').allTextContents();
     const before=await page.locator('.report-workspace').boundingBox();
     const downloaded=page.waitForEvent('download',{timeout:60000});
     await page.getByRole('button',{name:'PDF 저장',exact:true}).click();
@@ -43,8 +48,17 @@ try {
     assert.equal(await page.locator('.app-shell').getAttribute('data-active-section'),'reports');
     assert.deepEqual(await page.locator('.report-workspace').boundingBox(),before);
     await page.screenshot({path:path.join(out,`${period}.png`)});
-    result.reports.push({period,file:file.suggestedFilename(),articleTitles});
+    result.reports.push({period,file:file.suggestedFilename(),articleTitles:await page.evaluate(()=>window.__pdfTitles)});
   }
+  const fixtureTitle='[문자 검증] 한글 ABC 1200% 韓·日·美 기업 보험';
+  const fixturePublisher='韓·日·美 보도';
+  await page.locator('.a4-priority-main > b').first().evaluate((node,title)=>{node.textContent=title;},fixtureTitle);
+  await page.locator('.a4-press-rows > button > span').first().evaluate((node,title)=>{node.textContent=title;},fixturePublisher);
+  const cjkEvent=page.waitForEvent('download',{timeout:60000});
+  await page.getByRole('button',{name:'PDF 저장',exact:true}).click();
+  const cjk=await cjkEvent;
+  await cjk.saveAs(path.join(out,'cjk.pdf'));
+  result.reports.push({period:'cjk',file:cjk.suggestedFilename(),articleTitles:await page.evaluate(()=>window.__pdfTitles),expectedTexts:[fixturePublisher],expectedFonts:['IncarReportCJK-Regular','IncarReportCJK-Bold']});
   const recovery=await browser.newPage({viewport:{width:1600,height:900}});
   let blocked=0;
   await recovery.route('**/*',async route=>{

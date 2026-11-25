@@ -42,6 +42,14 @@ jobs:
         run: |
           npm install --prefix .qa/playwright-runtime --package-lock=false --no-save --no-audit --no-fund playwright@1.56.1
 
+      - name: Set up PDF validation
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PDF validation dependency
+        run: python -m pip install --disable-pip-version-check pypdf==7.1.1
+
       - name: Inspect deployed dashboard
         env:
           DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
@@ -56,6 +64,9 @@ jobs:
           PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
           PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
         run: node frontend/scripts/report-download-qa.mjs
+
+      - name: Verify exported text and CJK font embedding
+        run: python tools/verify_report_pdfs.py .qa/design/report-download --check-notice-urls
 
       - name: Verify publisher analysis and management controls
         env:

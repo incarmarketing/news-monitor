@@ -1,4 +1,5 @@
 import { chartGeometry } from "./chartPresentation.js";
+import { pdfText } from "./reportPdfText.js";
 
 export const REPORT_PDF_MARGIN = 72 * 10 / 25.4;
 const ink = "#131615", muted = "#686e6b", line = "#cdd1cf";
@@ -39,13 +40,13 @@ function chartSvg(rows = []) {
 function barTable(rows = []) {
   const max = Math.max(1, ...rows.map(row => Number(row.value) || 0));
   return { table:{ widths:[75,127,40], body:rows.map(row => [
-    { text:row.name, fontSize:9.5 },
+    { text:pdfText(row.name), fontSize:9.5 },
     { svg:`<svg xmlns="http://www.w3.org/2000/svg" width="127" height="10"><rect width="127" height="10" rx="2" fill="#f0f1f2"/><rect width="${127*Math.max(0,Number(row.value)||0)/max}" height="10" rx="2" fill="${color(row.color)}"/></svg>`, width:127, margin:[0,2,0,0] },
     { text:`${Number(row.value || 0).toLocaleString("ko-KR")}건`, bold:true, alignment:"right", fontSize:9.5 },
   ]) }, layout:{ hLineWidth:()=>0, vLineWidth:()=>0, paddingLeft:()=>0, paddingRight:()=>5, paddingTop:()=>3, paddingBottom:()=>3 } };
 }
 
-function sectionTitle(text) { return { text, fontSize:13, bold:true, margin:[0,0,0,8] }; }
+function sectionTitle(text) { return { text:pdfText(text), fontSize:13, bold:true, margin:[0,0,0,8] }; }
 
 export function buildReportPdfDefinition(model) {
   if (!model?.title || !Array.isArray(model.articles)) throw new Error("report_document_not_ready");
@@ -56,11 +57,11 @@ export function buildReportPdfDefinition(model) {
     return [
       { text:String(index+1).padStart(2,"0"), alignment:"center", bold:true, fontSize:14, margin:[0,2,0,0] },
       { stack:[{ text:article.tone || "중립", color:foreground, background, bold:true },{ text:article.category || "기타", margin:[0,4,0,0] }], fontSize:8.5, alignment:"center" },
-      { text:article.title, fontSize:10.5, bold:true, lineHeight:1.25, color:ink, link:safeUrl(article.url), margin:[0,2,0,0] },
+      { text:pdfText(article.title), fontSize:10.5, bold:true, lineHeight:1.25, color:ink, link:safeUrl(article.url), margin:[0,2,0,0] },
     ];
   });
   const publisherPairs = [];
-  for (let i=0; i<pressRows.length; i+=2) publisherPairs.push([pressRows[i],pressRows[i+1]].map(row => row ? { columns:[{ text:row.name, fontSize:9.5, width:"*" },{ text:`${Number(row.value || 0).toLocaleString("ko-KR")}건`, fontSize:10, bold:true, width:36, alignment:"right" }], columnGap:4 } : ""));
+  for (let i=0; i<pressRows.length; i+=2) publisherPairs.push([pressRows[i],pressRows[i+1]].map(row => row ? { columns:[{ text:pdfText(row.name), fontSize:9.5, width:"*" },{ text:`${Number(row.value || 0).toLocaleString("ko-KR")}건`, fontSize:10, bold:true, width:36, alignment:"right" }], columnGap:4 } : ""));
   const sidebar = [sectionTitle("분류별 기사량"),
     categoryRows.length ? barTable(categoryRows) : {text:"집계 데이터 없음",color:muted},
     { columns:[{ text:"표시 분류 합계", width:"*" },{ text:`${categoryRows.reduce((sum,row)=>sum+Number(row.value || 0),0).toLocaleString("ko-KR")}건`, bold:true, alignment:"right", width:60 }], fontSize:9, margin:[0,10,0,12] },
@@ -74,7 +75,7 @@ export function buildReportPdfDefinition(model) {
     pageSize:"A4", pageOrientation:"landscape", pageMargins:[REPORT_PDF_MARGIN,REPORT_PDF_MARGIN,REPORT_PDF_MARGIN,34],
     defaultStyle:{font:"Pretendard",fontSize:10,color:ink,lineHeight:1.15},
     content:[
-      { columns:[{text:model.title,bold:true,fontSize:22,width:"auto"},{text:(model.stats || []).flatMap(stat=>[{text:`${stat.label} `,fontSize:8.5},{text:`${stat.value}   `,bold:true,fontSize:13}]),width:"*",margin:[10,8,0,0]}], columnGap:10 },
+      { columns:[{text:pdfText(model.title),bold:true,fontSize:22,width:"auto"},{text:(model.stats || []).flatMap(stat=>[{text:pdfText(`${stat.label} `),fontSize:8.5},{text:pdfText(`${stat.value}   `),bold:true,fontSize:13}]),width:"*",margin:[10,8,0,0]}], columnGap:10 },
       {text:model.scope || "",fontSize:8,color:muted,alignment:"right",margin:[0,3,0,8]},
       {canvas:[{type:"line",x1:0,y1:0,x2:785.19,y2:0,lineWidth:0.8,lineColor:ink}],margin:[0,0,0,12]},
       { columns:[{width:"*",stack:[sectionTitle(model.articleTitle || "우선 확인 기사"),articleBody.length ? {table:{widths:[24,42,"*"],heights:model.period==="daily"?44:23,body:articleBody,dontBreakRows:true},layout:{hLineWidth:index=>index?0.5:0,vLineWidth:()=>0,hLineColor:()=>line,paddingLeft:()=>0,paddingRight:index=>index<2?10:0,paddingTop:()=>9,paddingBottom:()=>9}} : {text:"우선 확인할 기사가 없습니다.",color:muted}]},{width:258,stack:sidebar}],columnGap:22},
