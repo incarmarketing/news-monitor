@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Building2, Check, Download, Newspaper } from "lucide-react";
+import { Check, Download, Newspaper } from "lucide-react";
 import { monitoringCsv } from "./monitoringPresentation.js";
 import { loadMediaArticleRange } from "./mediaRange.js";
 import MediaSkeleton from "./MediaSkeleton.jsx";
@@ -161,6 +161,10 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
     ? analysisRead.value : { mediaSummaryData: { pressInfluence: [] }, dailyTrend: [], keywordRows: [], issueRows: [] };
   const { mediaSummaryData, dailyTrend, keywordRows, issueRows } = mediaAnalysis;
   const maxKeywordCount = Math.max(1, ...keywordRows.map(row => Number(row.value) || 0));
+  const openPeriodMonitoring = preset => onOpenMonitoring?.({
+    ...preset, startDate: effectiveRange.start, endDate: effectiveRange.end,
+    mediaScope: true, rangeRevision: revision,
+  });
   const downloadArticles = () => {
     const url = URL.createObjectURL(new Blob([monitoringCsv(deferredAnalysisArticles)], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
@@ -223,15 +227,19 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
           </section>
         </div>
         <div className="media-keywords">
-          <div className="newsroom-content-tabs" role="tablist" aria-label="기사량 집계 기준"><button type="button" role="tab" aria-selected={detailTab === "keywords"} onClick={() => setDetailTab("keywords")}>주요 키워드</button><button type="button" role="tab" aria-selected={detailTab === "publishers"} onClick={() => setDetailTab("publishers")}>언론사별 보도량</button></div>
+          <div className="newsroom-content-tabs" role="tablist" aria-label="기사량 집계 기준"><button type="button" role="tab" id="media-keywords-tab" aria-controls="media-detail-panel" aria-selected={detailTab === "keywords"} onClick={() => setDetailTab("keywords")}>주요 키워드</button><button type="button" role="tab" id="media-publishers-tab" aria-controls="media-detail-panel" aria-selected={detailTab === "publishers"} onClick={() => setDetailTab("publishers")}>언론사별 보도량</button></div>
+          <div className="media-keyword-content" id="media-detail-panel" role="tabpanel" aria-labelledby={`media-${detailTab}-tab`}>
           {detailTab === "keywords" ? loadingRange ? <MediaSkeleton kind="keywords" /> : <div className="media-keyword-bars">
-            {keywordRows.filter(row => Number(row.value) > 0).slice(0, 10).map(row => <button type="button" key={row.keyword || row.name} onClick={() => onOpenMonitoring?.({ keyword: row.keyword || row.name })}><b>{row.name}</b><span><i style={{ width: `${Math.max(1, Number(row.value) / maxKeywordCount * 100)}%` }} /></span><strong>{Number(row.value).toLocaleString("ko-KR")}건</strong></button>)}
+            {keywordRows.filter(row => Number(row.value) > 0).slice(0, 10).map(row => <button type="button" key={row.keyword || row.name} onClick={() => openPeriodMonitoring({ query: row.keyword || row.name })}><b>{row.name}</b><span><i style={{ width: `${Math.max(1, Number(row.value) / maxKeywordCount * 100)}%` }} /></span><strong>{Number(row.value).toLocaleString("ko-KR")}건</strong></button>)}
             {!keywordRows.some(row => Number(row.value) > 0) && <p className="empty-list-note">{analysisError ? "선택 기간 조회를 완료하지 못했습니다." : "해당 기간의 키워드 기사가 없습니다."}</p>}
-          </div> : <Panel title="언론사별 보도량" icon={Building2} meta="선택 기간 기준">{loadingRange ? <MediaSkeleton kind="publishers" /> : analysisError ? <p className="empty-list-note">선택 기간 조회를 완료하지 못했습니다.</p> : <PressInfluence rows={mediaSummaryData.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />}</Panel>}
+          </div> : loadingRange ? <MediaSkeleton kind="publishers" /> : analysisError ? <p className="empty-list-note">선택 기간 조회를 완료하지 못했습니다.</p> : <PressInfluence rows={mediaSummaryData.pressInfluence} onOpenMonitoring={openPeriodMonitoring} />}
+          </div>
         </div>
         <div className="media-issues">
           <Panel title="주요 보도 이슈" icon={Newspaper} meta={loadingRange || issuesLoading ? "" : analysisError ? "조회 실패" : periodIssueMeta("custom", issueRows)}>
+            <div className="media-issue-content">
             {loadingRange || issuesLoading ? <MediaSkeleton kind="issues" /> : analysisError ? <p className="empty-list-note" role="status">선택 기간 조회를 완료하지 못했습니다.</p> : <MonthlyIssueDigest issues={issueRows} period="custom" />}
+            </div>
           </Panel>
         </div>
       </section>

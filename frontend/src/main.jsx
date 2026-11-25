@@ -81,6 +81,7 @@ import { mapCooperatively } from "./cooperativeWork.js";
 import AppSelect from "./AppSelect.jsx";
 import { filterRegulatorArticles } from "./regulatorFilters.js";
 import { toneChartSeries, tonePanelStats } from "./toneTrendModel.js";
+import { loadMediaArticleRange } from "./mediaRange.js";
 
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
@@ -238,6 +239,7 @@ function App() {
   const [monitoringPreset, setMonitoringPreset] = useState(initialRoute.monitoringPreset);
   const [monitoringRangeArticles, setMonitoringRangeArticles] = useState([]);
   const [monitoringRangeLoading, setMonitoringRangeLoading] = useState(false);
+  const monitoringRangeRequest = useRef(0);
   const [monitoringWarmed, setMonitoringWarmed] = useState(initialRoute.section === "monitoring");
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
@@ -645,18 +647,21 @@ function App() {
 
   const overviewRefreshOperations = useStableCallback(refreshOperations);
 
-  const loadMonitoringRange = async ({ startDate, endDate }) => {
+  const loadMonitoringRange = async ({ startDate, endDate, mediaScope = false, revision = "" }) => {
     if (!startDate && !endDate) return [];
+    const request = ++monitoringRangeRequest.current;
     setMonitoringRangeLoading(true);
     try {
-      const rows = await loadArticleRange({ startDate, endDate, maxRows: ARTICLE_PROFILE_LIMITS.history });
-      setMonitoringRangeArticles(rows);
+      const rows = mediaScope
+        ? (await loadMediaArticleRange({ startDate, endDate, revision })).articles
+        : await loadArticleRange({ startDate, endDate, maxRows: ARTICLE_PROFILE_LIMITS.history });
+      if (request === monitoringRangeRequest.current) setMonitoringRangeArticles(rows);
       return rows;
     } catch {
-      finishWorkStatus("기간 조회", "기간 조회 실패: 기존 목록을 유지합니다. 다시 시도해 주세요.");
+      if (request === monitoringRangeRequest.current) finishWorkStatus("기간 조회", "기간 조회 실패: 기존 목록을 유지합니다. 다시 시도해 주세요.");
       return [];
     } finally {
-      setMonitoringRangeLoading(false);
+      if (request === monitoringRangeRequest.current) setMonitoringRangeLoading(false);
     }
   };
 
@@ -695,7 +700,11 @@ function App() {
   const stableLoadMonitoringRange = useStableCallback(loadMonitoringRange);
   const stableFeedbackSaved = useStableCallback(handleClassificationFeedbackSaved);
   const stableScrapSaved = useStableCallback(handleArticleScrapSaved);
-  const clearMonitoringRange = useCallback(() => setMonitoringRangeArticles([]), []);
+  const clearMonitoringRange = useCallback(() => {
+    monitoringRangeRequest.current += 1;
+    setMonitoringRangeArticles([]);
+    setMonitoringRangeLoading(false);
+  }, []);
 
   const dashboardHelpers = useMemo(() => ({
     ArticleSummaryBlock,
@@ -1210,43 +1219,35 @@ function formatDashboardChartDate(value = "") {
   return match ? `${Number(match[1])}/${Number(match[2])}` : value;
 }
 
-function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved, onOpenMonitoring }) {
+function DashboardClippingPanel({ candidates = [], scraps = [], onScrapSaved }) {
   const [visible, setVisible] = useState(6);
   const [evidence, setEvidence] = useState(null);
   return (
     <section className="clipping-candidate-panel">
-      <div className="clipping-panel-head">
-        <div>
-          <h2>클리핑 후보 <small>{candidates.length}건</small></h2>
-        </div>
-        <button type="button" className="ghost-button compact-button" onClick={() => onOpenMonitoring?.({ clipping: true })}>
-          후보 더보기
-        </button>
-      </div>
       <div className="clipping-candidate-list">
         {candidates.length ? candidates.slice(0, visible).map((article, index) => {
           const scrapped = isArticleScrapped(article, scraps);
           return (
             <article className={`clipping-candidate-card ${toneCssClass(article.tone)}`} key={`${articleSelectionKey(article)}-${index}`}>
-              <div className="clipping-card-top">
-                <div className="clipping-card-meta">
+              <span className="clipping-rank">{String(index + 1).padStart(2, "0")}</span>
+              <div className="clipping-card-meta">
                   <Chip tone={article.tone}>{article.tone}</Chip>
-                  <Chip>{article.category}</Chip>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                </div>
-                <div className="clipping-card-actions">
+                  <span>{displayDashboardCategory(article.category)}</span>
+              </div>
+              <div className="clipping-content">
+                <h3>{/^https?:\/\//i.test(article.link || "") ? <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={event => openArticleLink(event, article.link)}>{displayHeadline(article)}</a> : displayHeadline(article)}</h3>
+                <p className="clipping-publisher">{resolvePublisher(article)} · {articleClock(article, articleTimeValue(article))}</p>
+                <ArticleSummaryBlock item={article} dense />
+              </div>
+              <div className="clipping-card-actions">
                   <ArticleScrapButton article={article} scrapped={scrapped} onScrapSaved={onScrapSaved} />
                   {article.link && article.link !== "#" && (
                     <a href={article.link} target="_blank" rel="noopener noreferrer" aria-label="기사 원문 열기" title="기사 원문 열기" onClick={(event) => openArticleLink(event, article.link)}>
                       <ExternalLink />
                     </a>
                   )}
-                </div>
+                  <button type="button" className="clipping-evidence-trigger" onClick={() => setEvidence(article)} aria-label="선정 근거" title="선정 근거"><FileText aria-hidden="true" /></button>
               </div>
-              <h3>{/^https?:\/\//i.test(article.link || "") ? <a href={article.link} target="_blank" rel="noopener noreferrer">{displayHeadline(article)}</a> : displayHeadline(article)}</h3>
-              <p className="clipping-publisher">{resolvePublisher(article)} · {articleClock(article, articleTimeValue(article))}</p>
-              {(index === 0 || index > 2) && <ArticleSummaryBlock item={article} dense />}
-              <button type="button" className="clipping-evidence clipping-evidence-trigger" onClick={() => setEvidence(article)}>선정 근거<ChevronRight aria-hidden="true" /></button>
             </article>
           );
         }) : (
@@ -1521,6 +1522,7 @@ function Monitoring({
     const hasResolvedTarget = hasFocusTarget || issueLinks.size > 0;
     return workingArticles.filter((article) => {
       if (isOfficialRegulatorSource(article.source)) return false;
+      if (focusPreset?.mediaScope && !isUsableArticle(article)) return false;
       if (hasFocusTarget && !articleMatchesDeepLink(article, focusArticleHash, focusArticleLink, focusArticleTitle)) return false;
       if (issueLinks.size && !issueLinks.has(normalizeRiskUrl(article.link || article.url || ""))) return false;
       if (needle) {
@@ -1562,8 +1564,8 @@ function Monitoring({
       setEndDateInput(range.end);
       setStartDate(range.start);
       setEndDate(range.end);
-      if ((range.start && range.start !== latestDate) || (range.end && range.end !== latestDate)) {
-        onLoadMonitoringRange?.({ startDate: range.start, endDate: range.end });
+      if (monitoringPreset.mediaScope || (range.start && range.start !== latestDate) || (range.end && range.end !== latestDate)) {
+        onLoadMonitoringRange?.({ startDate: range.start, endDate: range.end, mediaScope: Boolean(monitoringPreset.mediaScope), revision: monitoringPreset.rangeRevision || "" });
       }
     }
     appliedPresetStamp.current = presetStamp;
@@ -1939,7 +1941,6 @@ function Clipping({ articles = [], allArticles = [], scraps = [], onOpenMonitori
           candidates={filteredCandidates}
           scraps={scraps}
           onScrapSaved={onScrapSaved}
-          onOpenMonitoring={onOpenMonitoring}
         />
       </section>
     </main>
@@ -4185,20 +4186,23 @@ function ReportAutomationStatus({ reportHealth, actionsHealth, historyHealth }) 
   );
 }
 
-function PressInfluence({ rows, detailed = false, compact = false, onOpenMonitoring }) {
+function PressInfluence({ rows = [], onOpenMonitoring }) {
   const pressRows = rows.filter((item) => !isOfficialRegulatorSource(item.source));
   const max = Math.max(1, ...pressRows.map((item) => item.total));
-  const visibleRows = pressRows.slice(0, compact ? 5 : PRESS_INFLUENCE_LIMIT);
+  const visibleRows = pressRows.slice(0, PRESS_INFLUENCE_LIMIT);
   return (
-    <div className={detailed ? "press-list detailed" : "press-list"}>
+    <div className="press-list" role="group" aria-label="언론사별 보도량">
+      <div className="press-table-head"><span>언론사</span><span>전체</span><span>당사 언급</span><span>부정</span><span aria-hidden="true" /></div>
       {visibleRows.map((item) => (
-        <button className={`press-row ${onOpenMonitoring ? "clickable" : ""}`} key={item.source} onClick={() => onOpenMonitoring?.({ source: item.source })}>
-          <b>{item.source}</b>
-          <span className="press-bar"><span style={{ width: `${Math.max(6, (item.total / max) * 100)}%` }} /></span>
-          <em>{item.total}건</em>
-          {detailed && <small>전체 {item.total}건 · 당사 언급 {item.own}건 · 부정 논조 {item.negative}건</small>}
+        <button type="button" className="press-row" key={item.source} onClick={() => onOpenMonitoring?.({ source: item.source })}>
+          <span className="press-name"><b>{item.source}</b><span className="press-bar" aria-hidden="true"><i style={{ width: `${(item.total / max) * 100}%` }} /></span></span>
+          <strong>{Number(item.total).toLocaleString("ko-KR")}건</strong>
+          <span>{Number(item.own).toLocaleString("ko-KR")}건</span>
+          <span className="press-negative" data-active={item.negative > 0}>{Number(item.negative).toLocaleString("ko-KR")}건</span>
+          <ChevronRight aria-hidden="true" />
         </button>
       ))}
+      {!visibleRows.length && <p className="empty-list-note">해당 기간의 언론사 보도가 없습니다.</p>}
     </div>
   );
 }

@@ -105,3 +105,35 @@ test("media uses structural skeletons and has no observation commentary", () => 
   const css = fs.readFileSync(new URL("../src/media-skeleton.css", import.meta.url), "utf8");
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
+
+test("media column divider shares the four-plot grid and keeps a stable detail scroller", () => {
+  const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const source = fs.readFileSync(new URL("../src/MediaAnalysis.jsx", import.meta.url), "utf8");
+  assert.match(css, /\.media-intel-board \{[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.media-intel-board > \.media-issues \{[^}]*grid-column: 3 \/ 5;[^}]*border-left:/);
+  assert.match(css, /\.tone-small-multiples \{[^}]*gap: var\(--media-column-gap, 16px\)/);
+  assert.match(source, /className="media-keyword-content"[^>]*role="tabpanel"/);
+  assert.doesNotMatch(source, /<Panel title="언론사별 보도량"/);
+});
+
+test("media drilldown keeps its complete period and read cache instead of falling back to today", () => {
+  const source = fs.readFileSync(new URL("../src/MediaAnalysis.jsx", import.meta.url), "utf8");
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  assert.match(source, /startDate: effectiveRange.start, endDate: effectiveRange.end/);
+  assert.match(source, /mediaScope: true, rangeRevision: revision/);
+  assert.match(source, /openPeriodMonitoring\(\{ query:/);
+  assert.match(main, /await loadMediaArticleRange\(\{ startDate, endDate, revision \}\)/);
+  assert.match(main, /focusPreset\?\.mediaScope && !isUsableArticle\(article\)/);
+  assert.match(main, /if \(request === monitoringRangeRequest.current\) setMonitoringRangeArticles/);
+});
+
+test("publisher rows fill their grid and clipping articles have no oversized lead treatment", () => {
+  const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  assert.match(css, /\.press-row \{ width: 100%;[^}]*border: 0;/);
+  assert.match(css, /\.press-table-head, \.press-row \{[^}]*grid-template-columns: var\(--press-columns\)/);
+  assert.match(main, /className="clipping-rank"/);
+  assert.match(main, /className="clipping-content"/);
+  assert.doesNotMatch(css, /\.clipping-candidate-card:(first-child|nth-child)/);
+  assert.doesNotMatch(main, /index === 0 \|\| index > 2/);
+});

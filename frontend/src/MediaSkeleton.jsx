@@ -8,6 +8,10 @@ export default function MediaSkeleton({ kind = "keywords" }) {
   if (kind === "issues") return <div className="media-skeleton media-skeleton-issues" aria-hidden="true">
     {[0, 1, 2, 3, 4, 5].map(index => <div className="media-skeleton-story" key={index}><i className="media-skeleton-fill" /><b className="media-skeleton-fill" /><b className="media-skeleton-fill" /></div>)}
   </div>;
+  if (kind === "publishers") return <div className="media-skeleton media-skeleton-publishers press-list" aria-hidden="true">
+    <div className="press-table-head">{[0, 1, 2, 3, 4].map(index => <i className="media-skeleton-fill" key={index} />)}</div>
+    {[0, 1, 2, 3, 4, 5].map(index => <div className="media-skeleton-publisher-row" key={index}><span><i className="media-skeleton-fill" /><i className="media-skeleton-fill" /></span>{[0, 1, 2, 3].map(cell => <i className="media-skeleton-fill" key={cell} />)}</div>)}
+  </div>;
   return <div className="media-skeleton media-skeleton-keywords" aria-hidden="true">
     {[0, 1, 2, 3, 4, 5, 6, 7].map(index => <div key={index}><i className="media-skeleton-fill" /><b className="media-skeleton-fill" /><span className="media-skeleton-fill" /></div>)}
   </div>;

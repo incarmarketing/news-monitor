@@ -1,3 +1,23 @@
+# Publisher Drilldown And Clipping Layout QA - 2026-11-25
+
+## Causes And Scope
+
+- Current production capture `.qa/clipping-media-before/02-media-publishers-1600.png` reproduced 202px-wide native-looking publisher buttons, zero-width bars, a duplicate section heading and multi-line counts in the first grid cell. Publisher clicks also discarded the active Media range and opened today's articles.
+- At 1600 x 900 the old lower divider was at x=776.5 while the caution/neutral divider was x=800.5. Media now uses the same four-column tracks and 16px gap throughout, putting the lower divider at x=800.5. Lower headings share 52px tracks and both article lists scroll beneath their headers.
+- Publisher rows now use the full pane width, with aligned publisher/bar, total, own-mention and negative-count columns. A single detail scroller and responsive reserved height prevent tab changes from shifting the rest of the page. Publisher-specific skeletons use the same columns.
+- Media publisher and keyword drilldowns preserve start/end dates and the usable-article scope. Monitoring reuses the same complete range cache and revision rather than issuing another query or truncating 90 days to the general 8,000-row history profile. Late range responses cannot overwrite a reset or newer range request.
+- Clipping replaces the oversized lead/two-side-story mosaic with consistent editorial rows: rank, tone/category, headline, source/time, a short summary and aligned save/original/evidence actions. All full summary/evidence remains in the existing dialog, and category filtering, sorting and incremental article display remain intact. No recommendation, collection, classification, scheduling or authorization rules changed.
+
+## Verification
+
+- Frontend: 209 passing tests, 40 modules with zero invalid local references and a successful production build. The backend is unchanged.
+- `.qa/media-clipping-detail/summary.json`: seven viewport sizes; publisher rows fill their pane and retain nonzero bar widths; desktop divider error is zero and tab bounds remain stable. Actual 30-day/90-day publisher drilldowns show exactly 248/797 matching articles and make zero additional range requests. These are live-data observations rather than fixed expected counts.
+- `.qa/media-loading-race/summary.json`: publisher loading/ready bounds match exactly, no visible loading prose replaces the skeleton, and a held fixture range response is discarded after Monitoring reset. No article save or notification was made.
+- `.qa/clipping-media-navigation/` contains 26 passing PC/mobile route captures, search/reset, sorting, CSV, tooltip/report checks and five desktop dashboard viewport fits. Before/after publisher and clipping captures were visually reviewed. Dedicated repeatable UI verification is in `frontend/scripts/media-clipping-qa.mjs`.
+- Final seven-viewport suite `.qa/clipping-media-layout/summary.json` records 65 states and zero failures, including publisher tabs, Media ranges, Clipping categories/evidence dialog and Monitoring detail/page-size changes. Desktop still has no document scroll or offscreen workspace controls.
+
+---
+
 # Media Skeletons, Publisher Columns And Commentary Removal QA - 2026-11-25
 
 ## Scope
