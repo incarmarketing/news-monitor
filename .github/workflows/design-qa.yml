@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Cache Playwright runtime
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .qa/playwright-runtime/node_modules
           key: playwright-runtime-1.56.1-${{ runner.os }}
@@ -41,14 +41,6 @@ jobs:
       - name: Install Playwright
         run: |
           npm install --prefix .qa/playwright-runtime --package-lock=false --no-save --no-audit --no-fund playwright@1.56.1
-
-      - name: Set up PDF validation
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Install PDF validation dependency
-        run: python -m pip install --disable-pip-version-check pypdf==7.1.1
 
       - name: Inspect deployed dashboard
         env:
@@ -65,9 +57,6 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
         run: node frontend/scripts/report-download-qa.mjs
 
-      - name: Verify exported text and CJK font embedding
-        run: python tools/verify_report_pdfs.py .qa/design/report-download --check-notice-urls
-
       - name: Verify publisher analysis and management controls
         env:
           DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
@@ -78,7 +67,33 @@ jobs:
 
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: design-qa
           path: .qa/design
+
+  pdf-content-check:
+    needs: visual-layout-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up PDF validation
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install PDF validation dependency
+        run: python -m pip install --disable-pip-version-check pypdf==7.1.1
+
+      - name: Download browser verification results
+        uses: actions/download-artifact@v7
+        with:
+          name: design-qa
+          path: .qa/design
+
+      - name: Verify exported text and CJK font embedding
+        run: python tools/verify_report_pdfs.py .qa/design/report-download --check-notice-urls
