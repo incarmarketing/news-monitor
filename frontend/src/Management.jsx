@@ -389,7 +389,7 @@ function MediaManagement({ rows = [], reporters = [], aliases = [] }) {
   };
 
   return (
-    <Panel title="언론사 관리" icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}곳`}>
+    <Panel title="언론사 관리" hideTitle icon={Building2} meta={`${managedRows.length.toLocaleString("ko-KR")}곳`}>
       <CrmSignalGrid signals={crmSignals} />
       <div className="management-toolbar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="언론사명, 도메인, 메모 검색" />
@@ -582,7 +582,7 @@ function ReporterManagement({ rows = [] }) {
   };
 
   return (
-    <Panel title="기자 관리" icon={Users} meta={`${managedRows.length.toLocaleString("ko-KR")}명`}>
+    <Panel title="기자 관리" hideTitle icon={Users} meta={`${managedRows.length.toLocaleString("ko-KR")}명`}>
       <CrmSignalGrid signals={reporterSignals} />
       <div className="operation-form reporter-form">
         <label>
@@ -703,7 +703,7 @@ function AdManagement({ rows = [] }) {
   }, [rows, query]);
   const visibleRows = showAll ? filteredRows : filteredRows.slice(0, 15);
   return (
-    <Panel title="광고비 관리" icon={WalletCards} meta={`${rows.length.toLocaleString("ko-KR")}건`}>
+    <Panel title="광고비 관리" hideTitle icon={WalletCards} meta={`${rows.length.toLocaleString("ko-KR")}건`}>
       <div className="ad-summary-row">
         <StatCard icon={WalletCards} label="총 집행액" value={formatMoney(rows.reduce((sum, row) => sum + Number(row.amount || 0), 0))} />
         <StatCard icon={CalendarDays} label="집행 월" value={`${unique(rows.map((row) => row.month)).length}개월`} />

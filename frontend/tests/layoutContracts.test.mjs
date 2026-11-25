@@ -130,10 +130,27 @@ test("media drilldown keeps its complete period and read cache instead of fallin
 test("publisher rows fill their grid and clipping articles have no oversized lead treatment", () => {
   const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
   const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
-  assert.match(css, /\.press-row \{ width: 100%;[^}]*border: 0;/);
-  assert.match(css, /\.press-table-head, \.press-row \{[^}]*grid-template-columns: var\(--press-columns\)/);
+  assert.match(css, /\.press-row \{ width: 100%;/);
+  assert.match(main, /className="media-keyword-bars press-list"/);
+  assert.match(css, /\.media-keyword-bars > button > span \{ height: 24px;/);
+  assert.doesNotMatch(css, /press-table-head|press-name|press-negative|--press-columns/);
   assert.match(main, /className="clipping-rank"/);
   assert.match(main, /className="clipping-content"/);
   assert.doesNotMatch(css, /\.clipping-candidate-card:(first-child|nth-child)/);
   assert.doesNotMatch(main, /index === 0 \|\| index > 2/);
+});
+
+test("management removes repeated category headings but retains section scope and controls", () => {
+  const management = fs.readFileSync(new URL("../src/Management.jsx", import.meta.url), "utf8");
+  const registry = fs.readFileSync(new URL("../src/MediaRegistry.jsx", import.meta.url), "utf8");
+  const audit = fs.readFileSync(new URL("../src/ClassificationMaintenance.jsx", import.meta.url), "utf8");
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  for (const name of ["언론사 관리", "기자 관리", "광고비 관리"]) assert.ok(management.includes(`title="${name}" hideTitle`));
+  assert.doesNotMatch(registry, /registry-section-heading"><h2>/);
+  assert.match(registry, /aria-label=\{reportersOnly \? "기자 관리 보기"/);
+  assert.doesNotMatch(audit, /<h2>/);
+  assert.match(audit, /aria-label="분류 점검"/);
+  assert.match(audit, /\["admin", "editor"\]\.includes\(getStoredSession\(\)\?\.role\)/);
+  assert.match(main, /aria-label=\{hideTitle \? title : undefined\}/);
+  assert.match(main, /className="panel-meta-only">\{meta\}/);
 });

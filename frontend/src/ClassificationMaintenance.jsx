@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink, RefreshCw } from "lucide-react";
 import { getStoredSession, loadClassificationMaintenance } from "./liveData";
 import { safeArticleUrl } from "./mediaRegistryModel.mjs";
 import { auditLabel, auditPercent, auditStamp } from "./classificationAuditModel.mjs";
@@ -27,15 +27,15 @@ export default function ClassificationMaintenance() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [allowed, query]);
-  if (!allowed) return <section className="classification-audit"><h2>분류 점검</h2><p role="status">관리자 또는 편집자 로그인이 필요한 운영 기록입니다.</p></section>;
+  if (!allowed) return <section className="classification-audit" aria-label="분류 점검"><p role="status">관리자 또는 편집자 로그인이 필요한 운영 기록입니다.</p></section>;
   const changeQuery = (patch) => { const runId = data?.run?.run_id; setData(null); setQuery((value) => ({ ...value, runId: runId || value.runId, offset: 0, ...patch })); };
   const run = data?.run;
   const gate = run?.gate || {};
   const scoped = gate.version === "scoped-v2";
   const quality = scoped ? gate.common || {} : gate;
   const failures = Array.isArray(gate.failures) ? gate.failures : [];
-  return <section className="classification-audit" aria-busy={loading}>
-    <div className="audit-toolbar"><h2><ShieldCheck size={20} />분류 점검</h2>
+  return <section className="classification-audit" aria-label="분류 점검" aria-busy={loading}>
+    <div className="audit-toolbar">
       <label>점검 이력 <AppSelect aria-label="점검 이력" value={query.runId || ""} disabled={loading} onChange={(event) => changeQuery({ runId: event.target.value })}>
         <option value="">최신 점검</option>{data?.runs?.map((item) => <option key={item.run_id} value={item.run_id}>{auditStamp(item.generated_at || item.created_at)} · {auditLabel(item.status)}</option>)}
       </AppSelect></label>

@@ -1,3 +1,21 @@
+# Keyword-Aligned Publisher Bars And Management Titles QA - 2026-11-25
+
+## Scope
+
+- User-directed presentation change: publisher rows now use the exact existing keyword-bar component styles and three tracks (publisher, bar, total), not the previous 5px micro-bar/five-column presentation. Bars are 24px high at every breakpoint, with identical fonts, column widths, padding and row gaps. Own-mention/negative counts remain in the native hover title and accessible button label; selected-period drilldowns are unchanged.
+- Publisher and keyword skeletons now share the same three-column structure and 24px placeholders. Removed the obsolete publisher table/micro-bar selectors rather than overriding them with another style layer.
+- Remove only repeated Management category titles: Media/Reporter Registry headings, manual media/reporter panel headings, Ad Management heading, and both locked/authorized Classification Audit titles. Preserve meaningful inner section headings, counts, sub-tabs, filters, forms, action buttons and the login requirement. `Panel.hideTitle` defaults to false so all other pages keep their existing headings.
+
+## Verification
+
+- Frontend: 210 passing tests, 40 checked modules without invalid local references, and a successful production build.
+- `.qa/keyword-publisher-bars/summary.json` passes seven viewport sizes. Publisher and keyword rows have exactly equal grid tracks/font sizes and 24px bars; lower dividers/headers and tab bounds remain stable. Actual 30/90-day publisher counts of 251/800 open matching article counts with zero extra range requests. Counts are observations of changing live data.
+- `.qa/management-headings/summary.json` checks all six Management categories on PC/mobile (12 views), including nested manual media/reporter views, count metadata, search fields, action buttons and the anonymous Classification Audit login notice. No duplicate category heading, JavaScript exception or write action. Authorized-only data was not fetched with a fabricated session; the existing role guard is unchanged and source-tested.
+- Native screenshots of the new bars and Management views were visually reviewed. No collection, classification, report dispatch or permission rules were changed.
+- `.qa/bars-management-navigation/` passes all 26 PC/mobile route checks, search/reset, sort, CSV, tooltip/report interactions and five desktop dashboard viewport fits. No JavaScript exceptions or empty fallback workspaces were observed.
+
+---
+
 # Publisher Drilldown And Clipping Layout QA - 2026-11-25
 
 ## Causes And Scope

@@ -1,6 +1,5 @@
 .media-registry { min-width:0; color:var(--ink); }
 .registry-section-heading { display:flex; align-items:center; gap:28px; padding-bottom:16px; }
-.registry-section-heading > h2 { font-size:28px; white-space:nowrap; }
 .registry-tabs { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--line); margin-bottom:18px; }
 .registry-section-heading .registry-tabs { border:0; margin:0; }
 .registry-tabs button { background:transparent; color:inherit; border:0; border-bottom:3px solid transparent; height:var(--control-height); padding:6px 14px; font-size:18px; line-height:22px; font-weight:600; cursor:pointer; }
@@ -40,4 +39,4 @@
 .registry-resolve button { display:flex; align-items:center; justify-content:center; gap:6px; min-height:var(--control-height); padding:8px 12px; font-size:var(--control-font-size); line-height:22px; color:var(--paper); background:var(--ink); border:0; border-radius:var(--control-radius); cursor:pointer; }
 .registry-resolve button:disabled { opacity:.5; cursor:default; }
 .registry-resolve p { width:100%; margin:0; font-size:13px; }
-@media(max-width:640px) { .registry-section-heading { align-items:start; flex-wrap:wrap; gap:12px; } .registry-section-heading > h2 { font-size:22px; } .registry-tabs button { font-size:14px; padding:8px; } .registry-toolbar { gap:8px; } .registry-toolbar > div:first-child { margin-left:0; width:100%; } .registry-search { width:100%; margin-left:0; } .registry-search input { width:100%; } .media-registry th,.media-registry td { padding:10px 6px; font-size:13px; } .media-registry td:first-child strong { font-size:18px; } .registry-table-wrap table { min-width:430px; } .registry-pagination-row { flex-wrap:wrap; } }
+@media(max-width:640px) { .registry-section-heading { align-items:start; flex-wrap:wrap; gap:12px; } .registry-tabs button { font-size:14px; padding:8px; } .registry-toolbar { gap:8px; } .registry-toolbar > div:first-child { margin-left:0; width:100%; } .registry-search { width:100%; margin-left:0; } .registry-search input { width:100%; } .media-registry th,.media-registry td { padding:10px 6px; font-size:13px; } .media-registry td:first-child strong { font-size:18px; } .registry-table-wrap table { min-width:430px; } .registry-pagination-row { flex-wrap:wrap; } }

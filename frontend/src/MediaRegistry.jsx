@@ -40,7 +40,7 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
       : { mode: "media", key: row.name, title: row.name });
   }
   return <section className="media-registry" data-registry-mode={mode} aria-label={reportersOnly ? "누적 기자 이력" : "누적 언론사 이력"}>
-    <header className="registry-section-heading"><h2>{reportersOnly ? "기자 관리" : "언론사 관리"}</h2><div className="registry-tabs" role="tablist">
+    <header className="registry-section-heading"><div className="registry-tabs" role="tablist" aria-label={reportersOnly ? "기자 관리 보기" : "언론사 관리 보기"}>
       {tabs.map(([key, label]) => <button type="button" role="tab" aria-selected={mode === key} className={mode === key ? "active" : ""} onClick={() => chooseMode(key)} key={key}>{label}{key === "unknown" && data && <span>{data.unknown.reduce((sum, row) => sum + row.article_count, 0)}</span>}</button>)}
     </div></header>
     {mode === "manual" ? children : selection ? <RegistryDetail key={`${selection.mode}:${selection.key}`} selection={selection} onBack={() => setSelection(null)} onSaved={refresh} /> : <>

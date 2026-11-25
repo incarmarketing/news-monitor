@@ -114,6 +114,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .panel-head h2 { display: flex; align-items: center; gap: 9px; }
 .panel-head h2 > svg { display: none; }
 .panel-head > span { color: var(--muted); font-size: 15px; }
+.panel-meta-only { color: var(--muted); font-size: 15px; text-align: right; margin-bottom: 10px; }
 .filter-card { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .filter-card label { display: grid; gap: 5px; }
 .wide-filter { flex: 1; min-width: 220px; }
@@ -212,20 +213,9 @@ label > span { color: var(--muted); font-size: 14px; }
 .media-keyword-content { min-width: 0; min-height: 0; height: 420px; padding-right: 8px; overflow: auto; scrollbar-gutter: stable; overscroll-behavior: contain; }
 .keyword-brief { display: grid; gap: 12px; font-size: 14px; margin-top: 15px; }
 .keyword-brief article { border-bottom: 1px solid var(--line-soft); padding-bottom: 10px; }
-.press-list { --press-columns: minmax(0, 1fr) 64px 64px 64px 20px; width: 100%; }
-.press-table-head, .press-row { display: grid; grid-template-columns: var(--press-columns); align-items: center; gap: 12px; }
-.press-table-head { position: sticky; top: 0; z-index: 1; padding: 10px 8px; background: var(--bg); color: var(--muted); font-size: 13px; text-align: center; border-bottom: 1px solid var(--line); }
-.press-table-head > span:first-child { text-align: left; }
-.press-row { width: 100%; min-height: 70px; padding: 12px 8px; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; font-size: 16px; text-align: center; font-variant-numeric: tabular-nums; }
-.press-row:hover { background: var(--paper-soft); }
-.press-name { display: grid; gap: 8px; min-width: 0; text-align: left; }
-.press-name b { font-size: 18px; font-weight: 650; overflow-wrap: anywhere; }
-.press-bar { display: block; height: 5px; width: 100%; background: var(--paper-soft); border-radius: 3px; overflow: hidden; }
-.press-bar i { display: block; height: 100%; background: #7b901c; }
-.press-row > strong { font-size: 17px; }
-.press-row > :is(strong, span):not(.press-name) { white-space: nowrap; }
-.press-negative[data-active="true"] { color: var(--red); font-weight: 650; }
-.press-row > svg { width: 18px; height: 18px; color: var(--muted); }
+.press-list { width: 100%; }
+.press-row { width: 100%; font-variant-numeric: tabular-nums; }
+.press-row > b { min-width: 0; overflow-wrap: anywhere; }
 .monthly-issue-lead { padding-bottom: 22px; }
 .monthly-issue-lead h3 { margin: 10px 0; }
 .media-issues .monthly-issue-lead { position: relative; padding-right: 40px; }
@@ -640,10 +630,6 @@ label > span { color: var(--muted); font-size: 14px; }
   .clipping-candidate-card h3 { font-size: 20px; }
   .clipping-candidate-card .summary-lines { font-size: 15px; }
   .clipping-publisher { font-size: 14px; }
-  .press-list { --press-columns: minmax(0, 1fr) 50px 50px 50px 18px; }
-  .press-table-head, .press-row { gap: 6px; padding-inline: 0; }
-  .press-table-head { font-size: 11px; }
-  .press-name b, .press-row, .press-row > strong { font-size: 14px; }
   .scrap-workspace-v2 { grid-template-columns: minmax(0, 1fr); }
   .scrap-side-stack { padding-left: 0; border-left: 0; }
   .scrap-category-summary { gap: 10px; }

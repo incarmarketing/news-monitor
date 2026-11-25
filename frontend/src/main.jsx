@@ -2992,13 +2992,13 @@ function PageTitle({ title, eyebrow, right }) {
   );
 }
 
-function Panel({ title, icon: Icon = FileText, meta, children, className = "" }) {
+function Panel({ title, icon: Icon = FileText, meta, children, className = "", hideTitle = false }) {
   return (
-    <section className={`panel ${className}`}>
-      <div className="panel-head">
+    <section className={`panel ${className}`} aria-label={hideTitle ? title : undefined}>
+      {hideTitle ? meta && <div className="panel-meta-only">{meta}</div> : <div className="panel-head">
         <h2><Icon />{title}</h2>
         {meta ? <span>{meta}</span> : null}
-      </div>
+      </div>}
       {children}
     </section>
   );
@@ -4191,15 +4191,12 @@ function PressInfluence({ rows = [], onOpenMonitoring }) {
   const max = Math.max(1, ...pressRows.map((item) => item.total));
   const visibleRows = pressRows.slice(0, PRESS_INFLUENCE_LIMIT);
   return (
-    <div className="press-list" role="group" aria-label="언론사별 보도량">
-      <div className="press-table-head"><span>언론사</span><span>전체</span><span>당사 언급</span><span>부정</span><span aria-hidden="true" /></div>
+    <div className="media-keyword-bars press-list" role="group" aria-label="언론사별 보도량">
       {visibleRows.map((item) => (
-        <button type="button" className="press-row" key={item.source} onClick={() => onOpenMonitoring?.({ source: item.source })}>
-          <span className="press-name"><b>{item.source}</b><span className="press-bar" aria-hidden="true"><i style={{ width: `${(item.total / max) * 100}%` }} /></span></span>
+        <button type="button" className="press-row" key={item.source} title={`당사 언급 ${item.own}건 · 부정 ${item.negative}건`} aria-label={`${item.source} ${item.total}건 · 당사 언급 ${item.own}건 · 부정 ${item.negative}건`} onClick={() => onOpenMonitoring?.({ source: item.source })}>
+          <b>{item.source}</b>
+          <span className="press-bar" aria-hidden="true"><i style={{ width: `${(item.total / max) * 100}%` }} /></span>
           <strong>{Number(item.total).toLocaleString("ko-KR")}건</strong>
-          <span>{Number(item.own).toLocaleString("ko-KR")}건</span>
-          <span className="press-negative" data-active={item.negative > 0}>{Number(item.negative).toLocaleString("ko-KR")}건</span>
-          <ChevronRight aria-hidden="true" />
         </button>
       ))}
       {!visibleRows.length && <p className="empty-list-note">해당 기간의 언론사 보도가 없습니다.</p>}

@@ -36,6 +36,7 @@ try {
     await page.setViewportSize({ width, height });
     await main.getByRole("tab", { name: "주요 키워드", exact: true }).click();
     const before = await main.locator(".media-keyword-content").boundingBox();
+    const keywordStyle = await main.locator(".media-keyword-bars > button").first().evaluate(node => ({ columns:getComputedStyle(node).gridTemplateColumns, barHeight:node.querySelector(":scope > span").getBoundingClientRect().height, font:getComputedStyle(node.querySelector("b")).fontSize }));
     await main.getByRole("tab", { name: "언론사별 보도량", exact: true }).click();
     assert.deepEqual(await main.locator(".media-keyword-content").boundingBox(), before, "tab changed detail bounds");
     const layout = await page.evaluate(() => {
@@ -44,7 +45,7 @@ try {
       const issues = document.querySelector(".media-issues");
       return { width:innerWidth, overflowX:document.documentElement.scrollWidth-innerWidth, overflowY:document.documentElement.scrollHeight-innerHeight,
         dividerError:Math.abs(plots[2].getBoundingClientRect().left-issues.getBoundingClientRect().left),
-        rows:[...document.querySelectorAll(".press-row")].map(row=>({ width:row.getBoundingClientRect().width, parent:row.parentElement.getBoundingClientRect().width, bar:row.querySelector(".press-bar").getBoundingClientRect().width, text:row.innerText })),
+        rows:[...document.querySelectorAll(".press-row")].map(row=>({ width:row.getBoundingClientRect().width, parent:row.parentElement.clientWidth-parseFloat(getComputedStyle(row.parentElement).paddingLeft)-parseFloat(getComputedStyle(row.parentElement).paddingRight), bar:row.querySelector(".press-bar").getBoundingClientRect().width, barHeight:row.querySelector(".press-bar").getBoundingClientRect().height, columns:getComputedStyle(row).gridTemplateColumns, font:getComputedStyle(row.querySelector("b")).fontSize, text:row.innerText })),
         sections:[...document.querySelectorAll(".media-keywords,.media-issues")].map(box),
         headers:[document.querySelector(".media-keywords > .newsroom-content-tabs"), document.querySelector(".media-issues .panel-head")].map(box) };
     });
@@ -54,6 +55,7 @@ try {
       assert.ok(Math.abs(layout.headers[0].y-layout.headers[1].y)<=1 && Math.abs(layout.headers[0].height-layout.headers[1].height)<=1, "unequal lower headings");
     }
     assert.ok(layout.rows.length > 0 && layout.rows.every(row => Math.abs(row.width-row.parent) <= 1 && row.bar >= 50 && !row.text.includes("NaN")));
+    assert.ok(layout.rows.every(row => row.barHeight===24 && row.barHeight===keywordStyle.barHeight && row.columns===keywordStyle.columns && row.font===keywordStyle.font), "publisher bars differ from keyword bars");
     assert.equal(await main.getByRole("heading", { name:"언론사별 보도량", exact:true }).count(), 0, "duplicate heading");
     await page.screenshot({ path:path.join(out, `publishers-${width}.png`), animations:"disabled" });
     results.layouts.push(layout);
@@ -65,7 +67,7 @@ try {
     await main.locator('.media-intel-board[aria-busy="false"]').waitFor({ timeout:120000 });
     await main.getByRole("tab", { name:"언론사별 보도량", exact:true }).click();
     const row = main.locator(".press-row").first();
-    const source = await row.locator(".press-name b").innerText();
+    const source = await row.locator(":scope > b").innerText();
     const expected = Number((await row.locator(":scope > strong").innerText()).replace(/\D/g,""));
     const dates = await main.locator('input[type="date"]').evaluateAll(nodes=>nodes.map(node=>node.value.replaceAll("-",".")));
     const requestsBefore = rangeRequests;
