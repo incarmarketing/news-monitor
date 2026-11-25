@@ -11,7 +11,15 @@ if sys.stdout.encoding.lower() != "utf-8":
 
 from news_collector import collect_news
 from ai_briefing import run_briefing
+from report_recovery import restore_generated_daily_report
 
-if __name__ == "__main__":
+
+def main():
+    if restore_generated_daily_report():
+        return
     articles = collect_news()
     run_briefing(articles)
+
+
+if __name__ == "__main__":
+    main()

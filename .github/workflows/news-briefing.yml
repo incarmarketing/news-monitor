@@ -80,7 +80,13 @@ jobs:
     timeout-minutes: 45
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      should_run: ${{ steps.guard.outputs.should_run }}
+      should_period: ${{ steps.guard.outputs.should_period }}
+      kst_hour: ${{ steps.guard.outputs.kst_hour }}
+      should_mark: ${{ steps.guard.outputs.should_mark }}
+      marker_path: ${{ steps.guard.outputs.marker_path }}
+      revision: ${{ steps.source.outputs.revision }}
 
     steps:
       - name: Checkout
@@ -90,7 +96,10 @@ jobs:
           fetch-depth: 0
 
       - name: Sync latest archive state
-        run: git pull --ff-only origin main
+        id: source
+        run: |
+          git pull --ff-only origin main
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -131,6 +140,10 @@ jobs:
         if: steps.guard.outputs.should_run == 'true'
         run: python -m pip install -r requirements.txt
 
+      - name: Test report delivery recovery
+        if: steps.guard.outputs.should_run == 'true'
+        run: python -m unittest tests.test_report_recovery tests.test_operational_schedules tests.test_slack_notify tests.test_job_ledger
+
       - name: Build rebuilt dashboard
         if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
         working-directory: frontend
@@ -164,6 +177,8 @@ jobs:
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
           REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          RESUME_GENERATED_REPORT: "true"
+          FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_slack_send == 'true' && '1' || '' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -274,13 +289,69 @@ jobs:
         with:
           path: public
 
+      - name: Preserve generated report state for delivery
+        if: steps.guard.outputs.should_run == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: briefing-state
+          path: |
+            data/daily
+            period_reports
+            .run-state
+            public/data/operations.json
+          include-hidden-files: true
+          retention-days: 2
+          if-no-files-found: error
+
+      - name: Record failed report preparation
+        if: failure() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual'
+        run: python job_ledger.py report finish --status failure --error "Report preparation failed before delivery"
+        env:
+          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          JOB_PROVIDER: github_actions
+
+  # A dependent job avoids racing Pages artifact discovery against its upload.
+  deliver:
+    needs: build-and-send
+    if: needs.build-and-send.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout prepared report revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build-and-send.outputs.revision }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Restore prepared report state
+        uses: actions/download-artifact@v5
+        with:
+          name: briefing-state
+          path: .
+
       - name: Deploy to GitHub Pages
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
+        if: needs.build-and-send.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only != 'true'))
         id: deployment
         uses: actions/deploy-pages@v5
 
       - name: Send Slack report link
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true') && ((github.event_name == 'schedule' && steps.guard.outputs.should_period != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none' && github.event.inputs.send_slack == 'true') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[send-slack]')))
+        if: needs.build-and-send.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.backfill_only != 'true') && ((github.event_name == 'schedule' && needs.build-and-send.outputs.should_period != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports == 'none' && github.event.inputs.send_slack == 'true') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[send-slack]')))
         run: python slack_notify.py daily
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -288,7 +359,7 @@ jobs:
           SLACK_AI_USAGE_WEBHOOK_URL: ${{ secrets.SLACK_AI_USAGE_WEBHOOK_URL }}
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
           TEAMS_REPORT_WEBHOOK_URL: ${{ secrets.TEAMS_REPORT_WEBHOOK_URL }}
-          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          REPORT_SLOT: ${{ needs.build-and-send.outputs.kst_hour }}
           REPORT_PUBLIC_URL: https://incarmarketing.github.io/news-monitor/
           REQUIRE_REPORT_LINK_OK: "true"
           FORCE_SLACK_SEND: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_slack_send == 'true' && '1' || '' }}
@@ -298,12 +369,12 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Send period Slack report link
-        if: steps.guard.outputs.should_run == 'true' && (steps.guard.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && github.event.inputs.send_slack == 'true'))
+        if: needs.build-and-send.outputs.should_run == 'true' && (needs.build-and-send.outputs.should_period == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.period_reports != 'none' && github.event.inputs.send_slack == 'true'))
         run: |
           PERIOD="${{ github.event.inputs.period_reports }}"
           REPORT_MONTH="${{ github.event.inputs.report_month }}"
 
-          if [ "${{ steps.guard.outputs.should_period }}" = "true" ]; then
+          if [ "${{ needs.build-and-send.outputs.should_period }}" = "true" ]; then
             if [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
               python slack_notify.py period weekly
             fi
@@ -337,10 +408,10 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.PUBLIC_SUPABASE_ANON_KEY || secrets.SUPABASE_PUBLISHABLE_KEY || secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Record report finish after notification
-        if: always() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        if: always() && needs.build-and-send.outputs.should_run == 'true' && needs.build-and-send.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: python job_ledger.py report finish --status "$JOB_STATUS"
         env:
-          REPORT_SLOT: ${{ steps.guard.outputs.kst_hour }}
+          REPORT_SLOT: ${{ needs.build-and-send.outputs.kst_hour }}
           REPORT_BACKFILL_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backfill_only == 'true' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -348,7 +419,7 @@ jobs:
           JOB_STATUS: ${{ job.status }}
 
       - name: Refresh public operations ledger after notification
-        if: always() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        if: always() && needs.build-and-send.outputs.should_run == 'true' && needs.build-and-send.outputs.kst_hour != 'manual' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: python -c "import dashboard_builder; print(dashboard_builder.publish_operations_snapshot())"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.PUBLIC_SUPABASE_URL || 'https://moszekksbhprhevxdynb.supabase.co' }}
@@ -356,14 +427,15 @@ jobs:
           REQUIRE_DASHBOARD_HISTORY: "true"
 
       - name: Persist run archive
-        if: steps.guard.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]'))
+        if: needs.build-and-send.outputs.should_run == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[send-slack]'))
         run: |
-          if [ "${{ steps.guard.outputs.should_mark }}" = "true" ]; then
-            python schedule_guard.py mark "${{ steps.guard.outputs.marker_path }}"
+          if [ "${{ needs.build-and-send.outputs.should_mark }}" = "true" ]; then
+            python schedule_guard.py mark "${{ needs.build-and-send.outputs.marker_path }}"
           fi
+          git switch -C main
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ "${{ steps.guard.outputs.should_period }}" != "true" ]; then
+          if [ "${{ needs.build-and-send.outputs.should_period }}" != "true" ]; then
             git add -f data/daily
           fi
           if [ -d period_reports ]; then
@@ -383,11 +455,11 @@ jobs:
           if ! git diff --quiet || [ -n "$(git status --porcelain --untracked-files=all)" ]; then
             git stash push --include-untracked -m "generated files before archive push"
           fi
-          git pull --rebase
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main
 
       - name: Verify unknown publishers and media bylines after briefing completion
-        if: success() && steps.guard.outputs.should_run == 'true' && steps.guard.outputs.kst_hour != 'manual'
+        if: success() && needs.build-and-send.outputs.should_run == 'true' && needs.build-and-send.outputs.kst_hour != 'manual'
         continue-on-error: true
         timeout-minutes: 3
         run: |

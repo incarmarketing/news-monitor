@@ -123,6 +123,28 @@ class OperationalScheduleTests(unittest.TestCase):
         self.assertIn("    environment:\n      name: github-pages\n", build)
         self.assertIn("  group: news-monitor-pages\n  cancel-in-progress: false", build)
 
+    def test_briefing_hands_prepared_report_to_a_dependent_delivery_job(self) -> None:
+        workflow = (ROOT / ".github/workflows/news-briefing.yml").read_text(encoding="utf-8")
+        prepare, deliver = workflow.split("\n  deliver:\n", 1)
+        self.assertIn("uses: actions/upload-pages-artifact@v5", prepare)
+        self.assertIn("name: briefing-state", prepare)
+        self.assertIn("include-hidden-files: true", prepare)
+        self.assertIn("Record failed report preparation", prepare)
+        self.assertNotIn("uses: actions/deploy-pages", prepare)
+        self.assertIn("    needs: build-and-send\n", deliver)
+        self.assertIn("Restore prepared report state", deliver)
+        self.assertIn("needs.build-and-send.outputs.revision", deliver)
+        self.assertNotIn("steps.guard.outputs", deliver)
+        self.assertLess(deliver.index("uses: actions/deploy-pages@v5"), deliver.index("run: python slack_notify.py daily"))
+        self.assertIn("Record report finish after notification", deliver)
+        self.assertIn("git push origin HEAD:main", deliver)
+
+    def test_briefing_retries_reuse_generated_reports_without_forcing_resends(self) -> None:
+        workflow = (ROOT / ".github/workflows/news-briefing.yml").read_text(encoding="utf-8")
+        self.assertIn('RESUME_GENERATED_REPORT: "true"', workflow)
+        self.assertIn("github.event.inputs.force_slack_send == 'true'", workflow)
+        self.assertIn("github.event.inputs.backfill_only != 'true'", workflow)
+
     def test_manual_dashboard_refresh_skips_report_and_pages_pipeline(self) -> None:
         workflow = (ROOT / ".github/workflows/dashboard-refresh.yml").read_text(encoding="utf-8")
         self.assertIn("python refresh_dashboard_news.py", workflow)
