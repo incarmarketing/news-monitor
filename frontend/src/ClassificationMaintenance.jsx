@@ -4,6 +4,7 @@ import { getStoredSession, loadClassificationMaintenance } from "./liveData";
 import { safeArticleUrl } from "./mediaRegistryModel.mjs";
 import { auditLabel, auditPercent, auditStamp } from "./classificationAuditModel.mjs";
 import "./classificationAudit.css";
+import AppSelect from "./AppSelect.jsx";
 
 function Decision({ value = {} }) {
   return <span className="audit-decision"><strong>{auditLabel(value.category)}</strong><span>{auditLabel(value.tone)}</span>
@@ -35,9 +36,9 @@ export default function ClassificationMaintenance() {
   const failures = Array.isArray(gate.failures) ? gate.failures : [];
   return <section className="classification-audit" aria-busy={loading}>
     <div className="audit-toolbar"><h2><ShieldCheck size={20} />분류 점검</h2>
-      <label>점검 이력 <select aria-label="점검 이력" value={query.runId || ""} disabled={loading} onChange={(event) => changeQuery({ runId: event.target.value })}>
+      <label>점검 이력 <AppSelect aria-label="점검 이력" value={query.runId || ""} disabled={loading} onChange={(event) => changeQuery({ runId: event.target.value })}>
         <option value="">최신 점검</option>{data?.runs?.map((item) => <option key={item.run_id} value={item.run_id}>{auditStamp(item.generated_at || item.created_at)} · {auditLabel(item.status)}</option>)}
-      </select></label>
+      </AppSelect></label>
       <button type="button" title="분류 점검 이력 새로고침" aria-label="분류 점검 이력 새로고침" disabled={loading} onClick={() => changeQuery({ revision: query.revision + 1 })}><RefreshCw size={18} /></button>
     </div>
     {loading && <p role="status">점검 기록을 불러오는 중입니다.</p>}

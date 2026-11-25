@@ -21,6 +21,7 @@ import {
   savePressAlias,
   saveReporterProfile,
 } from "./liveData";
+import AppSelect from "./AppSelect.jsx";
 
 let managementHelpers = {};
 
@@ -407,15 +408,15 @@ function MediaManagement({ rows = [], reporters = [], aliases = [] }) {
           </label>
           <label>
             <span>등급</span>
-            <select value={mediaForm.grade} onChange={(event) => updateMediaForm("grade", event.target.value)}>
+            <AppSelect value={mediaForm.grade} onChange={(event) => updateMediaForm("grade", event.target.value)}>
               {["A", "B", "C", "보류"].map((value) => <option key={value}>{value}</option>)}
-            </select>
+            </AppSelect>
           </label>
           <label>
             <span>관계 상태</span>
-            <select value={mediaForm.status} onChange={(event) => updateMediaForm("status", event.target.value)}>
+            <AppSelect value={mediaForm.status} onChange={(event) => updateMediaForm("status", event.target.value)}>
               {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
-            </select>
+            </AppSelect>
           </label>
           <label>
             <span>담당자</span>
@@ -598,9 +599,9 @@ function ReporterManagement({ rows = [] }) {
         </label>
         <label>
           <span>관계 상태</span>
-          <select value={form.status} onChange={(event) => updateForm("status", event.target.value)}>
+          <AppSelect value={form.status} onChange={(event) => updateForm("status", event.target.value)}>
             {["우호", "중립", "관찰", "주의"].map((value) => <option key={value}>{value}</option>)}
-          </select>
+          </AppSelect>
         </label>
         <label>
           <span>최근 접촉일</span>
@@ -909,11 +910,11 @@ function KeywordManagement({ keywords = [], articles = [] }) {
           <div className={`operation-form keyword-add-form${isEditing ? " is-editing" : ""}`}>
             <label>
               <span>상위 구분</span>
-              <select value={category} onChange={(event) => setCategory(event.target.value)}>
+              <AppSelect value={category} onChange={(event) => setCategory(event.target.value)}>
                 {keywordCategories.map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
             <label>
               <span>세부 구분</span>
@@ -937,27 +938,27 @@ function KeywordManagement({ keywords = [], articles = [] }) {
             </label>
             <label>
               <span>개체 유형</span>
-              <select value={entityType} onChange={(event) => setEntityType(event.target.value)}>
+              <AppSelect value={entityType} onChange={(event) => setEntityType(event.target.value)}>
                 {keywordEntityTypes.map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
             <label>
               <span>매칭 대상</span>
-              <select value={matchTarget} onChange={(event) => setMatchTarget(event.target.value)}>
+              <AppSelect value={matchTarget} onChange={(event) => setMatchTarget(event.target.value)}>
                 {keywordMatchTargets.map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
             <label>
               <span>매칭 방식</span>
-              <select value={matchMode} onChange={(event) => setMatchMode(event.target.value)}>
+              <AppSelect value={matchMode} onChange={(event) => setMatchMode(event.target.value)}>
                 {keywordMatchModes.map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
             <label>
               <span>포함 문맥</span>
@@ -977,32 +978,32 @@ function KeywordManagement({ keywords = [], articles = [] }) {
             </label>
             <label>
               <span>검색어 여부</span>
-              <select value={isSearchKeyword ? "yes" : "no"} onChange={(event) => setIsSearchKeyword(event.target.value === "yes")}>
+              <AppSelect value={isSearchKeyword ? "yes" : "no"} onChange={(event) => setIsSearchKeyword(event.target.value === "yes")}>
                 <option value="yes">검색에 사용</option>
                 <option value="no">분류에만 사용</option>
-              </select>
+              </AppSelect>
             </label>
             <label>
               <span>본문 등장</span>
-              <select value={requireArticleMention ? "required" : "optional"} onChange={(event) => setRequireArticleMention(event.target.value === "required")}>
+              <AppSelect value={requireArticleMention ? "required" : "optional"} onChange={(event) => setRequireArticleMention(event.target.value === "required")}>
                 <option value="optional">선택</option>
                 <option value="required">필수</option>
-              </select>
+              </AppSelect>
             </label>
             <label>
               <span>기본 논조</span>
-              <select value={defaultTone} onChange={(event) => setDefaultTone(event.target.value)}>
+              <AppSelect value={defaultTone} onChange={(event) => setDefaultTone(event.target.value)}>
                 {keywordDefaultTones.map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
             <label>
               <span>분석 포함</span>
-              <select value={analysisExcluded ? "exclude" : "include"} onChange={(event) => setAnalysisExcluded(event.target.value === "exclude")}>
+              <AppSelect value={analysisExcluded ? "exclude" : "include"} onChange={(event) => setAnalysisExcluded(event.target.value === "exclude")}>
                 <option value="include">포함</option>
                 <option value="exclude">제외</option>
-              </select>
+              </AppSelect>
             </label>
             <label className="compact-field">
               <span>우선순위</span>

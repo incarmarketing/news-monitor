@@ -88,7 +88,7 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
   const [retry, setRetry] = useState(0);
   const [analysisRead, setAnalysisRead] = useState({ status: "loading", key: "" });
   const defaultRange = useMemo(() => {
-    const start = addDaysToDateKey(today, -6);
+    const start = addDaysToDateKey(today, -29);
     return { start: start || today, end: today };
   }, [today]);
   const effectiveRange = useMemo(
@@ -220,7 +220,7 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
       <section className="media-analysis-layout media-intel-board" aria-busy={loadingRange || issuesLoading}>
         <div className="media-main-trend">
           <section className="panel media-trend-panel">
-            <header className="media-trend-heading"><h2>일별 논조 흐름</h2><span>{loadingRange ? "조회 중" : analysisError ? "조회 실패" : `${deferredAnalysisArticles.length.toLocaleString("ko-KR")}건`}</span><div className="newsroom-tone-legend"><span>긍정</span><span>중립</span><span>주의</span><span>부정</span></div></header>
+            <header className="media-trend-heading"><h2>일별 논조 흐름</h2><span>{loadingRange ? "조회 중" : analysisError ? "조회 실패" : `${deferredAnalysisArticles.length.toLocaleString("ko-KR")}건`}</span><small className="tone-axis-note">논조별 개별 눈금 · 기사 수(건)</small></header>
             {loadingRange ? <p className="media-trend-message" role="status">{loadingArticles ? "선택 기간의 기사를 불러오는 중입니다." : "선택 기간의 기사를 집계하는 중입니다."}</p> : analysisError ? <div className="media-trend-message" role="alert"><p>{analysisError}</p><button type="button" className="ghost-button" onClick={retryRange}>다시 조회</button></div> : <ToneTrend rows={dailyTrend} />}
           </section>
         </div>

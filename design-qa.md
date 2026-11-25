@@ -1,3 +1,30 @@
+# Shared Selects, Tone Scales And Regulator Filters QA - 2026-11-25
+
+## Scope
+
+- Replace every application-native select with one accessible, pinned Radix Select component (`@radix-ui/react-select` 2.4.1). Keep actual filtering, sorting, forms, numeric/string/empty values and disabled states; no collection/classification permissions or scheduling changes.
+- Selected fields and popup lists share a 6px radius, 1px neutral border, 16px text, centered labels and a Lucide chevron 14px from the right edge. Closed fields stay 40px high. Pointer selection no longer produces the olive focus outline; keyboard focus retains a neutral visible indicator.
+- All eight JSX consumers now use `AppSelect`. Removed the obsolete native-chevron SVG and native popup styling, and excluded select buttons from unrelated dashboard/pagination/correction action-button rules. Native options are not relied on for visible popup styling.
+- Popups use Radix-managed navigation/typeahead/focus, bounded collision-aware portals, internal scrolling and stable scrollbar space. When opened in an existing native dialog, the portal stays inside that dialog. Hidden native form values remain original values rather than display labels.
+- Media defaults to an inclusive 30-day range. Its four tone plots each have their own explicitly labeled zero-based integer scale, preserving every date and count; rare negatives are not flattened by the neutral-volume axis. Each plot shows period total and occurrence days. Desktop uses four columns; mobile/tablet use two columns without distorting plots.
+- Regulator category tiles are real filters, synchronized with the keyword selector. Counts use the complete current search/source/tone scope rather than a five-article sample. Clicking the active tile toggles back to all; the All command resets only the category, and category changes reset the visible-row limit and selection consistently.
+
+## Verification
+
+- Frontend: 204 passing tests; backend release suite: 388 passing mocked tests. Build and reference validation passed. The new tests cover empty/numeric/implicit select values, disabled groups, category filter consistency, independent integer axes and the 30-day default.
+- Local detailed checks: `.qa/select-tone-detail/summary.json`. All six tone option labels have 0px center error; popup radius is 6px and border 1px. Escape/focus return, End/Enter selection, reset and no surrounding-layout movement pass. Native-dialog tests pass for pointer interaction, disabled states, original/empty FormData values, focus restoration and long labels without dialog overflow. No real save was made in the fixture.
+- Actual 30-day tone test: 19 negative articles across the period, with a negative y-axis of 0/1/2/3/4 while neutral uses 0/50/100/150/200. The 90-day negative plot independently uses 0/5/10/15/20. Per-plot sums and the overall period count agree; totals are observations of changing live data, not hard-coded expected values.
+- Financial-regulator test: 15 articles in scope, with category counts 7/5/2/1/0; selecting the seven-article category shows only that category and the matching count, and All restores the same original scope. Actual click evidence: `.qa/select-tone-detail/regulator-filter.png`.
+- Existing regression: `.qa/select-tone-navigation/` has 26 passing PC/mobile category captures plus five dashboard viewport fits. `.qa/select-tone-layout/` preserves the five desktop no-document-scroll and stable-anchor contracts across seven viewport sizes. Screenshots of expanded selects and both desktop/mobile tone panels were visually reviewed.
+
+## Manual Refresh Authentication Recovery
+
+- Read-only DB evidence identified the November 25 13:42:14 KST failure as GitHub `401 Bad credentials`, not a chart/DB/session failure. The user regenerated and registered `GITHUB_DISPATCH_TOKEN` directly; the assistant did not receive, copy or expose the token.
+- Exactly one real public refresh was requested after registration, with Slack/report sends disabled. The endpoint returned HTTP 200 with `ok: true`; Dashboard News Refresh run https://github.com/incarmarketing/news-monitor/actions/runs/45549473041 succeeded.
+- The successful job log records completion at 13:51:39 KST: 103 collected, 79 analyzed, then persisted by the production refresh path. No duplicate report or corrective notice was sent.
+
+---
+
 # Complete Media History And Header Cleanup QA - 2026-11-25
 
 ## Scope And Causes

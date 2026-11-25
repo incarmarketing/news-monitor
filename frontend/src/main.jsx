@@ -78,6 +78,9 @@ import { monitoringCategoryCounts, monitoringCategoryKey } from "./monitoringPre
 import NewsroomChart from "./NewsroomChart.jsx";
 import { refreshFailureMessage } from "./refreshPresentation.js";
 import { mapCooperatively } from "./cooperativeWork.js";
+import AppSelect from "./AppSelect.jsx";
+import { filterRegulatorArticles } from "./regulatorFilters.js";
+import { toneChartSeries, tonePanelStats } from "./toneTrendModel.js";
 
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
@@ -1714,18 +1717,8 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
   const keywords = useMemo(() => REGULATOR_KEYWORD_LABELS, []);
   const sources = useMemo(() => unique(regulatorRows.map((article) => String(article.source || "").trim())).slice(0, 40), [regulatorRows]);
   const tones = useMemo(() => sortToneLabels(regulatorRows.map((article) => String(article.tone || "").trim())).slice(0, 8), [regulatorRows]);
-  const filteredRows = useMemo(() => {
-    const needle = String(query || "").trim().toLowerCase();
-    return regulatorRows.filter((article) => {
-      const text = `${article.title || ""} ${article.source || ""} ${article.summary || ""} ${article.regulatorKeyword || ""}`.toLowerCase();
-      return (
-        (!needle || text.includes(needle)) &&
-        (keyword === "all" || article.regulatorKeyword === keyword) &&
-        (source === "all" || article.source === source) &&
-        (tone === "all" || article.tone === tone)
-      );
-    });
-  }, [keyword, query, regulatorRows, source, tone]);
+  const facetRows = useMemo(() => filterRegulatorArticles(regulatorRows, { query, source, tone }), [query, regulatorRows, source, tone]);
+  const filteredRows = useMemo(() => filterRegulatorArticles(facetRows, { keyword }), [facetRows, keyword]);
   useEffect(() => {
     setVisible(60);
   }, [keyword, query, regulatorRows, source, tone]);
@@ -1734,7 +1727,6 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
     () => filteredRows.filter((article) => selected.has(articleSelectionKey(article))),
     [filteredRows, selected],
   );
-  const analysisRows = selectedRows.length ? selectedRows.slice(0, 10) : filteredRows.slice(0, 5);
   const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((article) => selected.has(articleSelectionKey(article)));
   const resetFilters = () => {
     setQuery("");
@@ -1785,24 +1777,24 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
         </label>
         <label>
           <span>키워드</span>
-          <select value={keyword} onChange={(event) => setKeyword(event.target.value)}>
+          <AppSelect value={keyword} onChange={(event) => setKeyword(event.target.value)}>
             <option value="all">전체</option>
             {keywords.map((item) => <option key={item}>{item}</option>)}
-          </select>
+          </AppSelect>
         </label>
         <label>
           <span>출처</span>
-          <select value={source} onChange={(event) => setSource(event.target.value)}>
+          <AppSelect value={source} onChange={(event) => setSource(event.target.value)}>
             <option value="all">전체</option>
             {sources.map((item) => <option key={item}>{item}</option>)}
-          </select>
+          </AppSelect>
         </label>
         <label>
           <span>논조</span>
-          <select value={tone} onChange={(event) => setTone(event.target.value)}>
+          <AppSelect value={tone} onChange={(event) => setTone(event.target.value)}>
             <option value="all">전체</option>
             {tones.map((item) => <option key={item}>{item}</option>)}
-          </select>
+          </AppSelect>
         </label>
         <button className="primary-button filter-action" onClick={() => setQuery(queryInput)}>
           조회
@@ -1812,7 +1804,7 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
         </button>
         <button className="ghost-button filter-action" onClick={toggleVisibleSelection}>{allVisibleSelected ? "선택 해제" : "현재 목록 선택"}</button>
       </section>
-      <RegulatorDirectionPanel rows={analysisRows} selectedCount={selectedRows.length} totalCount={filteredRows.length} />
+      <RegulatorDirectionPanel rows={facetRows} activeKeyword={keyword} onKeywordChange={next => { setKeyword(next); setVisible(60); setSelected(new Set()); }} />
       <Panel className="regulator-list-panel" title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>
         <RegulatorReleaseFeed rows={visibleRows} selected={selected} onToggle={toggleSelected} />
         {!filteredRows.length && (
@@ -1828,13 +1820,13 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
   );
 }
 
-function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 }) {
+function RegulatorDirectionPanel({ rows = [], activeKeyword = "all", onKeywordChange }) {
   const analysis = buildRegulatorDirectionAnalysis(rows);
   return (
     <section className="panel regulator-analysis-panel">
       <div className="panel-head">
         <h2><ShieldCheck />분류별 현황</h2>
-        <span>{selectedCount ? `${selectedCount.toLocaleString("ko-KR")}건 선택` : `최근 ${Math.min(totalCount, rows.length).toLocaleString("ko-KR")}건 기준`}</span>
+        <div className="regulator-facet-meta"><span>{rows.length.toLocaleString("ko-KR")}건 기준</span><button type="button" className="ghost-button" aria-pressed={activeKeyword === "all"} onClick={() => onKeywordChange("all")}>전체</button></div>
       </div>
       <div className="regulator-keyword-board">
         <div className="regulator-keyword-summary">
@@ -1843,10 +1835,10 @@ function RegulatorDirectionPanel({ rows = [], selectedCount = 0, totalCount = 0 
         </div>
         <div className="regulator-theme-grid compact">
           {analysis.themes.map((theme) => (
-            <article key={theme.label}>
+            <button type="button" key={theme.label} aria-pressed={activeKeyword === theme.label} onClick={() => onKeywordChange(activeKeyword === theme.label ? "all" : theme.label)}>
               <span>{theme.label}</span>
               <b>{theme.count.toLocaleString("ko-KR")}건</b>
-            </article>
+            </button>
           ))}
         </div>
       </div>
@@ -1942,7 +1934,7 @@ function Clipping({ articles = [], allArticles = [], scraps = [], onOpenMonitori
           <div className="newsroom-content-tabs" role="tablist" aria-label="클리핑 기사 분류">
             {[["all", "전체"], ["own", "당사"], ["policy", "정책·규제"], ["insurance", "보험업계"], ["ga", "GA"]].map(([key, label]) => <button type="button" role="tab" key={key} aria-selected={category === key} onClick={() => setCategory(key)}>{label}</button>)}
           </div>
-          <select aria-label="클리핑 정렬" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">추천순</option><option value="latest">최신순</option></select>
+          <AppSelect aria-label="클리핑 정렬" value={sort} onChange={event => setSort(event.target.value)}><option value="recommended">추천순</option><option value="latest">최신순</option></AppSelect>
         </div>
         <DashboardClippingPanel
           key={category}
@@ -2058,7 +2050,7 @@ function Scraps({ scraps, allArticles = [], operations = {}, onOpenMonitoring, o
       />
       <div className="scrap-category-summary" role="tablist" aria-label="스크랩 기사 분류"><button role="tab" aria-selected={scrapCategory === "all"} onClick={() => setScrapCategory("all")}>전체 <b>{scraps.length}</b></button>{grouped.map(({ name, value }) => <button role="tab" aria-selected={scrapCategory === name} onClick={() => setScrapCategory(name)} key={name}>{name} <b>{value}</b></button>)}</div>
       <section className="scrap-workspace-v2">
-        <section className="scrap-collection"><header className="scrap-collection-heading"><h2>보관 기사</h2><label className="scrap-search"><Search /><input aria-label="보관 기사 검색" placeholder="보관 기사 검색" value={scrapQuery} onChange={event => setScrapQuery(event.target.value)} /></label><select aria-label="스크랩 정렬" value={scrapSort} onChange={event => setScrapSort(event.target.value)}><option value="latest">최신순</option><option value="oldest">오래된순</option></select></header>
+        <section className="scrap-collection"><header className="scrap-collection-heading"><h2>보관 기사</h2><label className="scrap-search"><Search /><input aria-label="보관 기사 검색" placeholder="보관 기사 검색" value={scrapQuery} onChange={event => setScrapQuery(event.target.value)} /></label><AppSelect aria-label="스크랩 정렬" value={scrapSort} onChange={event => setScrapSort(event.target.value)}><option value="latest">최신순</option><option value="oldest">오래된순</option></AppSelect></header>
           {visibleScraps.map(article => <article className="scrap-collection-row" key={articleSelectionKey(article)}>
             <input type="checkbox" aria-label={`${displayHeadline(article)} 분석 선택`} checked={selection === null || selection.has(articleSelectionKey(article))} onChange={() => toggleScrap(article)} />
             <div><p>{resolvePublisher(article)} · {article.date || ""} {articleClock(article, articleTimeValue(article))}</p><h3>{article.link && /^https?:\/\//i.test(article.link) ? <a href={article.link} target="_blank" rel="noopener noreferrer">{displayHeadline(article)}</a> : displayHeadline(article)}</h3></div>
@@ -3838,15 +3830,15 @@ function ArticleCorrectionControl({ article, onSaved }) {
         <div className="correction-editor">
           <label>
             <span>논조</span>
-            <select value={tone} onChange={(event) => setTone(event.target.value)}>
+            <AppSelect value={tone} onChange={(event) => setTone(event.target.value)}>
               {FEEDBACK_TONE_OPTIONS.map((item) => <option key={item}>{item}</option>)}
-            </select>
+            </AppSelect>
           </label>
           <label>
             <span>분류</span>
-            <select value={category} onChange={(event) => setCategory(event.target.value)}>
+            <AppSelect value={category} onChange={(event) => setCategory(event.target.value)}>
               {FEEDBACK_CATEGORY_OPTIONS.map((item) => <option key={item}>{item}</option>)}
-            </select>
+            </AppSelect>
           </label>
           <button type="button" className="primary-button compact-save" onClick={save} disabled={saving}>
             저장
@@ -4243,17 +4235,17 @@ function CategoryChart({ rows, tall = false, mini = false, verticalBars = false,
   );
 }
 
-const toneChartSeries = [
-  { key: "positive", label: "긍정", color: "#7b901c" },
-  { key: "neutral", label: "중립", color: "#787b7c" },
-  { key: "caution", label: "주의", color: "#ad6b28" },
-  { key: "negative", label: "부정", color: "#b33739" },
-];
-
-function ToneTrend({ rows, compact = false }) {
+function ToneTrend({ rows = [], compact = false }) {
+  if (compact) return <div className="chart-box report-trend"><NewsroomChart rows={rows} series={toneChartSeries} compact ariaLabel="일별 논조별 기사 수" /></div>;
   return (
-    <div className={compact ? "chart-box report-trend" : "chart-box tall tone-trend"}>
-      <NewsroomChart rows={rows} series={toneChartSeries} compact={compact} ariaLabel="일별 논조별 기사 수" />
+    <div className="chart-box tall tone-trend tone-small-multiples">
+      {toneChartSeries.map(item => {
+        const stats = tonePanelStats(rows, item.key);
+        return <section key={item.key} className="tone-panel" data-tone={item.key}>
+          <header><h3><i style={{ background: item.color }} />{item.label}</h3><span><strong>{stats.total.toLocaleString("ko-KR")}건</strong><small>{stats.days}일 발생</small></span></header>
+          <NewsroomChart rows={rows} series={item.series} ariaLabel={`일별 ${item.label} 기사 수 · 개별 눈금`} />
+        </section>;
+      })}
     </div>
   );
 }

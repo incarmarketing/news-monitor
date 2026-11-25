@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { chooseOption } from "./select-qa.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || "playwright");
@@ -12,19 +13,19 @@ const results = [];
 const viewportFits = [];
 
 async function assertSelectStyles(main, label) {
-  const styles = await main.locator("select:visible").evaluateAll(nodes => nodes.map(node => {
+  const styles = await main.locator(".app-select:visible").evaluateAll(nodes => nodes.map(node => {
     const style = getComputedStyle(node);
-    return { height: node.getBoundingClientRect().height, size: style.fontSize, padding: style.padding, radius: style.borderRadius, border: style.borderWidth, align: style.textAlign, appearance: style.appearance, chevron: style.backgroundPosition, icon: style.backgroundImage };
+    return { height: node.getBoundingClientRect().height, size: style.fontSize, padding: style.padding, radius: style.borderRadius, border: style.borderWidth, align: style.textAlign, chevron: getComputedStyle(node.querySelector('.app-select-chevron')).right, icon: Boolean(node.querySelector('svg.lucide-chevron-down')) };
   }));
   for (const style of styles) {
     assert.equal(style.height, 40, `${label}: inconsistent select height`);
     assert.equal(style.size, "16px", `${label}: inconsistent select type`);
-    assert.equal(style.padding, "8px 42px 8px 12px", `${label}: inconsistent select padding`);
-    assert.equal(style.radius, "4px", `${label}: inconsistent select radius`);
+    assert.equal(style.padding, "8px 32px", `${label}: inconsistent select padding`);
+    assert.equal(style.radius, "6px", `${label}: inconsistent select radius`);
     assert.equal(style.border, "1px", `${label}: inconsistent select border`);
     assert.equal(style.align, "center", `${label}: inconsistent selected-label alignment`);
-    assert.equal(style.appearance, "none", `${label}: duplicate native chevron`);
-    assert.ok(style.icon !== "none" && style.chevron.includes("14px"), `${label}: missing fixed-inset chevron`);
+    assert.equal(style.chevron, "14px", `${label}: inconsistent chevron inset`);
+    assert.ok(style.icon, `${label}: missing shared chevron`);
   }
 }
 
@@ -94,9 +95,9 @@ try {
             await page.getByRole("tooltip").waitFor();
             await page.screenshot({ path: path.join(out, "desktop-tooltip.png"), animations: "disabled" });
           }
-          await page.locator(".desk-priority select").selectOption("latest");
+          await chooseOption(page, page.locator(".desk-priority .app-select"), "latest");
           assert.equal(await page.locator(".app-shell").getAttribute("data-active-section"), "overview");
-          await page.locator(".desk-priority select").selectOption("risk");
+          await chooseOption(page, page.locator(".desk-priority .app-select"), "risk");
           const links = await page.locator(".desk-story-grid h3 a").evaluateAll(nodes => nodes.map(e => ({ href: e.href, target: e.target })));
           assert.ok(links.every(link => /^https?:/.test(link.href) && link.target === "_blank"));
         }
@@ -130,13 +131,13 @@ try {
           assert.equal(await page.locator(".app-shell").getAttribute("data-active-section"), "overview");
         }
         if (desktop && round === 1 && section === "monitoring") {
-          const sort = main.locator(".monitor-sort select");
-          const originalSort = await sort.inputValue();
+          const sort = main.locator(".monitor-sort .app-select");
+          const originalSort = await sort.getAttribute("data-value");
           await sort.focus();
           await sort.press("ArrowDown");
           await sort.press("Enter");
           assert.equal(await page.locator(".app-shell").getAttribute("data-active-section"), "monitoring");
-          await sort.selectOption(originalSort);
+          await chooseOption(page, sort, originalSort);
           const actionBoxes = await main.locator(".monitor-article-row").first().locator(".monitor-action").evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { left: r.left, right: r.right, width: r.width }; }));
           assert.ok(actionBoxes.every(box => box.width >= 32), "monitoring action columns are collapsed");
           assert.ok(actionBoxes[0].right <= actionBoxes[1].left + 1, "monitoring action buttons overlap");
@@ -159,7 +160,7 @@ try {
           await main.getByRole("heading", { name: "주간 뉴스 브리핑", exact: true }).waitFor();
           await main.getByRole("button", { name: "월간", exact: true }).click();
           await main.getByRole("heading", { name: "월간 미디어 브리핑", exact: true }).waitFor();
-          await main.locator(".month-select select").waitFor();
+          await main.locator(".month-select .app-select").waitFor();
           await assertSelectStyles(main, "reports/monthly");
           await main.getByRole("button", { name: "일간", exact: true }).click();
           await main.getByRole("heading", { name: "일일 언론 동향", exact: true }).waitFor();
@@ -184,8 +185,8 @@ try {
         if (desktop && round === 1 && section === "clipping") {
           await main.getByRole("tab", { name: "당사", exact: true }).click();
           await main.getByRole("tab", { name: "전체", exact: true }).click();
-          await main.getByRole("combobox", { name: "클리핑 정렬" }).selectOption("latest");
-          await main.getByRole("combobox", { name: "클리핑 정렬" }).selectOption("recommended");
+          await chooseOption(page, main.getByRole("combobox", { name: "클리핑 정렬" }), "latest");
+          await chooseOption(page, main.getByRole("combobox", { name: "클리핑 정렬" }), "recommended");
         }
         if (desktop && round === 1 && section === "stocks") {
           await main.getByRole("button", { name: "20거래일", exact: true }).click();

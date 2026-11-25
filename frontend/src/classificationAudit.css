@@ -4,9 +4,9 @@
 .classification-audit h3 { font-size: 16px; }
 .audit-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; }
 .audit-toolbar label { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.classification-audit button { display: inline-flex; align-items: center; justify-content: center; min-width: var(--control-height); min-height: var(--control-height); background: var(--paper); border: 1px solid var(--line); border-radius: var(--control-radius); font-size: var(--control-font-size); color: inherit; }
+.classification-audit button:not(.app-select) { display: inline-flex; align-items: center; justify-content: center; min-width: var(--control-height); min-height: var(--control-height); background: var(--paper); border: 1px solid var(--line); border-radius: var(--control-radius); font-size: var(--control-font-size); color: inherit; }
 .classification-audit button:disabled { opacity: .5; cursor: default; }
-.classification-audit select { max-width: 100%; }
+.classification-audit .app-select { max-width: 100%; }
 .audit-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; border-block: 1px solid var(--line); padding: 16px 0; gap: 16px; }
 .audit-summary dt { color: var(--muted); font-size: 13px; }
 .audit-summary dd { font-size: 17px; font-weight: 700; margin: 6px 0 0; overflow-wrap: anywhere; }

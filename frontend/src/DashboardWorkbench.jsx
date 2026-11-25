@@ -4,6 +4,7 @@ import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
 import { formatDashboardCompositionShare } from "./dashboardRisk.js";
 import { dashboardSeries, latestDeliveryLabel, reportSlotPresentation } from "./dashboardPresentation.js";
 import slackMarkUrl from "./assets/slack-mark.png";
+import AppSelect from "./AppSelect.jsx";
 
 export function DashboardDialog({ title, onClose, children, className = "" }) {
   const ref = useRef(null);
@@ -59,9 +60,9 @@ export function DashboardAnalysis({ rows, compositionRows, Chart, categoryLabel 
 
 export function DashboardPriorityTable({ rows, sort, onSort, Action, onOpenMonitoring, categoryLabel, riskScore }) {
   return <section className="desk-priority" aria-label="우선 이슈">
-    <header className="desk-section-heading"><h2>우선 확인 기사</h2><div className="desk-priority-legend" aria-label="논조 범례"><span data-tone="부정">부정</span><span data-tone="주의">주의</span></div><select aria-label="우선 이슈 정렬 및 보기" value={sort} onChange={(event) => onSort(event.target.value)}>
+    <header className="desk-section-heading"><h2>우선 확인 기사</h2><div className="desk-priority-legend" aria-label="논조 범례"><span data-tone="부정">부정</span><span data-tone="주의">주의</span></div><AppSelect aria-label="우선 이슈 정렬 및 보기" value={sort} onChange={(event) => onSort(event.target.value)}>
       <option value="risk">정렬: 리스크순</option><option value="latest">정렬: 최신순</option><option value="own">보기: 당사 직접 언급만</option><option value="spread">정렬: 확산순</option>
-    </select></header>
+    </AppSelect></header>
     <div className="desk-story-grid">{rows.map((issue, index) => {
       const headline = displayHeadline(issue);
       return <article key={issue.id || `${issue.source}-${issue.title}`} data-tone={issue.tone || "중립"}>

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { chooseOption } from "./select-qa.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || "playwright");
@@ -35,9 +36,9 @@ function measure(selectors) {
     main: box(main),
     anchors: Object.fromEntries(selectors.map(s => [s, main.querySelector(s)]).filter(([,node]) => node && visible(node)).map(([s,node]) => [s,box(node)])),
     navigation: [...document.querySelectorAll(".newsroom-navigation button")].filter(visible).map(node => ({ id: node.dataset.section, ...box(node) })),
-    selects: [...main.querySelectorAll("select")].filter(visible).map(node => {
+    selects: [...main.querySelectorAll(".app-select")].filter(visible).map(node => {
       const style = getComputedStyle(node);
-      return { ...box(node), label: node.getAttribute("aria-label"), appearance: style.appearance, position: style.backgroundPosition, padding: style.padding, icon: style.backgroundImage };
+      return { ...box(node), label: node.getAttribute("aria-label"), radius: style.borderRadius, position: getComputedStyle(node.querySelector('.app-select-chevron')).right, padding: style.padding, icon: Boolean(node.querySelector('svg.lucide-chevron-down')) };
     }),
     charts: [...main.querySelectorAll(".desk-chart, .tone-trend, .report-count-chart")].filter(visible).map(box),
     plotBounds: [...main.querySelectorAll(".desk-chart, .tone-trend, .report-count-chart")].filter(visible).map(node => ({ container: box(node), plot: node.querySelector("svg") ? box(node.querySelector("svg")) : null })),
@@ -61,8 +62,8 @@ async function snapshot(page, section, state) {
       assert.ok(box.y >= 0 && box.bottom <= metrics.viewport.height + 1, `${section}/${state}: hidden ${selector}`);
     }
     for (const select of metrics.selects) {
-      assert.equal(select.appearance, "none");
-      assert.ok(select.position.includes("14px") && select.icon !== "none", `${section}: inconsistent chevron`);
+      assert.equal(select.radius, "6px");
+      assert.ok(select.position === "14px" && select.icon, `${section}: inconsistent chevron`);
     }
     for (const {container,plot} of metrics.plotBounds) {
       if (plot) assert.ok(plot.bottom <= container.bottom + 1, `${section}: plot exceeds its reserved height`);
@@ -90,11 +91,11 @@ function stable(before, after, label) {
 async function interactions(page, section, initial) {
   const main = page.locator("main.workspace:visible");
   if (section === "overview") {
-    await main.locator(".desk-priority select").selectOption("latest");
+    await chooseOption(page, main.locator(".desk-priority .app-select"), "latest");
     stable(initial, await snapshot(page, section, "sorted"), "priority sort");
-    await main.locator(".desk-priority select").selectOption("own");
+    await chooseOption(page, main.locator(".desk-priority .app-select"), "own");
     stable(initial, await snapshot(page, section, "own"), "priority empty or shorter list");
-    await main.locator(".desk-priority select").selectOption("risk");
+    await chooseOption(page, main.locator(".desk-priority .app-select"), "risk");
     await main.getByRole("button", {name:"Slack 발송 이력 열기", exact:true}).click();
     stable(initial, await snapshot(page, section, "dialog"), "Slack dialog");
     await page.keyboard.press("Escape");
@@ -117,7 +118,7 @@ async function interactions(page, section, initial) {
       stable(initial, await snapshot(page, section, "expanded"), "article detail");
       await detail.click();
     }
-    await main.getByRole("combobox",{name:"페이지당 기사 수",exact:true}).selectOption("50");
+    await chooseOption(page, main.getByRole("combobox",{name:"페이지당 기사 수",exact:true}), "50");
     stable(initial, await snapshot(page, section, "page-size"), "page size");
   }
   if (section === "media") {

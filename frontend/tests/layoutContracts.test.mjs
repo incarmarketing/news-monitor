@@ -29,9 +29,11 @@ test("light mode is permanent and select chevrons share a fixed right inset", ()
   assert.doesNotMatch(css, /html\[data-theme=/);
   assert.match(css, /color-scheme: light/);
   assert.match(css, /--select-chevron-inset: 14px/);
-  assert.match(css, /background-position: right var\(--select-chevron-inset\) center/);
-  const icon = fs.readFileSync(new URL("../src/assets/select-chevron.svg", import.meta.url), "utf8");
-  assert.match(icon, /lucide-chevron-down/);
+  const controlCss = fs.readFileSync(new URL("../src/app-select.css", import.meta.url), "utf8");
+  assert.match(controlCss, /right: var\(--select-chevron-inset\)/);
+  const control = fs.readFileSync(new URL("../src/AppSelect.jsx", import.meta.url), "utf8");
+  assert.match(control, /ChevronDown/);
+  assert.match(control, /Select\.Portal/);
 });
 
 test("interactive states reserve space instead of moving the surrounding workspace", () => {
@@ -48,7 +50,7 @@ test("form controls share one visual contract across feature stylesheets", () =>
   const shared = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
   assert.match(shared, /--control-height: 40px/);
   assert.match(shared, /--control-font-size: 16px/);
-  assert.match(shared, /--control-radius: 4px/);
+  assert.match(shared, /--control-radius: 6px/);
   for (const file of ["monitoring-workbench.css", "mediaRegistry.css", "classificationAudit.css"]) {
     const css = fs.readFileSync(new URL(`../src/${file}`, import.meta.url), "utf8");
     assert.match(css, /var\(--control-height\)/);
@@ -72,4 +74,12 @@ test("header has a home entry and no redundant search or inline status banner", 
 test("date popover uses equal date columns and a bottom-aligned apply action", () => {
   const css = fs.readFileSync(new URL("../src/monitoring-workbench.css", import.meta.url), "utf8");
   assert.match(css, /\.monitor-custom-dates \{[^}]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\) auto; align-items: end/);
+});
+
+test("every application select uses the shared accessible control", () => {
+  const files = fs.readdirSync(new URL("../src/", import.meta.url)).filter(file => file.endsWith(".jsx"));
+  for (const file of files) assert.doesNotMatch(fs.readFileSync(new URL(`../src/${file}`, import.meta.url), "utf8"), /<select\b/, `${file} retains a platform-styled dropdown`);
+  const shared = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(shared, /outline: 2px solid var\(--focus-ring\)/);
+  assert.doesNotMatch(shared, /:focus-visible[^}]*outline: 2px solid var\(--blue\)/);
 });

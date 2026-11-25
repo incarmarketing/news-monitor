@@ -4,6 +4,7 @@ import { periodData } from "./data";
 import { A4BarList, A4PressRows } from "./reportComponents";
 import { buildA4ReportStats, publicationMeta, reportArticleHeadline, reportCategoryColor, reportCategoryLabel, reportPurposeConfig } from "./reportModel";
 import NewsroomChart from "./NewsroomChart.jsx";
+import AppSelect from "./AppSelect.jsx";
 
 let reportHelpers = {};
 
@@ -123,12 +124,12 @@ function MonthSelect({ months = [], value = "", onChange }) {
   return (
     <label className="month-select no-print">
       <span>기준월</span>
-      <select value={value} onChange={(event) => onChange?.(event.target.value)} disabled={!months.length}>
+      <AppSelect value={value} onChange={(event) => onChange?.(event.target.value)} disabled={!months.length}>
         {!months.length && <option value="">월간 데이터 없음</option>}
         {months.map((month) => (
           <option key={month} value={month}>{formatReportMonthOption(month)}</option>
         ))}
-      </select>
+      </AppSelect>
     </label>
   );
 }

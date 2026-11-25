@@ -4,6 +4,7 @@ import { loadMediaRegistry, saveArticlePublisher, savePressAlias } from "./liveD
 import { registryError, registryRows, safeArticleUrl } from "./mediaRegistryModel.mjs";
 import { displayHeadline } from "./publisherIdentity.js";
 import "./mediaRegistry.css";
+import AppSelect from "./AppSelect.jsx";
 
 const date = (value) => value ? new Date(value).toLocaleDateString("ko-KR") : "-";
 const statuses = { pending: "확인 대기", not_found: "기자명 미확인", needs_original: "원문 주소 필요", fetch_failed: "원문 접속 실패", verified: "확인 완료" };
@@ -64,7 +65,7 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
           <td><button type="button" className="registry-icon" title="기사 이력 보기" aria-label={`${row.name || row.host || "미확인"} 기사 이력 보기`} onClick={() => open(row)}><ChevronRight size={18} /></button></td>
         </tr>)}</tbody></table></div>
         {!rows.length && <p className="registry-empty">{query ? "검색 결과가 없습니다." : mode === "unknown" ? "확인 대기 중인 언론사가 없습니다." : "확인된 이력이 없습니다."}</p>}
-        <div className="registry-pagination-row"><RegistryPager offset={page * pageSize} count={rows.length} size={pageSize} onPage={(offset) => setPage(offset / pageSize)} /><select aria-label="언론사 목록 페이지 크기" value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(0); }}>{[6, 20, 50].map(size => <option key={size} value={size}>{size}개씩 보기</option>)}</select></div>
+        <div className="registry-pagination-row"><RegistryPager offset={page * pageSize} count={rows.length} size={pageSize} onPage={(offset) => setPage(offset / pageSize)} /><AppSelect aria-label="언론사 목록 페이지 크기" value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(0); }}>{[6, 20, 50].map(size => <option key={size} value={size}>{size}개씩 보기</option>)}</AppSelect></div>
       </>}
     </>}
   </section>;

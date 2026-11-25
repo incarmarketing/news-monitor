@@ -3,6 +3,7 @@ import { ArrowUpRight, Bookmark, CalendarDays, Check, ChevronDown, ChevronLeft, 
 import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
 import { monitoringCategories, monitoringCategoryKey, monitoringCategoryLabel, monitoringCsv, monitoringDateRange, monitoringPage } from "./monitoringPresentation.js";
 import "./monitoring-workbench.css";
+import AppSelect from "./AppSelect.jsx";
 
 function PageCheckbox({ mixed = false, ...props }) {
   const input = useRef(null);
@@ -86,8 +87,8 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
         return <button key={days} type="button" aria-pressed={active} onClick={() => { onPeriod(range); setDatesOpen(false); }}>{label}</button>;
       })}<button type="button" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={toggleDates}>기간 선택</button></div>
       <button type="button" className="monitor-date-label" aria-label="조회 날짜 변경" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={toggleDates}>{rangeLabel}<CalendarDays/></button>
-      <label className="monitor-select"><span>논조</span><select aria-label="논조" value={filters.tone} onChange={event => onChange("tone", event.target.value)}><option value="all">전체</option>{filters.tones.map(tone => <option key={tone}>{tone}</option>)}</select></label>
-      <label className="monitor-select monitor-source"><span>언론사</span><select aria-label="언론사" value={filters.source} onChange={event => onChange("source", event.target.value)}><option value="all">전체</option>{filters.sources.map(source => <option key={source}>{source}</option>)}</select></label>
+      <label className="monitor-select"><span>논조</span><AppSelect aria-label="논조" value={filters.tone} onChange={event => onChange("tone", event.target.value)}><option value="all">전체</option>{filters.tones.map(tone => <option key={tone}>{tone}</option>)}</AppSelect></label>
+      <label className="monitor-select monitor-source"><span>언론사</span><AppSelect aria-label="언론사" value={filters.source} onChange={event => onChange("source", event.target.value)}><option value="all">전체</option>{filters.sources.map(source => <option key={source}>{source}</option>)}</AppSelect></label>
       {datesOpen && <form id={`${id}-dates`} className="monitor-custom-dates" onSubmit={apply}>
         <label>시작일<input type="date" value={filters.startDateInput} onInput={event => onChange("startDateInput", event.currentTarget.value)} onChange={event => onChange("startDateInput", event.target.value)}/></label>
         <label>종료일<input type="date" value={filters.endDateInput} onInput={event => onChange("endDateInput", event.currentTarget.value)} onChange={event => onChange("endDateInput", event.target.value)}/></label>
@@ -100,7 +101,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
           <button type="button" role="tab" aria-selected={filters.category === "all"} onClick={() => onChange("category", "all")}>전체 <b>{Object.values(categoryCounts).reduce((sum, n) => sum + n, 0)}</b></button>
           {tabs.map(item => <button key={item.key} type="button" role="tab" aria-selected={filters.category !== "all" && activeCategory === item.key} onClick={() => onChange("category", item.key)}>{item.label} <b>{categoryCounts[item.key]}</b></button>)}
         </div>
-        <label className="monitor-sort"><span>정렬</span><select aria-label="정렬" value={filters.viewMode} onChange={event => onChange("viewMode", event.target.value)}><option value="latest">최신순</option><option value="related">관련순</option></select></label>
+        <label className="monitor-sort"><span>정렬</span><AppSelect aria-label="정렬" value={filters.viewMode} onChange={event => onChange("viewMode", event.target.value)}><option value="latest">최신순</option><option value="related">관련순</option></AppSelect></label>
       </header>
       <div className="monitor-status-bar">
         <div className="monitor-scope">{(focusLabel || filters.query) && <><span>{focusLabel || `전체 보관 검색: ${filters.query}`}</span><button type="button" aria-label="검색 범위 해제" title="검색 범위 해제" onClick={reset}><X/></button></>}</div>
@@ -130,7 +131,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
         </table>
         {!pageRows.length && <div className="monitor-empty" role="status"><Search/><strong>{isUpdating ? "기사를 불러오고 있습니다." : "검색 조건에 맞는 기사가 없습니다."}</strong>{!isUpdating && <button className="monitor-command" type="button" onClick={reset}><RotateCcw/>초기화</button>}</div>}
       </div>
-      <footer className="monitor-pagination"><span>{paginated.first} - {paginated.last} / {rows.length.toLocaleString("ko-KR")}{filters.viewMode === "related" ? "개 묶음" : "건"}</span><nav aria-label="기사 페이지"><button type="button" className="monitor-icon" aria-label="이전 페이지" disabled={paginated.current === 1} onClick={() => { setPage(paginated.current - 1); setExpanded(null); }}><ChevronLeft/></button>{pageNumbers.map(n => <button key={n} type="button" aria-label={`${n}페이지`} aria-current={paginated.current === n ? "page" : undefined} onClick={() => { setPage(n); setExpanded(null); }}>{n}</button>)}<button type="button" className="monitor-icon" aria-label="다음 페이지" disabled={paginated.current === paginated.pages} onClick={() => { setPage(paginated.current + 1); setExpanded(null); }}><ChevronRight/></button></nav><select aria-label="페이지당 기사 수" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>{[10, 20, 50].map(n => <option key={n} value={n}>{n}개씩 보기</option>)}</select></footer>
+      <footer className="monitor-pagination"><span>{paginated.first} - {paginated.last} / {rows.length.toLocaleString("ko-KR")}{filters.viewMode === "related" ? "개 묶음" : "건"}</span><nav aria-label="기사 페이지"><button type="button" className="monitor-icon" aria-label="이전 페이지" disabled={paginated.current === 1} onClick={() => { setPage(paginated.current - 1); setExpanded(null); }}><ChevronLeft/></button>{pageNumbers.map(n => <button key={n} type="button" aria-label={`${n}페이지`} aria-current={paginated.current === n ? "page" : undefined} onClick={() => { setPage(n); setExpanded(null); }}>{n}</button>)}<button type="button" className="monitor-icon" aria-label="다음 페이지" disabled={paginated.current === paginated.pages} onClick={() => { setPage(paginated.current + 1); setExpanded(null); }}><ChevronRight/></button></nav><AppSelect aria-label="페이지당 기사 수" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>{[10, 20, 50].map(n => <option key={n} value={n}>{n}개씩 보기</option>)}</AppSelect></footer>
     </section>
   </main>;
 }

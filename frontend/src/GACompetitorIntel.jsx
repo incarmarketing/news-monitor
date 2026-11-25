@@ -27,6 +27,7 @@ import {
 } from "recharts";
 import { gaCompetitorSeed } from "./data";
 import { safeNumberDiff } from "./stockUtils";
+import AppSelect from "./AppSelect.jsx";
 
 function PageTitle({ right }) {
   if (!right) return null;
@@ -112,11 +113,11 @@ export default function GACompetitorIntel({ gaIntel }) {
             <span>직전 5개년 매출</span>
             <label>
               <b>비교 GA</b>
-              <select value={activeRevenuePeer.key || ""} onChange={(event) => setSelectedRevenuePeer(event.target.value)}>
+              <AppSelect value={activeRevenuePeer.key || ""} onChange={(event) => setSelectedRevenuePeer(event.target.value)}>
                 {revenuePeerOptions.map((option) => (
                   <option key={option.key} value={option.key}>{option.label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
           </div>
         </div>

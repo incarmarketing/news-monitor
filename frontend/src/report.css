@@ -63,7 +63,7 @@
   .report-period-picker { min-width: 230px; }
   .report-period-picker .period-control button { font-size: 18px; }
   .report-calendar, .report-command-copy > .month-select { min-width: 190px; font-size: 16px; padding-left: 20px; }
-  .report-command-copy > .month-select select { width: 140px; }
+  .report-command-copy > .month-select .app-select { width: 176px; }
   .a4-report-stage { min-height: 0; height: 100%; }
   .newspaper-report-sheet { display: grid; grid-template-rows: auto minmax(0, 1fr) 36px; min-height: 0; height: 100%; }
   .newspaper-masthead { gap: 20px; min-height: 64px; padding: 4px 0 14px; flex-wrap: nowrap; }
