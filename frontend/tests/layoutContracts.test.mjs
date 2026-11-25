@@ -83,3 +83,25 @@ test("every application select uses the shared accessible control", () => {
   assert.match(shared, /outline: 2px solid var\(--focus-ring\)/);
   assert.doesNotMatch(shared, /:focus-visible[^}]*outline: 2px solid var\(--blue\)/);
 });
+
+test("publisher is a column before the headline, never a headline subline", () => {
+  const source = fs.readFileSync(new URL("../src/MonitoringWorkbench.jsx", import.meta.url), "utf8");
+  assert.match(source, /monitor-publisher-column">언론사/);
+  assert.ok(source.indexOf('className="monitor-publisher"') < source.indexOf('className="monitor-headline"'));
+  assert.doesNotMatch(source, /<small>\{resolvePublisher/);
+  assert.match(source, /colSpan=\{9\}/);
+});
+
+test("media uses structural skeletons and has no observation commentary", () => {
+  const source = fs.readFileSync(new URL("../src/MediaAnalysis.jsx", import.meta.url), "utf8");
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  assert.match(source, /MediaSkeleton kind="trend"/);
+  assert.match(source, /MediaSkeleton kind="keywords"/);
+  assert.match(source, /MediaSkeleton kind="publishers"/);
+  assert.match(source, /MediaSkeleton kind="issues"/);
+  assert.doesNotMatch(source, /관찰 코멘트|buildPeriodObservations|<InsightList|media-observations/);
+  assert.doesNotMatch(main, /buildPeriodObservations|InsightList/);
+  assert.doesNotMatch(source, /className="media-trend-message" role="status"/);
+  const css = fs.readFileSync(new URL("../src/media-skeleton.css", import.meta.url), "utf8");
+  assert.match(css, /prefers-reduced-motion: reduce/);
+});

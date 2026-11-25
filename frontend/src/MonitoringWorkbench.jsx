@@ -108,8 +108,8 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
         <div className="monitor-loading" role="status" aria-live="polite">{isUpdating ? "검색 결과 확인 중" : ""}</div>
       </div>
       <div className="monitor-table-scroll" ref={scrollBox}>
-        <table className="monitor-table"><caption className="sr-only">수집 기사 목록</caption><colgroup><col className="monitor-col-check"/><col className="monitor-col-time"/><col className="monitor-col-tone"/><col className="monitor-col-category"/><col/><col className="monitor-col-action"/><col className="monitor-col-action"/><col className="monitor-col-expand"/></colgroup>
-          <thead><tr><th><PageCheckbox aria-label="현재 페이지 기사 전체 선택" checked={allSelected} mixed={someSelected && !allSelected} onChange={togglePage}/></th><th>작성 시간</th><th>논조</th><th>분류</th><th className="monitor-title-column">기사 제목</th><th><Bookmark aria-label="스크랩"/></th><th><ExternalLink aria-label="원문"/></th><th><span className="sr-only">상세</span></th></tr></thead>
+        <table className="monitor-table"><caption className="sr-only">수집 기사 목록</caption><colgroup><col className="monitor-col-check"/><col className="monitor-col-time"/><col className="monitor-col-tone"/><col className="monitor-col-category"/><col className="monitor-col-publisher"/><col/><col className="monitor-col-action"/><col className="monitor-col-action"/><col className="monitor-col-expand"/></colgroup>
+          <thead><tr><th><PageCheckbox aria-label="현재 페이지 기사 전체 선택" checked={allSelected} mixed={someSelected && !allSelected} onChange={togglePage}/></th><th>작성 시간</th><th>논조</th><th>분류</th><th className="monitor-publisher-column">언론사</th><th className="monitor-title-column">기사 제목</th><th><Bookmark aria-label="스크랩"/></th><th><ExternalLink aria-label="원문"/></th><th><span className="sr-only">상세</span></th></tr></thead>
           <tbody>{pageRows.map((row, index) => {
             const key = rowKey(row);
             const open = expanded === key;
@@ -122,11 +122,12 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
               <td className="monitor-time"><time title={[row.date, timeLabel(row)].filter(Boolean).join(" ")}><small>{String(row.date || "").replaceAll("-", ".") || "날짜 미확인"}</small>{timeLabel(row)}</time></td>
               <td className="monitor-tone-cell"><span className="monitor-tone" data-tone={row.tone}>{row.tone || "중립"}</span></td>
               <td className="monitor-category-cell">{monitoringCategoryLabel(row.category)}</td>
-              <td className="monitor-headline">{safeLink ? <a href={safeLink} target="_blank" rel="noopener noreferrer" title={headline} onClick={event => onOpenArticle(event, safeLink)}>{headline}</a> : <span>{headline}</span>}<small>{resolvePublisher(row)}</small></td>
+              <td className="monitor-publisher" title={resolvePublisher(row)}>{resolvePublisher(row)}</td>
+              <td className="monitor-headline">{safeLink ? <a href={safeLink} target="_blank" rel="noopener noreferrer" title={headline} onClick={event => onOpenArticle(event, safeLink)}>{headline}</a> : <span>{headline}</span>}</td>
               <td className="monitor-action"><ScrapButton article={row} scrapped={isScrapped(row, scraps)} onScrapSaved={onScrapSaved}/></td>
               <td className="monitor-action">{safeLink && <a href={safeLink} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" title="기사 열기" onClick={event => onOpenArticle(event, safeLink)}><ArrowUpRight/></a>}</td>
               <td className="monitor-expand"><button type="button" aria-label={relatedCount > 1 ? `기사 상세 및 묶음 ${relatedCount}건` : "기사 상세"} title={relatedCount > 1 ? `기사 상세 · 관련 ${relatedCount}건` : "기사 상세"} aria-expanded={open} aria-controls={detailId} onClick={() => setExpanded(open ? null : key)}>{open ? <ChevronDown/> : <ChevronRight/>}</button></td>
-            </tr>{open && <tr className="monitor-detail-row"><td colSpan={8}><div id={detailId}><Details article={row} onFeedbackSaved={onFeedbackSaved}/></div></td></tr>}</Fragment>;
+            </tr>{open && <tr className="monitor-detail-row"><td colSpan={9}><div id={detailId}><Details article={row} onFeedbackSaved={onFeedbackSaved}/></div></td></tr>}</Fragment>;
           })}</tbody>
         </table>
         {!pageRows.length && <div className="monitor-empty" role="status"><Search/><strong>{isUpdating ? "기사를 불러오고 있습니다." : "검색 조건에 맞는 기사가 없습니다."}</strong>{!isUpdating && <button className="monitor-command" type="button" onClick={reset}><RotateCcw/>초기화</button>}</div>}

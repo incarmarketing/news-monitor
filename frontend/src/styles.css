@@ -206,9 +206,9 @@ label > span { color: var(--muted); font-size: 14px; }
 .media-keyword-bars i { display: block; height: 100%; background: #7b901c; border-radius: 3px; }
 .media-intel-board > .media-keywords { border-right: 1px solid var(--line); padding-right: 30px; }
 .media-intel-board > .media-issues { min-width: 0; }
-.media-observations summary, .clipping-evidence summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-.keyword-brief, .insight-list { display: grid; gap: 12px; font-size: 14px; margin-top: 15px; }
-.keyword-brief article, .insight-list article { border-bottom: 1px solid var(--line-soft); padding-bottom: 10px; }
+.clipping-evidence summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.keyword-brief { display: grid; gap: 12px; font-size: 14px; margin-top: 15px; }
+.keyword-brief article { border-bottom: 1px solid var(--line-soft); padding-bottom: 10px; }
 .press-row, .press-influence-row { display: grid; grid-template-columns: 110px 1fr 60px; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
 .press-row button, .press-influence-row button { text-align: left; border: 0; background: none; }
 .monthly-issue-lead { padding-bottom: 22px; }

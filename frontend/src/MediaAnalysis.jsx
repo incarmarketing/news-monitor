@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Building2, Check, Download, Newspaper } from "lucide-react";
 import { monitoringCsv } from "./monitoringPresentation.js";
 import { loadMediaArticleRange } from "./mediaRange.js";
+import MediaSkeleton from "./MediaSkeleton.jsx";
 
 let mediaHelpers = {};
 
@@ -21,7 +22,6 @@ function HelperComponent({ name, fallback: Fallback = "div", props = {}, childre
 
 function Panel(props) { return <HelperComponent name="Panel" fallback="section" props={props} />; }
 function ToneTrend(props) { return <HelperComponent name="ToneTrend" fallback="div" props={props} />; }
-function InsightList(props) { return <HelperComponent name="InsightList" fallback="div" props={props} />; }
 function PressInfluence(props) { return <HelperComponent name="PressInfluence" fallback="div" props={props} />; }
 function MonthlyIssueDigest(props) { return <HelperComponent name="MonthlyIssueDigest" fallback="div" props={props} />; }
 
@@ -34,7 +34,6 @@ function selectDashboardKeywords(...args) { return callHelper("selectDashboardKe
 function buildDateRangeToneTrend(...args) { return callHelper("buildDateRangeToneTrend", () => [], ...args); }
 function buildKeywordFlow(...args) { return callHelper("buildKeywordFlow", () => [], ...args); }
 function buildMediaAnalysisIssuesAsync(...args) { return callHelper("buildMediaAnalysisIssuesAsync", async () => [], ...args); }
-function buildPeriodObservations(...args) { return callHelper("buildPeriodObservations", () => [], ...args); }
 function normalizeAnalysisDateRange(...args) { return callHelper("normalizeAnalysisDateRange", (start = "", end = "") => ({ start, end, clamped: false }), ...args); }
 function periodIssueMeta(...args) { return callHelper("periodIssueMeta", () => "", ...args); }
 
@@ -61,14 +60,12 @@ async function getCachedMediaAnalysis(input) {
     dailyTrend: buildDateRangeToneTrend(articles, start, end, Math.min(analysisDays, 90), []),
     keywordRows: buildKeywordFlow(articles, selectedKeywords),
     issueRows: [],
-    observations: [],
   };
   onProgress?.(baseValue);
   const issueRows = (await buildMediaAnalysisIssuesAsync(articles, "custom", { signal })).slice(0, 6);
   const value = {
     ...baseValue,
     issueRows,
-    observations: buildPeriodObservations(mediaSummaryData, issueRows, "custom", scopeLabel),
   };
   mediaAnalysisCache.set(key, value);
   if (mediaAnalysisCache.size > MEDIA_ANALYSIS_CACHE_LIMIT) {
@@ -161,8 +158,8 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
   const analysisError = rangeRead.status === "error" ? rangeRead.error
     : analysisRead.key === analysisKey && analysisRead.status === "error" ? "선택 기간의 기사 집계를 완료하지 못했습니다." : "";
   const mediaAnalysis = !loadingRange && !analysisError && analysisRead.key === analysisKey && ["partial", "ready"].includes(analysisRead.status)
-    ? analysisRead.value : { mediaSummaryData: { pressInfluence: [] }, dailyTrend: [], keywordRows: [], issueRows: [], observations: [] };
-  const { mediaSummaryData, dailyTrend, keywordRows, issueRows, observations } = mediaAnalysis;
+    ? analysisRead.value : { mediaSummaryData: { pressInfluence: [] }, dailyTrend: [], keywordRows: [], issueRows: [] };
+  const { mediaSummaryData, dailyTrend, keywordRows, issueRows } = mediaAnalysis;
   const maxKeywordCount = Math.max(1, ...keywordRows.map(row => Number(row.value) || 0));
   const downloadArticles = () => {
     const url = URL.createObjectURL(new Blob([monitoringCsv(deferredAnalysisArticles)], { type: "text/csv;charset=utf-8" }));
@@ -218,24 +215,24 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
       </header>
       {rangeNotice && <p className="media-range-notice" role="status">{rangeNotice}</p>}
       <section className="media-analysis-layout media-intel-board" aria-busy={loadingRange || issuesLoading}>
+        {(loadingRange || issuesLoading) && <span className="sr-only" role="status">기사 데이터를 불러오는 중입니다.</span>}
         <div className="media-main-trend">
           <section className="panel media-trend-panel">
-            <header className="media-trend-heading"><h2>일별 논조 흐름</h2><span>{loadingRange ? "조회 중" : analysisError ? "조회 실패" : `${deferredAnalysisArticles.length.toLocaleString("ko-KR")}건`}</span><small className="tone-axis-note">논조별 개별 눈금 · 기사 수(건)</small></header>
-            {loadingRange ? <p className="media-trend-message" role="status">{loadingArticles ? "선택 기간의 기사를 불러오는 중입니다." : "선택 기간의 기사를 집계하는 중입니다."}</p> : analysisError ? <div className="media-trend-message" role="alert"><p>{analysisError}</p><button type="button" className="ghost-button" onClick={retryRange}>다시 조회</button></div> : <ToneTrend rows={dailyTrend} />}
+            <header className="media-trend-heading"><h2>일별 논조 흐름</h2><span>{loadingRange ? <MediaSkeleton kind="count" /> : analysisError ? "조회 실패" : `${deferredAnalysisArticles.length.toLocaleString("ko-KR")}건`}</span><small className="tone-axis-note">논조별 개별 눈금 · 기사 수(건)</small></header>
+            {loadingRange ? <MediaSkeleton kind="trend" /> : analysisError ? <div className="media-trend-message" role="alert"><p>{analysisError}</p><button type="button" className="ghost-button" onClick={retryRange}>다시 조회</button></div> : <ToneTrend rows={dailyTrend} />}
           </section>
         </div>
         <div className="media-keywords">
           <div className="newsroom-content-tabs" role="tablist" aria-label="기사량 집계 기준"><button type="button" role="tab" aria-selected={detailTab === "keywords"} onClick={() => setDetailTab("keywords")}>주요 키워드</button><button type="button" role="tab" aria-selected={detailTab === "publishers"} onClick={() => setDetailTab("publishers")}>언론사별 보도량</button></div>
-          {detailTab === "keywords" ? <div className="media-keyword-bars">
+          {detailTab === "keywords" ? loadingRange ? <MediaSkeleton kind="keywords" /> : <div className="media-keyword-bars">
             {keywordRows.filter(row => Number(row.value) > 0).slice(0, 10).map(row => <button type="button" key={row.keyword || row.name} onClick={() => onOpenMonitoring?.({ keyword: row.keyword || row.name })}><b>{row.name}</b><span><i style={{ width: `${Math.max(1, Number(row.value) / maxKeywordCount * 100)}%` }} /></span><strong>{Number(row.value).toLocaleString("ko-KR")}건</strong></button>)}
-            {!keywordRows.some(row => Number(row.value) > 0) && <p className="empty-list-note">{loadingRange ? "선택 기간의 기사를 불러오는 중입니다." : analysisError ? "선택 기간 조회를 완료하지 못했습니다." : "해당 기간의 키워드 기사가 없습니다."}</p>}
-          </div> : <Panel title="언론사별 보도량" icon={Building2} meta="선택 기간 기준">{loadingRange || analysisError ? <p className="empty-list-note">{loadingRange ? "선택 기간의 기사를 불러오는 중입니다." : "선택 기간 조회를 완료하지 못했습니다."}</p> : <PressInfluence rows={mediaSummaryData.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />}</Panel>}
+            {!keywordRows.some(row => Number(row.value) > 0) && <p className="empty-list-note">{analysisError ? "선택 기간 조회를 완료하지 못했습니다." : "해당 기간의 키워드 기사가 없습니다."}</p>}
+          </div> : <Panel title="언론사별 보도량" icon={Building2} meta="선택 기간 기준">{loadingRange ? <MediaSkeleton kind="publishers" /> : analysisError ? <p className="empty-list-note">선택 기간 조회를 완료하지 못했습니다.</p> : <PressInfluence rows={mediaSummaryData.pressInfluence} detailed onOpenMonitoring={onOpenMonitoring} />}</Panel>}
         </div>
         <div className="media-issues">
-          <Panel title="주요 보도 이슈" icon={Newspaper} meta={loadingRange || issuesLoading ? "조회 중" : analysisError ? "조회 실패" : periodIssueMeta("custom", issueRows)}>
-            {loadingRange || issuesLoading || analysisError ? <p className="empty-list-note" role="status">{analysisError ? "선택 기간 조회를 완료하지 못했습니다." : "주요 보도 이슈를 집계하는 중입니다."}</p> : <MonthlyIssueDigest issues={issueRows} period="custom" />}
+          <Panel title="주요 보도 이슈" icon={Newspaper} meta={loadingRange || issuesLoading ? "" : analysisError ? "조회 실패" : periodIssueMeta("custom", issueRows)}>
+            {loadingRange || issuesLoading ? <MediaSkeleton kind="issues" /> : analysisError ? <p className="empty-list-note" role="status">선택 기간 조회를 완료하지 못했습니다.</p> : <MonthlyIssueDigest issues={issueRows} period="custom" />}
           </Panel>
-          <details className="media-observations"><summary>관찰 코멘트</summary><InsightList insights={observations} /></details>
         </div>
       </section>
     </main>

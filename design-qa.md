@@ -1,3 +1,20 @@
+# Media Skeletons, Publisher Columns And Commentary Removal QA - 2026-11-25
+
+## Scope
+
+- Remove the entire Media observation-commentary section, its cache payload, dedicated rendering helper, text generator and unused styles. Article counts, tone plots, keywords, publisher totals and issue links remain; no classification or report-writing rule changes.
+- Replace visible Media loading sentences with structural skeletons for the four tone plots, keyword/publisher rows and issue digest. Progressive rendering, genuine error/retry states and empty-result states remain distinct. A single screen-reader status and reduced-motion support are retained.
+- Move the Monitoring publisher into its own column immediately before the headline. Remove the headline subline, preserve links and controls, update detail colspan to nine, and reserve a separate publisher track on mobile.
+
+## Verification
+
+- Frontend: 206 passing tests, 40 checked modules with zero invalid local references, and a successful production build. The backend is unchanged from the 388-test release suite below.
+- Read-only delayed-range test: `.qa/publisher-skeleton/summary.json`. All three Media region boxes match exactly before/after loading at 1280 x 720, with zero document overflow. Keyword and publisher tabs both display skeletons; completed data has no skeleton or observation commentary.
+- Monitoring has nine cells per article at 1280 x 720, 1440 x 900 and 390 x 844, with the publisher before the headline and no publisher subline. Detail expansion retains all nine columns. No horizontal page overflow or JavaScript exceptions; desktop has no document scroll.
+- Cross-category regression: `.qa/media-final-navigation/` contains 26 passing PC/mobile navigation captures and five desktop dashboard fits, including searches, reset, sorting, CSV, tooltips and report interactions. Loading and mobile publisher captures were visually reviewed.
+
+---
+
 # Shared Selects, Tone Scales And Regulator Filters QA - 2026-11-25
 
 ## Scope

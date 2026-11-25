@@ -705,7 +705,6 @@ function App() {
     Chip,
     DataSourcePill,
     Fact,
-    InsightList,
     KeywordBrief,
     KeywordManagerTable,
     KeywordRuleValidation,
@@ -743,7 +742,6 @@ function App() {
     buildMediaAnalysisIssues,
     buildMediaAnalysisIssuesAsync,
     buildMediaCrmSignals,
-    buildPeriodObservations,
     buildPressInfluence,
     buildReporterCrmSignals,
     buildReportCategoryFlowRows,
@@ -4250,10 +4248,6 @@ function ToneTrend({ rows = [], compact = false }) {
   );
 }
 
-function InsightList({ insights = [] }) {
-  return <div className="insight-list">{insights.map((text) => <p key={text}>{text}</p>)}</div>;
-}
-
 function KeywordBrief({ rows = [] }) {
   const leaders = rows.filter((row) => Number(row.value || 0) > 0).slice(0, 4);
   if (!leaders.length) return <div className="keyword-brief empty">선정 키워드 기준으로 관찰된 기사가 아직 없습니다.</div>;
@@ -5515,39 +5509,6 @@ function composeMediaAnalysisData(base = {}, articles = [], scopeLabel = "선택
     categoryFlow: buildCategoryFlowRows(usableArticles),
     toneTrend: buildToneTrend(usableArticles),
   };
-}
-
-function buildPeriodObservations(data, issues = [], period = "monthly", customScopeLabel = "") {
-  const summary = data.summary || {};
-  const lead = issues[0];
-  const topPress = data.pressInfluence?.[0];
-  const scope = customScopeLabel || periodScopeLabel(period);
-  const periodIntent = {
-    daily: "일간 보고서는 신규 당사 언급과 즉시 확인할 리스크를 우선 배치합니다.",
-    weekly: "주간 보고서는 반복 노출과 논조 변화가 있는 이슈를 우선 묶어 봅니다.",
-    monthly: "월간 보고서는 누적 관리 대상, 언론사별 보도량, 키워드 흐름을 함께 봅니다.",
-    custom: "선택 기간 안에서 당사 언급, 정책 신호, 반복 노출 이슈를 같은 기준으로 비교합니다.",
-  }[period] || "선택 기간의 보도 흐름을 기준으로 핵심 이슈를 정리합니다.";
-  const observations = [];
-  observations.push(periodIntent);
-  if (summary.ownNegative > 0) {
-    observations.push(`당사 부정 이슈 ${summary.ownNegative}건이 확인돼 ${scope} 리스크 점검 대상으로 우선 배치했습니다.`);
-  } else if (summary.ownMentions > 0) {
-    observations.push(`당사 언급 ${summary.ownMentions}건은 직접 부정보다 시장 평가와 업계 흐름을 함께 확인하는 관찰 이슈로 봅니다.`);
-  } else {
-    observations.push(`${scope} 기준 당사 직접 부정 이슈는 확인되지 않았고, 업계성 이슈 중심으로 흐름을 추적합니다.`);
-  }
-  if (summary.caution > 0) {
-    observations.push(`주의 이슈 ${summary.caution}건은 투자 의견, 수수료, 규제, GA 운영 이슈처럼 의사결정자가 확인할 만한 신호로 분리했습니다.`);
-  }
-  if (lead?.title) {
-    const leadLine = buildArticleSummaryLines(lead)[0] || `${scope} 대표 이슈로 확인된 보도입니다.`;
-    observations.push(`대표 이슈 "${lead.title}"은 ${leadLine.replace(/[.。!?]+$/g, "")}.`);
-  }
-  if (topPress?.source) {
-    observations.push(`${topPress.source} 보도가 가장 많이 관찰돼 해당 매체의 반복 보도 흐름을 우선 확인하는 구성이 적절합니다.`);
-  }
-  return observations.slice(0, 4);
 }
 
 function buildToneTrend(articles) {
