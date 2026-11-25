@@ -523,7 +523,7 @@ function App() {
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const query = window.matchMedia("(max-width: 1240px)");
+    const query = window.matchMedia("screen and (max-width: 1240px)");
     const guardReportsOnMobile = () => {
       if (query.matches && activeSection === "reports") {
         setActiveSection("overview");
@@ -6408,14 +6408,22 @@ function categoryIdFromFeedbackLabel(value = "") {
   return "other";
 }
 
-function printCurrentView(title) {
+async function printCurrentView(title) {
   if (typeof window === "undefined") return;
   const previousTitle = document.title;
-  document.title = title || previousTitle;
-  window.setTimeout(() => window.print(), 50);
-  window.setTimeout(() => {
+  const restoreTitle = () => {
     document.title = previousTitle;
-  }, 1200);
+    window.removeEventListener("afterprint", restoreTitle);
+  };
+  window.addEventListener("afterprint", restoreTitle, { once: true });
+  document.title = title || previousTitle;
+  try {
+    await document.fonts?.ready;
+    await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+    window.print();
+  } finally {
+    restoreTitle();
+  }
 }
 
 function printHtmlDocument(html) {

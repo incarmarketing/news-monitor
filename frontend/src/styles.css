@@ -254,7 +254,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .regulator-release-list thead { position: sticky; top: 0; background: var(--bg); z-index: 1; }
 .regulator-release-list th { padding-block: 12px; font-size: 18px; white-space: nowrap; }
 .regulator-release-list th:first-child { text-align: center; }
-.regulator-release-list th:is(:nth-child(3), :nth-child(4)), .regulator-headline { text-align: left; }
+.regulator-headline { text-align: left; }
 .regulator-headline b { font-size: 26px; line-height: 1.4; font-weight: 720; }
 .regulator-institution { text-align: left; }
 .regulator-institution b { font-size: 20px; }
@@ -355,10 +355,10 @@ label > span { color: var(--muted); font-size: 14px; }
 .keyword-ledger-wrap, .data-table-wrap { width: 100%; max-width: 100%; overflow: auto; }
 .keyword-ledger-table { min-width: 1840px; table-layout: fixed; font-size: 14px; }
 .keyword-ledger-table th, .keyword-ledger-table td { padding: 12px 9px; overflow-wrap: anywhere; }
-.keyword-ledger-table th:first-child, .keyword-ledger-table td:first-child, .keyword-ledger-table th:nth-child(n+10), .keyword-ledger-table td:nth-child(n+10) { text-align: left; }
-.keyword-ledger-table th:nth-child(9), .keyword-ledger-table .ledger-number { text-align: right; }
-.media-data-table :is(th, td):is(:nth-child(1), :nth-child(2), :nth-child(5), :nth-child(7), :nth-child(8)), .reporter-data-table :is(th, td):is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(5), :nth-child(7), :nth-child(8), :nth-child(9)), .ad-data-table :is(th, td):is(:nth-child(2), :nth-child(5)), .feedback-table :is(th, td):is(:nth-child(2), :nth-child(5)) { text-align: left; }
-.ad-data-table :is(th, td):nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+.keyword-ledger-table td:first-child, .keyword-ledger-table td:nth-child(n+10) { text-align: left; }
+.keyword-ledger-table .ledger-number { text-align: right; }
+.media-data-table td:is(:nth-child(1), :nth-child(2), :nth-child(5), :nth-child(7), :nth-child(8)), .reporter-data-table td:is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(5), :nth-child(7), :nth-child(8), :nth-child(9)), .ad-data-table td:is(:nth-child(2), :nth-child(5)), .feedback-table td:is(:nth-child(2), :nth-child(5)) { text-align: left; }
+.ad-data-table td:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
 .ledger-col-anchor { width: 270px; }
 .ledger-col-context, .ledger-col-memo { width: 190px; }
 .ledger-anchor-row { display: grid; grid-template-columns: 42px 48px minmax(0,1fr); align-items: center; gap: 7px; text-align: left; }
@@ -438,9 +438,9 @@ label > span { color: var(--muted); font-size: 14px; }
 .stock-bottom-grid > .stock-disclosure-board { border-left: 1px solid var(--line); padding-left: 28px; margin-top: 18px; padding-top: 0; }
 .stock-relative-table { font-size: 20px; }
 .stock-relative-table td { padding-block: 10px; }
-.stock-relative-table th:first-child, .stock-relative-table td:first-child { text-align: left; }
-.stock-relative-table :is(th, td):last-child, .stock-table :is(th, td):not(:first-child) { text-align: right; }
-.stock-table :is(th, td):first-child { text-align: left; }
+.stock-relative-table td:first-child { text-align: left; }
+.stock-relative-table td:last-child, .stock-table td:not(:first-child) { text-align: right; }
+.stock-table td:first-child { text-align: left; }
 .stock-relative-table td:last-child { font-weight: 700; }
 .stock-insight-board summary { color: var(--muted); font-size: 14px; cursor: pointer; }
 .stock-workspace > .stock-insight-board { order: 1; display: block; }

@@ -23,7 +23,7 @@
 .audit-articles th:first-child { width: 33%; }
 .audit-articles th:nth-child(2), .audit-articles th:nth-child(4) { width: 13%; }
 .audit-articles th:nth-child(3) { width: 4%; }
-.audit-articles th:first-child, .audit-articles td:first-child, .audit-articles th:last-child, .audit-articles td:last-child { text-align: left; }
+.audit-articles td:first-child, .audit-articles td:last-child { text-align: left; }
 .audit-articles a { display: inline; font-weight: 600; line-height: 1.6; color: inherit; }
 .audit-articles a svg { display: inline; margin-left: 5px; }
 .audit-articles small { display: block; color: var(--muted); font-size: 12px; line-height: 1.6; margin-top: 6px; }

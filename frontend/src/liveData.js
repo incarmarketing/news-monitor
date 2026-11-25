@@ -1,5 +1,5 @@
 import { watchRunDisplayState } from "./watchHealth.js";
-import { resolvePublisher } from "./publisherIdentity.js";
+import { displayHeadline, isPublisherPortal, resolvePublisher, UNKNOWN_PUBLISHER } from "./publisherIdentity.js";
 import { validRegistryPayload } from "./mediaRegistryModel.mjs";
 import { isInsurerOnlyContext } from "./articleSector.js";
 import { mapCooperatively } from "./cooperativeWork.js";
@@ -147,7 +147,7 @@ export function loadCachedCoreSnapshot() {
       const cachedAt = Number(cached?.cachedAt || 0);
       if (!cachedAt || Date.now() - cachedAt > CORE_SNAPSHOT_CACHE_MAX_AGE_MS || !cached?.data) continue;
       const articles = Array.isArray(cached.data.articles)
-        ? cached.data.articles.slice(0, CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT)
+        ? deduplicateArticles(cached.data.articles.slice(0, CORE_SNAPSHOT_CACHE_ARTICLE_LIMIT))
         : [];
       if (!articles.length) continue;
       return {
@@ -1686,6 +1686,7 @@ function normalizeArticle(row) {
   return {
     id: row.article_hash || row.id || row.link || row.title,
     articleHash: row.article_hash || row.articleHash || "",
+    articleAliases: Array.isArray(row.articleAliases) ? row.articleAliases : [],
     date: formatArticleDate(dateSource) || String(row.report_date || row.date || "").slice(0, 10),
     reportDate: String(row.report_date || row.date || "").slice(0, 10),
     time: showTime ? formatTime(publicationSource || row.date || row.report_date) : "",
@@ -1932,7 +1933,34 @@ function deduplicateArticles(rows = []) {
       byKey.set(key, row);
     }
   });
-  return Array.from(byKey.values());
+  return collapsePortalArticleAliases(Array.from(byKey.values()));
+}
+
+function collapsePortalArticleAliases(rows) {
+  const groups = new Map();
+  rows.forEach(row => {
+    const title = displayHeadline(row).normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
+    const source = row.source;
+    const date = String(row.date || "");
+    if (!source || source === UNKNOWN_PUBLISHER || isPublisherPortal(source) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || title.length < 20 || /(?:\.{3}|…)\s*$/.test(title)) return;
+    const key = JSON.stringify([date, source, title]);
+    const group = groups.get(key) || [];
+    group.push(row);
+    groups.set(key, group);
+  });
+  const replacements = new Map();
+  const removed = new Set();
+  for (const group of groups.values()) {
+    const portals = group.filter(row => isPublisherPortal(row.link));
+    const originals = group.filter(row => /^https?:\/\//i.test(row.link || "") && !isPublisherPortal(row.link));
+    // A title is not enough to choose between two different original articles.
+    if (!portals.length || originals.length !== 1) continue;
+    const original = originals[0];
+    const aliases = group.flatMap(row => [...(row.articleAliases || []), ...(row === original ? [] : [{ articleHash: row.articleHash || row.id || "", link: row.link }])]);
+    replacements.set(original, { ...original, articleAliases: aliases });
+    portals.forEach(row => removed.add(row));
+  }
+  return rows.filter(row => !removed.has(row)).map(row => replacements.get(row) || row);
 }
 
 function articleDedupKey(row) {

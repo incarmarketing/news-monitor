@@ -13,6 +13,8 @@ const results = [];
 const viewportFits = [];
 
 async function assertSelectStyles(main, label) {
+  const headings = await main.locator("thead th:visible").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).textAlign));
+  assert.ok(headings.every(alignment => alignment === "center"), `${label}: table headings must be centered`);
   if (label === "monitoring") {
     const positions = await main.locator(".monitor-select-group .app-select:visible").evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().y));
     assert.equal(positions.length, 3, "monitoring filters must include tone, publisher and sorting");
@@ -37,7 +39,7 @@ async function assertSelectStyles(main, label) {
 async function assertTableAlignment(main, selector, expected) {
   const table = main.locator(selector);
   await table.waitFor();
-  assert.deepEqual(await table.locator("thead th").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).textAlign)), expected, `${selector}: header alignment differs`);
+  assert.deepEqual(await table.locator("thead th").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).textAlign)), expected.map(() => "center"), `${selector}: header alignment differs`);
   const firstRow = table.locator("tbody tr").filter({ hasNot: table.page().locator("[colspan]") }).first();
   if (await firstRow.count()) {
     assert.deepEqual(await firstRow.locator("td").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).textAlign)), expected, `${selector}: cell alignment differs`);

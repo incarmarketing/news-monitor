@@ -84,6 +84,8 @@ try {
     assert.equal(trace.length, 1, "cached reload displayed two rankings");
     assert.deepEqual(trace[0].rows, expected, "cached reload changed unchanged priority data");
   }
+  const chartSizes = () => page.locator('.desk-small-multiples svg').evaluateAll(nodes => nodes.map(node => ({ viewBox:node.getAttribute('viewBox'), width:node.clientWidth, height:node.clientHeight })));
+  const committedCharts = await chartSizes();
   await page.evaluate(() => { window.__homeTrace = []; });
   await page.getByRole("button", { name: "새로고침", exact: true }).click();
   await page.locator('.desk-story-grid > article:not([aria-hidden="true"]) h3').filter({ hasText: fixtureTitle }).waitFor({ timeout: 60000 });
@@ -92,6 +94,7 @@ try {
   assert.equal(refresh.length, 1, "refresh overwrote committed priorities with a provisional list");
   assert.ok(refresh[0].rows.some(row => row.title === fixtureTitle), "legitimate fresh data was frozen out");
   assert.deepEqual(await anchors(), initialBounds);
+  assert.deepEqual(await chartSizes(), committedCharts, 'refresh changed chart dimensions');
   results.rounds.push({ name: "mocked-manual-new-data", trace: refresh });
   assert.deepEqual(results.errors, []);
   assert.equal(results.mockedDispatches, 1);

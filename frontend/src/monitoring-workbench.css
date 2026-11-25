@@ -52,7 +52,6 @@
 .monitor-table th:not(:first-child) { color: var(--muted); }
 .monitor-table td { padding: 15px 10px; height: 90px; border-bottom: 1px solid var(--line); }
 .monitor-table th, .monitor-check { text-align: center; }
-.monitor-table th.monitor-title-column { text-align: left; }
 .monitor-article-row[data-selected="true"] { background: #e4ecad21; }
 .monitor-article-row:hover, .monitor-article-row[data-expanded="true"] { background: var(--paper-soft); }
 .monitor-headline { text-align: left; font-size: 26px; line-height: 1.35; font-weight: 720; word-break: keep-all; overflow-wrap: anywhere; }

@@ -1,25 +1,28 @@
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { chartGeometry, chartLabelIndexes, chartPointLabel } from "./chartPresentation.js";
 import { dashboardSeries } from "./dashboardPresentation.js";
 
 export default function NewsroomChart({ rows = [], series = dashboardSeries, compact = false, ariaLabel = "기사량 추이" }) {
   const container = useRef(null);
   const tooltipId = useId();
-  const [size, setSize] = useState({ width: compact ? 320 : 720, height: compact ? 160 : 260 });
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [active, setActive] = useState(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = container.current;
     if (!element) return undefined;
-    const observer = new ResizeObserver(([entry]) => {
-      const width = Math.round(entry.contentRect.width);
-      const height = Math.round(entry.contentRect.height);
+    const measure = () => {
+      const width = Math.round(element.clientWidth);
+      const height = Math.round(element.clientHeight);
       if (width > 0 && height > 0) setSize(previous => previous.width === width && previous.height === height ? previous : { width, height });
-    });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
   useEffect(() => setActive(null), [rows, series]);
   const { width, height } = size;
+  if (!width || !height) return <div className="newsroom-chart" ref={container} aria-busy="true" />;
   const { padding, ticks, x, y } = chartGeometry(rows, series, width, height, compact);
   const labelIndexes = new Set(chartLabelIndexes(rows.length, width - padding.left - padding.right, compact));
   const activeRow = active && rows[active.index];

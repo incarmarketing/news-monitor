@@ -91,3 +91,42 @@ test('different article query IDs survive deduplication while tracking parameter
   assert.equal(rows.length, 2);
   assert.deepEqual(rows.map(row => row.title), ['First insurance article', 'Second insurance article']);
 });
+
+test('a same-publisher portal copy resolves to its original without deleting deep-link identity', async (t) => {
+  browserTimers(t);
+  const title = '[10월 생보사 GA M/S] 푸본현대생명…서울법인금융센터 5계단 상승 1위, 인카금융서비스 7위로 급락';
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (String(url).endsWith('supabase.json')) return new Response(JSON.stringify({ url:'https://db.example', anon_key:'public-test' }));
+    return new Response(JSON.stringify({ ok:true, articles:[
+      {article_hash:'portal',title:`${title} - 보험저널`,link:'https://news.google.com/rss/articles/copy?oc=5',source:'보험저널',pub_date:'2026-11-25T00:00:00Z',tone:'positive',category:'own'},
+      {article_hash:'original',title,link:'https://www.insjournal.co.kr/news/articleView.html?idxno=34047',source:'보험저널',pub_date:'2026-11-25T00:00:00Z',tone:'positive',category:'own'},
+      {article_hash:'another-publisher',title,link:'https://www.fins.co.kr/news/articleView.html?idxno=123',source:'보험매일',pub_date:'2026-11-25T00:00:00Z',tone:'positive',category:'own'},
+    ],next_offset:null }));
+  });
+  const {loadArticleRange}=await import('../src/liveData.js?portal-alias');
+  const {articleMatchesDeepLink}=await import('../src/routeUtils.js');
+  const rows=await loadArticleRange({startDate:'2026-11-25',endDate:'2026-11-25'});
+  assert.equal(rows.length,2);
+  assert.equal(rows[0].articleHash,'original');
+  assert.equal(rows[0].link,'https://www.insjournal.co.kr/news/articleView.html?idxno=34047');
+  assert.ok(articleMatchesDeepLink(rows[0],'portal'));
+  assert.ok(articleMatchesDeepLink(rows[0],'','https://news.google.com/rss/articles/copy?oc=5'));
+});
+
+test('portal aliases do not collapse different original IDs, dates, or truncated headlines', async (t) => {
+  browserTimers(t);
+  const title='같은 제목이지만 실제 원문 주소가 서로 다른 보험 업계 기사';
+  const base={source:'보험저널',pub_date:'2026-11-25T00:00:00Z',tone:'neutral',category:'insurance'};
+  const articles=[
+    {...base,title,link:'https://www.insjournal.co.kr/news/articleView.html?idxno=1'},
+    {...base,title,link:'https://www.insjournal.co.kr/news/articleView.html?idxno=2'},
+    {...base,title,link:'https://news.google.com/rss/articles/ambiguous'},
+    {...base,title:`${title}…`,link:'https://news.google.com/rss/articles/truncated'},
+    {...base,title,pub_date:'2026-11-24T00:00:00Z',link:'https://news.google.com/rss/articles/yesterday'},
+  ];
+  t.mock.method(globalThis,'fetch',async url=>String(url).endsWith('supabase.json')
+    ? new Response(JSON.stringify({url:'https://db.example',anon_key:'public-test'}))
+    : new Response(JSON.stringify({ok:true,articles,next_offset:null})));
+  const {loadArticleRange}=await import('../src/liveData.js?portal-safety');
+  assert.equal((await loadArticleRange({startDate:'2026-11-24',endDate:'2026-11-25'})).length,5);
+});

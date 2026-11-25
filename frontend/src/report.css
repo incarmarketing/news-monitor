@@ -102,7 +102,7 @@
 @media screen and (min-width: 1201px) and (max-height: 820px) {
   .newspaper-brief-rail { grid-template-rows: minmax(0, 1fr) 176px; }
 }
-@media (max-width: 1050px) {
+@media screen and (max-width: 1050px) {
   .newspaper-report-body { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 20px; }
   .newspaper-brief-rail { padding-left: 20px; }
   .a4-priority-card { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
@@ -113,7 +113,7 @@
   .a4-priority-meta { border: 0; padding-right: 0; }
   .a4-priority-main > b { font-size: 16px; }
 }
-@media (max-width: 760px) {
+@media screen and (max-width: 760px) {
   .report-command-copy { gap: 12px; }
   .report-command-copy h1 { padding-right: 0; border: 0; }
   .report-calendar { padding-left: 0; border: 0; font-size: 15px; }
@@ -137,11 +137,15 @@
   .newspaper-footer { flex-wrap: wrap; gap: 7px; }
 }
 @media print {
-  @page { size: A4 landscape; margin: 12mm; }
-  .report-workspace, .a4-report-stage, .a4-report-sheet { display: block; padding: 0; width: 100%; }
-  .report-workspace ~ main, .newsroom-masthead, .report-command-panel, .no-print, .desk-dialog { display: none !important; }
+  @page { size: A4 landscape; margin: 10mm; }
+  html { scrollbar-gutter: auto; }
+  html, body, #root, .app-shell { min-height: 0; height: auto; width: 100%; margin: 0; padding: 0; overflow: visible; }
+  .app-shell { display: block; }
+  .report-workspace, .a4-report-stage, .a4-report-sheet { display: block; padding: 0; width: 100%; height: auto; min-height: 0; overflow: visible; }
+  .app-shell > .workspace:not(.report-workspace), .newsroom-masthead, .report-command-panel, .no-print, .desk-dialog, .work-notice { display: none !important; }
   .app-shell:not([data-active-section="reports"]) .report-workspace { display: none !important; }
   .newspaper-report-body { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 8mm; }
+  .newspaper-article-index { overflow: visible; scrollbar-gutter: auto; }
   .newspaper-nameplate h2 { font-size: 23pt; }
   .newspaper-masthead { gap: 4mm; padding-bottom: 4mm; }
   .newspaper-publisher { font-size: 9pt; padding-left: 3mm; }
@@ -156,6 +160,8 @@
   .a4-priority-meta { padding-right: 3mm; gap: 1mm; }
   .a4-priority-meta .chip, .a4-priority-meta .chip:nth-child(2) { font-size: 9pt; min-height: 5mm; line-height: 1.15; padding: 0; }
   .a4-priority-main > b { font-size: 11pt; }
+  .newspaper-report-sheet:not(.daily) .a4-priority-card { min-height: 15mm; padding-block: 2mm; }
+  .newspaper-report-sheet:not(.daily) .a4-priority-main > b { font-size: 10.5pt; line-height: 1.32; }
   .a4-priority-rank { width: 9mm; height: 9mm; font-size: 12pt; }
   .a4-priority-open { display: none; }
   .newspaper-footer { font-size: 8pt; }
@@ -166,13 +172,13 @@
   .newspaper-data-section + .newspaper-data-section { padding-top: 3mm; }
   .newspaper-data-section .newsroom-content-tabs { margin-bottom: 3mm; }
   .newspaper-data-section .newsroom-content-tabs button { font-size: 12pt; padding: 0 0 2mm; }
-  .a4-bar-list, .a4-press-rows { gap: 2mm; }
+  .a4-bar-list, .a4-press-rows { gap: 1.5mm; }
   .a4-bar-list > div, .a4-press-rows > button { grid-template-columns: 22mm minmax(0,1fr) 10mm; gap: 2mm; }
   .a4-bar-list span, .a4-press-rows span, .a4-bar-list em, .a4-press-rows em { font-size: 10pt; }
   .a4-bar-list b, .a4-press-rows b { height: 3mm; }
   .report-category-total { font-size: 9pt; margin-top: 3mm; padding-top: 2mm; }
   .report-category-total strong { font-size: 11pt; }
-  .report-count-chart { height: 35mm; }
+  .report-count-chart { height: 28mm; min-height: 0; }
   .print-only { display: block; padding-top: 3mm; }
   .print-only h3 { font-size: 11pt; margin-bottom: 2mm; }
   .print-only .a4-press-rows { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 2mm 4mm; }

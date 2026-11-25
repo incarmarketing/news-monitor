@@ -57,7 +57,7 @@ test("form controls share one visual contract across feature stylesheets", () =>
     assert.doesNotMatch(css, /select\s*\{[^}]*font-size:\s*(?:14|17|18)px/s);
   }
   const registry = fs.readFileSync(new URL("../src/mediaRegistry.css", import.meta.url), "utf8");
-  assert.match(registry, /\.registry-table :is\(th,td\):nth-child\(3\)/);
+  assert.match(registry, /\.registry-table td:nth-child\(3\)/);
   assert.doesNotMatch(registry, /\.media-registry :is\(th,td\):nth-child\(3\)/);
 });
 
@@ -188,4 +188,29 @@ test("monitoring sorting is grouped with tone and publisher, not isolated below 
   const results = source.slice(source.indexOf('<section className="monitor-results"'));
   assert.doesNotMatch(results, /className="monitor-sort"|aria-label="정렬"/);
   assert.match(css, /\.monitor-date-label \{ width: 280px; min-width: 280px;/);
+});
+
+test("home sorting uses concise names and keeps five story slots", () => {
+  const source=fs.readFileSync(new URL('../src/DashboardWorkbench.jsx',import.meta.url),'utf8');
+  for(const label of ['리스크순','최신순','당사언급순','관련기사순']) assert.ok(source.includes(`>${label}</option>`));
+  assert.doesNotMatch(source,/정렬:|보기:|확산순/);
+  assert.match(source,/5 - rows.length/);
+  assert.match(source,/className="desk-story-empty"/);
+});
+
+test("charts measure their actual container before painting instead of guessing a first size", () => {
+  const source=fs.readFileSync(new URL('../src/NewsroomChart.jsx',import.meta.url),'utf8');
+  assert.match(source,/useLayoutEffect\(\(\) =>/);
+  assert.match(source,/width: 0, height: 0/);
+  assert.match(source,/measure\(\);\s*const observer/);
+  assert.doesNotMatch(source,/compact \? 320|compact \? 160/);
+});
+
+test("report printing is separate from screen layouts and excludes other workspaces", () => {
+  const main=fs.readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8');
+  const css=fs.readFileSync(new URL('../src/report.css',import.meta.url),'utf8');
+  assert.match(main,/matchMedia\("screen and \(max-width: 1240px\)"\)/);
+  assert.match(css,/@page \{ size: A4 landscape; margin: 10mm;/);
+  assert.match(css,/\.app-shell > \.workspace:not\(\.report-workspace\)/);
+  assert.match(css,/html, body, #root, \.app-shell \{ min-height: 0; height: auto;/);
 });

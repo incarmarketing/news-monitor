@@ -1,3 +1,23 @@
+# Chart Paint, Report Printing, Headers And Article Aliases QA - 2026-11-25
+
+## Causes And Scope
+
+- Production trace `.qa/home-print-before/summary.json` captured Home charts painting a guessed `320 x 160` viewBox before changing to the measured `363 x 206`. Measure in a layout effect before the first paint; do not paint a guessed SVG while the container is hidden or unmeasured. Preserve resize handling and chart interactions.
+- Native Chromium PDF generation reproduced the report-to-Home navigation, including a PDF containing Home instead of the report. The mobile guard treated print-page width as a mobile viewport. Limit both route guards to `screen` media; actual mobile report exclusion remains. Print only the report workspace, clear screen viewport heights/scroll gutters, use A4 landscape with 10mm margins, and reduce print-only gaps so a footer does not occupy an otherwise blank second page. Restore the document title when print returns rather than on a fixed timer.
+- Home sort labels are Risk, Latest, Own mentions, Related articles without prefixes; Related articles is the existing bundle-size ordering, not a new ranking rule. Narrow the dropdown to 160px. Keep five story slots, including blank numbered rows when Own filtering has fewer results, without adding unrelated articles.
+- Center column headings across Monitoring, Regulators, Management, stocks and dashboard detail tables. Keep body headline/name/numeric alignments unchanged. Remove the conflicting header overrides instead of adding an important-style layer.
+- API evidence `.qa/article-alias-local/summary.json` confirms two records for Insurance Journal article 34047: publisher-original and Google RSS, with the same publisher, full title and publication timestamp. Existing read deduplication keyed by URL. Collapse only a same-publisher/date/full-title portal copy with one unambiguous original. Preserve different publishers, different original IDs, ambiguous or truncated titles and different dates. Prefer the original's full record; retain portal identifiers/links for existing deep links. Apply to core/cache/history reads, not only visible rows. Raw DB records and classification decisions are not changed or deleted.
+
+## Verification
+
+- 218 frontend tests pass; 40 modules have no invalid local references. Existing article-ID/query-parameter identity tests remain, with added portal alias, ambiguous-original and deep-link checks.
+- `.qa/report-print-final/summary.json`: cold/reloaded chart frames use the actual size from their first visible frame; all four Home sorting modes retain five slots and the same story-region bounds. Actual daily/weekly/monthly PDFs were generated, inspected with `pdfinfo`, rendered to PNG and visually reviewed: each is one landscape A4 page, no orphan footer page. Print and simulated cancellation preserve Reports and document title; a real mobile screen resize still redirects as intended. No write actions.
+- `.qa/article-alias-local/summary.json`: the reported real article appears once with its publisher-original URL; the previous Google record's hash deep link also opens that single article. Headers are centered. No JavaScript errors.
+- `.qa/print-sort-header-navigation/`: 26 PC/mobile route checks and five desktop Home viewport fits pass, including centered table headings, existing body alignment, search/reset/CSV, dropdowns, tooltips and report controls.
+- `frontend/scripts/report-print-qa.mjs` provides repeatable chart/slot/native-PDF/print-return checks. Home refresh QA additionally checks that a legitimate mocked refresh preserves the chart dimensions. These tests do not send Slack messages or perform real collection.
+
+---
+
 # Home Refresh And Monitoring Toolbar QA - 2026-11-25
 
 ## Cause And Fix
@@ -12,6 +32,7 @@
 - `.qa/home-refresh-final/summary.json`: a delayed initial read displays five skeleton rows and no fabricated zero headline metrics or empty-result message; completed-region bounds match exactly. Cold start and two cached reloads each display one identical finalized priority list. A browser-only new-article fixture then updates the list once, proving genuine updates are not frozen out. Monitoring also retains a loading state instead of reporting no results during its initial read. No real collection or notification was dispatched. Repeatable test: `frontend/scripts/home-refresh-qa.mjs`.
 - `.qa/refresh-toolbar-layout/summary.json`: 65 states across seven viewport sizes, zero failures. Date opening/search/reset/detail/page-size interactions preserve workspace bounds. `.qa/refresh-toolbar-navigation/` passes 26 PC/mobile category checks and five dashboard fits, with an explicit equal-y assertion for tone/publisher/sort selects.
 - Native Monitoring and Home loading/ready screenshots were visually reviewed. Changes include the previously committed keyword-aligned publisher bars, duplicate Management-title removal and six equal Regulator tiles; none was reverted.
+- Release `fb6648ee` completed Publish Dashboard run `45566204979` (publish and deploy successful). `.qa/live-home-fb6648ee/` passes four frozen-input/new-data rounds with no real dispatch; `.qa/live-newsroom-fb6648ee/` passes 26 routes and five viewport fits. Management's 12 views, five Regulator layouts and keyword-matched publisher bars/30-90 day drilldowns were also verified live on the preceding unchanged modules. Existing 08:00 and 13:00 report URLs return HTTP 200.
 
 ---
 

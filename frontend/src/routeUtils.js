@@ -1,4 +1,4 @@
-import { navItems } from "./data";
+import { navItems } from "./data.js";
 
 export function readInitialRoute() {
   const fallback = { section: "overview", monitoringPreset: null };
@@ -21,12 +21,13 @@ export function articleMatchesDeepLink(article = {}, articleHash = "", articleLi
   const hash = String(articleHash || "").trim().toLowerCase();
   const link = normalizeDeepLinkArticleLink(articleLink);
   const title = normalizeComparableTitle(articleTitle);
-  const articleHashes = [article.articleHash, article.article_hash, article.id]
+  const aliases = Array.isArray(article.articleAliases) ? article.articleAliases : [];
+  const articleHashes = [article.articleHash, article.article_hash, article.id, ...aliases.map(alias => alias.articleHash)]
     .map((value) => String(value || "").trim().toLowerCase())
     .filter(Boolean);
   if (hash && articleHashes.includes(hash)) return true;
   if (link) {
-    const articleLinks = [article.link, article.url]
+    const articleLinks = [article.link, article.url, ...aliases.map(alias => alias.link)]
       .map(normalizeDeepLinkArticleLink)
       .filter(Boolean);
     if (articleLinks.includes(link)) return true;
@@ -40,7 +41,7 @@ export function articleMatchesDeepLink(article = {}, articleHash = "", articleLi
 }
 
 function isMobileReportViewport() {
-  return typeof window !== "undefined" && window.matchMedia("(max-width: 1240px)").matches;
+  return typeof window !== "undefined" && window.matchMedia("screen and (max-width: 1240px)").matches;
 }
 
 function buildMonitoringPresetFromParams(params) {
