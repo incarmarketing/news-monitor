@@ -27,3 +27,11 @@ test('truncated matches require known publisher, explicit same minute, same day 
   }
   assert.equal(collapsePortalArticleAliases([original, {...portal, title:original.title}]).length, 2);
 });
+
+test('large full-title batches do not scan unrelated timed-prefix candidates', () => {
+  const rows=Array.from({length:5000},(_,i)=>[
+    {...original,articleHash:`o${i}`,title:`${headline} ${i}`,link:`${original.link}${i}`},
+    {...portal,articleHash:`p${i}`,title:`${headline} ${i}`,link:`${portal.link}${i}`},
+  ]).flat();
+  assert.equal(collapsePortalArticleAliases(rows).length,5000);
+});

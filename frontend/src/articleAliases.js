@@ -35,7 +35,7 @@ export function collapsePortalArticleAliases(rows) {
         exact.get(entry.normalized).push(entry);
       }
       if (entry.minute !== null && entry.prefix.length >= MIN_PREFIX_LENGTH) {
-        const key = `${entry.minute}:${entry.prefix.slice(0, MIN_PREFIX_LENGTH)}`;
+        const key = `${entry.minute}:${Number(entry.truncated)}:${entry.prefix.slice(0, MIN_PREFIX_LENGTH)}`;
         if (!timed.has(key)) timed.set(key, []);
         timed.get(key).push(entry);
       }
@@ -44,11 +44,11 @@ export function collapsePortalArticleAliases(rows) {
     for (const portal of entries.filter(item => isPublisherPortal(item.row.link))) {
       const candidates = new Set(portal.truncated ? [] : exact.get(portal.normalized) || []);
       if (portal.minute !== null && portal.prefix.length >= MIN_PREFIX_LENGTH) {
-        for (const original of timed.get(`${portal.minute}:${portal.prefix.slice(0, MIN_PREFIX_LENGTH)}`) || []) {
-          if (portal.truncated === original.truncated) continue;
+        for (const original of timed.get(`${portal.minute}:${Number(!portal.truncated)}:${portal.prefix.slice(0, MIN_PREFIX_LENGTH)}`) || []) {
           const shorter = portal.truncated ? portal : original;
           const longer = portal.truncated ? original : portal;
           if (longer.prefix.startsWith(shorter.prefix)) candidates.add(original);
+          if (candidates.size > 1) break;
         }
       }
       if (candidates.size !== 1) continue;
