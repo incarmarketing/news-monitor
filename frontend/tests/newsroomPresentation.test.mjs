@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chartGeometry, chartPointLabel } from "../src/chartPresentation.js";
+import { chartGeometry, chartLabelIndexes, chartPointLabel } from "../src/chartPresentation.js";
 import { priorityDisplayRows } from "../src/dashboardPresentation.js";
 import { reportArticleHeadline, reportCategoryColor, reportCategoryLabel } from "../src/reportModel.js";
 import { dashboardSeries } from "../src/dashboardPresentation.js";
@@ -23,6 +23,19 @@ test("empty, constant and malformed chart data has finite coordinates", () => {
 test("tooltip names the actual date, category, count and unit", () => {
   assert.equal(chartPointLabel({ date: "2026-11-24", own: 5 }, { key: "own", label: "당사" }), "2026-11-24 · 당사 · 5건");
   assert.equal(chartPointLabel({ date: "2026-11-24", risk: 30 }, { key: "risk", label: "리스크", unit: "점" }), "2026-11-24 · 리스크 · 30점");
+});
+
+test("date axis keeps both endpoints without crowding the final two dates", () => {
+  for (const count of [7, 30, 90]) {
+    for (const width of [280, 720, 1300]) {
+      const indexes = chartLabelIndexes(count, width);
+      assert.equal(indexes[0], 0);
+      assert.equal(indexes.at(-1), count - 1);
+      for (let i = 1; i < indexes.length; i++) assert.ok((indexes[i] - indexes[i - 1]) * width / (count - 1) >= 64);
+    }
+  }
+  assert.deepEqual(chartLabelIndexes(0, 200), []);
+  assert.deepEqual(chartLabelIndexes(1, 200), [0]);
 });
 test("duplicate source rows restore the longest available title without changing ranking", () => {
   const issue = { title: "보험 수수료...", link: "https://example.com/one", tone: "주의", category: "정책", score: 30 };

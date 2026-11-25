@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
-import { chartGeometry, chartPointLabel } from "./chartPresentation.js";
+import { chartGeometry, chartLabelIndexes, chartPointLabel } from "./chartPresentation.js";
 import { dashboardSeries } from "./dashboardPresentation.js";
 
 export default function NewsroomChart({ rows = [], series = dashboardSeries, compact = false, ariaLabel = "기사량 추이" }) {
@@ -21,6 +21,7 @@ export default function NewsroomChart({ rows = [], series = dashboardSeries, com
   useEffect(() => setActive(null), [rows, series]);
   const { width, height } = size;
   const { padding, ticks, x, y } = chartGeometry(rows, series, width, height, compact);
+  const labelIndexes = new Set(chartLabelIndexes(rows.length, width - padding.left - padding.right, compact));
   const activeRow = active && rows[active.index];
   const activeSeries = active && series.find(item => item.key === active.key);
   const hasTooltip = activeRow && activeSeries;
@@ -46,7 +47,7 @@ export default function NewsroomChart({ rows = [], series = dashboardSeries, com
           <title>{chartPointLabel(row, item)}</title>
         </circle>)}
       </g>)}
-      {rows.map((row, index) => index % Math.max(1, Math.ceil(rows.length / Math.max(2, (width - padding.left - padding.right) / (compact ? 35 : 55)))) === 0 || index === rows.length - 1
+      {rows.map((row, index) => labelIndexes.has(index)
         ? <text key={row.date || index} x={x(index)} y={height - 9} textAnchor="middle" className="dashboard-chart-label">{row.dateLabel || row.date || ""}</text> : null)}
     </svg>
     {hasTooltip && <div className="newsroom-chart-tooltip" id={tooltipId} role="tooltip"

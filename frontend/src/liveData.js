@@ -2,6 +2,7 @@ import { watchRunDisplayState } from "./watchHealth.js";
 import { resolvePublisher } from "./publisherIdentity.js";
 import { validRegistryPayload } from "./mediaRegistryModel.mjs";
 import { isInsurerOnlyContext } from "./articleSector.js";
+import { mapCooperatively } from "./cooperativeWork.js";
 
 const DASHBOARD_SESSION_KEY = "marketing_pr_session_v1";
 const CORE_SNAPSHOT_CACHE_KEY = "incar_core_snapshot_v3";
@@ -49,10 +50,13 @@ const ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_ARTICLE_LOOK
 const CORE_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_ARTICLE_MAX_ROWS", 1000, 500, 5000);
 const CORE_ARTICLE_LOOKBACK_DAYS = readPositiveEnvInt("VITE_NEWS_MONITOR_CORE_LOOKBACK_DAYS", 8, 3, 30);
 const HISTORY_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_HISTORY_ARTICLE_MAX_ROWS", 8000, 2000, 20000);
+const RANGE_ARTICLE_MAX_ROWS = 20000;
 const ENGAGEMENT_ARTICLE_MAX_ROWS = readPositiveEnvInt("VITE_NEWS_MONITOR_ENGAGEMENT_ARTICLE_MAX_ROWS", 4000, 1000, 10000);
 const REQUEST_TIMEOUT_MS = readPositiveEnvInt("VITE_NEWS_MONITOR_REQUEST_TIMEOUT_MS", 12000, 3000, 30000);
 const NEWS_ARTICLE_SELECT = "select=article_hash,report_date,report_slot,window_label,title,link,source,keyword,summary,pub_date,pub_date_raw,score,category,tone,own_mentioned,negative_target,classification_evidence,classification_reason,classification_confidence,classification_provider,clipping_recommended,clipping_reason,risk_level,status,cluster_size";
 let supabaseConfigPromise = null;
+const articleDateFormatter = new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" });
+const articleTimeFormatter = new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
 
 function readPositiveEnvInt(name, fallback, min, max) {
   const parsed = Number.parseInt(import.meta.env?.[name] || "", 10);
@@ -826,16 +830,20 @@ export async function loadOperationalData(options = {}) {
   }
 }
 
-export async function loadArticleRange({ startDate = "", endDate = "", maxRows = HISTORY_ARTICLE_MAX_ROWS } = {}) {
+export async function loadArticleRange({ startDate = "", endDate = "", maxRows = HISTORY_ARTICLE_MAX_ROWS, requireComplete = false } = {}) {
   const config = await loadSupabaseConfig();
-  if (!config?.url || !config?.anon_key) return [];
+  if (!config?.url || !config?.anon_key) {
+    if (requireComplete) throw new Error("missing_supabase_config");
+    return [];
+  }
 
   const start = String(startDate || "").trim();
   const end = String(endDate || "").trim();
-  const safeMaxRows = Math.min(HISTORY_ARTICLE_MAX_ROWS, Math.max(100, Number(maxRows || HISTORY_ARTICLE_MAX_ROWS)));
+  const safeMaxRows = Math.min(RANGE_ARTICLE_MAX_ROWS, Math.max(100, Number(maxRows || HISTORY_ARTICLE_MAX_ROWS)));
   const session = getStoredSession();
   const rows = [];
   let offset = 0;
+  let hasMore = false;
   while (rows.length < safeMaxRows) {
     const page = await dashboardApi(config, session, "article_range", {
       start_date: start, end_date: end,
@@ -843,10 +851,13 @@ export async function loadArticleRange({ startDate = "", endDate = "", maxRows =
     }, { allowAnonymous: true });
     if (!page?.ok || !Array.isArray(page.articles)) throw new Error("article_range_unavailable");
     rows.push(...page.articles);
-    if (!Number.isInteger(page.next_offset) || page.next_offset <= offset || !page.articles.length) break;
+    hasMore = page.next_offset !== null && page.next_offset !== undefined;
+    if (!hasMore) break;
+    if (!Number.isInteger(page.next_offset) || page.next_offset <= offset || !page.articles.length) throw new Error("invalid_article_range_cursor");
     offset = page.next_offset;
   }
-  return deduplicateArticles((Array.isArray(rows) ? rows : []).map(normalizeArticle).filter(Boolean));
+  if (requireComplete && hasMore) throw new Error("article_range_limit_reached");
+  return deduplicateArticles((await mapCooperatively(rows, normalizeArticle)).filter(Boolean));
 }
 
 function mergeOperationalData(primary, fallback) {
@@ -1892,12 +1903,7 @@ function formatArticleDate(value) {
       ? `${dateOnly[1]}-${dateOnly[2].padStart(2, "0")}-${dateOnly[3].padStart(2, "0")}`
       : "";
   }
-  const parts = new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
+  const parts = articleDateFormatter.formatToParts(date);
   const get = (type) => parts.find((part) => part.type === type)?.value || "";
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
@@ -1962,7 +1968,17 @@ function normalizeRegulatorTitle(value) {
 function normalizeArticleLink(value) {
   const raw = String(value || "").trim();
   if (!raw || raw === "#") return "";
-  return raw.replace(/[?#].*$/, "").replace(/\/$/, "").toLowerCase();
+  try {
+    const url = new URL(raw);
+    url.hash = "";
+    for (const key of [...url.searchParams.keys()]) {
+      if (/^utm_|^(?:fbclid|gclid|dclid|msclkid|mc_eid|mc_cid|igshid)$/i.test(key)) url.searchParams.delete(key);
+    }
+    url.searchParams.sort();
+    return `${url.origin}${url.pathname.replace(/\/$/, "")}${url.search}`;
+  } catch {
+    return raw.split("#")[0];
+  }
 }
 
 function shouldReplaceDedupedArticle(current, next) {
@@ -2176,10 +2192,5 @@ function formatTime(value) {
     const match = raw.match(/(\d{1,2}):(\d{2})/);
     return match ? `${match[1].padStart(2, "0")}:${match[2]}` : raw.slice(0, 5);
   }
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
+  return articleTimeFormatter.format(date);
 }

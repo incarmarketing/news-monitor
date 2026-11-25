@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, Bookmark, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, RefreshCw, RotateCcw, Search, X } from "lucide-react";
+import { ArrowUpRight, Bookmark, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, RefreshCw, RotateCcw, Search, X } from "lucide-react";
 import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
 import { monitoringCategories, monitoringCategoryKey, monitoringCategoryLabel, monitoringCsv, monitoringDateRange, monitoringPage } from "./monitoringPresentation.js";
 import "./monitoring-workbench.css";
@@ -20,6 +20,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
   const id = useId();
   const scrollBox = useRef(null);
   const filtersBox = useRef(null);
+  const dateTrigger = useRef(null);
   const paginated = useMemo(() => monitoringPage(rows, page, pageSize), [rows, page, pageSize]);
   const pageRows = useMemo(() => paginated.rows.map(normalizeRow), [paginated.rows, normalizeRow]);
   const selectedRows = useMemo(() => rows.filter(row => selected.has(rowKey(row))), [rows, selected, rowKey]);
@@ -34,7 +35,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
   useEffect(() => {
     if (!datesOpen) return undefined;
     const closeOutside = event => { if (!filtersBox.current?.contains(event.target)) setDatesOpen(false); };
-    const closeOnEscape = event => { if (event.key === "Escape") setDatesOpen(false); };
+    const closeOnEscape = event => { if (event.key === "Escape") { setDatesOpen(false); dateTrigger.current?.focus({ preventScroll: true }); } };
     document.addEventListener("pointerdown", closeOutside);
     document.addEventListener("keydown", closeOnEscape);
     return () => {
@@ -63,7 +64,8 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const apply = (event) => { event?.preventDefault(); onApply(); setDatesOpen(false); };
+  const apply = (event) => { event?.preventDefault(); onApply(); setDatesOpen(false); if (datesOpen) dateTrigger.current?.focus({ preventScroll: true }); };
+  const toggleDates = event => { dateTrigger.current = event.currentTarget; setDatesOpen(value => !value); };
   const reset = () => { onReset(); setDatesOpen(false); setSelected(new Set()); setPage(1); setExpanded(null); };
   const activeCategory = monitoringCategoryKey(filters.category);
   const tabs = monitoringCategories.filter(item => ["own", "ga", "insurance", "policy"].includes(item.key) || categoryCounts[item.key] || (filters.category !== "all" && item.key === activeCategory));
@@ -82,15 +84,14 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
         const range = monitoringDateRange(today, days);
         const active = !datesOpen && filters.startDateInput === range.startDate && filters.endDateInput === range.endDate;
         return <button key={days} type="button" aria-pressed={active} onClick={() => { onPeriod(range); setDatesOpen(false); }}>{label}</button>;
-      })}<button type="button" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={() => setDatesOpen(value => !value)}>기간 선택</button></div>
-      <button type="button" className="monitor-date-label" aria-label="조회 날짜 변경" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={() => setDatesOpen(value => !value)}>{rangeLabel}<CalendarDays/></button>
+      })}<button type="button" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={toggleDates}>기간 선택</button></div>
+      <button type="button" className="monitor-date-label" aria-label="조회 날짜 변경" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={toggleDates}>{rangeLabel}<CalendarDays/></button>
       <label className="monitor-select"><span>논조</span><select aria-label="논조" value={filters.tone} onChange={event => onChange("tone", event.target.value)}><option value="all">전체</option>{filters.tones.map(tone => <option key={tone}>{tone}</option>)}</select></label>
       <label className="monitor-select monitor-source"><span>언론사</span><select aria-label="언론사" value={filters.source} onChange={event => onChange("source", event.target.value)}><option value="all">전체</option>{filters.sources.map(source => <option key={source}>{source}</option>)}</select></label>
       {datesOpen && <form id={`${id}-dates`} className="monitor-custom-dates" onSubmit={apply}>
-        <label>시작 기준일<input type="date" value={filters.startDateInput} onInput={event => onChange("startDateInput", event.currentTarget.value)} onChange={event => onChange("startDateInput", event.target.value)}/></label>
-        <span aria-hidden="true">-</span>
-        <label>종료 기준일<input type="date" value={filters.endDateInput} onInput={event => onChange("endDateInput", event.currentTarget.value)} onChange={event => onChange("endDateInput", event.target.value)}/></label>
-        <button className="monitor-command" type="submit">적용</button>
+        <label>시작일<input type="date" value={filters.startDateInput} onInput={event => onChange("startDateInput", event.currentTarget.value)} onChange={event => onChange("startDateInput", event.target.value)}/></label>
+        <label>종료일<input type="date" value={filters.endDateInput} onInput={event => onChange("endDateInput", event.currentTarget.value)} onChange={event => onChange("endDateInput", event.target.value)}/></label>
+        <button className="monitor-command" type="submit"><Check aria-hidden="true" />적용</button>
       </form>}
     </section>
     <section className="monitor-results" aria-label="수집 기사 목록" aria-busy={isUpdating}>

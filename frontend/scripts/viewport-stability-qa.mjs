@@ -125,8 +125,10 @@ async function interactions(page, section, initial) {
     stable(initial, await snapshot(page, section, "publishers"), "media tab");
     await main.getByRole("tab",{name:"주요 키워드",exact:true}).click();
     await main.getByRole("button",{name:"30일",exact:true}).click();
+    await main.locator('.media-intel-board[aria-busy="false"]').waitFor({timeout:90000});
     stable(initial, await snapshot(page, section, "30-days"), "media range");
     await main.getByRole("button",{name:"7일",exact:true}).click();
+    await main.locator('.media-intel-board[aria-busy="false"]').waitFor({timeout:90000});
   }
   if (section === "clipping") {
     await main.getByRole("tab",{name:"당사",exact:true}).click();
@@ -164,6 +166,7 @@ try {
       if (width < 1241 && section === "reports") continue;
       await page.locator(`.newsroom-navigation [data-section="${section}"]`).click();
       await page.locator(`.app-shell[data-active-section="${section}"] main.workspace:visible h1`).waitFor();
+      if (section === "media") await page.locator('.media-intel-board[aria-busy="false"]').waitFor({timeout:90000});
       try {
         const initial = await snapshot(page, section, "initial");
         if (width === 1440 || width === 1280) await interactions(page, section, initial);

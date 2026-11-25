@@ -20,8 +20,11 @@
 .monitor-select > span { font-size: 16px; }
 .monitor-select select { width: 100px; max-width: 180px; }
 .monitor-source select { width: 180px; }
-.monitor-custom-dates { position: absolute; right: 0; top: calc(100% + 8px); z-index: 8; display: flex; align-items: end; flex-wrap: wrap; gap: 12px; max-width: min(560px, calc(100vw - 48px)); padding: 16px; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--paper); box-shadow: var(--shadow); }
-.monitor-custom-dates label { font-size: 13px; }
+.monitor-custom-dates { position: absolute; right: 0; top: calc(100% + 8px); z-index: 8; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 12px; width: min(560px, calc(100vw - 48px)); padding: 16px; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--paper); box-shadow: var(--shadow); }
+.monitor-custom-dates label { display: grid; gap: 6px; min-width: 0; font-size: 13px; }
+.monitor-custom-dates input { width: 100%; min-width: 0; }
+.monitor-custom-dates > button { white-space: nowrap; }
+.monitor-custom-dates > button svg { width: 18px; height: 18px; }
 .monitor-status-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
 .monitor-scope { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; color: var(--muted); }
 .monitor-scope button { border: 0; background: none; display: grid; place-items: center; }
@@ -101,10 +104,8 @@
   .monitor-date-label { width: 100%; justify-content: space-between; }
   .monitor-select { flex: 1; }
   .monitor-select select { flex: 1; max-width: 100%; }
-  .monitor-custom-dates { justify-content: start; }
-  .monitor-custom-dates label { flex-wrap: wrap; flex: 1; }
-  .monitor-custom-dates input { width: 100%; }
-  .monitor-custom-dates > span { display: none; }
+  .monitor-custom-dates { grid-template-columns: repeat(2, minmax(0, 1fr)); width: calc(100vw - 32px); }
+  .monitor-custom-dates > button { grid-column: 1 / -1; justify-self: end; }
   .monitor-results-header { flex-wrap: wrap; gap: 12px; }
   .monitor-results { margin-top: 0; }
   .monitor-table-scroll { height: auto; min-height: 0; overflow: visible; }

@@ -58,3 +58,18 @@ test("form controls share one visual contract across feature stylesheets", () =>
   assert.match(registry, /\.registry-table :is\(th,td\):nth-child\(3\)/);
   assert.doesNotMatch(registry, /\.media-registry :is\(th,td\):nth-child\(3\)/);
 });
+
+test("header has a home entry and no redundant search or inline status banner", () => {
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  const data = fs.readFileSync(new URL("../src/data.js", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const header = main.slice(main.indexOf('<header className="newsroom-masthead">'), main.indexOf('<MemoizedOverview'));
+  assert.match(data, /id: "overview", label: "홈"/);
+  assert.doesNotMatch(header, /<time>|newsroom-search-action|newsroom-work-status/);
+  assert.match(css, /\.work-notice \{ position: fixed/);
+});
+
+test("date popover uses equal date columns and a bottom-aligned apply action", () => {
+  const css = fs.readFileSync(new URL("../src/monitoring-workbench.css", import.meta.url), "utf8");
+  assert.match(css, /\.monitor-custom-dates \{[^}]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\) auto; align-items: end/);
+});

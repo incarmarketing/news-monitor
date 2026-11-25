@@ -60,6 +60,7 @@ try {
         const main = page.locator("main.workspace:visible");
         await main.locator("h1").waitFor();
         await page.waitForFunction(() => ![...document.querySelectorAll('main.workspace')].filter(e => e.getBoundingClientRect().width).some(e => /화면 불러오는 중/.test(e.innerText)));
+        if (section === "media") await main.locator('.media-intel-board[aria-busy="false"]').waitFor({ timeout: 90000 });
         await page.evaluate(() => document.fonts.ready);
         const font = await page.evaluate(() => ({
           family: getComputedStyle(document.body).fontFamily,
@@ -169,7 +170,9 @@ try {
         }
         if (desktop && round === 1 && section === "media") {
           await main.getByRole("button", { name: "30일", exact: true }).click();
+          await main.locator('.media-intel-board[aria-busy="false"]').waitFor({ timeout: 90000 });
           await main.getByRole("button", { name: "7일", exact: true }).click();
+          await main.locator('.media-intel-board[aria-busy="false"]').waitFor({ timeout: 90000 });
           const point = main.locator(".tone-trend circle").last();
           if (await point.count()) { await point.hover(); await main.getByRole("tooltip").waitFor(); }
           await main.getByRole("tab", { name: "언론사별 보도량", exact: true }).click();

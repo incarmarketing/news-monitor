@@ -1,3 +1,28 @@
+# Complete Media History And Header Cleanup QA - 2026-11-25
+
+## Scope And Causes
+
+- Requested follow-up, not a redesign reversal: keep the selected light editorial layout; rename the overview menu to Home, remove the duplicate masthead search and date, align the monitoring date popup, and repair the 30/90-day tone history.
+- The database contains all 90 publication days. Media previously consumed a recent bounded snapshot after an unauthorized direct-table read failed; the period buttons only filtered that incomplete input. Media now owns its exact publication-date range through the existing restricted `article_range` API. No table grant, RLS policy, API write permission, collection schedule or dispatch channel was changed.
+- Article URL deduplication also discarded every query parameter. Separate `articleView.html?idxno=...` articles therefore collapsed. It now preserves article IDs and case-sensitive paths, sorting retained parameters and removing only explicit tracking parameters/fragments.
+- The screenshot's GitHub dispatch 401 is distinct from the denied direct-table history read. Human-readable bottom-right status notices replace the raw error under the logo; the rejected server `GITHUB_DISPATCH_TOKEN` still requires credential verification/replacement. No credential was read, replaced or copied for this UI change, and a real collection dispatch was not used as a test.
+
+## Implementation And Evidence
+
+- Complete range reads paginate beyond the old 8,000-row default, reject invalid cursors and reject a truncated 20,000-row result instead of pretending the period is complete. Read failures display a retry state, not a fabricated zero/sample curve.
+- Two-minute bounded range caching shares duplicate/in-flight reads and invalidates on the article revision. Cancelled/late calculations cannot overwrite the selected period. Failed reads are evicted for retry.
+- Large historical ranges reuse the existing issue-grouping/classification rules, with short cooperative batches and memoized summaries/scores. Date/time formatters are reused. Fully fetched tone/keyword results appear before the longer issue digest completes; CSV remains based on the fully fetched selected range.
+- Local actual API verification: 30 days, 3,634 normalized articles; 90 days, 10,567 normalized articles, August 28 through November 25, all 90 days nonzero. Each displayed headline count equals the sum of its daily tone points. Different counts from raw DB rows reflect existing source exclusions and deduplication, not an assertion of one-to-one raw row counts.
+- Cold local measurements: the 30-day graph appeared in 2.7 seconds and its complete digest in 8.8 seconds; the 90-day graph in 7.8 seconds and its digest in 27.9 seconds. Returning to a cached period made zero new range requests. Longest main-thread task in the same audit fell from 8,138ms before batching to 248ms in the final run. These are observed development measurements, not a promise of instantaneous cold history or a production SLA.
+- Date popup: two equal 212.67px date inputs and a 40px-high Apply control have exactly matching bottoms on desktop; Escape/Apply restore the opener focus, outside click dismisses, mobile popup stays within 390px. The popup remains out of document flow.
+- Removed masthead-only search/date/status styles instead of leaving superseded CSS active. Search, filters and CSV in Monitoring remain intact. Menu route ID remains `overview`; only its visible name is Home.
+- Historical date-axis labels now reserve space before the final endpoint. Four/five-digit keyword counts retain their unit on one line.
+- Read-only background evidence: `.qa/header-history/summary.json`, `media-30.png`, `media-90.png`, `date-popup.png`, `date-popup-mobile.png`, `refresh-error.png`, `race-final.png`.
+- Mocked failure/race checks pass: failed range has no invented zero trend, retry succeeds, downloads are disabled for incomplete data, and a delayed 30-day response does not replace the selected 90-day result. The refresh 401 was mocked; no collector or notification was dispatched.
+- Frontend: 198 passing tests; backend release regression: 388 passing mocked tests. Build and local reference validation passed. Cross-category regression covered 26 PC/mobile navigation captures, CSV, chart tooltips, reports, management subviews and five desktop dashboard fits. Viewport checks preserve the previous no-document-scroll and stable-anchor contracts.
+
+---
+
 # Editorial Ledger And Stable Workspaces QA - 2026-11-25
 
 final result: passed

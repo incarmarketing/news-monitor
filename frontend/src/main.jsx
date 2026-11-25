@@ -76,6 +76,8 @@ import "./dashboard-workbench.css";
 import MonitoringWorkbench from "./MonitoringWorkbench.jsx";
 import { monitoringCategoryCounts, monitoringCategoryKey } from "./monitoringPresentation.js";
 import NewsroomChart from "./NewsroomChart.jsx";
+import { refreshFailureMessage } from "./refreshPresentation.js";
+import { mapCooperatively } from "./cooperativeWork.js";
 
 const loadManagement = () => import("./Management");
 const loadMediaAnalysis = () => import("./MediaAnalysis");
@@ -236,6 +238,8 @@ function App() {
   const [monitoringWarmed, setMonitoringWarmed] = useState(initialRoute.section === "monitoring");
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
+  const [workFailed, setWorkFailed] = useState(false);
+  const [workNoticeDismissed, setWorkNoticeDismissed] = useState(false);
   const [workflowHealth, setWorkflowHealth] = useState({ status: "deferred", workflows: [] });
   const [dashboardSnapshot, setDashboardSnapshot] = useState(() => {
     const cachedArticles = Array.isArray(initialCachedCore?.articles) ? initialCachedCore.articles : [];
@@ -323,6 +327,8 @@ function App() {
     const beforeFingerprint = operationsFingerprint(operations);
     clearWorkTimers();
     setWorking(true);
+    setWorkFailed(false);
+    setWorkNoticeDismissed(false);
     setWorkLabel(`${label} 작업 중`);
     setOperations((current) => ({
       ...current,
@@ -344,7 +350,8 @@ function App() {
         }
         triggerMessage = `${label} 요청 완료`;
       } catch (error) {
-        triggerMessage = `${label} 요청 실패: ${error?.message || "확인 필요"}`;
+        triggerMessage = refreshFailureMessage(error);
+        setWorkFailed(true);
         triggerFailed = true;
       }
     }
@@ -452,7 +459,6 @@ function App() {
     const profile = {
       monitoring: "core",
       regulators: "history",
-      media: "history",
       reports: "history",
       clipping: "engagement",
       scraps: "engagement",
@@ -732,6 +738,7 @@ function App() {
     buildKeywordFlow,
     buildKeywordRuleValidation,
     buildMediaAnalysisIssues,
+    buildMediaAnalysisIssuesAsync,
     buildMediaCrmSignals,
     buildPeriodObservations,
     buildPressInfluence,
@@ -785,6 +792,7 @@ function App() {
     unique,
     domainsForPressName,
     composeMediaAnalysisData,
+    composeMediaAnalysisDataAsync,
     dateRangeDayCount,
     filterArticlesByDateRange,
     latestArticleDate,
@@ -805,7 +813,7 @@ function App() {
   return (
     <div className="app-shell" data-active-section={activeSection}>
       <header className="newsroom-masthead">
-        <Header working={working || Boolean(pendingSection)} workLabel={pendingSection ? "화면 준비 중" : workLabel} />
+        <Header />
         <nav className="newsroom-navigation" aria-label="주요 메뉴">
             {newsroomNavItems.map((item) => (
                 <button
@@ -823,11 +831,12 @@ function App() {
             ))}
         </nav>
         <div className="newsroom-global-actions">
-          <time>{formatKstDateKey(new Date()).replaceAll("-", ".")}</time>
-          <button type="button" className="newsroom-search-action" onClick={() => openMonitoring({})} aria-label="기사 검색" title="기사 검색"><Search /><span>기사 검색</span></button>
           <button type="button" onClick={() => overviewRefreshOperations({ trigger: true, workflow: "dashboard-refresh.yml", source: "dashboard_manual_refresh", label: "기사 수집 갱신" })} disabled={working} aria-label="새로고침" title="기사 수집 갱신"><RefreshCw /></button>
         </div>
       </header>
+      {working && workLabel && !workNoticeDismissed && <div className="work-notice" data-error={workFailed} role={workFailed ? "alert" : "status"}>
+        {workFailed ? <AlertTriangle aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}<p>{workLabel}</p><button type="button" onClick={() => setWorkNoticeDismissed(true)} title="알림 닫기" aria-label="작업 알림 닫기"><X /></button>
+      </div>}
       <MemoizedOverview
         data={realtimeData}
         articles={realtimeArticles}
@@ -903,7 +912,7 @@ function App() {
   );
 }
 
-function Header({ working = false, workLabel = "" }) {
+function Header() {
   const userText = dashboardSessionLabel(getStoredSession());
 
   return (
@@ -913,7 +922,6 @@ function Header({ working = false, workLabel = "" }) {
           src={`${import.meta.env.BASE_URL || "./"}assets/incar-logo-white.png`}
           alt="인카금융서비스"
         />
-        {working && <span className="newsroom-work-status" role="status">{workLabel || "갱신 중"}</span>}
     </div>
   );
 }
@@ -4593,6 +4601,26 @@ function buildMediaAnalysisIssues(articles = [], period = "monthly") {
   return selectBalancedMediaIssues(issues, period, 12);
 }
 
+async function buildMediaAnalysisIssuesAsync(articles = [], period = "monthly", { signal } = {}) {
+  const scoped = articles.filter(article => article?.title && article.tone !== "제외" && !isPortalSource(article.source));
+  const groups = [];
+  const bucketIndex = new Map();
+  await mapCooperatively(scoped, (article, index) => {
+    mediaIssueScore(article, period);
+    if (period !== "monthly") mediaIssueScore(article);
+    addRelatedArticleGroup(groups, bucketIndex, article, index);
+  }, { signal });
+  const grouped = (await mapCooperatively(groups, finishRelatedArticleGroup, { signal })).sort(compareRelatedArticleGroups);
+  const issues = (await mapCooperatively(grouped, group => {
+    const issue = normalizeMediaIssueGroup(group, period);
+    mediaIssueScore(issue, period);
+    return issue;
+  }, { signal }))
+    .filter(issue => issue.title)
+    .sort((a, b) => mediaIssueScore(b, period) - mediaIssueScore(a, period) || articleTimeValue(b) - articleTimeValue(a));
+  return selectBalancedMediaIssues(issues, period, 12);
+}
+
 function selectBalancedMediaIssues(issues = [], period = "monthly", limit = 12) {
   const selected = [];
   const seen = new Set();
@@ -4715,6 +4743,10 @@ function reportFrontScore(item = {}) {
 }
 
 function mediaIssueScore(item = {}, period = "monthly") {
+  return memoizedArticleValue(item, `mediaIssueScore:${period}`, () => computeMediaIssueScore(item, period));
+}
+
+function computeMediaIssueScore(item = {}, period = "monthly") {
   const relatedBoost = Math.min(Number(item.relatedCount || item.clusterSize || 1), 8) * (period === "daily" ? 10 : 18);
   const ownBoost = isOwnArticle(item) ? 420 : 0;
   const performanceBoost = isOwnPerformanceArticle(item) ? 360 : 0;
@@ -4966,6 +4998,10 @@ function buildMediaIssueSummaryLines(representative = {}, members = []) {
 }
 
 function buildArticleSummaryLines(item = {}) {
+  return memoizedArticleValue(item, "summaryLines", () => computeArticleSummaryLines(item));
+}
+
+function computeArticleSummaryLines(item = {}) {
   if (isExternalInsuranceNoiseArticle(item)) return [];
   if (isGeneralFinanceNoiseArticle(item)) return [];
   if (isAdminAgencyNoiseArticle(item)) return [];
@@ -5453,6 +5489,14 @@ function isOwnSponsoredSportsScoreboardTitle(value = "") {
 
 function periodScopeLabel(period) {
   return { daily: "일간", weekly: "주간", monthly: "월간", custom: "선택 기간" }[period] || "기간";
+}
+
+async function composeMediaAnalysisDataAsync(base, articles, scopeLabel, { signal } = {}) {
+  await mapCooperatively(articles, article => {
+    isUsableArticle(article);
+    isOwnArticle(article);
+  }, { signal });
+  return composeMediaAnalysisData(base, articles, scopeLabel);
 }
 
 function composeMediaAnalysisData(base = {}, articles = [], scopeLabel = "선택 기간") {
@@ -7009,44 +7053,45 @@ function normalizeRegulatorDisplayTitle(value) {
 function buildRelatedArticleGroups(articles = []) {
   const groups = [];
   const bucketIndex = new Map();
-  articles.forEach((article, index) => {
-    const seed = articleGroupSeed(article);
-    const bucketKeys = articleGroupBucketKeys(seed);
-    const target = findRelatedArticleGroup(groups, bucketIndex, bucketKeys, seed);
-    if (target) {
-      target.group.members.push(article);
-      target.group.seed = mergeGroupSeed(target.group.seed, seed);
-      addGroupToBuckets(bucketIndex, target.index, bucketKeys);
-    } else {
-      groups.push({ seed, members: [article], index });
-      addGroupToBuckets(bucketIndex, groups.length - 1, bucketKeys);
-    }
-  });
+  articles.forEach((article, index) => addRelatedArticleGroup(groups, bucketIndex, article, index));
+  return groups.map(finishRelatedArticleGroup).sort(compareRelatedArticleGroups);
+}
 
-  return groups
-    .map((group) => {
-      const sortedMembers = [...group.members].sort(compareArticleImportance);
-      const representative = sortedMembers[0] || {};
-      const members = dedupeIssueMembers(
-        sortedMembers.filter((member) => articleBelongsToSameIssue(representative, member)),
-      );
-      if (!members.length && representative.title) members.push(representative);
-      const sources = unique(members.map((item) => item.source).filter(Boolean));
-      return {
-        ...representative,
-        relatedArticles: members,
-        relatedCount: members.length,
-        relatedSourceCount: sources.length,
-        relatedSources: sources.length
-          ? `${sources.slice(0, 5).join(" · ")}${sources.length > 5 ? ` 외 ${sources.length - 5}곳` : ""}`
-          : "",
-        clusterSize: Math.max(Number(representative.clusterSize || 1), members.length),
-      };
-    })
-    .sort((a, b) => {
-      if ((b.relatedCount || 1) !== (a.relatedCount || 1)) return (b.relatedCount || 1) - (a.relatedCount || 1);
-      return compareArticleImportance(a, b);
-    });
+function addRelatedArticleGroup(groups, bucketIndex, article, index) {
+  const seed = articleGroupSeed(article);
+  const bucketKeys = articleGroupBucketKeys(seed);
+  const target = findRelatedArticleGroup(groups, bucketIndex, bucketKeys, seed);
+  if (target) {
+    target.group.members.push(article);
+    target.group.seed = mergeGroupSeed(target.group.seed, seed);
+    addGroupToBuckets(bucketIndex, target.index, bucketKeys);
+  } else {
+    groups.push({ seed, members: [article], index });
+    addGroupToBuckets(bucketIndex, groups.length - 1, bucketKeys);
+  }
+}
+
+function finishRelatedArticleGroup(group) {
+  const sortedMembers = [...group.members].sort(compareArticleImportance);
+  const representative = sortedMembers[0] || {};
+  const members = dedupeIssueMembers(sortedMembers.filter(member => articleBelongsToSameIssue(representative, member)));
+  if (!members.length && representative.title) members.push(representative);
+  const sources = unique(members.map(item => item.source).filter(Boolean));
+  return {
+    ...representative,
+    relatedArticles: members,
+    relatedCount: members.length,
+    relatedSourceCount: sources.length,
+    relatedSources: sources.length
+      ? `${sources.slice(0, 5).join(" · ")}${sources.length > 5 ? ` 외 ${sources.length - 5}곳` : ""}`
+      : "",
+    clusterSize: Math.max(Number(representative.clusterSize || 1), members.length),
+  };
+}
+
+function compareRelatedArticleGroups(a, b) {
+  if ((b.relatedCount || 1) !== (a.relatedCount || 1)) return (b.relatedCount || 1) - (a.relatedCount || 1);
+  return compareArticleImportance(a, b);
 }
 
 function articleGroupSeed(article) {

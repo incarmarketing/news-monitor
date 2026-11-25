@@ -18,3 +18,15 @@ export function chartGeometry(rows = [], series = [], width = 480, height = 220,
 export function chartPointLabel(row, item) {
   return `${row.date || row.dateLabel || ""} · ${item.label} · ${Number(row[item.key] || 0).toLocaleString("ko-KR")}${item.unit || "건"}`;
 }
+
+export function chartLabelIndexes(count, plotWidth, compact = false) {
+  if (count <= 1) return count ? [0] : [];
+  const minimumGap = compact ? 42 : 64;
+  const step = Math.max(1, Math.ceil((count - 1) * minimumGap / Math.max(1, plotWidth)));
+  const indexes = [0];
+  for (let index = step; index < count - 1; index += step) {
+    if ((count - 1 - index) * plotWidth / (count - 1) >= minimumGap) indexes.push(index);
+  }
+  indexes.push(count - 1);
+  return indexes;
+}
