@@ -105,6 +105,24 @@ class OperationalScheduleTests(unittest.TestCase):
         self.assertNotIn('      - "period_reports/**"', pages)
         self.assertNotIn("gh workflow run pages-dashboard.yml", briefing)
 
+    def test_pages_deploy_waits_for_the_artifact_upload_job(self) -> None:
+        workflow = (ROOT / ".github/workflows/pages-dashboard.yml").read_text(encoding="utf-8")
+        build, deploy = workflow.split("\n  deploy:\n", 1)
+        self.assertIn("uses: actions/upload-pages-artifact@v5", build)
+        self.assertNotIn("uses: actions/deploy-pages", build)
+        self.assertIn("    needs: publish\n", deploy)
+        self.assertIn("    timeout-minutes: 15\n", deploy)
+        self.assertIn("uses: actions/deploy-pages@v5", deploy)
+        self.assertIn("url: ${{ steps.deployment.outputs.page_url }}", deploy)
+        self.assertNotIn("upload-pages-artifact", deploy)
+        self.assertNotIn("continue-on-error", deploy)
+
+    def test_pages_build_preserves_environment_scoped_configuration(self) -> None:
+        workflow = (ROOT / ".github/workflows/pages-dashboard.yml").read_text(encoding="utf-8")
+        build = workflow.split("\n  deploy:\n", 1)[0]
+        self.assertIn("    environment:\n      name: github-pages\n", build)
+        self.assertIn("  group: news-monitor-pages\n  cancel-in-progress: false", build)
+
     def test_manual_dashboard_refresh_skips_report_and_pages_pipeline(self) -> None:
         workflow = (ROOT / ".github/workflows/dashboard-refresh.yml").read_text(encoding="utf-8")
         self.assertIn("python refresh_dashboard_news.py", workflow)

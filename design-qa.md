@@ -60,6 +60,13 @@ Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-over
 - Final targeted recapture reviewed: monitoring bookmark/external/detail actions occupy separate columns, report category labels remain on one line, publisher prefixes are not duplicated, and print-only rail fits beside the five article rows. No actionable P0/P1/P2 visual findings remain in the reviewed states.
 - Deployment verification is recorded separately after publication; passing this local visual gate does not by itself claim successful deployment.
 
+## Deployment Follow-Through
+
+- Initial redesign commit `3b47016`: Publish Dashboard run `45511708014` succeeded.
+- Supplemental layout commit `b5ddd77`: build/tests/static generation and artifact upload succeeded in run `45513127157`; the final deploy step failed to discover the artifact immediately after upload. REST confirms artifact `14977031915` exists and is not expired. This is not a frontend build failure or an expired credential diagnosis.
+- Moved only the dashboard Pages deploy step into a dependent job, following the documented separate-job pattern and the same-job artifact visibility issue tracked at https://github.com/actions/deploy-pages/issues/451. Build environment configuration, serialized Pages concurrency, data/report generation and notification workflows are unchanged. A failed deploy job can now be retried without re-uploading a duplicate artifact.
+- Added regression checks for upload/deploy dependency, bounded deploy runtime, retained environment configuration and preserved concurrency. Final deployment and live browser results follow after publication.
+
 ## Scope And Residual Notes
 
 - This change does not repair the earlier 13:00 briefing deployment/authentication incident or change collection, classification, risk scoring, polling or scheduling.
