@@ -15,6 +15,7 @@
 - `.qa/article-alias-local/summary.json`: the reported real article appears once with its publisher-original URL; the previous Google record's hash deep link also opens that single article. Headers are centered. No JavaScript errors.
 - `.qa/print-sort-header-navigation/`: 26 PC/mobile route checks and five desktop Home viewport fits pass, including centered table headings, existing body alignment, search/reset/CSV, dropdowns, tooltips and report controls.
 - `frontend/scripts/report-print-qa.mjs` provides repeatable chart/slot/native-PDF/print-return checks. Home refresh QA additionally checks that a legitimate mocked refresh preserves the chart dimensions. These tests do not send Slack messages or perform real collection.
+- Live release `b0767c3c`: Publish Dashboard `45569508986` completed both publish and deploy successfully; Link QA `45570098299` succeeded. `.qa/live-report-print-b0767c3c/` passes initial chart sizing, all sort slots, three native PDF outputs, print return/cancellation and the genuine mobile guard. Each generated PDF is one landscape A4 page; all three rendered pages were visually reviewed. `.qa/live-article-alias-b0767c3c/` confirms one original article and preserved Google-hash navigation. `.qa/live-refresh-chart-b0767c3c/` passes cold/two cached reloads and a mocked new-data refresh, including unchanged chart dimensions, with zero real dispatches. `.qa/home-own-final/own-five.png` visually confirms two populated own-mention rows followed by three numbered empty slots.
 
 ---
 
