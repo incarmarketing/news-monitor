@@ -472,8 +472,18 @@ label > span { color: var(--muted); font-size: 14px; }
 .login-status { color: var(--amber); }
 .correction-editor { background: var(--paper-soft); padding: 15px; border: 1px solid var(--line); }
 .correction-editor p, .correction-editor button { grid-column: 1 / -1; }
-.notification-history-list { display: grid; }
-.notification-history-row { display: grid; grid-template-columns: 1fr 100px 70px 70px; align-items: center; gap: 12px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+.notification-history-count { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+.notification-list { display: grid; }
+.notification-list > button { display: grid; grid-template-columns: minmax(0, 1fr) 104px 58px 64px; align-items: center; gap: 12px; width: 100%; padding: 14px 8px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; text-align: left; font-size: 16px; }
+.notification-list > button:hover, .notification-list > button:focus-visible { background: var(--paper-soft); }
+.notification-list .notification-kind { overflow-wrap: anywhere; font-weight: 600; }
+.notification-timestamp { display: contents; }
+.notification-date, .notification-time { font-size: 14px; font-variant-numeric: tabular-nums; }
+.notification-list .chip { justify-self: end; }
+.notification-more { margin-top: 16px; }
+.notification-limit-note, .notification-history-empty { margin-top: 12px; color: var(--muted); font-size: 14px; }
+.notification-detail-dialog .detail-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; color: var(--muted); font-size: 14px; }
+.notification-detail-dialog pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 16px; line-height: 1.6; margin: 0 0 20px; }
 @media (min-width: 1700px) { .workspace { padding-inline: 42px; } .newsroom-masthead { margin-inline: 42px; } .newsroom-navigation { gap: 28px; } }
 @media (max-width: 1380px) {
   .newsroom-masthead { gap: 18px; margin-inline: 24px; }
@@ -626,7 +636,14 @@ label > span { color: var(--muted); font-size: 14px; }
   .stock-disclosure-card { border-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
   .stock-disclosure-head { flex-wrap: wrap; }
   .stock-table { min-width: 640px; }
-  .notification-history-row { grid-template-columns: 1fr auto; }
+  .desk-dialog { padding: 18px; }
+  .desk-dialog > header { align-items: flex-start; }
+  .desk-dialog > header h2 { font-size: 22px; overflow-wrap: anywhere; }
+  .desk-dialog > header button { flex-shrink: 0; }
+  .notification-list > button { grid-template-columns: minmax(0, 1fr) 60px; gap: 6px 12px; padding: 12px 4px; }
+  .notification-timestamp { display: flex; align-items: center; gap: 12px; grid-column: 1; grid-row: 2; }
+  .notification-list .chip { grid-column: 2; grid-row: 1 / span 2; }
+  .notification-detail-dialog .detail-meta { flex-wrap: wrap; }
   .desktop-only { display: none; } .mobile-only { display: inline; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

@@ -4056,9 +4056,10 @@ function getNotificationDisplayRow(item = {}) {
 function cleanNotificationLabel(title = "", messageType = "") {
   const text = String(title || "").trim();
   const key = `${text} ${messageType || ""}`.toLowerCase();
-  if (/daily_report|일일\s*언론\s*동향|언론\s*동향/.test(key)) return "일일 언론 동향";
+  if (/negative_(?:watch|alert)|부정\s*기사\s*(?:감지|알림)/.test(key)) return "부정기사 감지";
   if (/weekly_report|주간\s*언론\s*동향|주간/.test(key)) return "주간 언론 동향";
   if (/monthly_report|월간\s*언론\s*동향|월간/.test(key)) return "월간 언론 동향";
+  if (/daily_report|일일\s*언론\s*동향|언론\s*동향/.test(key)) return "일일 언론 동향";
   return text
     .replace(/\b20\d{2}[-.]\d{2}[-.]\d{2}\b/g, "")
     .replace(/\b\d{2}[.]\d{2}[.]\d{2}\b/g, "")
@@ -4121,8 +4122,7 @@ function NotificationList({ rows, initiallyExpanded = false }) {
               onClick={() => setSelected(item)}
             >
               <span className="notification-kind">{display.label}</span>
-              <span className="notification-date">{display.date}</span>
-              <b className="notification-time">{display.time}</b>
+              <span className="notification-timestamp"><span className="notification-date">{display.date}</span><b className="notification-time">{display.time}</b></span>
               <Chip tone={item.status}>{item.status}</Chip>
             </button>
           );
@@ -4142,35 +4142,8 @@ function NotificationList({ rows, initiallyExpanded = false }) {
 }
 
 function NotificationHistoryDialog({ rows = [], onClose }) {
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose?.();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
   return (
-    <div
-      className="modal-backdrop notification-history-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="notification-history-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose?.();
-      }}
-    >
-      <section className="detail-panel notification-history-dialog">
-        <header className="notification-history-header">
-          <div>
-            <span className="detail-kicker">Slack Delivery</span>
-            <h2 id="notification-history-title">Slack 발송 이력</h2>
-            <p>최근 발송 결과와 저장된 메시지 본문을 확인합니다.</p>
-          </div>
-          <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
-            <X />
-          </button>
-        </header>
+    <DashboardDialog title="Slack 발송 이력" onClose={onClose} className="notification-history-dialog">
         <div className="notification-history-count">최근 {rows.length.toLocaleString("ko-KR")}건</div>
         <div className="notification-history-body">
           {rows.length ? (
@@ -4179,23 +4152,17 @@ function NotificationHistoryDialog({ rows = [], onClose }) {
             <p className="notification-history-empty">저장된 Slack 발송 이력이 없습니다.</p>
           )}
         </div>
-      </section>
-    </div>
+    </DashboardDialog>
   );
 }
 
 function NotificationDetail({ item, onClose }) {
+  const display = getNotificationDisplayRow(item);
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true">
-      <section className="detail-panel">
-        <button type="button" className="icon-button close" onClick={onClose} aria-label="닫기">
-          <X />
-        </button>
-        <span className="detail-kicker">발송 내역</span>
-        <h2>{item.rawTitle || item.type || "발송"}</h2>
+    <DashboardDialog title={display.label} onClose={onClose} className="notification-detail-dialog">
         <div className="detail-meta">
           <Chip tone={item.status}>{item.status}</Chip>
-          <span>{item.time}</span>
+          <time>{display.date} {display.time}</time>
         </div>
         <pre>{item.body || "저장된 발송 본문이 없습니다."}</pre>
         {item.link && (
@@ -4203,8 +4170,7 @@ function NotificationDetail({ item, onClose }) {
             <ExternalLink />연결 링크 열기
           </a>
         )}
-      </section>
-    </div>
+    </DashboardDialog>
   );
 }
 

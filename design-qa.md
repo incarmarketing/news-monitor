@@ -35,6 +35,7 @@ final result: passed
 9. [P2, fixed] Print-only publisher bars made the report rail disproportionately tall. Added dedicated print typography, compact two-column publisher rows and bounded chart height. Short report category labels avoid broken policy labels; already-bracketed publisher names are not duplicated.
 10. [P2, fixed] Additional management-tab review found a mobile keyword ledger exceeding page width by 118px and advertising charts missing explicit plotting height after legacy CSS replacement. Added bounded table scrolling, responsive editor/rule grids and 240px chart surfaces. Post-fix `management-tabs.json` verifies all 12 desktop/mobile subviews with zero page overflow/errors; `management-ads-1440.png` visibly contains all three charts. The reusable browser suite now asserts secondary-tab overflow and chart height.
 11. [P2, fixed] Report category bars inherited positional colors when categories were absent. They now reuse the dashboard's semantic category series colors; unit coverage and the final report/print recaptures verify that insurer and policy colors stay stable.
+12. [P1, fixed] Supplemental modal review found that Slack history/detail had retained markup whose former panel/list CSS was removed. Both now reuse the same native dialog as risk/category details, with bounded surfaces, four-column delivery rows on desktop, compact two-line rows on mobile and readable formatted detail titles. Added browser checks for bounds, contained focus, Escape closing only the topmost detail and returning to the parent history without navigating away.
 
 Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-overview.png`, `focus-monitoring.png`, `focus-reports.png`, `mobile-{section}.png`, `desktop-1280.png`, `desktop-1366.png`, `desktop-1672.png`, `report-print.png`.
 
@@ -48,8 +49,8 @@ Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-over
 
 ## Verification
 
-- Frontend unit suite: 179 tests passed.
-- Python release regression suite: 378 tests passed; mocked tests only, no production writes or sends.
+- Frontend unit suite: 180 tests passed, including delivery labels for alerts, daily/weekly/monthly reports and unchanged custom labels.
+- Python release regression suite: 380 tests passed after the two deployment guards; mocked tests only, no production writes or sends.
 - Reference validation: 32 modules, zero unresolved or invalid local references.
 - Production Vite build: passed, screen chunks retained and no oversized-JS-chunk warning.
 - Repeated navigation/interaction suite: 26 captures across two desktop rounds and one mobile round. Search/reset, selected CSV, media CSV/ranges/tabs, article URLs, chart hover/focus/arrows, all report periods/month selector, delayed print command, stock periods/modes and six management tabs checked.

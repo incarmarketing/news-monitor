@@ -69,6 +69,35 @@ try {
           const links = await page.locator(".desk-story-grid h3 a").evaluateAll(nodes => nodes.map(e => ({ href: e.href, target: e.target })));
           assert.ok(links.every(link => /^https?:/.test(link.href) && link.target === "_blank"));
         }
+        if (round === 1 && section === "overview") {
+          for (const control of [page.locator(".editorial-kpi-strip button").filter({ hasText: "리스크" }), page.getByTitle("분류별 건수와 전일 대비 현황", { exact: true })]) {
+            await control.click();
+            const dialog = page.getByRole("dialog").last();
+            await dialog.waitFor();
+            assert.ok(await dialog.evaluate(node => node.contains(document.activeElement)), "dialog focus escaped to the page");
+            await dialog.getByRole("button", { name: "닫기", exact: true }).click();
+          }
+          await page.getByRole("button", { name: "Slack 발송 이력 열기", exact: true }).click();
+          const history = page.getByRole("dialog", { name: "Slack 발송 이력", exact: true });
+          await history.waitFor();
+          const bounds = await history.boundingBox();
+          assert.ok(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= viewport.width && bounds.y + bounds.height <= viewport.height, "Slack history exceeds viewport");
+          assert.ok(await history.evaluate(node => node.scrollWidth <= node.clientWidth), "Slack history contents overflow");
+          const firstDelivery = history.locator(".notification-list > button").first();
+          if (await firstDelivery.count()) {
+            await firstDelivery.click();
+            const detail = page.locator(".notification-detail-dialog");
+            await detail.waitFor();
+            assert.ok(await detail.evaluate(node => node.contains(document.activeElement)), "delivery detail did not receive focus");
+            await page.keyboard.press("Escape");
+            await detail.waitFor({ state: "detached" });
+            assert.equal(await history.isVisible(), true, "closing delivery detail also closed its parent");
+          }
+          await page.screenshot({ path: path.join(out, `${desktop ? "desktop" : "mobile"}-slack-history.png`), animations: "disabled" });
+          await page.keyboard.press("Escape");
+          await history.waitFor({ state: "detached" });
+          assert.equal(await page.locator(".app-shell").getAttribute("data-active-section"), "overview");
+        }
         if (desktop && round === 1 && section === "monitoring") {
           const actionBoxes = await main.locator(".monitor-article-row").first().locator(".monitor-action").evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { left: r.left, right: r.right, width: r.width }; }));
           assert.ok(actionBoxes.every(box => box.width >= 32), "monitoring action columns are collapsed");

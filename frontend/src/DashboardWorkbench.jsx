@@ -5,14 +5,14 @@ import { formatDashboardCompositionShare } from "./dashboardRisk.js";
 import { dashboardSeries, latestDeliveryLabel, reportSlotPresentation } from "./dashboardPresentation.js";
 import slackMarkUrl from "./assets/slack-mark.png";
 
-export function DashboardDialog({ title, onClose, children }) {
+export function DashboardDialog({ title, onClose, children, className = "" }) {
   const ref = useRef(null);
   useEffect(() => {
     const dialog = ref.current;
     dialog.showModal();
     return () => dialog.close();
   }, []);
-  return <dialog ref={ref} className="desk-dialog" onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} aria-label={title}>
+  return <dialog ref={ref} className={`desk-dialog ${className}`} onCancel={(event) => { event.preventDefault(); event.stopPropagation(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} aria-label={title}>
     <header><h2>{title}</h2><button type="button" onClick={onClose} aria-label="닫기" title="닫기"><X /></button></header>
     {children}
   </dialog>;
