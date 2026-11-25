@@ -2,6 +2,23 @@
 
 final result: passed
 
+## Viewport And Control Follow-Up
+
+- Updated requirement: the desktop dashboard must fit without document scrolling; align controls and tables across categories without removing workflows. The prior large newspaper spacing is intentionally compacted only where the viewport requires it.
+- Desktop layout is scoped to the overview at widths 1201px and above. It allocates the available viewport among five stories, operations and four charts instead of hiding document overflow. Mobile/tablet keep readable scrolling; other categories retain their existing scrolling behavior.
+- Baseline overflow: 1280 x 720 had 388px of vertical overflow; 1366 x 768 had 253px. Post-fix actual captures at 1280 x 720, 1366 x 768, 1440 x 900, 1672 x 941 and 1920 x 1080 have zero horizontal/vertical document overflow, five visible stories, non-overlapping headlines/footers and four complete plotting surfaces of at least 130px. Wheel input does not scroll the desktop overview.
+- Full before/after pairs inspected: `.qa/viewport-controls-after/compare-1280.png`, `compare-1672.png`; focused control comparison: `compare-controls.png`. Same viewport/theme/scale; differences in live news counts and headlines are expected, not reproduced as mock data.
+- Standard selects/inputs/commands now share 40px height, 16px control text, 4px radius and common borders/spacing; the dashboard's dense sort control is an explicit 32px/14px variant with the same styling. Native option typography/colors and keyboard behavior are retained without adding a dropdown framework. Native popup chrome remains OS/browser-rendered.
+- Search wrappers, reset/export commands and date fields align vertically. Name/headline columns align left, dates/status center and numeric financial/registry columns right; matching headers and data cells use the same alignment. Removed obsolete dark-theme registry overrides and hard-coded audit/registry surface colors.
+- Reusable browser regression checks now assert select styles, monthly selector, management subviews and the five desktop viewport fits in addition to the existing interactions. Local interaction/viewport checks and 27 responsive route cases passed; production follow-through will be recorded after publication.
+
+## Regular Briefing Recovery
+
+- Confirmed root cause: November 24 13:00/18:00 and November 25 08:00 runs failed at Pages artifact discovery after upload. Slack steps were skipped. This incident is not attributed to token expiry.
+- Fix `d15724e5`: preparation uploads the site and generated archive state; dependent delivery job restores that state, deploys Pages, then uses the existing link verification and notification deduplication. Failure/finish ledgers and archive persistence remain in place. Current-day generated daily reports can resume without another collection/analysis pass; forced regeneration and backfill keep their original paths.
+- Recovery run https://github.com/incarmarketing/news-monitor/actions/runs/45526481650 completed successfully. Today's 08:00 report was accepted by Slack at 10:39:26 KST, provider HTTP 200/body `ok`, with exactly one successful `daily_report` notification row and a successful `daily_report:2026-11-25:08` job record. Actual dashboard shows `08:00 발송완료` and `1/3 완료`. Yesterday's missed reports were not batch resent.
+- Automatic archive commit `5f5dfe79` was pulled before the UI deployment so current reports/state are preserved. No notification credentials were exposed or modified.
+
 ## Current Target
 
 - Selected first newsroom concept and the eight matching category samples from November 24, not the earlier September design.
@@ -49,8 +66,8 @@ Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-over
 
 ## Verification
 
-- Frontend unit suite: 180 tests passed, including delivery labels for alerts, daily/weekly/monthly reports and unchanged custom labels.
-- Python release regression suite: 380 tests passed after the two deployment guards; mocked tests only, no production writes or sends.
+- Frontend unit suite: 182 tests passed, including shared-control/viewport guards and delivery labels.
+- Python release regression suite: 388 tests passed, including delivery-job contracts and generated-report recovery; mocked tests only, no production writes or sends in the test suite. The explicitly requested operational recovery send is separately documented above.
 - Reference validation: 32 modules, zero unresolved or invalid local references.
 - Production Vite build: passed, screen chunks retained and no oversized-JS-chunk warning.
 - Repeated navigation/interaction suite: 26 captures across two desktop rounds and one mobile round. Search/reset, selected CSV, media CSV/ranges/tabs, article URLs, chart hover/focus/arrows, all report periods/month selector, delayed print command, stock periods/modes and six management tabs checked.
@@ -76,7 +93,7 @@ Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-over
 
 ## Scope And Residual Notes
 
-- This change does not repair the earlier 13:00 briefing deployment/authentication incident or change collection, classification, risk scoring, polling or scheduling.
+- The generated-but-unsent regular briefing incident is now fixed and verified as documented above. Existing collection/classification/risk scoring, regular 08:00/13:00/18:00 schedule, negative watch cadence and normal notification deduplication are preserved.
 - Report-run totals and currently loaded article subsets may differ in existing data; this visual change does not invent missing category counts. The report rail explicitly labels its displayed category sum.
 - Known data-quality follow-up, not a passed numerical assertion: live header article totals and the latest category-flow total can differ. They still use the existing composed period/report summary and seven-day context/history aggregation paths respectively. Numerical reconciliation and company-mention classification were not changed as part of this design release; no claim is made that those data-basis differences are fixed.
 - P3: exact glyph shapes can differ slightly from the image-generated sample. Long real headlines and empty/private workspaces cannot reproduce the mock's illustrative text density without fabricating content.

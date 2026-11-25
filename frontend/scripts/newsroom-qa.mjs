@@ -9,6 +9,23 @@ const baseUrl = process.env.DESIGN_QA_URL || "http://127.0.0.1:4186/";
 const out = path.resolve(process.env.DESIGN_QA_OUT || ".qa/newsroom-final");
 const sections = ["overview", "monitoring", "media", "regulators", "clipping", "scraps", "reports", "stocks", "management"];
 const results = [];
+const viewportFits = [];
+
+async function assertSelectStyles(main, label, compact = false) {
+  const styles = await main.locator("select:visible").evaluateAll(nodes => nodes.map(node => {
+    const style = getComputedStyle(node);
+    return { height: node.getBoundingClientRect().height, size: style.fontSize, padding: style.padding, radius: style.borderRadius, border: style.borderWidth, align: style.textAlign };
+  }));
+  for (const style of styles) {
+    assert.equal(style.height, compact ? 32 : 40, `${label}: inconsistent select height`);
+    assert.equal(style.size, compact ? "14px" : "16px", `${label}: inconsistent select type`);
+    assert.equal(style.padding, compact ? "4px 28px 4px 11px" : "8px 28px 8px 11px", `${label}: inconsistent select padding`);
+    assert.equal(style.radius, "4px", `${label}: inconsistent select radius`);
+    assert.equal(style.border, "1px", `${label}: inconsistent select border`);
+    assert.equal(style.align, "center", `${label}: inconsistent selected-label alignment`);
+  }
+}
+
 await fs.mkdir(out, { recursive: true });
 const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
 try {
@@ -44,6 +61,7 @@ try {
         // Let measured chart dimensions finish without waiting for unrelated network polling.
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         const layout = await page.evaluate(() => ({ width: innerWidth, overflow: document.documentElement.scrollWidth - innerWidth, text: [...document.querySelectorAll("main.workspace")].filter(e => e.getBoundingClientRect().width).map(e => e.innerText).join(" ").length }));
+        await assertSelectStyles(main, section, section === "overview");
         assert.ok(layout.overflow <= 2, `${section}: horizontal page overflow ${layout.overflow}`);
         assert.ok(layout.text > 30, `${section}: empty workspace`);
         assert.deepEqual(errors, [], `${section}: JavaScript errors`);
@@ -122,6 +140,7 @@ try {
           await main.getByRole("button", { name: "월간", exact: true }).click();
           await main.getByRole("heading", { name: "월간 미디어 브리핑", exact: true }).waitFor();
           await main.locator(".month-select select").waitFor();
+          await assertSelectStyles(main, "reports/monthly");
           await main.getByRole("button", { name: "일간", exact: true }).click();
           await main.getByRole("heading", { name: "일일 언론 동향", exact: true }).waitFor();
           await page.evaluate(() => { window.__qaPrinted = false; window.print = () => { window.__qaPrinted = true; }; });
@@ -160,7 +179,9 @@ try {
           const tabs = main.locator(".management-tabs");
           for (const name of ["기자 관리", "광고비 관리", "키워드 문맥", "분류 피드백", "분류 점검", "언론사 관리"]) {
             await tabs.getByRole("button", { name, exact: true }).click();
+            await page.waitForFunction(() => ![...document.querySelectorAll(".registry-empty")].some(node => /조회 중/.test(node.textContent)), { timeout: 30_000 });
             await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+            await assertSelectStyles(main, `management/${name}`);
             assert.deepEqual(errors, [], `management/${name}: JavaScript errors`);
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 2), `management/${name}: horizontal page overflow`);
             if (name === "광고비 관리") {
@@ -174,8 +195,32 @@ try {
     if (!desktop) assert.equal(await page.locator('.newsroom-navigation [data-section="reports"]').isVisible(), false);
     await context.close();
   }
+  for (const [width, height] of [[1280,720],[1366,768],[1440,900],[1672,941],[1920,1080]]) {
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+    await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+    await page.locator(".desk-story-grid h3").first().waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const fit = await page.evaluate(() => ({
+      overflowX: document.documentElement.scrollWidth - innerWidth,
+      overflowY: document.documentElement.scrollHeight - innerHeight,
+      stories: [...document.querySelectorAll(".desk-story-grid > article")].map(node => ({ overflow: node.scrollHeight - node.clientHeight, titleBottom: node.querySelector("h3").getBoundingClientRect().bottom, footerTop: node.querySelector(".desk-story-footer").getBoundingClientRect().top })),
+      charts: [...document.querySelectorAll(".desk-chart")].map(node => ({ height: node.getBoundingClientRect().height, bottom: node.getBoundingClientRect().bottom })),
+    }));
+    assert.ok(fit.overflowX <= 1 && fit.overflowY <= 1, `${width}/${height}: dashboard scrolls`);
+    assert.equal(fit.stories.length, 5);
+    assert.ok(fit.stories.every(story => story.overflow <= 2 && story.titleBottom <= story.footerTop + 2), `${width}/${height}: article content overlaps`);
+    assert.ok(fit.charts.length === 4 && fit.charts.every(chart => chart.height >= 130 && chart.bottom <= height), `${width}/${height}: clipped chart`);
+    await page.mouse.wheel(0, 500);
+    assert.equal(await page.evaluate(() => scrollY), 0, `${width}/${height}: dashboard scroll position changed`);
+    await page.screenshot({ path: path.join(out, `desktop-fit-${width}.png`), animations: "disabled" });
+    viewportFits.push({ width,height,...fit });
+    console.log(`PASS dashboard viewport ${width}x${height}: no scrolling or clipped content`);
+    await page.close();
+  }
 } finally {
   await browser.close();
   await fs.writeFile(path.join(out, "summary.json"), JSON.stringify({ baseUrl, results }, null, 2));
+  await fs.writeFile(path.join(out, "viewport-fits.json"), JSON.stringify(viewportFits, null, 2));
 }
 console.log(`Verified ${results.length} screens and navigation/search/CSV/tooltip/report interactions.`);

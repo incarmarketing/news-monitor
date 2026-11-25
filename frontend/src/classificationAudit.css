@@ -4,30 +4,30 @@
 .classification-audit h3 { font-size: 16px; }
 .audit-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; }
 .audit-toolbar label { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.classification-audit button { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; background: var(--surface, #fff); border: 1px solid #cbd5df; border-radius: 4px; color: inherit; }
+.classification-audit button { display: inline-flex; align-items: center; justify-content: center; min-width: var(--control-height); min-height: var(--control-height); background: var(--paper); border: 1px solid var(--line); border-radius: var(--control-radius); font-size: var(--control-font-size); color: inherit; }
 .classification-audit button:disabled { opacity: .5; cursor: default; }
-.classification-audit select { max-width: 100%; min-height: 36px; padding: 4px 8px; font-size: 14px; }
-.audit-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; border-block: 1px solid #dae1e7; padding: 16px 0; gap: 16px; }
-.audit-summary dt { color: #586875; font-size: 13px; }
+.classification-audit select { max-width: 100%; }
+.audit-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; border-block: 1px solid var(--line); padding: 16px 0; gap: 16px; }
+.audit-summary dt { color: var(--muted); font-size: 13px; }
 .audit-summary dd { font-size: 17px; font-weight: 700; margin: 6px 0 0; overflow-wrap: anywhere; }
-.audit-warning { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 12px; background: #fff4d9; color: #734714; border-left: 3px solid #bc7f20; }
-.audit-quality { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; padding: 20px 0; border-bottom: 1px solid #dae1e7; }
-.audit-quality p { margin-top: 8px; color: #586875; }
-.audit-historical { padding: 14px 0; border-bottom: 1px solid #dae1e7; }
+.audit-warning { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 12px; background: var(--amber-soft); color: var(--amber); border-left: 3px solid var(--amber); }
+.audit-quality { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.audit-quality p { margin-top: 8px; color: var(--muted); }
+.audit-historical { padding: 14px 0; border-bottom: 1px solid var(--line); }
 .audit-historical summary { cursor: pointer; font-weight: 600; }
 .audit-historical p { margin-top: 8px; line-height: 1.5; }
 .audit-table-wrap { overflow-x: auto; min-width: 0; }
 .classification-audit table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 14px; }
-.classification-audit th, .classification-audit td { padding: 10px 12px; border-bottom: 1px solid #dae1e7; text-align: center; vertical-align: middle; overflow-wrap: anywhere; }
-.classification-audit thead { background: var(--surface-soft, #f0f4f7); }
+.classification-audit th, .classification-audit td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: center; vertical-align: middle; overflow-wrap: anywhere; }
+.classification-audit thead { background: var(--paper-soft); }
 .audit-articles { min-width: 760px; }
 .audit-articles th:first-child { width: 33%; }
 .audit-articles th:nth-child(2), .audit-articles th:nth-child(4) { width: 13%; }
 .audit-articles th:nth-child(3) { width: 4%; }
-.audit-articles td:first-child, .audit-articles td:last-child { text-align: left; }
+.audit-articles th:first-child, .audit-articles td:first-child, .audit-articles th:last-child, .audit-articles td:last-child { text-align: left; }
 .audit-articles a { display: inline; font-weight: 600; line-height: 1.6; color: inherit; }
 .audit-articles a svg { display: inline; margin-left: 5px; }
-.audit-articles small { display: block; color: #586875; font-size: 12px; line-height: 1.6; margin-top: 6px; }
+.audit-articles small { display: block; color: var(--muted); font-size: 12px; line-height: 1.6; margin-top: 6px; }
 .audit-articles td:last-child p { margin-top: 5px; line-height: 1.5; }
 .audit-decision { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .audit-modes { display: flex; flex-wrap: wrap; gap: 0; }

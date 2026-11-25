@@ -11,6 +11,9 @@ on:
       - "frontend/**"
       - "dashboard_builder.py"
       - "news_collector.py"
+      - "run_once.py"
+      - "report_recovery.py"
+      - "tests/test_report_recovery.py"
       - "article_body.py"
       - "tests/test_article_body.py"
       - "publisher_identity.py"
@@ -138,6 +141,7 @@ jobs:
           tests.test_operational_schedules
           tests.test_public_report_links
           tests.test_report_window
+          tests.test_report_recovery
           tests.test_schedule_guard
           tests.test_slack_notify
           tests.test_stock_collector
