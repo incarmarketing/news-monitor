@@ -1,18 +1,20 @@
-# Keyword-Aligned Publisher Bars And Management Titles QA - 2026-11-25
+# Keyword-Aligned Bars, Management Titles And Regulator Tiles QA - 2026-11-25
 
 ## Scope
 
 - User-directed presentation change: publisher rows now use the exact existing keyword-bar component styles and three tracks (publisher, bar, total), not the previous 5px micro-bar/five-column presentation. Bars are 24px high at every breakpoint, with identical fonts, column widths, padding and row gaps. Own-mention/negative counts remain in the native hover title and accessible button label; selected-period drilldowns are unchanged.
 - Publisher and keyword skeletons now share the same three-column structure and 24px placeholders. Removed the obsolete publisher table/micro-bar selectors rather than overriding them with another style layer.
 - Remove only repeated Management category titles: Media/Reporter Registry headings, manual media/reporter panel headings, Ad Management heading, and both locked/authorized Classification Audit titles. Preserve meaningful inner section headings, counts, sub-tabs, filters, forms, action buttons and the login requirement. `Panel.hideTitle` defaults to false so all other pages keep their existing headings.
+- Follow-up: Financial Regulator status is now six equal tiles, starting with `All + current count`; remove the separate visible category-status heading, denominator caption and small All button. All reset and active-category toggle behavior remain, and mobile uses two equal columns/three rows. Removed the retired heading/summary/wrapper CSS.
 
 ## Verification
 
-- Frontend: 210 passing tests, 40 checked modules without invalid local references, and a successful production build.
+- Frontend: 211 passing tests, 40 checked modules without invalid local references, and a successful production build.
 - `.qa/keyword-publisher-bars/summary.json` passes seven viewport sizes. Publisher and keyword rows have exactly equal grid tracks/font sizes and 24px bars; lower dividers/headers and tab bounds remain stable. Actual 30/90-day publisher counts of 251/800 open matching article counts with zero extra range requests. Counts are observations of changing live data.
 - `.qa/management-headings/summary.json` checks all six Management categories on PC/mobile (12 views), including nested manual media/reporter views, count metadata, search fields, action buttons and the anonymous Classification Audit login notice. No duplicate category heading, JavaScript exception or write action. Authorized-only data was not fetched with a fabricated session; the existing role guard is unchanged and source-tested.
 - Native screenshots of the new bars and Management views were visually reviewed. No collection, classification, report dispatch or permission rules were changed.
 - `.qa/bars-management-navigation/` passes all 26 PC/mobile route checks, search/reset, sort, CSV, tooltip/report interactions and five desktop dashboard viewport fits. No JavaScript exceptions or empty fallback workspaces were observed.
+- `.qa/regulator-equal-panels/summary.json` verifies equal tile widths/heights across five viewport sizes, all five category filters (including zero results), toggle-to-All, explicit All reset and selector synchronization. The observed total was 17, split 8/6/2/1/0; the displayed All total equals the category sum and updates with the actual source/search/tone scope rather than hard-coding the screenshot's 15.
 
 ---
 

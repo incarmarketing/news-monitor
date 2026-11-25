@@ -154,3 +154,14 @@ test("management removes repeated category headings but retains section scope an
   assert.match(main, /aria-label=\{hideTitle \? title : undefined\}/);
   assert.match(main, /className="panel-meta-only">\{meta\}/);
 });
+
+test("regulator counts include an equal-width All tile instead of a separate heading", () => {
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  const panel = main.slice(main.indexOf("function RegulatorDirectionPanel("), main.indexOf("function RegulatorReleaseFeed("));
+  const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(panel, /data-category="all"/);
+  assert.match(panel, /<span>전체<\/span><b>\{rows.length.toLocaleString/);
+  assert.doesNotMatch(panel, /<h2>|건 기준|regulator-facet-meta/);
+  assert.match(css, /\.regulator-theme-grid \{[^}]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/);
+  assert.doesNotMatch(css, /regulator-facet-meta|regulator-keyword-summary|regulator-keyword-board/);
+});

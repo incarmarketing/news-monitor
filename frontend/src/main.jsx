@@ -1823,24 +1823,15 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
 function RegulatorDirectionPanel({ rows = [], activeKeyword = "all", onKeywordChange }) {
   const analysis = buildRegulatorDirectionAnalysis(rows);
   return (
-    <section className="panel regulator-analysis-panel">
-      <div className="panel-head">
-        <h2><ShieldCheck />분류별 현황</h2>
-        <div className="regulator-facet-meta"><span>{rows.length.toLocaleString("ko-KR")}건 기준</span><button type="button" className="ghost-button" aria-pressed={activeKeyword === "all"} onClick={() => onKeywordChange("all")}>전체</button></div>
-      </div>
-      <div className="regulator-keyword-board">
-        <div className="regulator-keyword-summary">
-          <b>{analysis.headline}</b>
-          <span>{analysis.summary}</span>
-        </div>
-        <div className="regulator-theme-grid compact">
-          {analysis.themes.map((theme) => (
-            <button type="button" key={theme.label} aria-pressed={activeKeyword === theme.label} onClick={() => onKeywordChange(activeKeyword === theme.label ? "all" : theme.label)}>
-              <span>{theme.label}</span>
-              <b>{theme.count.toLocaleString("ko-KR")}건</b>
-            </button>
-          ))}
-        </div>
+    <section className="panel regulator-analysis-panel" aria-label="분류별 현황">
+      <div className="regulator-theme-grid" role="group" aria-label="보도자료 분류">
+        <button type="button" data-category="all" aria-pressed={activeKeyword === "all"} onClick={() => onKeywordChange("all")}><span>전체</span><b>{rows.length.toLocaleString("ko-KR")}건</b></button>
+        {analysis.themes.map((theme) => (
+          <button type="button" key={theme.label} data-category={theme.label} aria-pressed={activeKeyword === theme.label} onClick={() => onKeywordChange(activeKeyword === theme.label ? "all" : theme.label)}>
+            <span>{theme.label}</span>
+            <b>{theme.count.toLocaleString("ko-KR")}건</b>
+          </button>
+        ))}
       </div>
     </section>
   );
