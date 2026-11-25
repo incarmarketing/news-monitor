@@ -253,7 +253,8 @@ function App() {
     return {
       contextArticles,
       realtimeArticles,
-      data: buildDashboardBootstrapData(periodData.daily, realtimeArticles, Boolean(cachedArticles.length)),
+      data: buildDisconnectedPeriodData(periodData.daily),
+      ready: false,
     };
   });
   const workTimers = useRef([]);
@@ -555,6 +556,7 @@ function App() {
     : fallbackArticles;
   const scraps = Array.isArray(operations.scraps) ? operations.scraps : [];
   useEffect(() => {
+    if (operations.status === "loading") return undefined;
     let cancelled = false;
     const buildSnapshot = () => {
       const contextArticles = lastNDays(coreArticles, 8).slice(0, 500);
@@ -563,7 +565,7 @@ function App() {
       // days, keeping dashboard navigation responsive on a large article DB.
       const realtimeArticles = selectRealtimeArticles(selectRealtimeArticlesBootstrap(contextArticles));
       const nextData = composeRealtimeData(periodData.daily, realtimeArticles, liveConnected);
-      if (!cancelled) setDashboardSnapshot({ contextArticles, realtimeArticles, data: nextData });
+      if (!cancelled) setDashboardSnapshot({ contextArticles, realtimeArticles, data: nextData, ready: true });
     };
     if (typeof window.requestIdleCallback === "function") {
       const idleId = window.requestIdleCallback(buildSnapshot, { timeout: 1200 });
@@ -577,7 +579,7 @@ function App() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [coreArticles, liveConnected]);
+  }, [coreArticles, liveConnected, operations.status]);
   const dashboardContextArticles = dashboardSnapshot.contextArticles;
   const needsScopedArticles = needsPeriodData || needsMediaData;
   const scopedArticles = useMemo(
@@ -848,6 +850,7 @@ function App() {
         {workFailed ? <AlertTriangle aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}<p>{workLabel}</p><button type="button" onClick={() => setWorkNoticeDismissed(true)} title="알림 닫기" aria-label="작업 알림 닫기"><X /></button>
       </div>}
       <MemoizedOverview
+        loading={!dashboardSnapshot.ready}
         data={realtimeData}
         articles={realtimeArticles}
         allArticles={dashboardContextArticles}
@@ -1002,7 +1005,7 @@ function LoginDialog({ open, onClose, onLoggedIn }) {
 
 const MemoizedOverview = React.memo(Overview);
 
-function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth }) {
+function Overview({ data, articles, allArticles = [], notifications, setActiveSection, onOpenMonitoring, operations, workflowHealth, loading = false }) {
   const { summary } = data;
   const [issueSort, setIssueSort] = useState("risk");
   const [slackHistoryOpen, setSlackHistoryOpen] = useState(false);
@@ -1064,7 +1067,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         operations={operations}
       />
 
-      <DashboardKpiStrip summary={summary} onOpenMonitoring={onOpenMonitoring} onOpenRisk={focusRiskIssues} />
+      <DashboardKpiStrip summary={summary} loading={loading} onOpenMonitoring={onOpenMonitoring} onOpenRisk={focusRiskIssues} />
 
       <nav className="dashboard-mobile-home" aria-label="모바일 대시보드 바로가기">
         <button type="button" onClick={() => setActiveSection("monitoring")}>모니터링</button>
@@ -1072,7 +1075,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
         <button type="button" onClick={() => setActiveSection("reports")}>리포트</button>
       </nav>
 
-      <DashboardPriorityTable rows={visibleIssueRows} sort={issueSort} onSort={setIssueSort} Action={DashboardIssueAction} onOpenMonitoring={onOpenMonitoring} categoryLabel={displayDashboardCategory} riskScore={dashboardDisplayScore} />
+      <DashboardPriorityTable rows={visibleIssueRows} loading={loading} sort={issueSort} onSort={setIssueSort} Action={DashboardIssueAction} onOpenMonitoring={onOpenMonitoring} categoryLabel={displayDashboardCategory} riskScore={dashboardDisplayScore} />
       <DashboardOperationsStrip watchHealth={watchHealth} notificationHealth={notificationHealth} reportHealth={reportHealth} cadence={NEGATIVE_WATCH_SHORT_LABEL} onOpenHistory={() => setSlackHistoryOpen(true)} />
       <DashboardAnalysis rows={momentumRows} compositionRows={compositionRows} Chart={NewsroomChart} categoryLabel={displayDashboardCategory} />
       {riskHistoryOpen && <DashboardDialog title="최근 7일 전체 리스크" onClose={() => setRiskHistoryOpen(false)}><DashboardLeadSparkline rows={momentumRows} /></DashboardDialog>}
@@ -1100,7 +1103,7 @@ function DashboardEditorialHeader({ status, operations }) {
   );
 }
 
-function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk }) {
+function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk, loading = false }) {
   const rows = [
     { label: "기사", value: Number(summary.analyzed || 0).toLocaleString("ko-KR"), meta: "건", Icon: Newspaper, preset: {} },
     { label: "당사", value: Number(summary.ownMentions || 0).toLocaleString("ko-KR"), meta: "건", Icon: Users, className: "own", preset: { ownOnly: true } },
@@ -1109,11 +1112,11 @@ function DashboardKpiStrip({ summary = {}, onOpenMonitoring, onOpenRisk }) {
     { label: "리스크", value: summary.risk || "LOW", meta: "당사 기준", Icon: ShieldCheck, className: `risk-${String(summary.risk || "low").toLowerCase()}`, onClick: onOpenRisk },
   ];
   return (
-    <section className="editorial-kpi-strip" aria-label="오늘의 주요 지표">
+    <section className="editorial-kpi-strip" aria-label="오늘의 주요 지표" aria-busy={loading}>
       {rows.map(({ Icon, onClick, ...item }) => (
-        <button type="button" key={item.label} className={item.className || ""} onClick={onClick || (() => onOpenMonitoring?.(item.preset))}>
+        <button type="button" key={item.label} disabled={loading} className={item.className || ""} onClick={onClick || (() => onOpenMonitoring?.(item.preset))}>
           <Icon aria-hidden="true" />
-          <span><small>{item.label}</small><b>{item.value}</b><em>{item.meta}</em></span>
+          <span><small>{item.label}</small><b>{loading ? <span className="desk-skeleton-fill desk-kpi-placeholder" aria-hidden="true" /> : item.value}</b><em>{item.meta}</em></span>
         </button>
       ))}
     </section>
@@ -1680,7 +1683,7 @@ function Monitoring({
       filterKey={JSON.stringify([query, tone, category, source, viewMode, startDate, endDate, ownOnly, focusPreset])}
       focusLabel={focusPreset?.issueTitle || focusPreset?.articleTitle || (ownOnly ? "당사 직접 언급" : "")}
       onChange={changeFilter} onApply={applyFilters} onReset={resetMonitoringFilters} onPeriod={selectPeriod}
-      isLoading={isLoading} isUpdating={isFilterPending || monitoringRangeLoading || filtered !== deferredFiltered || regularArticles !== deferredRegularArticles}
+      isLoading={isLoading} isUpdating={operations?.status === "loading" || isFilterPending || monitoringRangeLoading || filtered !== deferredFiltered || regularArticles !== deferredRegularArticles}
       updatedLabel={`${formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || latestDate || "-")} 기준`}
       onRefresh={onRefreshOperations} normalizeRow={normalizeArticleDisplay} rowKey={articleSelectionKey}
       timeLabel={(article) => articleClock(article, articleTimeValue(article))} onOpenArticle={openArticleLink}
@@ -7651,87 +7654,6 @@ function selectRealtimeArticlesBootstrap(articles = []) {
     .filter((row) => row.dateKey === targetDate)
     .map((row) => row.article)
     .slice(0, 240);
-}
-
-function buildDashboardBootstrapData(base, articles, liveConnected = false) {
-  if (!liveConnected) return buildDisconnectedPeriodData(base);
-  const rows = articles.filter(Boolean);
-  if (!rows.length) {
-    return buildDisconnectedPeriodData(base, "당일 기준으로 표시할 운영 기사가 없습니다.");
-  }
-
-  let analyzed = 0;
-  let ownMentions = 0;
-  let ownNegative = 0;
-  let caution = 0;
-  let gaInsurance = 0;
-  const categories = new Map();
-
-  rows.forEach((article) => {
-    const tone = String(article.tone || "").trim().toLowerCase();
-    const category = String(article.category || "").trim();
-    const categoryCanonical = category.toLowerCase();
-    const excluded = tone === "exclude" || tone === "제외" || categoryCanonical === "exclude" || category === "제외";
-    if (!excluded) analyzed += 1;
-
-    const own = article.ownMentioned === true
-      || article.own_mentioned === true
-      || article.aiContext?.ownMentioned === true
-      || categoryCanonical === "own"
-      || category === "당사";
-    const negative = tone === "negative" || tone === "부정";
-    if (own) ownMentions += 1;
-    if (own && negative) ownNegative += 1;
-    if (tone === "caution" || tone === "주의") caution += 1;
-    if (["competitor", "industry", "ga", "보험사", "경쟁사", "업계동향"].includes(categoryCanonical)) gaInsurance += 1;
-
-    if (!excluded) categories.set(category || "미분류", (categories.get(category || "미분류") || 0) + 1);
-  });
-
-  return {
-    ...base,
-    scope: rows[0]?.date ? `${rows[0].date} 당일 기사` : "당일 기사",
-    generatedAt: "-",
-    summary: {
-      ...base.summary,
-      risk: ownNegative >= 3 ? "HIGH" : ownNegative > 0 ? "MEDIUM" : "LOW",
-      collected: rows.length,
-      analyzed,
-      ownMentions,
-      ownNegative,
-      caution,
-      gaInsurance,
-      watchTime: rows[0]?.time || base.summary.watchTime,
-    },
-    issues: buildDashboardBootstrapIssues(rows),
-    categoryFlow: Array.from(categories.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([category, value]) => ({ name: categoryFlowLabel(category), category, value })),
-    toneTrend: [],
-    pressInfluence: [],
-  };
-}
-
-function buildDashboardBootstrapIssues(rows = []) {
-  return rows
-    .filter((article) => {
-      const tone = String(article?.tone || "").trim().toLowerCase();
-      const category = String(article?.category || "").trim().toLowerCase();
-      return article?.title && tone !== "exclude" && tone !== "제외" && category !== "exclude" && category !== "제외";
-    })
-    .map((article, index) => {
-      const normalized = normalizeArticleDisplay(article);
-      return {
-        article: normalized,
-        index,
-        score: dashboardIssueScore(normalized),
-        time: Date.parse(article?.pubDate || article?.pub_date || article?.fullDate || "") || 0,
-      };
-    })
-    .sort((a, b) => b.score - a.score || b.time - a.time || a.index - b.index)
-    .slice(0, 20)
-    .map(({ article }) => article);
 }
 
 const rootElement = document.getElementById("root");

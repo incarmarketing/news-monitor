@@ -58,12 +58,13 @@ export function DashboardAnalysis({ rows, compositionRows, Chart, categoryLabel 
   </section>;
 }
 
-export function DashboardPriorityTable({ rows, sort, onSort, Action, onOpenMonitoring, categoryLabel, riskScore }) {
-  return <section className="desk-priority" aria-label="우선 이슈">
+export function DashboardPriorityTable({ rows, sort, onSort, Action, onOpenMonitoring, categoryLabel, riskScore, loading = false }) {
+  return <section className="desk-priority" aria-label="우선 이슈" aria-busy={loading}>
     <header className="desk-section-heading"><h2>우선 확인 기사</h2><div className="desk-priority-legend" aria-label="논조 범례"><span data-tone="부정">부정</span><span data-tone="주의">주의</span></div><AppSelect aria-label="우선 이슈 정렬 및 보기" value={sort} onChange={(event) => onSort(event.target.value)}>
       <option value="risk">정렬: 리스크순</option><option value="latest">정렬: 최신순</option><option value="own">보기: 당사 직접 언급만</option><option value="spread">정렬: 확산순</option>
     </AppSelect></header>
-    <div className="desk-story-grid">{rows.map((issue, index) => {
+    {loading && <span className="sr-only" role="status">우선 확인 기사를 불러오는 중입니다.</span>}
+    <div className="desk-story-grid">{loading ? [0, 1, 2, 3, 4].map(index => <article className="desk-story-skeleton" key={index} aria-hidden="true"><span className="desk-story-rank desk-skeleton-fill" /><span className="desk-story-category desk-skeleton-fill" /><span className="desk-tone desk-skeleton-fill" /><h3><span className="desk-skeleton-fill" /></h3><span className="desk-story-publisher desk-skeleton-fill" /><span className="desk-skeleton-fill" /></article>) : rows.map((issue, index) => {
       const headline = displayHeadline(issue);
       return <article key={issue.id || `${issue.source}-${issue.title}`} data-tone={issue.tone || "중립"}>
       <b className="desk-story-rank">{String(index + 1).padStart(2, "0")}</b>
@@ -73,6 +74,6 @@ export function DashboardPriorityTable({ rows, sort, onSort, Action, onOpenMonit
       <span className="desk-story-publisher">{resolvePublisher(issue)}</span>
       <Action issue={issue} onOpenMonitoring={onOpenMonitoring}><ArrowUpRight aria-hidden="true" /><span className="sr-only">{headline} 원문 열기</span></Action>
     </article>;
-    })}{!rows.length && <p className="desk-empty">{sort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : "오늘 기준으로 표시할 주요 이슈가 없습니다."}</p>}</div>
+    })}{!loading && !rows.length && <p className="desk-empty">{sort === "own" ? "오늘 수집 기사 중 당사 직접 언급 기사가 없습니다." : "오늘 기준으로 표시할 주요 이슈가 없습니다."}</p>}</div>
   </section>;
 }

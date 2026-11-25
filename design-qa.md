@@ -1,3 +1,20 @@
+# Home Refresh And Monitoring Toolbar QA - 2026-11-25
+
+## Cause And Fix
+
+- Production trace `.qa/home-refresh-before/summary.json` reproduced the exact fourth-story switch on two cached page reloads: a GA commission headline at 275/283ms was replaced by the insurance-fraud headline at 1124/1123ms. Cold loading already showed the latter. The constructor ranked cached raw articles through a separate bootstrap path, whereas the later calculation grouped and filtered issues using the final rules. This was provisional rendering, not evidence that the database deleted and re-added an article.
+- Remove the provisional ranking and KPI builders. Priority rows and headline metrics use structural skeletons until the existing final day-scoped calculation commits atomically. Subsequent refreshes keep the committed view while loading. The final ranking/grouping rules, 240-article day cap and idle scheduling remain unchanged; no synchronous full classifier was added to startup.
+- Put Monitoring search/date/filter controls in one responsive toolbar and move Latest/Related sorting beside tone and publisher. The three selects stay on one horizontal line even on mobile. The fixed desktop date-field width avoids wrapping changes between one-day and date-range labels. Search/reset, date popover, pagination and CSV contracts remain unchanged.
+
+## Verification
+
+- Frontend: 213 passing tests, 40 modules with no invalid local references and a successful production build.
+- `.qa/home-refresh-final/summary.json`: a delayed initial read displays five skeleton rows and no fabricated zero headline metrics or empty-result message; completed-region bounds match exactly. Cold start and two cached reloads each display one identical finalized priority list. A browser-only new-article fixture then updates the list once, proving genuine updates are not frozen out. Monitoring also retains a loading state instead of reporting no results during its initial read. No real collection or notification was dispatched. Repeatable test: `frontend/scripts/home-refresh-qa.mjs`.
+- `.qa/refresh-toolbar-layout/summary.json`: 65 states across seven viewport sizes, zero failures. Date opening/search/reset/detail/page-size interactions preserve workspace bounds. `.qa/refresh-toolbar-navigation/` passes 26 PC/mobile category checks and five dashboard fits, with an explicit equal-y assertion for tone/publisher/sort selects.
+- Native Monitoring and Home loading/ready screenshots were visually reviewed. Changes include the previously committed keyword-aligned publisher bars, duplicate Management-title removal and six equal Regulator tiles; none was reverted.
+
+---
+
 # Keyword-Aligned Bars, Management Titles And Regulator Tiles QA - 2026-11-25
 
 ## Scope

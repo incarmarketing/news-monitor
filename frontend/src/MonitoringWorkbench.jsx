@@ -76,19 +76,24 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
 
   return <main className="workspace monitoring-workspace monitoring-workbench">
     <header className="monitor-header"><h1>모니터링</h1><div><span>{updatedLabel}</span><button type="button" className="monitor-icon" aria-label="모니터링 새로고침" title="새로고침" onClick={onRefresh} disabled={isLoading}><RefreshCw className={isLoading ? "monitor-spin" : ""} /></button><button type="button" className="monitor-command" onClick={exportCsv} disabled={!exportRows.length || isUpdating}><Download/><span>{selectedRows.length ? `선택 ${selectedRows.length}건 CSV` : "CSV 내보내기"}</span></button></div></header>
-    <form className="monitor-search" onSubmit={apply}>
+    <section className="monitor-filters" aria-label="기사 검색 조건" ref={filtersBox}>
+      <form className="monitor-search" onSubmit={apply}>
       <div className="monitor-search-input"><Search aria-hidden="true"/><input aria-label="검색어" placeholder="제목, 언론사, 키워드 검색" value={filters.queryInput} onChange={event => onChange("queryInput", event.target.value)} /><button className="monitor-search-submit" type="submit" aria-label="조회/검색" title="검색"><Search /></button></div>
       <button type="button" className="monitor-command" onClick={reset} title="검색 초기화" aria-label="검색 초기화"><RotateCcw/><span>초기화</span></button>
-    </form>
-    <section className="monitor-filters" aria-label="기사 검색 조건" ref={filtersBox}>
+      </form>
+      <div className="monitor-date-filters">
       <div className="monitor-period" aria-label="조회 기간">{[[1, "오늘"], [7, "7일"], [30, "30일"]].map(([days, label]) => {
         const range = monitoringDateRange(today, days);
         const active = !datesOpen && filters.startDateInput === range.startDate && filters.endDateInput === range.endDate;
         return <button key={days} type="button" aria-pressed={active} onClick={() => { onPeriod(range); setDatesOpen(false); }}>{label}</button>;
       })}<button type="button" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={toggleDates}>기간 선택</button></div>
       <button type="button" className="monitor-date-label" aria-label="조회 날짜 변경" aria-expanded={datesOpen} aria-controls={`${id}-dates`} onClick={toggleDates}>{rangeLabel}<CalendarDays/></button>
+      </div>
+      <div className="monitor-select-group">
       <label className="monitor-select"><span>논조</span><AppSelect aria-label="논조" value={filters.tone} onChange={event => onChange("tone", event.target.value)}><option value="all">전체</option>{filters.tones.map(tone => <option key={tone}>{tone}</option>)}</AppSelect></label>
       <label className="monitor-select monitor-source"><span>언론사</span><AppSelect aria-label="언론사" value={filters.source} onChange={event => onChange("source", event.target.value)}><option value="all">전체</option>{filters.sources.map(source => <option key={source}>{source}</option>)}</AppSelect></label>
+      <label className="monitor-select monitor-sort"><span>정렬</span><AppSelect aria-label="정렬" value={filters.viewMode} onChange={event => onChange("viewMode", event.target.value)}><option value="latest">최신순</option><option value="related">관련순</option></AppSelect></label>
+      </div>
       {datesOpen && <form id={`${id}-dates`} className="monitor-custom-dates" onSubmit={apply}>
         <label>시작일<input type="date" value={filters.startDateInput} onInput={event => onChange("startDateInput", event.currentTarget.value)} onChange={event => onChange("startDateInput", event.target.value)}/></label>
         <label>종료일<input type="date" value={filters.endDateInput} onInput={event => onChange("endDateInput", event.currentTarget.value)} onChange={event => onChange("endDateInput", event.target.value)}/></label>
@@ -101,7 +106,6 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
           <button type="button" role="tab" aria-selected={filters.category === "all"} onClick={() => onChange("category", "all")}>전체 <b>{Object.values(categoryCounts).reduce((sum, n) => sum + n, 0)}</b></button>
           {tabs.map(item => <button key={item.key} type="button" role="tab" aria-selected={filters.category !== "all" && activeCategory === item.key} onClick={() => onChange("category", item.key)}>{item.label} <b>{categoryCounts[item.key]}</b></button>)}
         </div>
-        <label className="monitor-sort"><span>정렬</span><AppSelect aria-label="정렬" value={filters.viewMode} onChange={event => onChange("viewMode", event.target.value)}><option value="latest">최신순</option><option value="related">관련순</option></AppSelect></label>
       </header>
       <div className="monitor-status-bar">
         <div className="monitor-scope">{(focusLabel || filters.query) && <><span>{focusLabel || `전체 보관 검색: ${filters.query}`}</span><button type="button" aria-label="검색 범위 해제" title="검색 범위 해제" onClick={reset}><X/></button></>}</div>

@@ -165,3 +165,27 @@ test("regulator counts include an equal-width All tile instead of a separate hea
   assert.match(css, /\.regulator-theme-grid \{[^}]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(css, /regulator-facet-meta|regulator-keyword-summary|regulator-keyword-board/);
 });
+
+test("home publishes only finalized issue rankings, never a differently ranked bootstrap list", () => {
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  const dashboard = fs.readFileSync(new URL("../src/DashboardWorkbench.jsx", import.meta.url), "utf8");
+  assert.doesNotMatch(main, /buildDashboardBootstrapData|buildDashboardBootstrapIssues/);
+  assert.match(main, /loading=\{!dashboardSnapshot.ready\}/);
+  assert.match(main, /data: nextData, ready: true/);
+  assert.match(dashboard, /aria-busy=\{loading\}/);
+  assert.match(dashboard, /desk-story-skeleton/);
+  assert.match(dashboard, /!loading && !rows.length/);
+});
+
+test("monitoring sorting is grouped with tone and publisher, not isolated below results", () => {
+  const source = fs.readFileSync(new URL("../src/MonitoringWorkbench.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/monitoring-workbench.css", import.meta.url), "utf8");
+  const filter = source.slice(source.indexOf('<section className="monitor-filters"'), source.indexOf('<section className="monitor-results"'));
+  assert.match(filter, /monitor-select-group/);
+  assert.match(filter, /aria-label="논조"/);
+  assert.match(filter, /aria-label="언론사"/);
+  assert.match(filter, /aria-label="정렬"/);
+  const results = source.slice(source.indexOf('<section className="monitor-results"'));
+  assert.doesNotMatch(results, /className="monitor-sort"|aria-label="정렬"/);
+  assert.match(css, /\.monitor-date-label \{ width: 280px; min-width: 280px;/);
+});

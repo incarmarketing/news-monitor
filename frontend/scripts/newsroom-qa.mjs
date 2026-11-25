@@ -13,6 +13,11 @@ const results = [];
 const viewportFits = [];
 
 async function assertSelectStyles(main, label) {
+  if (label === "monitoring") {
+    const positions = await main.locator(".monitor-select-group .app-select:visible").evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().y));
+    assert.equal(positions.length, 3, "monitoring filters must include tone, publisher and sorting");
+    assert.ok(Math.max(...positions) - Math.min(...positions) <= 1, "monitoring sort is isolated below the other filters");
+  }
   const styles = await main.locator(".app-select:visible").evaluateAll(nodes => nodes.map(node => {
     const style = getComputedStyle(node);
     return { height: node.getBoundingClientRect().height, size: style.fontSize, padding: style.padding, radius: style.borderRadius, border: style.borderWidth, align: style.textAlign, chevron: getComputedStyle(node.querySelector('.app-select-chevron')).right, icon: Boolean(node.querySelector('svg.lucide-chevron-down')) };
