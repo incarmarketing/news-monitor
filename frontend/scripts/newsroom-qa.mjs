@@ -26,6 +26,16 @@ async function assertSelectStyles(main, label, compact = false) {
   }
 }
 
+async function assertTableAlignment(main, selector, expected) {
+  const table = main.locator(selector);
+  await table.waitFor();
+  assert.deepEqual(await table.locator("thead th").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).textAlign)), expected, `${selector}: header alignment differs`);
+  const firstRow = table.locator("tbody tr").filter({ hasNot: table.page().locator("[colspan]") }).first();
+  if (await firstRow.count()) {
+    assert.deepEqual(await firstRow.locator("td").evaluateAll(nodes => nodes.map(node => getComputedStyle(node).textAlign)), expected, `${selector}: cell alignment differs`);
+  }
+}
+
 await fs.mkdir(out, { recursive: true });
 const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
 try {
@@ -117,6 +127,13 @@ try {
           assert.equal(await page.locator(".app-shell").getAttribute("data-active-section"), "overview");
         }
         if (desktop && round === 1 && section === "monitoring") {
+          const sort = main.locator(".monitor-sort select");
+          const originalSort = await sort.inputValue();
+          await sort.focus();
+          await sort.press("ArrowDown");
+          await sort.press("Enter");
+          assert.equal(await page.locator(".app-shell").getAttribute("data-active-section"), "monitoring");
+          await sort.selectOption(originalSort);
           const actionBoxes = await main.locator(".monitor-article-row").first().locator(".monitor-action").evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { left: r.left, right: r.right, width: r.width }; }));
           assert.ok(actionBoxes.every(box => box.width >= 32), "monitoring action columns are collapsed");
           assert.ok(actionBoxes[0].right <= actionBoxes[1].left + 1, "monitoring action buttons overlap");
@@ -187,6 +204,21 @@ try {
             if (name === "광고비 관리") {
               const heights = await main.locator(".ad-chart-box").evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().height));
               assert.ok(heights.length === 3 && heights.every(height => height >= 200), "advertising charts have no plotting height");
+            }
+            if (name === "기자 관리") {
+              await assertTableAlignment(main, ".registry-table", ["left","left","right","center","center"]);
+              await main.getByRole("tab", { name: "연락처·관리 정보", exact: true }).click();
+              await assertTableAlignment(main, ".reporter-data-table", ["left","left","left","center","left","center","left","left","left","center"]);
+              await assertSelectStyles(main, "management/manual-reporters");
+            }
+            if (name === "언론사 관리") {
+              await assertTableAlignment(main, ".registry-table", ["left","left","right","center","center"]);
+              await main.getByRole("tab", { name: /언론사 미확인/ }).click();
+              await assertTableAlignment(main, ".registry-table", ["left","right","right","center","center"]);
+              await main.getByRole("tab", { name: "관리 정보", exact: true }).click();
+              await assertTableAlignment(main, ".media-data-table", ["left","left","center","center","left","center","left","left","center"]);
+              await assertSelectStyles(main, "management/manual-media");
+              await main.getByRole("tab", { name: "당사 보도 매체", exact: true }).click();
             }
           }
         }

@@ -20,4 +20,7 @@ test("form controls share one visual contract across feature stylesheets", () =>
     assert.match(css, /var\(--control-height\)/);
     assert.doesNotMatch(css, /select\s*\{[^}]*font-size:\s*(?:14|17|18)px/s);
   }
+  const registry = fs.readFileSync(new URL("../src/mediaRegistry.css", import.meta.url), "utf8");
+  assert.match(registry, /\.registry-table :is\(th,td\):nth-child\(3\)/);
+  assert.doesNotMatch(registry, /\.media-registry :is\(th,td\):nth-child\(3\)/);
 });

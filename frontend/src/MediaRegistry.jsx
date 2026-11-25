@@ -51,7 +51,7 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
       </div>
       {error && <p role="alert" className="registry-error">{error}</p>}
       {!data ? <p className="registry-empty" role="status">{busy ? "누적 이력 조회 중" : "조회 결과 없음"}</p> : <>
-        <div className="registry-table-wrap"><table><thead><tr>
+        <div className="registry-table-wrap"><table className="registry-table"><thead><tr>
           <th>{mode === "unknown" ? "미확인 주소" : mode === "reporters" ? "기자" : "언론사"}</th>
           <th>{mode === "unknown" ? "당사 언급" : mode === "reporters" ? "언론사" : "작성 기자"}</th>
           <th>기사 수</th><th>최근 보도</th><th>이력</th>

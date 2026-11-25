@@ -11,6 +11,7 @@ final result: passed
 - Standard selects/inputs/commands now share 40px height, 16px control text, 4px radius and common borders/spacing; the dashboard's dense sort control is an explicit 32px/14px variant with the same styling. Native option typography/colors and keyboard behavior are retained without adding a dropdown framework. Native popup chrome remains OS/browser-rendered.
 - Search wrappers, reset/export commands and date fields align vertically. Name/headline columns align left, dates/status center and numeric financial/registry columns right; matching headers and data cells use the same alignment. Removed obsolete dark-theme registry overrides and hard-coded audit/registry surface colors.
 - Reusable browser regression checks now assert select styles, monthly selector, management subviews and the five desktop viewport fits in addition to the existing interactions. Local interaction/viewport checks and 27 responsive route cases passed; production follow-through will be recorded after publication.
+- Additional subview review found registry count-column styling reaching the nested manual management tables. Scoped it to the actual `.registry-table` and verified exact header/data alignment in publisher, unknown-publisher, reporter, manual publisher and manual contact tables on desktop/mobile. Native keyboard changes in the monitoring sort do not navigate away. This pre-publication issue is fixed and covered by the reusable browser suite.
 
 ## Regular Briefing Recovery
 

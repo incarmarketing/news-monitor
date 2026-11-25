@@ -19,8 +19,8 @@
 .media-registry th { font-weight:600; background:var(--paper-soft); color:var(--muted); }
 .media-registry th,.media-registry td { text-align:center; padding:10px 18px; border-bottom:1px solid var(--line); vertical-align:middle; }
 .media-registry td:first-child strong { font-size:26px; font-weight:750; }
-.media-registry :is(th,td):is(:first-child,:nth-child(2)) { text-align:left; overflow-wrap:anywhere; }
-.media-registry :is(th,td):nth-child(3), .media-registry[data-registry-mode="unknown"] :is(th,td):nth-child(2) { text-align:right; font-variant-numeric:tabular-nums; }
+.registry-table :is(th,td):is(:first-child,:nth-child(2)) { text-align:left; overflow-wrap:anywhere; }
+.registry-table :is(th,td):nth-child(3), .media-registry[data-registry-mode="unknown"] .registry-table :is(th,td):nth-child(2) { text-align:right; font-variant-numeric:tabular-nums; }
 .media-registry td small { display:block; font-size:12px; color:var(--muted); margin-top:4px; }
 .registry-empty { text-align:center; padding:36px 12px; color:var(--muted); }
 .registry-error { color:var(--red); padding:12px; border:1px solid var(--red-soft); }
