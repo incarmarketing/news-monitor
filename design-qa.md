@@ -12,6 +12,14 @@
 - Read-only delayed-range test: `.qa/publisher-skeleton/summary.json`. All three Media region boxes match exactly before/after loading at 1280 x 720, with zero document overflow. Keyword and publisher tabs both display skeletons; completed data has no skeleton or observation commentary.
 - Monitoring has nine cells per article at 1280 x 720, 1440 x 900 and 390 x 844, with the publisher before the headline and no publisher subline. Detail expansion retains all nine columns. No horizontal page overflow or JavaScript exceptions; desktop has no document scroll.
 - Cross-category regression: `.qa/media-final-navigation/` contains 26 passing PC/mobile navigation captures and five desktop dashboard fits, including searches, reset, sorting, CSV, tooltips and report interactions. Loading and mobile publisher captures were visually reviewed.
+- Seven-viewport stability suite: `.qa/media-final-layout/summary.json` records 65 states with zero failures. Desktop workspaces retain no-document-scroll and stable surrounding bounds during filtering, sorting, detail expansion and range changes.
+
+## Verified Publication
+
+- Commit `10b20cb5`; Publish Dashboard run https://github.com/incarmarketing/news-monitor/actions/runs/45554609289 completed successfully in both publish and deploy jobs. The preceding shared-select/tone/filter commit `7fcde41c` is included.
+- Actual service: https://incarmarketing.github.io/news-monitor/dashboard.html?v=10b20cb5 . `.qa/publisher-skeleton-live/summary.json` confirms no observation commentary, exact loading/ready region bounds, nine-column publisher placement at 1280/1440/390px and no JavaScript errors. Live loading, ready and publisher captures were visually reviewed.
+- `.qa/select-tone-live/summary.json` verifies all six tone option labels have zero center error, 6px popup corners and 1px borders. Keyboard selection, reset and regulator category/All filtering pass. The 30-day default and every day in both 30/90-day tone plots remain present, with plot sums matching the period total. Live negative totals were 19/58, on independent zero-based integer scales; these changing data observations are not fixed expected counts.
+- Both November 25 stable daily report links, `08.html` and `13.html`, return HTTP 200 after deployment. All post-deployment tests were read-only; no extra collection, article save or report/Slack send was triggered.
 
 ---
 
