@@ -43,6 +43,15 @@ final result: passed
 - No browser test logged in, dispatched collection, changed classification, saved scraps, called paid analysis or sent notifications. Publication is checked separately from this local visual gate.
 - No actionable P0/P1/P2 design issues remain in the tested states. P3: exact raster-generated glyph shapes vary slightly from the real licensed font; native menu popup chrome remains OS-controlled.
 
+## Verified Publication
+
+- Main UI commit `a0d9ed61`; mobile edge-marker correction `20f19af3`. Publish Dashboard runs `45536514607` and `45536980735` both completed successfully. Final run: https://github.com/incarmarketing/news-monitor/actions/runs/45536980735 .
+- Actual service: https://incarmarketing.github.io/news-monitor/dashboard.html?v=20f19af3 . Served assets are `assets/index-DUhrFfUA.js` and `assets/index-uVXPAy4_.css`; verified the served module contains the new priority heading and no theme-toggle labels.
+- Live viewport/interaction suite: 65 captures, zero failures, same seven viewport sizes and five desktop bounded workspaces. Evidence: `.qa/ledger-layout-live/summary.json`.
+- Live all-category regression: 26 passing screen/interaction captures plus five dashboard viewport fits. Evidence: `.qa/ledger-live/summary.json` and `viewport-fits.json`.
+- Final actual captures reviewed: `.qa/ledger-live/published-1600.png` and `published-390.png`. Dark-OS simulation plus the former stored dim preference still renders light; preference is removed, dropdown chevron inset is 14px, desktop document overflow is zero and the corrected mobile marker is -8px inside the page gutter.
+- Browser console review: no JavaScript exceptions, failed application requests or failed page assets. An existing browser-level request for `https://incarmarketing.github.io/favicon.ico` returns 404; recorded as non-blocking P3, not claimed as fixed. Exact evidence: `.qa/ledger-live/published-assets.json`.
+
 ---
 
 # Historical Newsroom Design QA - 2026-11-25
