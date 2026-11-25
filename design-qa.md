@@ -22,6 +22,7 @@ final result: passed
 4. [P2, fixed] Weekly report switching produced document overflow despite a bounded report sheet. Absolutely positioned screen-reader link labels lacked a positioned ancestor inside the scrollable article index. Positioned that index, preserving the labels and all article content. Repeated daily/weekly/monthly switching now keeps document overflow at zero; no body overflow clipping is used.
 5. [P2, fixed] Selected navigation/period/category text changed weight, date filters expanded in flow, and optional scope/loading text added height. Navigation and tabs now retain their weights; the custom date form opens as an anchored popup with outside/Escape dismissal; scope/loading has reserved space; root/content scrollbar gutters are stable.
 6. [P2, fixed] Expanding clipping evidence changed neighboring tile geometry. Evidence now opens in the existing accessible native dialog, preserving the original summary/decision information and article list position. Escape closes it without navigating.
+7. [P2, fixed] Final mobile visual review found the negative-story edge tick touching the first headline glyph after the layout stacked. Offset that tick into the existing mobile page gutter; the article text, ranks and desktop alignment remain unchanged. Final mobile capture is recaptured after this correction.
 
 ## Required Fidelity Surfaces
 
