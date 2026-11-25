@@ -66,12 +66,19 @@ Post-fix evidence: `desktop-{section}.png`, `compare-{section}.png`, `focus-over
 - Initial redesign commit `3b47016`: Publish Dashboard run `45511708014` succeeded.
 - Supplemental layout commit `b5ddd77`: build/tests/static generation and artifact upload succeeded in run `45513127157`; the final deploy step failed to discover the artifact immediately after upload. REST confirms artifact `14977031915` exists and is not expired. This is not a frontend build failure or an expired credential diagnosis.
 - Moved only the dashboard Pages deploy step into a dependent job, following the documented separate-job pattern and the same-job artifact visibility issue tracked at https://github.com/actions/deploy-pages/issues/451. Build environment configuration, serialized Pages concurrency, data/report generation and notification workflows are unchanged. A failed deploy job can now be retried without re-uploading a duplicate artifact.
-- Added regression checks for upload/deploy dependency, bounded deploy runtime, retained environment configuration and preserved concurrency. Final deployment and live browser results follow after publication.
+- Added regression checks for upload/deploy dependency, bounded deploy runtime, retained environment configuration and preserved concurrency.
+- Deployment fix `98ee5280`: run https://github.com/incarmarketing/news-monitor/actions/runs/45514750839 succeeded with separate `publish` and `deploy` jobs. Supplemental dialog fix `fb60427f`: run https://github.com/incarmarketing/news-monitor/actions/runs/45516721240 also succeeded.
+- Production verification URL: https://incarmarketing.github.io/news-monitor/dashboard.html?v=fb60427f. Served assets confirmed as `index-B87tCjKS.js` and `index-MSARdSEl.css`; publication was verified, not inferred from a local build.
+- Live interaction suite: 26 captures, two desktop navigation rounds and one mobile round, all passed. Includes search/reset, CSV, chart hover/focus/arrows, article links, all report periods/print command, stock modes, six management tabs and risk/category/Slack dialogs. Focus stays in the native dialog, Escape closes only the topmost delivery detail and leaves the history open.
+- Live responsive suite: 27 direct-route cases across 1440px desktop, 900px tablet and 390px mobile passed, with zero page overflow and no runtime exceptions. Mobile report routing follows the existing intentional restriction.
+- Live additional widths 1280/1366/1672: zero overflow and CDP confirms the custom `Pretendard Variable` platform font is actually rendered. Final report and browser print rendering reviewed.
+- Final production evidence: `.qa/newsroom-live/`, `.qa/newsroom-live-responsive/`; latest delivery-history captures use human-readable alert/daily/weekly labels without internal hashes. No browser test dispatched collection, logged in, saved classifications or sent notifications.
 
 ## Scope And Residual Notes
 
 - This change does not repair the earlier 13:00 briefing deployment/authentication incident or change collection, classification, risk scoring, polling or scheduling.
 - Report-run totals and currently loaded article subsets may differ in existing data; this visual change does not invent missing category counts. The report rail explicitly labels its displayed category sum.
+- Known data-quality follow-up, not a passed numerical assertion: live header article totals and the latest category-flow total can differ. They still use the existing composed period/report summary and seven-day context/history aggregation paths respectively. Numerical reconciliation and company-mention classification were not changed as part of this design release; no claim is made that those data-basis differences are fixed.
 - P3: exact glyph shapes can differ slightly from the image-generated sample. Long real headlines and empty/private workspaces cannot reproduce the mock's illustrative text density without fabricating content.
 - Authenticated saves, analysis execution and OS printer dialog were intentionally not exercised; print CSS was browser-rendered and the print command was intercepted only in the isolated test page.
 
