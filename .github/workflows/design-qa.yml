@@ -49,6 +49,22 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
         run: node frontend/scripts/design-qa.mjs
 
+      - name: Verify report PDF downloads
+        env:
+          DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
+          DESIGN_QA_OUT: .qa/design/report-download
+          PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
+          PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+        run: node frontend/scripts/report-download-qa.mjs
+
+      - name: Verify publisher analysis and management controls
+        env:
+          DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
+          DESIGN_QA_OUT: .qa/design/management-analysis
+          PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
+          PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+        run: node frontend/scripts/management-analysis-qa.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4

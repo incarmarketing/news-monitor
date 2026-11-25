@@ -1,5 +1,6 @@
 import { watchRunDisplayState } from "./watchHealth.js";
-import { displayHeadline, isPublisherPortal, resolvePublisher, UNKNOWN_PUBLISHER } from "./publisherIdentity.js";
+import { resolvePublisher } from "./publisherIdentity.js";
+import { collapsePortalArticleAliases } from "./articleAliases.js";
 import { validRegistryPayload } from "./mediaRegistryModel.mjs";
 import { isInsurerOnlyContext } from "./articleSector.js";
 import { mapCooperatively } from "./cooperativeWork.js";
@@ -1737,14 +1738,14 @@ function normalizeAiContext(row = {}) {
     ...source,
     category: source.category ?? row.category,
     tone: source.tone ?? row.tone,
-    own_mentioned: source.own_mentioned ?? row.own_mentioned,
-    negative_target: source.negative_target ?? row.negative_target,
+    own_mentioned: source.own_mentioned ?? source.ownMentioned ?? row.own_mentioned,
+    negative_target: source.negative_target ?? source.negativeTarget ?? row.negative_target,
     evidence: source.evidence ?? row.classification_evidence,
     reason: source.reason ?? row.classification_reason,
     confidence: source.confidence ?? row.classification_confidence,
     provider: source.provider ?? row.classification_provider,
-    clipping_recommended: source.clipping_recommended ?? row.clipping_recommended,
-    clipping_reason: source.clipping_reason ?? row.clipping_reason,
+    clipping_recommended: source.clipping_recommended ?? source.clippingRecommended ?? row.clipping_recommended,
+    clipping_reason: source.clipping_reason ?? source.clippingReason ?? row.clipping_reason,
   };
   return {
     category: normalizeBackendCategory(merged.category),
@@ -1934,33 +1935,6 @@ function deduplicateArticles(rows = []) {
     }
   });
   return collapsePortalArticleAliases(Array.from(byKey.values()));
-}
-
-function collapsePortalArticleAliases(rows) {
-  const groups = new Map();
-  rows.forEach(row => {
-    const title = displayHeadline(row).normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
-    const source = row.source;
-    const date = String(row.date || "");
-    if (!source || source === UNKNOWN_PUBLISHER || isPublisherPortal(source) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || title.length < 20 || /(?:\.{3}|…)\s*$/.test(title)) return;
-    const key = JSON.stringify([date, source, title]);
-    const group = groups.get(key) || [];
-    group.push(row);
-    groups.set(key, group);
-  });
-  const replacements = new Map();
-  const removed = new Set();
-  for (const group of groups.values()) {
-    const portals = group.filter(row => isPublisherPortal(row.link));
-    const originals = group.filter(row => /^https?:\/\//i.test(row.link || "") && !isPublisherPortal(row.link));
-    // A title is not enough to choose between two different original articles.
-    if (!portals.length || originals.length !== 1) continue;
-    const original = originals[0];
-    const aliases = group.flatMap(row => [...(row.articleAliases || []), ...(row === original ? [] : [{ articleHash: row.articleHash || row.id || "", link: row.link }])]);
-    replacements.set(original, { ...original, articleAliases: aliases });
-    portals.forEach(row => removed.add(row));
-  }
-  return rows.filter(row => !removed.has(row)).map(row => replacements.get(row) || row);
 }
 
 function articleDedupKey(row) {

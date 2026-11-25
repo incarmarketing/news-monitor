@@ -5,6 +5,7 @@ import { registryError, registryRows, safeArticleUrl } from "./mediaRegistryMode
 import { displayHeadline } from "./publisherIdentity.js";
 import "./mediaRegistry.css";
 import AppSelect from "./AppSelect.jsx";
+import PublisherAnalysis from "./PublisherAnalysis.jsx";
 
 const date = (value) => value ? new Date(value).toLocaleDateString("ko-KR") : "-";
 const statuses = { pending: "확인 대기", not_found: "기자명 미확인", needs_original: "원문 주소 필요", fetch_failed: "원문 접속 실패", verified: "확인 완료" };
@@ -43,7 +44,7 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
     <header className="registry-section-heading"><div className="registry-tabs" role="tablist" aria-label={reportersOnly ? "기자 관리 보기" : "언론사 관리 보기"}>
       {tabs.map(([key, label]) => <button type="button" role="tab" aria-selected={mode === key} className={mode === key ? "active" : ""} onClick={() => chooseMode(key)} key={key}>{label}{key === "unknown" && data && <span>{data.unknown.reduce((sum, row) => sum + row.article_count, 0)}</span>}</button>)}
     </div></header>
-    {mode === "manual" ? children : selection ? <RegistryDetail key={`${selection.mode}:${selection.key}`} selection={selection} onBack={() => setSelection(null)} onSaved={refresh} /> : <>
+    {mode === "manual" ? children : selection ? <RegistryDetail key={`${selection.mode}:${selection.key}`} selection={selection} summaryRevision={data?.as_of} onBack={() => setSelection(null)} onSaved={refresh} /> : <>
       <div className="registry-toolbar">
         <div><h2 className="sr-only">{reportersOnly ? "당사 보도 작성 기자" : mode === "unknown" ? "언론사 확인 대기" : "당사 보도 매체"}</h2>
           {data && <p>누적 당사 언급 {data.own_articles.toLocaleString()}건 · {date(data.as_of)} 기준</p>}</div>
@@ -55,14 +56,14 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
         <div className="registry-table-wrap"><table className="registry-table"><thead><tr>
           <th>{mode === "unknown" ? "미확인 주소" : mode === "reporters" ? "기자" : "언론사"}</th>
           <th>{mode === "unknown" ? "당사 언급" : mode === "reporters" ? "언론사" : "작성 기자"}</th>
-          <th>기사 수</th><th>최근 보도</th><th>이력</th>
+          <th>기사 수</th><th>최근 보도</th><th>{mode === "media" ? "분석" : "이력"}</th>
         </tr></thead><tbody>{rows.slice(page * pageSize, (page + 1) * pageSize).map((row) => <tr key={mode === "unknown" ? row.host : `${row.media || ""}:${row.name}`}>
           <td><strong>{row.name || row.host || "주소 미확인"}</strong>{row.portal && <small>기사별 확인</small>}</td>
           <td>{mode === "unknown" ? `${row.own_count}건` : mode === "reporters" ? row.media : <>
             <span title={(mediaAuthors.get(row.name) || []).join(", ")}>{(mediaAuthors.get(row.name) || []).slice(0,2).join(", ") || "확인 필요"}{(mediaAuthors.get(row.name)?.length || 0) > 2 ? ` 외 ${mediaAuthors.get(row.name).length - 2}명` : ""}</span>
             <small>확인 {row.verified_count} / {row.article_count}건</small></>}</td>
           <td>{row.article_count.toLocaleString()}건</td><td>{date(row.last_at)}</td>
-          <td><button type="button" className="registry-icon" title="기사 이력 보기" aria-label={`${row.name || row.host || "미확인"} 기사 이력 보기`} onClick={() => open(row)}><ChevronRight size={18} /></button></td>
+          <td><button type="button" className="registry-icon" title={mode === "media" ? "보도 분석 보기" : "기사 이력 보기"} aria-label={`${row.name || row.host || "미확인"} ${mode === "media" ? "보도 분석 보기" : "기사 이력 보기"}`} onClick={() => open(row)}><ChevronRight size={18} /></button></td>
         </tr>)}</tbody></table></div>
         {!rows.length && <p className="registry-empty">{query ? "검색 결과가 없습니다." : mode === "unknown" ? "확인 대기 중인 언론사가 없습니다." : "확인된 이력이 없습니다."}</p>}
         <div className="registry-pagination-row"><RegistryPager offset={page * pageSize} count={rows.length} size={pageSize} onPage={(offset) => setPage(offset / pageSize)} /><AppSelect aria-label="언론사 목록 페이지 크기" value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(0); }}>{[6, 20, 50].map(size => <option key={size} value={size}>{size}개씩 보기</option>)}</AppSelect></div>
@@ -77,35 +78,44 @@ function RegistryPager({ offset, count, size, onPage }) {
     <button type="button" className="registry-icon" aria-label="다음 페이지" disabled={offset + size >= count} onClick={() => onPage(offset + size)}><ChevronRight size={18} /></button></div>;
 }
 
-function RegistryDetail({ selection, onBack, onSaved }) {
+function RegistryDetail({ selection, summaryRevision, onBack, onSaved }) {
   const [data, setData] = useState(null);
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [detailBusy, setDetailBusy] = useState(false);
+  const [view, setView] = useState(selection.mode === "media" ? "analysis" : "articles");
   useEffect(() => {
+    if (view === "analysis") return;
     let active = true;
-    setData(null); setError("");
+    setData(null); setError(""); setDetailBusy(true);
     loadMediaRegistry(selection.mode, selection.key, offset).then((value) => { if (active) setData(value); })
-      .catch(() => { if (active) setError("기사 이력을 불러오지 못했습니다."); });
+      .catch(() => { if (active) setError("기사 이력을 불러오지 못했습니다."); })
+      .finally(() => { if (active) setDetailBusy(false); });
     return () => { active = false; };
-  }, [selection.mode, selection.key, offset, revision]);
+  }, [selection.mode, selection.key, offset, revision, view]);
   const saved = () => { setOffset(0); setRevision((value) => value + 1); onSaved(); };
-  return <div>
-    <div className="registry-toolbar"><button type="button" className="registry-icon" aria-label="목록으로" onClick={onBack}><ArrowLeft size={18} /></button><h2>{selection.title}</h2>
-      <button type="button" className="registry-icon" aria-label="기사 이력 새로고침" onClick={() => setRevision((v) => v + 1)}><RefreshCw size={18} /></button></div>
+  return <div className="registry-detail">
+    <div className="registry-detail-heading"><button type="button" className="registry-icon" aria-label="목록으로" onClick={onBack}><ArrowLeft size={18} /></button><div><h2>{selection.title}</h2><p>{selection.mode === "unknown" ? "언론사 확인 대기" : view === "analysis" ? "수집 보도 분석" : "누적 기사·기자 이력"}{view === "articles" && data ? ` · ${data.total.toLocaleString()}건` : ""}</p></div>
+      <button type="button" className="registry-icon" aria-label="언론사 상세 새로고침" title="상세 새로고침" disabled={detailBusy} onClick={() => { setDetailBusy(true); setRevision((v) => v + 1); }}><RefreshCw size={18} /></button></div>
+    {selection.mode === "media" && <div className="registry-detail-tabs" role="tablist" aria-label="언론사 상세 보기">{[["analysis","보도 분석"],["articles","기사·기자 이력"]].map(([key,label]) => <button type="button" key={key} role="tab" aria-selected={view === key} onClick={() => setView(key)}>{label}</button>)}</div>}
+    {view === "analysis" ? <PublisherAnalysis publisher={selection.key} revision={`${summaryRevision || ""}:${revision}`} onBusy={setDetailBusy}/> : <>
     {selection.mode === "unknown" && !selection.portal && <PublisherResolve host={selection.key} onSaved={saved} />}
     {error && <p role="alert" className="registry-error">{error}</p>}
     {!data && !error && <p className="registry-empty" role="status">기사 이력 조회 중</p>}
     {data && <><ul className="registry-articles">{data.rows.map((row) => <li key={row.article_hash}>
-      <div className="registry-article-meta"><span>{date(row.pub_date)}</span><span>{row.source}</span>{row.own_mentioned && <span>당사 언급</span>}</div>
+      <time className="registry-article-date">{date(row.pub_date)}</time><div className="registry-article-content">
+      <div className="registry-article-meta"><span>{row.source}</span>{row.own_mentioned && <span>당사 언급</span>}</div>
       <a className="registry-headline" href={safeArticleUrl(row.link) || undefined} target="_blank" rel="noreferrer">{displayHeadline(row)}<ExternalLink size={15} /></a>
       <div className="registry-evidence"><span>기자: {row.authors.map((author) => author.name).join(", ") || statuses[row.byline_status] || "미확인"}</span>
         {row.checked_at && <span>{date(row.checked_at)} 확인</span>}
         {safeArticleUrl(row.evidence_url) && <a href={safeArticleUrl(row.evidence_url)} target="_blank" rel="noreferrer">확인 출처 <ExternalLink size={13} /></a>}</div>
       {selection.mode === "unknown" && selection.portal && <PublisherResolve articleHash={row.article_hash} onSaved={saved} />}
+      </div>
     </li>)}</ul>
       {!data.rows.length && <p className="registry-empty">표시할 기사가 없습니다.</p>}
       <RegistryPager offset={offset} count={data.total} size={30} onPage={setOffset} />
+    </>}
     </>}
   </div>;
 }

@@ -792,7 +792,6 @@ function App() {
     normalizeKeywordRow,
     normalizeReporterDraft,
     periodScopeLabel,
-    printCurrentView,
     printAdReport,
     reporterDraftFromRemote,
     selectDashboardKeywords,
@@ -6401,24 +6400,6 @@ function categoryIdFromFeedbackLabel(value = "") {
   if (/업계|동향|industry|market/.test(value)) return "industry";
   if (/제외|exclude|noise/.test(value)) return "exclude";
   return "other";
-}
-
-async function printCurrentView(title) {
-  if (typeof window === "undefined") return;
-  const previousTitle = document.title;
-  const restoreTitle = () => {
-    document.title = previousTitle;
-    window.removeEventListener("afterprint", restoreTitle);
-  };
-  window.addEventListener("afterprint", restoreTitle, { once: true });
-  document.title = title || previousTitle;
-  try {
-    await document.fonts?.ready;
-    await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
-    window.print();
-  } finally {
-    restoreTitle();
-  }
 }
 
 function printHtmlDocument(html) {

@@ -4,7 +4,10 @@
 .report-command-copy h1 { padding-right: 26px; border-right: 1px solid var(--line); }
 .report-calendar { display: inline-flex; align-items: center; gap: 12px; border-left: 1px solid var(--line); padding-left: 26px; font-size: 20px; }
 .report-period-picker .period-control button { font-size: 20px; font-weight: 650; padding-inline: 19px; }
-.report-command-actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.report-command-actions { position: relative; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.report-download-button { width: 152px; flex: none; white-space: nowrap; }
+.report-download-error { position: absolute; right: 0; top: calc(100% + 8px); z-index: 5; width: 300px; padding: 10px 12px; border: 1px solid var(--red); border-radius: var(--control-radius); background: var(--paper); color: var(--red); font-size: 14px; }
+@media (prefers-reduced-motion: no-preference) { .report-download-spinner { animation: report-download-spin 1s linear infinite; } @keyframes report-download-spin { to { transform: rotate(360deg); } } }
 .report-period-picker { display: flex; align-items: center; }
 .month-select { display: flex; align-items: center; gap: 8px; }
 .month-select span { color: var(--muted); font-size: 13px; }

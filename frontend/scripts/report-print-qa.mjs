@@ -60,8 +60,11 @@ try{
  }
  await page.evaluate(()=>{window.__printCalls=0;window.print=()=>{window.__printCalls++;};});
  const title=await page.title();
+ const downloadEvent=page.waitForEvent('download',{timeout:60000});
  await page.getByRole('button',{name:'PDF 저장',exact:true}).click();
- await page.waitForFunction(()=>window.__printCalls===1);
+ const download=await downloadEvent;
+ await download.saveAs(path.join(out,'direct-download.pdf'));
+ assert.equal(await page.evaluate(()=>window.__printCalls),0,'PDF export still used the printer driver');
  await page.emulateMedia({media:'print'});
  await page.setViewportSize({width:1100,height:800});
  await page.waitForTimeout(150);

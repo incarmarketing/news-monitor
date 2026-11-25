@@ -172,9 +172,11 @@ try {
           await main.getByRole("button", { name: "일간", exact: true }).click();
           await main.getByRole("heading", { name: "일일 언론 동향", exact: true }).waitFor();
           await page.evaluate(() => { window.__qaPrinted = false; window.print = () => { window.__qaPrinted = true; }; });
+          const downloadEvent=page.waitForEvent("download",{timeout:60000});
           await main.getByRole("button", { name: "PDF 저장", exact: true }).click();
-          await page.waitForFunction(() => window.__qaPrinted === true);
-          assert.equal(await page.evaluate(() => window.__qaPrinted), true);
+          const download=await downloadEvent;
+          assert.equal(await download.failure(),null);
+          assert.equal(await page.evaluate(() => window.__qaPrinted), false);
         }
         if (desktop && round === 1 && section === "media") {
           await main.getByRole("button", { name: "30일", exact: true }).click();

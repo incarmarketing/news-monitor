@@ -146,3 +146,19 @@ test('re-reading normalized articles retains the known publication timestamp', a
   assert.deepEqual(rows.map(row=>row.time),['08:10','08:10','']);
   assert.equal(rows[0].pubDate,articles[0].pubDate);
 });
+
+test('cached normalized records retain company evidence, negative target and clipping metadata', async (t) => {
+  browserTimers(t);
+  let articles=[{article_hash:'own-negative',title:'인카금융서비스에 감독당국이 제재를 통보',source:'보험저널',link:'https://www.insjournal.co.kr/news/articleView.html?idxno=100',pub_date:'2026-11-25T07:40:00Z',tone:'negative',category:'own',own_mentioned:true,negative_target:'own',classification_evidence:'인카금융서비스에 감독당국이 제재를 통보',clipping_recommended:true,clipping_reason:'당사 직접 제재 보도'}];
+  t.mock.method(globalThis,'fetch',async url=>String(url).endsWith('supabase.json')
+    ? new Response(JSON.stringify({url:'https://db.example',anon_key:'public-test'}))
+    : new Response(JSON.stringify({ok:true,articles,next_offset:null})));
+  const {loadArticleRange}=await import('../src/liveData.js?preserve-context-metadata');
+  const initial=await loadArticleRange({startDate:'2026-11-25',endDate:'2026-11-25'});
+  articles=initial;
+  const restored=await loadArticleRange({startDate:'2026-11-25',endDate:'2026-11-25'});
+  assert.deepEqual(restored[0].aiContext,initial[0].aiContext);
+  assert.equal(restored[0].aiContext.ownMentioned,true);
+  assert.equal(restored[0].aiContext.negativeTarget,'own');
+  assert.equal(restored[0].clippingRecommended,true);
+});

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, CalendarDays, Download } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUpRight, CalendarDays, Download, LoaderCircle } from "lucide-react";
 import { periodData } from "./data";
 import { A4BarList, A4PressRows } from "./reportComponents";
 import { buildA4ReportStats, publicationMeta, reportArticleHeadline, reportCategoryColor, reportCategoryLabel, reportPurposeConfig } from "./reportModel";
 import NewsroomChart from "./NewsroomChart.jsx";
 import AppSelect from "./AppSelect.jsx";
+import { readReportPdfModel } from "./reportPdfModel.js";
 
 let reportHelpers = {};
 
@@ -23,7 +24,6 @@ function Chip({ children, tone }) {
   return Component ? <Component tone={tone}>{children}</Component> : <span className="chip">{children}</span>;
 }
 
-function printCurrentView(...args) { return callHelper("printCurrentView", () => {}, ...args); }
 function periodScopeLabel(...args) { return callHelper("periodScopeLabel", (period = "daily") => period, ...args); }
 function availableReportMonths(...args) { return callHelper("availableReportMonths", () => [], ...args); }
 function formatReportMonthOption(...args) { return callHelper("formatReportMonthOption", (month = "") => month, ...args); }
@@ -50,6 +50,19 @@ function isOwnSponsoredSportsArticle(...args) { return callHelper("isOwnSponsore
 function isOwnSponsoredSportsBrandArticle(...args) { return callHelper("isOwnSponsoredSportsBrandArticle", () => false, ...args); }
 export default function Reports({ data, period, setPeriod, articles, allArticles = [], scraps, onOpenMonitoring, operations, helpers = {} }) {
   reportHelpers = helpers;
+  const stageRef=useRef(null);
+  const [pdfBusy,setPdfBusy]=useState(false);
+  const [pdfError,setPdfError]=useState("");
+  const savePdf=async()=>{
+    if (pdfBusy) return;
+    setPdfBusy(true);setPdfError("");
+    try {
+      const model=readReportPdfModel(stageRef.current?.querySelector(".a4-report-sheet"));
+      const {downloadReportPdf}=await import("./reportPdf.js");
+      await downloadReportPdf(model);
+    } catch { setPdfError("PDF를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요."); }
+    finally { setPdfBusy(false); }
+  };
   const reportSourceArticles = allArticles.length ? allArticles : articles || [];
   const normalizedReportSourceArticles = useMemo(
     () => reportSourceArticles.map((article) => normalizeArticleDisplay(article)),
@@ -83,7 +96,6 @@ export default function Reports({ data, period, setPeriod, articles, allArticles
       ? composePeriodData(periodData.monthly, reportArticles, reportRuns, true, "monthly")
       : data
   ), [period, selectedMonth, reportArticles, reportRuns, data]);
-  const edition = publicationMeta(period, reportData);
   const calendarLabel = selectedMonth || String(reportArticles[0]?.date || reportData.scope || "").match(/\d{4}-\d{2}-\d{2}/)?.[0] || "";
   return (
     <main className="workspace report-workspace">
@@ -103,12 +115,14 @@ export default function Reports({ data, period, setPeriod, articles, allArticles
           {calendarLabel && period !== "monthly" && <span className="report-calendar"><CalendarDays />{calendarLabel.replaceAll("-", ".")}</span>}
         </div>
         <div className="report-command-actions">
-          <button className="primary-button" onClick={() => printCurrentView(`${edition.title} ${reportData.scope || ""}`)}>
-            <Download />PDF 저장
+          <button className="primary-button report-download-button" onClick={savePdf} disabled={pdfBusy} aria-busy={pdfBusy}>
+            {pdfBusy ? <LoaderCircle className="report-download-spinner"/> : <Download/>}{pdfBusy ? "PDF 생성 중" : "PDF 저장"}
           </button>
+          {pdfError && <p className="report-download-error" role="alert">{pdfError}</p>}
         </div>
       </section>
       <A4ReportStage
+        stageRef={stageRef}
         data={reportData}
         period={period}
         articles={reportArticles || []}
@@ -135,6 +149,7 @@ function MonthSelect({ months = [], value = "", onChange }) {
 }
 
 function A4ReportStage({
+  stageRef,
   data,
   period,
   articles = [],
@@ -165,7 +180,7 @@ function A4ReportStage({
     : buildKeywordFlow(reportArticles, selectDashboardKeywords()).slice(0, 10);
 
   return (
-    <section className={`a4-report-stage ${embedded ? "embedded" : "standalone"}`}>
+    <section ref={stageRef} className={`a4-report-stage ${embedded ? "embedded" : "standalone"}`}>
       <A4ReportSheet
         data={data}
         period={period}
@@ -208,13 +223,14 @@ function A4ReportSheet({
     .slice(0, 6).map(row => ({ ...row, name: reportCategoryLabel(row.category || row.name), color: reportCategoryColor(row.category || row.name) })), [articles, summary]);
   const issueGroups = useMemo(() => buildA4IssueGroups(lead, issues, articles, period), [lead, issues, articles, period]);
   const purpose = reportPurposeConfig(period);
+  const countTrendRows=trendRows.map(row=>({...row,total:row.total ?? ["positive","neutral","caution","negative"].reduce((sum,key)=>sum+Number(row[key] || 0),0)}));
   const briefingTitle = period === "daily"
     ? "일일 언론 동향"
     : period === "weekly"
       ? "주간 뉴스 브리핑"
       : "월간 미디어 브리핑";
   return (
-    <article className={`a4-report-sheet newspaper-report-sheet ${period}`}>
+    <article className={`a4-report-sheet newspaper-report-sheet ${period}`} data-pdf-press-title={purpose.pressTitle}>
       <header className="newspaper-masthead">
         <div className="newspaper-nameplate">
           <h2>{briefingTitle}</h2>
@@ -249,7 +265,7 @@ function A4ReportSheet({
             <div className="newspaper-panel-heading">
               <b>{period === "daily" ? "최근 7일 기사 수" : period === "weekly" ? "일별 기사 수" : "주별 기사 수"}</b>
             </div>
-            <div className="report-count-chart"><NewsroomChart rows={trendRows.map(row => ({ ...row, total: row.total ?? ["positive", "neutral", "caution", "negative"].reduce((sum, key) => sum + Number(row[key] || 0), 0) }))} series={reportCountSeries} ariaLabel="선택 기간 기사 수" compact /></div>
+            <div className="report-count-chart" data-pdf-chart={JSON.stringify(countTrendRows.map(row=>({date:row.date,dateLabel:row.dateLabel,total:row.total})))}><NewsroomChart rows={countTrendRows} series={reportCountSeries} ariaLabel="선택 기간 기사 수" compact /></div>
           </section>
         </aside>
       </section>

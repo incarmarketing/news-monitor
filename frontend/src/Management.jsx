@@ -3,9 +3,12 @@ import {
   Building2,
   CalendarDays,
   Download,
+  Database,
   FilePenLine,
   Megaphone,
   RefreshCw,
+  RotateCcw,
+  Search,
   Settings,
   ShieldCheck,
   Users,
@@ -22,6 +25,7 @@ import {
   saveReporterProfile,
 } from "./liveData";
 import AppSelect from "./AppSelect.jsx";
+import "./managementFeedback.css";
 
 let managementHelpers = {};
 
@@ -1054,7 +1058,11 @@ function FeedbackManagement({ feedback = [], operations, onRefreshOperations, is
   const needsLogin = !operations?.session?.session_token;
   const todayCount = useMemo(() => {
     const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
-    return rows.filter((row) => String(row.createdAt || "").slice(0, 10) === today || row.date === today).length;
+    return rows.filter((row) => {
+      const stamp = new Date(row.createdAt || "");
+      const date = row.date || (Number.isFinite(stamp.getTime()) ? new Intl.DateTimeFormat("sv-SE", { timeZone:"Asia/Seoul" }).format(stamp) : "");
+      return date === today;
+    }).length;
   }, [rows]);
   const latestFeedback = rows[0];
   const sourceLabel = operations?.source === "supabase" ? "운영 DB 직접 조회" : "정적 배포 이력";
@@ -1077,7 +1085,7 @@ function FeedbackManagement({ feedback = [], operations, onRefreshOperations, is
   };
 
   return (
-    <section className="content-grid two">
+    <section className="feedback-workspace">
       <Panel title="자동 규칙 후보" icon={ShieldCheck} meta={`${candidates.length.toLocaleString("ko-KR")}개`}>
         <div className="feedback-ledger">
           <article>
@@ -1096,8 +1104,8 @@ function FeedbackManagement({ feedback = [], operations, onRefreshOperations, is
         <div className="status-note feedback-login-note">
           <span>
             {needsLogin
-              ? "로그인 없이 보는 화면은 배포된 최근 피드백 이력입니다. 저장 직후 원장을 보려면 운영 DB 연결이 필요합니다."
-              : "운영 DB 세션으로 최근 분류 피드백을 직접 확인 중입니다."}
+              ? "읽기 전용"
+              : "운영 DB 연결됨"}
             {feedbackStamp ? ` · 기준 ${formatFeedbackStamp(feedbackStamp)}` : ""}
           </span>
           <div>
@@ -1105,10 +1113,12 @@ function FeedbackManagement({ feedback = [], operations, onRefreshOperations, is
               className="ghost-button compact-button"
               onClick={() => onRefreshOperations?.({ label: "운영 데이터 갱신" })}
               disabled={isWorking}
+              aria-label="분류 이력 갱신"
+              title="분류 이력 갱신"
             >
-              갱신
+              <RefreshCw size={17}/>
             </button>
-            {needsLogin && <button className="ghost-button compact-button" onClick={openLogin}>운영 DB 연결</button>}
+            {needsLogin && <button className="ghost-button compact-button" onClick={openLogin}><Database size={17}/>운영 DB 연결</button>}
           </div>
         </div>
         <div className="feedback-candidate-list">
@@ -1124,15 +1134,15 @@ function FeedbackManagement({ feedback = [], operations, onRefreshOperations, is
               </button>
             </article>
           )) : (
-            <div className="empty-state">누적 피드백이 쌓이면 반복 오분류 후보를 자동으로 모읍니다.</div>
+            <div className="empty-state">검토 대기 중인 규칙 후보가 없습니다.</div>
           )}
         </div>
         {status && <p className="status-note">{status}</p>}
       </Panel>
       <Panel title="분류 수정 이력" icon={FilePenLine} meta={`${rows.length.toLocaleString("ko-KR")}건`}>
         <div className="management-toolbar feedback-toolbar">
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="기사명, 이전/수정 분류, 사유 검색" />
-          <button className="ghost-button compact-button" onClick={() => setQuery("")}>초기화</button>
+          <label className="feedback-search"><Search size={17}/><input aria-label="분류 수정 이력 검색" value={query} onChange={(event) => { setQuery(event.target.value); setShowAll(false); }} placeholder="기사명, 분류, 수정 사유 검색" /></label>
+          <button className="ghost-button compact-button" aria-label="분류 이력 검색 초기화" title="검색 초기화" onClick={() => setQuery("")}><RotateCcw size={17}/></button>
         </div>
         {visibleRows.length ? (
           <div className="data-table-wrap">
@@ -1176,7 +1186,7 @@ function FeedbackManagement({ feedback = [], operations, onRefreshOperations, is
           <div className="empty-state feedback-empty">
             {query.trim()
               ? "검색 조건에 맞는 분류 수정 이력이 없습니다."
-              : "분류 수정 이력이 아직 표시되지 않습니다. 운영 DB 연결 또는 대시보드 갱신 후 다시 확인해 주세요."}
+              : "표시할 분류 수정 이력이 없습니다."}
           </div>
         )}
         {filteredRows.length > 15 && (

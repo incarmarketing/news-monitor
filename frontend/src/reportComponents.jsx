@@ -34,7 +34,7 @@ export function A4BarList({ rows = [] }) {
   return (
     <div className="a4-bar-list">
       {visibleRows.map((row, index) => (
-        <div key={row.keyword || row.name}>
+        <div key={row.keyword || row.name} data-count={Number(row.value || 0)} data-color={row.color || reportChartColors[index % reportChartColors.length]}>
           <span>{row.name}</span>
           <b>
             <i style={{ width: `${Math.max(5, (Number(row.value || 0) / max) * 100)}%`, background: row.color || reportChartColors[index % reportChartColors.length] }} />
@@ -52,7 +52,7 @@ export function A4PressRows({ rows = [], onOpenMonitoring }) {
   return (
     <div className="a4-press-rows">
       {rows.map((row) => (
-        <button key={row.source} type="button" onClick={() => onOpenMonitoring?.({ source: row.source })}>
+        <button key={row.source} type="button" data-count={Number(row.total || 0)} data-color="#506516" onClick={() => onOpenMonitoring?.({ source: row.source })}>
           <span>{row.source}</span>
           <b>
             <i style={{ width: `${Math.max(8, (Number(row.total || 0) / max) * 100)}%` }} />
