@@ -21,6 +21,15 @@
 - Mocked failure/race checks pass: failed range has no invented zero trend, retry succeeds, downloads are disabled for incomplete data, and a delayed 30-day response does not replace the selected 90-day result. The refresh 401 was mocked; no collector or notification was dispatched.
 - Frontend: 198 passing tests; backend release regression: 388 passing mocked tests. Build and local reference validation passed. Cross-category regression covered 26 PC/mobile navigation captures, CSV, chart tooltips, reports, management subviews and five desktop dashboard fits. Viewport checks preserve the previous no-document-scroll and stable-anchor contracts.
 
+## Verified Publication
+
+- UI commit `2190f288`; Publish Dashboard run https://github.com/incarmarketing/news-monitor/actions/runs/45544319850 completed successfully. Deployment waited for the existing 13:00 report workflow rather than cancelling or bypassing it.
+- Actual service checked: https://incarmarketing.github.io/news-monitor/dashboard.html?v=2190f288 . Live 30-day graph: 3,671 articles; live 90-day graph: 10,604 articles, all 90 dates present, each period total matching its plotted tone points. Counts rose by 37 after the regular report collection; local measurements above remain historical observations, not fixed expected counts.
+- Live graph availability: approximately 3.0s for 30 days, 8.1s for 90 days; full issue digests finished in 9.6s and 29.6s respectively. Longest observed main-thread task was 230ms; returning to a cached period made no range requests. Historical digest latency remains visible and cancellable, not claimed eliminated.
+- Live evidence: `.qa/header-history-live/summary.json` and native PC/mobile captures; `.qa/header-history-live-navigation/` contains 26 passing category/navigation checks plus five dashboard viewport fits. No JavaScript exceptions. Header/date alignment, final axis labels and unbroken keyword count units were visually reviewed.
+- The first live harness comparison ran before the webfont finished loading; gating the comparison on `document.fonts.ready` isolates interaction layout correctly. The repeated comparison passed without changing production typography.
+- Today's 08:00 and 13:00 stable report URLs both return HTTP 200 after the UI deployment. No corrective message, duplicate report send or test collection was triggered.
+
 ---
 
 # Editorial Ledger And Stable Workspaces QA - 2026-11-25
