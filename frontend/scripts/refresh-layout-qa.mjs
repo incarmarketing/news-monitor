@@ -27,11 +27,11 @@ const registry = {
 };
 const result = { rounds: [], errors: [], blockedWrites: [], mockedDispatches: 0 };
 const anchors = {
-  overview: [".editorial-dashboard-header", ".editorial-kpi-strip", ".desk-priority", ".desk-story-grid", ".desk-operations", ".desk-watch", ".desk-slack", ".desk-slots", ".desk-analysis", ".desk-chart"],
+  overview: [".editorial-dashboard-header", ".editorial-kpi-strip", ".editorial-kpi-strip button", ".desk-priority", ".desk-story-grid", ".desk-operations", ".desk-operations-title", ".desk-watch", ".desk-slack", ".desk-slots", ".desk-slots > span", ".desk-slots time", ".desk-slots b", ".desk-analysis", ".desk-chart"],
   monitoring: [".monitor-header", ".monitor-filters", ".monitor-select-group .app-select", ".monitor-results-header", ".monitor-status-bar", ".monitor-table-scroll"],
   regulators: [".page-title", ".regulator-filter .app-select", ".regulator-theme-grid", ".regulator-list-panel", ".regulator-table-scroll"],
   clipping: [".page-title", ".clipping-workspace", ".clipping-category-toolbar", ".clipping-category-toolbar .app-select"],
-  scraps: [".page-title", ".scrap-workspace-v2", ".scrap-collection-heading", ".scrap-collection-heading .app-select"],
+  scraps: [".page-title", ".scrap-workspace-v2", ".scrap-collection-heading", ".scrap-collection-heading .app-select", ".scrap-actions-v2", ".scrap-actions-v2 > button"],
   management: [".page-title", ".management-summary", ".management-tabs", ".registry-toolbar", ".registry-table-wrap", ".registry-pagination-row"],
 };
 

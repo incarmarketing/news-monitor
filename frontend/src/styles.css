@@ -317,7 +317,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .scrap-prompt-label { display: grid; gap: 8px; }
 .scrap-prompt { min-height: 150px; font-size: 18px; }
 .scrap-preset-row-v2 button { font-size: 18px; }
-.scrap-actions-v2 { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 0; }
+.scrap-actions-v2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 18px 0; }
 .scrap-analysis-preview { margin: 16px 0; padding: 12px; border-left: 2px solid var(--blue); font-size: 14px; }
 .scrap-analysis-preview p { color: var(--muted); }
 .scrap-analysis-status { padding: 10px 0; color: var(--green); }

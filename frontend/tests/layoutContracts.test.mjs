@@ -52,6 +52,9 @@ test("refresh-sensitive chrome reserves its footprint before fonts and status da
   assert.match(css, /\.newsroom-navigation button \{[^}]*width: calc\(var\(--nav-label-length\) \* 1em\)/);
   assert.match(home, /\.desk-operations \{ display: grid;[^}]*grid-template-columns:/);
   assert.match(home, /\.editorial-kpi-strip b \{[^}]*width: 48px; height: 32px/);
+  assert.match(home, /\.desk-slots > span \{ display: grid; grid-template-columns: 24px 44px minmax\(0, 1fr\)/);
+  assert.match(home, /\.desk-operations-title \{[^}]*white-space: nowrap/);
+  assert.match(css, /\.scrap-actions-v2 \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
 
 test("registry loading keeps table columns and rows instead of a short empty paragraph", () => {

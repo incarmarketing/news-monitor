@@ -11,9 +11,10 @@
 .editorial-kpi-strip { display: flex; align-items: center; justify-content: flex-start; gap: 10px; margin-left: 24px; padding-left: 24px; border-left: 1px solid var(--line); align-self: start; min-height: 46px; }
 .editorial-kpi-strip button { display: inline-flex; border: 0; background: transparent; padding: 0; align-items: center; }
 .editorial-kpi-strip button > svg { display: none; }
-.editorial-kpi-strip button > span { display: flex; align-items: baseline; gap: 6px; }
-.editorial-kpi-strip button + button::before { content: "·"; margin-right: 8px; }
-.editorial-kpi-strip small { font-size: 18px; color: var(--ink-2); }
+.editorial-kpi-strip button > span { display: flex; align-items: center; gap: 6px; }
+.editorial-kpi-strip button + button::before { content: "·"; width: 10px; height: 28px; line-height: 28px; flex: none; text-align: center; margin-right: 8px; }
+.editorial-kpi-strip small { display: inline-block; width: 2em; font-size: 18px; color: var(--ink-2); }
+.editorial-kpi-strip button:last-child small { width: 3em; }
 .editorial-kpi-strip b { display: inline-grid; place-items: center; width: 48px; height: 32px; font-size: 23px; font-weight: 750; line-height: 1; }
 .editorial-kpi-strip button:last-child b { width: 84px; }
 .editorial-kpi-strip em { display: none; }
@@ -108,8 +109,10 @@
   .desk-watch, .desk-slack, .desk-slots { min-width: 0; }
   .desk-operations > :is(span, button):not(.sr-only) { height: 28px; line-height: 28px; white-space: nowrap; }
   .desk-operations :is(b, time, img, svg) { flex-shrink: 0; }
-  .desk-slots { width: 100%; }
-  .desk-operations-title { font-size: 21px; padding-right: 16px; }
+  .desk-operations > .desk-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .desk-slots > span { display: grid; grid-template-columns: 24px 44px minmax(0, 1fr); justify-self: center; width: 100%; max-width: 160px; gap: 6px; }
+  .desk-slots time { font-variant-numeric: tabular-nums; }
+  .desk-operations-title { height: 28px; line-height: 28px; white-space: nowrap; font-size: 21px; padding-right: 16px; }
   .desk-operations > span, .desk-operations > button { font-size: 18px; }
   .desk-operations .desk-slack img { width: 24px; height: 24px; }
   .desk-slots { gap: 12px !important; }
@@ -123,7 +126,7 @@
   .desk-chart { height: 100%; min-height: 130px; }
   .dashboard-chart-label, .dashboard-chart-y-label { font-size: 14px; }
 }
-@media (min-width: 1201px) and (max-height: 820px) {
+@media (min-width: 1201px) and (max-height: 820px), (min-width: 1201px) and (max-width: 1380px) {
   .dashboard-workbench { grid-template-columns: 440px minmax(0, 1fr); grid-template-rows: auto minmax(0, 388px) 52px minmax(192px, 1fr); padding-block: 8px 18px; }
   .editorial-dashboard-header { padding-bottom: 8px; }
   .editorial-header-copy { gap: 16px; }
