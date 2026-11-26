@@ -77,6 +77,7 @@ import MonitoringWorkbench from "./MonitoringWorkbench.jsx";
 import { monitoringCategoryCounts, monitoringCategoryKey } from "./monitoringPresentation.js";
 import NewsroomChart from "./NewsroomChart.jsx";
 import { refreshFailureMessage } from "./refreshPresentation.js";
+import { coalesceMediaEvents } from "./mediaIssueModel.js";
 import { mapCooperatively } from "./cooperativeWork.js";
 import AppSelect from "./AppSelect.jsx";
 import { filterRegulatorArticles } from "./regulatorFilters.js";
@@ -719,7 +720,6 @@ function App() {
     KeywordBrief,
     KeywordManagerTable,
     KeywordRuleValidation,
-    MonthlyIssueDigest,
     PageTitle,
     Panel,
     PressInfluence,
@@ -808,7 +808,6 @@ function App() {
     filterArticlesByDateRange,
     latestArticleDate,
     normalizeAnalysisDateRange,
-    periodIssueMeta,
   }), []);
 
   const FeatureView = {
@@ -2991,108 +2990,6 @@ function Panel({ title, icon: Icon = FileText, meta, children, className = "", h
   );
 }
 
-function MonthlyIssueDigest({ issues, period = "monthly" }) {
-  const [lead, ...rest] = issues;
-  const meta = mediaDigestMeta(period);
-  if (!lead) {
-    return <div className="monthly-issue-empty">{meta.empty}</div>;
-  }
-  return (
-    <div className="monthly-issue-digest">
-      <article className="monthly-issue-lead">
-        <div className="issue-meta">
-          <Chip tone={lead.tone}>{lead.tone}</Chip>
-          <Chip>{lead.category}</Chip>
-          <span>{formatIssueMeta(lead)}</span>
-        </div>
-        <span className="monthly-issue-kicker">{meta.kicker}</span>
-        <h3>{/^https?:\/\//i.test(lead.link || "") ? <a href={lead.link} target="_blank" rel="noopener noreferrer">{displayHeadline(lead)}</a> : displayHeadline(lead)}</h3>
-        {lead.link && lead.link !== "#" && (
-          <a className="article-link-button" href={lead.link} target="_blank" rel="noopener noreferrer" onClick={(event) => openArticleLink(event, lead.link)}>
-            <ExternalLink /><span className="sr-only">기사 열기</span>
-          </a>
-        )}
-        <RelatedIssueDetails issue={lead} />
-      </article>
-      <div className="monthly-issue-list">
-        {rest.slice(0, 3).map((issue) => (
-          <article key={`${issue.source}-${issue.title}`}>
-            <div>
-              <span>{formatIssueMeta(issue)}</span>
-              <h4>{/^https?:\/\//i.test(issue.link || "") ? <a href={issue.link} target="_blank" rel="noopener noreferrer">{displayHeadline(issue)}</a> : displayHeadline(issue)}</h4>
-              <RelatedIssueDetails issue={issue} compact />
-            </div>
-            <Chip tone={issue.tone}>{issue.tone}</Chip>
-            {issue.link && issue.link !== "#" && (
-              <a href={issue.link} target="_blank" rel="noopener noreferrer" aria-label="기사 열기" onClick={(event) => openArticleLink(event, issue.link)}>
-                <ExternalLink />
-              </a>
-            )}
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function mediaDigestMeta(period) {
-  return {
-    daily: {
-      kicker: "Daily Lead",
-      empty: "당일 기준으로 표시할 핵심 이슈가 없습니다.",
-    },
-    weekly: {
-      kicker: "Weekly Flow",
-      empty: "주간 기준으로 표시할 반복 이슈가 없습니다.",
-    },
-    monthly: {
-      kicker: "Monthly Desk",
-      empty: "월간 기준으로 표시할 누적 핵심 이슈가 없습니다.",
-    },
-  }[period] || {
-    kicker: "Media Desk",
-    empty: "선택 기간 기준으로 표시할 핵심 이슈가 없습니다.",
-  };
-}
-
-function formatIssueMeta(issue = {}) {
-  const baseSource = issue.representativeSource || issue.source;
-  const relatedSourceCount = Number(issue.relatedSourceCount || 1);
-  const sourceLabel = baseSource && relatedSourceCount > 1
-    ? `${baseSource} 외 ${relatedSourceCount - 1}곳`
-    : issue.source || baseSource;
-  const parts = [
-    sourceLabel,
-    issue.publishedAt || issue.time || issue.date,
-  ].filter(Boolean);
-  return parts.join(" · ");
-}
-
-function RelatedIssueDetails({ issue = {}, compact = false }) {
-  const related = Array.isArray(issue.relatedArticles) ? issue.relatedArticles : [];
-  if (related.length <= 1) return null;
-  return (
-    <details className={compact ? "issue-related-details compact" : "issue-related-details"}>
-      <summary>관련 기사 {related.length.toLocaleString("ko-KR")}건 보기</summary>
-      <div>
-        {related.slice(0, compact ? 4 : 8).map((article) => (
-          <a
-            key={`${articleSelectionKey(article)}-${article.source}`}
-            href={article.link && article.link !== "#" ? article.link : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(event) => article.link && article.link !== "#" ? openArticleLink(event, article.link) : undefined}
-          >
-            <span>{article.source || "-"}</span>
-            <b>{displayHeadline(article)}</b>
-            <em>{[article.date, article.time].filter(Boolean).join(" ") || "-"}</em>
-          </a>
-        ))}
-      </div>
-    </details>
-  );
-}
-
 function ArticleSummaryBlock({ item, dense = false }) {
   const lines = buildVisibleArticleSummaryLines(item).slice(0, dense ? 2 : 3);
   if (!lines.length) return null;
@@ -4567,7 +4464,7 @@ function buildMediaAnalysisIssues(articles = [], period = "monthly") {
   const scoped = articles
     .filter((article) => article?.title && article.tone !== "제외")
     .filter((article) => !isPortalSource(article.source));
-  const grouped = buildRelatedArticleGroups(scoped);
+  const grouped = coalesceMediaEvents(buildRelatedArticleGroups(scoped));
   const issues = grouped
     .map((group) => normalizeMediaIssueGroup(group, period))
     .filter((issue) => issue.title)
@@ -4584,7 +4481,7 @@ async function buildMediaAnalysisIssuesAsync(articles = [], period = "monthly", 
     if (period !== "monthly") mediaIssueScore(article);
     addRelatedArticleGroup(groups, bucketIndex, article, index);
   }, { signal });
-  const grouped = (await mapCooperatively(groups, finishRelatedArticleGroup, { signal })).sort(compareRelatedArticleGroups);
+  const grouped = coalesceMediaEvents(await mapCooperatively(groups, finishRelatedArticleGroup, { signal })).sort(compareRelatedArticleGroups);
   const issues = (await mapCooperatively(grouped, group => {
     const issue = normalizeMediaIssueGroup(group, period);
     mediaIssueScore(issue, period);
@@ -4644,12 +4541,6 @@ function issueSemanticKey(issue = {}) {
   return [topic, issue.category, tokens].filter(Boolean).join(":").slice(0, 120);
 }
 
-function periodIssueMeta(period, issues = []) {
-  const related = issues.reduce((sum, issue) => sum + Math.max(0, Number(issue.relatedCount || 1) - 1), 0);
-  const label = period === "daily" ? "당일" : period === "weekly" ? "주간" : period === "monthly" ? "월간" : "선택 기간";
-  return related ? `${label} 대표 ${issues.length}건 · 관련 ${related}건` : `${label} 대표 ${issues.length}건`;
-}
-
 function normalizeMediaIssueGroup(group = {}, period = "monthly") {
   const members = dedupeIssueMembers(Array.isArray(group.relatedArticles) && group.relatedArticles.length ? group.relatedArticles : [group]);
   const representative = [...members]
@@ -4666,6 +4557,8 @@ function normalizeMediaIssueGroup(group = {}, period = "monthly") {
     relatedCount: members.length,
     relatedSourceCount: relatedSources.length,
     relatedSources,
+    eventKey: group.eventKey,
+    eventLabel: group.eventLabel,
     category: representative.category || group.category || "이슈",
     tone: representative.tone || group.tone || "중립",
     title: representative.title || group.title,

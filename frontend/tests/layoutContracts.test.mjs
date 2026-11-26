@@ -119,7 +119,8 @@ test("media uses structural skeletons and has no observation commentary", () => 
   assert.match(source, /MediaSkeleton kind="trend"/);
   assert.match(source, /MediaSkeleton kind="keywords"/);
   assert.match(source, /MediaSkeleton kind="publishers"/);
-  assert.match(source, /MediaSkeleton kind="issues"/);
+  const issues = fs.readFileSync(new URL("../src/MediaIssueDigest.jsx", import.meta.url), "utf8");
+  assert.match(issues, /MediaSkeleton kind="issues"/);
   assert.doesNotMatch(source, /관찰 코멘트|buildPeriodObservations|<InsightList|media-observations/);
   assert.doesNotMatch(main, /buildPeriodObservations|InsightList/);
   assert.doesNotMatch(source, /className="media-trend-message" role="status"/);

@@ -3,6 +3,8 @@ import { Check, Download, Newspaper } from "lucide-react";
 import { monitoringCsv } from "./monitoringPresentation.js";
 import { loadMediaArticleRange } from "./mediaRange.js";
 import MediaSkeleton from "./MediaSkeleton.jsx";
+import MediaIssueDigest from "./MediaIssueDigest.jsx";
+import { mediaIssuesMeta } from "./mediaIssueModel.js";
 
 let mediaHelpers = {};
 
@@ -23,7 +25,6 @@ function HelperComponent({ name, fallback: Fallback = "div", props = {}, childre
 function Panel(props) { return <HelperComponent name="Panel" fallback="section" props={props} />; }
 function ToneTrend(props) { return <HelperComponent name="ToneTrend" fallback="div" props={props} />; }
 function PressInfluence(props) { return <HelperComponent name="PressInfluence" fallback="div" props={props} />; }
-function MonthlyIssueDigest(props) { return <HelperComponent name="MonthlyIssueDigest" fallback="div" props={props} />; }
 
 function isOfficialRegulatorSource(...args) { return callHelper("isOfficialRegulatorSource", () => false, ...args); }
 function addDaysToDateKey(...args) { return callHelper("addDaysToDateKey", (key = "") => key, ...args); }
@@ -35,7 +36,6 @@ function buildDateRangeToneTrend(...args) { return callHelper("buildDateRangeTon
 function buildKeywordFlow(...args) { return callHelper("buildKeywordFlow", () => [], ...args); }
 function buildMediaAnalysisIssuesAsync(...args) { return callHelper("buildMediaAnalysisIssuesAsync", async () => [], ...args); }
 function normalizeAnalysisDateRange(...args) { return callHelper("normalizeAnalysisDateRange", (start = "", end = "") => ({ start, end, clamped: false }), ...args); }
-function periodIssueMeta(...args) { return callHelper("periodIssueMeta", () => "", ...args); }
 
 const mediaAnalysisCache = new Map();
 const MEDIA_ANALYSIS_CACHE_LIMIT = 8;
@@ -236,9 +236,9 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
           </div>
         </div>
         <div className="media-issues">
-          <Panel title="주요 보도 이슈" icon={Newspaper} meta={loadingRange || issuesLoading ? "" : analysisError ? "조회 실패" : periodIssueMeta("custom", issueRows)}>
+          <Panel title="주요 보도 이슈" icon={Newspaper} meta={loadingRange || issuesLoading ? "" : analysisError ? "조회 실패" : mediaIssuesMeta(issueRows)}>
             <div className="media-issue-content">
-            {loadingRange || issuesLoading ? <MediaSkeleton kind="issues" /> : analysisError ? <p className="empty-list-note" role="status">선택 기간 조회를 완료하지 못했습니다.</p> : <MonthlyIssueDigest issues={issueRows} period="custom" />}
+            <MediaIssueDigest issues={issueRows} loading={loadingRange || issuesLoading} error={analysisError} />
             </div>
           </Panel>
         </div>

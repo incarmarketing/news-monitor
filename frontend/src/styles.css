@@ -224,18 +224,6 @@ label > span { color: var(--muted); font-size: 14px; }
 .press-list { width: 100%; }
 .press-row { width: 100%; font-variant-numeric: tabular-nums; }
 .press-row > b { min-width: 0; overflow-wrap: anywhere; }
-.monthly-issue-lead { padding-bottom: 22px; }
-.monthly-issue-lead h3 { margin: 10px 0; }
-.media-issues .monthly-issue-lead { position: relative; padding-right: 40px; }
-.media-issues .monthly-issue-lead .article-link-button { position: absolute; right: 0; top: 42px; border: 0; padding: 0; min-height: 30px; }
-.media-issues .monthly-issue-lead h3, .media-issues .monthly-issue-list h4 { font-size: 23px; line-height: 1.4; font-weight: 700; }
-.media-issues .monthly-issue-list article { position: relative; padding: 16px 38px 16px 0; }
-.media-issues .monthly-issue-list article > a { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
-.media-issues .monthly-issue-list article > div > span { font-size: 14px; color: var(--muted); }
-.media-issues .monthly-issue-list article > .chip { display: none; }
-.monthly-issue-kicker { display: none; }
-.monthly-issue-list article { padding: 16px 0; border-top: 1px solid var(--line-soft); }
-.monthly-issue-list h4 { margin: 8px 0; font-size: 17px; }
 .related-details { margin-top: 12px; font-size: 14px; }
 .related-details summary { cursor: pointer; }
 .related-article-list { display: grid; gap: 8px; padding: 8px 0; }
@@ -536,7 +524,6 @@ label > span { color: var(--muted); font-size: 14px; }
   .media-keyword-bars b, .media-keyword-bars strong { font-size: 18px; }
   .media-keyword-bars > button { grid-template-columns: 140px minmax(0, 1fr) 88px; }
   .media-issues .panel-head h2 { font-size: 24px; }
-  .media-issues .monthly-issue-lead h3, .media-issues .monthly-issue-list h4 { font-size: 20px; }
   .clipping-workspace { display: grid; grid-template-rows: 52px minmax(0, 1fr); min-height: 0; }
   .clipping-category-toolbar { padding-bottom: 12px; }
   .clipping-candidate-panel { position: relative; min-height: 0; overflow: auto; scrollbar-gutter: stable; overscroll-behavior: contain; }
@@ -621,7 +608,6 @@ label > span { color: var(--muted); font-size: 14px; }
   .media-intel-board .tone-trend { height: 400px; }
   .tone-panel > header > span { gap: 4px; }
   .tone-panel small { display: none; }
-  .media-issues .monthly-issue-lead h3, .media-issues .monthly-issue-list h4 { font-size: 18px; }
   .clipping-summary-grid, .scrap-category-summary { flex-wrap: wrap; gap: 12px 22px; }
   .clipping-candidate-card { grid-template-columns: 28px minmax(0, 1fr) 112px; gap: 12px 8px; padding: 16px 0; }
   .clipping-rank { grid-column: 1; grid-row: 1; font-size: 15px; }
