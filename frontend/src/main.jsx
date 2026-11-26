@@ -833,6 +833,7 @@ function App() {
                   className={(pendingSection || activeSection) === item.id ? "active" : ""}
                   aria-current={(pendingSection || activeSection) === item.id ? "page" : undefined}
                   data-section={item.id}
+                  style={{ "--nav-label-length": item.id === "stocks" ? 5 : item.id === "management" ? 4 : item.label.length }}
                   onMouseEnter={() => preloadFeatureSection(item.id).catch(() => null)}
                   onFocus={() => preloadFeatureSection(item.id).catch(() => null)}
                   onClick={() => navigateSection(item.id)}
@@ -1804,9 +1805,6 @@ function Regulators({ articles = [], operations, isWorking, onRefreshOperations 
       <RegulatorDirectionPanel rows={facetRows} activeKeyword={keyword} onKeywordChange={next => { setKeyword(next); setVisible(60); setSelected(new Set()); }} />
       <Panel className="regulator-list-panel" title="보도자료 목록" icon={FileText} meta={`${filteredRows.length.toLocaleString("ko-KR")}건`}>
         <RegulatorReleaseFeed rows={visibleRows} selected={selected} onToggle={toggleSelected} />
-        {!filteredRows.length && (
-          <div className="empty-list-note">조건에 맞는 금융당국 보도자료가 없습니다.</div>
-        )}
         {filteredRows.length > visible && (
           <button className="ghost-button full" type="button" onClick={() => setVisible((count) => count + 60)}>
             {Math.min(filteredRows.length - visible, 60).toLocaleString("ko-KR")}건 더보기
@@ -1863,6 +1861,7 @@ function RegulatorReleaseFeed({ rows = [], selected, onToggle }) {
           </tr>
         );
       })}
+      {!rows.length && <tr><td colSpan={5} className="empty-list-note">조건에 맞는 금융당국 보도자료가 없습니다.</td></tr>}
       </tbody></table></div>
   );
 }
@@ -6921,7 +6920,7 @@ function buildRegulatorDirectionAnalysis(rows = []) {
     ...theme,
     count: theme.matches.length,
   }));
-  const ranked = themes.sort((a, b) => b.count - a.count);
+  const ranked = [...themes].sort((a, b) => b.count - a.count);
   const top = ranked.find((theme) => theme.count > 0) || ranked[0];
   const second = ranked.find((theme) => theme.count > 0 && theme.label !== top.label);
   const headline = rows.length
@@ -6933,7 +6932,8 @@ function buildRegulatorDirectionAnalysis(rows = []) {
   return {
     headline,
     summary,
-    themes: ranked.slice(0, 5),
+    themes: ["감독/검사", "소비자보호", "건전성/자본", "판매채널/GA", "디지털/보안"]
+      .map(label => themes.find(theme => theme.label === label)),
   };
 }
 

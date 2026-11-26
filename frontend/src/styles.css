@@ -79,7 +79,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .newsroom-brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
 .newsroom-logo { width: 88px; height: 32px; object-fit: contain; filter: grayscale(1) brightness(.05); }
 .newsroom-navigation { display: flex; align-self: stretch; align-items: stretch; gap: 24px; margin-left: 36px; }
-.newsroom-navigation button { position: relative; border: 0; padding: 0 0 2px; background: transparent; color: var(--ink-2); font-size: 16px; font-weight: 650; white-space: nowrap; flex-shrink: 0; }
+.newsroom-navigation button { position: relative; border: 0; padding: 0 0 2px; background: transparent; color: var(--ink-2); font-size: 16px; font-weight: 650; white-space: nowrap; flex-shrink: 0; width: calc(var(--nav-label-length) * 1em); }
 .newsroom-navigation button:hover { color: var(--blue); }
 .newsroom-navigation button.active { color: var(--ink); }
 .newsroom-navigation button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--blue); border-radius: 2px; }
@@ -253,7 +253,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .regulator-filter > label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .regulator-filter { align-items: center; padding-bottom: 0; border: 0; }
 .regulator-filter .wide-filter { max-width: 450px; }
-.regulator-filter .app-select { min-width: 138px; }
+.regulator-filter .app-select { width: 160px; min-width: 138px; }
 .regulator-list-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: var(--muted); font-size: 14px; }
 .regulator-table-scroll { overflow: auto; max-height: 610px; scrollbar-gutter: stable; }
 .regulator-release-list { table-layout: fixed; }
@@ -278,6 +278,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .clipping-category-toolbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; }
 .clipping-category-toolbar .newsroom-content-tabs { padding: 0; border: 0; }
 .clipping-category-toolbar .newsroom-content-tabs button { font-size: 20px; }
+.clipping-category-toolbar > .app-select { width: 140px; flex: none; }
 .clipping-candidate-list { display: grid; grid-template-columns: minmax(0, 1fr); border-top: 2px solid var(--ink); }
 .clipping-candidate-card { min-width: 0; min-height: 132px; padding: 16px 8px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 36px 92px minmax(0, 1fr) 116px; align-items: center; gap: 16px; }
 .clipping-rank { font-size: 18px; font-weight: 650; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -305,6 +306,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .scrap-search { display: flex; align-items: center; gap: 8px; max-width: 250px; height: var(--control-height); border: 1px solid var(--line); border-radius: var(--control-radius); padding-left: 10px; }
 .scrap-search input { width: 100%; border: 0; font-size: 16px; padding-left: 0; background: none; }
 .scrap-search input { height: calc(var(--control-height) - 2px); min-height: 0; }
+.scrap-collection-heading > .app-select { width: 150px; flex: none; }
 .scrap-collection-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto 34px; align-items: center; gap: 12px; padding: 22px 0; border-bottom: 1px solid var(--line); }
 .scrap-collection-row p { color: var(--muted); font-size: 16px; margin-bottom: 5px; }
 .scrap-collection-row h3 { font-size: 24px; line-height: 1.4; font-weight: 750; }
@@ -332,6 +334,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .stat-card > div { display: flex; align-items: baseline; gap: 8px; }
 .stat-card span { color: var(--muted); font-size: 18px; }
 .stat-card b, .stat-card strong { font-size: 23px; }
+.management-summary .stat-card:is(:first-child, :nth-child(2), :last-child) b { display: inline-block; min-width: 5ch; font-variant-numeric: tabular-nums; }
 .management-tabs { border-bottom: 1px solid var(--line); padding-bottom: 12px; gap: 18px; }
 .management-tabs button.active { background: var(--accent); font-weight: 700; }
 .management-tabs button svg { display: none; }
@@ -384,7 +387,7 @@ label > span { color: var(--muted); font-size: 14px; }
 .keyword-tag-list span { padding: 3px 8px; background: var(--paper-soft); border-radius: 3px; }
 .table-scroll, .stock-table-wrap, .registry-table-wrap { overflow: auto; }
 .stock-ticker-band { display: flex; align-items: center; gap: 28px; padding: 0 10px 20px; border-bottom: 1px solid var(--line); }
-.stock-company-name { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; max-width: 36%; }
+.stock-company-name { display: grid; align-content: center; gap: 4px; width: 340px; flex: none; max-width: 36%; }
 .stock-company-name h2 { font-size: 30px; font-weight: 750; }
 .stock-company-name span { color: var(--muted); font-size: 20px; }
 .stock-source-grid { display: grid; grid-template-columns: 1.6fr 1fr .8fr; gap: 26px; flex: 1; padding-left: 28px; border-left: 1px solid var(--line); }
@@ -537,6 +540,7 @@ label > span { color: var(--muted); font-size: 14px; }
   .clipping-workspace { display: grid; grid-template-rows: 52px minmax(0, 1fr); min-height: 0; }
   .clipping-category-toolbar { padding-bottom: 12px; }
   .clipping-candidate-panel { position: relative; min-height: 0; overflow: auto; scrollbar-gutter: stable; overscroll-behavior: contain; }
+  .regulator-table-scroll { height: max(260px, min(610px, calc(100dvh - 365px))); }
 }
 @media (min-width: 1700px) { .workspace { padding-inline: 42px; } .newsroom-masthead { margin-inline: 42px; } .newsroom-navigation { gap: 28px; } }
 @media (min-width: 1381px) { .newsroom-navigation button { font-size: 18px; } }
@@ -558,7 +562,7 @@ label > span { color: var(--muted); font-size: 14px; }
   .media-intel-board .tone-trend { height: 400px; }
   .tone-panel:nth-child(3) { padding-left: 0; border-left: 0; }
   .stock-ticker-band { align-items: start; flex-wrap: wrap; }
-  .stock-company-name { max-width: none; }
+  .stock-company-name { width: auto; max-width: none; }
   .stock-source-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-left: 0; border: 0; flex-basis: 100%; }
   .stock-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
   .page-title > div:first-child { flex-wrap: wrap; gap: 10px; }

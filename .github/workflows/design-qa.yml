@@ -65,6 +65,14 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
         run: node frontend/scripts/management-analysis-qa.mjs
 
+      - name: Verify refresh layout stability
+        env:
+          DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
+          DESIGN_QA_OUT: .qa/design/refresh-layout
+          PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
+          PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+        run: node frontend/scripts/refresh-layout-qa.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v6

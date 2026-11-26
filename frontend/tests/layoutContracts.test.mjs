@@ -46,6 +46,24 @@ test("interactive states reserve space instead of moving the surrounding workspa
   assert.doesNotMatch(css, /\[aria-selected="true"\] \{[^}]*font-weight/);
 });
 
+test("refresh-sensitive chrome reserves its footprint before fonts and status data arrive", () => {
+  const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const home = fs.readFileSync(new URL("../src/dashboard-workbench.css", import.meta.url), "utf8");
+  assert.match(css, /\.newsroom-navigation button \{[^}]*width: calc\(var\(--nav-label-length\) \* 1em\)/);
+  assert.match(home, /\.desk-operations \{ display: grid;[^}]*grid-template-columns:/);
+  assert.match(home, /\.editorial-kpi-strip b \{[^}]*width: 48px; height: 32px/);
+});
+
+test("registry loading keeps table columns and rows instead of a short empty paragraph", () => {
+  const source = fs.readFileSync(new URL("../src/MediaRegistry.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/mediaRegistry.css", import.meta.url), "utf8");
+  assert.match(source, /aria-busy=\{busy\}/);
+  assert.match(source, /<colgroup>/);
+  assert.match(source, /registry-skeleton-row/);
+  assert.match(css, /table\.registry-table \{ table-layout:fixed/);
+  assert.match(css, /\.registry-table tbody td \{ height:80px/);
+});
+
 test("form controls share one visual contract across feature stylesheets", () => {
   const shared = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
   assert.match(shared, /--control-height: 40px/);

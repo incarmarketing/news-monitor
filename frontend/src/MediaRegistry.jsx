@@ -12,7 +12,7 @@ const statuses = { pending: "확인 대기", not_found: "기자명 미확인", n
 
 export default function MediaRegistry({ children, reportersOnly = false, onSummary }) {
   const [data, setData] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
   const [mode, setMode] = useState(reportersOnly ? "reporters" : "media");
   const [query, setQuery] = useState("");
@@ -40,20 +40,21 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
       : mode === "reporters" ? { mode: "reporter", key: JSON.stringify([row.media, row.name]), title: `${row.media} · ${row.name}` }
       : { mode: "media", key: row.name, title: row.name });
   }
-  return <section className="media-registry" data-registry-mode={mode} aria-label={reportersOnly ? "누적 기자 이력" : "누적 언론사 이력"}>
+  return <section className="media-registry" data-registry-mode={mode} aria-busy={busy} aria-label={reportersOnly ? "누적 기자 이력" : "누적 언론사 이력"}>
     <header className="registry-section-heading"><div className="registry-tabs" role="tablist" aria-label={reportersOnly ? "기자 관리 보기" : "언론사 관리 보기"}>
-      {tabs.map(([key, label]) => <button type="button" role="tab" aria-selected={mode === key} className={mode === key ? "active" : ""} onClick={() => chooseMode(key)} key={key}>{label}{key === "unknown" && data && <span>{data.unknown.reduce((sum, row) => sum + row.article_count, 0)}</span>}</button>)}
+      {tabs.map(([key, label]) => <button type="button" role="tab" aria-selected={mode === key} className={mode === key ? "active" : ""} onClick={() => chooseMode(key)} key={key}>{label}{key === "unknown" && <span>{data ? data.unknown.reduce((sum, row) => sum + row.article_count, 0) : ""}</span>}</button>)}
     </div></header>
     {mode === "manual" ? children : selection ? <RegistryDetail key={`${selection.mode}:${selection.key}`} selection={selection} summaryRevision={data?.as_of} onBack={() => setSelection(null)} onSaved={refresh} /> : <>
       <div className="registry-toolbar">
         <div><h2 className="sr-only">{reportersOnly ? "당사 보도 작성 기자" : mode === "unknown" ? "언론사 확인 대기" : "당사 보도 매체"}</h2>
-          {data && <p>누적 당사 언급 {data.own_articles.toLocaleString()}건 · {date(data.as_of)} 기준</p>}</div>
+          <p>{data ? <>누적 당사 언급 {data.own_articles.toLocaleString()}건 · {date(data.as_of)} 기준</> : <span className="registry-skeleton-fill registry-summary-skeleton" aria-hidden="true" />}</p></div>
         <label className="registry-search"><Search size={16} /><input aria-label="언론사·기자 검색" placeholder={mode === "unknown" ? "주소 검색" : "언론사·기자 검색"} value={query} onChange={(e) => {setQuery(e.target.value); setPage(0);}} /></label>
         <button type="button" className="registry-icon" title="누적 이력 새로고침" aria-label="누적 이력 새로고침" onClick={refresh} disabled={busy}><RefreshCw size={18} /></button>
       </div>
       {error && <p role="alert" className="registry-error">{error}</p>}
-      {!data ? <p className="registry-empty" role="status">{busy ? "누적 이력 조회 중" : "조회 결과 없음"}</p> : <>
-        <div className="registry-table-wrap"><table className="registry-table"><thead><tr>
+      {!data && error ? <p className="registry-empty" role="status">조회 결과 없음</p> : <>
+        {!data && <span className="sr-only" role="status">누적 이력 조회 중</span>}
+        <div className="registry-table-wrap"><table className="registry-table"><colgroup><col style={{ width: "24%" }} /><col style={{ width: "26%" }} /><col style={{ width: "13%" }} /><col style={{ width: "25%" }} /><col style={{ width: "12%" }} /></colgroup><thead><tr>
           <th>{mode === "unknown" ? "미확인 주소" : mode === "reporters" ? "기자" : "언론사"}</th>
           <th>{mode === "unknown" ? "당사 언급" : mode === "reporters" ? "언론사" : "작성 기자"}</th>
           <th>기사 수</th><th>최근 보도</th><th>{mode === "media" ? "분석" : "이력"}</th>
@@ -64,9 +65,9 @@ export default function MediaRegistry({ children, reportersOnly = false, onSumma
             <small>확인 {row.verified_count} / {row.article_count}건</small></>}</td>
           <td>{row.article_count.toLocaleString()}건</td><td>{date(row.last_at)}</td>
           <td><button type="button" className="registry-icon" title={mode === "media" ? "보도 분석 보기" : "기사 이력 보기"} aria-label={`${row.name || row.host || "미확인"} ${mode === "media" ? "보도 분석 보기" : "기사 이력 보기"}`} onClick={() => open(row)}><ChevronRight size={18} /></button></td>
-        </tr>)}</tbody></table></div>
-        {!rows.length && <p className="registry-empty">{query ? "검색 결과가 없습니다." : mode === "unknown" ? "확인 대기 중인 언론사가 없습니다." : "확인된 이력이 없습니다."}</p>}
-        <div className="registry-pagination-row"><RegistryPager offset={page * pageSize} count={rows.length} size={pageSize} onPage={(offset) => setPage(offset / pageSize)} /><AppSelect aria-label="언론사 목록 페이지 크기" value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(0); }}>{[6, 20, 50].map(size => <option key={size} value={size}>{size}개씩 보기</option>)}</AppSelect></div>
+        </tr>)}{!data && Array.from({ length: pageSize }, (_, index) => <tr className="registry-skeleton-row" key={`loading-${index}`} aria-hidden="true">{[0, 1, 2, 3, 4].map(column => <td key={column}><span className="registry-skeleton-fill" /></td>)}</tr>)}</tbody></table></div>
+        {data && !rows.length && <p className="registry-empty">{query ? "검색 결과가 없습니다." : mode === "unknown" ? "확인 대기 중인 언론사가 없습니다." : "확인된 이력이 없습니다."}</p>}
+        <div className="registry-pagination-row"><RegistryPager offset={page * pageSize} count={rows.length} size={pageSize} onPage={(offset) => setPage(offset / pageSize)} /><AppSelect aria-label="언론사 목록 페이지 크기" value={pageSize} disabled={!data} onChange={event => { setPageSize(Number(event.target.value)); setPage(0); }}>{[6, 20, 50].map(size => <option key={size} value={size}>{size}개씩 보기</option>)}</AppSelect></div>
       </>}
     </>}
   </section>;
