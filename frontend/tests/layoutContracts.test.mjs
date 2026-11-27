@@ -100,7 +100,19 @@ test("data status and update time belong beside the global collection control", 
   assert.ok(actions.indexOf('<NewsroomDataStatus') < actions.indexOf('className="newsroom-collect"'));
   assert.match(actions, /<NewsroomDataStatus operations=\{operations\}/);
   assert.doesNotMatch(main + homeCss, /editorial-data-status/);
-  assert.match(css, /\.newsroom-data-status \{[^}]*grid-template-rows: repeat\(2, 20px\); width: 172px; height: 40px/);
+  assert.match(css, /\.newsroom-data-status > span, \.newsroom-data-status time \{[^}]*height: 44px/);
+  assert.match(css, /\.newsroom-data-status > span \{ width: 120px/);
+  assert.match(css, /\.newsroom-data-status time \{ width: 160px/);
+  assert.doesNotMatch(main.slice(main.indexOf('function NewsroomDataStatus'), main.indexOf('function DashboardEditorialHeader')), /<button/);
+});
+
+test("active monitoring scope and its clear icon share one bounded control", () => {
+  const view = fs.readFileSync(new URL("../src/MonitoringWorkbench.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/monitoring-workbench.css", import.meta.url), "utf8");
+  assert.match(view, /className="monitor-scope-chip"[^>]*onClick=\{clearScope\}><span>\{scopeLabel\}<\/span><X size=\{16\}/);
+  assert.match(css, /\.monitor-scope-chip \{[^}]*gap: 6px; max-width: 100%; height: 28px/);
+  assert.match(css, /\.monitor-scope-chip > span \{[^}]*text-overflow: ellipsis/);
+  assert.match(view, /focus\(\{ preventScroll: true \}\)/);
 });
 
 test("date popover uses equal date columns and a bottom-aligned apply action", () => {

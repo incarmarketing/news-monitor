@@ -22,6 +22,7 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
   const scrollBox = useRef(null);
   const filtersBox = useRef(null);
   const dateTrigger = useRef(null);
+  const categoryTabs = useRef(null);
   const paginated = useMemo(() => monitoringPage(rows, page, pageSize), [rows, page, pageSize]);
   const pageRows = useMemo(() => paginated.rows.map(normalizeRow), [paginated.rows, normalizeRow]);
   const selectedRows = useMemo(() => rows.filter(row => selected.has(rowKey(row))), [rows, selected, rowKey]);
@@ -68,6 +69,11 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
   const apply = (event) => { event?.preventDefault(); onApply(); setDatesOpen(false); if (datesOpen) dateTrigger.current?.focus({ preventScroll: true }); };
   const toggleDates = event => { dateTrigger.current = event.currentTarget; setDatesOpen(value => !value); };
   const reset = () => { onReset(); setDatesOpen(false); setSelected(new Set()); setPage(1); setExpanded(null); };
+  const clearScope = () => {
+    reset();
+    requestAnimationFrame(() => categoryTabs.current?.querySelector('[aria-selected="true"]')?.focus({ preventScroll: true }));
+  };
+  const scopeLabel = focusLabel || (filters.query ? `전체 보관 검색: ${filters.query}` : "");
   const activeCategory = monitoringCategoryKey(filters.category);
   const tabs = monitoringCategories.filter(item => ["own", "ga", "insurance", "policy"].includes(item.key) || categoryCounts[item.key] || (filters.category !== "all" && item.key === activeCategory));
   const rangeLabel = filters.startDateInput === filters.endDateInput
@@ -102,14 +108,14 @@ export default function MonitoringWorkbench({ rows, exportRows, categoryCounts, 
     </section>
     <section className="monitor-results" aria-label="수집 기사 목록" aria-busy={isUpdating}>
       <header className="monitor-results-header">
-        <div className="monitor-category-tabs" role="tablist" aria-label="기사 분류">
+        <div className="monitor-category-tabs" role="tablist" aria-label="기사 분류" ref={categoryTabs}>
           <button type="button" role="tab" aria-selected={filters.category === "all"} onClick={() => onChange("category", "all")}>전체 <b>{Object.values(categoryCounts).reduce((sum, n) => sum + n, 0)}</b></button>
           {tabs.map(item => <button key={item.key} type="button" role="tab" aria-selected={filters.category !== "all" && activeCategory === item.key} onClick={() => onChange("category", item.key)}>{item.label} <b>{categoryCounts[item.key]}</b></button>)}
         </div>
         <button type="button" className="monitor-command monitor-export" onClick={exportCsv} disabled={!exportRows.length || isUpdating}><Download aria-hidden="true"/><span>{selectedRows.length ? `선택 ${selectedRows.length}건 CSV` : "CSV 내보내기"}</span></button>
       </header>
       <div className="monitor-status-bar">
-        <div className="monitor-scope">{(focusLabel || filters.query) && <><span>{focusLabel || `전체 보관 검색: ${filters.query}`}</span><button type="button" aria-label="검색 범위 해제" title="검색 범위 해제" onClick={reset}><X/></button></>}</div>
+        <div className="monitor-scope">{scopeLabel && <button className="monitor-scope-chip" type="button" aria-label={`${scopeLabel} 필터 해제`} title={`${scopeLabel} · 필터 해제`} onClick={clearScope}><span>{scopeLabel}</span><X size={16} aria-hidden="true" /></button>}</div>
         <div className="monitor-loading" role="status" aria-live="polite">{isUpdating ? "검색 결과 확인 중" : ""}</div>
       </div>
       <div className="monitor-table-scroll" ref={scrollBox}>

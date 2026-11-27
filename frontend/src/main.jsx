@@ -9,6 +9,7 @@ import {
   Bookmark,
   ChevronDown,
   ChevronRight,
+  Clock,
   Download,
   ExternalLink,
   FilePenLine,
@@ -1098,7 +1099,7 @@ function NewsroomDataStatus({ operations }) {
   const sourceTime = formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || "-");
   return <p className={`newsroom-data-status ${live ? "live" : ""}`} role="group" aria-label="기사 데이터 상태">
     <span><i aria-hidden="true" />{live ? "데이터 정상" : status === "live" ? "저장본 · 연결 확인 필요" : "데이터 확인 중"}</span>
-    <time>{sourceTime} 기준</time>
+    <time title="기사 데이터 기준 시각"><Clock size={14} aria-hidden="true" /><span>{sourceTime} 기준</span></time>
   </p>;
 }
 

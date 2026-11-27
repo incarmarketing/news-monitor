@@ -28,9 +28,12 @@
 .monitor-custom-dates input { width: 100%; min-width: 0; }
 .monitor-custom-dates > button { white-space: nowrap; }
 .monitor-custom-dates > button svg { width: 18px; height: 18px; }
-.monitor-status-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
-.monitor-scope { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; color: var(--muted); }
-.monitor-scope button { border: 0; background: none; display: grid; place-items: center; }
+.monitor-status-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; min-height: 32px; }
+.monitor-scope { display: flex; align-items: center; flex: 1; min-width: 0; }
+.monitor-scope-chip { display: inline-flex; align-items: center; min-width: 0; gap: 6px; max-width: 100%; height: 28px; padding: 0 8px 0 10px; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--paper-soft); color: var(--ink-2); font-size: 14px; line-height: 22px; }
+.monitor-scope-chip > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.monitor-scope-chip > svg { width: 16px; height: 16px; flex: none; color: var(--muted); }
+.monitor-scope-chip:hover { border-color: var(--muted); }
 .monitor-results { grid-column: 1 / -1; min-width: 0; position: relative; margin-top: 16px; }
 .monitor-results-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 0 15px; border-bottom: 2px solid var(--ink); }
 .monitor-category-tabs { display: flex; align-items: center; gap: 20px; flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
@@ -82,7 +85,7 @@
   .monitor-header h1 { font-size: 32px; }
   .monitor-filters { align-content: start; }
   .monitor-date-label { width: 280px; min-width: 280px; justify-content: space-between; font-variant-numeric: tabular-nums; }
-  .monitor-results { display: grid; grid-template-rows: 56px 32px minmax(0, 1fr) 56px; margin: 0; min-height: 0; }
+  .monitor-results { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 56px 32px minmax(0, 1fr) 56px; margin: 0; min-height: 0; }
   .monitor-results-header { min-height: 0; padding-bottom: 10px; }
   .monitor-category-tabs { gap: 8px; flex-wrap: nowrap; }
   .monitor-category-tabs button { font-size: 18px; }
