@@ -49,6 +49,7 @@ try {
   await page.locator('.media-intel-board[aria-busy="false"]').waitFor({ timeout: 90000 });
   await page.evaluate(() => document.fonts.ready);
   assert.equal(await page.locator(".media-issue-entry").count(), 6, "issue count and rendered list disagree");
+  assert.equal(await page.locator('.media-issue-entry[data-article-count="1"] button').count(), 0, "single articles displayed a misleading group button");
   assert.match(await page.locator(".media-issues .panel-head").innerText(), /이슈 6개/);
   assert.equal(await page.locator(".media-issue-entry h3").filter({ hasText: /브랜드평판|GA 평판/ }).count(), 1, "one ranking announcement occupied several issue slots");
   const snapshot = async name => { await page.screenshot({ path: path.join(out, `${name}.png`), animations: "disabled" }); report.screenshots.push(name); };

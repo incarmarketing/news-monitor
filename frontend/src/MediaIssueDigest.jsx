@@ -17,11 +17,11 @@ export default function MediaIssueDigest({ issues = [], loading = false, error =
         const rows = mediaIssueArticles(issue);
         const href = mediaArticleUrl(issue);
         const headline = displayHeadline(issue);
-        return <article className="media-issue-entry" key={issue.eventKey || mediaArticleKey(issue)}>
+        return <article className="media-issue-entry" data-article-count={rows.length} key={issue.eventKey || mediaArticleKey(issue)}>
           <div className="media-issue-kicker"><span className="media-issue-number">{String(index + 1).padStart(2, "0")}</span><span data-tone={issue.tone || "중립"}>{issue.tone || "중립"}</span><span>{issue.category || "이슈"}</span></div>
           <h3>{href ? <a href={href} target="_blank" rel="noopener noreferrer" title={headline}>{headline}</a> : headline}</h3>
           <div className="media-issue-footer"><span>{resolvePublisher({ ...issue, source: issue.representativeSource || issue.source })} · {mediaArticleDate(issue)}</span>
-            <button type="button" aria-label={`${headline} 기사 ${rows.length}건 보기`} onClick={event => { opener.current = event.currentTarget; setSelection({ issue, rows }); }}>기사 {rows.length.toLocaleString("ko-KR")}건<ChevronRight size={16} /></button>
+            {rows.length > 1 ? <button type="button" aria-label={`${headline} 기사 ${rows.length}건 보기`} onClick={event => { opener.current = event.currentTarget; setSelection({ issue, rows }); }}>기사 {rows.length.toLocaleString("ko-KR")}건<ChevronRight size={16} /></button> : <span className="media-issue-count">기사 {rows.length}건</span>}
           </div>
         </article>;
       })}
