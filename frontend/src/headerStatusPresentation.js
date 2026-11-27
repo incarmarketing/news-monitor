@@ -6,9 +6,9 @@ const clockFormatter = new Intl.DateTimeFormat("en-GB", {
 export function headerDataStatus(operations = {}) {
   const live = operations.status === "live" && operations.source === "supabase"
     && !operations.degraded && !operations.statusReadFailed && !operations.dataLoadWarnings?.length;
-  const pending = !operations.status || operations.status === "loading";
-  const state = live ? "ok" : pending ? "pending" : "error";
-  const label = live ? "데이터 연결 정상" : pending ? "데이터 상태 확인 중"
+  const pending = operations.coreCheckPending === true || !operations.status || operations.status === "loading";
+  const state = pending ? "pending" : live ? "ok" : "error";
+  const label = pending ? "데이터 상태 확인 중" : live ? "데이터 연결 정상"
     : operations.status === "live" ? "저장본 또는 일부 연결 확인 필요" : "데이터 연결 확인 필요";
   const raw = String(operations.articlesGeneratedAt || operations.generatedAt || "").trim();
   const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);

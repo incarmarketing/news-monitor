@@ -72,9 +72,9 @@ try {
         assert.ok(statusBox && timeBox, "data status is not visible in the global header");
         assert.equal(statusBox.height, 44); assert.equal(timeBox.height, 44); assert.equal(collectBox.height, 44);
         assert.ok(timeBox.width > statusBox.width, "timestamp must have a wider display than the state");
-        assert.ok(timeBox.x - (statusBox.x + statusBox.width) >= 7, "state and timestamp displays overlap");
+        assert.ok(statusBox.x - (timeBox.x + timeBox.width) >= 7, "clock must be left of the status light");
         assert.ok(Math.abs(statusBox.y - timeBox.y) <= 1, "state and timestamp are not vertically aligned");
-        if (viewport.width > 760) assert.ok(timeBox.x + timeBox.width + 7 <= collectBox.x && Math.abs(timeBox.y - collectBox.y) <= 1, "timestamp and collection icon are not aligned");
+        if (viewport.width > 760) assert.ok(statusBox.x + statusBox.width + 7 <= collectBox.x && Math.abs(timeBox.y - collectBox.y) <= 1, "status light and collection icon are not aligned");
         assert.ok(statusBox.x >= 0 && timeBox.x + timeBox.width <= viewport.width && collectBox.x + collectBox.width <= viewport.width, "header controls overflow the viewport");
         await main.locator("h1").waitFor();
         await page.waitForFunction(() => ![...document.querySelectorAll('main.workspace')].filter(e => e.getBoundingClientRect().width).some(e => /화면 불러오는 중/.test(e.innerText)));

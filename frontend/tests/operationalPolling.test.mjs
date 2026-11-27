@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createOperationalPoller, kstPollingDay } from '../src/operationalPolling.js';
+import { coreSnapshotConnection, createOperationalPoller, kstPollingDay } from '../src/operationalPolling.js';
 
 function harness() {
   const state = { now: Date.parse('2026-09-10T00:00:00Z'), revision: 'a1', patch: {}, warnings: [], visible: true,
@@ -17,6 +17,15 @@ function harness() {
   });
   return { state, poller, tick: async () => { state.now += 60_000; if (timer) await timer(); } };
 }
+
+test('a verified core snapshot clears obsolete connection failures but not current warnings', () => {
+  const old = { coreCheckPending: true, degraded: true, statusReadFailed: true };
+  const recovered = { ...old, ...coreSnapshotConnection({ source: 'supabase', status: 'live', dataLoadWarnings: [] }) };
+  assert.deepEqual(recovered, { coreCheckPending: false, degraded: false, statusReadFailed: false });
+  assert.deepEqual(coreSnapshotConnection({ source: 'static', status: 'live' }), { coreCheckPending: false, degraded: true, statusReadFailed: true });
+  assert.equal(coreSnapshotConnection({ source: 'supabase', status: 'live', dataLoadWarnings: ['notifications_unavailable'] }).statusReadFailed, true);
+  assert.equal(coreSnapshotConnection({ source: 'supabase', status: 'live', degraded: true }).degraded, true);
+});
 
 test('one hour unchanged: one article load, no GitHub path, lightweight checks only', async () => {
   const h = harness(); await h.poller.start();

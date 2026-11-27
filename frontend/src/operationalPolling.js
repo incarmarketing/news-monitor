@@ -5,6 +5,15 @@ const topicFields = {
   report_runs: "reportRuns", job_runs: "jobRuns",
 };
 
+export function coreSnapshotConnection(snapshot = {}) {
+  const verified = snapshot.source === "supabase" && snapshot.status === "live";
+  return {
+    coreCheckPending: false,
+    degraded: !verified || Boolean(snapshot.degraded),
+    statusReadFailed: !verified || Boolean(snapshot.dataLoadWarnings?.length),
+  };
+}
+
 export function kstPollingDay(now) {
   return new Date(now + 9 * 60 * 60_000).toISOString().slice(0, 10);
 }

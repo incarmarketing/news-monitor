@@ -67,7 +67,7 @@ import {
   isDashboardPriorityArticle,
   mergeDashboardMomentumWithReportRuns,
 } from "./dashboardRisk";
-import { createOperationalPoller } from "./operationalPolling.js";
+import { coreSnapshotConnection, createOperationalPoller } from "./operationalPolling.js";
 import "./styles.css";
 import "./report.css";
 import { DashboardAnalysis, DashboardDialog, DashboardOperationsStrip, DashboardPriorityTable } from "./DashboardWorkbench.jsx";
@@ -232,7 +232,7 @@ function App() {
   const [pendingSection, setPendingSection] = useState("");
   const [period, setPeriod] = useState("daily");
   const [operations, setOperations] = useState(
-    () => initialCachedCore || { status: "loading", message: "연결 확인 중", articles: [] },
+    () => ({ ...(initialCachedCore || { status: "loading", message: "연결 확인 중", articles: [] }), coreCheckPending: true }),
   );
   const [articleProfiles, setArticleProfiles] = useState(
     () => initialCachedCore?.articles?.length ? { core: initialCachedCore.articles } : {},
@@ -288,6 +288,15 @@ function App() {
       }
       return next;
     });
+  };
+
+  const applyCoreSnapshot = (snapshot, { message, articleRevision } = {}) => {
+    rememberArticleProfile("core", snapshot);
+    setOperations(current => mergeOperationalSnapshots(current, {
+      ...snapshot, ...coreSnapshotConnection(snapshot),
+      articleRevision: articleRevision || current.articleRevision || "",
+      ...(message ? { message } : {}),
+    }, true));
   };
 
   const clearWorkTimers = () => {
@@ -365,12 +374,7 @@ function App() {
       }
     }
     const next = await loadOperationalData({ profile: "core" });
-    rememberArticleProfile("core", next);
-    setOperations((current) => mergeOperationalSnapshots(
-      current,
-      triggerMessage ? { ...next, message: `${triggerMessage} · ${next.message}` } : next,
-      true,
-    ));
+    applyCoreSnapshot(next, { message: triggerMessage ? `${triggerMessage} · ${next.message}` : "" });
     if (trigger && triggerFailed) {
       setWorkLabel(triggerMessage);
       workTimers.current.push(window.setTimeout(() => {
@@ -408,7 +412,6 @@ function App() {
       }
       if (refreshGeneration.current !== generation) return;
       const finalData = await loadOperationalData({ profile: "core" });
-      rememberArticleProfile("core", finalData);
       const finalChanged = operationsFingerprint(finalData) !== beforeFingerprint;
       const suffix = finalChanged
         ? "신규 데이터 반영 완료"
@@ -417,11 +420,7 @@ function App() {
           : finishedConclusion
             ? `수집 종료 상태 확인 필요: ${finishedConclusion}`
             : "수집 요청 완료 · GitHub Actions 지연 가능";
-      setOperations((current) => mergeOperationalSnapshots(
-        current,
-        { ...finalData, message: `${suffix} · ${finalData.message}` },
-        true,
-      ));
+      applyCoreSnapshot(finalData, { message: `${suffix} · ${finalData.message}` });
       finishWorkStatus(label, `${label} ${suffix}`);
       return;
     }
@@ -440,10 +439,7 @@ function App() {
       onCore: (next, articleRevision) => {
         loadingDataProfiles.current.delete("core");
         if (next?.status === "live") loadedDataProfiles.current.add("core");
-        rememberArticleProfile("core", next);
-        setOperations((current) => mergeOperationalSnapshots(current, {
-          ...next, articleRevision: articleRevision || current.articleRevision || "",
-        }, true));
+        applyCoreSnapshot(next, { articleRevision });
       },
       onStatus: (patch, watchJob, warnings) => {
         setOperations((current) => ({ ...current, ...patch,
@@ -483,8 +479,9 @@ function App() {
       .then((next) => {
         if (!active) return;
         if (next?.status === "live") loadedDataProfiles.current.add(profile);
+        if (profile === "core") { applyCoreSnapshot(next); return; }
         rememberArticleProfile(profile, next);
-        const operationalSnapshot = profile === "core" ? next : { ...next, articles: [] };
+        const operationalSnapshot = { ...next, articles: [] };
         setOperations((current) => mergeOperationalSnapshots(current, operationalSnapshot, true));
       })
       .finally(() => {
@@ -1096,8 +1093,8 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
 function NewsroomDataStatus({ operations }) {
   const status = headerDataStatus(operations);
   return <p className="newsroom-data-status" role="group" aria-label="기사 데이터 상태">
-    <span className="newsroom-status-light" data-state={status.state} role="img" aria-label={status.label} title={status.label}><i aria-hidden="true" /></span>
     <time className="newsroom-digital-clock" dateTime={status.dateTime} title={status.timeTitle} aria-label={`기사 데이터 기준 시각 ${status.timeTitle}`}><span className="newsroom-clock-date" aria-hidden="true">{status.dateLabel}</span><span className="newsroom-clock-digits" aria-hidden="true">{status.timeLabel}</span></time>
+    <span className="newsroom-status-light" data-state={status.state} role="img" aria-label={status.label} title={status.label}><i aria-hidden="true" /></span>
   </p>;
 }
 

@@ -12,6 +12,13 @@ test("header indicator requires a verified healthy connection", () => {
   assert.equal(headerDataStatus({ status: "loading" }).state, "pending");
 });
 
+test("cached content remains unverified while the initial live read is pending", () => {
+  const cached = { ...live, source: "cache", dataLoadWarnings: ["cached_snapshot"], statusReadFailed: true, coreCheckPending: true };
+  assert.equal(headerDataStatus(cached).state, "pending");
+  assert.equal(headerDataStatus({ ...cached, coreCheckPending: false }).state, "error");
+  assert.equal(headerDataStatus({ ...live, coreCheckPending: true }).state, "pending");
+});
+
 test("digital clock shows the data timestamp in KST, not the current wall time", () => {
   const status = headerDataStatus(live);
   assert.equal(status.dateLabel, "11.27");

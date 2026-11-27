@@ -20,15 +20,27 @@ const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIG
 let currentPage;
 try {
   for (const [width, height] of [[1864, 900], [1381, 900], [1201, 768], [390, 844], [320, 740]]) {
-    let warnings = [];
+    let warnings = [], changesFail = false, snapshotFails = false, snapshotDelay = 0;
     const context = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" });
+    await context.addInitScript(() => {
+      window.__headerSignals = [];
+      let previous = '';
+      new MutationObserver(() => {
+        const state = document.querySelector('.newsroom-status-light')?.dataset.state;
+        if (state && state !== previous) { previous = state; window.__headerSignals.push(state); }
+      }).observe(document, { subtree: true, childList: true, attributes: true });
+    });
+    await context.route(/\/(?:operations|articles)\.json(?:\?.*)?$/, route => route.fulfill({ json: { generated_at: now, articles_generated_at: now, articles, notifications: [], watch_runs: [], report_runs: [], job_runs: [] } }));
     await context.route(/\/supabase\.json(?:\?.*)?$/, route => route.fulfill({ json: { url: "https://qa-scope.invalid", anon_key: "fixture-not-a-key" } }));
-    await context.route("https://qa-scope.invalid/**", route => {
+    await context.route("https://qa-scope.invalid/**", async route => {
       const headers = { "access-control-allow-origin": "*", "access-control-allow-headers": "*" };
       if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers });
       const { action, payload = {} } = route.request().postDataJSON() || {};
-      if (action === "snapshot") return route.fulfill({ headers, json: { ok: true, snapshot_at: now, data: { articles, notifications: [], watch_runs: [], report_runs: [], job_runs: [] } } });
-      if (action === "changes") return route.fulfill({ headers, json: { ok: true, revisions: { news_articles: "scope-r1" }, data: {}, warnings } });
+      if (action === "snapshot") {
+        if (snapshotDelay) await new Promise(resolve => setTimeout(resolve, snapshotDelay));
+        return route.fulfill({ headers, status: snapshotFails ? 503 : 200, json: snapshotFails ? { ok: false, error: 'fixture_snapshot_offline' } : { ok: true, snapshot_at: now, data: { articles, notifications: [], watch_runs: [], report_runs: [], job_runs: [] } } });
+      }
+      if (action === "changes") return route.fulfill({ headers, status: changesFail ? 503 : 200, json: changesFail ? { ok: false, error: 'fixture_changes_offline' } : { ok: true, revisions: { news_articles: "scope-r1" }, data: {}, warnings } });
       if (action === "article_range") return route.fulfill({ headers, json: { ok: true, articles, next_offset: null } });
       if (action === "workflow_health") return route.fulfill({ headers, json: { ok: true, workflow: { id: payload.workflow, status: "live", latest: null } } });
       if (action === "rest" && payload.method === "GET") return route.fulfill({ headers, json: { ok: true, data: [] } });
@@ -53,13 +65,15 @@ try {
     assert.ok(header.time.width > header.state.width);
     assert.equal(header.state.height, 44); assert.equal(header.time.height, 44); assert.equal(header.button.height, 44);
     assert.equal(header.state.y, header.time.y);
-    assert.ok(header.time.x >= header.state.x + header.state.width + 7);
-    if (width > 760) assert.ok(header.button.x >= header.time.x + header.time.width + 7 && header.button.y === header.time.y);
+    assert.ok(header.state.x >= header.time.x + header.time.width + 7, 'clock is not the leftmost status control');
+    if (width > 760) assert.ok(header.button.x >= header.state.x + header.state.width + 7 && header.button.y === header.time.y);
     assert.equal(await page.locator('.newsroom-data-status button').count(), 0, "read-only status displays became fake actions");
     assert.match(await time.locator('.newsroom-clock-date').innerText(), /^\d{2}\.\d{2}$/);
     assert.match(await time.locator('.newsroom-clock-digits').innerText(), /^\d{2}:\d{2}$/);
     const clockDate = await time.locator('.newsroom-clock-date').boundingBox(), clockDigits = await time.locator('.newsroom-clock-digits').boundingBox();
     assert.ok(Math.abs(clockDate.y + clockDate.height / 2 - clockDigits.y - clockDigits.height / 2) <= 1, 'digital date and time wrapped onto different lines');
+    assert.ok(await time.evaluate(node => getComputedStyle(node).backgroundColor.match(/\d+/g).map(Number).slice(0, 3).every(value => value < 50)), 'clock face must be dark');
+    assert.equal(await time.locator('.newsroom-clock-digits').evaluate(node => getComputedStyle(node).fontSize), '24px');
     warnings = ["notifications_unavailable"];
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await page.locator('.newsroom-status-light[data-state="error"]').waitFor();
@@ -73,6 +87,24 @@ try {
     warnings = [];
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await page.locator('.newsroom-status-light[data-state="ok"]').waitFor();
+
+    await page.waitForFunction(() => Boolean(localStorage.getItem('incar_core_snapshot_v3')));
+    changesFail = true; snapshotDelay = 1100;
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('.newsroom-status-light[data-state="pending"]').waitFor();
+    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor({ timeout: 60000 });
+    assert.equal(await page.evaluate(() => window.__headerSignals.includes('error')), false, 'a warm reload flashed a false red signal before the healthy snapshot');
+
+    snapshotFails = true;
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('.newsroom-status-light[data-state="pending"]').waitFor();
+    await page.locator('.newsroom-status-light[data-state="error"]').waitFor({ timeout: 60000 });
+    await page.screenshot({ path: path.join(out, `${width}-connection-failed.png`), animations: 'disabled' });
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    changesFail = false; snapshotFails = false; snapshotDelay = 0;
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor({ timeout: 60000 });
+    assert.deepEqual(await headerBounds(), header, 'recovered snapshot changed the status control geometry');
 
     const openOwn = async () => {
       await page.locator('[data-section="overview"]').click();

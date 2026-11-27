@@ -91,9 +91,9 @@ label > span { color: var(--muted); font-size: 14px; }
 .newsroom-status-light i { width: 14px; height: 14px; flex: none; border-radius: 50%; background: #7b858d; }
 .newsroom-status-light[data-state="ok"] i { background: #226fd2; box-shadow: 0 0 0 3px #226fd214; }
 .newsroom-status-light[data-state="error"] i { background: #cf3945; box-shadow: 0 0 0 3px #cf394514; }
-.newsroom-data-status time { width: 160px; flex: none; gap: 12px; padding: 0 10px; border-color: #bec9d0; background: #edf2f5; box-shadow: inset 0 1px 2px #1720190a; color: #26333e; font-family: Consolas, "SFMono-Regular", "Liberation Mono", monospace; font-variant-numeric: tabular-nums; }
-.newsroom-clock-date { font-size: 12px; line-height: 20px; color: #65737f; }
-.newsroom-clock-digits { padding-left: 12px; border-left: 1px solid #c8d1d7; font-size: 20px; line-height: 24px; font-weight: 600; }
+.newsroom-data-status time { width: 160px; flex: none; gap: 12px; padding: 0 10px; border-color: #3c4a52; background: #11191e; box-shadow: inset 0 1px 4px #00000050; color: #eff7f2; font-family: Consolas, "SFMono-Regular", "Liberation Mono", monospace; font-variant-numeric: tabular-nums; }
+.newsroom-clock-date { font-size: 12px; line-height: 20px; color: #9dafb5; }
+.newsroom-clock-digits { padding-left: 12px; border-left: 1px solid #3a4a50; font-size: 24px; line-height: 28px; font-weight: 600; }
 .newsroom-global-actions button:hover { background: var(--accent); }
 .newsroom-collect-glyph { position: relative; display: block; width: 28px; height: 28px; }
 .newsroom-collect-glyph > svg:first-child { position: absolute; left: 0; top: 0; width: 24px; height: 24px; }
@@ -578,11 +578,11 @@ label > span { color: var(--muted); font-size: 14px; }
   h1 { font-size: 26px; } h2 { font-size: 20px; } h3 { font-size: 17px; }
   .newsroom-masthead { margin-inline: 16px; }
   .newsroom-logo { width: 74px; height: 28px; }
-  .newsroom-masthead { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: 44px 44px 46px; gap: 8px; }
+  .newsroom-masthead { display: grid; grid-template-columns: minmax(0, 1fr) 44px; grid-template-rows: 44px 44px 46px; gap: 8px; }
   .newsroom-brand { grid-column: 1 / -1; grid-row: 1; justify-self: start; }
   .newsroom-global-actions, .newsroom-data-status { display: contents; }
-  .newsroom-data-status > span { grid-column: 1; grid-row: 2; }
-  .newsroom-data-status time { grid-column: 2; grid-row: 2; width: 100%; }
+  .newsroom-data-status > span { grid-column: 2; grid-row: 2; }
+  .newsroom-data-status time { grid-column: 1; grid-row: 2; width: 100%; }
   .newsroom-collect { grid-column: 2; grid-row: 1; justify-self: end; }
   .newsroom-navigation { grid-column: 1 / -1; grid-row: 3; margin: 0; }
   .work-notice { right: 16px; bottom: 16px; }
