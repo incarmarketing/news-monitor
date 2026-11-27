@@ -9,6 +9,8 @@ import {
   Bookmark,
   ChevronDown,
   ChevronRight,
+  Check,
+  Clock3,
   Download,
   ExternalLink,
   FilePenLine,
@@ -20,6 +22,7 @@ import {
   Radar,
   RefreshCw,
   Search,
+  Server,
   Settings,
   ShieldCheck,
   TrendingDown,
@@ -77,7 +80,7 @@ import MonitoringWorkbench from "./MonitoringWorkbench.jsx";
 import { monitoringCategoryCounts, monitoringCategoryKey } from "./monitoringPresentation.js";
 import NewsroomChart from "./NewsroomChart.jsx";
 import { refreshFailureMessage } from "./refreshPresentation.js";
-import { headerDataStatus } from "./headerStatusPresentation.js";
+import { digitalClockGlyphs, headerDataStatus } from "./headerStatusPresentation.js";
 import { coalesceMediaEvents } from "./mediaIssueModel.js";
 import { mapCooperatively } from "./cooperativeWork.js";
 import AppSelect from "./AppSelect.jsx";
@@ -1092,9 +1095,15 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
 
 function NewsroomDataStatus({ operations }) {
   const status = headerDataStatus(operations);
+  const StatusIcon = status.state === "ok" ? Check : status.state === "error" ? AlertTriangle : Clock3;
   return <p className="newsroom-data-status" role="group" aria-label="기사 데이터 상태">
-    <time className="newsroom-digital-clock" dateTime={status.dateTime} title={status.timeTitle} aria-label={`기사 데이터 기준 시각 ${status.timeTitle}`}><span className="newsroom-clock-date" aria-hidden="true">{status.dateLabel}</span><span className="newsroom-clock-digits" aria-hidden="true">{status.timeLabel}</span></time>
-    <span className="newsroom-status-light" data-state={status.state} role="img" aria-label={status.label} title={status.label}><i aria-hidden="true" /></span>
+    <time className="newsroom-digital-clock" dateTime={status.dateTime} title={status.timeTitle} aria-label={`기사 데이터 기준 시각 ${status.timeTitle}`}>
+      <span className="newsroom-clock-date" aria-hidden="true">{status.dateLabel}</span>
+      <span className="newsroom-clock-digits" aria-hidden="true"><span className="sr-only">{status.timeLabel}</span>{digitalClockGlyphs(status.timeLabel).map((glyph, index) => glyph.character === ":"
+        ? <span className="newsroom-clock-colon" key={index}><i/><i/></span>
+        : <span className="newsroom-clock-digit" data-digit={glyph.character} key={index}>{[..."abcdefg"].map(segment => <i key={segment} data-segment={segment} data-lit={glyph.segments.includes(segment)}/>)}</span>)}</span>
+    </time>
+    <span className="newsroom-connection-status" data-state={status.state} role="img" aria-label={status.label} title={status.label}><Server aria-hidden="true"/><StatusIcon className="newsroom-connection-mark" aria-hidden="true"/></span>
   </p>;
 }
 
@@ -1684,7 +1693,7 @@ function Monitoring({
     <MonitoringWorkbench rows={visibleRows} exportRows={filtered} categoryCounts={categoryCounts}
       filters={{ queryInput, query, tone, category, source, viewMode, startDateInput, endDateInput, sources, tones: TONE_FILTER_OPTIONS }}
       filterKey={JSON.stringify([query, tone, category, source, viewMode, startDate, endDate, ownOnly, focusPreset])}
-      focusLabel={focusPreset?.issueTitle || focusPreset?.articleTitle || (ownOnly ? "당사 직접 언급" : "")}
+      focusLabel={focusPreset?.issueTitle || focusPreset?.articleTitle || ""}
       onChange={changeFilter} onApply={applyFilters} onReset={resetMonitoringFilters} onPeriod={selectPeriod}
       isUpdating={operations?.status === "loading" || isFilterPending || monitoringRangeLoading || filtered !== deferredFiltered || regularArticles !== deferredRegularArticles}
       updatedLabel={`${formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || latestDate || "-")} 기준`}

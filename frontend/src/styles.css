@@ -87,13 +87,28 @@ label > span { color: var(--muted); font-size: 14px; }
 .newsroom-global-actions button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); background: var(--blue-soft); border-radius: var(--control-radius); flex-shrink: 0; }
 .newsroom-data-status { display: flex; align-items: center; gap: 8px; height: 44px; margin: 0; flex: none; }
 .newsroom-data-status > span, .newsroom-data-status time { display: inline-flex; align-items: center; justify-content: center; height: 44px; border: 1px solid var(--line); border-radius: 4px; text-align: center; cursor: default; white-space: nowrap; }
-.newsroom-status-light { width: 44px; flex: none; background: var(--paper); }
-.newsroom-status-light i { width: 14px; height: 14px; flex: none; border-radius: 50%; background: #7b858d; }
-.newsroom-status-light[data-state="ok"] i { background: #226fd2; box-shadow: 0 0 0 3px #226fd214; }
-.newsroom-status-light[data-state="error"] i { background: #cf3945; box-shadow: 0 0 0 3px #cf394514; }
-.newsroom-data-status time { width: 160px; flex: none; gap: 12px; padding: 0 10px; border-color: #3c4a52; background: #11191e; box-shadow: inset 0 1px 4px #00000050; color: #eff7f2; font-family: Consolas, "SFMono-Regular", "Liberation Mono", monospace; font-variant-numeric: tabular-nums; }
-.newsroom-clock-date { font-size: 12px; line-height: 20px; color: #9dafb5; }
-.newsroom-clock-digits { padding-left: 12px; border-left: 1px solid #3a4a50; font-size: 24px; line-height: 28px; font-weight: 600; }
+.newsroom-connection-status { position: relative; width: 44px; flex: none; background: #f0f3f5; color: #6b7882; }
+.newsroom-connection-status > svg:first-child { width: 26px; height: 26px; stroke-width: 1.8; }
+.newsroom-connection-status .newsroom-connection-mark { position: absolute; right: 3px; bottom: 3px; width: 15px; height: 15px; padding: 1px; border-radius: 3px; background: inherit; stroke-width: 2.5; }
+.newsroom-connection-status[data-state="ok"] { border-color: #b9d1ef; background: #edf5ff; color: #2266bb; }
+.newsroom-connection-status[data-state="error"] { border-color: #eebcbc; background: #fff0f0; color: #bd303e; }
+.newsroom-data-status time { width: 160px; flex: none; gap: 10px; padding: 0 10px; border-color: #3c4a52; background: #0b1514; box-shadow: inset 0 1px 4px #00000050; color: #a8efd6; font-family: Consolas, "SFMono-Regular", "Liberation Mono", monospace; font-variant-numeric: tabular-nums; }
+.newsroom-clock-date { font-size: 12px; line-height: 20px; color: #a0b9b3; }
+.newsroom-clock-digits { position: relative; display: flex; align-items: center; justify-content: center; gap: 3px; height: 28px; padding-left: 10px; border-left: 1px solid #344943; }
+.newsroom-clock-digit { position: relative; display: block; width: 16px; height: 28px; flex: none; }
+.newsroom-clock-digit i { position: absolute; display: block; background: #14231e; }
+.newsroom-clock-digit i[data-lit="true"] { background: #a8efd6; }
+.newsroom-clock-digit i:is([data-segment="a"], [data-segment="d"], [data-segment="g"]) { left: 2px; width: 12px; height: 3px; clip-path: polygon(15% 0, 85% 0, 100% 50%, 85% 100%, 15% 100%, 0 50%); }
+.newsroom-clock-digit [data-segment="a"] { top: 0; }
+.newsroom-clock-digit [data-segment="g"] { top: 12.5px; }
+.newsroom-clock-digit [data-segment="d"] { bottom: 0; }
+.newsroom-clock-digit i:is([data-segment="b"], [data-segment="c"], [data-segment="e"], [data-segment="f"]) { width: 3px; height: 12px; clip-path: polygon(50% 0, 100% 15%, 100% 85%, 50% 100%, 0 85%, 0 15%); }
+.newsroom-clock-digit i:is([data-segment="b"], [data-segment="f"]) { top: 2px; }
+.newsroom-clock-digit i:is([data-segment="c"], [data-segment="e"]) { bottom: 2px; }
+.newsroom-clock-digit i:is([data-segment="b"], [data-segment="c"]) { right: 0; }
+.newsroom-clock-digit i:is([data-segment="e"], [data-segment="f"]) { left: 0; }
+.newsroom-clock-colon { display: flex; flex-direction: column; justify-content: center; gap: 7px; width: 5px; height: 28px; flex: none; }
+.newsroom-clock-colon i { display: block; width: 3px; height: 3px; margin: 0 auto; background: #a8efd6; }
 .newsroom-global-actions button:hover { background: var(--accent); }
 .newsroom-collect-glyph { position: relative; display: block; width: 28px; height: 28px; }
 .newsroom-collect-glyph > svg:first-child { position: absolute; left: 0; top: 0; width: 24px; height: 24px; }

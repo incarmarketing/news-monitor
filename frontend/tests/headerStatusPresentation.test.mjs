@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { headerDataStatus } from "../src/headerStatusPresentation.js";
+import { digitalClockGlyphs, headerDataStatus } from "../src/headerStatusPresentation.js";
+
+test("digital clock uses the correct seven-segment pattern for every numeral", () => {
+  const expected = ["abcdef", "bc", "abdeg", "abcdg", "bcfg", "acdfg", "acdefg", "abc", "abcdefg", "abcdfg"];
+  for (let digit = 0; digit < 10; digit++) {
+    const glyphs = digitalClockGlyphs(`${digit}${digit}:${digit}${digit}`);
+    assert.deepEqual(glyphs.filter(glyph => glyph.character !== ":").map(glyph => glyph.segments), Array(4).fill(expected[digit]));
+    assert.equal(glyphs[2].character, ":");
+    assert.equal(glyphs[2].segments, "");
+  }
+});
+
+test("unknown data timestamps remain four dashes rather than an invented time", () => {
+  for (const value of ["--:--", "", undefined, "invalid"]) {
+    assert.deepEqual(digitalClockGlyphs(value).map(glyph => glyph.character).join(""), "--:--");
+    assert.equal(digitalClockGlyphs(value).filter(glyph => glyph.segments === "g").length, 4);
+  }
+});
 
 const live = { status: "live", source: "supabase", generatedAt: "2026-11-27T07:37:00Z" };
 

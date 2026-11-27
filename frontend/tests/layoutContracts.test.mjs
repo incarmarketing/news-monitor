@@ -101,11 +101,22 @@ test("data status and update time belong beside the global collection control", 
   assert.match(actions, /<NewsroomDataStatus operations=\{operations\}/);
   assert.doesNotMatch(main + homeCss, /editorial-data-status/);
   assert.match(css, /\.newsroom-data-status > span, \.newsroom-data-status time \{[^}]*height: 44px/);
-  assert.match(css, /\.newsroom-status-light \{ width: 44px/);
+  assert.match(css, /\.newsroom-connection-status \{[^}]*width: 44px/);
   assert.match(css, /\.newsroom-data-status time \{ width: 160px/);
-  assert.match(main, /role="img" aria-label=\{status.label\} title=\{status.label\}><i aria-hidden="true" \/><\/span>/);
-  assert.match(css, /\.newsroom-clock-digits \{[^}]*font-size: 24px/);
+  assert.match(main, /role="img" aria-label=\{status.label\} title=\{status.label\}><Server aria-hidden="true"\/>/);
+  assert.match(main, /<StatusIcon className="newsroom-connection-mark"/);
+  assert.match(css, /\.newsroom-clock-digit \{[^}]*width: 16px; height: 28px/);
+  assert.match(main, /digitalClockGlyphs\(status.timeLabel\)/);
+  assert.doesNotMatch(css + main, /newsroom-status-light/);
   assert.doesNotMatch(main.slice(main.indexOf('function NewsroomDataStatus'), main.indexOf('function DashboardEditorialHeader')), /<button/);
+});
+
+test("own-mention entry retains the article filter without a redundant scope chip", () => {
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  assert.match(main, /setOwnOnly\(Boolean\(monitoringPreset.ownOnly\)\)/);
+  assert.match(main, /!ownOnly \|\| isOwnArticle\(article\)/);
+  assert.match(main, /focusLabel=\{focusPreset\?\.issueTitle \|\| focusPreset\?\.articleTitle \|\| ""\}/);
+  assert.match(main, /if \(field === "category"\) setOwnOnly\(false\)/);
 });
 
 test("active monitoring scope and its clear icon share one bounded control", () => {

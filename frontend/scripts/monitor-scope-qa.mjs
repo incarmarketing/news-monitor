@@ -13,6 +13,7 @@ const articles = [
   { title: "인카금융서비스, 보험설계사 교육센터 신규 개소", own_mentioned: true, category: "own", tone: "positive" },
   { title: "삼성화재, 자동차보험 보장 확대", category: "industry", tone: "neutral" },
   { title: "금융위원회, 보험소비자 보호 제도 개선", category: "policy", tone: "caution" },
+  { title: "보험 수수료 제도 개편, 인카금융서비스 교육 강화", own_mentioned: true, category: "policy", tone: "caution" },
 ].map((row, index) => ({ ...row, article_hash: `scope-qa-${index}`, source: "보험저널", summary: row.title, report_date: today, pub_date: now, link: `https://example.com/scope/${index}` }));
 const result = { rounds: [], errors: [], writes: [] };
 await fs.mkdir(out, { recursive: true });
@@ -26,7 +27,7 @@ try {
       window.__headerSignals = [];
       let previous = '';
       new MutationObserver(() => {
-        const state = document.querySelector('.newsroom-status-light')?.dataset.state;
+        const state = document.querySelector('.newsroom-connection-status')?.dataset.state;
         if (state && state !== previous) { previous = state; window.__headerSignals.push(state); }
       }).observe(document, { subtree: true, childList: true, attributes: true });
     });
@@ -55,9 +56,12 @@ try {
     await page.locator('.desk-priority[aria-busy="false"]').waitFor({ timeout: 90000 });
     await page.evaluate(() => document.fonts.ready);
     const state = page.locator('.newsroom-data-status > span'), time = page.locator('.newsroom-data-status time');
-    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor();
+    await page.locator('.newsroom-connection-status[data-state="ok"]').waitFor();
     assert.equal((await state.innerText()).trim(), '', 'status wording must be tooltip-only');
-    const blue = await state.locator('i').evaluate(node => getComputedStyle(node).backgroundColor);
+    assert.equal(await state.locator('svg').count(), 2, 'status must use a server icon and an explicit state symbol');
+    assert.equal(await state.locator('i').count(), 0, 'status still uses a dot');
+    const blue = await state.evaluate(node => getComputedStyle(node).color);
+    const blueBackground = await state.evaluate(node => getComputedStyle(node).backgroundColor);
     const blueRgb = blue.match(/\d+/g).map(Number);
     assert.ok(blueRgb[2] > blueRgb[0], 'healthy indicator must be blue, not red');
     const headerBounds = async () => ({ state: await state.boundingBox(), time: await time.boundingBox(), button: await page.getByRole('button', { name: '새 기사 수집', exact: true }).boundingBox() });
@@ -73,12 +77,17 @@ try {
     const clockDate = await time.locator('.newsroom-clock-date').boundingBox(), clockDigits = await time.locator('.newsroom-clock-digits').boundingBox();
     assert.ok(Math.abs(clockDate.y + clockDate.height / 2 - clockDigits.y - clockDigits.height / 2) <= 1, 'digital date and time wrapped onto different lines');
     assert.ok(await time.evaluate(node => getComputedStyle(node).backgroundColor.match(/\d+/g).map(Number).slice(0, 3).every(value => value < 50)), 'clock face must be dark');
-    assert.equal(await time.locator('.newsroom-clock-digits').evaluate(node => getComputedStyle(node).fontSize), '24px');
+    assert.equal(await time.locator('.newsroom-clock-digit').count(), 4);
+    assert.equal(await time.locator('[data-segment]').count(), 28);
+    assert.equal(await time.locator('.newsroom-clock-colon').count(), 1);
+    const digit = await time.locator('.newsroom-clock-digit').first().boundingBox();
+    assert.equal(digit.width, 16); assert.equal(digit.height, 28);
     warnings = ["notifications_unavailable"];
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await page.locator('.newsroom-status-light[data-state="error"]').waitFor();
+    await page.locator('.newsroom-connection-status[data-state="error"]').waitFor();
     assert.equal((await state.innerText()).trim(), '');
-    const red = await state.locator('i').evaluate(node => getComputedStyle(node).backgroundColor);
+    const red = await state.evaluate(node => getComputedStyle(node).color);
+    assert.notEqual(await state.evaluate(node => getComputedStyle(node).backgroundColor), blueBackground, 'state must change the server tile background as well as icon color');
     const redRgb = red.match(/\d+/g).map(Number);
     assert.ok(redRgb[0] > redRgb[2] && red !== blue, 'attention indicator must turn red');
     assert.deepEqual(await headerBounds(), header, "a longer status label moved header controls");
@@ -86,33 +95,34 @@ try {
     assert.ok(await time.evaluate(node => node.scrollWidth <= node.clientWidth));
     warnings = [];
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor();
+    await page.locator('.newsroom-connection-status[data-state="ok"]').waitFor();
 
     await page.waitForFunction(() => Boolean(localStorage.getItem('incar_core_snapshot_v3')));
     changesFail = true; snapshotDelay = 1100;
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.locator('.newsroom-status-light[data-state="pending"]').waitFor();
-    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor({ timeout: 60000 });
+    await page.locator('.newsroom-connection-status[data-state="pending"]').waitFor();
+    await page.locator('.newsroom-connection-status[data-state="ok"]').waitFor({ timeout: 60000 });
     assert.equal(await page.evaluate(() => window.__headerSignals.includes('error')), false, 'a warm reload flashed a false red signal before the healthy snapshot');
 
     snapshotFails = true;
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.locator('.newsroom-status-light[data-state="pending"]').waitFor();
-    await page.locator('.newsroom-status-light[data-state="error"]').waitFor({ timeout: 60000 });
+    await page.locator('.newsroom-connection-status[data-state="pending"]').waitFor();
+    await page.locator('.newsroom-connection-status[data-state="error"]').waitFor({ timeout: 60000 });
     await page.screenshot({ path: path.join(out, `${width}-connection-failed.png`), animations: 'disabled' });
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     changesFail = false; snapshotFails = false; snapshotDelay = 0;
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor({ timeout: 60000 });
+    await page.locator('.newsroom-connection-status[data-state="ok"]').waitFor({ timeout: 60000 });
     assert.deepEqual(await headerBounds(), header, 'recovered snapshot changed the status control geometry');
 
     const openOwn = async () => {
       await page.locator('[data-section="overview"]').click();
       await page.locator('.editorial-kpi-strip button.own').click();
       await page.locator('.app-shell[data-active-section="monitoring"]').waitFor();
-      await page.locator('.monitor-scope-chip').filter({ hasText: '당사 직접 언급' }).waitFor();
       await page.locator('.monitor-results[aria-busy="false"]').waitFor();
-      assert.equal(await page.locator('.monitor-article-row').count(), 1);
+      assert.equal(await page.locator('.monitor-scope-chip').count(), 0, 'own entry still shows a redundant scope label');
+      assert.equal(await page.locator('.monitor-article-row').count(), 2, 'own mentions in another stored category were lost');
+      assert.deepEqual((await page.locator('.monitor-headline').allTextContents()).sort(), [articles[0].title, articles[3].title].sort());
     };
     const tableTop = () => page.locator('.monitor-table').evaluate(node => node.getBoundingClientRect().y + window.scrollY);
     const chip = page.locator('.monitor-scope-chip');
@@ -131,13 +141,18 @@ try {
       assert.equal(await page.locator('.monitor-category-tabs > button').first().getAttribute('aria-selected'), 'true');
       await page.evaluate(() => new Promise(requestAnimationFrame));
     };
-    await openOwn(); await checkChip();
+    await openOwn();
     const before = await tableTop();
     await page.screenshot({ path: path.join(out, `${width}-own-filter.png`), animations: 'disabled' });
-    await chip.locator('svg').click(); await cleared();
-    assert.equal(await tableTop(), before, "clearing the filter moved the article table");
-    assert.equal(await page.locator('.monitor-category-tabs > button').first().evaluate(node => node === document.activeElement), true, "clear action stranded keyboard focus");
-    await openOwn(); await chip.focus(); await chip.press('Enter'); await cleared();
+    await page.locator('.monitor-category-tabs > button').first().click(); await cleared();
+    assert.equal(await tableTop(), before, "changing the own scope moved the article table");
+    await openOwn();
+    await page.getByRole('button', { name: '검색 초기화', exact: true }).click(); await cleared();
+    await openOwn();
+    await page.getByRole('tab', { name: /^정책 / }).click();
+    await page.locator('.monitor-results[aria-busy="false"]').waitFor();
+    assert.equal(await page.locator('.monitor-article-row').count(), 2, 'switching categories retained a hidden own-only constraint');
+    await page.locator('.monitor-category-tabs > button').first().click(); await cleared();
 
     const longQuery = '장기보험 소비자보호 '.repeat(18).trim();
     await page.getByRole('textbox', { name: '검색어', exact: true }).fill(longQuery);
@@ -149,7 +164,12 @@ try {
     await page.screenshot({ path: path.join(out, `${width}-long-query.png`), animations: 'disabled' });
     await chip.click(); await cleared();
     assert.equal(await page.getByRole('textbox', { name: '검색어', exact: true }).inputValue(), '');
-    result.rounds.push({ width, height, header, chipActions: ['own-icon', 'own-keyboard', 'empty-long-query'] });
+    await page.getByRole('textbox', { name: '검색어', exact: true }).fill('교육센터');
+    await page.getByRole('button', { name: '조회/검색', exact: true }).click();
+    await chip.waitFor();
+    await chip.focus(); await chip.press('Enter'); await cleared();
+    assert.equal(await page.locator('.monitor-category-tabs > button').first().evaluate(node => node === document.activeElement), true, 'clear action stranded keyboard focus');
+    result.rounds.push({ width, height, header, scopeActions: ['own-no-chip', 'own-all', 'own-reset', 'own-category', 'empty-long-query', 'query-keyboard'] });
     await context.close();
   }
   assert.deepEqual(result.errors, []); assert.deepEqual(result.writes, []);

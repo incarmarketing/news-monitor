@@ -3,6 +3,16 @@ const clockFormatter = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit", minute: "2-digit", hourCycle: "h23",
 });
 
+const clockSegments = {
+  0: "abcdef", 1: "bc", 2: "abdeg", 3: "abcdg", 4: "bcfg",
+  5: "acdfg", 6: "acdefg", 7: "abc", 8: "abcdefg", 9: "abcdfg", "-": "g",
+};
+
+export function digitalClockGlyphs(timeLabel) {
+  const value = /^(?:\d{2}:\d{2}|--:--)$/.test(timeLabel) ? timeLabel : "--:--";
+  return [...value].map(character => ({ character, segments: clockSegments[character] || "" }));
+}
+
 export function headerDataStatus(operations = {}) {
   const live = operations.status === "live" && operations.source === "supabase"
     && !operations.degraded && !operations.statusReadFailed && !operations.dataLoadWarnings?.length;
