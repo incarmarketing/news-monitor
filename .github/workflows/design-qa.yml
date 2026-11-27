@@ -97,6 +97,14 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
         run: node frontend/scripts/monitor-scope-qa.mjs
 
+      - name: Verify in-place skeletons on delayed navigation
+        env:
+          DESIGN_QA_URL: ${{ github.event.inputs.url || 'https://incarmarketing.github.io/news-monitor/dashboard.html' }}
+          DESIGN_QA_OUT: .qa/design/route-loading
+          PLAYWRIGHT_MODULE_PATH: ${{ github.workspace }}/.qa/playwright-runtime/node_modules/playwright
+          PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+        run: node frontend/scripts/route-loading-qa.mjs
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v6

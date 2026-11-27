@@ -84,6 +84,7 @@ import { digitalClockGlyphs, headerDataStatus } from "./headerStatusPresentation
 import { coalesceMediaEvents } from "./mediaIssueModel.js";
 import { mapCooperatively } from "./cooperativeWork.js";
 import AppSelect from "./AppSelect.jsx";
+import WorkspaceLoading from "./WorkspaceLoading.jsx";
 import { filterRegulatorArticles } from "./regulatorFilters.js";
 import { toneChartSeries, tonePanelStats } from "./toneTrendModel.js";
 import { loadMediaArticleRange } from "./mediaRange.js";
@@ -880,12 +881,12 @@ function App() {
         />
       )}
       {(mediaWarmed || needsMediaData) && (
-        <React.Suspense fallback={needsMediaData ? <main className="workspace media-page" aria-busy="true" /> : null}>
+        <React.Suspense fallback={needsMediaData ? <WorkspaceLoading section="media"/> : null}>
           <MediaAnalysis active={needsMediaData} data={baseData} operations={operations} onOpenMonitoring={openMonitoring} helpers={dashboardHelpers} />
         </React.Suspense>
       )}
       {FeatureView && (
-        <React.Suspense fallback={<main className="workspace"><section className="panel empty-state-panel"><h2>화면 불러오는 중</h2></section></main>}>
+        <React.Suspense fallback={<WorkspaceLoading section={activeSection}/>}>
           <FeatureView
           data={data}
           period={period}

@@ -119,6 +119,20 @@ test("own-mention entry retains the article filter without a redundant scope chi
   assert.match(main, /if \(field === "category"\) setOwnOnly\(false\)/);
 });
 
+test("lazy routes use in-place workspace skeletons rather than a floating loading message", () => {
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  const loading = fs.readFileSync(new URL("../src/WorkspaceLoading.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/workspace-loading.css", import.meta.url), "utf8");
+  assert.doesNotMatch(main, /화면 불러오는 중/);
+  assert.match(main, /fallback=\{<WorkspaceLoading section=\{activeSection\}/);
+  assert.match(main, /needsMediaData \? <WorkspaceLoading section="media"/);
+  for (const className of ["media-page", "media-intel-board", "report-workspace", "report-command-panel", "newspaper-report-body", "management-summary", "stock-ticker-band"]) assert.ok(loading.includes(className));
+  assert.match(loading, /aria-busy="true"/);
+  assert.match(loading, /aria-hidden="true"/);
+  assert.doesNotMatch(css, /position:\s*(?:fixed|absolute)/);
+  assert.doesNotMatch(loading, /setInterval|fetch\(|setTimeout/);
+});
+
 test("active monitoring scope and its clear icon share one bounded control", () => {
   const view = fs.readFileSync(new URL("../src/MonitoringWorkbench.jsx", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../src/monitoring-workbench.css", import.meta.url), "utf8");
