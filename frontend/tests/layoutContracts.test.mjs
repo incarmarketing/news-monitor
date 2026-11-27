@@ -101,8 +101,10 @@ test("data status and update time belong beside the global collection control", 
   assert.match(actions, /<NewsroomDataStatus operations=\{operations\}/);
   assert.doesNotMatch(main + homeCss, /editorial-data-status/);
   assert.match(css, /\.newsroom-data-status > span, \.newsroom-data-status time \{[^}]*height: 44px/);
-  assert.match(css, /\.newsroom-data-status > span \{ width: 120px/);
+  assert.match(css, /\.newsroom-status-light \{ width: 44px/);
   assert.match(css, /\.newsroom-data-status time \{ width: 160px/);
+  assert.match(main, /role="img" aria-label=\{status.label\} title=\{status.label\}><i aria-hidden="true" \/><\/span>/);
+  assert.match(css, /\.newsroom-clock-digits \{[^}]*font-size: 20px/);
   assert.doesNotMatch(main.slice(main.indexOf('function NewsroomDataStatus'), main.indexOf('function DashboardEditorialHeader')), /<button/);
 });
 

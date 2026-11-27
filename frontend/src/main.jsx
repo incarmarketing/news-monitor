@@ -9,7 +9,6 @@ import {
   Bookmark,
   ChevronDown,
   ChevronRight,
-  Clock,
   Download,
   ExternalLink,
   FilePenLine,
@@ -78,6 +77,7 @@ import MonitoringWorkbench from "./MonitoringWorkbench.jsx";
 import { monitoringCategoryCounts, monitoringCategoryKey } from "./monitoringPresentation.js";
 import NewsroomChart from "./NewsroomChart.jsx";
 import { refreshFailureMessage } from "./refreshPresentation.js";
+import { headerDataStatus } from "./headerStatusPresentation.js";
 import { coalesceMediaEvents } from "./mediaIssueModel.js";
 import { mapCooperatively } from "./cooperativeWork.js";
 import AppSelect from "./AppSelect.jsx";
@@ -1094,12 +1094,10 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
 }
 
 function NewsroomDataStatus({ operations }) {
-  const status = operations?.status;
-  const live = status === "live" && operations?.source === "supabase" && !operations?.degraded && !operations?.statusReadFailed && !operations?.dataLoadWarnings?.length;
-  const sourceTime = formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || "-");
-  return <p className={`newsroom-data-status ${live ? "live" : ""}`} role="group" aria-label="기사 데이터 상태">
-    <span><i aria-hidden="true" />{live ? "데이터 정상" : status === "live" ? "저장본 · 연결 확인 필요" : "데이터 확인 중"}</span>
-    <time title="기사 데이터 기준 시각"><Clock size={14} aria-hidden="true" /><span>{sourceTime} 기준</span></time>
+  const status = headerDataStatus(operations);
+  return <p className="newsroom-data-status" role="group" aria-label="기사 데이터 상태">
+    <span className="newsroom-status-light" data-state={status.state} role="img" aria-label={status.label} title={status.label}><i aria-hidden="true" /></span>
+    <time className="newsroom-digital-clock" dateTime={status.dateTime} title={status.timeTitle} aria-label={`기사 데이터 기준 시각 ${status.timeTitle}`}><span className="newsroom-clock-date" aria-hidden="true">{status.dateLabel}</span><span className="newsroom-clock-digits" aria-hidden="true">{status.timeLabel}</span></time>
   </p>;
 }
 

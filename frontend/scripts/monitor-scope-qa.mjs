@@ -43,7 +43,11 @@ try {
     await page.locator('.desk-priority[aria-busy="false"]').waitFor({ timeout: 90000 });
     await page.evaluate(() => document.fonts.ready);
     const state = page.locator('.newsroom-data-status > span'), time = page.locator('.newsroom-data-status time');
-    await state.filter({ hasText: "데이터 정상" }).waitFor();
+    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor();
+    assert.equal((await state.innerText()).trim(), '', 'status wording must be tooltip-only');
+    const blue = await state.locator('i').evaluate(node => getComputedStyle(node).backgroundColor);
+    const blueRgb = blue.match(/\d+/g).map(Number);
+    assert.ok(blueRgb[2] > blueRgb[0], 'healthy indicator must be blue, not red');
     const headerBounds = async () => ({ state: await state.boundingBox(), time: await time.boundingBox(), button: await page.getByRole('button', { name: '새 기사 수집', exact: true }).boundingBox() });
     const header = await headerBounds();
     assert.ok(header.time.width > header.state.width);
@@ -52,15 +56,23 @@ try {
     assert.ok(header.time.x >= header.state.x + header.state.width + 7);
     if (width > 760) assert.ok(header.button.x >= header.time.x + header.time.width + 7 && header.button.y === header.time.y);
     assert.equal(await page.locator('.newsroom-data-status button').count(), 0, "read-only status displays became fake actions");
+    assert.match(await time.locator('.newsroom-clock-date').innerText(), /^\d{2}\.\d{2}$/);
+    assert.match(await time.locator('.newsroom-clock-digits').innerText(), /^\d{2}:\d{2}$/);
+    const clockDate = await time.locator('.newsroom-clock-date').boundingBox(), clockDigits = await time.locator('.newsroom-clock-digits').boundingBox();
+    assert.ok(Math.abs(clockDate.y + clockDate.height / 2 - clockDigits.y - clockDigits.height / 2) <= 1, 'digital date and time wrapped onto different lines');
     warnings = ["notifications_unavailable"];
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await state.filter({ hasText: "연결 확인 필요" }).waitFor();
+    await page.locator('.newsroom-status-light[data-state="error"]').waitFor();
+    assert.equal((await state.innerText()).trim(), '');
+    const red = await state.locator('i').evaluate(node => getComputedStyle(node).backgroundColor);
+    const redRgb = red.match(/\d+/g).map(Number);
+    assert.ok(redRgb[0] > redRgb[2] && red !== blue, 'attention indicator must turn red');
     assert.deepEqual(await headerBounds(), header, "a longer status label moved header controls");
     assert.ok(await state.evaluate(node => node.scrollWidth <= node.clientWidth && node.scrollHeight <= node.clientHeight));
     assert.ok(await time.evaluate(node => node.scrollWidth <= node.clientWidth));
     warnings = [];
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await state.filter({ hasText: "데이터 정상" }).waitFor();
+    await page.locator('.newsroom-status-light[data-state="ok"]').waitFor();
 
     const openOwn = async () => {
       await page.locator('[data-section="overview"]').click();
