@@ -50,3 +50,22 @@ test("failed media reads are not cached as an empty successful result", async ()
   assert.deepEqual((await read(range)).articles, []);
   assert.equal(calls, 2);
 });
+
+test("a long-running media read is shared and cache age starts only after completion", async () => {
+  let time = 0, calls = 0, finish;
+  const read = createMediaRangeLoader(() => { calls++; return new Promise(resolve => { finish = resolve; }); }, () => time);
+  const first = read(range);
+  await Promise.resolve();
+  time = 20 * 60000;
+  assert.equal(read(range), first);
+  assert.equal(calls, 1);
+  finish([{ id: "complete-history" }]);
+  const completed = await first;
+  time += 119999;
+  assert.equal(await read(range), completed);
+  time++;
+  assert.notEqual(read(range), first);
+  await Promise.resolve();
+  assert.equal(calls, 2);
+  finish([]);
+});

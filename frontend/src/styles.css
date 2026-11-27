@@ -192,6 +192,9 @@ label > span { color: var(--muted); font-size: 14px; }
 .media-trend-heading .newsroom-tone-legend { padding-bottom: 0; margin-left: 20px; font-size: 19px; }
 .media-trend-message { display: grid; align-content: center; justify-items: center; gap: 12px; min-height: 150px; height: 100%; color: var(--muted); font-size: 16px; text-align: center; }
 .tone-axis-note { margin-left: auto; color: var(--muted); font-size: 14px; white-space: nowrap; }
+.media-page[hidden] { display: none; }
+.media-refresh-status { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.media-refresh-status button { border: 0; background: transparent; padding: 0; color: inherit; font: inherit; line-height: 24px; text-decoration: underline; text-underline-offset: 3px; }
 .tone-small-multiples { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--media-column-gap, 16px); }
 .tone-panel { display: grid; grid-template-rows: 32px minmax(0, 1fr); min-width: 0; min-height: 0; padding-left: 12px; border-left: 1px solid var(--line-soft); }
 .tone-panel:first-child { padding-left: 0; border-left: 0; }

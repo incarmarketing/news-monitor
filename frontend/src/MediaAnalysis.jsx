@@ -74,16 +74,18 @@ async function getCachedMediaAnalysis(input) {
   return value;
 }
 
-export default function MediaAnalysis({ data, onOpenMonitoring, operations, helpers = {} }) {
+export default function MediaAnalysis({ data, onOpenMonitoring, operations, helpers = {}, active = true }) {
   mediaHelpers = helpers;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
   const [rangeDraft, setRangeDraft] = useState({ start: "", end: "" });
   const [activeRange, setActiveRange] = useState({ start: "", end: "" });
+  const [rollingDays, setRollingDays] = useState(30);
   const [rangeNotice, setRangeNotice] = useState("");
   const [detailTab, setDetailTab] = useState("keywords");
   const [rangeRead, setRangeRead] = useState({ status: "loading", articles: [], loadedAt: 0 });
   const [retry, setRetry] = useState(0);
   const [analysisRead, setAnalysisRead] = useState({ status: "loading", key: "" });
+  const [presented, setPresented] = useState(null);
   const defaultRange = useMemo(() => {
     const start = addDaysToDateKey(today, -29);
     return { start: start || today, end: today };
@@ -96,22 +98,25 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
     [activeRange.end, activeRange.start, defaultRange.end, defaultRange.start],
   );
   useEffect(() => {
-    if (activeRange.start || activeRange.end || rangeDraft.start || rangeDraft.end) return;
-    setRangeDraft(defaultRange);
-    setActiveRange(defaultRange);
-  }, [activeRange.end, activeRange.start, defaultRange, rangeDraft.end, rangeDraft.start]);
-  const revision = operations?.articlesGeneratedAt || "";
+    if (!rollingDays) return;
+    const next = { start: addDaysToDateKey(today, -(rollingDays - 1)), end: today };
+    if (activeRange.start === next.start && activeRange.end === next.end) return;
+    if ((!rangeDraft.start && !rangeDraft.end) || (rangeDraft.start === activeRange.start && rangeDraft.end === activeRange.end)) setRangeDraft(next);
+    setActiveRange(next);
+  }, [activeRange.end, activeRange.start, rangeDraft.end, rangeDraft.start, rollingDays, today]);
+  const revision = operations?.articleRevision || operations?.articlesGeneratedAt || "";
   useEffect(() => {
-    if (!effectiveRange.start || !effectiveRange.end) return undefined;
-    let active = true;
+    if (!active || !effectiveRange.start || !effectiveRange.end) return undefined;
+    let requestActive = true;
     const requestedRange = { startDate: effectiveRange.start, endDate: effectiveRange.end };
-    setRangeRead({ ...requestedRange, status: "loading", articles: [], loadedAt: 0 });
+    setRangeRead(current => ({ ...requestedRange, status: "loading",
+      articles: current.startDate === requestedRange.startDate && current.endDate === requestedRange.endDate ? current.articles : [], loadedAt: current.loadedAt }));
     loadMediaArticleRange({ startDate: effectiveRange.start, endDate: effectiveRange.end, revision })
-      .then(result => { if (active) setRangeRead({ ...result, status: "ready" }); })
-      .catch(error => { if (active) setRangeRead({ ...requestedRange, status: "error", articles: [], loadedAt: 0,
-        error: error.message === "article_range_limit_reached" ? "기사량이 조회 한도를 초과했습니다. 기간을 나누어 조회해 주세요." : "선택 기간의 기사를 불러오지 못했습니다." }); });
-    return () => { active = false; };
-  }, [effectiveRange.start, effectiveRange.end, revision, retry]);
+      .then(result => { if (requestActive) setRangeRead({ ...result, status: "ready" }); })
+      .catch(error => { if (requestActive) setRangeRead(current => ({ ...current, ...requestedRange, status: "error",
+        error: error.message === "article_range_limit_reached" ? "기사량이 조회 한도를 초과했습니다. 기간을 나누어 조회해 주세요." : "선택 기간의 기사를 불러오지 못했습니다." })); });
+    return () => { requestActive = false; };
+  }, [active, effectiveRange.start, effectiveRange.end, revision, retry]);
   const mediaSourceArticles = useMemo(() => rangeRead.articles.filter(article => !isOfficialRegulatorSource(article.source)), [rangeRead.articles]);
   const analysisArticles = useMemo(
     () => {
@@ -143,21 +148,30 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
   );
   const analysisKey = mediaAnalysisCacheKey(analysisInput);
   useEffect(() => {
-    if (loadingArticles || rangeRead.status !== "ready") return undefined;
+    if (!active || loadingArticles || rangeRead.status !== "ready") return undefined;
     const controller = new AbortController();
     setAnalysisRead({ status: "loading", key: analysisKey });
     getCachedMediaAnalysis({ ...analysisInput, signal: controller.signal,
       onProgress: value => { if (!controller.signal.aborted) setAnalysisRead({ status: "partial", key: analysisKey, value }); },
     })
-      .then(value => { if (!controller.signal.aborted) setAnalysisRead({ status: "ready", key: analysisKey, value }); })
+      .then(value => { if (!controller.signal.aborted) {
+        setAnalysisRead({ status: "ready", key: analysisKey, value });
+        setPresented({ start: effectiveRange.start, end: effectiveRange.end, articles: deferredAnalysisArticles, value });
+      } })
       .catch(() => { if (!controller.signal.aborted) setAnalysisRead({ status: "error", key: analysisKey }); });
     return () => controller.abort();
-  }, [analysisInput, analysisKey, loadingArticles, rangeRead.status]);
+  }, [active, analysisInput, analysisKey, loadingArticles, rangeRead.status]);
   const loadingRange = loadingArticles || (rangeRead.status === "ready" && (analysisRead.key !== analysisKey || analysisRead.status === "loading"));
   const issuesLoading = rangeRead.status === "ready" && analysisRead.key === analysisKey && analysisRead.status === "partial";
   const analysisError = rangeRead.status === "error" ? rangeRead.error
     : analysisRead.key === analysisKey && analysisRead.status === "error" ? "선택 기간의 기사 집계를 완료하지 못했습니다." : "";
-  const mediaAnalysis = !loadingRange && !analysisError && analysisRead.key === analysisKey && ["partial", "ready"].includes(analysisRead.status)
+  const retained = presented?.start === effectiveRange.start && presented?.end === effectiveRange.end;
+  const visibleLoading = !retained && loadingRange;
+  const visibleIssuesLoading = !retained && issuesLoading;
+  const blockingError = retained ? "" : analysisError;
+  const displayedArticles = retained ? presented.articles : deferredAnalysisArticles;
+  // Publish a complete refresh atomically; never replace a usable view with intermediate work.
+  const mediaAnalysis = retained ? presented.value : !loadingRange && !analysisError && analysisRead.key === analysisKey && ["partial", "ready"].includes(analysisRead.status)
     ? analysisRead.value : { mediaSummaryData: { pressInfluence: [] }, dailyTrend: [], keywordRows: [], issueRows: [] };
   const { mediaSummaryData, dailyTrend, keywordRows, issueRows } = mediaAnalysis;
   const maxKeywordCount = Math.max(1, ...keywordRows.map(row => Number(row.value) || 0));
@@ -166,7 +180,7 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
     mediaScope: true, rangeRevision: revision,
   });
   const downloadArticles = () => {
-    const url = URL.createObjectURL(new Blob([monitoringCsv(deferredAnalysisArticles)], { type: "text/csv;charset=utf-8" }));
+    const url = URL.createObjectURL(new Blob([monitoringCsv(displayedArticles)], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = `media-analysis-${effectiveRange.start}-${effectiveRange.end}.csv`;
@@ -186,12 +200,13 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
       nextStart = addDaysToDateKey(fallbackEnd, -(days - 1)) || fallbackEnd;
     }
     const normalized = normalizeAnalysisDateRange(nextStart, nextEnd, 90);
+    setRollingDays(days || null);
     setRangeDraft(normalized);
     setActiveRange(normalized);
     setRangeNotice(normalized.clamped ? "최대 90일 기준으로 시작일을 조정했습니다." : "");
   };
   return (
-    <main className="workspace media-page">
+    <main className="workspace media-page" hidden={!active}>
       <header className="page-title media-command-panel">
         <h1>언론동향</h1>
           <div className="media-range-actions">
@@ -215,30 +230,30 @@ export default function MediaAnalysis({ data, onOpenMonitoring, operations, help
           <Check />적용
         </button>
       </div>
-      <button type="button" className="ghost-button media-export" onClick={downloadArticles} disabled={loadingRange || Boolean(analysisError) || rangeRead.status !== "ready" || !deferredAnalysisArticles.length}><Download />다운로드</button>
+      <button type="button" className="ghost-button media-export" onClick={downloadArticles} disabled={visibleLoading || Boolean(blockingError) || !displayedArticles.length}><Download />다운로드</button>
       </header>
       {rangeNotice && <p className="media-range-notice" role="status">{rangeNotice}</p>}
       <section className="media-analysis-layout media-intel-board" aria-busy={loadingRange || issuesLoading}>
         {(loadingRange || issuesLoading) && <span className="sr-only" role="status">기사 데이터를 불러오는 중입니다.</span>}
         <div className="media-main-trend">
           <section className="panel media-trend-panel">
-            <header className="media-trend-heading"><h2>일별 논조 흐름</h2><span>{loadingRange ? <MediaSkeleton kind="count" /> : analysisError ? "조회 실패" : `${deferredAnalysisArticles.length.toLocaleString("ko-KR")}건`}</span><small className="tone-axis-note">논조별 개별 눈금 · 기사 수(건)</small></header>
-            {loadingRange ? <MediaSkeleton kind="trend" /> : analysisError ? <div className="media-trend-message" role="alert"><p>{analysisError}</p><button type="button" className="ghost-button" onClick={retryRange}>다시 조회</button></div> : <ToneTrend rows={dailyTrend} />}
+            <header className="media-trend-heading"><h2>일별 논조 흐름</h2><span>{visibleLoading ? <MediaSkeleton kind="count" /> : blockingError ? "조회 실패" : `${displayedArticles.length.toLocaleString("ko-KR")}건`}</span><small className="tone-axis-note media-refresh-status" role="status" aria-label="언론동향 갱신 상태">{retained && analysisError ? <>갱신 실패 · 이전 집계 유지<button type="button" onClick={retryRange}>다시 조회</button></> : retained && (loadingRange || issuesLoading) ? "최신 기사 갱신 중" : "논조별 개별 눈금 · 기사 수(건)"}</small></header>
+            {visibleLoading ? <MediaSkeleton kind="trend" /> : blockingError ? <div className="media-trend-message" role="alert"><p>{blockingError}</p><button type="button" className="ghost-button" onClick={retryRange}>다시 조회</button></div> : <ToneTrend rows={dailyTrend} />}
           </section>
         </div>
         <div className="media-keywords">
           <div className="newsroom-content-tabs" role="tablist" aria-label="기사량 집계 기준"><button type="button" role="tab" id="media-keywords-tab" aria-controls="media-detail-panel" aria-selected={detailTab === "keywords"} onClick={() => setDetailTab("keywords")}>주요 키워드</button><button type="button" role="tab" id="media-publishers-tab" aria-controls="media-detail-panel" aria-selected={detailTab === "publishers"} onClick={() => setDetailTab("publishers")}>언론사별 보도량</button></div>
           <div className="media-keyword-content" id="media-detail-panel" role="tabpanel" aria-labelledby={`media-${detailTab}-tab`}>
-          {detailTab === "keywords" ? loadingRange ? <MediaSkeleton kind="keywords" /> : <div className="media-keyword-bars">
+          {detailTab === "keywords" ? visibleLoading ? <MediaSkeleton kind="keywords" /> : <div className="media-keyword-bars">
             {keywordRows.filter(row => Number(row.value) > 0).slice(0, 10).map(row => <button type="button" key={row.keyword || row.name} onClick={() => openPeriodMonitoring({ query: row.keyword || row.name })}><b>{row.name}</b><span><i style={{ width: `${Math.max(1, Number(row.value) / maxKeywordCount * 100)}%` }} /></span><strong>{Number(row.value).toLocaleString("ko-KR")}건</strong></button>)}
-            {!keywordRows.some(row => Number(row.value) > 0) && <p className="empty-list-note">{analysisError ? "선택 기간 조회를 완료하지 못했습니다." : "해당 기간의 키워드 기사가 없습니다."}</p>}
-          </div> : loadingRange ? <MediaSkeleton kind="publishers" /> : analysisError ? <p className="empty-list-note">선택 기간 조회를 완료하지 못했습니다.</p> : <PressInfluence rows={mediaSummaryData.pressInfluence} onOpenMonitoring={openPeriodMonitoring} />}
+            {!keywordRows.some(row => Number(row.value) > 0) && <p className="empty-list-note">{blockingError ? "선택 기간 조회를 완료하지 못했습니다." : "해당 기간의 키워드 기사가 없습니다."}</p>}
+          </div> : visibleLoading ? <MediaSkeleton kind="publishers" /> : blockingError ? <p className="empty-list-note">선택 기간 조회를 완료하지 못했습니다.</p> : <PressInfluence rows={mediaSummaryData.pressInfluence} onOpenMonitoring={openPeriodMonitoring} />}
           </div>
         </div>
         <div className="media-issues">
-          <Panel title="주요 보도 이슈" icon={Newspaper} meta={loadingRange || issuesLoading ? "" : analysisError ? "조회 실패" : mediaIssuesMeta(issueRows)}>
+          <Panel title="주요 보도 이슈" icon={Newspaper} meta={visibleLoading || visibleIssuesLoading ? "" : blockingError ? "조회 실패" : mediaIssuesMeta(issueRows)}>
             <div className="media-issue-content">
-            <MediaIssueDigest issues={issueRows} loading={loadingRange || issuesLoading} error={analysisError} />
+            <MediaIssueDigest active={active} issues={issueRows} loading={visibleLoading || visibleIssuesLoading} error={blockingError} />
             </div>
           </Panel>
         </div>

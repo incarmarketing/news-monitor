@@ -48,10 +48,11 @@ export function createOperationalPoller({ readChanges, readCore, onCore, onStatu
         lastCoreAttempt = now();
         snapshot = await readCore();
         if (stopped) return {};
-        onCore(snapshot);
+        const liveSnapshot = snapshot?.source === "supabase" && snapshot?.status === "live";
+        onCore(snapshot, liveSnapshot ? changes?.revisions?.news_articles || snapshot.articlesGeneratedAt || snapshot.generatedAt || "" : "");
         day = currentDay;
         // A static fallback is useful, but it cannot acknowledge a newer DB revision.
-        if (snapshot?.source === "supabase" && snapshot?.status === "live") {
+        if (liveSnapshot) {
           if (changes) revisions.news_articles = changes.revisions.news_articles;
         }
       }

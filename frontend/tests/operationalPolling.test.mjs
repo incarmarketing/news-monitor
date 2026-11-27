@@ -13,7 +13,7 @@ function harness() {
       if (state.fail) throw Error('offline');
       return { revisions: { news_articles: state.revision, notification_sends: 'n1', job_runs: 'j1' }, patch: state.patch, warnings: state.warnings }; },
     readCore: async () => { state.coreCalls++; if (state.hold) await state.hold; return state.core; },
-    onCore: (core) => state.received.push(core), onStatus: (patch) => { state.lastPatch = patch; }, onError: () => state.errors++,
+    onCore: (core, revision) => { state.received.push(core); state.receivedRevision = revision; }, onStatus: (patch) => { state.lastPatch = patch; }, onError: () => state.errors++,
   });
   return { state, poller, tick: async () => { state.now += 60_000; if (timer) await timer(); } };
 }
@@ -41,6 +41,7 @@ test('article insert, edit or delete invalidates even if the article count is un
   const h = harness(); await h.poller.start();
   for (const revision of ['edited', 'deleted', 'new-negative']) { h.state.revision = revision; await h.tick(); }
   assert.equal(h.state.coreCalls, 4);
+  assert.equal(h.state.receivedRevision, 'new-negative');
 });
 
 test('partial ledger outages keep existing rows and leave the revision unacknowledged', async () => {
@@ -60,9 +61,11 @@ test('static fallback cannot acknowledge a DB article revision', async () => {
   h.state.revision = 'new'; h.state.core = { source: 'static', status: 'live' };
   await h.tick(); await h.tick();
   assert.equal(h.state.requested.news_articles, 'a1');
+  assert.equal(h.state.receivedRevision, '');
   h.state.core = { source: 'supabase', status: 'live' };
   await h.tick(); await h.tick();
   assert.equal(h.state.requested.news_articles, 'new');
+  assert.equal(h.state.receivedRevision, 'new');
 });
 
 test('no hidden-tab reads; returning or reconnecting checks immediately', async () => {
@@ -95,4 +98,12 @@ test('change endpoint outage reports uncertainty and retains five-minute core fa
   assert.equal(h.state.coreCalls, 1);
   await h.tick(); assert.equal(h.state.coreCalls, 2);
   assert.equal(h.state.errors, 5);
+});
+
+test('a successful DB fallback can invalidate a view without trusting an unavailable revision endpoint', async () => {
+  const h = harness(); await h.poller.start(); h.state.fail = true;
+  h.state.core = { ...h.state.core, generatedAt: '2026-09-10T00:05:00Z' };
+  for (let i = 0; i < 5; i++) await h.tick();
+  assert.equal(h.state.receivedRevision, h.state.core.generatedAt);
+  assert.equal(h.state.requested.news_articles, 'a1');
 });

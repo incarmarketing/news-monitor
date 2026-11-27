@@ -242,6 +242,7 @@ function App() {
   const [monitoringRangeLoading, setMonitoringRangeLoading] = useState(false);
   const monitoringRangeRequest = useRef(0);
   const [monitoringWarmed, setMonitoringWarmed] = useState(initialRoute.section === "monitoring");
+  const [mediaWarmed, setMediaWarmed] = useState(initialRoute.section === "media");
   const [working, setWorking] = useState(false);
   const [workLabel, setWorkLabel] = useState("");
   const [workFailed, setWorkFailed] = useState(false);
@@ -435,11 +436,13 @@ function App() {
       readChanges: loadOperationalChanges,
       readCore: () => loadOperationalData({ profile: "core" }),
       visible: () => document.visibilityState !== "hidden",
-      onCore: (next) => {
+      onCore: (next, articleRevision) => {
         loadingDataProfiles.current.delete("core");
         if (next?.status === "live") loadedDataProfiles.current.add("core");
         rememberArticleProfile("core", next);
-        setOperations((current) => mergeOperationalSnapshots(current, next, true));
+        setOperations((current) => mergeOperationalSnapshots(current, {
+          ...next, articleRevision: articleRevision || current.articleRevision || "",
+        }, true));
       },
       onStatus: (patch, watchJob, warnings) => {
         setOperations((current) => ({ ...current, ...patch,
@@ -636,6 +639,7 @@ function App() {
     // wait for the network. Suspense keeps the shell responsive while it loads.
     const preload = preloadFeatureSection(sectionId).catch(() => null);
     if (sectionId === "monitoring") setMonitoringWarmed(true);
+    if (sectionId === "media") setMediaWarmed(true);
     activeSectionRef.current = sectionId;
     setActiveSection(sectionId);
     preload.finally(() => {
@@ -812,7 +816,6 @@ function App() {
 
   const FeatureView = {
     regulators: Regulators,
-    media: MediaAnalysis,
     stocks: StockMarketDashboard,
     clipping: Clipping,
     scraps: Scraps,
@@ -873,6 +876,11 @@ function App() {
           onFeedbackSaved={stableFeedbackSaved}
           onScrapSaved={stableScrapSaved}
         />
+      )}
+      {(mediaWarmed || needsMediaData) && (
+        <React.Suspense fallback={needsMediaData ? <main className="workspace media-page" aria-busy="true" /> : null}>
+          <MediaAnalysis active={needsMediaData} data={baseData} operations={operations} onOpenMonitoring={openMonitoring} helpers={dashboardHelpers} />
+        </React.Suspense>
       )}
       {FeatureView && (
         <React.Suspense fallback={<main className="workspace"><section className="panel empty-state-panel"><h2>화면 불러오는 중</h2></section></main>}>

@@ -7,10 +7,11 @@ import { displayHeadline, resolvePublisher } from "./publisherIdentity.js";
 import { mediaArticleDate, mediaArticleKey, mediaArticleUrl, mediaIssueArticles, mediaIssuePage } from "./mediaIssueModel.js";
 import "./media-issues.css";
 
-export default function MediaIssueDigest({ issues = [], loading = false, error = "" }) {
+export default function MediaIssueDigest({ issues = [], loading = false, error = "", active = true }) {
   const [selection, setSelection] = useState(null);
   const opener = useRef(null);
   const fallback = useRef(null);
+  useEffect(() => { if (!active) setSelection(null); }, [active]);
   return <div className="media-issue-view" ref={fallback} tabIndex={-1}>
     {loading ? <MediaSkeleton kind="issues" /> : error ? <p className="empty-list-note" role="status">선택 기간 조회를 완료하지 못했습니다.</p> : !issues.length ? <p className="empty-list-note">선택 기간에 표시할 주요 이슈가 없습니다.</p> : <div className="media-issue-digest">
       {issues.map((issue, index) => {
