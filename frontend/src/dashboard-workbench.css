@@ -5,9 +5,6 @@
 .editorial-header-copy { display: flex; align-items: center; gap: 26px; }
 .editorial-header-copy h1 { font-size: 38px; white-space: nowrap; }
 .editorial-header-copy p { padding-left: 26px; border-left: 1px solid var(--line); font-size: 16px; color: var(--ink-2); white-space: nowrap; }
-.editorial-data-status { position: absolute; right: 30px; bottom: 5px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
-.editorial-data-status i { width: 6px; height: 6px; background: var(--amber); border-radius: 50%; }
-.editorial-data-status.live i { background: var(--green); }
 .editorial-kpi-strip { display: flex; align-items: center; justify-content: flex-start; gap: 10px; margin-left: 24px; padding-left: 24px; border-left: 1px solid var(--line); align-self: start; min-height: 46px; }
 .editorial-kpi-strip button { display: inline-flex; border: 0; background: transparent; padding: 0; align-items: center; }
 .editorial-kpi-strip button > svg { display: none; }
@@ -163,7 +160,6 @@
   .editorial-header-copy { display: grid; gap: 7px; }
   .editorial-header-copy p { border: 0; padding: 0; font-size: 13px; }
   .editorial-header-copy h1 { font-size: 27px; }
-  .editorial-data-status { right: 16px; bottom: 8px; max-width: none; font-size: 11px; }
   .editorial-kpi-strip { gap: 14px; flex-wrap: wrap; }
   .editorial-kpi-strip button + button::before { display: none; }
   .editorial-kpi-strip small { font-size: 12px; }

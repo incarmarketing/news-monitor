@@ -845,6 +845,7 @@ function App() {
             ))}
         </nav>
         <div className="newsroom-global-actions">
+          <NewsroomDataStatus operations={operations} />
           <button type="button" className="newsroom-collect" onClick={() => overviewRefreshOperations({ trigger: true, workflow: "dashboard-refresh.yml", source: "dashboard_manual_refresh", label: "기사 수집 갱신" })} disabled={working} aria-busy={working} aria-label="새 기사 수집" title="새 기사 수집"><span className="newsroom-collect-glyph" aria-hidden="true"><Newspaper /><RefreshCw className="newsroom-collect-arrow" /></span></button>
         </div>
       </header>
@@ -1067,10 +1068,7 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   }, []);
   return (
     <main className="workspace dashboard-workspace dashboard-workbench">
-      <DashboardEditorialHeader
-        status={operations?.status}
-        operations={operations}
-      />
+      <DashboardEditorialHeader />
 
       <DashboardKpiStrip summary={summary} loading={loading} onOpenMonitoring={onOpenMonitoring} onOpenRisk={focusRiskIssues} />
 
@@ -1094,16 +1092,23 @@ function Overview({ data, articles, allArticles = [], notifications, setActiveSe
   );
 }
 
-function DashboardEditorialHeader({ status, operations }) {
+function NewsroomDataStatus({ operations }) {
+  const status = operations?.status;
   const live = status === "live" && operations?.source === "supabase" && !operations?.degraded && !operations?.statusReadFailed && !operations?.dataLoadWarnings?.length;
   const sourceTime = formatCompactDateTime(operations?.articlesGeneratedAt || operations?.generatedAt || "-");
+  return <p className={`newsroom-data-status ${live ? "live" : ""}`} role="group" aria-label="기사 데이터 상태">
+    <span><i aria-hidden="true" />{live ? "데이터 정상" : status === "live" ? "저장본 · 연결 확인 필요" : "데이터 확인 중"}</span>
+    <time>{sourceTime} 기준</time>
+  </p>;
+}
+
+function DashboardEditorialHeader() {
   return (
     <header className="editorial-dashboard-header">
       <div className="editorial-header-copy">
         <h1>오늘의 언론 상황</h1>
         <p>{formatDashboardScopeDate(formatKstDateKey(new Date()))}</p>
       </div>
-      <p className={`editorial-data-status ${live ? "live" : ""}`}><i /><span>{live ? "데이터 정상" : status === "live" ? "저장본 · 연결 확인 필요" : "데이터 확인 중"}</span><time>{sourceTime} 기준</time></p>
     </header>
   );
 }

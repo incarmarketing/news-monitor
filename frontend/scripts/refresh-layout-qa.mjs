@@ -76,7 +76,7 @@ try {
         await new Promise(resolve => setTimeout(resolve, 1200));
         await route.fulfill({ response });
       });
-      const selectors = [".newsroom-masthead", ".newsroom-navigation", ".newsroom-navigation > button", ".newsroom-global-actions", ...(width > 1200 ? anchors[section] : [])];
+      const selectors = [".newsroom-masthead", ".newsroom-navigation", ".newsroom-navigation > button", ".newsroom-global-actions", ".newsroom-data-status", ".newsroom-data-status > span", ".newsroom-data-status time", ".newsroom-collect", ...(width > 1200 ? anchors[section] : [])];
       await page.addInitScript(({ selectors }) => {
         window.__refreshGeometry = [];
         window.__readRefreshGeometry = () => Object.fromEntries(selectors.flatMap(selector => [...document.querySelectorAll(selector)].flatMap((node, index) => {

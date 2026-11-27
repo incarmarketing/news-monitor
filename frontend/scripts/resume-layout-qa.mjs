@@ -82,7 +82,7 @@ try {
       publishers: document.querySelector('#media-publishers-tab')?.getAttribute('aria-selected'),
       scroll: document.querySelector('.media-issue-content')?.scrollTop,
       windowScroll: window.scrollY,
-      geometry: [...document.querySelectorAll('.media-main-trend,.media-keywords,.media-issues,.media-intel-board .dashboard-svg-chart')].map(node => { const r = node.getBoundingClientRect(); return [r.x, r.y + window.scrollY, r.width, r.height, node.getAttribute('viewBox')]; }),
+      geometry: [...document.querySelectorAll('.newsroom-masthead,.newsroom-global-actions,.newsroom-data-status,.media-main-trend,.media-keywords,.media-issues,.media-intel-board .dashboard-svg-chart')].map(node => { const r = node.getBoundingClientRect(); return [r.x, r.y + window.scrollY, r.width, r.height, node.getAttribute('viewBox')]; }),
       flashes: window.__resumeFlashes,
     }));
     const before = await state(), initialCalls = { ...result.counts };

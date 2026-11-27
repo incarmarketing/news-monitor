@@ -66,6 +66,13 @@ try {
         await page.locator(`.newsroom-navigation [data-section="${section}"]`).click();
         await page.locator(`.app-shell[data-active-section="${section}"]`).waitFor();
         const main = page.locator("main.workspace:visible");
+        const status = page.getByRole("group", { name: "기사 데이터 상태", exact: true });
+        assert.equal(await status.count(), 1, "data status is duplicated across the shell and page");
+        assert.equal(await status.isVisible(), true, "data status is not visible in the global header");
+        const statusBox = await status.boundingBox(), collectBox = await page.getByRole("button", { name: "새 기사 수집", exact: true }).boundingBox();
+        assert.ok(collectBox.x - (statusBox.x + statusBox.width) >= 3, "data status is not separated from the collection icon");
+        assert.ok(Math.abs(statusBox.y + statusBox.height / 2 - collectBox.y - collectBox.height / 2) <= 1, "data status and collection icon are not vertically centered");
+        assert.ok(statusBox.x >= 0 && collectBox.x + collectBox.width <= viewport.width, "header controls overflow the viewport");
         await main.locator("h1").waitFor();
         await page.waitForFunction(() => ![...document.querySelectorAll('main.workspace')].filter(e => e.getBoundingClientRect().width).some(e => /화면 불러오는 중/.test(e.innerText)));
         if (section === "media") await main.locator('.media-intel-board[aria-busy="false"]').waitFor({ timeout: 90000 });

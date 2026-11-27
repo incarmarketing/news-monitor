@@ -92,6 +92,17 @@ test("header has a home entry and no redundant search or inline status banner", 
   assert.match(css, /\.work-notice \{ position: fixed/);
 });
 
+test("data status and update time belong beside the global collection control", () => {
+  const main = fs.readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8");
+  const css = fs.readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  const homeCss = fs.readFileSync(new URL("../src/dashboard-workbench.css", import.meta.url), "utf8");
+  const actions = main.slice(main.indexOf('<div className="newsroom-global-actions"'), main.indexOf('<MemoizedOverview'));
+  assert.ok(actions.indexOf('<NewsroomDataStatus') < actions.indexOf('className="newsroom-collect"'));
+  assert.match(actions, /<NewsroomDataStatus operations=\{operations\}/);
+  assert.doesNotMatch(main + homeCss, /editorial-data-status/);
+  assert.match(css, /\.newsroom-data-status \{[^}]*grid-template-rows: repeat\(2, 20px\); width: 172px; height: 40px/);
+});
+
 test("date popover uses equal date columns and a bottom-aligned apply action", () => {
   const css = fs.readFileSync(new URL("../src/monitoring-workbench.css", import.meta.url), "utf8");
   assert.match(css, /\.monitor-custom-dates \{[^}]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\) auto; align-items: end/);

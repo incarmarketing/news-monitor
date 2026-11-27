@@ -84,7 +84,12 @@ label > span { color: var(--muted); font-size: 14px; }
 .newsroom-navigation button.active { color: var(--ink); }
 .newsroom-navigation button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--blue); border-radius: 2px; }
 .newsroom-global-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; padding-left: 20px; border-left: 1px solid var(--line); }
-.newsroom-global-actions button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); background: var(--blue-soft); border-radius: var(--control-radius); }
+.newsroom-global-actions button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); background: var(--blue-soft); border-radius: var(--control-radius); flex-shrink: 0; }
+.newsroom-data-status { display: grid; grid-template-rows: repeat(2, 20px); width: 172px; height: 40px; margin: 0; flex-shrink: 0; color: var(--muted); font-size: 12px; line-height: 20px; text-align: right; white-space: nowrap; }
+.newsroom-data-status > span { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.newsroom-data-status i { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--amber); }
+.newsroom-data-status.live i { background: var(--green); }
+.newsroom-data-status time { display: block; font-variant-numeric: tabular-nums; }
 .newsroom-global-actions button:hover { background: var(--accent); }
 .newsroom-collect-glyph { position: relative; display: block; width: 28px; height: 28px; }
 .newsroom-collect-glyph > svg:first-child { position: absolute; left: 0; top: 0; width: 24px; height: 24px; }
@@ -570,6 +575,7 @@ label > span { color: var(--muted); font-size: 14px; }
   .newsroom-masthead { margin-inline: 16px; }
   .newsroom-logo { width: 74px; height: 28px; }
   .newsroom-global-actions { gap: 4px; padding: 0; }
+  .newsroom-data-status { width: 142px; height: 36px; grid-template-rows: repeat(2, 18px); font-size: 11px; line-height: 18px; }
   .work-notice { right: 16px; bottom: 16px; }
   .newsroom-navigation { justify-content: flex-start; gap: 23px; scrollbar-width: thin; }
   .newsroom-navigation button { min-height: 44px; font-size: 14px; }
